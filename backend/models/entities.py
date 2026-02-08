@@ -5,6 +5,7 @@ Gestion énergétique multi-sites (120 sites)
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Enum, Boolean, Text
 from sqlalchemy.orm import relationship
 from .base import Base, TimestampMixin
+from .conformite import StatutConformite
 import enum
 
 # ========================================
@@ -65,7 +66,16 @@ class Site(Base, TimestampMixin):
     
     # Status
     actif = Column(Boolean, default=True, comment="Site actif ou non")
-    
+
+    # Conformité réglementaire
+    portefeuille_id = Column(Integer, ForeignKey("portefeuilles.id"), nullable=True)
+    statut_decret_tertiaire = Column(Enum(StatutConformite), default=StatutConformite.A_RISQUE)
+    avancement_decret_pct = Column(Float, default=0.0)  # % avancement (0-100)
+    statut_bacs = Column(Enum(StatutConformite), default=StatutConformite.A_RISQUE)
+    anomalie_facture = Column(Boolean, default=False)
+    action_recommandee = Column(String, nullable=True)
+    risque_financier_euro = Column(Float, default=0.0)  # € de risque détecté
+
     # Relations avec les autres tables
     compteurs = relationship(
         "Compteur", 
@@ -74,12 +84,13 @@ class Site(Base, TimestampMixin):
         lazy="dynamic"
     )
     alertes = relationship(
-        "Alerte", 
-        back_populates="site", 
+        "Alerte",
+        back_populates="site",
         cascade="all, delete-orphan",
         lazy="dynamic"
     )
-    
+    portefeuille = relationship("Portefeuille", backref="sites")
+
     def __repr__(self):
         return f"<Site {self.id}: {self.nom} ({self.type.value})>"
 

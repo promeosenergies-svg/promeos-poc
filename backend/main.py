@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 # Import des routes
-from routes import sites_router, compteurs_router, consommations_router, alertes_router
+from routes import sites_router, compteurs_router, consommations_router, alertes_router, cockpit_router
 
 # Créer l'application FastAPI
 app = FastAPI(

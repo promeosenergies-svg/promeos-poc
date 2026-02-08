@@ -4,7 +4,7 @@ PROMEOS - Schémas Pydantic pour validation des données API
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
-from models import TypeSite, TypeCompteur, SeveriteAlerte
+from models import TypeSite, TypeCompteur, SeveriteAlerte, StatutConformite
 
 # ========================================
 # SCHÉMAS SITE
@@ -25,9 +25,16 @@ class SiteBase(BaseModel):
 
 class SiteResponse(SiteBase):
     id: int
+    portefeuille_id: Optional[int] = None
+    statut_decret_tertiaire: Optional[StatutConformite] = None
+    avancement_decret_pct: Optional[float] = None
+    statut_bacs: Optional[StatutConformite] = None
+    anomalie_facture: bool = False
+    action_recommandee: Optional[str] = None
+    risque_financier_euro: float = 0.0
     created_at: datetime
     updated_at: datetime
-    
+
     class Config:
         from_attributes = True
 
