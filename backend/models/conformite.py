@@ -1,24 +1,10 @@
 """
-PROMEOS - Enums et modèles pour la conformité réglementaire
+PROMEOS - Modèle Obligation (conformité réglementaire)
 """
-import enum
-from sqlalchemy import Column, Integer, String, Date, Boolean, Float, ForeignKey, Enum
+from sqlalchemy import Column, Integer, String, Date, Float, ForeignKey, Enum
 from sqlalchemy.orm import relationship
 from .base import Base, TimestampMixin
-
-
-class StatutConformite(str, enum.Enum):
-    """Statut de conformité"""
-    CONFORME = "conforme"
-    A_RISQUE = "a_risque"
-    NON_CONFORME = "non_conforme"
-
-
-class TypeObligation(str, enum.Enum):
-    """Types d'obligations réglementaires"""
-    DECRET_TERTIAIRE = "decret_tertiaire"
-    BACS = "bacs"
-    APER = "aper"
+from .enums import StatutConformite, TypeObligation
 
 
 class Obligation(Base, TimestampMixin):

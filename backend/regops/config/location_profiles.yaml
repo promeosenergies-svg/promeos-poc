@@ -1,0 +1,14 @@
+# French regions to climate zones (RT2012/RE2020)
+"11": {region_name: "Ile-de-France", climate_zone: "H1a"}
+"32": {region_name: "Hauts-de-France", climate_zone: "H1b"}
+"44": {region_name: "Grand Est", climate_zone: "H1c"}
+"27": {region_name: "Bourgogne-Franche-Comte", climate_zone: "H1c"}
+"84": {region_name: "Auvergne-Rhone-Alpes", climate_zone: "H1c"}
+"52": {region_name: "Pays de la Loire", climate_zone: "H2b"}
+"53": {region_name: "Bretagne", climate_zone: "H2a"}
+"28": {region_name: "Normandie", climate_zone: "H2a"}
+"24": {region_name: "Centre-Val de Loire", climate_zone: "H2b"}
+"75": {region_name: "Nouvelle-Aquitaine", climate_zone: "H2c"}
+"76": {region_name: "Occitanie", climate_zone: "H2d"}
+"93": {region_name: "Provence-Alpes-Cote d'Azur", climate_zone: "H3"}
+"94": {region_name: "Corse", climate_zone: "H3"}

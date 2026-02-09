@@ -1,0 +1,266 @@
+"""
+PROMEOS RegOps - Engine orchestrateur
+Coordonne les 4 moteurs de regles + scoring + cache.
+"""
+import yaml
+import os
+from pathlib import Path
+from datetime import date, datetime
+from collections import defaultdict
+from sqlalchemy.orm import Session
+
+from models import Site, Batiment, Obligation, Evidence, RegAssessment, RegStatus
+from .schemas import Finding, Action, SiteSummary
+from .completeness import check_required_inputs
+from .versioning import compute_deterministic_version, compute_data_version
+from .rules import tertiaire_operat, bacs, aper, cee_p6
+
+
+# Cache for YAML configs
+_config_cache = {}
+
+
+def _load_configs():
+    """Load all YAML configs (cached)."""
+    if _config_cache:
+        return _config_cache
+
+    config_dir = Path(__file__).parent / "config"
+
+    with open(config_dir / "regs.yaml") as f:
+        _config_cache["regs"] = yaml.safe_load(f)
+
+    with open(config_dir / "naf_profiles.yaml") as f:
+        _config_cache["naf_profiles"] = yaml.safe_load(f)
+
+    with open(config_dir / "location_profiles.yaml") as f:
+        _config_cache["location_profiles"] = yaml.safe_load(f)
+
+    with open(config_dir / "cee_p6_catalog.yaml") as f:
+        _config_cache["cee_p6_catalog"] = yaml.safe_load(f)
+
+    return _config_cache
+
+
+def evaluate_site(db: Session, site_id: int) -> SiteSummary:
+    """
+    Evaluate un site avec les 4 reglementations.
+    Retourne un SiteSummary complet.
+    """
+    # Load site + related data
+    site = db.query(Site).filter(Site.id == site_id).first()
+    if not site:
+        raise ValueError(f"Site {site_id} not found")
+
+    batiments = db.query(Batiment).filter(Batiment.site_id == site_id).all()
+    evidences = db.query(Evidence).filter(Evidence.site_id == site_id).all()
+    obligations = db.query(Obligation).filter(Obligation.site_id == site_id).all()
+
+    # Load configs
+    configs = _load_configs()
+    regs = configs["regs"]
+
+    # Run 4 rule engines
+    all_findings = []
+    all_findings.extend(tertiaire_operat.evaluate(site, batiments, evidences, regs.get("tertiaire_operat", {})))
+    all_findings.extend(bacs.evaluate(site, batiments, evidences, regs.get("bacs", {})))
+    all_findings.extend(aper.evaluate(site, batiments, evidences, regs.get("aper", {})))
+    all_findings.extend(cee_p6.evaluate(site, batiments, evidences, regs.get("cee_p6", {})))
+
+    # Check completeness for missing data actions
+    missing_data = []
+    for reg_name in ["tertiaire_operat", "bacs", "aper"]:
+        reg_config = regs.get(reg_name, {})
+        missing = check_required_inputs(site, batiments, reg_config)
+        missing_data.extend(missing)
+    missing_data = list(set(missing_data))  # Deduplicate
+
+    # Compute global status (worst finding status)
+    status_severity = {
+        "COMPLIANT": 0,
+        "OUT_OF_SCOPE": 1,
+        "EXEMPTION_POSSIBLE": 2,
+        "AT_RISK": 3,
+        "NON_COMPLIANT": 4,
+        "UNKNOWN": 5,
+    }
+    worst_status = "COMPLIANT"
+    for f in all_findings:
+        if status_severity.get(f.status, 0) > status_severity.get(worst_status, 0):
+            worst_status = f.status
+
+    # Compute compliance score (0-100)
+    scoring = regs.get("scoring", {})
+    severity_weights = scoring.get("severity_weights", {})
+    confidence_weights = scoring.get("confidence_weights", {})
+
+    total_weight = 0.0
+    weighted_sum = 0.0
+
+    for f in all_findings:
+        if f.status in ["OUT_OF_SCOPE", "COMPLIANT"]:
+            continue
+
+        sev_weight = severity_weights.get(f.severity.lower(), 10)
+        conf_weight = confidence_weights.get(f.confidence.lower(), 1.0)
+        urgency_weight = 1.0
+
+        if f.legal_deadline:
+            days_to_deadline = (f.legal_deadline - date.today()).days
+            urgency_days = scoring.get("urgency_weights_days", {})
+            if days_to_deadline <= 0:
+                urgency_weight = urgency_days.get(0, 100)
+            elif days_to_deadline <= 90:
+                urgency_weight = urgency_days.get(90, 80)
+            elif days_to_deadline <= 180:
+                urgency_weight = urgency_days.get(180, 60)
+            elif days_to_deadline <= 365:
+                urgency_weight = urgency_days.get(365, 40)
+            else:
+                urgency_weight = urgency_days.get(730, 20)
+
+        finding_weight = sev_weight * conf_weight * (urgency_weight / 100)
+        total_weight += finding_weight
+
+        # Score contribution: lower is better
+        if f.status == "NON_COMPLIANT":
+            weighted_sum += finding_weight  # Full penalty
+        elif f.status == "AT_RISK":
+            weighted_sum += finding_weight * 0.5  # Half penalty
+        elif f.status == "UNKNOWN":
+            weighted_sum += finding_weight * 0.7  # 70% penalty
+
+    # Normalize to 0-100 (100 = perfect, 0 = worst)
+    if total_weight > 0:
+        raw_score = max(0, 100 - (weighted_sum / total_weight * 100))
+    else:
+        raw_score = 100.0
+
+    compliance_score = round(raw_score, 1)
+
+    # Next deadline
+    deadlines = [f.legal_deadline for f in all_findings if f.legal_deadline]
+    next_deadline = min(deadlines) if deadlines else None
+
+    # Generate actions from findings
+    actions = []
+    for i, f in enumerate(all_findings):
+        if f.status in ["AT_RISK", "NON_COMPLIANT", "UNKNOWN"]:
+            priority_score = severity_weights.get(f.severity.lower(), 10) * confidence_weights.get(f.confidence.lower(), 1.0)
+            if f.legal_deadline:
+                days_to_deadline = (f.legal_deadline - date.today()).days
+                if days_to_deadline < 90:
+                    priority_score *= 1.5
+
+            action = Action(
+                action_code=f.rule_id,
+                label=f.explanation,
+                priority_score=priority_score,
+                urgency_reason=f"Echeance: {f.legal_deadline.isoformat()}" if f.legal_deadline else "Pas d'echeance specifique",
+                owner_role="Energy Manager",
+                effort="MEDIUM",
+                roi_hint=None,
+                cee_p6_hints=None,
+                is_ai_suggestion=False
+            )
+            actions.append(action)
+
+    # Sort actions by priority DESC
+    actions.sort(key=lambda a: a.priority_score, reverse=True)
+
+    # Versioning
+    deterministic_version = compute_deterministic_version(regs, {})
+    data_version = compute_data_version(site, obligations, evidences)
+
+    return SiteSummary(
+        site_id=site_id,
+        global_status=worst_status,
+        compliance_score=compliance_score,
+        next_deadline=next_deadline,
+        findings=all_findings,
+        actions=actions,
+        missing_data=missing_data,
+        deterministic_version=deterministic_version
+    )
+
+
+def evaluate_batch(db: Session, site_ids: list[int] = None) -> list[SiteSummary]:
+    """
+    Bulk evaluation (3 queries total, no N+1).
+    """
+    if site_ids is None:
+        sites = db.query(Site).all()
+    else:
+        sites = db.query(Site).filter(Site.id.in_(site_ids)).all()
+
+    summaries = []
+    for site in sites:
+        try:
+            summary = evaluate_site(db, site.id)
+            summaries.append(summary)
+        except Exception as e:
+            print(f"Error evaluating site {site.id}: {e}")
+            continue
+
+    return summaries
+
+
+def persist_assessment(db: Session, summary: SiteSummary):
+    """
+    Upsert RegAssessment cache row.
+    """
+    import json
+
+    existing = db.query(RegAssessment).filter(
+        RegAssessment.object_type == "site",
+        RegAssessment.object_id == summary.site_id
+    ).first()
+
+    findings_json = json.dumps([{
+        "regulation": f.regulation,
+        "rule_id": f.rule_id,
+        "status": f.status,
+        "severity": f.severity,
+        "confidence": f.confidence,
+        "legal_deadline": f.legal_deadline.isoformat() if f.legal_deadline else None,
+        "explanation": f.explanation
+    } for f in summary.findings])
+
+    actions_json = json.dumps([{
+        "action_code": a.action_code,
+        "label": a.label,
+        "priority_score": a.priority_score,
+        "urgency_reason": a.urgency_reason
+    } for a in summary.actions[:10]])  # Top 10 only
+
+    missing_data_json = json.dumps(summary.missing_data)
+
+    if existing:
+        existing.computed_at = datetime.utcnow()
+        existing.global_status = RegStatus[summary.global_status]
+        existing.compliance_score = summary.compliance_score
+        existing.next_deadline = summary.next_deadline
+        existing.findings_json = findings_json
+        existing.top_actions_json = actions_json
+        existing.missing_data_json = missing_data_json
+        existing.deterministic_version = summary.deterministic_version
+        existing.data_version = compute_data_version(None, [], [])  # Placeholder
+        existing.is_stale = False
+    else:
+        assessment = RegAssessment(
+            object_type="site",
+            object_id=summary.site_id,
+            computed_at=datetime.utcnow(),
+            global_status=RegStatus[summary.global_status],
+            compliance_score=summary.compliance_score,
+            next_deadline=summary.next_deadline,
+            findings_json=findings_json,
+            top_actions_json=actions_json,
+            missing_data_json=missing_data_json,
+            deterministic_version=summary.deterministic_version,
+            data_version="",
+            is_stale=False
+        )
+        db.add(assessment)
+
+    db.commit()

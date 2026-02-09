@@ -3,45 +3,52 @@ PROMEOS - Models
 """
 from .base import Base, TimestampMixin
 
-# Modèles hiérarchie organisation
+# Enums (tous centralises)
+from .enums import (
+    TypeSite, TypeCompteur, SeveriteAlerte, TypeUsage,
+    StatutConformite, TypeObligation,
+    TypeEvidence, StatutEvidence,
+    ParkingType, OperatStatus, EnergyVector, SourceType,
+    JobType, JobStatus, RegStatus, Severity, Confidence,
+    InsightType, RegulationType,
+)
+
+# Hierarchie organisation
 from .organisation import Organisation
 from .entite_juridique import EntiteJuridique
 from .portefeuille import Portefeuille
 
-# Modèles sites et assets
-from .entities import Site, Compteur, Consommation, Alerte, TypeSite, TypeCompteur, SeveriteAlerte
+# Site (coeur)
+from .site import Site
 from .batiment import Batiment
-from .usage import Usage, TypeUsage
+from .usage import Usage
 
-# Modèles conformité
-from .conformite import Obligation, StatutConformite, TypeObligation
+# Assets energie
+from .compteur import Compteur
+from .consommation import Consommation
+from .alerte import Alerte
+
+# Conformite
+from .conformite import Obligation
+from .evidence import Evidence
+
+# RegOps / Lifecycle
+from .datapoint import DataPoint
+from .reg_assessment import RegAssessment
+from .job_outbox import JobOutbox
+from .ai_insight import AiInsight
+from .reg_source_event import RegSourceEvent
 
 __all__ = [
-    # Base
-    "Base",
-    "TimestampMixin",
-
-    # Hiérarchie organisation
-    "Organisation",
-    "EntiteJuridique",
-    "Portefeuille",
-
-    # Sites et assets
-    "Site",
-    "Compteur",
-    "Consommation",
-    "Alerte",
-    "Batiment",
-    "Usage",
-
-    # Conformité
-    "Obligation",
-
-    # Enums
-    "TypeSite",
-    "TypeCompteur",
-    "SeveriteAlerte",
-    "TypeUsage",
-    "StatutConformite",
-    "TypeObligation",
+    "Base", "TimestampMixin",
+    "Organisation", "EntiteJuridique", "Portefeuille",
+    "Site", "Batiment", "Usage",
+    "Compteur", "Consommation", "Alerte",
+    "Obligation", "Evidence",
+    "DataPoint", "RegAssessment", "JobOutbox", "AiInsight", "RegSourceEvent",
+    "TypeSite", "TypeCompteur", "SeveriteAlerte", "TypeUsage",
+    "StatutConformite", "TypeObligation", "TypeEvidence", "StatutEvidence",
+    "ParkingType", "OperatStatus", "EnergyVector", "SourceType",
+    "JobType", "JobStatus", "RegStatus", "Severity", "Confidence",
+    "InsightType", "RegulationType",
 ]

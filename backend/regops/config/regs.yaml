@@ -1,0 +1,59 @@
+tertiaire_operat:
+  scope_threshold_m2: 1000
+  deadlines:
+    attestation_display: "2026-07-01"
+    declaration_2025: "2026-09-30"
+  penalties:
+    non_declaration: 7500
+    non_affichage: 1500
+  required_inputs:
+    - tertiaire_area_m2
+    - operat_status
+    - annual_kwh_total
+
+bacs:
+  thresholds:
+    high_kw: 290
+    low_kw: 70
+  deadlines:
+    above_290: "2025-01-01"
+    above_70: "2030-01-01"
+  penalties:
+    non_compliance: 7500
+  required_inputs:
+    - cvc_power_kw
+
+aper:
+  parking_thresholds:
+    large_m2: 10000
+    medium_m2: 1500
+  roof_threshold_m2: 500
+  deadlines:
+    parking_large: "2026-07-01"
+    parking_medium: "2028-07-01"
+    roof: "2028-01-01"
+  required_inputs:
+    - parking_area_m2
+    - parking_type
+    - roof_area_m2
+
+cee_p6:
+  required_inputs: []
+
+scoring:
+  severity_weights:
+    critical: 100
+    high: 70
+    medium: 40
+    low: 10
+  urgency_weights_days:
+    0: 100
+    90: 80
+    180: 60
+    365: 40
+    730: 20
+  confidence_weights:
+    high: 1.0
+    medium: 0.8
+    low: 0.5
+  completeness_boost: 1.3

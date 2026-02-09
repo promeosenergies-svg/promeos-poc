@@ -2,21 +2,10 @@
 PROMEOS - Modèle Usage
 Type d'usage d'un bâtiment (bureaux, process, froid, CVC, etc.)
 """
-import enum
 from sqlalchemy import Column, Integer, String, ForeignKey, Enum
 from sqlalchemy.orm import relationship
 from .base import Base, TimestampMixin
-
-
-class TypeUsage(str, enum.Enum):
-    """Types d'usage énergétique"""
-    BUREAUX = "bureaux"
-    PROCESS = "process"
-    FROID = "froid"
-    CVC = "cvc"
-    ECLAIRAGE = "eclairage"
-    IT = "it"
-    AUTRES = "autres"
+from .enums import TypeUsage
 
 
 class Usage(Base, TimestampMixin):

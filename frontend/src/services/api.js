@@ -74,4 +74,65 @@ export const resolveAlerte = async (id) => {
   return response.data;
 };
 
+// ========================================
+// DEMO MODE
+// ========================================
+
+export const getDemoStatus = () => api.get('/demo/status').then(r => r.data);
+export const enableDemo = () => api.post('/demo/enable').then(r => r.data);
+export const disableDemo = () => api.post('/demo/disable').then(r => r.data);
+export const getDemoTemplates = () => api.get('/demo/templates').then(r => r.data);
+
+// ========================================
+// GUIDANCE (Action Plan + Readiness)
+// ========================================
+
+export const getActionPlan = (params = {}) => api.get('/guidance/action-plan', { params }).then(r => r.data);
+export const getReadiness = () => api.get('/guidance/readiness').then(r => r.data);
+
+// ========================================
+// GUARDRAILS
+// ========================================
+
+export const getSiteGuardrails = (id) => api.get(`/sites/${id}/guardrails`).then(r => r.data);
+
+// ========================================
+// REGOPS
+// ========================================
+
+export const getRegOpsAssessment = (siteId) => api.get(`/regops/site/${siteId}`).then(r => r.data);
+export const getRegOpsCached = (siteId) => api.get(`/regops/site/${siteId}/cached`).then(r => r.data);
+export const recomputeRegOps = (params = {}) => api.post('/regops/recompute', null, { params }).then(r => r.data);
+export const getRegOpsDashboard = () => api.get('/regops/dashboard').then(r => r.data);
+
+// ========================================
+// CONNECTORS
+// ========================================
+
+export const listConnectors = () => api.get('/connectors/list').then(r => r.data);
+export const testConnector = (name) => api.post(`/connectors/${name}/test`).then(r => r.data);
+export const syncConnector = (name, objectType, objectId) =>
+  api.post(`/connectors/${name}/sync`, null, { params: { object_type: objectType, object_id: objectId } }).then(r => r.data);
+
+// ========================================
+// WATCHERS
+// ========================================
+
+export const listWatchers = () => api.get('/watchers/list').then(r => r.data);
+export const runWatcher = (name) => api.post(`/watchers/${name}/run`).then(r => r.data);
+export const listRegEvents = (source = null, reviewed = null) =>
+  api.get('/watchers/events', { params: { source, reviewed } }).then(r => r.data);
+export const reviewRegEvent = (eventId, reviewNote = '') =>
+  api.patch(`/watchers/events/${eventId}/review`, null, { params: { review_note: reviewNote } }).then(r => r.data);
+
+// ========================================
+// AI AGENTS
+// ========================================
+
+export const getAiExplanation = (siteId) => api.get(`/ai/site/${siteId}/explain`).then(r => r.data);
+export const getAiRecommendations = (siteId) => api.get(`/ai/site/${siteId}/recommend`).then(r => r.data);
+export const getAiDataQuality = (siteId) => api.get(`/ai/site/${siteId}/data-quality`).then(r => r.data);
+export const getAiExecBrief = (orgId = 1) => api.get('/ai/org/brief', { params: { org_id: orgId } }).then(r => r.data);
+export const listAiInsights = (params = {}) => api.get('/ai/insights', { params }).then(r => r.data);
+
 export default api;

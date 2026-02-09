@@ -15,6 +15,9 @@ class EntiteJuridique(Base, TimestampMixin):
     nom = Column(String, nullable=False)
     siren = Column(String(9), unique=True, nullable=False)
     siret = Column(String(14), nullable=True)
+    naf_code = Column(String(5), nullable=True, comment="Code NAF principal")
+    region_code = Column(String(3), nullable=True, comment="Code region")
+    insee_code = Column(String(5), nullable=True, comment="Code INSEE siege")
 
     # Relations
     organisation = relationship("Organisation", backref="entites_juridiques")

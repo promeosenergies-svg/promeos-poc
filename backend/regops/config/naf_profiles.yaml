@@ -1,0 +1,21 @@
+# NAF profiles - mapping NAF code prefix to usage family
+"47": {usage_family: "retail", default_flags: {tertiaire: true, high_occupancy: true}}
+"56": {usage_family: "hospitality", default_flags: {tertiaire: true, high_occupancy: true}}
+"68": {usage_family: "real_estate", default_flags: {tertiaire: true}}
+"70": {usage_family: "corporate_hq", default_flags: {tertiaire: true}}
+"85": {usage_family: "education", default_flags: {tertiaire: true, public_sector: true}}
+"86": {usage_family: "healthcare", default_flags: {tertiaire: true, critical_service: true}}
+"87": {usage_family: "social_care", default_flags: {tertiaire: true}}
+"10": {usage_family: "food_industry", default_flags: {industrial: true}}
+"24": {usage_family: "metallurgy", default_flags: {industrial: true, high_energy: true}}
+"25": {usage_family: "metal_products", default_flags: {industrial: true}}
+"29": {usage_family: "automotive", default_flags: {industrial: true}}
+"52": {usage_family: "warehousing", default_flags: {logistics: true}}
+"64": {usage_family: "financial", default_flags: {tertiaire: true, data_center: true}}
+"62": {usage_family: "it_services", default_flags: {tertiaire: true, data_center: true}}
+"41": {usage_family: "construction", default_flags: {industrial: true}}
+"46": {usage_family: "wholesale", default_flags: {logistics: true}}
+"55": {usage_family: "accommodation", default_flags: {tertiaire: true, high_occupancy: true}}
+"90": {usage_family: "creative_arts", default_flags: {tertiaire: true}}
+"93": {usage_family: "sports_recreation", default_flags: {tertiaire: true}}
+"84": {usage_family: "public_admin", default_flags: {tertiaire: true, public_sector: true}}

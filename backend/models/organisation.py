@@ -13,4 +13,5 @@ class Organisation(Base, TimestampMixin):
     nom = Column(String, nullable=False)
     type_client = Column(String, nullable=True)  # "retail", "tertiaire", "industrie"
     logo_url = Column(String, nullable=True)
+    siren = Column(String(9), nullable=True, comment="Numero SIREN")
     actif = Column(Boolean, default=True)

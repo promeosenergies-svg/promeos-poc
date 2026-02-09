@@ -6,7 +6,11 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 # Import des routes
-from routes import sites_router, compteurs_router, consommations_router, alertes_router, cockpit_router
+from routes import (
+    sites_router, compteurs_router, consommations_router, alertes_router,
+    cockpit_router, compliance_router, demo_router, guidance_router,
+    regops_router, connectors_router, watchers_router, ai_router
+)
 
 # Créer l'application FastAPI
 app = FastAPI(
@@ -29,6 +33,14 @@ app.include_router(sites_router)
 app.include_router(compteurs_router)
 app.include_router(consommations_router)
 app.include_router(alertes_router)
+app.include_router(cockpit_router)
+app.include_router(compliance_router)
+app.include_router(demo_router)
+app.include_router(guidance_router)
+app.include_router(regops_router)
+app.include_router(connectors_router)
+app.include_router(watchers_router)
+app.include_router(ai_router)
 
 # Route racine
 @app.get("/")

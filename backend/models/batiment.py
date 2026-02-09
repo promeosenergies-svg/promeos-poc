@@ -15,6 +15,7 @@ class Batiment(Base, TimestampMixin):
     nom = Column(String, nullable=False)
     surface_m2 = Column(Float, nullable=False)
     annee_construction = Column(Integer, nullable=True)
+    cvc_power_kw = Column(Float, nullable=True, comment="Puissance CVC nominale (kW)")
 
     # Relations
     site = relationship("Site", backref="batiments")

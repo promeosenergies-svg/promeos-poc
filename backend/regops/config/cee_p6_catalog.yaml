@@ -1,0 +1,11 @@
+# CEE Period 6 action catalog (simplified)
+"BAT-EN-101": {label: "Isolation combles/toiture", category: "envelope", typical_savings_kwh_m2: 50}
+"BAT-EN-102": {label: "Isolation murs", category: "envelope", typical_savings_kwh_m2: 30}
+"BAT-EN-103": {label: "Isolation planchers bas", category: "envelope", typical_savings_kwh_m2: 20}
+"BAT-TH-104": {label: "Chaudiere condensation gaz", category: "heating", typical_savings_kwh_m2: 40}
+"BAT-TH-113": {label: "Pompe a chaleur air/eau", category: "heating", typical_savings_kwh_m2: 80}
+"BAT-TH-127": {label: "Ventilation double flux", category: "ventilation", typical_savings_kwh_m2: 25}
+"BAT-EQ-127": {label: "Eclairage LED", category: "lighting", typical_savings_kwh_m2: 15}
+"BAT-TH-158": {label: "Systeme GTB BACS", category: "controls", typical_savings_kwh_m2: 35}
+"BAT-TH-116": {label: "Systeme solaire thermique", category: "renewables", typical_savings_kwh_m2: 60}
+"BAT-SE-06": {label: "Contrat performance energetique CPE", category: "services", typical_savings_pct: 15}

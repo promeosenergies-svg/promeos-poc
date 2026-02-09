@@ -16,7 +16,7 @@ os.makedirs(os.path.dirname(DATABASE_PATH), exist_ok=True)
 # URL de connexion SQLite
 DATABASE_URL = f"sqlite:///{DATABASE_PATH}"
 
-print(f"📁 Base de données PROMEOS : {DATABASE_PATH}")
+print(f"[DB] Base de donnees PROMEOS : {DATABASE_PATH}")
 
 # Engine SQLAlchemy
 engine = create_engine(

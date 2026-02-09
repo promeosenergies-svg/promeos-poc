@@ -3,8 +3,11 @@ PROMEOS - Schémas Pydantic pour validation des données API
 """
 from pydantic import BaseModel
 from typing import Optional, List
-from datetime import datetime
-from models import TypeSite, TypeCompteur, SeveriteAlerte, StatutConformite
+from datetime import datetime, date
+from models import (
+    TypeSite, TypeCompteur, SeveriteAlerte, StatutConformite,
+    TypeObligation, TypeEvidence, StatutEvidence,
+)
 
 # ========================================
 # SCHÉMAS SITE
@@ -59,7 +62,7 @@ class CompteurResponse(CompteurBase):
     id: int
     site_id: int
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 
@@ -73,7 +76,7 @@ class ConsommationResponse(BaseModel):
     timestamp: datetime
     valeur: float
     cout_euro: Optional[float] = None
-    
+
     class Config:
         from_attributes = True
 
@@ -92,7 +95,7 @@ class AlerteResponse(AlerteBase):
     timestamp: datetime
     resolue: bool
     date_resolution: Optional[datetime] = None
-    
+
     class Config:
         from_attributes = True
 
@@ -108,3 +111,73 @@ class AlerteListResponse(BaseModel):
     total: int
     alertes: List[AlerteResponse]
 
+# ========================================
+# SCHÉMAS BATIMENT
+# ========================================
+
+class BatimentResponse(BaseModel):
+    id: int
+    site_id: int
+    nom: str
+    surface_m2: float
+    annee_construction: Optional[int] = None
+    cvc_power_kw: Optional[float] = None
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+# ========================================
+# SCHÉMAS OBLIGATION
+# ========================================
+
+class ObligationResponse(BaseModel):
+    id: int
+    site_id: int
+    type: TypeObligation
+    description: Optional[str] = None
+    echeance: Optional[date] = None
+    statut: StatutConformite
+    avancement_pct: float
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+# ========================================
+# SCHÉMAS EVIDENCE
+# ========================================
+
+class EvidenceResponse(BaseModel):
+    id: int
+    site_id: int
+    type: TypeEvidence
+    statut: StatutEvidence
+    note: Optional[str] = None
+    file_url: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+# ========================================
+# SCHÉMA COMPLIANCE DÉTAILLÉ
+# ========================================
+
+class ComplianceExplanation(BaseModel):
+    """Explication lisible d'un aspect conformité"""
+    label: str
+    statut: StatutConformite
+    why: str
+
+class SiteComplianceResponse(BaseModel):
+    """Réponse détaillée conformité d'un site"""
+    site: SiteResponse
+    batiments: List[BatimentResponse]
+    obligations: List[ObligationResponse]
+    evidences: List[EvidenceResponse]
+    explanations: List[ComplianceExplanation]
+    actions: List[str]
