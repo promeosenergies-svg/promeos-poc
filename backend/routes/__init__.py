@@ -13,6 +13,8 @@ from .regops import router as regops_router
 from .connectors_route import router as connectors_router
 from .watchers_route import router as watchers_router
 from .ai_route import router as ai_router
+from .kb_usages import router as kb_usages_router
+from .energy import router as energy_router
 
 __all__ = [
     "sites_router",
@@ -27,4 +29,6 @@ __all__ = [
     "connectors_router",
     "watchers_router",
     "ai_router",
+    "kb_usages_router",
+    "energy_router",
 ]

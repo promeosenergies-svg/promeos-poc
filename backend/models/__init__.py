@@ -39,6 +39,19 @@ from .job_outbox import JobOutbox
 from .ai_insight import AiInsight
 from .reg_source_event import RegSourceEvent
 
+# KB (Knowledge Base)
+from .kb_models import (
+    KBVersion, KBArchetype, KBMappingCode, KBAnomalyRule, KBRecommendation, KBTaxonomy,
+    KBConfidence, KBStatus
+)
+
+# Energy (Consumption & Analytics)
+from .energy_models import (
+    Meter, MeterReading, DataImportJob, UsageProfile, Anomaly, Recommendation,
+    EnergyVector as EnergyVectorModel, FrequencyType, ImportStatus,
+    AnomalySeverity, RecommendationStatus
+)
+
 __all__ = [
     "Base", "TimestampMixin",
     "Organisation", "EntiteJuridique", "Portefeuille",
@@ -46,9 +59,16 @@ __all__ = [
     "Compteur", "Consommation", "Alerte",
     "Obligation", "Evidence",
     "DataPoint", "RegAssessment", "JobOutbox", "AiInsight", "RegSourceEvent",
+    # KB models
+    "KBVersion", "KBArchetype", "KBMappingCode", "KBAnomalyRule", "KBRecommendation", "KBTaxonomy",
+    # Energy models
+    "Meter", "MeterReading", "DataImportJob", "UsageProfile", "Anomaly", "Recommendation",
+    # Enums
     "TypeSite", "TypeCompteur", "SeveriteAlerte", "TypeUsage",
     "StatutConformite", "TypeObligation", "TypeEvidence", "StatutEvidence",
     "ParkingType", "OperatStatus", "EnergyVector", "SourceType",
     "JobType", "JobStatus", "RegStatus", "Severity", "Confidence",
     "InsightType", "RegulationType",
+    "KBConfidence", "KBStatus", "EnergyVectorModel", "FrequencyType",
+    "ImportStatus", "AnomalySeverity", "RecommendationStatus",
 ]

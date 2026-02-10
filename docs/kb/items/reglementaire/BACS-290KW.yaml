@@ -1,0 +1,78 @@
+---
+id: "BACS-290KW-DEADLINE-2025"
+type: "rule"
+domain: "reglementaire"
+title: "Obligation BACS pour bâtiments >290 kW"
+summary: "Obligation d'installer une GTB (système BACS) avant le 1er janvier 2025 pour tout bâtiment tertiaire dont la puissance nominale de chauffage ou de refroidissement dépasse 290 kW."
+
+tags:
+  energy:
+    - elec
+  segment:
+    - tertiaire_multisite
+    - collectivite
+  asset:
+    - hvac
+  reg:
+    - bacs
+  granularity:
+    - event
+
+scope:
+  hvac_kw_min: 290
+
+content_md: |
+  ## Obligation BACS (Décret n°2020-887)
+
+  ### Seuil
+  - Puissance nominale utile (Pn) de chauffage OU de refroidissement > 290 kW
+
+  ### Deadline
+  - 1er janvier 2025
+
+  ### Systèmes concernés
+  - Systèmes d'automatisation et de contrôle des bâtiments (BACS) = GTB
+  - Classes d'efficacité : B ou A (selon norme NF EN ISO 52120-1)
+
+  ### Exemptions
+  - Bâtiments avec TRI (temps de retour sur investissement) > 10 ans
+  - Nécessite une étude technique préalable
+
+  ### Sanctions
+  - Amende jusqu'à 1500 EUR par bâtiment non conforme
+
+  ### Contrôles
+  - Inspection obligatoire tous les 5 ans après installation
+
+logic:
+  when:
+    all:
+      - field: "hvac_kw"
+        op: ">="
+        value: 290
+  then:
+    outputs:
+      - type: "obligation"
+        label: "Installer une GTB (classe B ou A)"
+        deadline: "2025-01-01"
+        severity: "critical"
+        details: "Décret n°2020-887 du 22 juillet 2020"
+
+      - type: "next_step"
+        label: "Vérifier puissance CVC installée"
+        priority: 1
+
+      - type: "next_step"
+        label: "Faire réaliser étude TRI si exemption envisagée"
+        priority: 2
+
+sources:
+  - doc_id: "DECRET-2020-887"
+    label: "Décret n°2020-887 du 22 juillet 2020"
+    section: "Article 2"
+    anchor: "#article-2"
+    excerpt_short: "Obligation d'installer un système d'automatisation et de contrôle pour les bâtiments dont la puissance nominale utile de chauffage ou de refroidissement est supérieure à 290 kilowatts"
+
+updated_at: "2026-02-09"
+confidence: "high"
+priority: 1

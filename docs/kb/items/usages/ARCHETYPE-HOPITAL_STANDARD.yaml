@@ -1,0 +1,60 @@
+id: ARCHETYPE-HOPITAL_STANDARD
+type: knowledge
+domain: usages
+title: Archétype Hopital Standard
+summary: '2.'
+tags:
+  energy:
+  - elec
+  segment:
+  - collectivite
+  asset:
+  - hvac
+  - eclairage
+  - it
+  reg: []
+  granularity:
+  - mensuel
+  - horaire
+scope:
+  archetype: HOPITAL_STANDARD
+  naf_codes:
+  - '86.10'
+  - '86.21'
+  - '87.10'
+content_md: '## Archétype Hopital Standard
+
+
+  ### Consommation typique
+
+  - **Fourchette**: 250-450 kWh/m²/an
+
+
+  ### Caractéristiques
+
+  (Extrait du document source - voir provenance)
+
+
+  2.5 Établissement de Santé Code: HOPITAL_STANDARD Description : Hôpital, clinique
+  fonctionnement 24/7 Consommation typique : 250-450 kWh/m²/an Répartition usages
+  : HVAC: 40-50% (air neuf continu) ECS: 15-20% (hygiène) Éclairage: 15-20% IT/Médical:
+  10-15% Autres: 10% Signature temporelle : Consommation stable 24/7 avec légère baisse
+  nuit Codes NAF associés : 86.10, 86.21...
+
+  '
+logic: null
+sources:
+- doc_id: USAGES_ENERGETIQUES_B2B_v1
+  label: USAGES_ENERGETIQUES_B2B_v1 - Section Archétypes
+  section: archetype-hopital
+  anchor: '#archetype-hopital'
+  excerpt_short: '2.'
+provenance:
+  source_path: source/USAGES_ENERGETIQUES_B2B_v1.html
+  source_sha256: e27ab62d958a5ab1240c118ce7e69079fdea166fe22cb95953ed2a3cadd97a22
+  source_section: archetype-hopital
+  extracted_at: '2026-02-09'
+updated_at: '2026-02-09'
+confidence: high
+status: validated
+priority: 2

@@ -77,5 +77,12 @@ class Site(Base, TimestampMixin):
     )
     portefeuille = relationship("Portefeuille", backref="sites")
 
+    # Energy analytics
+    meters = relationship(
+        "Meter",
+        back_populates="site",
+        cascade="all, delete-orphan"
+    )
+
     def __repr__(self):
         return f"<Site {self.id}: {self.nom} ({self.type.value})>"

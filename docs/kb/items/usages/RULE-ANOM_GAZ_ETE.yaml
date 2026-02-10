@@ -1,0 +1,60 @@
+id: RULE-ANOM_GAZ_ETE
+type: rule
+domain: usages
+title: Détection Anom Gaz Ete
+summary: Règle ANOM_GAZ_ETE
+tags:
+  energy:
+  - elec
+  segment:
+  - tertiaire_multisite
+  - industrie
+  asset:
+  - hvac
+  reg: []
+  granularity:
+  - horaire
+  - journalier
+scope: {}
+content_md: '## Règle de Détection: Anom Gaz Ete
+
+
+  ### Description
+
+  (Extrait du document source)
+
+
+  3.6 Consommation Gaz en Été (Chauffage) Code: ANOM_GAZ_ETE Condition : Conso_gaz(juin-août)
+  > 0.10 * Conso_gaz_annuelle Cause : Chauffage actif en été OU ECS surdimensionné
+  Gravité : HIGH 4. Recommandations & Playbooks Actions correctives pour chaque type
+  d''anomalie détectée....
+
+  '
+logic:
+  when:
+    all:
+    - field: metrics.computed
+      op: '='
+      value: true
+      comment: Rule ANOM_GAZ_ETE - requires manual threshold configuration
+  then:
+    outputs:
+    - type: anomaly
+      label: 'Anomalie détectée: ANOM_GAZ_ETE'
+      severity: medium
+      confidence: medium
+sources:
+- doc_id: USAGES_ENERGETIQUES_B2B_v1
+  label: USAGES_ENERGETIQUES_B2B_v1 - Règles Anomalies
+  section: anomalie-gaz-ete
+  anchor: '#anomalie-gaz-ete'
+  excerpt_short: Règle ANOM_GAZ_ETE
+provenance:
+  source_path: source/USAGES_ENERGETIQUES_B2B_v1.html
+  source_sha256: e27ab62d958a5ab1240c118ce7e69079fdea166fe22cb95953ed2a3cadd97a22
+  source_section: anomalie-gaz-ete
+  extracted_at: '2026-02-09'
+updated_at: '2026-02-09'
+confidence: high
+status: validated
+priority: 2

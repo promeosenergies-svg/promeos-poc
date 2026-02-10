@@ -9,8 +9,12 @@ import uvicorn
 from routes import (
     sites_router, compteurs_router, consommations_router, alertes_router,
     cockpit_router, compliance_router, demo_router, guidance_router,
-    regops_router, connectors_router, watchers_router, ai_router
+    regops_router, connectors_router, watchers_router, ai_router,
+    kb_usages_router, energy_router
 )
+
+# Import KB router
+from app.kb.router import router as kb_router
 
 # Créer l'application FastAPI
 app = FastAPI(
@@ -41,6 +45,9 @@ app.include_router(regops_router)
 app.include_router(connectors_router)
 app.include_router(watchers_router)
 app.include_router(ai_router)
+app.include_router(kb_router)  # Knowledge Base (generic)
+app.include_router(kb_usages_router)  # KB Usages (archetypes, rules, recommendations)
+app.include_router(energy_router)  # Energy (import, analysis)
 
 # Route racine
 @app.get("/")

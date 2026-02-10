@@ -1,0 +1,49 @@
+id: RECO-RECO_FROID_COMMERCIAL
+type: knowledge
+domain: usages
+title: Recommandation Reco Froid Commercial
+summary: Recommandation RECO_FROID_COMMERCIAL
+tags:
+  energy:
+  - elec
+  segment:
+  - tertiaire_multisite
+  asset:
+  - froid
+  reg: []
+  granularity:
+  - event
+scope: {}
+content_md: '## Recommandation: Reco Froid Commercial
+
+
+  ### Impact estimé
+
+  - **Économies potentielles**: 20-40%
+
+
+  ### Détails
+
+  4.5 Optimisation Froid Commercial Code: RECO_FROID_COMMERCIAL Applicable : Commerce
+  alimentaire, restauration Actions : Installer portes/couvercles meubles froids ouverts
+  (-30% conso froid) Vérifier étanchéité chambres froides Nettoyer condenseurs (efficacité
+  +15%) Récupération chaleur groupes froids pour ECS/chauffage Impact : 20-40% économie
+  poste froid ROI : 2-5 ans...
+
+  '
+logic: null
+sources:
+- doc_id: USAGES_ENERGETIQUES_B2B_v1
+  label: USAGES_ENERGETIQUES_B2B_v1 - Playbooks Recommandations
+  section: reco-froid
+  anchor: '#reco-froid'
+  excerpt_short: Recommandation RECO_FROID_COMMERCIAL
+provenance:
+  source_path: source/USAGES_ENERGETIQUES_B2B_v1.html
+  source_sha256: e27ab62d958a5ab1240c118ce7e69079fdea166fe22cb95953ed2a3cadd97a22
+  source_section: reco-froid
+  extracted_at: '2026-02-09'
+updated_at: '2026-02-09'
+confidence: high
+status: validated
+priority: 3

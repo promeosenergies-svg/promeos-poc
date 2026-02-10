@@ -135,4 +135,37 @@ export const getAiDataQuality = (siteId) => api.get(`/ai/site/${siteId}/data-qua
 export const getAiExecBrief = (orgId = 1) => api.get('/ai/org/brief', { params: { org_id: orgId } }).then(r => r.data);
 export const listAiInsights = (params = {}) => api.get('/ai/insights', { params }).then(r => r.data);
 
+// ========================================
+// KB USAGES (Knowledge Base)
+// ========================================
+
+export const getKBArchetypes = () => api.get('/kb/archetypes').then(r => r.data);
+export const getKBArchetype = (code) => api.get(`/kb/archetypes/${code}`).then(r => r.data);
+export const getKBArchetypeByNaf = (naf) => api.get(`/kb/archetypes/by-naf/${naf}`).then(r => r.data);
+export const getKBRules = () => api.get('/kb/rules').then(r => r.data);
+export const getKBRecommendations = () => api.get('/kb/recommendations').then(r => r.data);
+export const searchKB = (q, type = null) => api.get('/kb/search', { params: { q, type } }).then(r => r.data);
+export const getKBProvenance = (itemType, code) => api.get(`/kb/provenance/${itemType}/${code}`).then(r => r.data);
+export const getKBStats = () => api.get('/kb/stats').then(r => r.data);
+export const reloadKB = () => api.post('/kb/reload').then(r => r.data);
+
+// ========================================
+// ENERGY (Import & Analysis)
+// ========================================
+
+export const getMeters = (siteId = null) => api.get('/energy/meters', { params: { site_id: siteId } }).then(r => r.data);
+export const createMeter = (data) => api.post('/energy/meters', data).then(r => r.data);
+export const uploadConsumptionData = (file, meterId, frequency = 'hourly') => {
+  const formData = new FormData();
+  formData.append('file', file);
+  return api.post('/energy/import/upload', formData, {
+    params: { meter_id: meterId, frequency },
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }).then(r => r.data);
+};
+export const getImportJobs = (meterId = null) => api.get('/energy/import/jobs', { params: { meter_id: meterId } }).then(r => r.data);
+export const runAnalysis = (meterId) => api.post('/energy/analysis/run', null, { params: { meter_id: meterId } }).then(r => r.data);
+export const getAnalysisSummary = (meterId) => api.get('/energy/analysis/summary', { params: { meter_id: meterId } }).then(r => r.data);
+export const generateDemoEnergy = (data) => api.post('/energy/demo/generate', data).then(r => r.data);
+
 export default api;

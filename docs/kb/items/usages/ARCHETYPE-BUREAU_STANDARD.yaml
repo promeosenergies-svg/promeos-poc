@@ -1,0 +1,64 @@
+id: ARCHETYPE-BUREAU_STANDARD
+type: knowledge
+domain: usages
+title: Archétype Bureau Standard
+summary: '2.'
+tags:
+  energy:
+  - elec
+  segment:
+  - tertiaire_multisite
+  asset:
+  - hvac
+  - eclairage
+  - it
+  reg: []
+  granularity:
+  - mensuel
+  - horaire
+scope:
+  archetype: BUREAU_STANDARD
+  naf_codes:
+  - '64.19'
+  - '68.20'
+  - '69.10'
+  - '70.10'
+  - '70.22'
+  - '62.02'
+content_md: '## Archétype Bureau Standard
+
+
+  ### Consommation typique
+
+  - **Fourchette**: 150-250 kWh/m²/an
+
+
+  ### Caractéristiques
+
+  (Extrait du document source - voir provenance)
+
+
+  2.1 Bureaux Tertiaires Code: BUREAU_STANDARD Description : Bureaux tertiaires classiques,
+  8h-19h, 5j/7 Consommation typique : 150-250 kWh/m²/an (moyenne: 180 kWh/m²/an) Répartition
+  usages : HVAC: 45-55% Éclairage: 20-25% IT: 15-20% Autres: 10-15% Signature temporelle
+  : Lundi-vendredi: consommation élevée 8h-19h, base réduite nuit/WE Pic matin: 9h-10h
+  (démarrage postes + chauffage) Pic après-midi: 14h-16h (climatisation été) Base
+  nuit: 10-15% de la consommation jour (veilles IT, sécurité) Codes N...
+
+  '
+logic: null
+sources:
+- doc_id: USAGES_ENERGETIQUES_B2B_v1
+  label: USAGES_ENERGETIQUES_B2B_v1 - Section Archétypes
+  section: archetype-bureau
+  anchor: '#archetype-bureau'
+  excerpt_short: '2.'
+provenance:
+  source_path: source/USAGES_ENERGETIQUES_B2B_v1.html
+  source_sha256: e27ab62d958a5ab1240c118ce7e69079fdea166fe22cb95953ed2a3cadd97a22
+  source_section: archetype-bureau
+  extracted_at: '2026-02-09'
+updated_at: '2026-02-09'
+confidence: high
+status: validated
+priority: 2

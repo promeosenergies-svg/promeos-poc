@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Base Documentaire - Usages Énergétiques B2B France</title>
+    <meta name="version" content="1.0">
+    <meta name="date" content="2026-02-09">
+    <meta name="author" content="PROMEOS Energy Intelligence">
+</head>
+<body>
+    <header>
+        <h1>Usages Énergétiques B2B - Base de Connaissance France</h1>
+        <p>Version 1.0 - Février 2026</p>
+        <p>Document canonique de référence pour l'analyse des consommations énergétiques des bâtiments tertiaires et industriels en France.</p>
+    </header>
+
+    <main>
+        <!-- Section 1: Taxonomie des usages -->
+        <section id="taxonomie-usages">
+            <h2>1. Taxonomie des Usages Énergétiques</h2>
+            <p>Classification des postes de consommation selon les normes françaises et européennes.</p>
+
+            <h3 id="usages-principaux">1.1 Usages Principaux</h3>
+            <ul>
+                <li><strong>HVAC</strong> (Heating, Ventilation, Air Conditioning): Chauffage, ventilation, climatisation - 40-60% de la consommation tertiaire</li>
+                <li><strong>Éclairage</strong>: Éclairage intérieur et extérieur - 15-25%</li>
+                <li><strong>ECS</strong> (Eau Chaude Sanitaire): Production d'eau chaude - 5-15%</li>
+                <li><strong>Froid</strong>: Chambres froides, congélateurs, groupes froids - 10-30% (commerce alimentaire)</li>
+                <li><strong>Cuisson</strong>: Équipements de cuisine professionnelle - 5-20% (restauration)</li>
+                <li><strong>IT</strong> (Informatique): Serveurs, postes de travail, data centers - 5-15%</li>
+                <li><strong>Process</strong>: Machines industrielles, chaînes de production - variable selon secteur</li>
+                <li><strong>Air comprimé</strong>: Compresseurs industriels - 10-20% (industrie)</li>
+                <li><strong>Pompes</strong>: Circulation fluides, irrigation - 5-10%</li>
+                <li><strong>Ventilation</strong>: CTA, extracteurs - 10-15%</li>
+                <li><strong>Autres</strong>: Ascenseurs, portes automatiques, signalétique</li>
+            </ul>
+
+            <h3 id="usages-secondaires">1.2 Usages Secondaires</h3>
+            <p>Catégories spécifiques selon le secteur d'activité:</p>
+            <ul>
+                <li><strong>Bornes IRVE</strong>: Recharge véhicules électriques</li>
+                <li><strong>Piscine</strong>: Filtration, chauffage bassin</li>
+                <li><strong>Signalétique</strong>: Enseignes lumineuses</li>
+                <li><strong>Sécurité</strong>: Alarmes, contrôle d'accès, vidéosurveillance</li>
+            </ul>
+        </section>
+
+        <!-- Section 2: Archétypes de consommation -->
+        <section id="archetypes">
+            <h2>2. Archétypes de Consommation par Secteur</h2>
+            <p>Profils types de consommation basés sur l'analyse de milliers de sites français.</p>
+
+            <h3 id="archetype-bureau">2.1 Bureaux Tertiaires</h3>
+            <div class="archetype">
+                <h4>Code: BUREAU_STANDARD</h4>
+                <p><strong>Description</strong>: Bureaux tertiaires classiques, 8h-19h, 5j/7</p>
+                <p><strong>Consommation typique</strong>: 150-250 kWh/m²/an (moyenne: 180 kWh/m²/an)</p>
+                <p><strong>Répartition usages</strong>:</p>
+                <ul>
+                    <li>HVAC: 45-55%</li>
+                    <li>Éclairage: 20-25%</li>
+                    <li>IT: 15-20%</li>
+                    <li>Autres: 10-15%</li>
+                </ul>
+                <p><strong>Signature temporelle</strong>:</p>
+                <ul>
+                    <li>Lundi-vendredi: consommation élevée 8h-19h, base réduite nuit/WE</li>
+                    <li>Pic matin: 9h-10h (démarrage postes + chauffage)</li>
+                    <li>Pic après-midi: 14h-16h (climatisation été)</li>
+                    <li>Base nuit: 10-15% de la consommation jour (veilles IT, sécurité)</li>
+                </ul>
+                <p><strong>Codes NAF associés</strong>: 64.19, 68.20, 69.10, 70.10</p>
+                <p><strong>Kit data minimal</strong>: consommation mensuelle élec, surface m², nb employés</p>
+            </div>
+
+            <h3 id="archetype-commerce">2.2 Commerce de Détail</h3>
+            <div class="archetype">
+                <h4>Code: COMMERCE_ALIMENTAIRE</h4>
+                <p><strong>Description</strong>: Supermarchés, hypermarchés avec rayons frais</p>
+                <p><strong>Consommation typique</strong>: 400-800 kWh/m²/an (moyenne: 600 kWh/m²/an)</p>
+                <p><strong>Répartition usages</strong>:</p>
+                <ul>
+                    <li>Froid: 35-45%</li>
+                    <li>HVAC: 20-30%</li>
+                    <li>Éclairage: 20-25%</li>
+                    <li>Autres: 10-15%</li>
+                </ul>
+                <p><strong>Signature temporelle</strong>:</p>
+                <ul>
+                    <li>Consommation stable 7j/7 (froid 24/7)</li>
+                    <li>Heures d'ouverture: augmentation +30-40% (éclairage + HVAC)</li>
+                    <li>Base nuit haute (froid + réfrigération)</li>
+                </ul>
+                <p><strong>Codes NAF associés</strong>: 47.11, 47.21, 47.29</p>
+            </div>
+
+            <h3 id="archetype-restauration">2.3 Restauration</h3>
+            <div class="archetype">
+                <h4>Code: RESTAURATION_SERVICE</h4>
+                <p><strong>Description</strong>: Restaurants avec cuisine sur place</p>
+                <p><strong>Consommation typique</strong>: 250-450 kWh/m²/an</p>
+                <p><strong>Répartition usages</strong>:</p>
+                <ul>
+                    <li>Cuisson: 30-40%</li>
+                    <li>HVAC: 25-30%</li>
+                    <li>Froid: 15-20%</li>
+                    <li>ECS: 10-15%</li>
+                    <li>Éclairage: 10%</li>
+                </ul>
+                <p><strong>Codes NAF associés</strong>: 56.10, 56.21</p>
+            </div>
+
+            <h3 id="archetype-logistique">2.4 Entrepôt Logistique</h3>
+            <div class="archetype">
+                <h4>Code: LOGISTIQUE_FROID</h4>
+                <p><strong>Description</strong>: Entrepôt frigorifique ou sous température dirigée</p>
+                <p><strong>Consommation typique</strong>: 100-300 kWh/m²/an selon température</p>
+                <p><strong>Répartition usages</strong>:</p>
+                <ul>
+                    <li>Froid: 60-70%</li>
+                    <li>HVAC: 10-15%</li>
+                    <li>Éclairage: 10-15%</li>
+                    <li>Autres: 5-10%</li>
+                </ul>
+                <p><strong>Codes NAF associés</strong>: 52.10, 52.21</p>
+            </div>
+
+            <h3 id="archetype-hopital">2.5 Établissement de Santé</h3>
+            <div class="archetype">
+                <h4>Code: HOPITAL_STANDARD</h4>
+                <p><strong>Description</strong>: Hôpital, clinique fonctionnement 24/7</p>
+                <p><strong>Consommation typique</strong>: 250-450 kWh/m²/an</p>
+                <p><strong>Répartition usages</strong>:</p>
+                <ul>
+                    <li>HVAC: 40-50% (air neuf continu)</li>
+                    <li>ECS: 15-20% (hygiène)</li>
+                    <li>Éclairage: 15-20%</li>
+                    <li>IT/Médical: 10-15%</li>
+                    <li>Autres: 10%</li>
+                </ul>
+                <p><strong>Signature temporelle</strong>: Consommation stable 24/7 avec légère baisse nuit</p>
+                <p><strong>Codes NAF associés</strong>: 86.10, 86.21</p>
+            </div>
+
+            <h3 id="archetype-industrie">2.6 Industrie Légère</h3>
+            <div class="archetype">
+                <h4>Code: INDUSTRIE_LEGERE</h4>
+                <p><strong>Description</strong>: Industrie manufacturière légère (assemblage, conditionnement)</p>
+                <p><strong>Consommation typique</strong>: 80-200 kWh/m²/an</p>
+                <p><strong>Répartition usages</strong>:</p>
+                <ul>
+                    <li>Process: 35-45%</li>
+                    <li>Air comprimé: 15-20%</li>
+                    <li>HVAC: 15-20%</li>
+                    <li>Éclairage: 10-15%</li>
+                    <li>Autres: 10%</li>
+                </ul>
+                <p><strong>Signature temporelle</strong>: 2x8 ou 3x8 selon activité, WE variables</p>
+            </div>
+        </section>
+
+        <!-- Section 3: Règles de détection d'anomalies -->
+        <section id="regles-anomalies">
+            <h2>3. Règles de Détection d'Anomalies (Tier 1)</h2>
+            <p>Règles déterministes pour détecter les anomalies de consommation sans ML.</p>
+
+            <h3 id="anomalie-base-nuit">3.1 Base de Nuit Anormale</h3>
+            <div class="rule">
+                <h4>Code: ANOM_BASE_NUIT_ELEVEE</h4>
+                <p><strong>Condition</strong>: (Conso_nuit / Conso_jour) > seuil_secteur</p>
+                <p><strong>Seuils typiques</strong>:</p>
+                <ul>
+                    <li>Bureaux: ratio > 0.20 (20%)</li>
+                    <li>Commerce alimentaire: ratio < 0.70 (froid 24/7 normal)</li>
+                    <li>Commerce non-alimentaire: ratio > 0.15</li>
+                    <li>Restauration: ratio > 0.10</li>
+                </ul>
+                <p><strong>Causes probables</strong>:</p>
+                <ul>
+                    <li>Équipements en veille excessive</li>
+                    <li>Éclairage non éteint</li>
+                    <li>CVC mal programmé</li>
+                    <li>Fuites air comprimé</li>
+                </ul>
+                <p><strong>Gravité</strong>: MEDIUM - Économie potentielle 5-15%</p>
+            </div>
+
+            <h3 id="anomalie-weekend">3.2 Consommation Weekend Anormale</h3>
+            <div class="rule">
+                <h4>Code: ANOM_WEEKEND_ELEVE</h4>
+                <p><strong>Condition</strong>: (Conso_weekend / Conso_semaine) > seuil_secteur</p>
+                <p><strong>Seuils</strong>:</p>
+                <ul>
+                    <li>Bureaux: ratio > 0.25</li>
+                    <li>Commerce (fermé WE): ratio > 0.30</li>
+                </ul>
+                <p><strong>Gravité</strong>: MEDIUM</p>
+            </div>
+
+            <h3 id="anomalie-pointe">3.3 Puissance de Pointe Anormale</h3>
+            <div class="rule">
+                <h4>Code: ANOM_PUISSANCE_POINTE</h4>
+                <p><strong>Condition</strong>: P_max > (P_souscrite * 0.95) OU P_max < (P_souscrite * 0.30)</p>
+                <p><strong>Impact</strong>:</p>
+                <ul>
+                    <li>Dépassement > 95%: risque pénalités TURPE, sous-dimensionnement</li>
+                    <li>Max < 30%: surdimensionnement, coûts fixes excessifs</li>
+                </ul>
+                <p><strong>Gravité</strong>: HIGH (impact financier direct)</p>
+            </div>
+
+            <h3 id="anomalie-saisonnalite">3.4 Absence de Saisonnalité (Chauffage/Clim)</h3>
+            <div class="rule">
+                <h4>Code: ANOM_PAS_SAISONNALITE</h4>
+                <p><strong>Condition</strong>: coefficient_variation(conso_mensuelle) < 0.10</p>
+                <p><strong>Applicable</strong>: Sites avec HVAC, hors commerce alimentaire (froid 24/7)</p>
+                <p><strong>Cause probable</strong>: Pas de régulation thermique, chauffage/clim en conflit</p>
+                <p><strong>Gravité</strong>: HIGH - Économie 10-25%</p>
+            </div>
+
+            <h3 id="anomalie-ratio-secteur">3.5 Ratio kWh/m² Hors Norme Sectorielle</h3>
+            <div class="rule">
+                <h4>Code: ANOM_RATIO_M2_ANORMAL</h4>
+                <p><strong>Condition</strong>: kWh_an/m² > P90_secteur OU < P10_secteur</p>
+                <p><strong>Références</strong>:</p>
+                <ul>
+                    <li>Bureaux: P10=120, P90=300 kWh/m²/an</li>
+                    <li>Commerce alim: P10=400, P90=1000</li>
+                    <li>Restauration: P10=200, P90=600</li>
+                </ul>
+                <p><strong>Gravité</strong>: MEDIUM (nécessite investigation)</p>
+            </div>
+
+            <h3 id="anomalie-gaz-ete">3.6 Consommation Gaz en Été (Chauffage)</h3>
+            <div class="rule">
+                <h4>Code: ANOM_GAZ_ETE</h4>
+                <p><strong>Condition</strong>: Conso_gaz(juin-août) > 0.10 * Conso_gaz_annuelle</p>
+                <p><strong>Cause</strong>: Chauffage actif en été OU ECS surdimensionné</p>
+                <p><strong>Gravité</strong>: HIGH</p>
+            </div>
+        </section>
+
+        <!-- Section 4: Recommandations & Playbooks -->
+        <section id="recommandations">
+            <h2>4. Recommandations & Playbooks</h2>
+            <p>Actions correctives pour chaque type d'anomalie détectée.</p>
+
+            <h3 id="reco-base-nuit">4.1 Réduction Base de Nuit</h3>
+            <div class="recommendation">
+                <h4>Code: RECO_BASE_NUIT</h4>
+                <p><strong>Déclencheur</strong>: ANOM_BASE_NUIT_ELEVEE</p>
+                <p><strong>Actions</strong>:</p>
+                <ol>
+                    <li>Audit rapide: identifier équipements en fonctionnement nuit (sous-comptage si dispo)</li>
+                    <li>Vérifier programmation horaire CVC (coupure nuit ?)</li>
+                    <li>Éteindre éclairage extérieur après fermeture (sauf sécurité)</li>
+                    <li>Installer prises coupe-veille bureautique</li>
+                    <li>Réparer fuites air comprimé (détection ultrasons)</li>
+                </ol>
+                <p><strong>Impact estimé</strong>: 5-15% économie sur conso totale</p>
+                <p><strong>Coût</strong>: Faible (audit) à Moyen (automatisation)</p>
+                <p><strong>ROI</strong>: < 2 ans</p>
+                <p><strong>Difficulté</strong>: Facile</p>
+            </div>
+
+            <h3 id="reco-puissance">4.2 Optimisation Puissance Souscrite</h3>
+            <div class="recommendation">
+                <h4>Code: RECO_AJUST_PUISSANCE</h4>
+                <p><strong>Déclencheur</strong>: ANOM_PUISSANCE_POINTE</p>
+                <p><strong>Actions</strong>:</p>
+                <ol>
+                    <li>Si P_max < 30% souscrite: demander réduction puissance (économie ~100-300 EUR/kVA/an TURPE)</li>
+                    <li>Si P_max > 90% souscrite: analyser écrêtement via:
+                        <ul>
+                            <li>Effacement temporaire (heures pointe)</li>
+                            <li>Stockage batterie</li>
+                            <li>Pilotage CVC/ECS</li>
+                        </ul>
+                    </li>
+                </ol>
+                <p><strong>Impact</strong>: 3-10% économie facture élec</p>
+                <p><strong>ROI</strong>: Immédiat (changement puissance) à 3 ans (effacement)</p>
+            </div>
+
+            <h3 id="reco-saisonnalite">4.3 Régulation Thermique Avancée</h3>
+            <div class="recommendation">
+                <h4>Code: RECO_REGULATION_THERMIQUE</h4>
+                <p><strong>Déclencheur</strong>: ANOM_PAS_SAISONNALITE, ANOM_GAZ_ETE</p>
+                <p><strong>Actions</strong>:</p>
+                <ol>
+                    <li>Installer GTB/GTC si absent (voir obligation BACS)</li>
+                    <li>Programmer arrêt chauffage si T_ext > 15°C</li>
+                    <li>Programmer arrêt clim si T_ext < 20°C</li>
+                    <li>Installer sondes température + intermittence nuit/WE</li>
+                </ol>
+                <p><strong>Impact</strong>: 10-25% économie HVAC</p>
+                <p><strong>ROI</strong>: 2-5 ans</p>
+            </div>
+
+            <h3 id="reco-eclairage">4.4 Optimisation Éclairage</h3>
+            <div class="recommendation">
+                <h4>Code: RECO_ECLAIRAGE_LED</h4>
+                <p><strong>Applicable</strong>: Si base nuit élevée + usage éclairage significatif</p>
+                <p><strong>Actions</strong>:</p>
+                <ol>
+                    <li>Remplacer tubes fluo par LED (-50% conso)</li>
+                    <li>Installer détecteurs présence (bureaux, sanitaires)</li>
+                    <li>Installer cellules crépusculaires (éclairage extérieur)</li>
+                </ol>
+                <p><strong>Impact</strong>: 40-60% économie poste éclairage</p>
+                <p><strong>ROI</strong>: 3-7 ans</p>
+            </div>
+
+            <h3 id="reco-froid">4.5 Optimisation Froid Commercial</h3>
+            <div class="recommendation">
+                <h4>Code: RECO_FROID_COMMERCIAL</h4>
+                <p><strong>Applicable</strong>: Commerce alimentaire, restauration</p>
+                <p><strong>Actions</strong>:</p>
+                <ol>
+                    <li>Installer portes/couvercles meubles froids ouverts (-30% conso froid)</li>
+                    <li>Vérifier étanchéité chambres froides</li>
+                    <li>Nettoyer condenseurs (efficacité +15%)</li>
+                    <li>Récupération chaleur groupes froids pour ECS/chauffage</li>
+                </ol>
+                <p><strong>Impact</strong>: 20-40% économie poste froid</p>
+                <p><strong>ROI</strong>: 2-5 ans</p>
+            </div>
+
+            <h3 id="reco-air-comprime">4.6 Chasse aux Fuites Air Comprimé</h3>
+            <div class="recommendation">
+                <h4>Code: RECO_AIR_COMPRIME_FUITES</h4>
+                <p><strong>Applicable</strong>: Industrie avec air comprimé</p>
+                <p><strong>Actions</strong>:</p>
+                <ol>
+                    <li>Audit ultrasons (détection fuites)</li>
+                    <li>Réparer fuites identifiées</li>
+                    <li>Coupure compresseur nuit/WE si pas de besoin continu</li>
+                </ol>
+                <p><strong>Impact</strong>: 15-30% économie air comprimé (20-30% des fuites typiques)</p>
+                <p><strong>ROI</strong>: < 1 an</p>
+            </div>
+        </section>
+
+        <!-- Section 5: Méthodologie & Kit Data Minimal -->
+        <section id="methodologie">
+            <h2>5. Méthodologie d'Analyse</h2>
+
+            <h3 id="kit-data-minimal">5.1 Kit Data Minimal pour Profiling</h3>
+            <p>Données minimales requises pour un profiling robuste:</p>
+            <ul>
+                <li><strong>Obligatoire</strong>:
+                    <ul>
+                        <li>Consommations mensuelles élec (12 mois minimum)</li>
+                        <li>Surface m² du site</li>
+                        <li>Code NAF/NACE/NCE (ou description activité)</li>
+                    </ul>
+                </li>
+                <li><strong>Fortement recommandé</strong>:
+                    <ul>
+                        <li>Consommations 30min ou horaires (1 an)</li>
+                        <li>Nombre d'employés / taux d'occupation</li>
+                        <li>Puissance souscrite (kVA)</li>
+                        <li>Année construction + rénovations majeures</li>
+                        <li>Horaires d'ouverture</li>
+                    </ul>
+                </li>
+                <li><strong>Optionnel (améliore précision)</strong>:
+                    <ul>
+                        <li>Consommation gaz</li>
+                        <li>Sous-comptage par usage</li>
+                        <li>DJU (Degrés Jours Unifiés) zone géographique</li>
+                        <li>Équipements principaux (CVC kW, chambres froides, etc.)</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <h3 id="pipeline-analyse">5.2 Pipeline d'Analyse Recommandé</h3>
+            <ol>
+                <li><strong>Collecte & Validation</strong>: Import données + contrôle qualité (trous, doublons, cohérence)</li>
+                <li><strong>Features Engineering</strong>:
+                    <ul>
+                        <li>kWh/m², kWh/employé</li>
+                        <li>Ratio nuit/jour, WE/semaine</li>
+                        <li>Saisonnalité (coefficient variation mensuelle)</li>
+                        <li>Facteur de charge (P_moy / P_max)</li>
+                    </ul>
+                </li>
+                <li><strong>Retrieval Archetypes</strong>: Matching NAF + features → archétype(s) candidat(s)</li>
+                <li><strong>Détection Anomalies</strong>: Application règles tier-1 (seuils sectoriels)</li>
+                <li><strong>Génération Recommandations</strong>: Playbooks associés aux anomalies + scoring ICE</li>
+                <li><strong>Executive Summary</strong>: Top 3 recos + impacts estimés</li>
+            </ol>
+
+            <h3 id="scoring-ice">5.3 Scoring ICE des Recommandations</h3>
+            <p>Priorisation des recommandations selon Impact × Confiance × Facilité:</p>
+            <ul>
+                <li><strong>Impact</strong> (1-10): Économie kWh/€ estimée</li>
+                <li><strong>Confiance</strong> (1-10): Qualité données + robustesse règle</li>
+                <li><strong>Facilité</strong> (1-10): Coût + complexité mise en œuvre (10=facile)</li>
+            </ul>
+            <p><strong>Score ICE</strong> = (I × C × E) / 100</p>
+            <p>Afficher les 3 recos avec score ICE le plus élevé.</p>
+        </section>
+
+        <!-- Section 6: Mapping Codes Activité -->
+        <section id="mapping-codes">
+            <h2>6. Mapping Codes Activité → Archétypes</h2>
+            <p>Correspondance approximative codes NAF (France) vers archétypes.</p>
+
+            <h3 id="naf-bureau">6.1 Bureaux & Services</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Code NAF</th>
+                        <th>Libellé</th>
+                        <th>Archétype(s)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>64.19</td><td>Autres intermédiations monétaires</td><td>BUREAU_STANDARD</td></tr>
+                    <tr><td>68.20</td><td>Location/exploitation biens immobiliers</td><td>BUREAU_STANDARD</td></tr>
+                    <tr><td>69.10</td><td>Activités juridiques</td><td>BUREAU_STANDARD</td></tr>
+                    <tr><td>70.10</td><td>Activités des sièges sociaux</td><td>BUREAU_STANDARD</td></tr>
+                </tbody>
+            </table>
+
+            <h3 id="naf-commerce">6.2 Commerce</h3>
+            <table>
+                <thead>
+                    <tr><th>Code NAF</th><th>Libellé</th><th>Archétype(s)</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>47.11</td><td>Commerce de détail en magasin non spécialisé</td><td>COMMERCE_ALIMENTAIRE</td></tr>
+                    <tr><td>47.21</td><td>Commerce de détail de fruits et légumes</td><td>COMMERCE_ALIMENTAIRE</td></tr>
+                    <tr><td>47.29</td><td>Autres commerces de détail alimentaires</td><td>COMMERCE_ALIMENTAIRE</td></tr>
+                </tbody>
+            </table>
+
+            <h3 id="naf-restauration">6.3 Restauration</h3>
+            <table>
+                <thead>
+                    <tr><th>Code NAF</th><th>Libellé</th><th>Archétype(s)</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>56.10</td><td>Restaurants et services de restauration mobile</td><td>RESTAURATION_SERVICE</td></tr>
+                    <tr><td>56.21</td><td>Services des traiteurs</td><td>RESTAURATION_SERVICE</td></tr>
+                </tbody>
+            </table>
+
+            <h3 id="naf-logistique">6.4 Logistique & Entreposage</h3>
+            <table>
+                <thead>
+                    <tr><th>Code NAF</th><th>Libellé</th><th>Archétype(s)</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>52.10</td><td>Entreposage et stockage</td><td>LOGISTIQUE_FROID (si température dirigée)</td></tr>
+                    <tr><td>52.21</td><td>Services auxiliaires des transports terrestres</td><td>LOGISTIQUE_FROID</td></tr>
+                </tbody>
+            </table>
+
+            <h3 id="naf-sante">6.5 Santé</h3>
+            <table>
+                <thead>
+                    <tr><th>Code NAF</th><th>Libellé</th><th>Archétype(s)</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>86.10</td><td>Activités hospitalières</td><td>HOPITAL_STANDARD</td></tr>
+                    <tr><td>86.21</td><td>Activité des médecins généralistes</td><td>HOPITAL_STANDARD (cabinet médical)</td></tr>
+                </tbody>
+            </table>
+
+            <p><strong>Note</strong>: Mapping approximatif. Affiner avec analyse consommation réelle.</p>
+        </section>
+
+        <!-- Section 7: Notes de version -->
+        <section id="notes-version">
+            <h2>7. Notes de Version & Évolutions</h2>
+            <h3>Version 1.0 (2026-02-09)</h3>
+            <ul>
+                <li>✅ Taxonomie usages (11 postes principaux)</li>
+                <li>✅ 6 archétypes sectoriels (bureaux, commerce, restauration, logistique, santé, industrie)</li>
+                <li>✅ 6 règles anomalies tier-1</li>
+                <li>✅ 6 playbooks recommandations</li>
+                <li>✅ Mapping NAF partiel (40 codes)</li>
+                <li>✅ Méthodologie pipeline analyse</li>
+                <li>✅ Kit data minimal</li>
+            </ul>
+            <h3>Évolutions futures (v1.1+)</h3>
+            <ul>
+                <li>Élargir archétypes (hôtellerie, piscines, data centers, etc.)</li>
+                <li>Ajouter règles tier-2 (ML, benchmarking dynamique)</li>
+                <li>Intégrer DJU automatiques par zone</li>
+                <li>Mapping NACE (codes européens)</li>
+            </ul>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 PROMEOS Energy Intelligence - Document interne propriétaire</p>
+        <p>Toute reproduction interdite sans autorisation</p>
+    </footer>
+</body>
+</html>

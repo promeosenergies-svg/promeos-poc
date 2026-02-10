@@ -1,0 +1,61 @@
+id: RULE-ANOM_WEEKEND_ELEVE
+type: rule
+domain: usages
+title: Détection Anom Weekend Eleve
+summary: Règle ANOM_WEEKEND_ELEVE
+tags:
+  energy:
+  - elec
+  segment:
+  - tertiaire_multisite
+  - industrie
+  asset:
+  - hvac
+  - eclairage
+  - it
+  reg: []
+  granularity:
+  - horaire
+  - journalier
+scope: {}
+content_md: '## Règle de Détection: Anom Weekend Eleve
+
+
+  ### Description
+
+  (Extrait du document source)
+
+
+  3.2 Consommation Weekend Anormale Code: ANOM_WEEKEND_ELEVE Condition : (Conso_weekend
+  / Conso_semaine) > seuil_secteur Seuils : Bureaux: ratio > 0.25 Commerce (fermé
+  WE): ratio > 0.30 Gravité : MEDIUM...
+
+  '
+logic:
+  when:
+    all:
+    - field: metrics.computed
+      op: '='
+      value: true
+      comment: Rule ANOM_WEEKEND_ELEVE - requires manual threshold configuration
+  then:
+    outputs:
+    - type: anomaly
+      label: 'Anomalie détectée: ANOM_WEEKEND_ELEVE'
+      severity: medium
+      confidence: medium
+sources:
+- doc_id: USAGES_ENERGETIQUES_B2B_v1
+  label: USAGES_ENERGETIQUES_B2B_v1 - Règles Anomalies
+  section: anomalie-weekend
+  anchor: '#anomalie-weekend'
+  excerpt_short: Règle ANOM_WEEKEND_ELEVE
+provenance:
+  source_path: source/USAGES_ENERGETIQUES_B2B_v1.html
+  source_sha256: e27ab62d958a5ab1240c118ce7e69079fdea166fe22cb95953ed2a3cadd97a22
+  source_section: anomalie-weekend
+  extracted_at: '2026-02-09'
+updated_at: '2026-02-09'
+confidence: high
+status: validated
+priority: 2

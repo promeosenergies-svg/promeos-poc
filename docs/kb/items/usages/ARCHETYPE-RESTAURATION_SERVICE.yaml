@@ -1,0 +1,61 @@
+id: ARCHETYPE-RESTAURATION_SERVICE
+type: knowledge
+domain: usages
+title: Archétype Restauration Service
+summary: '2.'
+tags:
+  energy:
+  - elec
+  segment:
+  - tertiaire_multisite
+  asset:
+  - hvac
+  - eclairage
+  - froid
+  - it
+  reg: []
+  granularity:
+  - mensuel
+  - horaire
+scope:
+  archetype: RESTAURATION_SERVICE
+  naf_codes:
+  - '56.10'
+  - '56.21'
+  - '56.29'
+  - '56.30'
+content_md: '## Archétype Restauration Service
+
+
+  ### Consommation typique
+
+  - **Fourchette**: 250-450 kWh/m²/an
+
+
+  ### Caractéristiques
+
+  (Extrait du document source - voir provenance)
+
+
+  2.3 Restauration Code: RESTAURATION_SERVICE Description : Restaurants avec cuisine
+  sur place Consommation typique : 250-450 kWh/m²/an Répartition usages : Cuisson:
+  30-40% HVAC: 25-30% Froid: 15-20% ECS: 10-15% Éclairage: 10% Codes NAF associés
+  : 56.10, 56.21...
+
+  '
+logic: null
+sources:
+- doc_id: USAGES_ENERGETIQUES_B2B_v1
+  label: USAGES_ENERGETIQUES_B2B_v1 - Section Archétypes
+  section: archetype-restauration
+  anchor: '#archetype-restauration'
+  excerpt_short: '2.'
+provenance:
+  source_path: source/USAGES_ENERGETIQUES_B2B_v1.html
+  source_sha256: e27ab62d958a5ab1240c118ce7e69079fdea166fe22cb95953ed2a3cadd97a22
+  source_section: archetype-restauration
+  extracted_at: '2026-02-09'
+updated_at: '2026-02-09'
+confidence: high
+status: validated
+priority: 2

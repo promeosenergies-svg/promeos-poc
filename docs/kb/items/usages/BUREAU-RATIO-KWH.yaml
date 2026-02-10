@@ -1,0 +1,65 @@
+---
+id: "BUREAU-RATIO-KWH-M2"
+type: "knowledge"
+domain: "usages"
+title: "Ratio de consommation bureaux tertiaires"
+summary: "Consommation électrique typique des bureaux tertiaires : 150-250 kWh/m²/an (moyenne 180 kWh/m²/an) selon zone climatique et équipements."
+
+tags:
+  energy:
+    - elec
+  segment:
+    - tertiaire_multisite
+  asset:
+    - hvac
+    - eclairage
+    - it
+  reg: []
+  granularity:
+    - mensuel
+
+scope:
+  building_type: ["bureau"]
+
+content_md: |
+  ## Ratios de consommation - Bureaux tertiaires
+
+  ### Moyennes nationales
+  - **Minimum**: 150 kWh/m²/an (bureaux BBC, faible densité IT)
+  - **Moyenne**: 180 kWh/m²/an
+  - **Maximum**: 250 kWh/m²/an (bureaux anciens, forte densité IT)
+
+  ### Répartition par usage
+  - CVC (chauffage/clim/ventilation): 45-55%
+  - Éclairage: 20-25%
+  - IT/bureautique: 15-20%
+  - Autres (ascenseurs, cafétéria, etc.): 10-15%
+
+  ### Facteurs de variation
+  - Zone climatique (H1/H2/H3)
+  - Densité d'occupation (m²/personne)
+  - Équipements IT (data rooms, serveurs)
+  - Isolation thermique (année construction)
+
+logic:
+  when:
+    all:
+      - field: "building_type"
+        op: "="
+        value: "bureau"
+  then:
+    outputs:
+      - type: "heuristic"
+        label: "Ratio consommation attendu: 180 kWh/m²/an"
+        confidence: "medium"
+
+sources:
+  - doc_id: "ADEME-RATIOS-2024"
+    label: "ADEME - Ratios de consommation bâtiments tertiaires 2024"
+    section: "Bureaux"
+    anchor: "#bureaux"
+    excerpt_short: "Consommation électrique moyenne des bureaux: 180 kWh/m²/an"
+
+updated_at: "2026-02-09"
+confidence: "medium"
+priority: 3

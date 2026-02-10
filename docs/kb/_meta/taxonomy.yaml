@@ -1,0 +1,89 @@
+# PROMEOS KB TAXONOMY
+# Liste fermée des valeurs autorisées pour les tags KB items
+# Toute valeur hors taxonomie = REJET par validation
+
+# Types d'items
+types:
+  - rule          # Règle déterministe (obligation/seuil/deadline)
+  - knowledge     # Connaissance métier (ratios/usages/heuristiques)
+  - checklist     # Liste de contrôle (étapes/procédure)
+  - calc          # Calcul/formule
+
+# Domaines métier
+domains:
+  - reglementaire  # Conformité réglementaire
+  - usages         # Usages/profils de consommation
+  - acc            # Autoconsommation collective
+  - facturation    # Facturation/tarifs
+  - flex           # Flexibilité/effacement
+
+# Tags énergies
+energy:
+  - elec
+  - gaz
+  - multi         # Plusieurs énergies
+
+# Tags segments clients
+segment:
+  - collectivite
+  - bailleur
+  - tertiaire_multisite
+  - industrie
+  - copro
+
+# Tags assets techniques
+asset:
+  - hvac          # Chauffage/Ventilation/Clim
+  - froid
+  - eclairage
+  - air_comprime
+  - irve          # Bornes recharge VE
+  - process
+  - it
+  - multi         # Plusieurs assets
+
+# Tags réglementations
+reg:
+  - decret_tertiaire
+  - bacs
+  - loi_aper
+  - acc
+  - turpe
+  - taxes
+  - cee
+  - multi         # Plusieurs réglementations
+
+# Tags granularités temporelles
+granularity:
+  - mensuel
+  - journalier
+  - horaire       # Données horaires
+  - 30min
+  - 15min
+  - 10min
+  - event         # Événementiel
+  - multi         # Plusieurs granularités
+
+# Niveaux de confiance
+confidence:
+  - high
+  - medium
+  - low
+
+# Codes NAF (échantillon - à compléter selon besoins)
+# Format: "XXXX" ou "XX.XX"
+naf_codes:
+  - "4110"  # Promotion immobilière
+  - "4120"  # Construction bâtiments résidentiels
+  - "47.11" # Commerce détail non spécialisé
+  - "52.10" # Entreposage/stockage
+  - "56.10" # Restaurants
+  - "64.19" # Banques
+  - "68.20" # Location/exploitation biens immobiliers
+  - "85.31" # Enseignement secondaire
+  - "86.10" # Activités hospitalières
+  - "multi" # Plusieurs NAF
+
+# Version taxonomy (pour compatibilité)
+version: "1.0"
+updated_at: "2026-02-09"

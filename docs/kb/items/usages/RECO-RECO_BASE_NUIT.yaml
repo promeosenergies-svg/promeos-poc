@@ -1,0 +1,49 @@
+id: RECO-RECO_BASE_NUIT
+type: knowledge
+domain: usages
+title: Recommandation Reco Base Nuit
+summary: Recommandation RECO_BASE_NUIT
+tags:
+  energy:
+  - elec
+  segment:
+  - tertiaire_multisite
+  asset:
+  - hvac
+  reg: []
+  granularity:
+  - event
+scope: {}
+content_md: '## Recommandation: Reco Base Nuit
+
+
+  ### Impact estimé
+
+  - **Économies potentielles**: 5-15%
+
+
+  ### Détails
+
+  4.1 Réduction Base de Nuit Code: RECO_BASE_NUIT Déclencheur : ANOM_BASE_NUIT_ELEVEE
+  Actions : Audit rapide: identifier équipements en fonctionnement nuit (sous-comptage
+  si dispo) Vérifier programmation horaire CVC (coupure nuit ?) Éteindre éclairage
+  extérieur après fermeture (sauf sécurité) Installer prises coupe-veille bureautique
+  Réparer fuites air comprimé (détection ultrasons) Impact estimé : ...
+
+  '
+logic: null
+sources:
+- doc_id: USAGES_ENERGETIQUES_B2B_v1
+  label: USAGES_ENERGETIQUES_B2B_v1 - Playbooks Recommandations
+  section: reco-base-nuit
+  anchor: '#reco-base-nuit'
+  excerpt_short: Recommandation RECO_BASE_NUIT
+provenance:
+  source_path: source/USAGES_ENERGETIQUES_B2B_v1.html
+  source_sha256: e27ab62d958a5ab1240c118ce7e69079fdea166fe22cb95953ed2a3cadd97a22
+  source_section: reco-base-nuit
+  extracted_at: '2026-02-09'
+updated_at: '2026-02-09'
+confidence: high
+status: validated
+priority: 3

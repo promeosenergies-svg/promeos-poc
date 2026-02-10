@@ -1,0 +1,53 @@
+id: RECO-RECO_AIR_COMPRIME_FUITES
+type: knowledge
+domain: usages
+title: Recommandation Reco Air Comprime Fuites
+summary: 's : Audit ultrasons (détection fuites) Réparer fuites identifiées Coupure
+  compresseur nuit/WE si pas de besoin continu Impact : 15-30% économie air comprimé
+  (20-30% des fuites typiques) ROI : < 1 an 5'
+tags:
+  energy:
+  - elec
+  segment:
+  - tertiaire_multisite
+  asset:
+  - it
+  reg: []
+  granularity:
+  - event
+scope: {}
+content_md: '## Recommandation: Reco Air Comprime Fuites
+
+
+  ### Impact estimé
+
+  - **Économies potentielles**: 15-30%
+
+
+  ### Détails
+
+  4.6 Chasse aux Fuites Air Comprimé Code: RECO_AIR_COMPRIME_FUITES Applicable : Industrie
+  avec air comprimé Actions : Audit ultrasons (détection fuites) Réparer fuites identifiées
+  Coupure compresseur nuit/WE si pas de besoin continu Impact : 15-30% économie air
+  comprimé (20-30% des fuites typiques) ROI : < 1 an 5. Méthodologie d''Analyse 5.1
+  Kit Data Minimal pour Profiling Données minimales requises...
+
+  '
+logic: null
+sources:
+- doc_id: USAGES_ENERGETIQUES_B2B_v1
+  label: USAGES_ENERGETIQUES_B2B_v1 - Playbooks Recommandations
+  section: reco-air-comprime
+  anchor: '#reco-air-comprime'
+  excerpt_short: 's : Audit ultrasons (détection fuites) Réparer fuites identifiées
+    Coupure compresseur nuit/WE si pas de besoin continu Impact : 15-30% économie
+    air co'
+provenance:
+  source_path: source/USAGES_ENERGETIQUES_B2B_v1.html
+  source_sha256: e27ab62d958a5ab1240c118ce7e69079fdea166fe22cb95953ed2a3cadd97a22
+  source_section: reco-air-comprime
+  extracted_at: '2026-02-09'
+updated_at: '2026-02-09'
+confidence: high
+status: validated
+priority: 3

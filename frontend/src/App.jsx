@@ -11,6 +11,7 @@ import ActionPlan from './pages/ActionPlan';
 import RegOps from './pages/RegOps';
 import ConnectorsPage from './pages/ConnectorsPage';
 import WatchersPage from './pages/WatchersPage';
+import ConsommationsUsages from './pages/ConsommationsUsages';
 
 function App() {
   const [showUpgradeWizard, setShowUpgradeWizard] = useState(false);
@@ -47,6 +48,12 @@ function App() {
                     Plan d'action
                   </Link>
                   <Link
+                    to="/consommations"
+                    className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 transition text-sm"
+                  >
+                    Conso & Usages
+                  </Link>
+                  <Link
                     to="/connectors"
                     className="px-4 py-2 rounded hover:bg-gray-100 text-gray-700 hover:text-gray-900 transition text-sm"
                   >
@@ -77,6 +84,7 @@ function App() {
             <Route path="/sites/:id" element={<SiteDetail />} />
             <Route path="/action-plan" element={<ActionPlan />} />
             <Route path="/regops/:id" element={<RegOps />} />
+            <Route path="/consommations" element={<ConsommationsUsages />} />
             <Route path="/connectors" element={<ConnectorsPage />} />
             <Route path="/watchers" element={<WatchersPage />} />
           </Routes>

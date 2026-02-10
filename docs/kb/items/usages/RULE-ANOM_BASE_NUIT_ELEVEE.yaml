@@ -1,0 +1,63 @@
+id: RULE-ANOM_BASE_NUIT_ELEVEE
+type: rule
+domain: usages
+title: Détection Anom Base Nuit Elevee
+summary: Règle ANOM_BASE_NUIT_ELEVEE
+tags:
+  energy:
+  - elec
+  segment:
+  - tertiaire_multisite
+  - industrie
+  asset:
+  - hvac
+  - eclairage
+  - it
+  reg: []
+  granularity:
+  - horaire
+  - journalier
+scope: {}
+content_md: '## Règle de Détection: Anom Base Nuit Elevee
+
+
+  ### Description
+
+  (Extrait du document source)
+
+
+  3.1 Base de Nuit Anormale Code: ANOM_BASE_NUIT_ELEVEE Condition : (Conso_nuit /
+  Conso_jour) > seuil_secteur Seuils typiques : Bureaux: ratio > 0.20 (20%) Commerce
+  alimentaire: ratio < 0.70 (froid 24/7 normal) Commerce non-alimentaire: ratio >
+  0.15 Restauration: ratio > 0.10 Causes probables : Équipements en veille excessive
+  Éclairage non éteint CVC mal programmé Fuites air comprimé Gravité : MEDIU...
+
+  '
+logic:
+  when:
+    all:
+    - field: metrics.computed
+      op: '='
+      value: true
+      comment: Rule ANOM_BASE_NUIT_ELEVEE - requires manual threshold configuration
+  then:
+    outputs:
+    - type: anomaly
+      label: 'Anomalie détectée: ANOM_BASE_NUIT_ELEVEE'
+      severity: medium
+      confidence: medium
+sources:
+- doc_id: USAGES_ENERGETIQUES_B2B_v1
+  label: USAGES_ENERGETIQUES_B2B_v1 - Règles Anomalies
+  section: anomalie-base-nuit
+  anchor: '#anomalie-base-nuit'
+  excerpt_short: Règle ANOM_BASE_NUIT_ELEVEE
+provenance:
+  source_path: source/USAGES_ENERGETIQUES_B2B_v1.html
+  source_sha256: e27ab62d958a5ab1240c118ce7e69079fdea166fe22cb95953ed2a3cadd97a22
+  source_section: anomalie-base-nuit
+  extracted_at: '2026-02-09'
+updated_at: '2026-02-09'
+confidence: high
+status: validated
+priority: 2

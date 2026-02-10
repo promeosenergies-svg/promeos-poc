@@ -1,0 +1,49 @@
+id: RECO-RECO_AJUST_PUISSANCE
+type: knowledge
+domain: usages
+title: Recommandation Reco Ajust Puissance
+summary: Recommandation RECO_AJUST_PUISSANCE
+tags:
+  energy:
+  - elec
+  segment:
+  - tertiaire_multisite
+  asset:
+  - hvac
+  reg: []
+  granularity:
+  - event
+scope: {}
+content_md: '## Recommandation: Reco Ajust Puissance
+
+
+  ### Impact estimé
+
+  - **Économies potentielles**: 3-10%
+
+
+  ### Détails
+
+  4.2 Optimisation Puissance Souscrite Code: RECO_AJUST_PUISSANCE Déclencheur : ANOM_PUISSANCE_POINTE
+  Actions : Si P_max < 30% souscrite: demander réduction puissance (économie ~100-300
+  EUR/kVA/an TURPE) Si P_max > 90% souscrite: analyser écrêtement via: Effacement
+  temporaire (heures pointe) Stockage batterie Pilotage CVC/ECS Impact : 3-10% économie
+  facture élec ROI : Immédiat (changement puissance)...
+
+  '
+logic: null
+sources:
+- doc_id: USAGES_ENERGETIQUES_B2B_v1
+  label: USAGES_ENERGETIQUES_B2B_v1 - Playbooks Recommandations
+  section: reco-puissance
+  anchor: '#reco-puissance'
+  excerpt_short: Recommandation RECO_AJUST_PUISSANCE
+provenance:
+  source_path: source/USAGES_ENERGETIQUES_B2B_v1.html
+  source_sha256: e27ab62d958a5ab1240c118ce7e69079fdea166fe22cb95953ed2a3cadd97a22
+  source_section: reco-puissance
+  extracted_at: '2026-02-09'
+updated_at: '2026-02-09'
+confidence: high
+status: validated
+priority: 3
