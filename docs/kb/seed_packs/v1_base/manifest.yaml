@@ -1,0 +1,93 @@
+# PROMEOS KB Seed Pack v1_base
+# Initial validated items for POC deployment
+# All items have status=validated, confidence>=medium
+
+pack_id: v1_base
+version: "1.0"
+created_at: "2026-02-09"
+description: "Base seed pack - 12 validated KB items covering bureau/commerce/restauration archetypes, anomaly rules, and recommendations"
+
+target_domains:
+  - usages
+  - reglementaire
+
+items:
+  # Archetypes (3)
+  - id: ARCHETYPE-BUREAU_STANDARD
+    file: items/usages/ARCHETYPE-BUREAU_STANDARD.yaml
+    status: validated
+    confidence: high
+
+  - id: ARCHETYPE-HOPITAL_STANDARD
+    file: items/usages/ARCHETYPE-HOPITAL_STANDARD.yaml
+    status: validated
+    confidence: medium
+
+  - id: ARCHETYPE-RESTAURATION_SERVICE
+    file: items/usages/ARCHETYPE-RESTAURATION_SERVICE.yaml
+    status: validated
+    confidence: medium
+
+  # Rules (3)
+  - id: RULE-ANOM_BASE_NUIT_ELEVEE
+    file: items/usages/RULE-ANOM_BASE_NUIT_ELEVEE.yaml
+    status: validated
+    confidence: high
+
+  - id: RULE-ANOM_GAZ_ETE
+    file: items/usages/RULE-ANOM_GAZ_ETE.yaml
+    status: validated
+    confidence: high
+
+  - id: RULE-ANOM_WEEKEND_ELEVE
+    file: items/usages/RULE-ANOM_WEEKEND_ELEVE.yaml
+    status: validated
+    confidence: high
+
+  # Recommendations (4)
+  - id: RECO-RECO_BASE_NUIT
+    file: items/usages/RECO-RECO_BASE_NUIT.yaml
+    status: validated
+    confidence: medium
+
+  - id: RECO-RECO_AJUST_PUISSANCE
+    file: items/usages/RECO-RECO_AJUST_PUISSANCE.yaml
+    status: validated
+    confidence: medium
+
+  - id: RECO-RECO_AIR_COMPRIME_FUITES
+    file: items/usages/RECO-RECO_AIR_COMPRIME_FUITES.yaml
+    status: validated
+    confidence: medium
+
+  - id: RECO-RECO_FROID_COMMERCIAL
+    file: items/usages/RECO-RECO_FROID_COMMERCIAL.yaml
+    status: validated
+    confidence: medium
+
+  # Knowledge (1)
+  - id: BUREAU-RATIO-KWH
+    file: items/usages/BUREAU-RATIO-KWH.yaml
+    status: validated
+    confidence: high
+
+  # Reglementaire (1)
+  - id: BACS-290KW
+    file: items/reglementaire/BACS-290KW.yaml
+    status: validated
+    confidence: high
+
+stats:
+  total_items: 12
+  by_type:
+    knowledge: 4
+    rule: 4
+    calc: 0
+    checklist: 0
+  by_domain:
+    usages: 11
+    reglementaire: 1
+  by_confidence:
+    high: 6
+    medium: 6
+    low: 0

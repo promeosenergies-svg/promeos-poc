@@ -1,0 +1,63 @@
+{
+  "description": "Golden test expectations for KB apply() results. Each entry matches a site_context by ID.",
+  "expectations": {
+    "bureau_standard_paris": {
+      "min_applicable_items": 1,
+      "max_applicable_items": 20,
+      "expected_status_in": ["ok", "partial"],
+      "must_not_have_status": "insufficient",
+      "checks": [
+        {
+          "description": "No draft items in apply results (allow_drafts=false)",
+          "check": "no_draft_items"
+        },
+        {
+          "description": "All items have confidence field",
+          "check": "all_have_confidence"
+        },
+        {
+          "description": "All items have sources field",
+          "check": "all_have_sources"
+        }
+      ]
+    },
+    "commerce_alimentaire_lyon": {
+      "min_applicable_items": 1,
+      "max_applicable_items": 20,
+      "expected_status_in": ["ok", "partial"],
+      "must_not_have_status": "insufficient",
+      "checks": [
+        {
+          "description": "No draft items in apply results",
+          "check": "no_draft_items"
+        },
+        {
+          "description": "All items have confidence field",
+          "check": "all_have_confidence"
+        }
+      ]
+    },
+    "minimal_context": {
+      "min_applicable_items": 0,
+      "max_applicable_items": 15,
+      "expected_status_in": ["ok", "partial", "insufficient"],
+      "checks": [
+        {
+          "description": "No draft items in apply results",
+          "check": "no_draft_items"
+        }
+      ]
+    },
+    "empty_context": {
+      "min_applicable_items": 0,
+      "max_applicable_items": 15,
+      "expected_status_in": ["ok", "partial", "insufficient"],
+      "checks": [
+        {
+          "description": "No draft items in apply results",
+          "check": "no_draft_items"
+        }
+      ]
+    }
+  }
+}

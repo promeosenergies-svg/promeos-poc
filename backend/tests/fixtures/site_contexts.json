@@ -1,0 +1,87 @@
+{
+  "contexts": [
+    {
+      "id": "bureau_standard_paris",
+      "description": "Standard office building in Paris, 1200m2, NAF 70.10",
+      "site_context": {
+        "building_type": "bureau",
+        "surface_m2": 1200,
+        "naf_code": "70.10",
+        "hvac_kw": 85,
+        "ville": "Paris",
+        "nb_occupants": 120,
+        "has_clim": true,
+        "annual_kwh": 180000,
+        "base_nuit_ratio": 0.35,
+        "weekend_ratio": 0.25,
+        "metrics": {
+          "computed": true
+        }
+      },
+      "expected_domains": ["usages", "reglementaire"],
+      "expected_min_applicable": 1
+    },
+    {
+      "id": "commerce_alimentaire_lyon",
+      "description": "Supermarket in Lyon, 2500m2, NAF 47.11",
+      "site_context": {
+        "building_type": "commerce",
+        "surface_m2": 2500,
+        "naf_code": "47.11",
+        "hvac_kw": 320,
+        "ville": "Lyon",
+        "nb_occupants": 45,
+        "has_clim": true,
+        "has_froid_commercial": true,
+        "annual_kwh": 750000,
+        "base_nuit_ratio": 0.65,
+        "weekend_ratio": 0.80,
+        "metrics": {
+          "computed": true
+        }
+      },
+      "expected_domains": ["usages", "reglementaire"],
+      "expected_min_applicable": 1
+    },
+    {
+      "id": "hopital_marseille",
+      "description": "Hospital in Marseille, 8000m2, NAF 86.10",
+      "site_context": {
+        "building_type": "hopital",
+        "surface_m2": 8000,
+        "naf_code": "86.10",
+        "hvac_kw": 450,
+        "ville": "Marseille",
+        "nb_occupants": 500,
+        "has_clim": true,
+        "annual_kwh": 2400000,
+        "base_nuit_ratio": 0.75,
+        "weekend_ratio": 0.90,
+        "metrics": {
+          "computed": true
+        }
+      },
+      "expected_domains": ["usages"],
+      "expected_min_applicable": 0
+    },
+    {
+      "id": "minimal_context",
+      "description": "Minimal context - only surface and building type",
+      "site_context": {
+        "building_type": "bureau",
+        "surface_m2": 500
+      },
+      "expected_domains": [],
+      "expected_min_applicable": 0,
+      "expected_status": "insufficient"
+    },
+    {
+      "id": "empty_context",
+      "description": "Empty context - should return insufficient",
+      "site_context": {},
+      "expected_domains": [],
+      "expected_min_applicable": 0,
+      "expected_status": "insufficient"
+    }
+  ]
+}
