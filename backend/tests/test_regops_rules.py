@@ -22,8 +22,9 @@ from regops.engine import _load_configs
 
 @pytest.fixture
 def configs():
-    """Load YAML configs once for all tests"""
-    return _load_configs()
+    """Load YAML configs once for all tests — extract regs sub-dict"""
+    all_configs = _load_configs()
+    return all_configs["regs"]
 
 
 def make_site(**kwargs):
@@ -257,7 +258,7 @@ def test_cee_p6_with_valid_audit(configs):
     """Site with valid audit → COMPLIANT"""
     site = make_site()
     batiments = [make_batiment()]
-    evidences = [make_evidence(type=TypeEvidence.AUDIT_ENERGETIQUE, statut=StatutEvidence.VALIDE)]
+    evidences = [make_evidence(type=TypeEvidence.AUDIT, statut=StatutEvidence.VALIDE)]
 
     findings = cee_p6.evaluate(site, batiments, evidences, configs['cee_p6'])
 
@@ -268,14 +269,14 @@ def test_cee_p6_with_valid_audit(configs):
 
 
 def test_cee_p6_no_audit(configs):
-    """Site without audit → NON_COMPLIANT or AT_RISK"""
-    site = make_site()
-    batiments = [make_batiment()]
+    """Large site without GTB -> CEE opportunity flagged"""
+    site = make_site(surface_m2=6000)
+    batiments = [make_batiment(cvc_power_kw=200.0)]
     evidences = []
 
     findings = cee_p6.evaluate(site, batiments, evidences, configs['cee_p6'])
 
-    # Should flag missing audit
+    # CEE P6 is opportunity-based; large site + high CVC + no GTB = opportunity
     assert len(findings) > 0
 
 

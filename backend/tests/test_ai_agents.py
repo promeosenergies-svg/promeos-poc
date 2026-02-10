@@ -31,15 +31,16 @@ def db_session():
 
     # Create minimal data for agents
     org = Organisation(id=1, nom="Test Org", type_client="retail", actif=True)
+    session.add(org)
+    session.flush()
+
     site = Site(
         id=1,
         nom="Test Site",
         type=TypeSite.BUREAU,
         surface_m2=1500,
-        organisation_id=1,
         actif=True
     )
-    session.add(org)
     session.add(site)
     session.commit()
 

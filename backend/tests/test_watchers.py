@@ -43,10 +43,10 @@ def test_watcher_registry():
     assert len(watchers) >= 3  # We have at least 3 watchers
     watcher_names = [w['name'] for w in watchers]
 
-    # Check for expected watchers
-    assert 'legifrance_watcher' in watcher_names
-    assert 'cre_watcher' in watcher_names
-    assert 'rte_watcher' in watcher_names
+    # Check for expected watchers (names match class definitions)
+    assert 'legifrance' in watcher_names
+    assert 'cre' in watcher_names
+    assert 'rte' in watcher_names
 
 
 def test_rss_watcher_base_class():
