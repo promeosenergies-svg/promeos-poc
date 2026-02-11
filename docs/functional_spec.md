@@ -21,9 +21,9 @@ PROMEOS = cockpit independant du fournisseur pour piloter un patrimoine immobili
 
 | Element | Quantite | Statut |
 |---------|----------|--------|
-| Endpoints API | 94 | Stable |
+| Endpoints API | 97 | Stable |
 | Modeles SQLAlchemy | 23 classes | Stable |
-| Tests pytest | 363 | 363/363 green |
+| Tests pytest | 427 | 427/427 green |
 | DB principale | promeos.db (SQLite) | 2.0 MB demo |
 | DB Knowledge Base | kb.db (SQLite FTS5) | 176 KB |
 
@@ -42,6 +42,7 @@ PROMEOS = cockpit independant du fournisseur pour piloter un patrimoine immobili
 | **IA** | 5 agents stub (explainer, recommender, data quality, exec brief, reg change) | 5 endpoints |
 | **Cockpit executif** | KPIs portefeuille, worst-sites, echeances, plan d'action | 4 endpoints |
 | **Mode demo** | Seed 120 sites, activation/desactivation, templates | 4 endpoints |
+| **Onboarding B2B** | Wizard frontend, creation org/sites, import CSV, classification NAF auto, auto-provisioning batiment+obligations | 3 endpoints |
 
 ### 2.3 Frontend (React 18 + Tailwind + Vite)
 
@@ -90,6 +91,7 @@ PROMEOS = cockpit independant du fournisseur pour piloter un patrimoine immobili
 ### M1 - Patrimoine & Organisation
 - CRUD Organisation > Entite > Portefeuille > Site
 - Site: surface, NAF, parking, toiture, CVC, statuts reglementaires
+- 11 TypeSite B2B: magasin, usine, bureau, entrepot, commerce, copropriete, logement_social, collectivite, hotel, sante, enseignement
 - Batiment: puissance CVC, surface
 - Compteur: PRM/PDL, vecteur energetique, puissance souscrite
 
@@ -121,6 +123,16 @@ PROMEOS = cockpit independant du fournisseur pour piloter un patrimoine immobili
 - Risque puissance: score 0-100 (P95/Psub, depassements, volatilite)
 - Qualite donnees: score 0-100 (gaps, doublons, DST, negatifs, outliers)
 - 12 alertes Tier-1 avec lifecycle (open/ack/resolved)
+
+### M7 - Onboarding B2B
+- Wizard frontend 4 etapes: choix mode (demo/reel) > org + portefeuille > import sites (CSV ou saisie) > confirmation
+- API: POST /api/onboarding (creation org complete), POST /api/onboarding/import-csv, GET /api/onboarding/status
+- Classification NAF automatique: 21 prefixes NAF (INSEE) mappes vers 11 TypeSite
+- Auto-provisioning: 1 Batiment principal par site, estimation CVC (W/m2), obligations Decret Tertiaire (>1000 m2) et BACS (>70 kW)
+- Recompute compliance automatique post-import
+- CSV: separateur auto (`,` ou `;`), BOM Excel, gestion erreurs ligne par ligne
+- Dashboard adaptatif: nom org dynamique, CTA "Importer mes sites" si 0 sites
+- DemoBanner: affiche le nom de l'organisation reelle apres onboarding
 
 ---
 

@@ -79,7 +79,7 @@ npm run dev
 # Depuis backend/
 cd backend
 
-# Tous les tests (363 attendus)
+# Tous les tests (427 attendus)
 .\venv\Scripts\pytest.exe tests/ -v
 
 # Tests rapides (sans -v)
@@ -138,11 +138,35 @@ python scripts/kb_smoke.py
 
 ---
 
-## 7. Fichiers cles
+## 7. Onboarding (creation patrimoine reel)
+
+```bash
+# Via API (curl ou Swagger http://localhost:8000/docs)
+# 1. Creer org + sites
+curl -X POST http://localhost:8000/api/onboarding \
+  -H "Content-Type: application/json" \
+  -d '{"organisation":{"nom":"Ma Societe","siren":"123456789","type_client":"bureau"},"sites":[{"nom":"Bureau Paris","type":"bureau","surface_m2":2000}]}'
+
+# 2. Import CSV
+curl -X POST http://localhost:8000/api/onboarding/import-csv \
+  -F "file=@mes_sites.csv"
+
+# 3. Verifier l'etat
+curl http://localhost:8000/api/onboarding/status
+
+# Format CSV attendu (separateur , ou ;):
+# nom,adresse,code_postal,ville,surface_m2,type,naf_code
+# Bureau Paris,10 rue de la Paix,75002,Paris,1200,bureau,
+# Hotel Nice,Promenade,06000,Nice,800,,55.10Z
+```
+
+---
+
+## 8. Fichiers cles
 
 | Fichier | Role |
 |---------|------|
-| `backend/main.py` | Point d'entree FastAPI, enregistrement des 17 routers |
+| `backend/main.py` | Point d'entree FastAPI, enregistrement des 18 routers |
 | `backend/models/__init__.py` | Exports de tous les modeles SQLAlchemy |
 | `backend/database/connection.py` | Session SQLite, `get_db()` dependency |
 | `backend/routes/__init__.py` | Exports de tous les routers |
@@ -153,7 +177,7 @@ python scripts/kb_smoke.py
 
 ---
 
-## 8. Conventions
+## 9. Conventions
 
 - **Commits**: `feat:`, `fix:`, `docs:`, `test:`, `chore:`, `refactor:`
 - **Python**: black pour le formatage (pas encore enforce)
@@ -163,7 +187,7 @@ python scripts/kb_smoke.py
 
 ---
 
-## 9. Troubleshooting
+## 10. Troubleshooting
 
 | Probleme | Solution |
 |----------|----------|
