@@ -53,11 +53,16 @@ def submit_answers(req: AnswersRequest, db: Session = Depends(get_db)):
 
     profile = update_profile_with_answers(db, org.id, req.answers)
 
+    # Auto-recompute compliance after questionnaire answers
+    from services.compliance_rules import evaluate_organisation
+    eval_result = evaluate_organisation(db, org.id)
+
     return {
         "typologie": profile.typologie,
         "confidence_score": profile.confidence_score,
         "answers_count": len(json.loads(profile.answers_json)) if profile.answers_json else 0,
         "reasons": json.loads(profile.reasons_json) if profile.reasons_json else [],
+        "compliance_recomputed": eval_result["sites_evaluated"],
     }
 
 

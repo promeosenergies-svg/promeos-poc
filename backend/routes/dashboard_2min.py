@@ -8,7 +8,7 @@ from sqlalchemy import func
 
 from database import get_db
 from models import (
-    Organisation, Site, Obligation, Compteur,
+    Organisation, Site, Obligation, Compteur, ComplianceFinding,
     StatutConformite, TypeObligation,
 )
 
@@ -89,6 +89,36 @@ def get_dashboard_2min(db: Session = Depends(get_db)):
     # Completude du patrimoine
     completude = _compute_completude(total_sites, total_compteurs, org)
 
+    # ComplianceFinding-based summary (Sprint 4)
+    findings = db.query(ComplianceFinding).all()
+    nok_findings = [f for f in findings if f.status == "NOK"]
+    unknown_findings = [f for f in findings if f.status == "UNKNOWN"]
+
+    findings_summary = None
+    if findings:
+        findings_summary = {
+            "total": len(findings),
+            "nok": len(nok_findings),
+            "unknown": len(unknown_findings),
+            "ok": sum(1 for f in findings if f.status == "OK"),
+        }
+        # Override action_1 from findings if more specific
+        if nok_findings:
+            import json
+            nok_findings.sort(
+                key=lambda f: {"critical": 4, "high": 3, "medium": 2, "low": 1}.get(f.severity, 0),
+                reverse=True,
+            )
+            top = nok_findings[0]
+            actions = json.loads(top.recommended_actions_json) if top.recommended_actions_json else []
+            if actions:
+                action_1 = {
+                    "texte": actions[0],
+                    "priorite": top.severity or "high",
+                    "nb_sites_concernes": len(set(f.site_id for f in nok_findings if f.rule_id == top.rule_id)),
+                    "reglementation": top.regulation,
+                }
+
     return {
         "has_data": True,
         "organisation": {
@@ -99,6 +129,7 @@ def get_dashboard_2min(db: Session = Depends(get_db)):
         "pertes_estimees_eur": round(risque_total, 2),
         "action_1": action_1,
         "completude": completude,
+        "findings_summary": findings_summary,
         "stats": {
             "total_sites": total_sites,
             "sites_actifs": sites_actifs,

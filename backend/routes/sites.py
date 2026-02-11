@@ -53,11 +53,17 @@ def create_site(req: SiteCreateRequest, db: Session = Depends(get_db)):
         surface_m2=req.surface_m2,
     )
     prov = provision_site(db, site)
+
+    # Auto-evaluate compliance rules
+    from services.compliance_rules import evaluate_site as eval_rules
+    findings = eval_rules(db, site.id)
+
     db.commit()
     return {
         "id": site.id,
         "nom": site.nom,
         "type": site.type.value,
+        "findings_count": len(findings),
         **prov,
     }
 
