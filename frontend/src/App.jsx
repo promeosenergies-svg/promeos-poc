@@ -15,6 +15,7 @@ import ConsommationsUsages from './pages/ConsommationsUsages';
 import MonitoringPage from './pages/MonitoringPage';
 import StatusPage from './pages/StatusPage';
 import ImportPage from './pages/ImportPage';
+import Cockpit2MinPage from './pages/Cockpit2MinPage';
 
 function App() {
   const [showUpgradeWizard, setShowUpgradeWizard] = useState(false);
@@ -37,6 +38,12 @@ function App() {
                     className="px-4 py-2 rounded hover:bg-blue-50 text-gray-700 hover:text-blue-600 transition text-sm"
                   >
                     Dashboard
+                  </Link>
+                  <Link
+                    to="/cockpit-2min"
+                    className="px-4 py-2 rounded bg-emerald-600 text-white hover:bg-emerald-700 transition text-sm"
+                  >
+                    2 minutes
                   </Link>
                   <Link
                     to="/cockpit"
@@ -101,6 +108,7 @@ function App() {
           {/* Routes */}
           <Routes>
             <Route path="/" element={<Dashboard onUpgradeClick={() => setShowUpgradeWizard(true)} />} />
+            <Route path="/cockpit-2min" element={<Cockpit2MinPage onUpgradeClick={() => setShowUpgradeWizard(true)} />} />
             <Route path="/cockpit" element={<Cockpit />} />
             <Route path="/sites/:id" element={<SiteDetail />} />
             <Route path="/action-plan" element={<ActionPlan />} />
