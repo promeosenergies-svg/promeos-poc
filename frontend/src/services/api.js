@@ -182,4 +182,23 @@ export const importSitesCsv = (file) => {
 };
 export const getOnboardingStatus = () => api.get('/onboarding/status').then(r => r.data);
 
+// ========================================
+// IMPORT STANDALONE
+// ========================================
+
+export const importSitesStandalone = (file) => {
+  const fd = new FormData();
+  fd.append('file', file);
+  return api.post('/import/sites', fd, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }).then(r => r.data);
+};
+export const getImportTemplate = () => api.get('/import/template').then(r => r.data);
+
+// ========================================
+// DEMO SEED
+// ========================================
+
+export const seedDemo = () => api.post('/demo/seed').then(r => r.data);
+
 export default api;

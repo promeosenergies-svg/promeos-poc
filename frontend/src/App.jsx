@@ -14,6 +14,7 @@ import WatchersPage from './pages/WatchersPage';
 import ConsommationsUsages from './pages/ConsommationsUsages';
 import MonitoringPage from './pages/MonitoringPage';
 import StatusPage from './pages/StatusPage';
+import ImportPage from './pages/ImportPage';
 
 function App() {
   const [showUpgradeWizard, setShowUpgradeWizard] = useState(false);
@@ -74,6 +75,12 @@ function App() {
                     Veille Réglementaire
                   </Link>
                   <Link
+                    to="/import"
+                    className="px-4 py-2 rounded hover:bg-gray-100 text-gray-700 hover:text-gray-900 transition text-sm"
+                  >
+                    Import
+                  </Link>
+                  <Link
                     to="/status"
                     className="px-3 py-2 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition text-xs"
                   >
@@ -102,6 +109,7 @@ function App() {
             <Route path="/connectors" element={<ConnectorsPage />} />
             <Route path="/watchers" element={<WatchersPage />} />
             <Route path="/monitoring" element={<MonitoringPage />} />
+            <Route path="/import" element={<ImportPage />} />
             <Route path="/status" element={<StatusPage />} />
           </Routes>
 
