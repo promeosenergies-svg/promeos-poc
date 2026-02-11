@@ -8,10 +8,10 @@ import {
 const NAV = [
   { to: '/',                icon: LayoutDashboard, label: 'Command Center' },
   { to: '/patrimoine',     icon: Building2,       label: 'Patrimoine' },
-  { to: '/compliance',     icon: ShieldCheck,     label: 'Conformite' },
+  { to: '/conformite',     icon: ShieldCheck,     label: 'Conformite' },
+  { to: '/actions',        icon: ListChecks,      label: 'Actions' },
   { to: '/consommations',  icon: Zap,             label: 'Conso & Usages' },
   { to: '/diagnostic-conso', icon: BarChart3,     label: 'Diagnostic Conso' },
-  { to: '/action-plan',    icon: ListChecks,      label: 'Plan d\'action' },
   { to: '/monitoring',     icon: Activity,        label: 'Monitoring' },
 ];
 

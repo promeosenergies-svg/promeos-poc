@@ -8,6 +8,7 @@ import { ShieldCheck, BadgeEuro, AlertTriangle, ArrowRight, Scan, Clock } from '
 import { Card, CardBody, Badge, Button, EmptyState, SkeletonCard } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { mockKpis, mockTodos, mockTopAnomalies } from '../mocks/kpis';
+import { useScope } from '../contexts/ScopeContext';
 
 function KpiCard({ icon: Icon, title, value, sub, badge, badgeStatus, color }) {
   return (
@@ -49,6 +50,7 @@ function TodoItem({ item }) {
 
 export default function CommandCenter() {
   const navigate = useNavigate();
+  const { org, scopedSites } = useScope();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
 
@@ -78,9 +80,9 @@ export default function CommandCenter() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-gray-900">Command Center</h2>
-          <p className="text-sm text-gray-500 mt-0.5">{kpis.conformite.total_sites} sites &middot; Derniere analyse: aujourd'hui</p>
+          <p className="text-sm text-gray-500 mt-0.5">{org.nom} &middot; {scopedSites.length} sites &middot; Derniere analyse: aujourd'hui</p>
         </div>
-        <Button onClick={() => navigate('/compliance')}>
+        <Button onClick={() => navigate('/conformite')}>
           <Scan size={16} />
           Lancer un scan
         </Button>
@@ -122,7 +124,7 @@ export default function CommandCenter() {
         <Card>
           <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
             <h3 className="font-semibold text-gray-800">A faire cette semaine</h3>
-            <Button variant="ghost" size="sm" onClick={() => navigate('/action-plan')}>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/actions')}>
               Voir tout <ArrowRight size={14} />
             </Button>
           </div>
