@@ -1,9 +1,31 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDemo } from '../contexts/DemoContext';
-import { Sparkles, ArrowRight } from 'lucide-react';
+import { Sparkles, ArrowRight, CheckCircle } from 'lucide-react';
+import { getOnboardingStatus } from '../services/api';
 
 const DemoBanner = ({ onUpgradeClick }) => {
   const { demoEnabled, toggleDemo } = useDemo();
+  const [onboarding, setOnboarding] = useState(null);
+
+  useEffect(() => {
+    getOnboardingStatus()
+      .then(setOnboarding)
+      .catch(() => {});
+  }, []);
+
+  // Si onboarding reel fait et demo desactivee → bandeau vert avec nom org
+  if (!demoEnabled && onboarding?.onboarding_complete) {
+    return (
+      <div className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-6 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <CheckCircle size={20} />
+          <span className="font-medium text-sm">
+            {onboarding.organisation_nom} — {onboarding.total_sites} site{onboarding.total_sites > 1 ? 's' : ''}, {onboarding.total_portefeuilles} portefeuille{onboarding.total_portefeuilles > 1 ? 's' : ''}
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   if (!demoEnabled) return null;
 
@@ -12,7 +34,8 @@ const DemoBanner = ({ onUpgradeClick }) => {
       <div className="flex items-center gap-3">
         <Sparkles size={20} />
         <span className="font-medium text-sm">
-          Mode Demo actif — Donnees de demonstration (Groupe Casino, 120 sites)
+          Mode Demo actif — Donnees de demonstration
+          {onboarding?.organisation_nom ? ` (${onboarding.organisation_nom}, ${onboarding.total_sites} sites)` : ''}
         </span>
       </div>
       <div className="flex items-center gap-4">

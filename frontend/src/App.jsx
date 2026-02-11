@@ -93,7 +93,7 @@ function App() {
 
           {/* Routes */}
           <Routes>
-            <Route path="/" element={<Dashboard />} />
+            <Route path="/" element={<Dashboard onUpgradeClick={() => setShowUpgradeWizard(true)} />} />
             <Route path="/cockpit" element={<Cockpit />} />
             <Route path="/sites/:id" element={<SiteDetail />} />
             <Route path="/action-plan" element={<ActionPlan />} />

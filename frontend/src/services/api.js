@@ -168,4 +168,18 @@ export const runAnalysis = (meterId) => api.post('/energy/analysis/run', null, {
 export const getAnalysisSummary = (meterId) => api.get('/energy/analysis/summary', { params: { meter_id: meterId } }).then(r => r.data);
 export const generateDemoEnergy = (data) => api.post('/energy/demo/generate', data).then(r => r.data);
 
+// ========================================
+// ONBOARDING
+// ========================================
+
+export const createOnboarding = (data) => api.post('/onboarding', data).then(r => r.data);
+export const importSitesCsv = (file) => {
+  const fd = new FormData();
+  fd.append('file', file);
+  return api.post('/onboarding/import-csv', fd, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }).then(r => r.data);
+};
+export const getOnboardingStatus = () => api.get('/onboarding/status').then(r => r.data);
+
 export default api;

@@ -3,10 +3,10 @@
  * Vue d'ensemble des 120 sites
  */
 import { useEffect, useState } from 'react';
-import { getSites, getAlertes } from '../services/api';
-import { Flame, Building2, AlertTriangle, TrendingUp } from 'lucide-react';
+import { getSites, getAlertes, getOnboardingStatus } from '../services/api';
+import { Flame, Building2, AlertTriangle, TrendingUp, Upload, Plus } from 'lucide-react';
 
-function Dashboard() {
+function Dashboard({ onUpgradeClick }) {
   const [sites, setSites] = useState([]);
   const [alertes, setAlertes] = useState([]);
   const [stats, setStats] = useState({
@@ -14,15 +14,18 @@ function Dashboard() {
     sitesActifs: 0,
     alertesActives: 0,
   });
+  const [orgName, setOrgName] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const sitesData = await getSites({ limit: 120 });
+        const [sitesData, alertesData, onboardingData] = await Promise.all([
+          getSites({ limit: 120 }),
+          getAlertes({ resolue: false, limit: 50 }),
+          getOnboardingStatus().catch(() => null),
+        ]);
         setSites(sitesData.sites);
-
-        const alertesData = await getAlertes({ resolue: false, limit: 50 });
         setAlertes(alertesData.alertes);
 
         setStats({
@@ -30,6 +33,10 @@ function Dashboard() {
           sitesActifs: sitesData.sites.filter(s => s.actif).length,
           alertesActives: alertesData.total,
         });
+
+        if (onboardingData?.organisation_nom) {
+          setOrgName(onboardingData.organisation_nom);
+        }
 
         setLoading(false);
       } catch (error) {
@@ -66,7 +73,7 @@ function Dashboard() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
           <Flame style={{ width: '48px', height: '48px', color: '#fb923c' }} />
           <h1 style={{ fontSize: '36px', fontWeight: 'bold', color: 'white', margin: 0 }}>
-            PROMEOS Dashboard
+            {orgName ? `${orgName} — Dashboard` : 'PROMEOS Dashboard'}
           </h1>
         </div>
         <p style={{ color: '#ddd6fe', fontSize: '18px', margin: 0 }}>
@@ -136,8 +143,42 @@ function Dashboard() {
         </div>
       </div>
 
+      {/* CTA si 0 sites */}
+      {stats.totalSites === 0 && !loading && (
+        <div style={{
+          background: 'white',
+          borderRadius: '16px',
+          padding: '48px',
+          marginBottom: '32px',
+          boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+          textAlign: 'center',
+        }}>
+          <Building2 style={{ width: '64px', height: '64px', color: '#9ca3af', margin: '0 auto 16px' }} />
+          <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '8px', color: '#111827' }}>
+            Aucun site enregistre
+          </h2>
+          <p style={{ color: '#6b7280', marginBottom: '24px', maxWidth: '480px', margin: '0 auto 24px' }}>
+            Importez vos sites pour commencer a suivre votre consommation energetique et votre conformite reglementaire.
+          </p>
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+            <button
+              onClick={onUpgradeClick}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '8px',
+                padding: '12px 24px', background: '#4f46e5', color: 'white',
+                border: 'none', borderRadius: '10px', fontSize: '15px',
+                fontWeight: '600', cursor: 'pointer',
+              }}
+            >
+              <Upload style={{ width: '18px', height: '18px' }} />
+              Importer mes sites
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Sites récents */}
-      <div style={{
+      {stats.totalSites > 0 && <div style={{
         background: 'white',
         borderRadius: '16px',
         padding: '24px',
@@ -205,7 +246,7 @@ function Dashboard() {
             </tbody>
           </table>
         </div>
-      </div>
+      </div>}
 
       {/* Alertes récentes */}
       {alertes.length > 0 && (
