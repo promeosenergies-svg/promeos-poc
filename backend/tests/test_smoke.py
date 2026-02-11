@@ -9,12 +9,41 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 from main import app
+from models import Base
+from database import get_db
 
 
 @pytest.fixture
 def client():
     return TestClient(app)
+
+
+@pytest.fixture
+def isolated_client():
+    """Client with isolated in-memory DB for write tests."""
+    engine = create_engine(
+        "sqlite:///:memory:",
+        echo=False,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(bind=engine)
+    session = sessionmaker(bind=engine)()
+
+    def _override():
+        try:
+            yield session
+        finally:
+            pass
+
+    app.dependency_overrides[get_db] = _override
+    yield TestClient(app)
+    app.dependency_overrides.clear()
+    session.close()
 
 
 class TestHealthEndpoint:
@@ -134,3 +163,32 @@ class TestOpenAPISchema:
         schema = r.json()
         assert "paths" in schema
         assert len(schema["paths"]) > 50  # At least 50 unique paths
+
+
+class TestAPICreateChain:
+    """Verify write operations: create Org + Site via onboarding API."""
+
+    def test_onboarding_creates_org_and_site(self, isolated_client):
+        r = isolated_client.post("/api/onboarding", json={
+            "organisation": {"nom": "Smoke Corp", "siren": "999999999", "type_client": "bureau"},
+            "sites": [{"nom": "Smoke Site", "type": "bureau", "surface_m2": 1500}],
+        })
+        assert r.status_code == 200
+        data = r.json()
+        assert data["status"] == "ok"
+        assert data["organisation_id"] is not None
+        assert data["sites_created"] == 1
+
+    def test_onboarding_status_reflects_creation(self, isolated_client):
+        # Create
+        isolated_client.post("/api/onboarding", json={
+            "organisation": {"nom": "Status Corp"},
+            "sites": [{"nom": "Site A", "type": "bureau"}],
+        })
+        # Check status
+        r = isolated_client.get("/api/onboarding/status")
+        assert r.status_code == 200
+        data = r.json()
+        assert data["has_organisation"] is True
+        assert data["onboarding_complete"] is True
+        assert data["total_sites"] >= 1
