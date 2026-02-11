@@ -1,0 +1,93 @@
+{
+  "invoice_id": "DEMO-GAZ-001",
+  "energy_type": "gaz",
+  "supplier": "Engie Entreprises",
+  "contract_ref": "CTR-ENGIE-DEMO-001",
+  "pdl_pce": "GI000789012345",
+  "site_id": 2,
+  "invoice_date": "2025-01-20",
+  "due_date": "2025-02-20",
+  "period_start": "2024-12-01",
+  "period_end": "2024-12-31",
+  "total_ht": 1423.67,
+  "total_tva": 269.34,
+  "total_ttc": 1693.01,
+  "conso_kwh": 25000,
+  "source_format": "json",
+  "components": [
+    {
+      "component_type": "abonnement",
+      "label": "Abonnement distribution gaz T2",
+      "quantity": 1,
+      "unit": "mois",
+      "unit_price": 38.50,
+      "amount_ht": 38.50,
+      "tva_rate": 5.5,
+      "tva_amount": 2.12
+    },
+    {
+      "component_type": "terme_variable",
+      "label": "Molecule gaz naturel",
+      "quantity": 25000,
+      "unit": "kWh",
+      "unit_price": 0.0385,
+      "amount_ht": 962.50,
+      "tva_rate": 20.0,
+      "tva_amount": 192.50
+    },
+    {
+      "component_type": "terme_fixe",
+      "label": "ATRD7 - Part fixe distribution GRDF",
+      "quantity": 1,
+      "unit": "mois",
+      "unit_price": 52.80,
+      "amount_ht": 52.80,
+      "tva_rate": 5.5,
+      "tva_amount": 2.90
+    },
+    {
+      "component_type": "turpe_energie",
+      "label": "ATRD7 - Part proportionnelle distribution",
+      "quantity": 25000,
+      "unit": "kWh",
+      "unit_price": 0.0062,
+      "amount_ht": 155.00,
+      "tva_rate": 20.0,
+      "tva_amount": 31.00
+    },
+    {
+      "component_type": "cta",
+      "label": "CTA (Contribution Tarifaire d'Acheminement)",
+      "quantity": 1,
+      "unit": "forfait",
+      "amount_ht": 14.87,
+      "tva_rate": 5.5,
+      "tva_amount": 0.82
+    },
+    {
+      "component_type": "accise",
+      "label": "Accise sur le gaz naturel (ex-TICGN)",
+      "quantity": 25000,
+      "unit": "kWh",
+      "unit_price": 0.008,
+      "amount_ht": 200.00,
+      "tva_rate": 20.0,
+      "tva_amount": 40.00
+    },
+    {
+      "component_type": "tva_reduite",
+      "label": "TVA 5,5%",
+      "amount_ht": 106.17,
+      "tva_rate": 5.5,
+      "tva_amount": 5.84
+    },
+    {
+      "component_type": "tva_normale",
+      "label": "TVA 20%",
+      "amount_ht": 1317.50,
+      "tva_rate": 20.0,
+      "tva_amount": 263.50
+    }
+  ],
+  "_demo_notes": "Facture demo gaz naturel B2B - profil entrepot chauffage gaz - T2 GRDF"
+}

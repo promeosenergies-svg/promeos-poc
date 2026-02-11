@@ -1,0 +1,78 @@
+{
+  "invoice_id": "DEMO-ELEC-ERR-TVA",
+  "energy_type": "elec",
+  "supplier": "EDF Entreprises",
+  "contract_ref": "CTR-EDF-DEMO-002",
+  "pdl_pce": "30001234567891",
+  "site_id": 3,
+  "invoice_date": "2025-03-10",
+  "due_date": "2025-04-10",
+  "period_start": "2025-02-01",
+  "period_end": "2025-02-28",
+  "total_ht": 1850.00,
+  "total_tva": 390.00,
+  "total_ttc": 2240.00,
+  "conso_kwh": 12000,
+  "puissance_souscrite_kva": 80,
+  "source_format": "json",
+  "components": [
+    {
+      "component_type": "abonnement",
+      "label": "Abonnement Option Base C5",
+      "quantity": 1,
+      "unit": "mois",
+      "unit_price": 120.00,
+      "amount_ht": 120.00,
+      "tva_rate": 20.0,
+      "tva_amount": 24.00,
+      "_anomaly_hint": "TVA abonnement devrait etre 5.5% pas 20%"
+    },
+    {
+      "component_type": "conso_base",
+      "label": "Energie base",
+      "quantity": 12000,
+      "unit": "kWh",
+      "unit_price": 0.095,
+      "amount_ht": 1140.00,
+      "tva_rate": 20.0,
+      "tva_amount": 228.00
+    },
+    {
+      "component_type": "turpe_fixe",
+      "label": "TURPE gestion",
+      "quantity": 1,
+      "unit": "mois",
+      "amount_ht": 18.48,
+      "tva_rate": 20.0,
+      "tva_amount": 3.70,
+      "_anomaly_hint": "TVA TURPE gestion devrait etre 5.5%"
+    },
+    {
+      "component_type": "accise",
+      "label": "Accise electricite",
+      "quantity": 12000,
+      "unit": "kWh",
+      "unit_price": 0.02121,
+      "amount_ht": 254.52,
+      "tva_rate": 20.0,
+      "tva_amount": 50.90
+    },
+    {
+      "component_type": "cta",
+      "label": "CTA",
+      "amount_ht": 42.00,
+      "tva_rate": 20.0,
+      "tva_amount": 8.40,
+      "_anomaly_hint": "TVA CTA devrait etre 5.5%"
+    },
+    {
+      "component_type": "autre",
+      "label": "Frais divers non detailles",
+      "amount_ht": 275.00,
+      "tva_rate": 20.0,
+      "tva_amount": 55.00,
+      "_anomaly_hint": "Composante non identifiee - montant suspect"
+    }
+  ],
+  "_demo_notes": "Facture avec ERREURS volontaires pour test audit rules: TVA incorrecte sur abo/CTA/TURPE + composante opaque + total TTC incorrect"
+}

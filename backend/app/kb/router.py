@@ -241,5 +241,189 @@ def get_doc(doc_id: str):
     }
 
 
+# ========================================
+# Bill Intelligence KB endpoints (T3-KB → T5-KB)
+# ========================================
+
+class IngestRequest(BaseModel):
+    doc_id: str
+    title: str
+    file_path: str
+    source_org: str = "unknown"
+    doc_type: str = "html"
+    published_date: Optional[str] = None
+    effective_from: Optional[str] = None
+    effective_to: Optional[str] = None
+    version_tag: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class ExtractRuleRequest(BaseModel):
+    rule_card_id: str
+    name: str
+    scope: str  # elec | gas | both
+    category: str  # tax | network | invoice_structure | vat | ...
+    intent: str
+    formula_or_check: str
+    inputs_needed: List[str] = []
+    effective_from: Optional[str] = None
+    effective_to: Optional[str] = None
+    citation_ids: List[str] = []
+    status: str = "ACTIVE"
+    notes: Optional[str] = None
+
+
+class DocSearchRequest(BaseModel):
+    q: str
+    doc_id: Optional[str] = None
+    limit: int = 10
+
+
+@router.post("/ingest")
+def ingest_doc(request: IngestRequest):
+    """
+    Ingest a raw document into KB.
+    Creates doc manifest + chunks + normalized text.
+    """
+    try:
+        from .doc_ingest import ingest_document
+        result = ingest_document(
+            doc_id=request.doc_id,
+            title=request.title,
+            file_path=request.file_path,
+            source_org=request.source_org,
+            doc_type=request.doc_type,
+            published_date=request.published_date,
+            effective_from=request.effective_from,
+            effective_to=request.effective_to,
+            version_tag=request.version_tag,
+            notes=request.notes,
+        )
+        if result["status"] == "error":
+            raise HTTPException(status_code=400, detail=result["message"])
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Ingest error: {str(e)[:200]}")
+
+
+@router.post("/ingest-referential")
+def ingest_referential():
+    """
+    Auto-ingest all referential snapshots as KB documents.
+    Idempotent: skips already-ingested docs with same hash.
+    """
+    try:
+        from .doc_ingest import ingest_referential_snapshots
+        return ingest_referential_snapshots()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Ingest error: {str(e)[:200]}")
+
+
+@router.post("/reindex")
+def reindex_kb():
+    """Rebuild FTS5 index for all KB items."""
+    try:
+        result = indexer.rebuild_index()
+        return {"status": "ok", **result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Reindex error: {str(e)[:200]}")
+
+
+@router.post("/search-docs")
+def search_docs(request: DocSearchRequest):
+    """
+    Search KB document chunks (full-text).
+    Returns candidate chunks for citation creation.
+    """
+    try:
+        from .doc_ingest import search_doc_chunks
+        results = search_doc_chunks(
+            query=request.q,
+            doc_id=request.doc_id,
+            limit=request.limit,
+        )
+        return {
+            "query": request.q,
+            "results": results,
+            "count": len(results),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Search error: {str(e)[:200]}")
+
+
+@router.post("/extract-rule")
+def extract_rule(request: ExtractRuleRequest):
+    """
+    Create a RuleCard from selected citations.
+    P5: normative rules MUST have >= 1 citation.
+    """
+    try:
+        from .citations import create_rule_card
+        card = create_rule_card(
+            rule_card_id=request.rule_card_id,
+            name=request.name,
+            scope=request.scope,
+            category=request.category,
+            intent=request.intent,
+            formula_or_check=request.formula_or_check,
+            inputs_needed=request.inputs_needed,
+            effective_from=request.effective_from,
+            effective_to=request.effective_to,
+            citation_ids=request.citation_ids,
+            status=request.status,
+            notes=request.notes,
+        )
+        if not card:
+            raise HTTPException(status_code=500, detail="Failed to create RuleCard")
+        return card
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Extract-rule error: {str(e)[:200]}")
+
+
+@router.get("/rule-cards")
+def list_rule_cards(
+    scope: Optional[str] = Query(None),
+    category: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    limit: int = Query(100, ge=1, le=500),
+):
+    """List RuleCards with optional filters."""
+    try:
+        from .citations import get_rule_cards
+        cards = get_rule_cards(scope=scope, category=category, status=status, limit=limit)
+        return {"rule_cards": cards, "count": len(cards)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Rule cards error: {str(e)[:200]}")
+
+
+@router.get("/rule-cards/{rule_card_id}")
+def get_rule_card_endpoint(rule_card_id: str):
+    """Get a RuleCard by ID with its citations."""
+    from .citations import get_rule_card
+    card = get_rule_card(rule_card_id)
+    if not card:
+        raise HTTPException(status_code=404, detail=f"RuleCard {rule_card_id} not found")
+    return card
+
+
+@router.get("/citations/{doc_id}")
+def list_citations_for_doc(doc_id: str):
+    """List all citations for a document."""
+    from .citations import get_citations_by_doc
+    citations = get_citations_by_doc(doc_id)
+    return {"doc_id": doc_id, "citations": citations, "count": len(citations)}
+
+
+@router.get("/rule-card-stats")
+def rule_card_stats_endpoint():
+    """Get rule card + citation statistics including P5 compliance."""
+    from .citations import get_rule_card_stats
+    return get_rule_card_stats()
+
+
 # Export router
 __all__ = ["router"]

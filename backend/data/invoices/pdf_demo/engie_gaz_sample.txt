@@ -1,0 +1,28 @@
+Engie Entreprises
+Facture de gaz naturel
+
+N° de facture : ENGIE-2025-GAZ-001
+Ref. contrat : CTR-ENGIE-PRO-456
+Date facture : 20/01/2025
+Date d'echeance : 20/02/2025
+PCE : GI000789012345
+
+Periode de consommation
+Du : 01/12/2024 au 31/12/2024
+Consommation : 25000 kWh
+
+Detail des composantes
+--------------------------------------------------------------
+Abonnement distribution gaz T2                 38,50 EUR
+Molecule gaz naturel 25000 kWh x 0,0385 EUR/kWh  962,50 EUR
+ATRD7 - Part fixe distribution GRDF            52,80 EUR
+ATRD7 - Part proportionnelle distribution     155,00 EUR
+CTA                                            14,87 EUR
+Accise sur le gaz naturel (TICGN) 25000 kWh  200,00 EUR
+--------------------------------------------------------------
+
+Total HT : 1423,67 EUR
+Total TVA : 269,34 EUR
+Total TTC : 1693,01 EUR
+
+Net a payer : 1693,01 EUR

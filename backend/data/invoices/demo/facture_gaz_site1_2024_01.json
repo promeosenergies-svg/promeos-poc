@@ -1,0 +1,93 @@
+{
+  "invoice_id": "DEMO-GAZ-001-202401",
+  "energy_type": "gaz",
+  "supplier": "Engie Entreprises",
+  "contract_ref": "CTR-ENGIE-DEMO-001",
+  "pdl_pce": "GI000789012345",
+  "site_id": 1,
+  "invoice_date": "2024-02-20",
+  "due_date": "2024-03-21",
+  "period_start": "2024-01-01",
+  "period_end": "2024-01-31",
+  "total_ht": 2619.23,
+  "total_tva": 508.45,
+  "total_ttc": 3127.68,
+  "conso_kwh": 45609,
+  "source_format": "json",
+  "components": [
+    {
+      "component_type": "abonnement",
+      "label": "Abonnement distribution gaz T2",
+      "quantity": 1,
+      "unit": "mois",
+      "unit_price": 38.5,
+      "amount_ht": 38.5,
+      "tva_rate": 5.5,
+      "tva_amount": 2.12
+    },
+    {
+      "component_type": "terme_variable",
+      "label": "Molecule gaz naturel",
+      "quantity": 45609,
+      "unit": "kWh",
+      "unit_price": 0.0409,
+      "amount_ht": 1865.41,
+      "tva_rate": 20.0,
+      "tva_amount": 373.08
+    },
+    {
+      "component_type": "terme_fixe",
+      "label": "ATRD7 - Part fixe distribution GRDF",
+      "quantity": 1,
+      "unit": "mois",
+      "unit_price": 52.8,
+      "amount_ht": 52.8,
+      "tva_rate": 5.5,
+      "tva_amount": 2.9
+    },
+    {
+      "component_type": "turpe_energie",
+      "label": "ATRD7 - Part proportionnelle distribution",
+      "quantity": 45609,
+      "unit": "kWh",
+      "unit_price": 0.0062,
+      "amount_ht": 282.78,
+      "tva_rate": 20.0,
+      "tva_amount": 56.56
+    },
+    {
+      "component_type": "cta",
+      "label": "CTA (Contribution Tarifaire d'Acheminement)",
+      "quantity": 1,
+      "unit": "forfait",
+      "amount_ht": 14.87,
+      "tva_rate": 5.5,
+      "tva_amount": 0.82
+    },
+    {
+      "component_type": "accise",
+      "label": "Accise sur le gaz naturel (ex-TICGN)",
+      "quantity": 45609,
+      "unit": "kWh",
+      "unit_price": 0.008,
+      "amount_ht": 364.87,
+      "tva_rate": 20.0,
+      "tva_amount": 72.97
+    },
+    {
+      "component_type": "tva_reduite",
+      "label": "TVA 5,5%",
+      "amount_ht": 106.17,
+      "tva_rate": 5.5,
+      "tva_amount": 5.84
+    },
+    {
+      "component_type": "tva_normale",
+      "label": "TVA 20%",
+      "amount_ht": 2513.06,
+      "tva_rate": 20.0,
+      "tva_amount": 502.61
+    }
+  ],
+  "_demo_notes": "Facture demo gaz Engie Entreprises site 1 - 2024/01"
+}

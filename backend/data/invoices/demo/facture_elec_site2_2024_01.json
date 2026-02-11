@@ -1,0 +1,104 @@
+{
+  "invoice_id": "DEMO-ELEC-002-202401",
+  "energy_type": "elec",
+  "supplier": "TotalEnergies",
+  "contract_ref": "CTR-TE-DEMO-001",
+  "pdl_pce": "30009876543210",
+  "site_id": 2,
+  "invoice_date": "2024-02-15",
+  "due_date": "2024-03-16",
+  "period_start": "2024-01-01",
+  "period_end": "2024-01-31",
+  "total_ht": 2259.21,
+  "total_tva": 425.7,
+  "total_ttc": 2684.91,
+  "conso_kwh": 15075,
+  "puissance_souscrite_kva": 80,
+  "source_format": "json",
+  "components": [
+    {
+      "component_type": "abonnement",
+      "label": "Abonnement Option Base C5 - 80 kVA",
+      "quantity": 1,
+      "unit": "mois",
+      "unit_price": 98.4,
+      "amount_ht": 98.4,
+      "tva_rate": 5.5,
+      "tva_amount": 5.41
+    },
+    {
+      "component_type": "conso_hp",
+      "label": "Energie heures pleines",
+      "quantity": 8367,
+      "unit": "kWh",
+      "unit_price": 0.1022,
+      "amount_ht": 855.11,
+      "tva_rate": 20.0,
+      "tva_amount": 171.02
+    },
+    {
+      "component_type": "conso_hc",
+      "label": "Energie heures creuses",
+      "quantity": 6708,
+      "unit": "kWh",
+      "unit_price": 0.0804,
+      "amount_ht": 539.32,
+      "tva_rate": 20.0,
+      "tva_amount": 107.86
+    },
+    {
+      "component_type": "turpe_fixe",
+      "label": "TURPE - Composante de gestion",
+      "quantity": 1,
+      "unit": "mois",
+      "unit_price": 18.48,
+      "amount_ht": 18.48,
+      "tva_rate": 5.5,
+      "tva_amount": 1.02
+    },
+    {
+      "component_type": "turpe_puissance",
+      "label": "TURPE - Composante de soutirage fixe",
+      "quantity": 80,
+      "unit": "kVA",
+      "unit_price": 4.56,
+      "amount_ht": 364.8,
+      "tva_rate": 20.0,
+      "tva_amount": 72.96
+    },
+    {
+      "component_type": "cta",
+      "label": "Contribution Tarifaire d'Acheminement",
+      "quantity": 1,
+      "unit": "forfait",
+      "amount_ht": 63.36,
+      "tva_rate": 5.5,
+      "tva_amount": 3.48
+    },
+    {
+      "component_type": "accise",
+      "label": "Accise sur l'electricite (ex-CSPE/TICFE)",
+      "quantity": 15075,
+      "unit": "kWh",
+      "unit_price": 0.02121,
+      "amount_ht": 319.74,
+      "tva_rate": 20.0,
+      "tva_amount": 63.95
+    },
+    {
+      "component_type": "tva_reduite",
+      "label": "TVA 5,5% (abonnement + CTA + TURPE gestion)",
+      "amount_ht": 180.24,
+      "tva_rate": 5.5,
+      "tva_amount": 9.91
+    },
+    {
+      "component_type": "tva_normale",
+      "label": "TVA 20% (consommation + TURPE soutirage + accise)",
+      "amount_ht": 2078.97,
+      "tva_rate": 20.0,
+      "tva_amount": 415.79
+    }
+  ],
+  "_demo_notes": "Facture demo elec TotalEnergies site 2 - 2024/01"
+}

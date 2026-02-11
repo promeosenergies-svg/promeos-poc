@@ -1,0 +1,30 @@
+EDF Entreprises
+Facture d'electricite
+
+N° de facture : EDF-2024-12345
+Ref. contrat : CTR-EDF-PRO-789
+Date facture : 15/01/2025
+Date d'echeance : 15/02/2025
+PDL : 30001234567890
+
+Periode de consommation
+Du : 01/12/2024 au 31/12/2024
+Consommation : 18500 kWh
+Puissance souscrite : 120 kVA
+
+Detail des composantes
+--------------------------------------------------------------
+Abonnement Option Base C5 - 120 kVA          145,92 EUR
+Heures Pleines 11100 kWh x 0,0952 EUR/kWh   1056,72 EUR
+Heures Creuses 7400 kWh x 0,0741 EUR/kWh     548,34 EUR
+TURPE - Composante de gestion                  18,48 EUR
+TURPE - Composante de soutirage fixe          547,20 EUR
+CTA                                            63,36 EUR
+Accise sur l'electricite                      392,39 EUR
+--------------------------------------------------------------
+
+Total HT : 2772,41 EUR
+Total TVA : 521,46 EUR
+Total TTC : 3293,87 EUR
+
+Net a payer : 3293,87 EUR

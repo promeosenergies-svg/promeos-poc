@@ -1,0 +1,104 @@
+{
+  "invoice_id": "DEMO-ELEC-001-202311",
+  "energy_type": "elec",
+  "supplier": "EDF Entreprises",
+  "contract_ref": "CTR-EDF-DEMO-001",
+  "pdl_pce": "30001234567890",
+  "site_id": 1,
+  "invoice_date": "2023-12-15",
+  "due_date": "2024-01-14",
+  "period_start": "2023-11-01",
+  "period_end": "2023-11-30",
+  "total_ht": 2685.91,
+  "total_tva": 504.16,
+  "total_ttc": 3190.07,
+  "conso_kwh": 17995,
+  "puissance_souscrite_kva": 120,
+  "source_format": "json",
+  "components": [
+    {
+      "component_type": "abonnement",
+      "label": "Abonnement Option Base C5 - 120 kVA",
+      "quantity": 1,
+      "unit": "mois",
+      "unit_price": 145.92,
+      "amount_ht": 145.92,
+      "tva_rate": 5.5,
+      "tva_amount": 8.03
+    },
+    {
+      "component_type": "conso_hp",
+      "label": "Energie heures pleines",
+      "quantity": 9955,
+      "unit": "kWh",
+      "unit_price": 0.0945,
+      "amount_ht": 940.75,
+      "tva_rate": 20.0,
+      "tva_amount": 188.15
+    },
+    {
+      "component_type": "conso_hc",
+      "label": "Energie heures creuses",
+      "quantity": 8040,
+      "unit": "kWh",
+      "unit_price": 0.0732,
+      "amount_ht": 588.53,
+      "tva_rate": 20.0,
+      "tva_amount": 117.71
+    },
+    {
+      "component_type": "turpe_fixe",
+      "label": "TURPE - Composante de gestion",
+      "quantity": 1,
+      "unit": "mois",
+      "unit_price": 18.48,
+      "amount_ht": 18.48,
+      "tva_rate": 5.5,
+      "tva_amount": 1.02
+    },
+    {
+      "component_type": "turpe_puissance",
+      "label": "TURPE - Composante de soutirage fixe",
+      "quantity": 120,
+      "unit": "kVA",
+      "unit_price": 4.56,
+      "amount_ht": 547.2,
+      "tva_rate": 20.0,
+      "tva_amount": 109.44
+    },
+    {
+      "component_type": "cta",
+      "label": "Contribution Tarifaire d'Acheminement",
+      "quantity": 1,
+      "unit": "forfait",
+      "amount_ht": 63.36,
+      "tva_rate": 5.5,
+      "tva_amount": 3.48
+    },
+    {
+      "component_type": "accise",
+      "label": "Accise sur l'electricite (ex-CSPE/TICFE)",
+      "quantity": 17995,
+      "unit": "kWh",
+      "unit_price": 0.02121,
+      "amount_ht": 381.67,
+      "tva_rate": 20.0,
+      "tva_amount": 76.33
+    },
+    {
+      "component_type": "tva_reduite",
+      "label": "TVA 5,5% (abonnement + CTA + TURPE gestion)",
+      "amount_ht": 227.76,
+      "tva_rate": 5.5,
+      "tva_amount": 12.53
+    },
+    {
+      "component_type": "tva_normale",
+      "label": "TVA 20% (consommation + TURPE soutirage + accise)",
+      "amount_ht": 2458.15,
+      "tva_rate": 20.0,
+      "tva_amount": 491.63
+    }
+  ],
+  "_demo_notes": "Facture demo elec EDF Entreprises site 1 - 2023/11"
+}

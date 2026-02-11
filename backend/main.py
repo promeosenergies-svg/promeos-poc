@@ -16,6 +16,9 @@ from routes import (
 # Import KB router
 from app.kb.router import router as kb_router
 
+# Import Bill Intelligence router
+from app.bill_intelligence.router import router as bill_router
+
 # Créer l'application FastAPI
 app = FastAPI(
     title="PROMEOS API",
@@ -48,6 +51,7 @@ app.include_router(ai_router)
 app.include_router(kb_router)  # Knowledge Base (generic)
 app.include_router(kb_usages_router)  # KB Usages (archetypes, rules, recommendations)
 app.include_router(energy_router)  # Energy (import, analysis)
+app.include_router(bill_router)  # Bill Intelligence (audit, shadow billing)
 
 # Route racine
 @app.get("/")
