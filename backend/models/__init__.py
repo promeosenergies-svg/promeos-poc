@@ -33,6 +33,9 @@ from .conformite import Obligation
 from .evidence import Evidence
 from .compliance_finding import ComplianceFinding
 
+# Consumption diagnostics
+from .consumption_insight import ConsumptionInsight
+
 # Segmentation
 from .segmentation import SegmentationProfile
 
@@ -62,7 +65,7 @@ __all__ = [
     "Organisation", "EntiteJuridique", "Portefeuille",
     "Site", "Batiment", "Usage",
     "Compteur", "Consommation", "Alerte",
-    "Obligation", "Evidence", "ComplianceFinding",
+    "Obligation", "Evidence", "ComplianceFinding", "ConsumptionInsight",
     "SegmentationProfile",
     "DataPoint", "RegAssessment", "JobOutbox", "AiInsight", "RegSourceEvent",
     # KB models
