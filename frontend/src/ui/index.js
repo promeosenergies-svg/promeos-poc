@@ -8,3 +8,4 @@ export { Table, Thead, Tbody, Th, Tr, Td } from './Table';
 export { default as Pagination } from './Pagination';
 export { default as Skeleton, SkeletonCard, SkeletonTable } from './Skeleton';
 export { default as EmptyState } from './EmptyState';
+export { default as Modal } from './Modal';

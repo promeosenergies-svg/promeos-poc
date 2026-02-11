@@ -9,6 +9,7 @@ const LABELS = {
   'compliance': 'Conformite',
   'cockpit': 'Cockpit Executif',
   'cockpit-2min': '2 Minutes',
+  'actions': 'Actions',
   'action-plan': 'Plan d\'action',
   'consommations': 'Conso & Usages',
   'diagnostic-conso': 'Diagnostic Conso',
