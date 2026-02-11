@@ -10,6 +10,7 @@ from database import get_db
 from models import (
     Organisation, Site, Obligation, Compteur, ComplianceFinding,
     ConsumptionInsight, StatutConformite, TypeObligation,
+    EnergyInvoice, BillingInsight, BillingInvoiceStatus,
 )
 
 router = APIRouter(prefix="/api/dashboard", tags=["Dashboard 2min"])
@@ -80,9 +81,10 @@ def get_dashboard_2min(db: Session = Depends(get_db)):
             "non_conformes": 0,
         }
 
-    # Risque financier (base: obligations) + pertes estimees (insights conso)
+    # Risque financier (base: obligations) + pertes estimees (insights conso) + billing
     risque_total = db.query(func.sum(Site.risque_financier_euro)).scalar() or 0
     pertes_conso = db.query(func.sum(ConsumptionInsight.estimated_loss_eur)).scalar() or 0
+    pertes_billing = db.query(func.sum(BillingInsight.estimated_loss_eur)).scalar() or 0
 
     # Action prioritaire #1
     action_1 = _get_top_action(db, obligations)
@@ -150,7 +152,7 @@ def get_dashboard_2min(db: Session = Depends(get_db)):
             "type_client": org.type_client,
         },
         "conformite_status": conformite_status,
-        "pertes_estimees_eur": round(risque_total + pertes_conso, 2),
+        "pertes_estimees_eur": round(risque_total + pertes_conso + pertes_billing, 2),
         "action_1": action_1,
         "completude": completude,
         "findings_summary": findings_summary,
@@ -160,6 +162,7 @@ def get_dashboard_2min(db: Session = Depends(get_db)):
             "total_compteurs": total_compteurs,
             "total_obligations": len(obligations),
         },
+        "billing": _billing_summary(db),
     }
 
 
@@ -225,4 +228,20 @@ def _empty_completude() -> dict:
         "pct": 0,
         "checks": {"organisation": False, "sites": False, "compteurs": False},
         "message": "Creez votre organisation pour commencer",
+    }
+
+
+def _billing_summary(db: Session) -> dict:
+    """Billing intelligence summary for dashboard 2min."""
+    total_invoices = db.query(EnergyInvoice).count()
+    if total_invoices == 0:
+        return None
+    total_eur = db.query(func.sum(EnergyInvoice.total_eur)).scalar() or 0
+    anomalies_count = db.query(BillingInsight).count()
+    total_loss = db.query(func.sum(BillingInsight.estimated_loss_eur)).scalar() or 0
+    return {
+        "total_invoices": total_invoices,
+        "total_eur": round(total_eur, 2),
+        "anomalies_count": anomalies_count,
+        "total_loss_eur": round(total_loss, 2),
     }

@@ -13,7 +13,8 @@ from routes import (
     kb_usages_router, energy_router, monitoring_router, onboarding_router,
     import_router, dashboard_2min_router, segmentation_router,
     consumption_diag_router,
-    site_config_router
+    site_config_router,
+    billing_router
 )
 
 # Import KB router
@@ -62,6 +63,7 @@ app.include_router(dashboard_2min_router)  # Dashboard 2 minutes
 app.include_router(segmentation_router)  # Segmentation B2B (profil, questionnaire)
 app.include_router(consumption_diag_router)  # Diagnostic consommation V1
 app.include_router(site_config_router)  # Site config (schedule, tariff)
+app.include_router(billing_router)  # Bill Intelligence V2 (CSV import, shadow billing, anomaly engine)
 
 # Route racine
 @app.get("/")

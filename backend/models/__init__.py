@@ -11,6 +11,7 @@ from .enums import (
     ParkingType, OperatStatus, EnergyVector, SourceType,
     JobType, JobStatus, RegStatus, Severity, Confidence,
     InsightType, RegulationType, Typologie,
+    BillingEnergyType, InvoiceLineType, BillingInvoiceStatus,
 )
 
 # Hierarchie organisation
@@ -54,6 +55,11 @@ from .kb_models import (
     KBConfidence, KBStatus
 )
 
+# Bill Intelligence (persisted)
+from .billing_models import (
+    EnergyContract, EnergyInvoice, EnergyInvoiceLine, BillingInsight,
+)
+
 # Energy (Consumption & Analytics)
 from .energy_models import (
     Meter, MeterReading, DataImportJob, UsageProfile, Anomaly, Recommendation,
@@ -76,6 +82,8 @@ __all__ = [
     # Energy models
     "Meter", "MeterReading", "DataImportJob", "UsageProfile", "Anomaly", "Recommendation",
     "MonitoringSnapshot", "MonitoringAlert",
+    # Bill Intelligence models
+    "EnergyContract", "EnergyInvoice", "EnergyInvoiceLine", "BillingInsight",
     # Enums
     "TypeSite", "TypeCompteur", "SeveriteAlerte", "TypeUsage",
     "StatutConformite", "TypeObligation", "TypeEvidence", "StatutEvidence",
@@ -85,4 +93,5 @@ __all__ = [
     "KBConfidence", "KBStatus", "EnergyVectorModel", "FrequencyType",
     "ImportStatus", "AnomalySeverity", "RecommendationStatus",
     "AlertStatus", "AlertSeverity",
+    "BillingEnergyType", "InvoiceLineType", "BillingInvoiceStatus",
 ]

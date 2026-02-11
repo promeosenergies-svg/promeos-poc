@@ -188,3 +188,30 @@ class Typologie(str, enum.Enum):
     SANTE_MEDICO_SOCIAL = "sante_medico_social"
     ENSEIGNEMENT = "enseignement"
     MIXTE = "mixte"
+
+
+# ========================================
+# Enums Bill Intelligence
+# ========================================
+
+class BillingEnergyType(str, enum.Enum):
+    """Type d'energie pour les contrats et factures."""
+    ELEC = "elec"
+    GAZ = "gaz"
+
+
+class InvoiceLineType(str, enum.Enum):
+    """Types de lignes d'une facture energie."""
+    ENERGY = "energy"
+    NETWORK = "network"
+    TAX = "tax"
+    OTHER = "other"
+
+
+class BillingInvoiceStatus(str, enum.Enum):
+    """Statut d'une facture energie persistee."""
+    IMPORTED = "imported"
+    VALIDATED = "validated"
+    AUDITED = "audited"
+    ANOMALY = "anomaly"
+    ARCHIVED = "archived"
