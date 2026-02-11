@@ -17,6 +17,7 @@ import StatusPage from './pages/StatusPage';
 import ImportPage from './pages/ImportPage';
 import Cockpit2MinPage from './pages/Cockpit2MinPage';
 import SegmentationPage from './pages/SegmentationPage';
+import CompliancePage from './pages/CompliancePage';
 
 function App() {
   const [showUpgradeWizard, setShowUpgradeWizard] = useState(false);
@@ -51,6 +52,12 @@ function App() {
                     className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition text-sm"
                   >
                     Cockpit Executif
+                  </Link>
+                  <Link
+                    to="/compliance"
+                    className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700 transition text-sm"
+                  >
+                    Conformite
                   </Link>
                   <Link
                     to="/action-plan"
@@ -124,6 +131,7 @@ function App() {
             <Route path="/connectors" element={<ConnectorsPage />} />
             <Route path="/watchers" element={<WatchersPage />} />
             <Route path="/monitoring" element={<MonitoringPage />} />
+            <Route path="/compliance" element={<CompliancePage />} />
             <Route path="/segmentation" element={<SegmentationPage />} />
             <Route path="/import" element={<ImportPage />} />
             <Route path="/status" element={<StatusPage />} />
