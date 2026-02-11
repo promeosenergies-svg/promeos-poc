@@ -19,6 +19,7 @@ from .monitoring import router as monitoring_router
 from .onboarding import router as onboarding_router
 from .import_sites import router as import_router
 from .dashboard_2min import router as dashboard_2min_router
+from .segmentation import router as segmentation_router
 
 __all__ = [
     "sites_router",
@@ -39,4 +40,5 @@ __all__ = [
     "onboarding_router",
     "import_router",
     "dashboard_2min_router",
+    "segmentation_router",
 ]
