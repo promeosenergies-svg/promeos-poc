@@ -10,7 +10,7 @@ from .enums import (
     TypeEvidence, StatutEvidence,
     ParkingType, OperatStatus, EnergyVector, SourceType,
     JobType, JobStatus, RegStatus, Severity, Confidence,
-    InsightType, RegulationType,
+    InsightType, RegulationType, Typologie,
 )
 
 # Hierarchie organisation
@@ -31,6 +31,9 @@ from .alerte import Alerte
 # Conformite
 from .conformite import Obligation
 from .evidence import Evidence
+
+# Segmentation
+from .segmentation import SegmentationProfile
 
 # RegOps / Lifecycle
 from .datapoint import DataPoint
@@ -59,6 +62,7 @@ __all__ = [
     "Site", "Batiment", "Usage",
     "Compteur", "Consommation", "Alerte",
     "Obligation", "Evidence",
+    "SegmentationProfile",
     "DataPoint", "RegAssessment", "JobOutbox", "AiInsight", "RegSourceEvent",
     # KB models
     "KBVersion", "KBArchetype", "KBMappingCode", "KBAnomalyRule", "KBRecommendation", "KBTaxonomy",
@@ -70,7 +74,7 @@ __all__ = [
     "StatutConformite", "TypeObligation", "TypeEvidence", "StatutEvidence",
     "ParkingType", "OperatStatus", "EnergyVector", "SourceType",
     "JobType", "JobStatus", "RegStatus", "Severity", "Confidence",
-    "InsightType", "RegulationType",
+    "InsightType", "RegulationType", "Typologie",
     "KBConfidence", "KBStatus", "EnergyVectorModel", "FrequencyType",
     "ImportStatus", "AnomalySeverity", "RecommendationStatus",
     "AlertStatus", "AlertSeverity",

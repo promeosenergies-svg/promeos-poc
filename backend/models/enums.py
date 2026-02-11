@@ -173,3 +173,18 @@ class RegulationType(str, enum.Enum):
     BACS = "bacs"
     APER = "aper"
     CEE_P6 = "cee_p6"
+
+
+class Typologie(str, enum.Enum):
+    """Segment client detecte par la segmentation."""
+    TERTIAIRE_PRIVE = "tertiaire_prive"
+    TERTIAIRE_PUBLIC = "tertiaire_public"
+    INDUSTRIE = "industrie"
+    COMMERCE_RETAIL = "commerce_retail"
+    COPROPRIETE_SYNDIC = "copropriete_syndic"
+    BAILLEUR_SOCIAL = "bailleur_social"
+    COLLECTIVITE = "collectivite"
+    HOTELLERIE_RESTAURATION = "hotellerie_restauration"
+    SANTE_MEDICO_SOCIAL = "sante_medico_social"
+    ENSEIGNEMENT = "enseignement"
+    MIXTE = "mixte"
