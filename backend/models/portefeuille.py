@@ -11,9 +11,10 @@ class Portefeuille(Base, TimestampMixin):
     __tablename__ = "portefeuilles"
 
     id = Column(Integer, primary_key=True, index=True)
-    entite_juridique_id = Column(Integer, ForeignKey("entites_juridiques.id"), nullable=False)
+    entite_juridique_id = Column(Integer, ForeignKey("entites_juridiques.id"), nullable=False, index=True)
     nom = Column(String, nullable=False)
     description = Column(String, nullable=True)
 
     # Relations
-    entite_juridique = relationship("EntiteJuridique", backref="portefeuilles")
+    entite_juridique = relationship("EntiteJuridique", back_populates="portefeuilles")
+    sites = relationship("Site", back_populates="portefeuille")

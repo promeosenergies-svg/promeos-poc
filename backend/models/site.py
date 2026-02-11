@@ -40,7 +40,7 @@ class Site(Base, TimestampMixin):
     actif = Column(Boolean, default=True, comment="Site actif ou non")
 
     # Conformité réglementaire (snapshots calculés par compliance_engine)
-    portefeuille_id = Column(Integer, ForeignKey("portefeuilles.id"), nullable=True)
+    portefeuille_id = Column(Integer, ForeignKey("portefeuilles.id"), nullable=True, index=True)
     statut_decret_tertiaire = Column(Enum(StatutConformite), default=StatutConformite.A_RISQUE)
     avancement_decret_pct = Column(Float, default=0.0)  # % avancement (0-100)
     statut_bacs = Column(Enum(StatutConformite), default=StatutConformite.A_RISQUE)
@@ -75,7 +75,12 @@ class Site(Base, TimestampMixin):
         cascade="all, delete-orphan",
         lazy="dynamic"
     )
-    portefeuille = relationship("Portefeuille", backref="sites")
+    portefeuille = relationship("Portefeuille", back_populates="sites")
+    batiments = relationship(
+        "Batiment",
+        back_populates="site",
+        cascade="all, delete-orphan",
+    )
 
     # Energy analytics
     meters = relationship(

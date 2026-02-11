@@ -10,11 +10,20 @@ import enum
 # ========================================
 
 class TypeSite(str, enum.Enum):
-    """Types de sites gérés par PROMEOS"""
+    """Types de sites gérés par PROMEOS — segments B2B France"""
+    # Existants
     MAGASIN = "magasin"
     USINE = "usine"
     BUREAU = "bureau"
     ENTREPOT = "entrepot"
+    # Nouveaux segments B2B
+    COMMERCE = "commerce"
+    COPROPRIETE = "copropriete"
+    LOGEMENT_SOCIAL = "logement_social"
+    COLLECTIVITE = "collectivite"
+    HOTEL = "hotel"
+    SANTE = "sante"
+    ENSEIGNEMENT = "enseignement"
 
 
 class TypeCompteur(str, enum.Enum):

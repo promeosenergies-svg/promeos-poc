@@ -16,6 +16,7 @@ from .ai_route import router as ai_router
 from .kb_usages import router as kb_usages_router
 from .energy import router as energy_router
 from .monitoring import router as monitoring_router
+from .onboarding import router as onboarding_router
 
 __all__ = [
     "sites_router",
@@ -33,4 +34,5 @@ __all__ = [
     "kb_usages_router",
     "energy_router",
     "monitoring_router",
+    "onboarding_router",
 ]

@@ -11,7 +11,7 @@ class EntiteJuridique(Base, TimestampMixin):
     __tablename__ = "entites_juridiques"
 
     id = Column(Integer, primary_key=True, index=True)
-    organisation_id = Column(Integer, ForeignKey("organisations.id"), nullable=False)
+    organisation_id = Column(Integer, ForeignKey("organisations.id"), nullable=False, index=True)
     nom = Column(String, nullable=False)
     siren = Column(String(9), unique=True, nullable=False)
     siret = Column(String(14), nullable=True)
@@ -20,4 +20,9 @@ class EntiteJuridique(Base, TimestampMixin):
     insee_code = Column(String(5), nullable=True, comment="Code INSEE siege")
 
     # Relations
-    organisation = relationship("Organisation", backref="entites_juridiques")
+    organisation = relationship("Organisation", back_populates="entites_juridiques")
+    portefeuilles = relationship(
+        "Portefeuille",
+        back_populates="entite_juridique",
+        cascade="all, delete-orphan",
+    )
