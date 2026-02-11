@@ -10,10 +10,10 @@
 
 | # | Item | I | C | E | ICE | Preuve attendue | Statut |
 |---|------|---|---|---|-----|-----------------|--------|
-| 1 | **Auth JWT + RBAC (3 roles)** | 10 | 9 | 7 | 63 | Login/logout fonctionnel, 94 endpoints proteges, 10 tests auth | TODO |
+| 1 | **Auth JWT + RBAC (3 roles)** | 10 | 9 | 7 | 63 | Login/logout fonctionnel, 118 endpoints proteges, 10 tests auth | TODO |
 | 2 | **Dockerize backend + frontend** | 9 | 9 | 8 | 64.8 | `docker compose up` lance tout, CI-ready | TODO |
 | 3 | **CI GitHub Actions** | 9 | 9 | 8 | 64.8 | PR = tests auto + build auto + badge green | TODO |
-| 4 | **MAJ README avec etat reel** | 8 | 10 | 10 | 80 | README reflete 427 tests, 97 endpoints, 9 pages | TODO |
+| 4 | **MAJ README avec etat reel** | 8 | 10 | 10 | 80 | README reflete 574 tests, 118 endpoints, 11 pages | TODO |
 | 5 | **Corriger warnings utcnow()** | 6 | 10 | 9 | 54 | 0 DeprecationWarning dans pytest | TODO |
 | 6 | **Indexes DB critiques** | 8 | 10 | 9 | 72 | 10 indexes sur FK + colonnes filtrees, queries <50ms | TODO |
 | 7 | **Smoke test /health + API create** | 9 | 10 | 9 | 81 | 1 test ping /health, 1 test create Org/Site via API | SPRINT 0 |
@@ -25,7 +25,7 @@
 | 13 | **Shadow billing L2** | 7 | 7 | 5 | 24.5 | Optimisation tarifaire (meilleure option HP/HC vs Base) | TODO |
 | 14 | **Notifications email** | 6 | 8 | 7 | 33.6 | Email sur alerte CRITICAL, template HTML | TODO |
 | 15 | **Export PDF rapport site** | 7 | 8 | 6 | 33.6 | PDF telechargeab avec conformite + conso + alertes | TODO |
-| 16 | **PostgreSQL migration** | 9 | 7 | 4 | 25.2 | Meme 427 tests green sur Postgres, script migration | TODO |
+| 16 | **PostgreSQL migration** | 9 | 7 | 4 | 25.2 | Meme 574 tests green sur Postgres, script migration | TODO |
 | 17 | **Audit logging** | 6 | 8 | 7 | 33.6 | Table AuditLog, middleware, qui/quoi/quand | TODO |
 | 18 | **Structured JSON logging** | 6 | 9 | 9 | 48.6 | Logs JSON parsables, correlation_id | TODO |
 | 19 | **Activer IA Claude live** | 7 | 8 | 8 | 44.8 | 5 agents fonctionnels avec cle API, fallback stub | TODO |
@@ -47,6 +47,7 @@
 | C5 | Referentiel Tarifs & Taxes | 56 | 2026-02-10 | 3ff603a |
 | C6 | Electric Monitoring complet | 81 | 2026-02-11 | 4e53a6f |
 | C7 | Onboarding B2B (wizard + API + NAF + CSV) | 85 | 2026-02-11 | - |
+| C8 | Diagnostic Conso V1.1 (horaires, tarif, stats robustes, actions) | 72 | 2026-02-11 | - |
 
 ---
 

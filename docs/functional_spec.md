@@ -21,9 +21,9 @@ PROMEOS = cockpit independant du fournisseur pour piloter un patrimoine immobili
 
 | Element | Quantite | Statut |
 |---------|----------|--------|
-| Endpoints API | 97 | Stable |
-| Modeles SQLAlchemy | 23 classes | Stable |
-| Tests pytest | 427 | 427/427 green |
+| Endpoints API | 118 | Stable |
+| Modeles SQLAlchemy | 25 classes | Stable |
+| Tests pytest | 574 | 574/574 green |
 | DB principale | promeos.db (SQLite) | 2.0 MB demo |
 | DB Knowledge Base | kb.db (SQLite FTS5) | 176 KB |
 
@@ -35,6 +35,7 @@ PROMEOS = cockpit independant du fournisseur pour piloter un patrimoine immobili
 | **RegOps** | 4 moteurs de regles YAML (Decret Tertiaire, BACS, APER, CEE P6), scoring composite, cache RegAssessment, job queue async | 4 endpoints |
 | **Knowledge Base** | 12 items YAML, FTS5, archetypes, regles anomalie, recommendations, lifecycle (draft/validated/deprecated) | 20 endpoints |
 | **Usages & Consommations** | Import CSV/JSON, profils, anomalies, recommendations ICE-scored, analytics engine | 7 endpoints |
+| **Diagnostic Conso V1.1** | Horaires site, tarif ref, stats robustes (median+MAD, linreg), actions recommandees par insight | 4 endpoints |
 | **Bill Intelligence** | Parser JSON/PDF, 20 regles audit, shadow billing L1, timeline 24 mois, couverture L0-L3, export CSV/HTML | 13 endpoints |
 | **Electric Monitoring** | KPIEngine (Pmax/P95/P99/profils), PowerEngine (risque 0-100), DataQualityEngine (qualite 0-100), 12 alertes Tier-1 avec lifecycle | 6 endpoints |
 | **Connecteurs** | RTE eCO2mix + PVGIS (live), Enedis + Meteo (stubs) | 3 endpoints |
@@ -54,6 +55,7 @@ PROMEOS = cockpit independant du fournisseur pour piloter un patrimoine immobili
 | RegOps | `/regops/:id` | Audit reglementaire, findings, actions |
 | Plan d'action | `/action-plan` | Actions priorisees cross-sites |
 | Conso & Usages | `/consommations` | Profils energetiques, anomalies |
+| Diagnostic Conso | `/diagnostic-conso` | Diagnostic V1.1: horaires, talon, pointes, derive, lacunes, actions |
 | Monitoring | `/monitoring` | KPIs electriques, alertes, jour-type |
 | Connecteurs | `/connectors` | Statut connecteurs, test/sync |
 | Veille Reglementaire | `/watchers` | Evenements reglementaires, revue |
@@ -133,6 +135,16 @@ PROMEOS = cockpit independant du fournisseur pour piloter un patrimoine immobili
 - CSV: separateur auto (`,` ou `;`), BOM Excel, gestion erreurs ligne par ligne
 - Dashboard adaptatif: nom org dynamique, CTA "Importer mes sites" si 0 sites
 - DemoBanner: affiche le nom de l'organisation reelle apres onboarding
+
+### M8 - Diagnostic Consommation V1.1
+- **Horaires site** (SiteOperatingSchedule): GET/PUT /api/site/{id}/schedule, timezone, jours ouvrables, heures ouverture/fermeture, is_24_7, exceptions
+- **Tarif reference** (SiteTariffProfile): GET/PUT /api/site/{id}/tariff, prix EUR/kWh par site (defaut 0.18)
+- **Stats robustes**: median + 3*1.4826*MAD pour detection pointes (remplace mean+2*std), regression lineaire pour derive (remplace comparaison naive), Q10 vs mediane heures ouvrables pour talon
+- **Actions recommandees**: 1-3 actions par insight avec titre, rationale, gain attendu kWh/EUR, effort, priorite
+- **Detection horaires**: hors_horaires respecte le schedule site (24/7 = pas d'alerte, jours feries exclus)
+- **Pertes EUR**: recalculees avec le tarif specifique au site
+- **Frontend**: table expandable avec actions recommandees, prix ref et horaires affiches
+- **Dashboard 2min**: fallback action_1 depuis top insight conso si pas de NOK conformite
 
 ---
 
