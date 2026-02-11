@@ -18,6 +18,7 @@ import ImportPage from './pages/ImportPage';
 import Cockpit2MinPage from './pages/Cockpit2MinPage';
 import SegmentationPage from './pages/SegmentationPage';
 import CompliancePage from './pages/CompliancePage';
+import ConsumptionDiagPage from './pages/ConsumptionDiagPage';
 
 function App() {
   const [showUpgradeWizard, setShowUpgradeWizard] = useState(false);
@@ -78,6 +79,12 @@ function App() {
                     Monitoring
                   </Link>
                   <Link
+                    to="/diagnostic-conso"
+                    className="px-4 py-2 rounded bg-orange-600 text-white hover:bg-orange-700 transition text-sm"
+                  >
+                    Usages & Derives
+                  </Link>
+                  <Link
                     to="/connectors"
                     className="px-4 py-2 rounded hover:bg-gray-100 text-gray-700 hover:text-gray-900 transition text-sm"
                   >
@@ -132,6 +139,7 @@ function App() {
             <Route path="/watchers" element={<WatchersPage />} />
             <Route path="/monitoring" element={<MonitoringPage />} />
             <Route path="/compliance" element={<CompliancePage />} />
+            <Route path="/diagnostic-conso" element={<ConsumptionDiagPage />} />
             <Route path="/segmentation" element={<SegmentationPage />} />
             <Route path="/import" element={<ImportPage />} />
             <Route path="/status" element={<StatusPage />} />

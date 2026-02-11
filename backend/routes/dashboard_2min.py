@@ -9,7 +9,7 @@ from sqlalchemy import func
 from database import get_db
 from models import (
     Organisation, Site, Obligation, Compteur, ComplianceFinding,
-    StatutConformite, TypeObligation,
+    ConsumptionInsight, StatutConformite, TypeObligation,
 )
 
 router = APIRouter(prefix="/api/dashboard", tags=["Dashboard 2min"])
@@ -80,8 +80,9 @@ def get_dashboard_2min(db: Session = Depends(get_db)):
             "non_conformes": 0,
         }
 
-    # Risque financier
+    # Risque financier (base: obligations) + pertes estimees (insights conso)
     risque_total = db.query(func.sum(Site.risque_financier_euro)).scalar() or 0
+    pertes_conso = db.query(func.sum(ConsumptionInsight.estimated_loss_eur)).scalar() or 0
 
     # Action prioritaire #1
     action_1 = _get_top_action(db, obligations)
@@ -126,7 +127,7 @@ def get_dashboard_2min(db: Session = Depends(get_db)):
             "type_client": org.type_client,
         },
         "conformite_status": conformite_status,
-        "pertes_estimees_eur": round(risque_total, 2),
+        "pertes_estimees_eur": round(risque_total + pertes_conso, 2),
         "action_1": action_1,
         "completude": completude,
         "findings_summary": findings_summary,

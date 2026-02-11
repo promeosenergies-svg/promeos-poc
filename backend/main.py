@@ -11,7 +11,8 @@ from routes import (
     cockpit_router, compliance_router, demo_router, guidance_router,
     regops_router, connectors_router, watchers_router, ai_router,
     kb_usages_router, energy_router, monitoring_router, onboarding_router,
-    import_router, dashboard_2min_router, segmentation_router
+    import_router, dashboard_2min_router, segmentation_router,
+    consumption_diag_router
 )
 
 # Import KB router
@@ -58,6 +59,7 @@ app.include_router(onboarding_router)  # Onboarding B2B (org, sites, CSV import)
 app.include_router(import_router)  # Import CSV standalone
 app.include_router(dashboard_2min_router)  # Dashboard 2 minutes
 app.include_router(segmentation_router)  # Segmentation B2B (profil, questionnaire)
+app.include_router(consumption_diag_router)  # Diagnostic consommation V1
 
 # Route racine
 @app.get("/")

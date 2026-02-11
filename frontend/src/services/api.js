@@ -231,4 +231,13 @@ export const getComplianceSites = (params = {}) => api.get('/compliance/sites', 
 export const recomputeComplianceRules = (orgId = null) => api.post('/compliance/recompute-rules', null, { params: { org_id: orgId } }).then(r => r.data);
 export const getComplianceRules = () => api.get('/compliance/rules').then(r => r.data);
 
+// ========================================
+// CONSUMPTION DIAGNOSTIC
+// ========================================
+
+export const getConsumptionInsights = (orgId = null) => api.get('/consumption/insights', { params: { org_id: orgId } }).then(r => r.data);
+export const getConsumptionSite = (siteId) => api.get(`/consumption/site/${siteId}`).then(r => r.data);
+export const runConsumptionDiagnose = (orgId = null, days = 30) => api.post('/consumption/diagnose', null, { params: { org_id: orgId, days } }).then(r => r.data);
+export const seedDemoConsumption = (siteId = null, days = 30) => api.post('/consumption/seed-demo', null, { params: { site_id: siteId, days } }).then(r => r.data);
+
 export default api;
