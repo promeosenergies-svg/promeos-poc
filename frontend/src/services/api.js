@@ -214,4 +214,12 @@ export const createCompteur = (data) => api.post('/compteurs', data).then(r => r
 
 export const getDashboard2min = () => api.get('/dashboard/2min').then(r => r.data);
 
+// ========================================
+// SEGMENTATION
+// ========================================
+
+export const getSegmentationQuestions = () => api.get('/segmentation/questions').then(r => r.data);
+export const submitSegmentationAnswers = (answers) => api.post('/segmentation/answers', { answers }).then(r => r.data);
+export const getSegmentationProfile = () => api.get('/segmentation/profile').then(r => r.data);
+
 export default api;

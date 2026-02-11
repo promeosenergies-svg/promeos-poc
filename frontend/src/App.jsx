@@ -16,6 +16,7 @@ import MonitoringPage from './pages/MonitoringPage';
 import StatusPage from './pages/StatusPage';
 import ImportPage from './pages/ImportPage';
 import Cockpit2MinPage from './pages/Cockpit2MinPage';
+import SegmentationPage from './pages/SegmentationPage';
 
 function App() {
   const [showUpgradeWizard, setShowUpgradeWizard] = useState(false);
@@ -82,6 +83,12 @@ function App() {
                     Veille Réglementaire
                   </Link>
                   <Link
+                    to="/segmentation"
+                    className="px-4 py-2 rounded hover:bg-gray-100 text-gray-700 hover:text-gray-900 transition text-sm"
+                  >
+                    Segmentation
+                  </Link>
+                  <Link
                     to="/import"
                     className="px-4 py-2 rounded hover:bg-gray-100 text-gray-700 hover:text-gray-900 transition text-sm"
                   >
@@ -117,6 +124,7 @@ function App() {
             <Route path="/connectors" element={<ConnectorsPage />} />
             <Route path="/watchers" element={<WatchersPage />} />
             <Route path="/monitoring" element={<MonitoringPage />} />
+            <Route path="/segmentation" element={<SegmentationPage />} />
             <Route path="/import" element={<ImportPage />} />
             <Route path="/status" element={<StatusPage />} />
           </Routes>
