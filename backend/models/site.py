@@ -81,6 +81,11 @@ class Site(Base, TimestampMixin):
         back_populates="site",
         cascade="all, delete-orphan",
     )
+    obligations = relationship(
+        "Obligation",
+        back_populates="site",
+        cascade="all, delete-orphan",
+    )
 
     # Energy analytics
     meters = relationship(

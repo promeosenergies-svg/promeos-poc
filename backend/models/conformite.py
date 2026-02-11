@@ -12,7 +12,7 @@ class Obligation(Base, TimestampMixin):
     __tablename__ = "obligations"
 
     id = Column(Integer, primary_key=True, index=True)
-    site_id = Column(Integer, ForeignKey("sites.id"), nullable=False)
+    site_id = Column(Integer, ForeignKey("sites.id"), nullable=False, index=True)
     type = Column(Enum(TypeObligation), nullable=False)
     description = Column(String, nullable=True)
     echeance = Column(Date, nullable=True)
@@ -20,4 +20,4 @@ class Obligation(Base, TimestampMixin):
     avancement_pct = Column(Float, default=0.0)  # 0-100
 
     # Relations
-    site = relationship("Site", backref="obligations")
+    site = relationship("Site", back_populates="obligations")

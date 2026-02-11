@@ -17,4 +17,4 @@ class Portefeuille(Base, TimestampMixin):
 
     # Relations
     entite_juridique = relationship("EntiteJuridique", back_populates="portefeuilles")
-    sites = relationship("Site", back_populates="portefeuille")
+    sites = relationship("Site", back_populates="portefeuille", cascade="all, delete-orphan")
