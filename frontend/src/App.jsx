@@ -13,6 +13,7 @@ import ConnectorsPage from './pages/ConnectorsPage';
 import WatchersPage from './pages/WatchersPage';
 import ConsommationsUsages from './pages/ConsommationsUsages';
 import MonitoringPage from './pages/MonitoringPage';
+import StatusPage from './pages/StatusPage';
 
 function App() {
   const [showUpgradeWizard, setShowUpgradeWizard] = useState(false);
@@ -72,6 +73,12 @@ function App() {
                   >
                     Veille Réglementaire
                   </Link>
+                  <Link
+                    to="/status"
+                    className="px-3 py-2 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition text-xs"
+                  >
+                    Statut
+                  </Link>
                   <button
                     onClick={() => setShowUpgradeWizard(true)}
                     className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-semibold hover:from-blue-700 hover:to-indigo-700 transition"
@@ -95,6 +102,7 @@ function App() {
             <Route path="/connectors" element={<ConnectorsPage />} />
             <Route path="/watchers" element={<WatchersPage />} />
             <Route path="/monitoring" element={<MonitoringPage />} />
+            <Route path="/status" element={<StatusPage />} />
           </Routes>
 
           {/* Upgrade Wizard Modal */}
