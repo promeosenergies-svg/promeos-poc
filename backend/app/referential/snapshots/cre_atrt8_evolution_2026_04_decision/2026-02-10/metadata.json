@@ -1,0 +1,31 @@
+{
+  "source_id": "cre_atrt8_evolution_2026_04_decision",
+  "url": "https://www.cre.fr/documents/deliberations/evolution-annuelle-du-tarif-dutilisation-des-reseaux-de-transport-de-gaz-naturel-de-natran-et-terega-au-1er-avril-2026-1.html",
+  "fetched_at_utc": "2026-02-10T22:24:27.493753Z",
+  "http_status": 200,
+  "content_type": "text/html; charset=utf-8",
+  "sha256_raw": "956803e697e12e93039bfd7dc60606c42e531b28e877405a545de3f540a84482",
+  "sha256_md": "7f358dc4231c1c58843da077ae4163337cdda0b55b4efc408575876e96ee78d7",
+  "title": "Evolution annuelle du tarif d&rsquo;utilisation des r&eacute;seaux de transport de gaz naturel de NaTran et Ter&eacute;ga au 1er avril 2026 | CRE",
+  "authority": "CRE",
+  "category": "tarif_reseau",
+  "energy": "gaz",
+  "regulation": "ATRT8",
+  "tags": [
+    "atrt",
+    "atrt8",
+    "gaz",
+    "transport",
+    "evolution"
+  ],
+  "date_hint": "2026-02-05",
+  "description": "Evolution annuelle ATRT8 NaTran/Terega au 1er avril 2026",
+  "baseline": false,
+  "raw_size_bytes": 65937,
+  "md_size_bytes": 548,
+  "cre_metadata": {
+    "document_type": "Decision",
+    "energy_detected": "multi",
+    "pdf_url": "https://www.cre.fr/fileadmin/Documents/Deliberations/2026/260128_2026-28_maj_tarifaire_ATRT8_1er_avril_2026.pdf"
+  }
+}

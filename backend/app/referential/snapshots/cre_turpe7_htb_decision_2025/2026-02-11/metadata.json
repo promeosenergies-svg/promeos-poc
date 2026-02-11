@@ -1,0 +1,30 @@
+{
+  "source_id": "cre_turpe7_htb_decision_2025",
+  "url": "https://www.cre.fr/documents/deliberations/tarif-dutilisation-des-reseaux-publics-de-transport-delectricite-turpe-7-htb-1.html",
+  "fetched_at_utc": "2026-02-11T05:19:17.719821Z",
+  "http_status": 200,
+  "content_type": "text/html; charset=utf-8",
+  "sha256_raw": "631935dc99275b6f36fa69d0e3b41f38933dc8c5189ac8c8897f399a0f9dcc78",
+  "sha256_md": "654c37649fe374b6855cec92843cc5c4e6e53ace23b3181e8c49d034e6c304d7",
+  "title": "Tarif d&rsquo;utilisation des r&eacute;seaux publics de transport d&rsquo;&eacute;lectricit&eacute; (TURPE 7 HTB) | CRE",
+  "authority": "CRE",
+  "category": "tarif_reseau",
+  "energy": "electricite",
+  "regulation": "TURPE7",
+  "tags": [
+    "turpe",
+    "turpe7",
+    "htb",
+    "transport"
+  ],
+  "date_hint": "2025-01-16",
+  "description": "Decision TURPE 7 HTB (transport)",
+  "baseline": false,
+  "raw_size_bytes": 65926,
+  "md_size_bytes": 550,
+  "cre_metadata": {
+    "document_type": "Decision",
+    "energy_detected": "multi",
+    "pdf_url": "https://www.cre.fr/fileadmin/Documents/Deliberations/2025/250313_2025-77_Post-CSE_TURPE_7_HTB.pdf"
+  }
+}

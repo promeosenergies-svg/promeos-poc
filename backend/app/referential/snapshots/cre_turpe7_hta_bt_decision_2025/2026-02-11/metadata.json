@@ -1,0 +1,31 @@
+{
+  "source_id": "cre_turpe7_hta_bt_decision_2025",
+  "url": "https://www.cre.fr/documents/deliberations/tarif-dutilisation-des-reseaux-publics-de-distribution-delectricite-turpe-7-hta-bt-1.html",
+  "fetched_at_utc": "2026-02-11T05:19:15.868498Z",
+  "http_status": 200,
+  "content_type": "text/html; charset=utf-8",
+  "sha256_raw": "9e966f76e18dd737f4ab9e7282feda9843402ccd49c49d011905594c2e29556e",
+  "sha256_md": "51d73a8527e940c19a7dfdfa9f2b1cc6cb4022a0342e26e1fa347c57b5d50696",
+  "title": "Tarif d&rsquo;utilisation des r&eacute;seaux publics de distribution d&rsquo;&eacute;lectricit&eacute; (TURPE 7 HTA-BT) | CRE",
+  "authority": "CRE",
+  "category": "tarif_reseau",
+  "energy": "electricite",
+  "regulation": "TURPE7",
+  "tags": [
+    "turpe",
+    "turpe7",
+    "hta",
+    "bt",
+    "distribution"
+  ],
+  "date_hint": "2025-01-16",
+  "description": "Decision TURPE 7 HTA-BT (distribution)",
+  "baseline": false,
+  "raw_size_bytes": 66043,
+  "md_size_bytes": 556,
+  "cre_metadata": {
+    "document_type": "Decision",
+    "energy_detected": "multi",
+    "pdf_url": "https://www.cre.fr/fileadmin/Documents/Deliberations/2025/250313_2025-78_Post-CSE_TURPE_7_HTA-BT.pdf"
+  }
+}

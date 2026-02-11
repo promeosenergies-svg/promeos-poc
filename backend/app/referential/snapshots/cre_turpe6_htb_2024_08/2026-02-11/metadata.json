@@ -1,0 +1,31 @@
+{
+  "source_id": "cre_turpe6_htb_2024_08",
+  "url": "https://www.cre.fr/documents/deliberations/evolution-au-1er-aout-2024-turpe-6-htb-et-montant-de-la-compensation-a-verser-a-strasbourg-electricite-reseaux.html",
+  "fetched_at_utc": "2026-02-11T05:19:10.783505Z",
+  "http_status": 200,
+  "content_type": "text/html; charset=utf-8",
+  "sha256_raw": "3a460a3f6268d97c87e6dc56b6c5b20bea48a44c41efc41b08da08675f931bdd",
+  "sha256_md": "036925bee8326f738437639266f7e5c07604aba2ee0e3ddc538687ab8df1025d",
+  "title": "Evolution au 1er ao&ucirc;t 2024 TURPE 6 HTB et montant de la compensation &agrave; verser &agrave; Strasbourg Electricit&eacute; R&eacute;seaux | CRE",
+  "authority": "CRE",
+  "category": "tarif_reseau",
+  "energy": "electricite",
+  "regulation": "TURPE6",
+  "tags": [
+    "turpe",
+    "turpe6",
+    "htb",
+    "transport"
+  ],
+  "date_hint": "2024-07-11",
+  "description": "Evolution TURPE 6 HTB au 1er aout 2024",
+  "baseline": false,
+  "raw_size_bytes": 67259,
+  "md_size_bytes": 634,
+  "cre_metadata": {
+    "date_document": "2024-07-15",
+    "document_type": "Decision",
+    "energy_detected": "multi",
+    "pdf_url": "https://www.cre.fr/fileadmin/Documents/Deliberations/2024/240626_2024-121_Evolution_TURPE_6_HTB_1er_aout_2024.pdf"
+  }
+}

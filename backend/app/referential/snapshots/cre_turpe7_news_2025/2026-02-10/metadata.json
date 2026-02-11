@@ -1,0 +1,29 @@
+{
+  "source_id": "cre_turpe7_news_2025",
+  "url": "https://www.cre.fr/actualites/toute-lactualite/la-cre-publie-ses-decisions-finales-sur-le-tarif-dutilisation-des-reseaux-publics-delectricite-turpe-7.html",
+  "fetched_at_utc": "2026-02-10T22:23:28.038511Z",
+  "http_status": 200,
+  "content_type": "text/html; charset=utf-8",
+  "sha256_raw": "7b3efe4399ce45e1032a384da2a1fbe186e46f58a583f39a2c4eab94ef51c05d",
+  "sha256_md": "7467a2651cde64682e3434749d33e321ade418d057378a50dbd9f36ed346b5fd",
+  "title": "La CRE publie ses d&eacute;cisions finales sur le tarif d&rsquo;utilisation des r&eacute;seaux publics d&rsquo;&eacute;lectricit&eacute; (TURPE 7) | CRE",
+  "authority": "CRE",
+  "category": "tarif_reseau",
+  "energy": "electricite",
+  "regulation": "TURPE7",
+  "tags": [
+    "turpe",
+    "turpe7",
+    "actualite"
+  ],
+  "date_hint": "2025-01-16",
+  "description": "Actualite CRE: decisions finales TURPE 7",
+  "baseline": false,
+  "raw_size_bytes": 86750,
+  "md_size_bytes": 12118,
+  "cre_metadata": {
+    "document_type": "Projet",
+    "energy_detected": "multi",
+    "pdf_url": "https://www.cre.fr/fileadmin/Documents/Communiques_de_presse/2025/250206_Annexe_CP_TURPE_7_HPHC.pdf"
+  }
+}

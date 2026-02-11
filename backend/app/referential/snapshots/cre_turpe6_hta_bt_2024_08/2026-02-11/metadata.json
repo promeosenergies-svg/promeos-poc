@@ -1,0 +1,32 @@
+{
+  "source_id": "cre_turpe6_hta_bt_2024_08",
+  "url": "https://www.cre.fr/documents/deliberations/evolution-turpe-6-hta-bt-et-evolution-du-parametre-rf-au-1er-aout-2024.html",
+  "fetched_at_utc": "2026-02-11T05:19:09.049119Z",
+  "http_status": 200,
+  "content_type": "text/html; charset=utf-8",
+  "sha256_raw": "e26ad947423fe9d7d4a0db3aee1c1ab14fc18c00752e82149835d84646f50041",
+  "sha256_md": "c6f470eff2e5702285d99b81950e6008b289496a92dd7faef333c0d555acac34",
+  "title": "Evolution TURPE 6 HTA-BT et &eacute;volution du param&egrave;tre Rf au 1er ao&ucirc;t 2024 | CRE",
+  "authority": "CRE",
+  "category": "tarif_reseau",
+  "energy": "electricite",
+  "regulation": "TURPE6",
+  "tags": [
+    "turpe",
+    "turpe6",
+    "hta",
+    "bt",
+    "distribution"
+  ],
+  "date_hint": "2024-07-11",
+  "description": "Evolution TURPE 6 HTA-BT au 1er aout 2024",
+  "baseline": false,
+  "raw_size_bytes": 66367,
+  "md_size_bytes": 589,
+  "cre_metadata": {
+    "date_document": "2024-07-15",
+    "document_type": "Decision",
+    "energy_detected": "multi",
+    "pdf_url": "https://www.cre.fr/fileadmin/Documents/Deliberations/2024/240626_2024-122_Evolution_TURPE_6_HTA-BT_1er_aout_2024.pdf"
+  }
+}

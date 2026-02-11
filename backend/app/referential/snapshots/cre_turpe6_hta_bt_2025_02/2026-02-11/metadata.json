@@ -1,0 +1,31 @@
+{
+  "source_id": "cre_turpe6_hta_bt_2025_02",
+  "url": "https://www.cre.fr/documents/deliberations/evolution-exceptionnelle-du-turpe-6-hta-bt-au-1er-fevrier-2025.html",
+  "fetched_at_utc": "2026-02-11T05:19:12.534125Z",
+  "http_status": 200,
+  "content_type": "text/html; charset=utf-8",
+  "sha256_raw": "af0f740b339d832f9acdbf56f298f3996a0926af9b539bd71c3a025747c07043",
+  "sha256_md": "c003c18255b8d7e089eac4bb7fe8b8d936522741e0a57a9a6b96c9df808c63ed",
+  "title": "Evolution exceptionnelle du TURPE 6 HTA-BT au 1er f&eacute;vrier 2025 | CRE",
+  "authority": "CRE",
+  "category": "tarif_reseau",
+  "energy": "electricite",
+  "regulation": "TURPE6",
+  "tags": [
+    "turpe",
+    "turpe6",
+    "hta",
+    "bt",
+    "distribution"
+  ],
+  "date_hint": "2025-01-16",
+  "description": "Evolution exceptionnelle TURPE 6 HTA-BT au 1er fevrier 2025",
+  "baseline": false,
+  "raw_size_bytes": 64698,
+  "md_size_bytes": 487,
+  "cre_metadata": {
+    "document_type": "Decision",
+    "energy_detected": "multi",
+    "pdf_url": "https://www.cre.fr/fileadmin/Documents/Deliberations/2025/250115__2025-08_Evolution_TURPE_6_HTA-BT.pdf"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "source_id": "cre_turpe6_htb_2025_02",
+  "url": "https://www.cre.fr/documents/deliberations/evolution-exceptionnelle-du-turpe-6-htb-au-1er-fevrier-2025.html",
+  "fetched_at_utc": "2026-02-10T22:23:20.101673Z",
+  "http_status": 200,
+  "content_type": "text/html; charset=utf-8",
+  "sha256_raw": "8a29b655b0477224ced94639bb42a9ac2ab4cfd18b0c5cc76dd4638d4cc4d4de",
+  "sha256_md": "f3ddcc8b7208e1508b0d20218bbb0fae0b8aabf0ea88f116576137a58e28027d",
+  "title": "Evolution exceptionnelle du TURPE 6 HTB au 1er f&eacute;vrier 2025 | CRE",
+  "authority": "CRE",
+  "category": "tarif_reseau",
+  "energy": "electricite",
+  "regulation": "TURPE6",
+  "tags": [
+    "turpe",
+    "turpe6",
+    "htb",
+    "transport"
+  ],
+  "date_hint": "2025-01-16",
+  "description": "Evolution exceptionnelle TURPE 6 HTB au 1er fevrier 2025",
+  "baseline": false,
+  "raw_size_bytes": 64637,
+  "md_size_bytes": 484,
+  "cre_metadata": {
+    "document_type": "Decision",
+    "energy_detected": "multi",
+    "pdf_url": "https://www.cre.fr/fileadmin/Documents/Deliberations/2025/250115_2025-09_Evolution_TURPE_6_HTB.pdf"
+  }
+}

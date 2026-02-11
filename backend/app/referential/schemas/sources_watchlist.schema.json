@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PROMEOS Sources Watchlist",
+  "description": "Schema for sources_watchlist_24m.yaml — official regulatory HTML sources",
+  "type": "object",
+  "required": ["version", "window", "allowed_domains", "sources"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+$"
+    },
+    "window": {
+      "type": "object",
+      "required": ["start", "end"],
+      "properties": {
+        "start": { "type": "string", "format": "date" },
+        "end": { "type": "string", "format": "date" }
+      }
+    },
+    "allowed_domains": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/source"
+      },
+      "minItems": 1
+    }
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "required": ["id", "category", "energy", "authority", "url", "expected_type", "description", "tags"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$",
+          "minLength": 3,
+          "maxLength": 80
+        },
+        "category": {
+          "type": "string",
+          "enum": ["tarif_reseau", "taxe"]
+        },
+        "energy": {
+          "type": "string",
+          "enum": ["electricite", "gaz", "multi"]
+        },
+        "authority": {
+          "type": "string",
+          "enum": ["CRE", "Legifrance", "BOFiP", "impots.gouv"]
+        },
+        "regulation": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://"
+        },
+        "expected_type": {
+          "type": "string",
+          "enum": ["html", "pdf"]
+        },
+        "date_hint": {
+          "type": "string",
+          "format": "date"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 5
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "baseline": {
+          "type": "boolean",
+          "description": "true if source is before the 24m window but needed as reference"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

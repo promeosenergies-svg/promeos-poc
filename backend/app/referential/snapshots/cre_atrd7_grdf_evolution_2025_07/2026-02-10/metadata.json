@@ -1,0 +1,32 @@
+{
+  "source_id": "cre_atrd7_grdf_evolution_2025_07",
+  "url": "https://www.cre.fr/documents/deliberations/evolution-de-la-grille-tarifaire-du-tarif-pereque-dutilisation-des-reseaux-publics-de-distribution-de-gaz-naturel-de-grdf-au-1er-juillet-2025.html",
+  "fetched_at_utc": "2026-02-10T22:24:03.168930Z",
+  "http_status": 200,
+  "content_type": "text/html; charset=utf-8",
+  "sha256_raw": "993527a0d9f714236f052dd3fe691e19b7fa6f6814d3dfec14c7ac0de6dab621",
+  "sha256_md": "9ebc58055c179180043236e9214818ddd014425a80510dc37a6f82064c2c0ecf",
+  "title": "Evolution de la grille tarifaire du tarif p&eacute;r&eacute;qu&eacute; d&rsquo;utilisation des r&eacute;seaux publics de distribution de gaz naturel de GRDF au 1er juillet 2025 | CRE",
+  "authority": "CRE",
+  "category": "tarif_reseau",
+  "energy": "gaz",
+  "regulation": "ATRD7",
+  "tags": [
+    "atrd",
+    "atrd7",
+    "gaz",
+    "distribution",
+    "grdf",
+    "evolution"
+  ],
+  "date_hint": "2025-06-19",
+  "description": "Evolution grille tarifaire ATRD7 GRDF au 1er juillet 2025",
+  "baseline": false,
+  "raw_size_bytes": 67230,
+  "md_size_bytes": 612,
+  "cre_metadata": {
+    "document_type": "Decision",
+    "energy_detected": "multi",
+    "pdf_url": "https://www.cre.fr/fileadmin/Documents/Deliberations/2025/250514_2025-122_Evolution_ATRD7_GRDF_1er_juillet_2025.pdf"
+  }
+}

@@ -1,0 +1,503 @@
+# =============================================================================
+# PROMEOS — Referentiel Tarifs & Taxes
+# Sources HTML officielles — Fenetre 24 mois (2024-02-01 → 2026-02-10)
+# =============================================================================
+# Regles:
+#   - Toutes les URLs doivent etre HTTPS
+#   - Domaines autorises: cre.fr, legifrance.gouv.fr, bofip.impots.gouv.fr, impots.gouv.fr
+#   - expected_type: html (sauf mention contraire)
+#   - baseline: true = source anterieure a la fenetre mais necessaire comme reference
+# =============================================================================
+
+version: "1.0"
+window:
+  start: "2024-02-01"
+  end: "2026-02-10"
+
+allowed_domains:
+  - cre.fr
+  - legifrance.gouv.fr
+  - bofip.impots.gouv.fr
+  - impots.gouv.fr
+
+sources:
+
+  # =========================================================================
+  # ELECTRICITE — CRE (deliberations HTML)
+  # =========================================================================
+
+  - id: cre_turpe6_hta_bt_2024_08
+    category: tarif_reseau
+    energy: electricite
+    authority: CRE
+    regulation: TURPE6
+    url: https://www.cre.fr/documents/deliberations/evolution-turpe-6-hta-bt-et-evolution-du-parametre-rf-au-1er-aout-2024.html
+    expected_type: html
+    date_hint: "2024-07-11"
+    description: "Evolution TURPE 6 HTA-BT au 1er aout 2024"
+    tags:
+      - turpe
+      - turpe6
+      - hta
+      - bt
+      - distribution
+
+  - id: cre_turpe6_htb_2024_08
+    category: tarif_reseau
+    energy: electricite
+    authority: CRE
+    regulation: TURPE6
+    url: https://www.cre.fr/documents/deliberations/evolution-au-1er-aout-2024-turpe-6-htb-et-montant-de-la-compensation-a-verser-a-strasbourg-electricite-reseaux.html
+    expected_type: html
+    date_hint: "2024-07-11"
+    description: "Evolution TURPE 6 HTB au 1er aout 2024"
+    tags:
+      - turpe
+      - turpe6
+      - htb
+      - transport
+
+  - id: cre_turpe6_hta_bt_2025_02
+    category: tarif_reseau
+    energy: electricite
+    authority: CRE
+    regulation: TURPE6
+    url: https://www.cre.fr/documents/deliberations/evolution-exceptionnelle-du-turpe-6-hta-bt-au-1er-fevrier-2025.html
+    expected_type: html
+    date_hint: "2025-01-16"
+    description: "Evolution exceptionnelle TURPE 6 HTA-BT au 1er fevrier 2025"
+    tags:
+      - turpe
+      - turpe6
+      - hta
+      - bt
+      - distribution
+
+  - id: cre_turpe6_htb_2025_02
+    category: tarif_reseau
+    energy: electricite
+    authority: CRE
+    regulation: TURPE6
+    url: https://www.cre.fr/documents/deliberations/evolution-exceptionnelle-du-turpe-6-htb-au-1er-fevrier-2025.html
+    expected_type: html
+    date_hint: "2025-01-16"
+    description: "Evolution exceptionnelle TURPE 6 HTB au 1er fevrier 2025"
+    tags:
+      - turpe
+      - turpe6
+      - htb
+      - transport
+
+  - id: cre_turpe7_hta_bt_decision_2025
+    category: tarif_reseau
+    energy: electricite
+    authority: CRE
+    regulation: TURPE7
+    url: https://www.cre.fr/documents/deliberations/tarif-dutilisation-des-reseaux-publics-de-distribution-delectricite-turpe-7-hta-bt-1.html
+    expected_type: html
+    date_hint: "2025-01-16"
+    description: "Decision TURPE 7 HTA-BT (distribution)"
+    tags:
+      - turpe
+      - turpe7
+      - hta
+      - bt
+      - distribution
+
+  - id: cre_turpe7_htb_decision_2025
+    category: tarif_reseau
+    energy: electricite
+    authority: CRE
+    regulation: TURPE7
+    url: https://www.cre.fr/documents/deliberations/tarif-dutilisation-des-reseaux-publics-de-transport-delectricite-turpe-7-htb-1.html
+    expected_type: html
+    date_hint: "2025-01-16"
+    description: "Decision TURPE 7 HTB (transport)"
+    tags:
+      - turpe
+      - turpe7
+      - htb
+      - transport
+
+  - id: cre_turpe7_news_2025
+    category: tarif_reseau
+    energy: electricite
+    authority: CRE
+    regulation: TURPE7
+    url: https://www.cre.fr/actualites/toute-lactualite/la-cre-publie-ses-decisions-finales-sur-le-tarif-dutilisation-des-reseaux-publics-delectricite-turpe-7.html
+    expected_type: html
+    date_hint: "2025-01-16"
+    description: "Actualite CRE: decisions finales TURPE 7"
+    tags:
+      - turpe
+      - turpe7
+      - actualite
+
+  - id: cre_turpe7_project_modif_2026
+    category: tarif_reseau
+    energy: electricite
+    authority: CRE
+    regulation: TURPE7
+    url: https://www.cre.fr/documents/deliberations/projet-de-modification-des-tarifs-dutilisation-des-reseaux-publics-de-distribution-et-transport-delectricite-turpe-7-hta-bt-et-turpe-7-htb.html
+    expected_type: html
+    date_hint: "2026-01-15"
+    description: "Projet de modification TURPE 7 HTA-BT et HTB"
+    tags:
+      - turpe
+      - turpe7
+      - projet
+      - modification
+
+  # =========================================================================
+  # ELECTRICITE — Legifrance (JORF)
+  # =========================================================================
+
+  - id: legifrance_turpe7_htb_jorf
+    category: tarif_reseau
+    energy: electricite
+    authority: Legifrance
+    regulation: TURPE7
+    url: https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000051587186
+    expected_type: html
+    date_hint: "2025-05-01"
+    description: "JORF: Decision TURPE 7 HTB (transport)"
+    tags:
+      - turpe
+      - turpe7
+      - htb
+      - jorf
+
+  - id: legifrance_turpe7_hta_bt_jorf
+    category: tarif_reseau
+    energy: electricite
+    authority: Legifrance
+    regulation: TURPE7
+    url: https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000051587195
+    expected_type: html
+    date_hint: "2025-05-01"
+    description: "JORF: Decision TURPE 7 HTA-BT (distribution)"
+    tags:
+      - turpe
+      - turpe7
+      - hta
+      - bt
+      - jorf
+
+  # =========================================================================
+  # GAZ — CRE (deliberations HTML)
+  # =========================================================================
+
+  - id: cre_atrd7_grdf_decision_2024
+    category: tarif_reseau
+    energy: gaz
+    authority: CRE
+    regulation: ATRD7
+    url: https://www.cre.fr/documents/deliberations/tarif-pereque-dutilisation-des-reseaux-publics-de-distribution-de-gaz-naturel-de-grdf-atrd7.html
+    expected_type: html
+    date_hint: "2024-01-25"
+    description: "Decision ATRD7 GRDF (distribution gaz 2024-2027)"
+    tags:
+      - atrd
+      - atrd7
+      - gaz
+      - distribution
+      - grdf
+    baseline: true
+
+  - id: cre_atrd7_grdf_news_2024
+    category: tarif_reseau
+    energy: gaz
+    authority: CRE
+    regulation: ATRD7
+    url: https://www.cre.fr/actualites/toute-lactualite/la-cre-fixe-le-tarif-des-reseaux-de-distribution-de-gaz-naturel-de-grdf-pour-la-periode-2024-2027.html
+    expected_type: html
+    date_hint: "2024-01-25"
+    description: "Actualite CRE: tarif GRDF 2024-2027"
+    tags:
+      - atrd
+      - atrd7
+      - gaz
+      - actualite
+    baseline: true
+
+  - id: cre_atrd7_grdf_evolution_2025_07
+    category: tarif_reseau
+    energy: gaz
+    authority: CRE
+    regulation: ATRD7
+    url: https://www.cre.fr/documents/deliberations/evolution-de-la-grille-tarifaire-du-tarif-pereque-dutilisation-des-reseaux-publics-de-distribution-de-gaz-naturel-de-grdf-au-1er-juillet-2025.html
+    expected_type: html
+    date_hint: "2025-06-19"
+    description: "Evolution grille tarifaire ATRD7 GRDF au 1er juillet 2025"
+    tags:
+      - atrd
+      - atrd7
+      - gaz
+      - distribution
+      - grdf
+      - evolution
+
+  - id: cre_atrt8_decision_2024
+    category: tarif_reseau
+    energy: gaz
+    authority: CRE
+    regulation: ATRT8
+    url: https://www.cre.fr/documents/deliberations/tarif-dutilisation-des-reseaux-de-transport-de-gaz-naturel-dits-tarifs-atrt8.html
+    expected_type: html
+    date_hint: "2024-01-18"
+    description: "Decision ATRT8 (transport gaz NaTran/Terega)"
+    tags:
+      - atrt
+      - atrt8
+      - gaz
+      - transport
+    baseline: true
+
+  - id: cre_atrt8_evolution_2025_04
+    category: tarif_reseau
+    energy: gaz
+    authority: CRE
+    regulation: ATRT8
+    url: https://www.cre.fr/documents/deliberations/evolution-annuelle-du-tarif-dutilisation-des-reseaux-de-transport-de-gaz-naturel-dits-tarifs-atrt8-au-1er-avril-2025.html
+    expected_type: html
+    date_hint: "2025-02-06"
+    description: "Evolution annuelle ATRT8 au 1er avril 2025"
+    tags:
+      - atrt
+      - atrt8
+      - gaz
+      - transport
+      - evolution
+
+  - id: cre_atrt8_evolution_2026_04_decision
+    category: tarif_reseau
+    energy: gaz
+    authority: CRE
+    regulation: ATRT8
+    url: https://www.cre.fr/documents/deliberations/evolution-annuelle-du-tarif-dutilisation-des-reseaux-de-transport-de-gaz-naturel-de-natran-et-terega-au-1er-avril-2026-1.html
+    expected_type: html
+    date_hint: "2026-02-05"
+    description: "Evolution annuelle ATRT8 NaTran/Terega au 1er avril 2026"
+    tags:
+      - atrt
+      - atrt8
+      - gaz
+      - transport
+      - evolution
+
+  - id: cre_ats3_decision_2024
+    category: tarif_reseau
+    energy: gaz
+    authority: CRE
+    regulation: ATS3
+    url: https://www.cre.fr/documents/deliberations/tarif-dutilisation-des-infrastructures-de-stockage-souterrain-de-gaz-naturel-dits-tarifs-ats3.html
+    expected_type: html
+    date_hint: "2024-01-18"
+    description: "Decision ATS3 (stockage gaz souterrain)"
+    tags:
+      - ats
+      - ats3
+      - gaz
+      - stockage
+    baseline: true
+
+  - id: cre_ats3_evolution_2025
+    category: tarif_reseau
+    energy: gaz
+    authority: CRE
+    regulation: ATS3
+    url: https://www.cre.fr/documents/deliberations/evolution-du-tarif-dutilisation-des-infrastructures-de-stockage-souterrain-de-gaz-naturel-de-storengy-terega-et-geomethane-pour-lannee-2025.html
+    expected_type: html
+    date_hint: "2025-02-06"
+    description: "Evolution ATS3 Storengy/Terega/Geomethane 2025"
+    tags:
+      - ats
+      - ats3
+      - gaz
+      - stockage
+      - evolution
+
+  - id: cre_ats3_evolution_2026
+    category: tarif_reseau
+    energy: gaz
+    authority: CRE
+    regulation: ATS3
+    url: https://www.cre.fr/documents/deliberations/evolution-du-tarif-dutilisation-des-infrastructures-de-stockage-souterrain-de-gaz-naturel-de-storengy-terega-et-geomethane-pour-lannee-2026.html
+    expected_type: html
+    date_hint: "2026-02-05"
+    description: "Evolution ATS3 Storengy/Terega/Geomethane 2026"
+    tags:
+      - ats
+      - ats3
+      - gaz
+      - stockage
+      - evolution
+
+  # =========================================================================
+  # GAZ — Legifrance (JORF)
+  # =========================================================================
+
+  - id: legifrance_atrd7_jorf
+    category: tarif_reseau
+    energy: gaz
+    authority: Legifrance
+    regulation: ATRD7
+    url: https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000049565712
+    expected_type: html
+    date_hint: "2024-05-01"
+    description: "JORF: Decision ATRD7 GRDF"
+    tags:
+      - atrd
+      - atrd7
+      - gaz
+      - jorf
+    baseline: true
+
+  - id: legifrance_atrt8_jorf
+    category: tarif_reseau
+    energy: gaz
+    authority: Legifrance
+    regulation: ATRT8
+    url: https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000049346421
+    expected_type: html
+    date_hint: "2024-03-01"
+    description: "JORF: Decision ATRT8"
+    tags:
+      - atrt
+      - atrt8
+      - gaz
+      - jorf
+    baseline: true
+
+  - id: legifrance_ats3_jorf
+    category: tarif_reseau
+    energy: gaz
+    authority: Legifrance
+    regulation: ATS3
+    url: https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000049347086
+    expected_type: html
+    date_hint: "2024-03-01"
+    description: "JORF: Decision ATS3"
+    tags:
+      - ats
+      - ats3
+      - gaz
+      - jorf
+    baseline: true
+
+  # =========================================================================
+  # TAXES — CTA
+  # =========================================================================
+
+  - id: legifrance_cta_arrete_2026
+    category: taxe
+    energy: multi
+    authority: Legifrance
+    regulation: CTA
+    url: https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000053417026
+    expected_type: html
+    date_hint: "2026-01-01"
+    description: "Arrete fixant les taux CTA (transport + distribution elec et gaz)"
+    tags:
+      - cta
+      - taxe
+      - jorf
+
+  - id: cre_cta_project_2026
+    category: taxe
+    energy: multi
+    authority: CRE
+    regulation: CTA
+    url: https://www.cre.fr/documents/deliberations/projet-darrete-relatif-aux-taux-de-la-contribution-tarifaire-sur-les-prestations-de-transport-et-de-distribution-delectricite-et-de-gaz-naturel.html
+    expected_type: html
+    date_hint: "2025-12-01"
+    description: "Projet d'arrete CTA: avis CRE sur les taux"
+    tags:
+      - cta
+      - taxe
+      - projet
+
+  # =========================================================================
+  # TAXES — Accises (CIBS + BOFiP + impots.gouv)
+  # =========================================================================
+
+  - id: legifrance_cibs_accise_electricite
+    category: taxe
+    energy: electricite
+    authority: Legifrance
+    regulation: CIBS
+    url: https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT000044638518/LEGISCTA000044669771/
+    expected_type: html
+    date_hint: "2024-01-01"
+    description: "Code des impositions: accise sur l'electricite"
+    tags:
+      - accise
+      - electricite
+      - cibs
+      - code
+    baseline: true
+
+  - id: legifrance_cibs_accise_gaz
+    category: taxe
+    energy: gaz
+    authority: Legifrance
+    regulation: CIBS
+    url: https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT000044638518/LEGISCTA000044669796/
+    expected_type: html
+    date_hint: "2024-01-01"
+    description: "Code des impositions: accise sur le gaz naturel"
+    tags:
+      - accise
+      - gaz
+      - cibs
+      - code
+    baseline: true
+
+  - id: bofip_rescrit_accise_electricite_2025
+    category: taxe
+    energy: electricite
+    authority: BOFiP
+    regulation: accise
+    url: https://bofip.impots.gouv.fr/bofip/15176-PGP.html/ACTU-2025-00081
+    expected_type: html
+    date_hint: "2025-06-01"
+    description: "BOFiP: rescrit accise electricite (taux reduit, exigibilite)"
+    tags:
+      - accise
+      - electricite
+      - bofip
+      - taux_reduit
+
+  - id: impots_attestation_accise_elec_2780sd
+    category: taxe
+    energy: electricite
+    authority: impots.gouv
+    regulation: accise
+    url: https://www.impots.gouv.fr/formulaire/2780-sd/attestation-delectricite-pour-lapplication-du-taux-reduit-de-accise-sur
+    expected_type: html
+    date_hint: "2025-01-01"
+    description: "Formulaire 2780-SD: attestation taux reduit accise electricite"
+    tags:
+      - accise
+      - electricite
+      - attestation
+      - formulaire
+
+  # =========================================================================
+  # TVA — BOFiP
+  # =========================================================================
+
+  - id: bofip_tva_energie_2025
+    category: taxe
+    energy: multi
+    authority: BOFiP
+    regulation: TVA
+    url: https://bofip.impots.gouv.fr/bofip/14655-PGP.html/ACTU-2025-00019
+    expected_type: html
+    date_hint: "2025-02-01"
+    description: "BOFiP: TVA applicable aux livraisons d'energie (taux, changements)"
+    tags:
+      - tva
+      - energie
+      - bofip
+      - taux

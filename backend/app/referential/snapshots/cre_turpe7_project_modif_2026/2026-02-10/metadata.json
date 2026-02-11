@@ -1,0 +1,30 @@
+{
+  "source_id": "cre_turpe7_project_modif_2026",
+  "url": "https://www.cre.fr/documents/deliberations/projet-de-modification-des-tarifs-dutilisation-des-reseaux-publics-de-distribution-et-transport-delectricite-turpe-7-hta-bt-et-turpe-7-htb.html",
+  "fetched_at_utc": "2026-02-10T22:23:31.383106Z",
+  "http_status": 200,
+  "content_type": "text/html; charset=utf-8",
+  "sha256_raw": "01e82e13e2de11438ed57391d08573eb589ee0ad44e2668ddf1a271877423150",
+  "sha256_md": "1820edae4d6e0bb4798954d88fc67e80fab5af4c805f4746754d0b15ada8e1df",
+  "title": "Projet de modification des tarifs d&rsquo;utilisation des r&eacute;seaux publics de distribution et transport d&rsquo;&eacute;lectricit&eacute; (TURPE 7 HTA-BT et TURPE 7 HTB) | CRE",
+  "authority": "CRE",
+  "category": "tarif_reseau",
+  "energy": "electricite",
+  "regulation": "TURPE7",
+  "tags": [
+    "turpe",
+    "turpe7",
+    "projet",
+    "modification"
+  ],
+  "date_hint": "2026-01-15",
+  "description": "Projet de modification TURPE 7 HTA-BT et HTB",
+  "baseline": false,
+  "raw_size_bytes": 67673,
+  "md_size_bytes": 677,
+  "cre_metadata": {
+    "document_type": "Projet",
+    "energy_detected": "multi",
+    "pdf_url": "https://www.cre.fr/fileadmin/Documents/Deliberations/2026/250108_2025-02_Modif_TURPE_7_HTB_HTA_BT.pdf"
+  }
+}

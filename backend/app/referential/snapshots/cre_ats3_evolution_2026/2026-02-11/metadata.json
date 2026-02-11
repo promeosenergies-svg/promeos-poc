@@ -1,0 +1,31 @@
+{
+  "source_id": "cre_ats3_evolution_2026",
+  "url": "https://www.cre.fr/documents/deliberations/evolution-du-tarif-dutilisation-des-infrastructures-de-stockage-souterrain-de-gaz-naturel-de-storengy-terega-et-geomethane-pour-lannee-2026.html",
+  "fetched_at_utc": "2026-02-11T05:20:14.247098Z",
+  "http_status": 200,
+  "content_type": "text/html; charset=utf-8",
+  "sha256_raw": "87f9a0abc5c5e2c9f8e1db3cf9c728b151548d5cfd731fd22b3562aeba88079f",
+  "sha256_md": "f594e0a34896304cefd9d797dbafa701e04547684780d9cae08ee47ece6b7fe1",
+  "title": "Evolution du tarif d&rsquo;utilisation des infrastructures de stockage souterrain de gaz naturel de Storengy, Ter&eacute;ga et G&eacute;om&eacute;thane pour l&rsquo;ann&eacute;e 2026 | CRE",
+  "authority": "CRE",
+  "category": "tarif_reseau",
+  "energy": "gaz",
+  "regulation": "ATS3",
+  "tags": [
+    "ats",
+    "ats3",
+    "gaz",
+    "stockage",
+    "evolution"
+  ],
+  "date_hint": "2026-02-05",
+  "description": "Evolution ATS3 Storengy/Terega/Geomethane 2026",
+  "baseline": false,
+  "raw_size_bytes": 66502,
+  "md_size_bytes": 577,
+  "cre_metadata": {
+    "document_type": "Decision",
+    "energy_detected": "multi",
+    "pdf_url": "https://www.cre.fr/fileadmin/Documents/Deliberations/2026/260128_2026-29_Evolution_2026_tarif_utilisation_stockages_gaz.pdf"
+  }
+}

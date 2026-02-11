@@ -1,0 +1,628 @@
+{
+  "generated_at": "2026-02-11T05:21:37.175021Z",
+  "window": {
+    "start": "2024-02-01",
+    "end": "2026-02-10"
+  },
+  "sources": {
+    "cre_atrd7_grdf_evolution_2025_07": {
+      "latest": {
+        "date": "2026-02-11",
+        "sha256_raw": "993527a0d9f714236f052dd3fe691e19b7fa6f6814d3dfec14c7ac0de6dab621",
+        "sha256_md": "9ebc58055c179180043236e9214818ddd014425a80510dc37a6f82064c2c0ecf",
+        "content_changed": false,
+        "in_window_24m": true,
+        "title": "Evolution de la grille tarifaire du tarif p&eacute;r&eacute;qu&eacute; d&rsquo;utilisation des r&eacute;seaux publics de distribution de gaz naturel de GRDF au 1er juillet 2025 | CRE",
+        "fetched_at": "2026-02-11T05:19:45.270031Z"
+      },
+      "history": [
+        {
+          "date": "2026-02-10",
+          "sha256_raw": "993527a0d9f714236f052dd3fe691e19b7fa6f6814d3dfec14c7ac0de6dab621",
+          "sha256_md": "9ebc58055c179180043236e9214818ddd014425a80510dc37a6f82064c2c0ecf",
+          "content_changed": false,
+          "in_window_24m": true,
+          "title": "Evolution de la grille tarifaire du tarif p&eacute;r&eacute;qu&eacute; d&rsquo;utilisation des r&eacute;seaux publics de distribution de gaz naturel de GRDF au 1er juillet 2025 | CRE",
+          "fetched_at": "2026-02-10T22:24:03.168930Z"
+        },
+        {
+          "date": "2026-02-11",
+          "sha256_raw": "993527a0d9f714236f052dd3fe691e19b7fa6f6814d3dfec14c7ac0de6dab621",
+          "sha256_md": "9ebc58055c179180043236e9214818ddd014425a80510dc37a6f82064c2c0ecf",
+          "content_changed": false,
+          "in_window_24m": true,
+          "title": "Evolution de la grille tarifaire du tarif p&eacute;r&eacute;qu&eacute; d&rsquo;utilisation des r&eacute;seaux publics de distribution de gaz naturel de GRDF au 1er juillet 2025 | CRE",
+          "fetched_at": "2026-02-11T05:19:45.270031Z"
+        }
+      ],
+      "total_snapshots": 2,
+      "has_content_changes": false,
+      "authority": "CRE",
+      "category": "tarif_reseau",
+      "energy": "gaz",
+      "regulation": "ATRD7",
+      "tags": [
+        "atrd",
+        "atrd7",
+        "gaz",
+        "distribution",
+        "grdf",
+        "evolution"
+      ],
+      "url": "https://www.cre.fr/documents/deliberations/evolution-de-la-grille-tarifaire-du-tarif-pereque-dutilisation-des-reseaux-publics-de-distribution-de-gaz-naturel-de-grdf-au-1er-juillet-2025.html"
+    },
+    "cre_atrd7_grdf_news_2024": {
+      "latest": {
+        "date": "2026-02-11",
+        "sha256_raw": "c584aefab60a33d65e7853f67238f6d04f88c78a431274eced85881db8c20cda",
+        "sha256_md": "c0f03e4ab32b1722d68546909f1572c83facaed06a02a01e129ebca543dadc85",
+        "content_changed": false,
+        "in_window_24m": true,
+        "title": "La CRE fixe le tarif des r&eacute;seaux de distribution de gaz naturel de GRDF pour la p&eacute;riode 2024-2027 | CRE",
+        "fetched_at": "2026-02-11T05:19:43.358868Z"
+      },
+      "history": [
+        {
+          "date": "2026-02-10",
+          "sha256_raw": "c584aefab60a33d65e7853f67238f6d04f88c78a431274eced85881db8c20cda",
+          "sha256_md": "c0f03e4ab32b1722d68546909f1572c83facaed06a02a01e129ebca543dadc85",
+          "content_changed": false,
+          "in_window_24m": true,
+          "title": "La CRE fixe le tarif des r&eacute;seaux de distribution de gaz naturel de GRDF pour la p&eacute;riode 2024-2027 | CRE",
+          "fetched_at": "2026-02-10T22:24:00.854478Z"
+        },
+        {
+          "date": "2026-02-11",
+          "sha256_raw": "c584aefab60a33d65e7853f67238f6d04f88c78a431274eced85881db8c20cda",
+          "sha256_md": "c0f03e4ab32b1722d68546909f1572c83facaed06a02a01e129ebca543dadc85",
+          "content_changed": false,
+          "in_window_24m": true,
+          "title": "La CRE fixe le tarif des r&eacute;seaux de distribution de gaz naturel de GRDF pour la p&eacute;riode 2024-2027 | CRE",
+          "fetched_at": "2026-02-11T05:19:43.358868Z"
+        }
+      ],
+      "total_snapshots": 2,
+      "has_content_changes": false,
+      "authority": "CRE",
+      "category": "tarif_reseau",
+      "energy": "gaz",
+      "regulation": "ATRD7",
+      "tags": [
+        "atrd",
+        "atrd7",
+        "gaz",
+        "actualite"
+      ],
+      "url": "https://www.cre.fr/actualites/toute-lactualite/la-cre-fixe-le-tarif-des-reseaux-de-distribution-de-gaz-naturel-de-grdf-pour-la-periode-2024-2027.html"
+    },
+    "cre_atrt8_evolution_2026_04_decision": {
+      "latest": {
+        "date": "2026-02-11",
+        "sha256_raw": "956803e697e12e93039bfd7dc60606c42e531b28e877405a545de3f540a84482",
+        "sha256_md": "7f358dc4231c1c58843da077ae4163337cdda0b55b4efc408575876e96ee78d7",
+        "content_changed": false,
+        "in_window_24m": true,
+        "title": "Evolution annuelle du tarif d&rsquo;utilisation des r&eacute;seaux de transport de gaz naturel de NaTran et Ter&eacute;ga au 1er avril 2026 | CRE",
+        "fetched_at": "2026-02-11T05:20:03.120659Z"
+      },
+      "history": [
+        {
+          "date": "2026-02-10",
+          "sha256_raw": "956803e697e12e93039bfd7dc60606c42e531b28e877405a545de3f540a84482",
+          "sha256_md": "7f358dc4231c1c58843da077ae4163337cdda0b55b4efc408575876e96ee78d7",
+          "content_changed": false,
+          "in_window_24m": true,
+          "title": "Evolution annuelle du tarif d&rsquo;utilisation des r&eacute;seaux de transport de gaz naturel de NaTran et Ter&eacute;ga au 1er avril 2026 | CRE",
+          "fetched_at": "2026-02-10T22:24:27.493753Z"
+        },
+        {
+          "date": "2026-02-11",
+          "sha256_raw": "956803e697e12e93039bfd7dc60606c42e531b28e877405a545de3f540a84482",
+          "sha256_md": "7f358dc4231c1c58843da077ae4163337cdda0b55b4efc408575876e96ee78d7",
+          "content_changed": false,
+          "in_window_24m": true,
+          "title": "Evolution annuelle du tarif d&rsquo;utilisation des r&eacute;seaux de transport de gaz naturel de NaTran et Ter&eacute;ga au 1er avril 2026 | CRE",
+          "fetched_at": "2026-02-11T05:20:03.120659Z"
+        }
+      ],
+      "total_snapshots": 2,
+      "has_content_changes": false,
+      "authority": "CRE",
+      "category": "tarif_reseau",
+      "energy": "gaz",
+      "regulation": "ATRT8",
+      "tags": [
+        "atrt",
+        "atrt8",
+        "gaz",
+        "transport",
+        "evolution"
+      ],
+      "url": "https://www.cre.fr/documents/deliberations/evolution-annuelle-du-tarif-dutilisation-des-reseaux-de-transport-de-gaz-naturel-de-natran-et-terega-au-1er-avril-2026-1.html"
+    },
+    "cre_ats3_evolution_2025": {
+      "latest": {
+        "date": "2026-02-11",
+        "sha256_raw": "08a957d10304f54f0cc930a57c9aee313af857c7c86d94e2b6b41e3fb633e2d6",
+        "sha256_md": "4976c890c44adcc24e5dd300efac139fca559365d1362a4209b03326316cde4c",
+        "content_changed": false,
+        "in_window_24m": true,
+        "title": "Evolution du tarif d&rsquo;utilisation des infrastructures de stockage souterrain de gaz naturel de Storengy, Ter&eacute;ga et G&eacute;om&eacute;thane pour l&rsquo;ann&eacute;e 2025 | CRE",
+        "fetched_at": "2026-02-11T05:20:12.602074Z"
+      },
+      "history": [
+        {
+          "date": "2026-02-10",
+          "sha256_raw": "08a957d10304f54f0cc930a57c9aee313af857c7c86d94e2b6b41e3fb633e2d6",
+          "sha256_md": "4976c890c44adcc24e5dd300efac139fca559365d1362a4209b03326316cde4c",
+          "content_changed": false,
+          "in_window_24m": true,
+          "title": "Evolution du tarif d&rsquo;utilisation des infrastructures de stockage souterrain de gaz naturel de Storengy, Ter&eacute;ga et G&eacute;om&eacute;thane pour l&rsquo;ann&eacute;e 2025 | CRE",
+          "fetched_at": "2026-02-10T22:24:40.745458Z"
+        },
+        {
+          "date": "2026-02-11",
+          "sha256_raw": "08a957d10304f54f0cc930a57c9aee313af857c7c86d94e2b6b41e3fb633e2d6",
+          "sha256_md": "4976c890c44adcc24e5dd300efac139fca559365d1362a4209b03326316cde4c",
+          "content_changed": false,
+          "in_window_24m": true,
+          "title": "Evolution du tarif d&rsquo;utilisation des infrastructures de stockage souterrain de gaz naturel de Storengy, Ter&eacute;ga et G&eacute;om&eacute;thane pour l&rsquo;ann&eacute;e 2025 | CRE",
+          "fetched_at": "2026-02-11T05:20:12.602074Z"
+        }
+      ],
+      "total_snapshots": 2,
+      "has_content_changes": false,
+      "authority": "CRE",
+      "category": "tarif_reseau",
+      "energy": "gaz",
+      "regulation": "ATS3",
+      "tags": [
+        "ats",
+        "ats3",
+        "gaz",
+        "stockage",
+        "evolution"
+      ],
+      "url": "https://www.cre.fr/documents/deliberations/evolution-du-tarif-dutilisation-des-infrastructures-de-stockage-souterrain-de-gaz-naturel-de-storengy-terega-et-geomethane-pour-lannee-2025.html"
+    },
+    "cre_ats3_evolution_2026": {
+      "latest": {
+        "date": "2026-02-11",
+        "sha256_raw": "87f9a0abc5c5e2c9f8e1db3cf9c728b151548d5cfd731fd22b3562aeba88079f",
+        "sha256_md": "f594e0a34896304cefd9d797dbafa701e04547684780d9cae08ee47ece6b7fe1",
+        "content_changed": false,
+        "in_window_24m": true,
+        "title": "Evolution du tarif d&rsquo;utilisation des infrastructures de stockage souterrain de gaz naturel de Storengy, Ter&eacute;ga et G&eacute;om&eacute;thane pour l&rsquo;ann&eacute;e 2026 | CRE",
+        "fetched_at": "2026-02-11T05:20:14.247098Z"
+      },
+      "history": [
+        {
+          "date": "2026-02-10",
+          "sha256_raw": "87f9a0abc5c5e2c9f8e1db3cf9c728b151548d5cfd731fd22b3562aeba88079f",
+          "sha256_md": "f594e0a34896304cefd9d797dbafa701e04547684780d9cae08ee47ece6b7fe1",
+          "content_changed": false,
+          "in_window_24m": true,
+          "title": "Evolution du tarif d&rsquo;utilisation des infrastructures de stockage souterrain de gaz naturel de Storengy, Ter&eacute;ga et G&eacute;om&eacute;thane pour l&rsquo;ann&eacute;e 2026 | CRE",
+          "fetched_at": "2026-02-10T22:24:42.557475Z"
+        },
+        {
+          "date": "2026-02-11",
+          "sha256_raw": "87f9a0abc5c5e2c9f8e1db3cf9c728b151548d5cfd731fd22b3562aeba88079f",
+          "sha256_md": "f594e0a34896304cefd9d797dbafa701e04547684780d9cae08ee47ece6b7fe1",
+          "content_changed": false,
+          "in_window_24m": true,
+          "title": "Evolution du tarif d&rsquo;utilisation des infrastructures de stockage souterrain de gaz naturel de Storengy, Ter&eacute;ga et G&eacute;om&eacute;thane pour l&rsquo;ann&eacute;e 2026 | CRE",
+          "fetched_at": "2026-02-11T05:20:14.247098Z"
+        }
+      ],
+      "total_snapshots": 2,
+      "has_content_changes": false,
+      "authority": "CRE",
+      "category": "tarif_reseau",
+      "energy": "gaz",
+      "regulation": "ATS3",
+      "tags": [
+        "ats",
+        "ats3",
+        "gaz",
+        "stockage",
+        "evolution"
+      ],
+      "url": "https://www.cre.fr/documents/deliberations/evolution-du-tarif-dutilisation-des-infrastructures-de-stockage-souterrain-de-gaz-naturel-de-storengy-terega-et-geomethane-pour-lannee-2026.html"
+    },
+    "cre_cta_project_2026": {
+      "latest": {
+        "date": "2026-02-11",
+        "sha256_raw": "02ca45b4248a98c8a31089bff2665a378287a9e606243f8b17f68f99cd8d9c6f",
+        "sha256_md": "a163434205abb271be5ce7851662f651067fc0b3a92dd54ae41565f34467222b",
+        "content_changed": false,
+        "in_window_24m": true,
+        "title": "Projet d&rsquo;arr&ecirc;t&eacute; relatif aux taux de la contribution tarifaire sur les prestations de transport et de distribution d&rsquo;&eacute;lectricit&eacute; et de gaz naturel | CRE",
+        "fetched_at": "2026-02-11T05:20:43.997962Z"
+      },
+      "history": [
+        {
+          "date": "2026-02-11",
+          "sha256_raw": "02ca45b4248a98c8a31089bff2665a378287a9e606243f8b17f68f99cd8d9c6f",
+          "sha256_md": "a163434205abb271be5ce7851662f651067fc0b3a92dd54ae41565f34467222b",
+          "content_changed": false,
+          "in_window_24m": true,
+          "title": "Projet d&rsquo;arr&ecirc;t&eacute; relatif aux taux de la contribution tarifaire sur les prestations de transport et de distribution d&rsquo;&eacute;lectricit&eacute; et de gaz naturel | CRE",
+          "fetched_at": "2026-02-11T05:20:43.997962Z"
+        }
+      ],
+      "total_snapshots": 1,
+      "has_content_changes": false,
+      "authority": "CRE",
+      "category": "taxe",
+      "energy": "multi",
+      "regulation": "CTA",
+      "tags": [
+        "cta",
+        "taxe",
+        "projet"
+      ],
+      "url": "https://www.cre.fr/documents/deliberations/projet-darrete-relatif-aux-taux-de-la-contribution-tarifaire-sur-les-prestations-de-transport-et-de-distribution-delectricite-et-de-gaz-naturel.html"
+    },
+    "cre_turpe6_hta_bt_2024_08": {
+      "latest": {
+        "date": "2026-02-11",
+        "sha256_raw": "e26ad947423fe9d7d4a0db3aee1c1ab14fc18c00752e82149835d84646f50041",
+        "sha256_md": "c6f470eff2e5702285d99b81950e6008b289496a92dd7faef333c0d555acac34",
+        "content_changed": false,
+        "in_window_24m": true,
+        "title": "Evolution TURPE 6 HTA-BT et &eacute;volution du param&egrave;tre Rf au 1er ao&ucirc;t 2024 | CRE",
+        "fetched_at": "2026-02-11T05:19:09.049119Z"
+      },
+      "history": [
+        {
+          "date": "2026-02-10",
+          "sha256_raw": "e26ad947423fe9d7d4a0db3aee1c1ab14fc18c00752e82149835d84646f50041",
+          "sha256_md": "c6f470eff2e5702285d99b81950e6008b289496a92dd7faef333c0d555acac34",
+          "content_changed": false,
+          "in_window_24m": true,
+          "title": "Evolution TURPE 6 HTA-BT et &eacute;volution du param&egrave;tre Rf au 1er ao&ucirc;t 2024 | CRE",
+          "fetched_at": "2026-02-10T22:23:12.088795Z"
+        },
+        {
+          "date": "2026-02-11",
+          "sha256_raw": "e26ad947423fe9d7d4a0db3aee1c1ab14fc18c00752e82149835d84646f50041",
+          "sha256_md": "c6f470eff2e5702285d99b81950e6008b289496a92dd7faef333c0d555acac34",
+          "content_changed": false,
+          "in_window_24m": true,
+          "title": "Evolution TURPE 6 HTA-BT et &eacute;volution du param&egrave;tre Rf au 1er ao&ucirc;t 2024 | CRE",
+          "fetched_at": "2026-02-11T05:19:09.049119Z"
+        }
+      ],
+      "total_snapshots": 2,
+      "has_content_changes": false,
+      "authority": "CRE",
+      "category": "tarif_reseau",
+      "energy": "electricite",
+      "regulation": "TURPE6",
+      "tags": [
+        "turpe",
+        "turpe6",
+        "hta",
+        "bt",
+        "distribution"
+      ],
+      "url": "https://www.cre.fr/documents/deliberations/evolution-turpe-6-hta-bt-et-evolution-du-parametre-rf-au-1er-aout-2024.html"
+    },
+    "cre_turpe6_hta_bt_2025_02": {
+      "latest": {
+        "date": "2026-02-11",
+        "sha256_raw": "af0f740b339d832f9acdbf56f298f3996a0926af9b539bd71c3a025747c07043",
+        "sha256_md": "c003c18255b8d7e089eac4bb7fe8b8d936522741e0a57a9a6b96c9df808c63ed",
+        "content_changed": false,
+        "in_window_24m": true,
+        "title": "Evolution exceptionnelle du TURPE 6 HTA-BT au 1er f&eacute;vrier 2025 | CRE",
+        "fetched_at": "2026-02-11T05:19:12.534125Z"
+      },
+      "history": [
+        {
+          "date": "2026-02-10",
+          "sha256_raw": "af0f740b339d832f9acdbf56f298f3996a0926af9b539bd71c3a025747c07043",
+          "sha256_md": "c003c18255b8d7e089eac4bb7fe8b8d936522741e0a57a9a6b96c9df808c63ed",
+          "content_changed": false,
+          "in_window_24m": true,
+          "title": "Evolution exceptionnelle du TURPE 6 HTA-BT au 1er f&eacute;vrier 2025 | CRE",
+          "fetched_at": "2026-02-10T22:23:18.233808Z"
+        },
+        {
+          "date": "2026-02-11",
+          "sha256_raw": "af0f740b339d832f9acdbf56f298f3996a0926af9b539bd71c3a025747c07043",
+          "sha256_md": "c003c18255b8d7e089eac4bb7fe8b8d936522741e0a57a9a6b96c9df808c63ed",
+          "content_changed": false,
+          "in_window_24m": true,
+          "title": "Evolution exceptionnelle du TURPE 6 HTA-BT au 1er f&eacute;vrier 2025 | CRE",
+          "fetched_at": "2026-02-11T05:19:12.534125Z"
+        }
+      ],
+      "total_snapshots": 2,
+      "has_content_changes": false,
+      "authority": "CRE",
+      "category": "tarif_reseau",
+      "energy": "electricite",
+      "regulation": "TURPE6",
+      "tags": [
+        "turpe",
+        "turpe6",
+        "hta",
+        "bt",
+        "distribution"
+      ],
+      "url": "https://www.cre.fr/documents/deliberations/evolution-exceptionnelle-du-turpe-6-hta-bt-au-1er-fevrier-2025.html"
+    },
+    "cre_turpe6_htb_2024_08": {
+      "latest": {
+        "date": "2026-02-11",
+        "sha256_raw": "3a460a3f6268d97c87e6dc56b6c5b20bea48a44c41efc41b08da08675f931bdd",
+        "sha256_md": "036925bee8326f738437639266f7e5c07604aba2ee0e3ddc538687ab8df1025d",
+        "content_changed": false,
+        "in_window_24m": true,
+        "title": "Evolution au 1er ao&ucirc;t 2024 TURPE 6 HTB et montant de la compensation &agrave; verser &agrave; Strasbourg Electricit&eacute; R&eacute;seaux | CRE",
+        "fetched_at": "2026-02-11T05:19:10.783505Z"
+      },
+      "history": [
+        {
+          "date": "2026-02-10",
+          "sha256_raw": "3a460a3f6268d97c87e6dc56b6c5b20bea48a44c41efc41b08da08675f931bdd",
+          "sha256_md": "036925bee8326f738437639266f7e5c07604aba2ee0e3ddc538687ab8df1025d",
+          "content_changed": false,
+          "in_window_24m": true,
+          "title": "Evolution au 1er ao&ucirc;t 2024 TURPE 6 HTB et montant de la compensation &agrave; verser &agrave; Strasbourg Electricit&eacute; R&eacute;seaux | CRE",
+          "fetched_at": "2026-02-10T22:23:14.985919Z"
+        },
+        {
+          "date": "2026-02-11",
+          "sha256_raw": "3a460a3f6268d97c87e6dc56b6c5b20bea48a44c41efc41b08da08675f931bdd",
+          "sha256_md": "036925bee8326f738437639266f7e5c07604aba2ee0e3ddc538687ab8df1025d",
+          "content_changed": false,
+          "in_window_24m": true,
+          "title": "Evolution au 1er ao&ucirc;t 2024 TURPE 6 HTB et montant de la compensation &agrave; verser &agrave; Strasbourg Electricit&eacute; R&eacute;seaux | CRE",
+          "fetched_at": "2026-02-11T05:19:10.783505Z"
+        }
+      ],
+      "total_snapshots": 2,
+      "has_content_changes": false,
+      "authority": "CRE",
+      "category": "tarif_reseau",
+      "energy": "electricite",
+      "regulation": "TURPE6",
+      "tags": [
+        "turpe",
+        "turpe6",
+        "htb",
+        "transport"
+      ],
+      "url": "https://www.cre.fr/documents/deliberations/evolution-au-1er-aout-2024-turpe-6-htb-et-montant-de-la-compensation-a-verser-a-strasbourg-electricite-reseaux.html"
+    },
+    "cre_turpe6_htb_2025_02": {
+      "latest": {
+        "date": "2026-02-11",
+        "sha256_raw": "8a29b655b0477224ced94639bb42a9ac2ab4cfd18b0c5cc76dd4638d4cc4d4de",
+        "sha256_md": "f3ddcc8b7208e1508b0d20218bbb0fae0b8aabf0ea88f116576137a58e28027d",
+        "content_changed": false,
+        "in_window_24m": true,
+        "title": "Evolution exceptionnelle du TURPE 6 HTB au 1er f&eacute;vrier 2025 | CRE",
+        "fetched_at": "2026-02-11T05:19:14.195685Z"
+      },
+      "history": [
+        {
+          "date": "2026-02-10",
+          "sha256_raw": "8a29b655b0477224ced94639bb42a9ac2ab4cfd18b0c5cc76dd4638d4cc4d4de",
+          "sha256_md": "f3ddcc8b7208e1508b0d20218bbb0fae0b8aabf0ea88f116576137a58e28027d",
+          "content_changed": false,
+          "in_window_24m": true,
+          "title": "Evolution exceptionnelle du TURPE 6 HTB au 1er f&eacute;vrier 2025 | CRE",
+          "fetched_at": "2026-02-10T22:23:20.101673Z"
+        },
+        {
+          "date": "2026-02-11",
+          "sha256_raw": "8a29b655b0477224ced94639bb42a9ac2ab4cfd18b0c5cc76dd4638d4cc4d4de",
+          "sha256_md": "f3ddcc8b7208e1508b0d20218bbb0fae0b8aabf0ea88f116576137a58e28027d",
+          "content_changed": false,
+          "in_window_24m": true,
+          "title": "Evolution exceptionnelle du TURPE 6 HTB au 1er f&eacute;vrier 2025 | CRE",
+          "fetched_at": "2026-02-11T05:19:14.195685Z"
+        }
+      ],
+      "total_snapshots": 2,
+      "has_content_changes": false,
+      "authority": "CRE",
+      "category": "tarif_reseau",
+      "energy": "electricite",
+      "regulation": "TURPE6",
+      "tags": [
+        "turpe",
+        "turpe6",
+        "htb",
+        "transport"
+      ],
+      "url": "https://www.cre.fr/documents/deliberations/evolution-exceptionnelle-du-turpe-6-htb-au-1er-fevrier-2025.html"
+    },
+    "cre_turpe7_hta_bt_decision_2025": {
+      "latest": {
+        "date": "2026-02-11",
+        "sha256_raw": "9e966f76e18dd737f4ab9e7282feda9843402ccd49c49d011905594c2e29556e",
+        "sha256_md": "51d73a8527e940c19a7dfdfa9f2b1cc6cb4022a0342e26e1fa347c57b5d50696",
+        "content_changed": false,
+        "in_window_24m": true,
+        "title": "Tarif d&rsquo;utilisation des r&eacute;seaux publics de distribution d&rsquo;&eacute;lectricit&eacute; (TURPE 7 HTA-BT) | CRE",
+        "fetched_at": "2026-02-11T05:19:15.868498Z"
+      },
+      "history": [
+        {
+          "date": "2026-02-10",
+          "sha256_raw": "9e966f76e18dd737f4ab9e7282feda9843402ccd49c49d011905594c2e29556e",
+          "sha256_md": "51d73a8527e940c19a7dfdfa9f2b1cc6cb4022a0342e26e1fa347c57b5d50696",
+          "content_changed": false,
+          "in_window_24m": true,
+          "title": "Tarif d&rsquo;utilisation des r&eacute;seaux publics de distribution d&rsquo;&eacute;lectricit&eacute; (TURPE 7 HTA-BT) | CRE",
+          "fetched_at": "2026-02-10T22:23:23.146659Z"
+        },
+        {
+          "date": "2026-02-11",
+          "sha256_raw": "9e966f76e18dd737f4ab9e7282feda9843402ccd49c49d011905594c2e29556e",
+          "sha256_md": "51d73a8527e940c19a7dfdfa9f2b1cc6cb4022a0342e26e1fa347c57b5d50696",
+          "content_changed": false,
+          "in_window_24m": true,
+          "title": "Tarif d&rsquo;utilisation des r&eacute;seaux publics de distribution d&rsquo;&eacute;lectricit&eacute; (TURPE 7 HTA-BT) | CRE",
+          "fetched_at": "2026-02-11T05:19:15.868498Z"
+        }
+      ],
+      "total_snapshots": 2,
+      "has_content_changes": false,
+      "authority": "CRE",
+      "category": "tarif_reseau",
+      "energy": "electricite",
+      "regulation": "TURPE7",
+      "tags": [
+        "turpe",
+        "turpe7",
+        "hta",
+        "bt",
+        "distribution"
+      ],
+      "url": "https://www.cre.fr/documents/deliberations/tarif-dutilisation-des-reseaux-publics-de-distribution-delectricite-turpe-7-hta-bt-1.html"
+    },
+    "cre_turpe7_htb_decision_2025": {
+      "latest": {
+        "date": "2026-02-11",
+        "sha256_raw": "631935dc99275b6f36fa69d0e3b41f38933dc8c5189ac8c8897f399a0f9dcc78",
+        "sha256_md": "654c37649fe374b6855cec92843cc5c4e6e53ace23b3181e8c49d034e6c304d7",
+        "content_changed": false,
+        "in_window_24m": true,
+        "title": "Tarif d&rsquo;utilisation des r&eacute;seaux publics de transport d&rsquo;&eacute;lectricit&eacute; (TURPE 7 HTB) | CRE",
+        "fetched_at": "2026-02-11T05:19:17.719821Z"
+      },
+      "history": [
+        {
+          "date": "2026-02-10",
+          "sha256_raw": "631935dc99275b6f36fa69d0e3b41f38933dc8c5189ac8c8897f399a0f9dcc78",
+          "sha256_md": "654c37649fe374b6855cec92843cc5c4e6e53ace23b3181e8c49d034e6c304d7",
+          "content_changed": false,
+          "in_window_24m": true,
+          "title": "Tarif d&rsquo;utilisation des r&eacute;seaux publics de transport d&rsquo;&eacute;lectricit&eacute; (TURPE 7 HTB) | CRE",
+          "fetched_at": "2026-02-10T22:23:24.966811Z"
+        },
+        {
+          "date": "2026-02-11",
+          "sha256_raw": "631935dc99275b6f36fa69d0e3b41f38933dc8c5189ac8c8897f399a0f9dcc78",
+          "sha256_md": "654c37649fe374b6855cec92843cc5c4e6e53ace23b3181e8c49d034e6c304d7",
+          "content_changed": false,
+          "in_window_24m": true,
+          "title": "Tarif d&rsquo;utilisation des r&eacute;seaux publics de transport d&rsquo;&eacute;lectricit&eacute; (TURPE 7 HTB) | CRE",
+          "fetched_at": "2026-02-11T05:19:17.719821Z"
+        }
+      ],
+      "total_snapshots": 2,
+      "has_content_changes": false,
+      "authority": "CRE",
+      "category": "tarif_reseau",
+      "energy": "electricite",
+      "regulation": "TURPE7",
+      "tags": [
+        "turpe",
+        "turpe7",
+        "htb",
+        "transport"
+      ],
+      "url": "https://www.cre.fr/documents/deliberations/tarif-dutilisation-des-reseaux-publics-de-transport-delectricite-turpe-7-htb-1.html"
+    },
+    "cre_turpe7_news_2025": {
+      "latest": {
+        "date": "2026-02-11",
+        "sha256_raw": "7b3efe4399ce45e1032a384da2a1fbe186e46f58a583f39a2c4eab94ef51c05d",
+        "sha256_md": "7467a2651cde64682e3434749d33e321ade418d057378a50dbd9f36ed346b5fd",
+        "content_changed": false,
+        "in_window_24m": true,
+        "title": "La CRE publie ses d&eacute;cisions finales sur le tarif d&rsquo;utilisation des r&eacute;seaux publics d&rsquo;&eacute;lectricit&eacute; (TURPE 7) | CRE",
+        "fetched_at": "2026-02-11T05:19:19.447363Z"
+      },
+      "history": [
+        {
+          "date": "2026-02-10",
+          "sha256_raw": "7b3efe4399ce45e1032a384da2a1fbe186e46f58a583f39a2c4eab94ef51c05d",
+          "sha256_md": "7467a2651cde64682e3434749d33e321ade418d057378a50dbd9f36ed346b5fd",
+          "content_changed": false,
+          "in_window_24m": true,
+          "title": "La CRE publie ses d&eacute;cisions finales sur le tarif d&rsquo;utilisation des r&eacute;seaux publics d&rsquo;&eacute;lectricit&eacute; (TURPE 7) | CRE",
+          "fetched_at": "2026-02-10T22:23:28.038511Z"
+        },
+        {
+          "date": "2026-02-11",
+          "sha256_raw": "7b3efe4399ce45e1032a384da2a1fbe186e46f58a583f39a2c4eab94ef51c05d",
+          "sha256_md": "7467a2651cde64682e3434749d33e321ade418d057378a50dbd9f36ed346b5fd",
+          "content_changed": false,
+          "in_window_24m": true,
+          "title": "La CRE publie ses d&eacute;cisions finales sur le tarif d&rsquo;utilisation des r&eacute;seaux publics d&rsquo;&eacute;lectricit&eacute; (TURPE 7) | CRE",
+          "fetched_at": "2026-02-11T05:19:19.447363Z"
+        }
+      ],
+      "total_snapshots": 2,
+      "has_content_changes": false,
+      "authority": "CRE",
+      "category": "tarif_reseau",
+      "energy": "electricite",
+      "regulation": "TURPE7",
+      "tags": [
+        "turpe",
+        "turpe7",
+        "actualite"
+      ],
+      "url": "https://www.cre.fr/actualites/toute-lactualite/la-cre-publie-ses-decisions-finales-sur-le-tarif-dutilisation-des-reseaux-publics-delectricite-turpe-7.html"
+    },
+    "cre_turpe7_project_modif_2026": {
+      "latest": {
+        "date": "2026-02-11",
+        "sha256_raw": "01e82e13e2de11438ed57391d08573eb589ee0ad44e2668ddf1a271877423150",
+        "sha256_md": "1820edae4d6e0bb4798954d88fc67e80fab5af4c805f4746754d0b15ada8e1df",
+        "content_changed": false,
+        "in_window_24m": true,
+        "title": "Projet de modification des tarifs d&rsquo;utilisation des r&eacute;seaux publics de distribution et transport d&rsquo;&eacute;lectricit&eacute; (TURPE 7 HTA-BT et TURPE 7 HTB) | CRE",
+        "fetched_at": "2026-02-11T05:19:21.134889Z"
+      },
+      "history": [
+        {
+          "date": "2026-02-10",
+          "sha256_raw": "01e82e13e2de11438ed57391d08573eb589ee0ad44e2668ddf1a271877423150",
+          "sha256_md": "1820edae4d6e0bb4798954d88fc67e80fab5af4c805f4746754d0b15ada8e1df",
+          "content_changed": false,
+          "in_window_24m": true,
+          "title": "Projet de modification des tarifs d&rsquo;utilisation des r&eacute;seaux publics de distribution et transport d&rsquo;&eacute;lectricit&eacute; (TURPE 7 HTA-BT et TURPE 7 HTB) | CRE",
+          "fetched_at": "2026-02-10T22:23:31.383106Z"
+        },
+        {
+          "date": "2026-02-11",
+          "sha256_raw": "01e82e13e2de11438ed57391d08573eb589ee0ad44e2668ddf1a271877423150",
+          "sha256_md": "1820edae4d6e0bb4798954d88fc67e80fab5af4c805f4746754d0b15ada8e1df",
+          "content_changed": false,
+          "in_window_24m": true,
+          "title": "Projet de modification des tarifs d&rsquo;utilisation des r&eacute;seaux publics de distribution et transport d&rsquo;&eacute;lectricit&eacute; (TURPE 7 HTA-BT et TURPE 7 HTB) | CRE",
+          "fetched_at": "2026-02-11T05:19:21.134889Z"
+        }
+      ],
+      "total_snapshots": 2,
+      "has_content_changes": false,
+      "authority": "CRE",
+      "category": "tarif_reseau",
+      "energy": "electricite",
+      "regulation": "TURPE7",
+      "tags": [
+        "turpe",
+        "turpe7",
+        "projet",
+        "modification"
+      ],
+      "url": "https://www.cre.fr/documents/deliberations/projet-de-modification-des-tarifs-dutilisation-des-reseaux-publics-de-distribution-et-transport-delectricite-turpe-7-hta-bt-et-turpe-7-htb.html"
+    }
+  },
+  "stats": {
+    "total_sources": 14,
+    "total_snapshots": 27,
+    "sources_with_changes": 0,
+    "errors": 0
+  }
+}
