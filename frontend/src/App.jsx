@@ -30,6 +30,7 @@ import Cockpit2MinPage from './pages/Cockpit2MinPage';
 import SegmentationPage from './pages/SegmentationPage';
 import CompliancePage from './pages/CompliancePage';
 import ConsumptionDiagPage from './pages/ConsumptionDiagPage';
+import BillIntelPage from './pages/BillIntelPage';
 
 function App() {
   const [showUpgradeWizard, setShowUpgradeWizard] = useState(false);
@@ -62,6 +63,7 @@ function App() {
                 <Route path="/monitoring" element={<MonitoringPage />} />
                 <Route path="/compliance" element={<CompliancePage />} />
                 <Route path="/diagnostic-conso" element={<ConsumptionDiagPage />} />
+                <Route path="/bill-intel" element={<BillIntelPage />} />
                 <Route path="/segmentation" element={<SegmentationPage />} />
                 <Route path="/import" element={<ImportPage />} />
                 <Route path="/status" element={<StatusPage />} />

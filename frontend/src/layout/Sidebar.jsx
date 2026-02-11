@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, Building2, ShieldCheck, FileText,
   Zap, ListChecks, Activity, Settings, HelpCircle,
-  BarChart3, Import, Users,
+  BarChart3, Import, Users, Receipt,
 } from 'lucide-react';
 
 const NAV = [
@@ -12,6 +12,7 @@ const NAV = [
   { to: '/actions',        icon: ListChecks,      label: 'Actions' },
   { to: '/consommations',  icon: Zap,             label: 'Conso & Usages' },
   { to: '/diagnostic-conso', icon: BarChart3,     label: 'Diagnostic Conso' },
+  { to: '/bill-intel',     icon: Receipt,         label: 'Bill Intelligence' },
   { to: '/monitoring',     icon: Activity,        label: 'Monitoring' },
 ];
 

@@ -21,9 +21,9 @@ PROMEOS = cockpit independant du fournisseur pour piloter un patrimoine immobili
 
 | Element | Quantite | Statut |
 |---------|----------|--------|
-| Endpoints API | 118 | Stable |
-| Modeles SQLAlchemy | 25 classes | Stable |
-| Tests pytest | 574 | 574/574 green |
+| Endpoints API | 130 | Stable |
+| Modeles SQLAlchemy | 29 classes | Stable |
+| Tests pytest | 603 | 603/603 green |
 | DB principale | promeos.db (SQLite) | 2.0 MB demo |
 | DB Knowledge Base | kb.db (SQLite FTS5) | 176 KB |
 
@@ -36,7 +36,8 @@ PROMEOS = cockpit independant du fournisseur pour piloter un patrimoine immobili
 | **Knowledge Base** | 12 items YAML, FTS5, archetypes, regles anomalie, recommendations, lifecycle (draft/validated/deprecated) | 20 endpoints |
 | **Usages & Consommations** | Import CSV/JSON, profils, anomalies, recommendations ICE-scored, analytics engine | 7 endpoints |
 | **Diagnostic Conso V1.1** | Horaires site, tarif ref, stats robustes (median+MAD, linreg), actions recommandees par insight | 4 endpoints |
-| **Bill Intelligence** | Parser JSON/PDF, 20 regles audit, shadow billing L1, timeline 24 mois, couverture L0-L3, export CSV/HTML | 13 endpoints |
+| **Bill Intelligence V1** | Parser JSON/PDF, 20 regles audit V0, shadow billing L1, timeline 24 mois, couverture L0-L3, export CSV/HTML | 13 endpoints |
+| **Bill Intelligence V2** | Models persistes (EnergyContract, EnergyInvoice, EnergyInvoiceLine, BillingInsight), import CSV, shadow billing simplifie, 10 regles anomalies, seed demo, dashboard 2min integration | 12 endpoints |
 | **Electric Monitoring** | KPIEngine (Pmax/P95/P99/profils), PowerEngine (risque 0-100), DataQualityEngine (qualite 0-100), 12 alertes Tier-1 avec lifecycle | 6 endpoints |
 | **Connecteurs** | RTE eCO2mix + PVGIS (live), Enedis + Meteo (stubs) | 3 endpoints |
 | **Veille reglementaire** | 3 watchers RSS (Legifrance, CRE, RTE), deduplication hash | 4 endpoints |
@@ -56,6 +57,7 @@ PROMEOS = cockpit independant du fournisseur pour piloter un patrimoine immobili
 | Plan d'action | `/action-plan` | Actions priorisees cross-sites |
 | Conso & Usages | `/consommations` | Profils energetiques, anomalies |
 | Diagnostic Conso | `/diagnostic-conso` | Diagnostic V1.1: horaires, talon, pointes, derive, lacunes, actions |
+| Bill Intelligence | `/bill-intel` | Factures importees, anomalies, shadow billing, seed demo, audit global |
 | Monitoring | `/monitoring` | KPIs electriques, alertes, jour-type |
 | Connecteurs | `/connectors` | Statut connecteurs, test/sync |
 | Veille Reglementaire | `/watchers` | Evenements reglementaires, revue |

@@ -249,4 +249,24 @@ export const putSiteSchedule = (siteId, data) => api.put(`/site/${siteId}/schedu
 export const getSiteTariff = (siteId) => api.get(`/site/${siteId}/tariff`).then(r => r.data);
 export const putSiteTariff = (siteId, data) => api.put(`/site/${siteId}/tariff`, data).then(r => r.data);
 
+// ========================================
+// BILL INTELLIGENCE
+// ========================================
+
+export const getBillingSummary = () => api.get('/billing/summary').then(r => r.data);
+export const getBillingInsights = (params = {}) => api.get('/billing/insights', { params }).then(r => r.data);
+export const getBillingInvoices = (params = {}) => api.get('/billing/invoices', { params }).then(r => r.data);
+export const getSiteBilling = (siteId) => api.get(`/billing/site/${siteId}`).then(r => r.data);
+export const getBillingRules = () => api.get('/billing/rules').then(r => r.data);
+export const auditInvoice = (invoiceId) => api.post(`/billing/audit/${invoiceId}`).then(r => r.data);
+export const auditAllInvoices = () => api.post('/billing/audit-all').then(r => r.data);
+export const seedBillingDemo = () => api.post('/billing/seed-demo').then(r => r.data);
+export const importInvoicesCsv = (file) => {
+  const fd = new FormData();
+  fd.append('file', file);
+  return api.post('/billing/import-csv', fd, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }).then(r => r.data);
+};
+
 export default api;
