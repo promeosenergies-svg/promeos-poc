@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { useDemo } from '../contexts/DemoContext';
 import {
-  X, ChevronRight, ChevronLeft, Building2,
-  FileSpreadsheet, Check, Rocket, Sparkles, AlertTriangle, Upload,
+  X, ChevronRight, ChevronLeft, Building2, Building, MapPin,
+  FileSpreadsheet, Check, Rocket, AlertTriangle, Upload,
+  Zap, Plus, Trash2, SkipForward,
 } from 'lucide-react';
-import { createOnboarding, importSitesCsv, getDemoTemplates } from '../services/api';
+import {
+  createOnboarding, importSitesCsv, createCompteur,
+} from '../services/api';
 
 const STEPS = [
-  { key: 'bienvenue', label: 'Bienvenue' },
   { key: 'organisation', label: 'Organisation' },
-  { key: 'sites', label: 'Import Sites' },
-  { key: 'confirmation', label: 'Confirmation' },
+  { key: 'entite', label: 'Entite juridique' },
+  { key: 'sites', label: 'Sites' },
+  { key: 'compteurs', label: 'Compteurs' },
+  { key: 'resume', label: 'Resume' },
 ];
 
 const TYPE_CLIENT_OPTIONS = [
@@ -26,10 +29,31 @@ const TYPE_CLIENT_OPTIONS = [
   { value: 'mixte', label: 'Patrimoine mixte' },
 ];
 
+const TYPE_SITE_OPTIONS = [
+  { value: 'bureau', label: 'Bureau' },
+  { value: 'commerce', label: 'Commerce' },
+  { value: 'entrepot', label: 'Entrepot' },
+  { value: 'usine', label: 'Usine / Industrie' },
+  { value: 'hotel', label: 'Hotel' },
+  { value: 'sante', label: 'Sante / EHPAD' },
+  { value: 'enseignement', label: 'Enseignement' },
+  { value: 'collectivite', label: 'Collectivite' },
+  { value: 'copropriete', label: 'Copropriete' },
+  { value: 'logement_social', label: 'Logement social' },
+  { value: 'magasin', label: 'Magasin' },
+];
+
+const COMPTEUR_TYPES = [
+  { value: 'electricite', label: 'Electricite' },
+  { value: 'gaz', label: 'Gaz' },
+  { value: 'eau', label: 'Eau' },
+];
+
+const emptySite = { nom: '', type: 'bureau', ville: '', code_postal: '', surface_m2: '', naf_code: '' };
+const emptyCompteur = { site_index: 0, type: 'electricite', numero_serie: '', puissance_kw: '' };
+
 const UpgradeWizard = ({ onClose }) => {
-  const { toggleDemo } = useDemo();
   const [step, setStep] = useState(0);
-  const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
@@ -37,30 +61,71 @@ const UpgradeWizard = ({ onClose }) => {
   const [csvPreview, setCsvPreview] = useState(null);
 
   const [formData, setFormData] = useState({
-    mode: 'real',
-    selectedTemplate: 'casino_retail',
     orgNom: '',
     orgSiren: '',
     orgType: 'tertiaire',
-    portefeuilleName: '',
-    importMethod: 'csv',
-    manualSite: { nom: '', adresse: '', code_postal: '', ville: '', surface_m2: '', naf_code: '' },
+    ejNom: '',
+    ejSiren: '',
+    importMethod: 'manual',
+    sites: [{ ...emptySite }],
+    compteurs: [],
   });
 
   useEffect(() => {
-    getDemoTemplates()
-      .then(data => setTemplates(data.templates || []))
-      .catch(() => {});
-  }, []);
+    if (step === 1 && !formData.ejNom) {
+      setFormData(prev => ({
+        ...prev,
+        ejNom: prev.orgNom,
+        ejSiren: prev.orgSiren,
+      }));
+    }
+  }, [step]);
 
   const updateField = (key, value) => {
     setFormData(prev => ({ ...prev, [key]: value }));
+    setError(null);
   };
 
-  const updateManualSite = (key, value) => {
+  const updateSite = (index, key, value) => {
+    setFormData(prev => {
+      const sites = [...prev.sites];
+      sites[index] = { ...sites[index], [key]: value };
+      return { ...prev, sites };
+    });
+  };
+
+  const addSite = () => {
+    setFormData(prev => ({ ...prev, sites: [...prev.sites, { ...emptySite }] }));
+  };
+
+  const removeSite = (index) => {
     setFormData(prev => ({
       ...prev,
-      manualSite: { ...prev.manualSite, [key]: value },
+      sites: prev.sites.filter((_, i) => i !== index),
+      compteurs: prev.compteurs.filter(c => c.site_index !== index)
+        .map(c => ({ ...c, site_index: c.site_index > index ? c.site_index - 1 : c.site_index })),
+    }));
+  };
+
+  const updateCompteur = (index, key, value) => {
+    setFormData(prev => {
+      const compteurs = [...prev.compteurs];
+      compteurs[index] = { ...compteurs[index], [key]: value };
+      return { ...prev, compteurs };
+    });
+  };
+
+  const addCompteur = () => {
+    setFormData(prev => ({
+      ...prev,
+      compteurs: [...prev.compteurs, { ...emptyCompteur }],
+    }));
+  };
+
+  const removeCompteur = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      compteurs: prev.compteurs.filter((_, i) => i !== index),
     }));
   };
 
@@ -77,28 +142,21 @@ const UpgradeWizard = ({ onClose }) => {
     reader.readAsText(file);
   };
 
-  const handleFinish = async () => {
+  const handleSubmit = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      if (formData.mode === 'demo') {
-        await toggleDemo();
-        onClose();
-        return;
-      }
-
-      const sites = [];
-      if (formData.importMethod === 'manual' && formData.manualSite.nom) {
-        sites.push({
-          nom: formData.manualSite.nom,
-          adresse: formData.manualSite.adresse || null,
-          code_postal: formData.manualSite.code_postal || null,
-          ville: formData.manualSite.ville || null,
-          surface_m2: formData.manualSite.surface_m2 ? parseFloat(formData.manualSite.surface_m2) : null,
-          naf_code: formData.manualSite.naf_code || null,
-        });
-      }
+      const sitesPayload = formData.importMethod === 'manual'
+        ? formData.sites.filter(s => s.nom.trim()).map(s => ({
+            nom: s.nom,
+            type: s.type || null,
+            code_postal: s.code_postal || null,
+            ville: s.ville || null,
+            surface_m2: s.surface_m2 ? parseFloat(s.surface_m2) : null,
+            naf_code: s.naf_code || null,
+          }))
+        : [];
 
       const payload = {
         organisation: {
@@ -106,10 +164,8 @@ const UpgradeWizard = ({ onClose }) => {
           siren: formData.orgSiren || null,
           type_client: formData.orgType,
         },
-        portefeuilles: formData.portefeuilleName
-          ? [{ nom: formData.portefeuilleName }]
-          : [{ nom: 'Principal' }],
-        sites: sites.length > 0 ? sites : undefined,
+        portefeuilles: [{ nom: 'Principal' }],
+        sites: sitesPayload.length > 0 ? sitesPayload : undefined,
       };
 
       const onboardResult = await createOnboarding(payload);
@@ -119,12 +175,31 @@ const UpgradeWizard = ({ onClose }) => {
         csvResult = await importSitesCsv(csvFile);
       }
 
+      let compteursCreated = 0;
+      if (formData.compteurs.length > 0 && onboardResult.sites?.length > 0) {
+        for (const c of formData.compteurs) {
+          const siteObj = onboardResult.sites[c.site_index];
+          if (siteObj) {
+            try {
+              await createCompteur({
+                site_id: siteObj.id,
+                type: c.type,
+                numero_serie: c.numero_serie || null,
+                puissance_souscrite_kw: c.puissance_kw ? parseFloat(c.puissance_kw) : null,
+              });
+              compteursCreated++;
+            } catch { /* skip individual compteur errors */ }
+          }
+        }
+      }
+
       setResult({
         ...onboardResult,
         csv_imported: csvResult?.imported || 0,
         csv_errors: csvResult?.errors || 0,
+        compteurs_created: compteursCreated,
       });
-      setStep(3);
+      setStep(4);
 
     } catch (err) {
       const detail = err.response?.data?.detail || err.message;
@@ -143,26 +218,33 @@ const UpgradeWizard = ({ onClose }) => {
   };
 
   const canProceed = () => {
-    if (step === 0) return true;
-    if (step === 1) return formData.mode === 'demo' || formData.orgNom.trim().length > 0;
+    if (step === 0) return formData.orgNom.trim().length > 0;
+    if (step === 1) return true;
     if (step === 2) {
-      if (formData.mode === 'demo') return true;
       if (formData.importMethod === 'csv') return csvFile !== null;
-      if (formData.importMethod === 'manual') return formData.manualSite.nom.trim().length > 0;
-      return true;
+      return formData.sites.some(s => s.nom.trim().length > 0);
     }
+    if (step === 3) return true;
     return true;
   };
 
   const handleNext = () => {
-    if (step === 2 && formData.mode !== 'demo') {
-      handleFinish();
-    } else if (step === 2 && formData.mode === 'demo') {
-      handleFinish();
+    if (step === 3) {
+      handleSubmit();
     } else if (step < STEPS.length - 1) {
       setStep(step + 1);
     } else {
       handleClose();
+    }
+  };
+
+  const handleSkip = () => {
+    if (step === 2) {
+      setFormData(prev => ({ ...prev, sites: [], compteurs: [] }));
+      setStep(3);
+    } else if (step === 3) {
+      setFormData(prev => ({ ...prev, compteurs: [] }));
+      handleSubmit();
     }
   };
 
@@ -173,7 +255,7 @@ const UpgradeWizard = ({ onClose }) => {
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <div className="flex items-center gap-2">
             <Rocket size={22} className="text-blue-600" />
-            <h2 className="text-lg font-bold text-gray-900">Configurer mon patrimoine</h2>
+            <h2 className="text-lg font-bold text-gray-900">Onboarding</h2>
           </div>
           <button onClick={handleClose} className="text-gray-400 hover:text-gray-600">
             <X size={20} />
@@ -181,20 +263,20 @@ const UpgradeWizard = ({ onClose }) => {
         </div>
 
         {/* Step indicator */}
-        <div className="px-6 py-4 flex items-center gap-2">
+        <div className="px-6 py-3 flex items-center gap-1">
           {STEPS.map((s, i) => (
             <React.Fragment key={s.key}>
-              <div className={`flex items-center gap-1.5 text-sm ${
+              <div className={`flex items-center gap-1 text-xs ${
                 i <= step ? 'text-blue-600 font-medium' : 'text-gray-400'
               }`}>
-                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
                   i < step ? 'bg-blue-600 text-white' :
                   i === step ? 'bg-blue-100 text-blue-700 ring-2 ring-blue-600' :
                   'bg-gray-100 text-gray-400'
                 }`}>
-                  {i < step ? <Check size={14} /> : i + 1}
+                  {i < step ? <Check size={12} /> : i + 1}
                 </div>
-                <span className="hidden md:inline">{s.label}</span>
+                <span className="hidden lg:inline">{s.label}</span>
               </div>
               {i < STEPS.length - 1 && (
                 <div className={`flex-1 h-0.5 ${i < step ? 'bg-blue-600' : 'bg-gray-200'}`} />
@@ -204,94 +286,27 @@ const UpgradeWizard = ({ onClose }) => {
         </div>
 
         {/* Step content */}
-        <div className="px-6 py-6 min-h-[300px]">
+        <div className="px-6 py-5 min-h-[320px]">
 
-          {/* Step 0: Bienvenue */}
+          {/* Step 0: Organisation */}
           {step === 0 && (
             <div>
-              <div className="flex items-center gap-3 mb-4">
-                <Sparkles size={28} className="text-indigo-500" />
-                <h3 className="text-xl font-bold text-gray-900">Bienvenue dans PROMEOS</h3>
+              <div className="flex items-center gap-2 mb-1">
+                <Building2 size={20} className="text-blue-600" />
+                <h3 className="text-lg font-semibold text-gray-900">Votre organisation</h3>
               </div>
-              <p className="text-gray-600 mb-6">
-                PROMEOS transforme votre patrimoine immobilier en un plan d'action
-                concret pour la conformite energetique.
-              </p>
-              <div className="space-y-3">
-                <label className={`flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition ${
-                  formData.mode === 'real' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
-                }`}>
-                  <input type="radio" name="mode" checked={formData.mode === 'real'}
-                    onChange={() => updateField('mode', 'real')} className="mt-1" />
-                  <div>
-                    <div className="font-medium text-gray-900">Configurer mon patrimoine</div>
-                    <div className="text-sm text-gray-500">
-                      Creez votre organisation et importez vos sites reels (CSV ou saisie manuelle).
-                    </div>
-                  </div>
-                </label>
-                <label className={`flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition ${
-                  formData.mode === 'demo' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
-                }`}>
-                  <input type="radio" name="mode" checked={formData.mode === 'demo'}
-                    onChange={() => updateField('mode', 'demo')} className="mt-1" />
-                  <div>
-                    <div className="font-medium text-gray-900">Explorer en mode demo</div>
-                    <div className="text-sm text-gray-500">
-                      Decouvrez la plateforme avec 120 sites de demonstration pre-charges.
-                    </div>
-                  </div>
-                </label>
-              </div>
-            </div>
-          )}
-
-          {/* Step 1: Organisation (demo) */}
-          {step === 1 && formData.mode === 'demo' && (
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">Choisir un profil demo</h3>
-              <p className="text-sm text-gray-500 mb-6">Selectionnez un profil de demonstration.</p>
-              <div className="space-y-3">
-                {templates.map(tpl => (
-                  <label key={tpl.id} className={`flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition ${
-                    formData.selectedTemplate === tpl.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
-                  }`}>
-                    <input type="radio" name="template" checked={formData.selectedTemplate === tpl.id}
-                      onChange={() => updateField('selectedTemplate', tpl.id)} className="mt-1" />
-                    <div>
-                      <div className="font-medium text-gray-900">{tpl.label}</div>
-                      <div className="text-sm text-gray-500">{tpl.description}</div>
-                      <div className="flex gap-3 mt-1 text-xs text-gray-400">
-                        <span>{tpl.stats_preview.total_sites} sites</span>
-                        <span>Risque: {tpl.stats_preview.risque_financier}</span>
-                      </div>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Step 1: Organisation (real) */}
-          {step === 1 && formData.mode === 'real' && (
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">Votre organisation</h3>
-              <p className="text-sm text-gray-500 mb-6">
-                Renseignez les informations de votre organisation.
-              </p>
+              <p className="text-sm text-gray-500 mb-5">Qui etes-vous ?</p>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Nom de l'organisation *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nom de l'organisation *</label>
                   <input type="text" value={formData.orgNom}
                     onChange={e => updateField('orgNom', e.target.value)}
-                    placeholder="Ex: Nexity Immobilier, Ville de Lyon, OPH 93..."
+                    placeholder="Ex: Nexity, Ville de Lyon, OPH 93..."
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">SIREN</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">SIREN (optionnel)</label>
                     <input type="text" value={formData.orgSiren}
                       onChange={e => updateField('orgSiren', e.target.value)}
                       placeholder="9 chiffres" maxLength={9}
@@ -307,133 +322,189 @@ const UpgradeWizard = ({ onClose }) => {
                     </select>
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Step 1: Entite Juridique */}
+          {step === 1 && (
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Building size={20} className="text-indigo-600" />
+                <h3 className="text-lg font-semibold text-gray-900">Entite juridique</h3>
+              </div>
+              <p className="text-sm text-gray-500 mb-5">Qui signe les contrats ? (pre-rempli depuis l'organisation)</p>
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nom du portefeuille</label>
-                  <input type="text" value={formData.portefeuilleName}
-                    onChange={e => updateField('portefeuilleName', e.target.value)}
-                    placeholder="Ex: Patrimoine IDF (laissez vide pour 'Principal')"
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Raison sociale</label>
+                  <input type="text" value={formData.ejNom}
+                    onChange={e => updateField('ejNom', e.target.value)}
+                    placeholder="Ex: Nexity SA"
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">SIREN</label>
+                  <input type="text" value={formData.ejSiren}
+                    onChange={e => updateField('ejSiren', e.target.value)}
+                    placeholder="9 chiffres" maxLength={9}
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+                </div>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-xs text-blue-700">
+                    L'entite juridique est creee automatiquement. Vous pourrez en ajouter d'autres plus tard.
+                  </p>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Step 2: Import Sites (demo) */}
-          {step === 2 && formData.mode === 'demo' && (
+          {/* Step 2: Sites */}
+          {step === 2 && (
             <div>
-              <div className="flex items-center gap-3 mb-4">
-                <Check size={28} className="text-green-500" />
-                <h3 className="text-xl font-bold text-gray-900">Pret a demarrer</h3>
+              <div className="flex items-center gap-2 mb-1">
+                <MapPin size={20} className="text-green-600" />
+                <h3 className="text-lg font-semibold text-gray-900">Vos sites</h3>
               </div>
-              <p className="text-gray-600 mb-4">
-                Le mode demo sera active avec 120 sites de demonstration.
-              </p>
-            </div>
-          )}
+              <p className="text-sm text-gray-500 mb-4">Quels batiments gerez-vous ?</p>
 
-          {/* Step 2: Import Sites (real) */}
-          {step === 2 && formData.mode === 'real' && (
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">Import de vos sites</h3>
-              <p className="text-sm text-gray-500 mb-6">Comment souhaitez-vous ajouter vos sites ?</p>
-
-              <div className="flex gap-3 mb-6">
+              <div className="flex gap-2 mb-4">
                 {[
-                  { value: 'csv', icon: FileSpreadsheet, title: 'Import CSV' },
                   { value: 'manual', icon: Building2, title: 'Saisie manuelle' },
+                  { value: 'csv', icon: FileSpreadsheet, title: 'Import CSV' },
                 ].map(opt => {
                   const Icon = opt.icon;
                   return (
                     <button key={opt.value}
                       onClick={() => updateField('importMethod', opt.value)}
-                      className={`flex-1 flex items-center gap-2 p-3 border rounded-lg text-sm transition ${
+                      className={`flex-1 flex items-center justify-center gap-2 p-2.5 border rounded-lg text-sm transition ${
                         formData.importMethod === opt.value
                           ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium'
                           : 'border-gray-200 text-gray-600 hover:border-gray-300'
                       }`}>
-                      <Icon size={18} />
+                      <Icon size={16} />
                       {opt.title}
                     </button>
                   );
                 })}
               </div>
 
+              {formData.importMethod === 'manual' && (
+                <div className="space-y-3">
+                  {formData.sites.map((site, i) => (
+                    <div key={i} className="border rounded-lg p-3 bg-gray-50">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-medium text-gray-500">Site {i + 1}</span>
+                        {formData.sites.length > 1 && (
+                          <button onClick={() => removeSite(i)} className="text-gray-400 hover:text-red-500">
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <input type="text" value={site.nom} onChange={e => updateSite(i, 'nom', e.target.value)}
+                          placeholder="Nom du site *" className="col-span-2 border rounded px-2.5 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500" />
+                        <select value={site.type} onChange={e => updateSite(i, 'type', e.target.value)}
+                          className="border rounded px-2.5 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500">
+                          {TYPE_SITE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                        </select>
+                        <input type="text" value={site.ville} onChange={e => updateSite(i, 'ville', e.target.value)}
+                          placeholder="Ville" className="border rounded px-2.5 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500" />
+                        <input type="text" value={site.code_postal} onChange={e => updateSite(i, 'code_postal', e.target.value)}
+                          placeholder="Code postal" maxLength={5} className="border rounded px-2.5 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500" />
+                        <input type="number" value={site.surface_m2} onChange={e => updateSite(i, 'surface_m2', e.target.value)}
+                          placeholder="Surface m2" className="border rounded px-2.5 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500" />
+                      </div>
+                    </div>
+                  ))}
+                  <button onClick={addSite}
+                    className="w-full flex items-center justify-center gap-1.5 py-2 border-2 border-dashed border-gray-300 rounded-lg text-sm text-gray-500 hover:border-blue-400 hover:text-blue-600 transition">
+                    <Plus size={14} /> Ajouter un site
+                  </button>
+                </div>
+              )}
+
               {formData.importMethod === 'csv' && (
                 <div>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                    <Upload size={32} className="mx-auto text-gray-400 mb-2" />
-                    <p className="text-sm text-gray-600 mb-2">
-                      Glissez votre fichier CSV ou cliquez pour selectionner
-                    </p>
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-5 text-center">
+                    <Upload size={28} className="mx-auto text-gray-400 mb-2" />
+                    <p className="text-sm text-gray-600 mb-2">Glissez votre fichier CSV ou cliquez</p>
                     <input type="file" accept=".csv,.txt" onChange={handleCsvSelect}
-                      className="text-sm text-gray-500 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+                      className="text-sm text-gray-500 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
                   </div>
-                  <div className="mt-3 p-3 bg-gray-50 rounded text-xs text-gray-500">
-                    Format : <code>nom,adresse,code_postal,ville,surface_m2,type,naf_code</code><br />
-                    Le type est auto-detecte via le code NAF si non renseigne.
-                  </div>
+                  <p className="mt-2 text-xs text-gray-400">Format : nom,adresse,code_postal,ville,surface_m2,type,naf_code</p>
                   {csvPreview && (
-                    <div className="mt-4">
-                      <p className="text-sm font-medium text-gray-700 mb-2">Apercu ({csvFile?.name})</p>
-                      <div className="bg-gray-50 rounded border text-xs font-mono overflow-x-auto p-2 max-h-32">
+                    <div className="mt-3">
+                      <p className="text-xs font-medium text-gray-600 mb-1">Apercu ({csvFile?.name})</p>
+                      <div className="bg-gray-50 rounded border text-xs font-mono overflow-x-auto p-2 max-h-28">
                         {csvPreview.map((line, i) => (
-                          <div key={i} className={i === 0 ? 'font-bold text-blue-700' : 'text-gray-600'}>
-                            {line}
-                          </div>
+                          <div key={i} className={i === 0 ? 'font-bold text-blue-700' : 'text-gray-600'}>{line}</div>
                         ))}
                       </div>
                     </div>
                   )}
                 </div>
               )}
+            </div>
+          )}
 
-              {formData.importMethod === 'manual' && (
-                <div className="space-y-3">
-                  <p className="text-sm text-gray-500">
-                    Ajoutez un premier site. Vous pourrez en ajouter d'autres ensuite.
-                  </p>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Nom du site *</label>
-                    <input type="text" value={formData.manualSite.nom}
-                      onChange={e => updateManualSite('nom', e.target.value)}
-                      placeholder="Ex: Siege social, Residence Les Lilas..."
-                      className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Ville</label>
-                      <input type="text" value={formData.manualSite.ville}
-                        onChange={e => updateManualSite('ville', e.target.value)}
-                        placeholder="Paris" className="w-full border rounded-lg px-3 py-2 text-sm outline-none" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Code postal</label>
-                      <input type="text" value={formData.manualSite.code_postal}
-                        onChange={e => updateManualSite('code_postal', e.target.value)}
-                        placeholder="75008" maxLength={5} className="w-full border rounded-lg px-3 py-2 text-sm outline-none" />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Surface (m2)</label>
-                      <input type="number" value={formData.manualSite.surface_m2}
-                        onChange={e => updateManualSite('surface_m2', e.target.value)}
-                        placeholder="2500" className="w-full border rounded-lg px-3 py-2 text-sm outline-none" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Code NAF</label>
-                      <input type="text" value={formData.manualSite.naf_code}
-                        onChange={e => updateManualSite('naf_code', e.target.value)}
-                        placeholder="68.32A" className="w-full border rounded-lg px-3 py-2 text-sm outline-none" />
-                    </div>
-                  </div>
+          {/* Step 3: Compteurs */}
+          {step === 3 && (
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Zap size={20} className="text-amber-500" />
+                <h3 className="text-lg font-semibold text-gray-900">Compteurs</h3>
+              </div>
+              <p className="text-sm text-gray-500 mb-4">
+                Rattachez des compteurs a vos sites (optionnel — ajoutables plus tard).
+              </p>
+
+              {formData.sites.filter(s => s.nom.trim()).length === 0 && formData.importMethod === 'manual' ? (
+                <div className="bg-gray-50 border rounded-lg p-4 text-center text-sm text-gray-500">
+                  Aucun site saisi. Les compteurs seront ajoutables apres creation.
                 </div>
+              ) : (
+                <>
+                  {formData.compteurs.map((c, i) => (
+                    <div key={i} className="border rounded-lg p-3 bg-gray-50 mb-2">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-medium text-gray-500">Compteur {i + 1}</span>
+                        <button onClick={() => removeCompteur(i)} className="text-gray-400 hover:text-red-500">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        {formData.importMethod === 'manual' && (
+                          <select value={c.site_index} onChange={e => updateCompteur(i, 'site_index', parseInt(e.target.value))}
+                            className="col-span-2 border rounded px-2.5 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500">
+                            {formData.sites.filter(s => s.nom.trim()).map((s, si) => (
+                              <option key={si} value={si}>{s.nom || `Site ${si + 1}`}</option>
+                            ))}
+                          </select>
+                        )}
+                        <select value={c.type} onChange={e => updateCompteur(i, 'type', e.target.value)}
+                          className="border rounded px-2.5 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500">
+                          {COMPTEUR_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                        </select>
+                        <input type="text" value={c.numero_serie} onChange={e => updateCompteur(i, 'numero_serie', e.target.value)}
+                          placeholder="N de serie (optionnel)" className="border rounded px-2.5 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500" />
+                        {c.type === 'electricite' && (
+                          <input type="number" value={c.puissance_kw} onChange={e => updateCompteur(i, 'puissance_kw', e.target.value)}
+                            placeholder="Puissance souscrite kW" className="col-span-2 border rounded px-2.5 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500" />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  <button onClick={addCompteur}
+                    className="w-full flex items-center justify-center gap-1.5 py-2 border-2 border-dashed border-gray-300 rounded-lg text-sm text-gray-500 hover:border-amber-400 hover:text-amber-600 transition">
+                    <Plus size={14} /> Ajouter un compteur
+                  </button>
+                </>
               )}
             </div>
           )}
 
-          {/* Step 3: Confirmation */}
-          {step === 3 && result && (
+          {/* Step 4: Resume */}
+          {step === 4 && result && (
             <div>
               <div className="flex items-center gap-3 mb-4">
                 <Check size={28} className="text-green-500" />
@@ -445,12 +516,16 @@ const UpgradeWizard = ({ onClose }) => {
                   <span className="font-medium">{formData.orgNom}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Portefeuilles</span>
-                  <span className="font-medium">{result.portefeuille_ids?.length || 1}</span>
+                  <span className="text-gray-600">Entite juridique</span>
+                  <span className="font-medium">{formData.ejNom || formData.orgNom}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Sites crees</span>
                   <span className="font-medium">{(result.sites_created || 0) + (result.csv_imported || 0)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Compteurs ajoutes</span>
+                  <span className="font-medium">{result.compteurs_created || 0}</span>
                 </div>
                 {result.csv_errors > 0 && (
                   <div className="flex justify-between text-sm text-orange-600">
@@ -462,7 +537,7 @@ const UpgradeWizard = ({ onClose }) => {
               {result.sites?.length > 0 && (
                 <div className="mt-4">
                   <p className="text-sm font-medium text-gray-700 mb-2">Sites provisionnes :</p>
-                  <div className="space-y-1 max-h-40 overflow-y-auto">
+                  <div className="space-y-1 max-h-36 overflow-y-auto">
                     {result.sites.map(s => (
                       <div key={s.id} className="flex items-center justify-between text-sm bg-gray-50 rounded px-3 py-1.5">
                         <span>{s.nom}</span>
@@ -478,18 +553,6 @@ const UpgradeWizard = ({ onClose }) => {
             </div>
           )}
 
-          {step === 3 && !result && (
-            <div>
-              <div className="flex items-center gap-3 mb-4">
-                <Sparkles size={28} className="text-indigo-500" />
-                <h3 className="text-xl font-bold text-gray-900">Mode demo active</h3>
-              </div>
-              <p className="text-gray-600">
-                Explorez PROMEOS avec 120 sites de demonstration.
-              </p>
-            </div>
-          )}
-
           {error && (
             <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
               <AlertTriangle size={18} className="text-red-500 shrink-0 mt-0.5" />
@@ -501,38 +564,48 @@ const UpgradeWizard = ({ onClose }) => {
         {/* Footer */}
         <div className="flex items-center justify-between px-6 py-4 border-t bg-gray-50 rounded-b-2xl">
           <button
-            onClick={() => step > 0 && !result ? setStep(step - 1) : handleClose()}
+            onClick={() => step > 0 && step < 4 ? setStep(step - 1) : handleClose()}
             className="flex items-center gap-1 text-gray-600 hover:text-gray-800 text-sm"
           >
             <ChevronLeft size={16} />
-            {step > 0 && !result ? 'Precedent' : 'Fermer'}
+            {step > 0 && step < 4 ? 'Precedent' : 'Fermer'}
           </button>
-          {step < 3 && (
-            <button
-              onClick={handleNext}
-              disabled={!canProceed() || loading}
-              className={`flex items-center gap-1 px-6 py-2 rounded-lg text-sm font-semibold transition ${
-                !canProceed() || loading
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : step === 2
-                    ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700'
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
-              }`}
-            >
-              {loading ? 'Creation en cours...' :
-               step === 2 && formData.mode === 'real' ? 'Creer mon patrimoine' :
-               step === 2 && formData.mode === 'demo' ? 'Activer le mode demo' :
-               'Suivant'}
-              {!loading && <ChevronRight size={16} />}
-            </button>
-          )}
-          {step === 3 && (
-            <button onClick={handleClose}
-              className="flex items-center gap-1 px-6 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition">
-              Acceder au cockpit
-              <ChevronRight size={16} />
-            </button>
-          )}
+
+          <div className="flex items-center gap-2">
+            {(step === 2 || step === 3) && !loading && (
+              <button onClick={handleSkip}
+                className="flex items-center gap-1 px-3 py-2 text-sm text-gray-500 hover:text-gray-700 transition">
+                <SkipForward size={14} />
+                Je n'ai pas tout
+              </button>
+            )}
+
+            {step < 4 && (
+              <button
+                onClick={handleNext}
+                disabled={!canProceed() || loading}
+                className={`flex items-center gap-1 px-5 py-2 rounded-lg text-sm font-semibold transition ${
+                  !canProceed() || loading
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : step === 3
+                      ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+              >
+                {loading ? 'Creation en cours...' :
+                 step === 3 ? 'Creer mon patrimoine' :
+                 'Suivant'}
+                {!loading && <ChevronRight size={16} />}
+              </button>
+            )}
+            {step === 4 && (
+              <button onClick={handleClose}
+                className="flex items-center gap-1 px-5 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition">
+                Acceder au cockpit
+                <ChevronRight size={16} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

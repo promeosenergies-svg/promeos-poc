@@ -201,4 +201,17 @@ export const getImportTemplate = () => api.get('/import/template').then(r => r.d
 
 export const seedDemo = () => api.post('/demo/seed').then(r => r.data);
 
+// ========================================
+// CRUD (Sites + Compteurs)
+// ========================================
+
+export const createSite = (data) => api.post('/sites', data).then(r => r.data);
+export const createCompteur = (data) => api.post('/compteurs', data).then(r => r.data);
+
+// ========================================
+// DASHBOARD 2 MINUTES
+// ========================================
+
+export const getDashboard2min = () => api.get('/dashboard/2min').then(r => r.data);
+
 export default api;
