@@ -1,15 +1,15 @@
 /**
- * PROMEOS - Patrimoine (/patrimoine) V2
- * Scope-filtered table + saved views + bulk actions + sticky header + density toggle.
+ * PROMEOS - Patrimoine (/patrimoine) V3
+ * Scope-filtered table + saved views + bulk actions + premium table + density toggle + trust badge.
  */
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Building2, Search, RotateCcw, BookmarkPlus, Download, Star,
   Plus, ChevronDown, Rows3, Rows4,
 } from 'lucide-react';
-import { Card, Badge, Button, Select, Pagination, EmptyState } from '../ui';
-import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
+import { Card, Badge, Button, Select, Pagination, EmptyState, TrustBadge } from '../ui';
+import { Table, Thead, Tbody, Th, Tr, Td, ThCheckbox, TdCheckbox } from '../ui';
 import { useScope } from '../contexts/ScopeContext';
 import CreateActionModal from '../components/CreateActionModal';
 import { track } from '../services/tracker';
@@ -156,7 +156,6 @@ export default function Patrimoine() {
   }
 
   const hasFilters = search || filterUsage || filterStatut;
-  const cellPy = compact ? 'py-2' : 'py-3';
 
   return (
     <div className="px-6 py-6 space-y-4">
@@ -231,53 +230,54 @@ export default function Patrimoine() {
         <EmptyState icon={Building2} title="Aucun site trouve" text="Modifiez vos filtres ou importez de nouveaux sites." ctaLabel="Reinitialiser les filtres" onCta={resetFilters} />
       ) : (
         <Card>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-[1]">
-                <tr>
-                  <th className="px-4 py-3 w-10">
-                    <input type="checkbox" checked={selected.size === pageData.length && pageData.length > 0} onChange={toggleSelectAll}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-                  </th>
-                  <Th sortable sorted={sortCol === 'nom' ? sortDir : ''} onSort={() => handleSort('nom')}>Site</Th>
-                  <Th sortable sorted={sortCol === 'ville' ? sortDir : ''} onSort={() => handleSort('ville')}>Ville</Th>
-                  <Th>Usage</Th>
-                  <Th>Conformite</Th>
-                  <Th sortable sorted={sortCol === 'risque_eur' ? sortDir : ''} onSort={() => handleSort('risque_eur')} className="text-right">Risque EUR</Th>
-                  <Th sortable sorted={sortCol === 'surface_m2' ? sortDir : ''} onSort={() => handleSort('surface_m2')} className="text-right">Surface</Th>
-                  <Th sortable sorted={sortCol === 'anomalies_count' ? sortDir : ''} onSort={() => handleSort('anomalies_count')} className="text-right">Anomalies</Th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {pageData.map((site) => {
-                  const badge = STATUT_BADGE[site.statut_conformite] || STATUT_BADGE.a_evaluer;
-                  const isFav = favorites.has(site.id);
-                  return (
-                    <tr key={site.id} className={`hover:bg-gray-50 transition cursor-pointer ${selected.has(site.id) ? 'bg-blue-50' : ''}`}
-                      onClick={() => { track('row_click', { site_id: site.id }); navigate(`/sites/${site.id}`); }}>
-                      <td className={`px-4 ${cellPy}`} onClick={(e) => e.stopPropagation()}>
-                        <input type="checkbox" checked={selected.has(site.id)} onChange={() => toggleSelect(site.id)}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-                      </td>
-                      <td className={`px-4 ${cellPy} font-medium text-gray-900`}>
-                        {isFav && <Star size={12} className="inline text-amber-400 mr-1 fill-amber-400" />}
-                        {site.nom}
-                      </td>
-                      <td className={`px-4 ${cellPy} text-gray-700`}>{site.ville}</td>
-                      <td className={`px-4 ${cellPy}`}><span className="capitalize text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">{site.usage}</span></td>
-                      <td className={`px-4 ${cellPy}`}><Badge status={badge.status}>{badge.label}</Badge></td>
-                      <td className={`px-4 ${cellPy} text-right font-medium text-red-600`}>{site.risque_eur > 0 ? `${site.risque_eur.toLocaleString()} EUR` : '-'}</td>
-                      <td className={`px-4 ${cellPy} text-right text-gray-700`}>{site.surface_m2.toLocaleString()} m2</td>
-                      <td className={`px-4 ${cellPy} text-right`}>
-                        {site.anomalies_count > 0 ? <span className={`font-medium ${site.anomalies_count > 4 ? 'text-red-600' : 'text-amber-600'}`}>{site.anomalies_count}</span> : <span className="text-gray-400">0</span>}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <Table compact={compact} pinFirst>
+            <Thead sticky>
+              <tr>
+                <ThCheckbox
+                  checked={selected.size === pageData.length && pageData.length > 0}
+                  onChange={toggleSelectAll}
+                />
+                <Th sortable sorted={sortCol === 'nom' ? sortDir : ''} onSort={() => handleSort('nom')} pin>Site</Th>
+                <Th sortable sorted={sortCol === 'ville' ? sortDir : ''} onSort={() => handleSort('ville')}>Ville</Th>
+                <Th>Usage</Th>
+                <Th>Conformite</Th>
+                <Th sortable sorted={sortCol === 'risque_eur' ? sortDir : ''} onSort={() => handleSort('risque_eur')} className="text-right">Risque EUR</Th>
+                <Th sortable sorted={sortCol === 'surface_m2' ? sortDir : ''} onSort={() => handleSort('surface_m2')} className="text-right">Surface</Th>
+                <Th sortable sorted={sortCol === 'anomalies_count' ? sortDir : ''} onSort={() => handleSort('anomalies_count')} className="text-right">Anomalies</Th>
+              </tr>
+            </Thead>
+            <Tbody>
+              {pageData.map((site) => {
+                const badge = STATUT_BADGE[site.statut_conformite] || STATUT_BADGE.a_evaluer;
+                const isFav = favorites.has(site.id);
+                return (
+                  <Tr
+                    key={site.id}
+                    selected={selected.has(site.id)}
+                    onClick={() => { track('row_click', { site_id: site.id }); navigate(`/sites/${site.id}`); }}
+                  >
+                    <TdCheckbox checked={selected.has(site.id)} onChange={() => toggleSelect(site.id)} />
+                    <Td pin className="font-medium text-gray-900">
+                      {isFav && <Star size={12} className="inline text-amber-400 mr-1 fill-amber-400" />}
+                      {site.nom}
+                    </Td>
+                    <Td>{site.ville}</Td>
+                    <Td><span className="capitalize text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">{site.usage}</span></Td>
+                    <Td><Badge status={badge.status}>{badge.label}</Badge></Td>
+                    <Td className="text-right font-medium text-red-600">{site.risque_eur > 0 ? `${site.risque_eur.toLocaleString()} EUR` : '-'}</Td>
+                    <Td className="text-right">{site.surface_m2.toLocaleString()} m2</Td>
+                    <Td className="text-right">
+                      {site.anomalies_count > 0 ? <span className={`font-medium ${site.anomalies_count > 4 ? 'text-red-600' : 'text-amber-600'}`}>{site.anomalies_count}</span> : <span className="text-gray-400">0</span>}
+                    </Td>
+                  </Tr>
+                );
+              })}
+            </Tbody>
+          </Table>
+          <div className="flex items-center justify-between px-4 py-2 border-t border-gray-100">
+            <TrustBadge source="PROMEOS" period="donnees demo" confidence="medium" />
+            <Pagination page={page} pageSize={pageSize} total={total} onChange={setPage} />
           </div>
-          <Pagination page={page} pageSize={pageSize} total={total} onChange={setPage} />
         </Card>
       )}
 

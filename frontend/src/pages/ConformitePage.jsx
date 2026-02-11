@@ -1,10 +1,13 @@
 /**
- * PROMEOS - Conformite (/conformite)
- * Score global + liste obligations + CTA creer action conformite
+ * PROMEOS - Conformite (/conformite) V3
+ * Score global + obligations + proof status + audit trail + mock upload
  */
 import { useState } from 'react';
-import { ShieldCheck, AlertTriangle, CheckCircle, Clock, FileText, ChevronDown, ChevronUp, Plus } from 'lucide-react';
-import { Card, CardBody, Badge, Button, EmptyState } from '../ui';
+import {
+  ShieldCheck, AlertTriangle, CheckCircle, Clock, FileText,
+  ChevronDown, ChevronUp, Plus, Upload, User, Calendar,
+} from 'lucide-react';
+import { Card, CardBody, Badge, Button, EmptyState, TrustBadge } from '../ui';
 import Modal from '../ui/Modal';
 import CreateActionModal from '../components/CreateActionModal';
 import { mockObligations, getObligationScore } from '../mocks/obligations';
@@ -12,10 +15,7 @@ import { useScope } from '../contexts/ScopeContext';
 import { track } from '../services/tracker';
 
 const SEVERITY_BADGE = {
-  critical: 'crit',
-  high: 'warn',
-  medium: 'info',
-  low: 'neutral',
+  critical: 'crit', high: 'warn', medium: 'info', low: 'neutral',
 };
 
 const STATUT_CONFIG = {
@@ -24,10 +24,26 @@ const STATUT_CONFIG = {
   conforme: { label: 'Conforme', color: 'text-green-700', bg: 'bg-green-50', border: 'border-green-200', icon: CheckCircle },
 };
 
+const PROOF_CONFIG = {
+  missing: { label: 'Manquante', color: 'bg-red-50 text-red-700', icon: AlertTriangle },
+  in_progress: { label: 'En cours', color: 'bg-amber-50 text-amber-700', icon: Clock },
+  ok: { label: 'OK', color: 'bg-green-50 text-green-700', icon: CheckCircle },
+};
+
+function ProofBadge({ status }) {
+  const cfg = PROOF_CONFIG[status] || PROOF_CONFIG.missing;
+  const Icon = cfg.icon;
+  return (
+    <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${cfg.color}`}>
+      <Icon size={12} />
+      Preuve: {cfg.label}
+    </span>
+  );
+}
+
 function ScoreGauge({ pct }) {
   const color = pct >= 80 ? 'text-green-600' : pct >= 50 ? 'text-amber-600' : 'text-red-600';
   const bg = pct >= 80 ? 'bg-green-100' : pct >= 50 ? 'bg-amber-100' : 'bg-red-100';
-  const track_bg = 'bg-gray-200';
   const fill = pct >= 80 ? 'bg-green-500' : pct >= 50 ? 'bg-amber-500' : 'bg-red-500';
 
   return (
@@ -36,7 +52,7 @@ function ScoreGauge({ pct }) {
         <span className={`text-2xl font-bold ${color}`}>{pct}%</span>
       </div>
       <div className="flex-1">
-        <div className={`h-3 ${track_bg} rounded-full overflow-hidden`}>
+        <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
           <div className={`h-full ${fill} rounded-full transition-all`} style={{ width: `${pct}%` }} />
         </div>
         <p className="text-xs text-gray-500 mt-1">Score de conformite global</p>
@@ -45,13 +61,26 @@ function ScoreGauge({ pct }) {
   );
 }
 
-function ObligationCard({ obligation, onCreateAction }) {
+function AuditTrail({ obligation }) {
+  return (
+    <div className="flex items-center gap-4 text-xs text-gray-400 pt-2 border-t border-gray-100 mt-3">
+      <span className="flex items-center gap-1"><User size={11} /> {obligation.created_by || 'Systeme'}</span>
+      <span className="flex items-center gap-1"><Calendar size={11} /> Cree le {obligation.created_at || '-'}</span>
+      {obligation.updated_at && obligation.updated_at !== obligation.created_at && (
+        <span className="flex items-center gap-1"><Clock size={11} /> MAJ {obligation.updated_at}</span>
+      )}
+    </div>
+  );
+}
+
+function ObligationCard({ obligation, onCreateAction, onUploadProof, proofFiles }) {
   const [expanded, setExpanded] = useState(false);
   const cfg = STATUT_CONFIG[obligation.statut] || STATUT_CONFIG.a_risque;
   const Icon = cfg.icon;
   const pctConforme = obligation.sites_concernes > 0
     ? Math.round(obligation.sites_conformes / obligation.sites_concernes * 100)
     : 100;
+  const files = proofFiles[obligation.id] || [];
 
   return (
     <Card className={`border-l-4 ${cfg.border}`}>
@@ -67,6 +96,7 @@ function ObligationCard({ obligation, onCreateAction }) {
                 <h3 className="text-sm font-bold text-gray-900">{obligation.regulation}</h3>
                 <Badge status={SEVERITY_BADGE[obligation.severity] || 'neutral'}>{obligation.severity}</Badge>
                 <span className={`text-xs font-medium px-2 py-0.5 rounded ${cfg.bg} ${cfg.color}`}>{cfg.label}</span>
+                <ProofBadge status={obligation.proof_status} />
               </div>
               <p className="text-sm text-gray-600 mt-1">{obligation.description}</p>
             </div>
@@ -134,6 +164,33 @@ function ObligationCard({ obligation, onCreateAction }) {
               </div>
             </div>
 
+            {/* Proof upload section */}
+            <div className="p-3 bg-indigo-50/50 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-semibold text-indigo-600 uppercase">Joindre preuve</p>
+                <ProofBadge status={obligation.proof_status} />
+              </div>
+              {files.length > 0 && (
+                <div className="space-y-1 mb-2">
+                  {files.map((f, i) => (
+                    <div key={i} className="flex items-center gap-2 text-sm text-gray-700 bg-white px-2 py-1.5 rounded">
+                      <FileText size={14} className="text-indigo-500 shrink-0" />
+                      <span className="truncate">{f.name}</span>
+                      <span className="text-xs text-gray-400 ml-auto whitespace-nowrap">{f.date}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <label className="inline-flex items-center gap-2 cursor-pointer text-sm text-indigo-600 hover:text-indigo-800 transition font-medium">
+                <Upload size={14} />
+                Ajouter un fichier
+                <input type="file" className="sr-only" onChange={(e) => { if (e.target.files[0]) onUploadProof(obligation.id, e.target.files[0]); e.target.value = ''; }} />
+              </label>
+            </div>
+
+            {/* Audit trail */}
+            <AuditTrail obligation={obligation} />
+
             {obligation.statut !== 'conforme' && (
               <Button onClick={() => onCreateAction(obligation)} size="sm">
                 <Plus size={14} /> Creer une action conformite
@@ -150,6 +207,7 @@ export default function ConformitePage() {
   const { org, scopedSites } = useScope();
   const [showCreate, setShowCreate] = useState(false);
   const [prefill, setPrefill] = useState(null);
+  const [proofFiles, setProofFiles] = useState({});
   const score = getObligationScore();
 
   function handleCreateFromObligation(obligation) {
@@ -165,6 +223,15 @@ export default function ConformitePage() {
 
   function handleSaveAction(action) {
     track('action_create_from_conformite', { titre: action.titre });
+  }
+
+  function handleUploadProof(obligationId, file) {
+    const entry = { name: file.name, date: new Date().toLocaleDateString('fr-FR') };
+    setProofFiles(prev => ({
+      ...prev,
+      [obligationId]: [...(prev[obligationId] || []), entry],
+    }));
+    track('proof_upload', { obligation_id: obligationId, file: file.name });
   }
 
   return (
@@ -185,6 +252,7 @@ export default function ConformitePage() {
         <Card className="col-span-2">
           <CardBody>
             <ScoreGauge pct={score.pct} />
+            <TrustBadge source="RegOps" period="30 derniers jours" confidence="high" className="mt-2" />
           </CardBody>
         </Card>
         <Card>
@@ -240,7 +308,13 @@ export default function ConformitePage() {
                 return (order[a.statut] ?? 9) - (order[b.statut] ?? 9);
               })
               .map((o) => (
-                <ObligationCard key={o.id} obligation={o} onCreateAction={handleCreateFromObligation} />
+                <ObligationCard
+                  key={o.id}
+                  obligation={o}
+                  onCreateAction={handleCreateFromObligation}
+                  onUploadProof={handleUploadProof}
+                  proofFiles={proofFiles}
+                />
               ))}
           </div>
         )}
