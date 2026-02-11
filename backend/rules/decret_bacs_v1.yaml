@@ -1,0 +1,58 @@
+# PROMEOS — Pack de regles BACS (Building Automation & Control Systems) v1
+# Reference: Decret n 2020-887 du 20 juillet 2020
+# Seuils: CVC > 290 kW (2025) et CVC > 70 kW (2030)
+
+version: "1.0"
+regulation: "bacs"
+label: "BACS (GTB/GTC)"
+description: "Obligation d'installation de systemes d'automatisation et de controle des batiments"
+
+thresholds:
+  high_power_kw: 290
+  low_power_kw: 70
+  deadline_high: "2025-01-01"
+  deadline_low: "2030-01-01"
+
+rules:
+  - id: "BACS_POWER"
+    label: "Puissance CVC et seuil BACS"
+    description: "La puissance CVC du batiment depasse-t-elle un seuil BACS ?"
+    condition: "cvc_power_kw > 70"
+    scope_check: true
+    severity: "high"
+    when_unknown: "Puissance CVC non renseignee — impossible d'evaluer"
+    when_out_of_scope: "CVC <= 70 kW — non assujetti BACS"
+
+  - id: "BACS_HIGH_DEADLINE"
+    label: "Echeance BACS > 290 kW"
+    description: "Site avec CVC > 290 kW — echeance 1er janvier 2025"
+    condition: "cvc_power_kw > 290 and has_bacs_attestation"
+    severity: "critical"
+    deadline: "2025-01-01"
+    when_nok: "CVC > 290 kW sans attestation BACS — echeance depassee"
+    action: "Installer un systeme GTB/GTC conforme classe B minimum et obtenir l'attestation"
+
+  - id: "BACS_LOW_DEADLINE"
+    label: "Echeance BACS 70-290 kW"
+    description: "Site avec CVC 70-290 kW — echeance 1er janvier 2030"
+    condition: "cvc_power_kw > 70 and cvc_power_kw <= 290 and has_bacs_attestation"
+    severity: "high"
+    deadline: "2030-01-01"
+    when_nok: "CVC entre 70 et 290 kW sans attestation BACS"
+    action: "Planifier l'installation d'un systeme GTB/GTC avant le 1er janvier 2030"
+
+  - id: "BACS_ATTESTATION"
+    label: "Attestation BACS"
+    description: "Le site dispose-t-il d'une attestation BACS valide ?"
+    condition: "has_valid_bacs_evidence"
+    severity: "high"
+    when_nok: "Aucune attestation BACS valide deposee"
+    action: "Faire realiser une inspection BACS et deposer l'attestation"
+
+  - id: "BACS_DEROGATION"
+    label: "Derogation BACS"
+    description: "Le site beneficie-t-il d'une derogation BACS ?"
+    condition: "has_bacs_derogation"
+    severity: "low"
+    when_ok_override: true
+    when_ok: "Derogation BACS accordee — pas d'obligation d'installation"

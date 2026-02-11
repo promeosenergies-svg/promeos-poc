@@ -1,0 +1,45 @@
+# PROMEOS — Pack de regles Loi APER (Acceleration des Energies Renouvelables) v1
+# Reference: Loi n 2023-175 du 10 mars 2023
+# Concerne: parkings > 1500 m2, toitures batiments > 500 m2
+
+version: "1.0"
+regulation: "aper"
+label: "Loi APER (ENR)"
+description: "Obligations de solarisation des parkings et toitures"
+
+thresholds:
+  parking_area_m2: 1500
+  roof_area_m2: 500
+  deadline_parking_large: "2026-07-01"
+  deadline_parking_small: "2028-07-01"
+
+rules:
+  - id: "APER_PARKING"
+    label: "Solarisation parking"
+    description: "Le parking depasse-t-il 1500 m2 (obligation de couverture ENR) ?"
+    condition: "parking_area_m2 >= 1500"
+    scope_check: true
+    severity: "high"
+    deadline: "2026-07-01"
+    when_unknown: "Surface parking non renseignee — impossible d'evaluer"
+    when_out_of_scope: "Parking < 1500 m2 ou absent — non concerne"
+    when_nok: "Parking > 1500 m2 sans dispositif ENR"
+    action: "Etudier l'installation d'ombieres photovoltaiques sur le parking"
+
+  - id: "APER_TOITURE"
+    label: "Solarisation toiture"
+    description: "La toiture depasse-t-elle 500 m2 (obligation ENR pour batiments neufs/renoves) ?"
+    condition: "roof_area_m2 >= 500"
+    severity: "medium"
+    when_unknown: "Surface toiture non renseignee"
+    when_out_of_scope: "Toiture < 500 m2 — non concerne"
+    when_nok: "Toiture > 500 m2 sans dispositif ENR"
+    action: "Evaluer le potentiel solaire de la toiture"
+
+  - id: "APER_PARKING_TYPE"
+    label: "Type de parking"
+    description: "Le type de parking permet-il l'installation d'ombieres ?"
+    condition: "parking_type == outdoor"
+    severity: "low"
+    when_nok: "Parking couvert/souterrain — ombieres non applicables (derogation possible)"
+    action: "Verifier l'eligibilite a une derogation APER pour parking couvert"

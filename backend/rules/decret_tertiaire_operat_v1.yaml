@@ -1,0 +1,53 @@
+# PROMEOS — Pack de regles Decret Tertiaire / OPERAT v1
+# Reference: Decret n 2019-771 du 23 juillet 2019
+# Seuil: batiments tertiaires > 1000 m2
+
+version: "1.0"
+regulation: "decret_tertiaire_operat"
+label: "Decret Tertiaire / OPERAT"
+description: "Obligation de reduction des consommations energetiques des batiments tertiaires > 1000 m2"
+
+rules:
+  - id: "DT_SCOPE"
+    label: "Assujettissement Decret Tertiaire"
+    description: "Le batiment est-il soumis au decret tertiaire ?"
+    condition: "tertiaire_area_m2 >= 1000"
+    scope_check: true
+    severity: "high"
+    when_unknown: "Surface tertiaire non renseignee — impossible d'evaluer"
+    when_out_of_scope: "Surface < 1000 m2 — non assujetti"
+
+  - id: "DT_OPERAT"
+    label: "Declaration OPERAT"
+    description: "Les consommations ont-elles ete declarees sur la plateforme OPERAT ?"
+    condition: "operat_status in [submitted, verified]"
+    severity: "critical"
+    deadline: "2026-09-30"
+    when_nok: "Consommations non declarees sur OPERAT"
+    action: "Declarer vos consommations sur la plateforme OPERAT (ADEME)"
+
+  - id: "DT_TRAJECTORY_2030"
+    label: "Trajectoire -40% en 2030"
+    description: "Le site est-il sur la trajectoire de reduction de -40% vs reference"
+    condition: "avancement_pct >= 40"
+    severity: "high"
+    deadline: "2030-12-31"
+    when_nok: "Trajectoire de reduction insuffisante pour atteindre -40% en 2030"
+    action: "Realiser un audit energetique et definir un plan de reduction"
+
+  - id: "DT_TRAJECTORY_2040"
+    label: "Trajectoire -50% en 2040"
+    description: "Le site est-il sur la trajectoire de reduction de -50% vs reference"
+    condition: "avancement_pct >= 50"
+    severity: "medium"
+    deadline: "2040-12-31"
+    when_nok: "Trajectoire de reduction insuffisante pour atteindre -50% en 2040"
+    action: "Anticiper les investissements pour la cible 2040"
+
+  - id: "DT_ENERGY_DATA"
+    label: "Donnees de consommation"
+    description: "Les donnees de consommation annuelles sont-elles disponibles ?"
+    condition: "annual_kwh_total is not null"
+    severity: "medium"
+    when_nok: "Donnees de consommation annuelles manquantes"
+    action: "Collecter les donnees de consommation via compteurs ou factures"
