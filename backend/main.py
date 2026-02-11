@@ -10,7 +10,7 @@ from routes import (
     sites_router, compteurs_router, consommations_router, alertes_router,
     cockpit_router, compliance_router, demo_router, guidance_router,
     regops_router, connectors_router, watchers_router, ai_router,
-    kb_usages_router, energy_router
+    kb_usages_router, energy_router, monitoring_router
 )
 
 # Import KB router
@@ -52,6 +52,7 @@ app.include_router(kb_router)  # Knowledge Base (generic)
 app.include_router(kb_usages_router)  # KB Usages (archetypes, rules, recommendations)
 app.include_router(energy_router)  # Energy (import, analysis)
 app.include_router(bill_router)  # Bill Intelligence (audit, shadow billing)
+app.include_router(monitoring_router)  # Electric Monitoring (KPIs, alerts, risk)
 
 # Route racine
 @app.get("/")

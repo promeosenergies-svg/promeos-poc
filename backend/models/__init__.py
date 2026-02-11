@@ -49,7 +49,8 @@ from .kb_models import (
 from .energy_models import (
     Meter, MeterReading, DataImportJob, UsageProfile, Anomaly, Recommendation,
     EnergyVector as EnergyVectorModel, FrequencyType, ImportStatus,
-    AnomalySeverity, RecommendationStatus
+    AnomalySeverity, RecommendationStatus,
+    MonitoringSnapshot, MonitoringAlert, AlertStatus, AlertSeverity,
 )
 
 __all__ = [
@@ -63,6 +64,7 @@ __all__ = [
     "KBVersion", "KBArchetype", "KBMappingCode", "KBAnomalyRule", "KBRecommendation", "KBTaxonomy",
     # Energy models
     "Meter", "MeterReading", "DataImportJob", "UsageProfile", "Anomaly", "Recommendation",
+    "MonitoringSnapshot", "MonitoringAlert",
     # Enums
     "TypeSite", "TypeCompteur", "SeveriteAlerte", "TypeUsage",
     "StatutConformite", "TypeObligation", "TypeEvidence", "StatutEvidence",
@@ -71,4 +73,5 @@ __all__ = [
     "InsightType", "RegulationType",
     "KBConfidence", "KBStatus", "EnergyVectorModel", "FrequencyType",
     "ImportStatus", "AnomalySeverity", "RecommendationStatus",
+    "AlertStatus", "AlertSeverity",
 ]

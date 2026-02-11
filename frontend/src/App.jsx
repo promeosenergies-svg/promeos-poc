@@ -12,6 +12,7 @@ import RegOps from './pages/RegOps';
 import ConnectorsPage from './pages/ConnectorsPage';
 import WatchersPage from './pages/WatchersPage';
 import ConsommationsUsages from './pages/ConsommationsUsages';
+import MonitoringPage from './pages/MonitoringPage';
 
 function App() {
   const [showUpgradeWizard, setShowUpgradeWizard] = useState(false);
@@ -54,6 +55,12 @@ function App() {
                     Conso & Usages
                   </Link>
                   <Link
+                    to="/monitoring"
+                    className="px-4 py-2 rounded bg-amber-600 text-white hover:bg-amber-700 transition text-sm"
+                  >
+                    Monitoring
+                  </Link>
+                  <Link
                     to="/connectors"
                     className="px-4 py-2 rounded hover:bg-gray-100 text-gray-700 hover:text-gray-900 transition text-sm"
                   >
@@ -87,6 +94,7 @@ function App() {
             <Route path="/consommations" element={<ConsommationsUsages />} />
             <Route path="/connectors" element={<ConnectorsPage />} />
             <Route path="/watchers" element={<WatchersPage />} />
+            <Route path="/monitoring" element={<MonitoringPage />} />
           </Routes>
 
           {/* Upgrade Wizard Modal */}

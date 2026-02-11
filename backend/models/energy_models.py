@@ -347,3 +347,119 @@ class Recommendation(Base):
 
     def __repr__(self):
         return f"<Recommendation(id={self.id}, code='{self.recommendation_code}', ice={self.ice_score}, meter_id={self.meter_id})>"
+
+
+# ========================================
+# Monitoring Models (Electric Consumption Mastery)
+# ========================================
+
+class AlertStatus(str, enum.Enum):
+    """Monitoring alert lifecycle"""
+    OPEN = "open"
+    ACKNOWLEDGED = "ack"
+    RESOLVED = "resolved"
+
+
+class AlertSeverity(str, enum.Enum):
+    """Alert severity levels"""
+    INFO = "info"
+    WARNING = "warning"
+    HIGH = "high"
+    CRITICAL = "critical"
+
+
+class MonitoringSnapshot(Base):
+    """Periodic monitoring snapshot with KPIs for a site/meter"""
+    __tablename__ = "monitoring_snapshot"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    # Scope
+    site_id = Column(Integer, ForeignKey("sites.id"), nullable=False, index=True)
+    meter_id = Column(Integer, ForeignKey("meter.id"), nullable=True, index=True)
+
+    # Period
+    period_start = Column(DateTime, nullable=False)
+    period_end = Column(DateTime, nullable=False)
+
+    # KPIs (JSON blob for flexibility)
+    kpis_json = Column(JSON, nullable=True)
+    # Expected keys:
+    # pmax_kw, p95_kw, p99_kw, pmean_kw, pbase_kw, pbase_night_kw,
+    # load_factor, peak_to_average, weekend_ratio, night_ratio,
+    # total_kwh, readings_count, interval_minutes,
+    # ramp_rate_max_kw_h, weekday_profile_kw[], weekend_profile_kw[],
+    # monthly_kwh{}
+
+    # Scores
+    data_quality_score = Column(Float, nullable=True)  # 0-100
+    risk_power_score = Column(Float, nullable=True)  # 0-100
+    data_quality_details_json = Column(JSON, nullable=True)
+    risk_power_details_json = Column(JSON, nullable=True)
+
+    # Metadata
+    engine_version = Column(String(50), nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    # Relationships
+    site = relationship("Site")
+    meter = relationship("Meter")
+
+    def __repr__(self):
+        return f"<MonitoringSnapshot(site_id={self.site_id}, period={self.period_start.date()}-{self.period_end.date()})>"
+
+
+class MonitoringAlert(Base):
+    """Monitoring alert instance with lifecycle (open/ack/resolved)"""
+    __tablename__ = "monitoring_alert"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    # Scope
+    site_id = Column(Integer, ForeignKey("sites.id"), nullable=False, index=True)
+    meter_id = Column(Integer, ForeignKey("meter.id"), nullable=True, index=True)
+
+    # Alert type & severity
+    alert_type = Column(String(100), nullable=False, index=True)
+    severity = Column(SQLEnum(AlertSeverity), nullable=False, default=AlertSeverity.WARNING)
+
+    # Time window
+    start_ts = Column(DateTime, nullable=True)
+    end_ts = Column(DateTime, nullable=True)
+
+    # Evidence
+    evidence_json = Column(JSON, nullable=True)
+    # Expected: {measured, threshold, deviation_pct, context, ...}
+
+    # Explanation & action
+    explanation = Column(Text, nullable=False)
+    recommended_action = Column(Text, nullable=True)
+    estimated_impact_kwh = Column(Float, nullable=True)
+    estimated_impact_eur = Column(Float, nullable=True)
+
+    # KB linkage
+    kb_link_json = Column(JSON, nullable=True)
+    # Expected: {kb_rule_id, kb_rec_id, provenance, confidence}
+
+    # Lifecycle
+    status = Column(SQLEnum(AlertStatus), nullable=False, default=AlertStatus.OPEN, index=True)
+    acknowledged_at = Column(DateTime, nullable=True)
+    acknowledged_by = Column(String(200), nullable=True)
+    resolved_at = Column(DateTime, nullable=True)
+    resolved_by = Column(String(200), nullable=True)
+    resolution_note = Column(Text, nullable=True)
+
+    # Snapshot reference
+    snapshot_id = Column(Integer, ForeignKey("monitoring_snapshot.id"), nullable=True)
+
+    # Audit
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    site = relationship("Site")
+    meter = relationship("Meter")
+    snapshot = relationship("MonitoringSnapshot")
+
+    def __repr__(self):
+        return f"<MonitoringAlert(id={self.id}, type='{self.alert_type}', severity='{self.severity.value}', status='{self.status.value}')>"
