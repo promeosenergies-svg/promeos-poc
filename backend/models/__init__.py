@@ -35,6 +35,8 @@ from .compliance_finding import ComplianceFinding
 
 # Consumption diagnostics
 from .consumption_insight import ConsumptionInsight
+from .site_operating_schedule import SiteOperatingSchedule
+from .site_tariff_profile import SiteTariffProfile
 
 # Segmentation
 from .segmentation import SegmentationProfile
@@ -66,6 +68,7 @@ __all__ = [
     "Site", "Batiment", "Usage",
     "Compteur", "Consommation", "Alerte",
     "Obligation", "Evidence", "ComplianceFinding", "ConsumptionInsight",
+    "SiteOperatingSchedule", "SiteTariffProfile",
     "SegmentationProfile",
     "DataPoint", "RegAssessment", "JobOutbox", "AiInsight", "RegSourceEvent",
     # KB models

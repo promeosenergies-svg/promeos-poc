@@ -21,6 +21,7 @@ from .import_sites import router as import_router
 from .dashboard_2min import router as dashboard_2min_router
 from .segmentation import router as segmentation_router
 from .consumption_diagnostic import router as consumption_diag_router
+from .site_config import router as site_config_router
 
 __all__ = [
     "sites_router",
@@ -43,4 +44,5 @@ __all__ = [
     "dashboard_2min_router",
     "segmentation_router",
     "consumption_diag_router",
+    "site_config_router",
 ]

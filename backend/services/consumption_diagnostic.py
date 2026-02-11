@@ -1,11 +1,17 @@
 """
-PROMEOS - Service Diagnostic Consommation V1
-Detecte les defauts d'usage sans complexite:
-- hors_horaires: consommation en dehors des heures d'occupation
-- base_load: talon de consommation (quantile bas) anormalement eleve
-- pointe: jours avec consommation anormalement haute
-- derive: tendance a la hausse sur 30j
+PROMEOS - Service Diagnostic Consommation V1.1
+Detecte les defauts d'usage:
+- hors_horaires: consommation en dehors des heures d'occupation (schedule-aware)
+- base_load: talon de consommation anormalement eleve (robust: Q10 vs median heures ouvertes)
+- pointe: jours avec consommation anormalement haute (robust: median + 3*MAD)
+- derive: tendance a la hausse sur 30j (linear regression + fallback first/last week)
 - data_gap: trous dans les donnees
+
+V1.1 changes:
+- Schedule-aware hors_horaires (SiteOperatingSchedule)
+- Site-specific price ref (SiteTariffProfile) for loss EUR
+- Robust statistics (median+MAD for pointe, linreg for derive)
+- Recommended actions per insight
 """
 import json
 import math
@@ -22,8 +28,172 @@ from models import (
 )
 from models.energy_models import FrequencyType
 
-# Prix de reference kWh (EUR HT)
-PRIX_REF_KWH = 0.15
+# Fallback price — used when no SiteTariffProfile exists
+DEFAULT_PRICE_REF_KWH = 0.18
+
+
+# ========================================
+# Helpers
+# ========================================
+
+def _median(values: List[float]) -> float:
+    """Calculate median of a sorted or unsorted list."""
+    s = sorted(values)
+    n = len(s)
+    if n == 0:
+        return 0.0
+    mid = n // 2
+    return s[mid] if n % 2 else (s[mid - 1] + s[mid]) / 2
+
+
+def _mad(values: List[float]) -> float:
+    """Median Absolute Deviation."""
+    med = _median(values)
+    return _median([abs(v - med) for v in values])
+
+
+def _linear_slope(values: List[float]) -> float:
+    """Simple linear regression slope (y = a*x + b, returns a).
+    x = 0..n-1, y = values.
+    """
+    n = len(values)
+    if n < 2:
+        return 0.0
+    x_mean = (n - 1) / 2
+    y_mean = sum(values) / n
+    num = sum((i - x_mean) * (v - y_mean) for i, v in enumerate(values))
+    den = sum((i - x_mean) ** 2 for i in range(n))
+    return num / den if den != 0 else 0.0
+
+
+def _get_price_ref(db: Session, site_id: int) -> float:
+    """Get site-specific price ref or fallback."""
+    from routes.site_config import get_site_price_ref
+    return get_site_price_ref(db, site_id)
+
+
+def _get_schedule_params(db: Session, site_id: int) -> dict:
+    """Get site-specific schedule or defaults."""
+    from routes.site_config import get_site_schedule_params
+    return get_site_schedule_params(db, site_id)
+
+
+# ========================================
+# Recommended actions templates
+# ========================================
+
+def _actions_hors_horaires(metrics: dict, price_ref: float) -> list:
+    """Generate recommended actions for off-hours consumption."""
+    loss_kwh = metrics.get("off_hours_kwh", 0) * 0.5 * 12
+    actions = [
+        {
+            "title": "Programmer l'arret CVC hors horaires",
+            "rationale": f"Consommation hors horaires = {metrics.get('off_hours_pct', 0):.0f}% du total. L'arret programme de la CVC la nuit/weekend reduirait la facture.",
+            "expected_gain_kwh": round(loss_kwh * 0.6, 0),
+            "expected_gain_eur": round(loss_kwh * 0.6 * price_ref, 0),
+            "effort": "2j",
+            "priority": "high",
+        },
+        {
+            "title": "Installer une horloge / GTC pour pilotage horaire",
+            "rationale": "Un systeme de gestion technique permet d'automatiser les coupures hors occupation.",
+            "expected_gain_kwh": round(loss_kwh * 0.8, 0),
+            "expected_gain_eur": round(loss_kwh * 0.8 * price_ref, 0),
+            "effort": "5j",
+            "priority": "medium",
+        },
+    ]
+    return actions
+
+
+def _actions_base_load(metrics: dict, price_ref: float) -> list:
+    """Generate recommended actions for elevated base load."""
+    excess_kw = max(0, metrics.get("base_load_kw", 0) - metrics.get("median_kw", 0) * 0.3)
+    annual_excess = excess_kw * 8760 * 0.3
+    actions = [
+        {
+            "title": "Audit du talon: identifier les equipements en fonctionnement permanent",
+            "rationale": f"Talon a {metrics.get('base_ratio_pct', 0):.0f}% de la mediane. Verifier eclairage, serveurs, chauffage eau, VMC.",
+            "expected_gain_kwh": round(annual_excess * 0.4, 0),
+            "expected_gain_eur": round(annual_excess * 0.4 * price_ref, 0),
+            "effort": "1j",
+            "priority": "high",
+        },
+        {
+            "title": "Couper les veilles et equipements non essentiels la nuit",
+            "rationale": "Les equipements en veille representent souvent 10-15% du talon.",
+            "expected_gain_kwh": round(annual_excess * 0.15, 0),
+            "expected_gain_eur": round(annual_excess * 0.15 * price_ref, 0),
+            "effort": "0.5j",
+            "priority": "medium",
+        },
+    ]
+    return actions
+
+
+def _actions_pointe(metrics: dict, price_ref: float) -> list:
+    """Generate recommended actions for peak anomalies."""
+    excess_kwh = (metrics.get("max_daily_kwh", 0) - metrics.get("mean_daily_kwh", 0)) * 12
+    actions = [
+        {
+            "title": "Analyser les jours de pointe pour identifier la cause",
+            "rationale": f"{metrics.get('anomaly_days_count', 0)} jours anormaux detectes (pic {metrics.get('max_daily_kwh', 0):.0f} kWh). Verifier evenements, meteo, occupation.",
+            "expected_gain_kwh": round(excess_kwh * 0.3, 0),
+            "expected_gain_eur": round(excess_kwh * 0.3 * price_ref, 0),
+            "effort": "1j",
+            "priority": "medium",
+        },
+    ]
+    return actions
+
+
+def _actions_derive(metrics: dict, price_ref: float) -> list:
+    """Generate recommended actions for upward drift."""
+    drift_pct = metrics.get("drift_pct", 0)
+    avg_last = metrics.get("avg_last_week_kw", 0)
+    actions = [
+        {
+            "title": "Verifier les reglages CVC et la maintenance",
+            "rationale": f"Derive de +{drift_pct:.1f}% detectee. Possible encrassement, fuite, ou dereglement.",
+            "expected_gain_kwh": round(avg_last * 168 * drift_pct / 100 * 12, 0),
+            "expected_gain_eur": round(avg_last * 168 * drift_pct / 100 * 12 * price_ref, 0),
+            "effort": "2j",
+            "priority": "high",
+        },
+        {
+            "title": "Planifier une maintenance preventive",
+            "rationale": "Un entretien regulier previent les derives de consommation.",
+            "expected_gain_kwh": 0,
+            "expected_gain_eur": 0,
+            "effort": "3j",
+            "priority": "low",
+        },
+    ]
+    return actions
+
+
+def _actions_data_gap(metrics: dict, price_ref: float) -> list:
+    """Generate recommended actions for data gaps."""
+    actions = [
+        {
+            "title": "Verifier la connexion du compteur communicant",
+            "rationale": f"Couverture {metrics.get('coverage_pct', 0):.0f}% — {metrics.get('gaps_count', 0)} trou(s). Possible defaut telereleve.",
+            "expected_gain_kwh": 0,
+            "expected_gain_eur": 0,
+            "effort": "0.5j",
+            "priority": "medium",
+        },
+    ]
+    return actions
+
+
+ACTIONS_GENERATORS = {
+    "hors_horaires": _actions_hors_horaires,
+    "base_load": _actions_base_load,
+    "pointe": _actions_pointe,
+    "derive": _actions_derive,
+    "data_gap": _actions_data_gap,
+}
 
 
 # ========================================
@@ -140,7 +310,7 @@ def generate_demo_consumption(
 
 
 # ========================================
-# Diagnostic calculations
+# Diagnostic calculations (V1.1 — robust)
 # ========================================
 
 def _get_readings(db: Session, meter_id: int, days: int = 30) -> List[MeterReading]:
@@ -156,14 +326,26 @@ def _get_readings(db: Session, meter_id: int, days: int = 30) -> List[MeterReadi
 
 def _detect_hors_horaires(
     readings: List[MeterReading],
-    biz_start: int = 8, biz_end: int = 19,
+    schedule: dict = None,
 ) -> Optional[dict]:
     """Detect significant consumption outside business hours.
 
-    Returns insight dict or None.
+    V1.1: uses SiteOperatingSchedule (open_time, close_time, open_days, is_24_7, exceptions).
     """
-    if len(readings) < 48:  # Need at least 2 days
+    if len(readings) < 48:
         return None
+
+    if schedule is None:
+        schedule = {"open_time": 8, "close_time": 19, "open_days": {0, 1, 2, 3, 4}, "is_24_7": False, "exceptions": []}
+
+    # If 24/7 site, no off-hours detection
+    if schedule.get("is_24_7", False):
+        return None
+
+    biz_start = schedule["open_time"]
+    biz_end = schedule["close_time"]
+    open_days = schedule["open_days"]
+    exceptions = set(schedule.get("exceptions", []))
 
     biz_kwh = 0
     off_kwh = 0
@@ -172,7 +354,15 @@ def _detect_hors_horaires(
     for r in readings:
         hour = r.timestamp.hour
         weekday = r.timestamp.weekday()
-        is_biz = (weekday < 5 and biz_start <= hour < biz_end)
+        date_str = r.timestamp.strftime("%Y-%m-%d")
+
+        # Exception days (holidays) count as off-hours
+        if date_str in exceptions:
+            off_kwh += r.value_kwh
+            off_readings.append(r.value_kwh)
+            continue
+
+        is_biz = (weekday in open_days and biz_start <= hour < biz_end)
         if is_biz:
             biz_kwh += r.value_kwh
         else:
@@ -185,12 +375,10 @@ def _detect_hors_horaires(
 
     off_pct = off_kwh / total * 100
 
-    # Alert if > 35% of consumption is outside business hours
     if off_pct < 35:
         return None
 
     avg_off = sum(off_readings) / len(off_readings) if off_readings else 0
-    annual_loss_kwh = avg_off * len(off_readings) * (365 / 30)  # Extrapolate
     severity = "critical" if off_pct > 60 else "high" if off_pct > 45 else "medium"
 
     return {
@@ -202,61 +390,76 @@ def _detect_hors_horaires(
             "off_hours_kwh": round(off_kwh, 1),
             "business_hours_kwh": round(biz_kwh, 1),
             "avg_off_hour_kw": round(avg_off, 2),
+            "schedule_open": f"{biz_start}h-{biz_end}h",
+            "schedule_source": "site" if schedule.get("_from_db") else "default",
         },
-        "estimated_loss_kwh": round(off_kwh * 0.5 * 12, 0),  # 50% recoverable, annualized
-        "estimated_loss_eur": round(off_kwh * 0.5 * 12 * PRIX_REF_KWH, 0),
+        "estimated_loss_kwh": round(off_kwh * 0.5 * 12, 0),
     }
 
 
-def _detect_base_load(readings: List[MeterReading]) -> Optional[dict]:
+def _detect_base_load(
+    readings: List[MeterReading],
+    schedule: dict = None,
+) -> Optional[dict]:
     """Detect elevated base load (talon).
 
-    Uses Q10 (10th percentile) as proxy for base load.
+    V1.1: Q10 compared to median of business-hours readings only.
     """
     if len(readings) < 48:
         return None
 
-    values = sorted([r.value_kwh for r in readings])
-    q10_idx = max(0, int(len(values) * 0.10))
-    q50_idx = int(len(values) * 0.50)
-    q10 = values[q10_idx]
-    q50 = values[q50_idx]
+    if schedule is None:
+        schedule = {"open_time": 8, "close_time": 19, "open_days": {0, 1, 2, 3, 4}, "is_24_7": False}
 
-    if q50 == 0:
+    biz_start = schedule["open_time"]
+    biz_end = schedule["close_time"]
+    open_days = schedule["open_days"]
+
+    # Separate business vs all readings
+    all_values = sorted([r.value_kwh for r in readings])
+    biz_values = []
+    for r in readings:
+        if r.timestamp.weekday() in open_days and biz_start <= r.timestamp.hour < biz_end:
+            biz_values.append(r.value_kwh)
+
+    q10_idx = max(0, int(len(all_values) * 0.10))
+    q10 = all_values[q10_idx]
+
+    # Use median of business hours (not global median)
+    q50_biz = _median(biz_values) if biz_values else _median(all_values)
+
+    if q50_biz == 0:
         return None
 
-    base_ratio = q10 / q50 * 100
+    base_ratio = q10 / q50_biz * 100
 
-    # Alert if base load > 40% of median
     if base_ratio < 40:
         return None
 
     severity = "high" if base_ratio > 60 else "medium"
-    annual_excess_kwh = (q10 - q50 * 0.3) * len(readings) * (365 / 30)
+    annual_excess_kwh = (q10 - q50_biz * 0.3) * len(readings) * (365 / 30)
 
     return {
         "type": "base_load",
         "severity": severity,
-        "message": f"Talon de consommation eleve: {q10:.1f} kW (={base_ratio:.0f}% de la mediane) — verifier les equipements en fonctionnement permanent",
+        "message": f"Talon de consommation eleve: {q10:.1f} kW (={base_ratio:.0f}% de la mediane heures ouvertes) — verifier les equipements en fonctionnement permanent",
         "metrics": {
             "base_load_kw": round(q10, 2),
-            "median_kw": round(q50, 2),
+            "median_kw": round(q50_biz, 2),
             "base_ratio_pct": round(base_ratio, 1),
         },
         "estimated_loss_kwh": round(max(0, annual_excess_kwh), 0),
-        "estimated_loss_eur": round(max(0, annual_excess_kwh) * PRIX_REF_KWH, 0),
     }
 
 
 def _detect_pointe(readings: List[MeterReading]) -> Optional[dict]:
     """Detect abnormal peak days.
 
-    Flags days where daily total > mean + 2*std.
+    V1.1: uses median + 3*MAD instead of mean + 2*std (more robust to outliers).
     """
-    if len(readings) < 168:  # Need at least 1 week
+    if len(readings) < 168:
         return None
 
-    # Aggregate by day
     daily = {}
     for r in readings:
         day = r.timestamp.date()
@@ -266,13 +469,14 @@ def _detect_pointe(readings: List[MeterReading]) -> Optional[dict]:
         return None
 
     values = list(daily.values())
-    mean_daily = sum(values) / len(values)
-    std_daily = math.sqrt(sum((v - mean_daily) ** 2 for v in values) / len(values))
+    med = _median(values)
+    mad_val = _mad(values)
 
-    if std_daily == 0:
+    if mad_val == 0:
         return None
 
-    threshold = mean_daily + 2 * std_daily
+    # 3*MAD threshold (1.4826 * MAD approximates stddev for normal distribution)
+    threshold = med + 3 * 1.4826 * mad_val
     anomaly_days = [d for d, v in daily.items() if v > threshold]
 
     if len(anomaly_days) < 2:
@@ -280,66 +484,96 @@ def _detect_pointe(readings: List[MeterReading]) -> Optional[dict]:
 
     max_day = max(daily, key=daily.get)
     max_val = daily[max_day]
-    excess_kwh = sum(daily[d] - mean_daily for d in anomaly_days)
+    excess_kwh = sum(daily[d] - med for d in anomaly_days)
     severity = "high" if len(anomaly_days) > 5 else "medium"
 
     return {
         "type": "pointe",
         "severity": severity,
-        "message": f"{len(anomaly_days)} jour(s) avec consommation anormale (>{threshold:.0f} kWh/j vs moyenne {mean_daily:.0f}) — pic le {max_day}: {max_val:.0f} kWh",
+        "message": f"{len(anomaly_days)} jour(s) avec consommation anormale (>{threshold:.0f} kWh/j vs mediane {med:.0f}) — pic le {max_day}: {max_val:.0f} kWh",
         "metrics": {
             "anomaly_days_count": len(anomaly_days),
-            "mean_daily_kwh": round(mean_daily, 1),
+            "median_daily_kwh": round(med, 1),
             "threshold_kwh": round(threshold, 1),
             "max_daily_kwh": round(max_val, 1),
             "max_day": max_day.isoformat(),
+            "mad": round(mad_val, 1),
         },
         "estimated_loss_kwh": round(excess_kwh * 12, 0),
-        "estimated_loss_eur": round(excess_kwh * 12 * PRIX_REF_KWH, 0),
     }
 
 
 def _detect_derive(readings: List[MeterReading]) -> Optional[dict]:
     """Detect upward trend (derive) over 30 days.
 
-    Compares average of first week vs last week.
+    V1.1: uses linear regression on daily averages.
+    Fallback: first week vs last week comparison if < 14 days.
     """
     if len(readings) < 336:  # Need at least 14 days
         return None
 
-    # Split into first week and last week
-    total_hours = len(readings)
-    week_hours = 168  # 7 * 24
+    # Aggregate daily averages
+    daily_avg = {}
+    daily_count = {}
+    for r in readings:
+        day = r.timestamp.date()
+        daily_avg[day] = daily_avg.get(day, 0) + r.value_kwh
+        daily_count[day] = daily_count.get(day, 0) + 1
 
+    days_sorted = sorted(daily_avg.keys())
+    daily_means = [daily_avg[d] / daily_count[d] for d in days_sorted]
+
+    if len(daily_means) < 14:
+        return None
+
+    # Linear regression on daily means
+    slope = _linear_slope(daily_means)
+    mean_val = sum(daily_means) / len(daily_means)
+
+    if mean_val == 0:
+        return None
+
+    # slope is kW/day, convert to % over the period
+    total_change = slope * len(daily_means)
+    drift_pct = total_change / mean_val * 100
+
+    # Fallback: first week vs last week (for validation)
+    week_hours = 168
     first_week = readings[:week_hours]
     last_week = readings[-week_hours:]
-
     avg_first = sum(r.value_kwh for r in first_week) / len(first_week)
     avg_last = sum(r.value_kwh for r in last_week) / len(last_week)
+    fallback_drift = (avg_last - avg_first) / avg_first * 100 if avg_first > 0 else 0
 
-    if avg_first == 0:
+    # Use linreg drift if available, validate with fallback
+    # If signs disagree, reduce confidence (use smaller absolute)
+    if drift_pct > 0 and fallback_drift > 0:
+        final_drift = min(drift_pct, fallback_drift * 1.5)
+    elif drift_pct > 0:
+        final_drift = drift_pct * 0.5  # linreg positive but fallback negative: halve it
+    else:
+        final_drift = fallback_drift  # linreg not positive, use fallback
+
+    if final_drift < 5:
         return None
 
-    drift_pct = (avg_last - avg_first) / avg_first * 100
-
-    # Alert if > 5% increase
-    if drift_pct < 5:
-        return None
-
-    severity = "high" if drift_pct > 15 else "medium" if drift_pct > 8 else "low"
-    excess_kwh = (avg_last - avg_first) * total_hours
+    severity = "high" if final_drift > 15 else "medium" if final_drift > 8 else "low"
+    total_hours = len(readings)
+    excess_kwh = (avg_last - avg_first) * total_hours if avg_last > avg_first else 0
 
     return {
         "type": "derive",
         "severity": severity,
-        "message": f"Derive de +{drift_pct:.1f}% sur la periode ({avg_first:.1f} → {avg_last:.1f} kW moyen) — verifier les reglages et la maintenance",
+        "message": f"Derive de +{final_drift:.1f}% sur la periode ({avg_first:.1f} → {avg_last:.1f} kW moyen) — verifier les reglages et la maintenance",
         "metrics": {
-            "drift_pct": round(drift_pct, 1),
+            "drift_pct": round(final_drift, 1),
+            "drift_pct_linreg": round(drift_pct, 1),
+            "drift_pct_fallback": round(fallback_drift, 1),
             "avg_first_week_kw": round(avg_first, 2),
             "avg_last_week_kw": round(avg_last, 2),
+            "slope_kw_per_day": round(slope, 4),
         },
         "estimated_loss_kwh": round(max(0, excess_kwh * 12), 0),
-        "estimated_loss_eur": round(max(0, excess_kwh * 12) * PRIX_REF_KWH, 0),
     }
 
 
@@ -350,14 +584,12 @@ def _detect_data_gaps(readings: List[MeterReading]) -> Optional[dict]:
 
     gaps = 0
     max_gap_hours = 0
-    current_gap = 0
 
     for i in range(1, len(readings)):
         delta = (readings[i].timestamp - readings[i-1].timestamp).total_seconds() / 3600
-        if delta > 1.5:  # More than 1.5h between hourly readings = gap
+        if delta > 1.5:
             gap_hours = int(delta)
             gaps += 1
-            current_gap = gap_hours
             max_gap_hours = max(max_gap_hours, gap_hours)
 
     if gaps < 2 or max_gap_hours < 4:
@@ -379,7 +611,6 @@ def _detect_data_gaps(readings: List[MeterReading]) -> Optional[dict]:
             "total_readings": len(readings),
         },
         "estimated_loss_kwh": 0,
-        "estimated_loss_eur": 0,
     }
 
 
@@ -389,21 +620,29 @@ def _detect_data_gaps(readings: List[MeterReading]) -> Optional[dict]:
 
 def run_diagnostic(
     db: Session, site_id: int,
-    biz_start: int = 8, biz_end: int = 19,
+    biz_start: int = None, biz_end: int = None,
     days: int = 30,
 ) -> List[ConsumptionInsight]:
-    """Run all V1 diagnostics for a site and persist ConsumptionInsight rows.
+    """Run all V1.1 diagnostics for a site and persist ConsumptionInsight rows.
 
-    Args:
-        biz_start, biz_end: business hours (from questionnaire or default)
-        days: lookback period
+    V1.1: reads SiteOperatingSchedule and SiteTariffProfile from DB.
+    biz_start/biz_end are legacy overrides (if provided, override schedule).
 
     Returns list of created ConsumptionInsight objects.
     """
-    # Get all meters for site
     meters = db.query(Meter).filter(Meter.site_id == site_id, Meter.is_active == True).all()
     if not meters:
         return []
+
+    # Load schedule + tariff
+    schedule = _get_schedule_params(db, site_id)
+    price_ref = _get_price_ref(db, site_id)
+
+    # Legacy overrides
+    if biz_start is not None:
+        schedule["open_time"] = biz_start
+    if biz_end is not None:
+        schedule["close_time"] = biz_end
 
     # Delete existing insights for this site
     db.query(ConsumptionInsight).filter(ConsumptionInsight.site_id == site_id).delete()
@@ -420,8 +659,8 @@ def run_diagnostic(
         period_end = readings[-1].timestamp
 
         detectors = [
-            _detect_hors_horaires(readings, biz_start, biz_end),
-            _detect_base_load(readings),
+            _detect_hors_horaires(readings, schedule),
+            _detect_base_load(readings, schedule),
             _detect_pointe(readings),
             _detect_derive(readings),
             _detect_data_gaps(readings),
@@ -431,15 +670,28 @@ def run_diagnostic(
             if insight_data is None:
                 continue
 
+            # Compute estimated_loss_eur from kwh * price_ref
+            loss_kwh = insight_data.get("estimated_loss_kwh", 0) or 0
+            loss_eur = round(loss_kwh * price_ref, 0)
+
+            # Add price_ref to metrics for transparency
+            metrics = insight_data.get("metrics", {})
+            metrics["price_ref_eur_kwh"] = price_ref
+
+            # Generate recommended actions
+            gen_fn = ACTIONS_GENERATORS.get(insight_data["type"])
+            rec_actions = gen_fn(metrics, price_ref) if gen_fn else []
+
             ci = ConsumptionInsight(
                 site_id=site_id,
                 meter_id=meter.id,
                 type=insight_data["type"],
                 severity=insight_data["severity"],
                 message=insight_data["message"],
-                metrics_json=json.dumps(insight_data.get("metrics", {}), ensure_ascii=False),
-                estimated_loss_kwh=insight_data.get("estimated_loss_kwh"),
-                estimated_loss_eur=insight_data.get("estimated_loss_eur"),
+                metrics_json=json.dumps(metrics, ensure_ascii=False),
+                estimated_loss_kwh=loss_kwh,
+                estimated_loss_eur=loss_eur,
+                recommended_actions_json=json.dumps(rec_actions, ensure_ascii=False) if rec_actions else None,
                 period_start=period_start,
                 period_end=period_end,
             )
@@ -529,12 +781,12 @@ def get_insights_summary(db: Session, org_id: int) -> dict:
             "message": ci.message,
             "estimated_loss_kwh": ci.estimated_loss_kwh,
             "estimated_loss_eur": ci.estimated_loss_eur,
+            "recommended_actions": json.loads(ci.recommended_actions_json) if ci.recommended_actions_json else [],
             "metrics": json.loads(ci.metrics_json) if ci.metrics_json else {},
             "period_start": ci.period_start.isoformat() if ci.period_start else None,
             "period_end": ci.period_end.isoformat() if ci.period_end else None,
         })
 
-    # Sort by severity then loss
     sev_order = {"critical": 4, "high": 3, "medium": 2, "low": 1}
     insight_list.sort(key=lambda x: (sev_order.get(x["severity"], 0), x["estimated_loss_eur"] or 0), reverse=True)
 

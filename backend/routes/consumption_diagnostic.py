@@ -65,6 +65,7 @@ def site_insights(site_id: int, db: Session = Depends(get_db)):
                 "message": ci.message,
                 "estimated_loss_kwh": ci.estimated_loss_kwh,
                 "estimated_loss_eur": ci.estimated_loss_eur,
+                "recommended_actions": json.loads(ci.recommended_actions_json) if ci.recommended_actions_json else [],
                 "metrics": json.loads(ci.metrics_json) if ci.metrics_json else {},
                 "period_start": ci.period_start.isoformat() if ci.period_start else None,
                 "period_end": ci.period_end.isoformat() if ci.period_end else None,

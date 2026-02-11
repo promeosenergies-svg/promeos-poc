@@ -63,6 +63,11 @@ class ConsumptionInsight(Base, TimestampMixin):
         nullable=True,
         comment="Perte estimee en EUR/an",
     )
+    recommended_actions_json = Column(
+        Text,
+        nullable=True,
+        comment="Actions recommandees (JSON array of {title, rationale, expected_gain_kwh, expected_gain_eur, effort, priority})",
+    )
     period_start = Column(DateTime, nullable=True)
     period_end = Column(DateTime, nullable=True)
 

@@ -120,6 +120,29 @@ def get_dashboard_2min(db: Session = Depends(get_db)):
                     "reglementation": top.regulation,
                 }
 
+    # V1.1: If no critical compliance NOK, try top conso insight for action_1
+    if not nok_findings:
+        import json as _json
+        top_insight = (
+            db.query(ConsumptionInsight)
+            .filter(ConsumptionInsight.estimated_loss_eur > 0)
+            .order_by(ConsumptionInsight.estimated_loss_eur.desc())
+            .first()
+        )
+        if top_insight and top_insight.recommended_actions_json:
+            rec = _json.loads(top_insight.recommended_actions_json)
+            if rec:
+                site_obj = db.query(Site).filter(Site.id == top_insight.site_id).first()
+                action_1 = {
+                    "texte": rec[0]["title"],
+                    "priorite": top_insight.severity or "high",
+                    "nb_sites_concernes": 1,
+                    "reglementation": None,
+                    "source": "conso_insight",
+                    "site_nom": site_obj.nom if site_obj else None,
+                    "expected_gain_eur": rec[0].get("expected_gain_eur", 0),
+                }
+
     return {
         "has_data": True,
         "organisation": {

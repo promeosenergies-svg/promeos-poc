@@ -240,4 +240,13 @@ export const getConsumptionSite = (siteId) => api.get(`/consumption/site/${siteI
 export const runConsumptionDiagnose = (orgId = null, days = 30) => api.post('/consumption/diagnose', null, { params: { org_id: orgId, days } }).then(r => r.data);
 export const seedDemoConsumption = (siteId = null, days = 30) => api.post('/consumption/seed-demo', null, { params: { site_id: siteId, days } }).then(r => r.data);
 
+// ========================================
+// SITE CONFIG (Schedule + Tariff)
+// ========================================
+
+export const getSiteSchedule = (siteId) => api.get(`/site/${siteId}/schedule`).then(r => r.data);
+export const putSiteSchedule = (siteId, data) => api.put(`/site/${siteId}/schedule`, data).then(r => r.data);
+export const getSiteTariff = (siteId) => api.get(`/site/${siteId}/tariff`).then(r => r.data);
+export const putSiteTariff = (siteId, data) => api.put(`/site/${siteId}/tariff`, data).then(r => r.data);
+
 export default api;
