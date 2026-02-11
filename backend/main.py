@@ -11,7 +11,7 @@ from routes import (
     cockpit_router, compliance_router, demo_router, guidance_router,
     regops_router, connectors_router, watchers_router, ai_router,
     kb_usages_router, energy_router, monitoring_router, onboarding_router,
-    import_router
+    import_router, dashboard_2min_router
 )
 
 # Import KB router
@@ -56,6 +56,7 @@ app.include_router(bill_router)  # Bill Intelligence (audit, shadow billing)
 app.include_router(monitoring_router)  # Electric Monitoring (KPIs, alerts, risk)
 app.include_router(onboarding_router)  # Onboarding B2B (org, sites, CSV import)
 app.include_router(import_router)  # Import CSV standalone
+app.include_router(dashboard_2min_router)  # Dashboard 2 minutes
 
 # Route racine
 @app.get("/")

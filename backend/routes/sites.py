@@ -7,11 +7,59 @@ from database import get_db
 from models import Site, Compteur, Alerte, Consommation, Obligation, Evidence, Batiment, StatutConformite, StatutEvidence, TypeObligation
 from routes.schemas import SiteResponse, SiteListResponse, SiteStats, SiteComplianceResponse, BatimentResponse
 from services.compliance_engine import compute_action_recommandee, _ACTION_TEMPLATES
+from pydantic import BaseModel
 from typing import List, Optional
 from sqlalchemy import func
 from datetime import datetime, timedelta
 
 router = APIRouter(prefix="/api/sites", tags=["Sites"])
+
+
+class SiteCreateRequest(BaseModel):
+    nom: str
+    type: Optional[str] = None
+    naf_code: Optional[str] = None
+    adresse: Optional[str] = None
+    code_postal: Optional[str] = None
+    ville: Optional[str] = None
+    surface_m2: Optional[float] = None
+
+
+@router.post("")
+def create_site(req: SiteCreateRequest, db: Session = Depends(get_db)):
+    """
+    Cree un site dans le premier portefeuille de l'organisation existante.
+    Auto-provision: batiment + obligations + compliance recompute.
+    """
+    from models import Organisation, Portefeuille
+    from services.onboarding_service import create_site_from_data, provision_site
+
+    org = db.query(Organisation).first()
+    if not org:
+        raise HTTPException(status_code=400, detail="Aucune organisation. Creez-en une d'abord.")
+    pf = db.query(Portefeuille).first()
+    if not pf:
+        raise HTTPException(status_code=400, detail="Aucun portefeuille.")
+
+    site = create_site_from_data(
+        db=db,
+        portefeuille_id=pf.id,
+        nom=req.nom,
+        type_site=req.type,
+        naf_code=req.naf_code,
+        adresse=req.adresse,
+        code_postal=req.code_postal,
+        ville=req.ville,
+        surface_m2=req.surface_m2,
+    )
+    prov = provision_site(db, site)
+    db.commit()
+    return {
+        "id": site.id,
+        "nom": site.nom,
+        "type": site.type.value,
+        **prov,
+    }
 
 @router.get("", response_model=SiteListResponse)
 def get_sites(

@@ -18,6 +18,7 @@ from .energy import router as energy_router
 from .monitoring import router as monitoring_router
 from .onboarding import router as onboarding_router
 from .import_sites import router as import_router
+from .dashboard_2min import router as dashboard_2min_router
 
 __all__ = [
     "sites_router",
@@ -37,4 +38,5 @@ __all__ = [
     "monitoring_router",
     "onboarding_router",
     "import_router",
+    "dashboard_2min_router",
 ]
