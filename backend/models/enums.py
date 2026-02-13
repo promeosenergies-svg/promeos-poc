@@ -391,3 +391,36 @@ class WatcherEventStatus(str, enum.Enum):
     REVIEWED = "reviewed"
     APPLIED = "applied"
     DISMISSED = "dismissed"
+
+
+# ========================================
+# Enums BACS Expert (Decret n°2020-887)
+# ========================================
+
+class CvcSystemType(str, enum.Enum):
+    """Type de systeme CVC pour inventaire BACS."""
+    HEATING = "heating"
+    COOLING = "cooling"
+    VENTILATION = "ventilation"
+
+
+class CvcArchitecture(str, enum.Enum):
+    """Architecture d'installation CVC (impacte le calcul Putile)."""
+    CASCADE = "cascade"
+    NETWORK = "network"
+    INDEPENDENT = "independent"
+
+
+class BacsTriggerReason(str, enum.Enum):
+    """Raison declenchante de l'obligation BACS."""
+    THRESHOLD_290 = "threshold_290"
+    THRESHOLD_70 = "threshold_70"
+    RENEWAL = "renewal"
+    NEW_CONSTRUCTION = "new_construction"
+
+
+class InspectionStatus(str, enum.Enum):
+    """Statut d'une inspection quinquennale BACS."""
+    SCHEDULED = "scheduled"
+    COMPLETED = "completed"
+    OVERDUE = "overdue"

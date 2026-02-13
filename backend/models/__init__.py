@@ -19,6 +19,7 @@ from .enums import (
     StagingStatus, ImportSourceType, QualityRuleSeverity,
     IntakeSessionStatus, IntakeMode, IntakeSource,
     WatcherEventStatus,
+    CvcSystemType, CvcArchitecture, BacsTriggerReason, InspectionStatus,
 )
 
 # Hierarchie organisation
@@ -92,6 +93,9 @@ from .patrimoine import (
 # Smart Intake (DIAMANT)
 from .intake import IntakeSession, IntakeAnswer, IntakeFieldOverride
 
+# BACS Expert (Decret n°2020-887)
+from .bacs_models import BacsAsset, BacsCvcSystem, BacsAssessment, BacsInspection
+
 # Energy (Consumption & Analytics)
 from .energy_models import (
     Meter, MeterReading, DataImportJob, UsageProfile, Anomaly, Recommendation,
@@ -147,4 +151,7 @@ __all__ = [
     "IntakeSessionStatus", "IntakeMode", "IntakeSource",
     # Watchers
     "WatcherEventStatus",
+    # BACS Expert (Decret n°2020-887)
+    "BacsAsset", "BacsCvcSystem", "BacsAssessment", "BacsInspection",
+    "CvcSystemType", "CvcArchitecture", "BacsTriggerReason", "InspectionStatus",
 ]
