@@ -469,4 +469,17 @@ export const deleteCvcSystem = (systemId) => api.delete(`/regops/bacs/system/${s
 export const seedBacsDemo = () => api.post('/regops/bacs/seed_demo').then(r => r.data);
 export const getBacsOpsPanel = (siteId) => api.get(`/regops/bacs/site/${siteId}/ops`).then(r => r.data);
 
+// ========================================
+// EMS Consumption Explorer
+// ========================================
+
+export const getEmsTimeseries = (params) => api.get('/ems/timeseries', { params }).then(r => r.data);
+export const getEmsTimeseriesSuggest = (dateFrom, dateTo) => api.get('/ems/timeseries/suggest', { params: { date_from: dateFrom, date_to: dateTo } }).then(r => r.data);
+export const getEmsWeather = (siteId, dateFrom, dateTo) => api.get('/ems/weather', { params: { site_id: siteId, date_from: dateFrom, date_to: dateTo } }).then(r => r.data);
+export const runEmsSignature = (siteId, dateFrom, dateTo, meterIds = null) => api.post('/ems/signature/run', null, { params: { site_id: siteId, date_from: dateFrom, date_to: dateTo, meter_ids: meterIds } }).then(r => r.data);
+export const getEmsViews = (userId = null) => api.get('/ems/views', { params: userId ? { user_id: userId } : {} }).then(r => r.data);
+export const createEmsView = (name, configJson, userId = null) => api.post('/ems/views', null, { params: { name, config_json: configJson, user_id: userId } }).then(r => r.data);
+export const updateEmsView = (id, params) => api.put(`/ems/views/${id}`, null, { params }).then(r => r.data);
+export const deleteEmsView = (id) => api.delete(`/ems/views/${id}`).then(r => r.data);
+
 export default api;

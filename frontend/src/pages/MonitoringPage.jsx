@@ -4,6 +4,7 @@
  * KPIs, Recharts power profile, alerts lifecycle, demo integration.
  */
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Activity, AlertTriangle, Zap, BarChart3, CheckCircle, Clock,
   Shield, TrendingUp, ChevronDown, ChevronUp, Eye, PlayCircle,
@@ -178,6 +179,7 @@ function AlertCard({ alert, onAck, onResolve }) {
 export default function MonitoringPage() {
   const { scope, scopedSites, setSite } = useScope();
   const { isExpert } = useExpertMode();
+  const navigate = useNavigate();
   const siteId = scope.siteId;
 
   const [kpis, setKpis] = useState(null);
@@ -347,6 +349,10 @@ export default function MonitoringPage() {
           <Button variant="secondary" size="sm" onClick={handleRun} disabled={loading}>
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
             {loading ? 'Analyse...' : 'Lancer Analyse'}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => navigate(`/explorer?site_id=${siteId}`)}>
+            <BarChart3 size={14} />
+            Explorer
           </Button>
         </>
       }

@@ -41,6 +41,7 @@ const AdminUsersPage = lazy(() => import('./pages/AdminUsersPage'));
 const AdminRolesPage = lazy(() => import('./pages/AdminRolesPage'));
 const AdminAssignmentsPage = lazy(() => import('./pages/AdminAssignmentsPage'));
 const AdminAuditLogPage = lazy(() => import('./pages/AdminAuditLogPage'));
+const ConsumptionExplorerPage = lazy(() => import('./pages/ConsumptionExplorerPage'));
 
 function PageSuspense({ children }) {
   return (
@@ -101,6 +102,7 @@ function App() {
                   <Route path="/segmentation" element={<PageSuspense><SegmentationPage /></PageSuspense>} />
                   <Route path="/import" element={<PageSuspense><ImportPage /></PageSuspense>} />
                   <Route path="/notifications" element={<PageSuspense><NotificationsPage /></PageSuspense>} />
+                  <Route path="/explorer" element={<PageSuspense><ConsumptionExplorerPage /></PageSuspense>} />
                   <Route path="/status" element={<PageSuspense><StatusPage /></PageSuspense>} />
 
                   {/* IAM pages */}
@@ -128,6 +130,7 @@ function App() {
                   <Route path="/connexions" element={<Navigate to="/connectors" replace />} />
                   <Route path="/veille" element={<Navigate to="/watchers" replace />} />
                   <Route path="/alertes" element={<Navigate to="/notifications" replace />} />
+                  <Route path="/ems" element={<Navigate to="/explorer" replace />} />
 
                   {/* Catch-all */}
                   <Route path="*" element={<PageSuspense><NotFound /></PageSuspense>} />

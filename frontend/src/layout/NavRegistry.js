@@ -7,6 +7,7 @@ import {
   LayoutDashboard, Building2, ShieldCheck, FileText,
   Zap, ListChecks, Activity, Import, Users, Receipt,
   BookOpen, ShoppingCart, Search, Link2, Eye, Bell, Lock,
+  BarChart3,
 } from 'lucide-react';
 
 export const ROUTE_MODULE_MAP = {
@@ -21,6 +22,7 @@ export const ROUTE_MODULE_MAP = {
   '/bill-intel': 'billing',
   '/achat-energie': 'purchase',
   '/monitoring': 'monitoring',
+  '/explorer': 'ems',
   '/import': null,
   '/connectors': null,
   '/segmentation': null,
@@ -54,6 +56,7 @@ export const NAV_SECTIONS = [
       { to: '/bill-intel',       icon: Receipt,       label: 'Facturation', keywords: ['factures', 'billing', 'invoices'] },
       { to: '/achat-energie',    icon: ShoppingCart,   label: 'Achats energie', keywords: ['achat', 'purchase', 'scenarios'] },
       { to: '/monitoring',       icon: Activity,      label: 'Performance', badgeKey: 'monitoring', keywords: ['monitoring', 'kpi', 'puissance'] },
+      { to: '/explorer',        icon: BarChart3,     label: 'Explorateur Conso', keywords: ['explorer', 'ems', 'timeseries', 'signature'] },
     ],
   },
   {
