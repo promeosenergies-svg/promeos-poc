@@ -31,6 +31,7 @@ from .auth import router as auth_router
 from .admin_users import router as admin_users_router
 from .patrimoine import router as patrimoine_router
 from .intake import router as intake_router
+from .bacs import router as bacs_router
 
 __all__ = [
     "sites_router",
@@ -63,4 +64,5 @@ __all__ = [
     "admin_users_router",
     "patrimoine_router",
     "intake_router",
+    "bacs_router",
 ]

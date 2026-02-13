@@ -23,6 +23,7 @@ from routes import (
     admin_users_router,
     patrimoine_router,
     intake_router,
+    bacs_router,
 )
 
 # Import KB router
@@ -80,6 +81,7 @@ app.include_router(auth_router)  # IAM Auth (login, me, refresh, logout, passwor
 app.include_router(admin_users_router)  # IAM Admin (CRUD users, roles, scopes)
 app.include_router(patrimoine_router)  # Patrimoine DIAMANT (staging, quality gate, activation)
 app.include_router(intake_router)  # Smart Intake DIAMANT (questions, answers, before/after)
+app.include_router(bacs_router)  # BACS Expert (Decret n°2020-887)
 
 # Route racine
 @app.get("/")
