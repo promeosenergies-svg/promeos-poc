@@ -75,3 +75,71 @@ def suggest_timeseries_granularity(
     dt_to = datetime.fromisoformat(date_to)
     recommended = suggest_granularity(dt_from, dt_to)
     return {"granularity": recommended}
+
+
+# -------------------------------------------------------------------
+# Weather
+# -------------------------------------------------------------------
+@router.get("/weather")
+def get_weather_data(
+    site_id: int = Query(...),
+    date_from: str = Query(...),
+    date_to: str = Query(...),
+    db: Session = Depends(get_db),
+):
+    from services.ems.weather_service import get_weather
+    from datetime import date as date_cls
+    df = date_cls.fromisoformat(date_from)
+    dt = date_cls.fromisoformat(date_to)
+    data = get_weather(db, site_id, df, dt)
+    return {"site_id": site_id, "days": data}
+
+
+# -------------------------------------------------------------------
+# Energy Signature
+# -------------------------------------------------------------------
+@router.post("/signature/run")
+def run_energy_signature(
+    site_id: int = Query(...),
+    date_from: str = Query(...),
+    date_to: str = Query(...),
+    meter_ids: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
+    from services.ems.weather_service import get_weather
+    from services.ems.signature_service import run_signature
+    from services.ems.timeseries_service import query_timeseries
+    from datetime import date as date_cls
+
+    df = date_cls.fromisoformat(date_from)
+    dt_to = date_cls.fromisoformat(date_to)
+    parsed_meter_ids = [int(x) for x in meter_ids.split(",") if x.strip()] if meter_ids else None
+
+    # Get daily consumption
+    ts_data = query_timeseries(
+        db, [site_id], parsed_meter_ids,
+        datetime.combine(df, datetime.min.time()),
+        datetime.combine(dt_to, datetime.min.time()),
+        "daily", "aggregate", "kwh",
+    )
+
+    if not ts_data["series"] or not ts_data["series"][0]["data"]:
+        raise HTTPException(404, "No consumption data for this site/period")
+
+    daily_series = ts_data["series"][0]["data"]
+
+    # Get weather
+    weather = get_weather(db, site_id, df, dt_to)
+    weather_map = {w["date"]: w["temp_avg_c"] for w in weather}
+
+    # Align: only days with both consumption and weather
+    daily_kwh = []
+    daily_temp = []
+    for pt in daily_series:
+        date_key = pt["t"][:10]
+        if date_key in weather_map:
+            daily_kwh.append(pt["v"])
+            daily_temp.append(weather_map[date_key])
+
+    result = run_signature(daily_kwh, daily_temp)
+    return result
