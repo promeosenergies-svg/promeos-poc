@@ -18,6 +18,7 @@ from .enums import (
     UserRole, ScopeLevel, PermissionAction,
     StagingStatus, ImportSourceType, QualityRuleSeverity,
     IntakeSessionStatus, IntakeMode, IntakeSource,
+    WatcherEventStatus,
 )
 
 # Hierarchie organisation
@@ -144,4 +145,6 @@ __all__ = [
     # Smart Intake (DIAMANT)
     "IntakeSession", "IntakeAnswer", "IntakeFieldOverride",
     "IntakeSessionStatus", "IntakeMode", "IntakeSource",
+    # Watchers
+    "WatcherEventStatus",
 ]

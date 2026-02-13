@@ -143,10 +143,11 @@ export const syncConnector = (name, objectType, objectId) =>
 
 export const listWatchers = () => api.get('/watchers/list').then(r => r.data);
 export const runWatcher = (name) => api.post(`/watchers/${name}/run`).then(r => r.data);
-export const listRegEvents = (source = null, reviewed = null) =>
-  api.get('/watchers/events', { params: { source, reviewed } }).then(r => r.data);
-export const reviewRegEvent = (eventId, reviewNote = '') =>
-  api.patch(`/watchers/events/${eventId}/review`, null, { params: { review_note: reviewNote } }).then(r => r.data);
+export const listRegEvents = (source = null, reviewed = null, status = null) =>
+  api.get('/watchers/events', { params: { source, reviewed, status } }).then(r => r.data);
+export const reviewRegEvent = (eventId, decision = 'apply', notes = '') =>
+  api.patch(`/watchers/events/${eventId}/review`, { decision, notes }).then(r => r.data);
+export const getRegEventDetail = (eventId) => api.get(`/watchers/events/${eventId}`).then(r => r.data);
 
 // ========================================
 // AI AGENTS

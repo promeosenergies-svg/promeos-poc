@@ -383,3 +383,11 @@ class IntakeSource(str, enum.Enum):
     SYSTEM = "system"
     SYSTEM_DEMO = "system_demo"
     AI_PREFILL = "ai_prefill"
+
+
+class WatcherEventStatus(str, enum.Enum):
+    """Pipeline status for watcher events."""
+    NEW = "new"
+    REVIEWED = "reviewed"
+    APPLIED = "applied"
+    DISMISSED = "dismissed"

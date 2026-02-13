@@ -2,13 +2,23 @@
 PROMEOS Watchers - Generic RSS watcher (stdlib only, no feedparser)
 """
 import hashlib
+import re
+import unicodedata
 import urllib.request
 import xml.etree.ElementTree as ET
 from datetime import datetime
 from typing import List
 from sqlalchemy.orm import Session
-from models import RegSourceEvent
+from models import RegSourceEvent, WatcherEventStatus
 from .base import Watcher
+
+
+def _normalize_dedup_key(title: str, published_date: str, source: str) -> str:
+    """Normalize: lowercase, strip accents/punct, trim -> SHA256."""
+    text = f"{title}|{published_date}|{source}"
+    text = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode()
+    text = re.sub(r"[^a-z0-9|]", "", text.lower())
+    return hashlib.sha256(text.encode()).hexdigest()[:128]
 
 
 class RSSWatcher(Watcher):
@@ -66,6 +76,11 @@ class RSSWatcher(Watcher):
                     except:
                         pass
 
+                # Compute normalized dedup key
+                dedup_key = _normalize_dedup_key(
+                    title, pub_date_str or "", self.name
+                )
+
                 event = RegSourceEvent(
                     source_name=self.name,
                     title=title,
@@ -75,7 +90,9 @@ class RSSWatcher(Watcher):
                     tags=self.tags_default,
                     published_at=published_at,
                     retrieved_at=datetime.utcnow(),
-                    reviewed=False
+                    reviewed=False,
+                    status=WatcherEventStatus.NEW,
+                    dedup_key=dedup_key,
                 )
                 db.add(event)
                 events.append(event)
