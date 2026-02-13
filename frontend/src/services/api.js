@@ -451,4 +451,22 @@ export const ackMonitoringAlert = (id) => api.post(`/monitoring/alerts/${id}/ack
 export const resolveMonitoringAlert = (id, note = null) => api.post(`/monitoring/alerts/${id}/resolve`, { resolved_by: 'user', resolution_note: note }).then(r => r.data);
 export const generateMonitoringDemo = (siteId, days = 90) => api.post('/monitoring/demo/generate', { site_id: siteId, days }).then(r => r.data);
 
+// ========================================
+// BACS Expert (Decret n°2020-887)
+// ========================================
+
+export const getBacsAssessment = (siteId) => api.get(`/regops/bacs/site/${siteId}`).then(r => r.data);
+export const recomputeBacs = (siteId) => api.post(`/regops/bacs/recompute/${siteId}`).then(r => r.data);
+export const getBacsScoreExplain = (siteId) => api.get(`/regops/bacs/score_explain/${siteId}`).then(r => r.data);
+export const getBacsDataQuality = (siteId) => api.get(`/regops/bacs/data_quality/${siteId}`).then(r => r.data);
+export const createBacsAsset = (siteId, isTertiary = true, pcDate = null) =>
+  api.post('/regops/bacs/asset', null, { params: { site_id: siteId, is_tertiary: isTertiary, pc_date: pcDate } }).then(r => r.data);
+export const addCvcSystem = (assetId, systemType, architecture, unitsJson = '[]') =>
+  api.post(`/regops/bacs/asset/${assetId}/system`, null, { params: { system_type: systemType, architecture, units_json: unitsJson } }).then(r => r.data);
+export const updateCvcSystem = (systemId, unitsJson = null, architecture = null) =>
+  api.put(`/regops/bacs/system/${systemId}`, null, { params: { units_json: unitsJson, architecture } }).then(r => r.data);
+export const deleteCvcSystem = (systemId) => api.delete(`/regops/bacs/system/${systemId}`).then(r => r.data);
+export const seedBacsDemo = () => api.post('/regops/bacs/seed_demo').then(r => r.data);
+export const getBacsOpsPanel = (siteId) => api.get(`/regops/bacs/site/${siteId}/ops`).then(r => r.data);
+
 export default api;

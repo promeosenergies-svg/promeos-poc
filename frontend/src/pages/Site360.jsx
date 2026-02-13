@@ -14,6 +14,7 @@ import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { getMockSite } from '../mocks/sites';
 import { applyKB } from '../services/api';
 import IntakeWizard from '../components/IntakeWizard';
+import BacsWizard from '../components/BacsWizard';
 
 const STATUT_BADGE = {
   conforme: { status: 'ok', label: 'Conforme' },
@@ -350,6 +351,7 @@ export default function Site360() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('resume');
   const [showIntake, setShowIntake] = useState(false);
+  const [showBacs, setShowBacs] = useState(false);
 
   const site = getMockSite(id);
 
@@ -391,6 +393,10 @@ export default function Site360() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setShowBacs(true)}>
+            <ShieldCheck size={14} className="mr-1" />
+            Evaluer BACS
+          </Button>
           <Button variant="outline" onClick={() => setShowIntake(true)}>
             <ClipboardCheck size={14} className="mr-1" />
             Completer les donnees
@@ -417,6 +423,11 @@ export default function Site360() {
       {activeTab === 'factures' && <TabStub title="Factures" text="Analyse factures, shadow billing et optimisation tarifaire a venir." />}
       {activeTab === 'conformite' && <TabConformite site={site} />}
       {activeTab === 'actions' && <TabStub title="Actions" text="Plan d'action et suivi des recommandations a venir." />}
+
+      {/* BACS Wizard modal */}
+      {showBacs && (
+        <BacsWizard siteId={site.id} onClose={() => setShowBacs(false)} />
+      )}
 
       {/* Smart Intake Wizard modal */}
       {showIntake && (
