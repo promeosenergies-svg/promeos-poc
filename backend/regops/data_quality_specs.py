@@ -12,6 +12,9 @@ DATA_QUALITY_SPECS = {
     "bacs": {
         "critical": ["cvc_power_kw"],
         "optional": ["has_bacs_attestation", "has_bacs_derogation"],
+        # Extended BACS v2 fields are resolved by bacs_engine DQ (not generic gate):
+        # critical_ext: is_tertiary_non_residential, pc_date, cvc_inventory, cvc_architecture
+        # important_ext: conso_2_ans_kwh, prix_kwh, cout_bacs_eur, aides_pct
     },
     "aper": {
         "critical": ["parking_area_m2", "roof_area_m2"],
