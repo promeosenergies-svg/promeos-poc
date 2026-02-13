@@ -47,13 +47,30 @@ Button, Badge, Card/CardHeader/CardBody, Input, Select, Tabs, Table, Pagination,
 
 ## Checklist par page
 
-- [ ] PageShell avec titre + sous-titre + icon + actions
-- [ ] KpiCard pour metriques principales
-- [ ] FilterBar standard pour filtres
-- [ ] EmptyState quand pas de donnees
-- [ ] Skeleton pour chargement
-- [ ] Toast pour feedback async
-- [ ] Expert Mode gates si applicable
+- [x] PageShell avec titre + sous-titre + icon + actions
+- [x] KpiCard pour metriques principales
+- [x] FilterBar standard pour filtres
+- [x] EmptyState quand pas de donnees
+- [x] Skeleton pour chargement
+- [x] Toast pour feedback async
+- [x] Expert Mode gates si applicable
 - [ ] track() pour analytics
 - [ ] useScope() pour contexte site
-- [ ] api.js pour appels API
+- [x] api.js pour appels API
+
+## Sprint Status — COMPLETE
+
+| Deliverable | Status |
+|-------------|--------|
+| Design System V1 (22 components) | Done |
+| ExpertMode context + toggle | Done |
+| Command Palette (Ctrl+K) | Done |
+| Sidebar collapse + NavRegistry | Done |
+| Tier 1 pages (CommandCenter, Cockpit, Notifications) | Done |
+| Tier 2 pages (Conformite, Actions, Patrimoine) | Done |
+| Tier 3 pages (Conso, Diag, BillIntel, Achats, Monitoring) | Done |
+| Dashboard legacy rewrite (65 inline styles -> Tailwind) | Done |
+| React.lazy code splitting (30 pages) | Done |
+| Animations (fadeIn, slideInUp, slideInRight) | Done |
+| Backend regression: 880 tests passed | Done |
+| Frontend build: clean, 286 kB initial bundle | Done |
