@@ -1,20 +1,24 @@
 /**
- * PROMEOS — Vue Executive (/cockpit) V3.1.2
- * Scope-aligned: all KPIs and sites table respect ScopeContext.
- * V3.1.2: Readiness → Maturite de pilotage + definition + drill-down modal.
+ * PROMEOS — Vue Executive (/cockpit) V4
+ * PageShell + KpiCard + Progress + Expert Mode + Table UI kit
  */
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Rocket, ArrowRight, Info, Database, ShieldCheck, ListChecks } from 'lucide-react';
+import {
+  FileText, Rocket, ArrowRight, Info, Database, ShieldCheck, ListChecks,
+  Building2, Zap,
+} from 'lucide-react';
 import { useScope } from '../contexts/ScopeContext';
-import Modal from '../ui/Modal';
+import { useExpertMode } from '../contexts/ExpertModeContext';
+import { Badge, Button, Card, CardBody, KpiCard, PageShell, Progress, Modal } from '../ui';
+import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 
 const Cockpit = () => {
   const navigate = useNavigate();
   const { org, portefeuille, portefeuilles, scopedSites } = useScope();
+  const { isExpert } = useExpertMode();
   const [showMaturiteModal, setShowMaturiteModal] = useState(false);
 
-  // ── Derive all KPIs from scopedSites (scope-aligned) ──
   const kpis = useMemo(() => {
     const sites = scopedSites;
     const total = sites.length;
@@ -25,7 +29,6 @@ const Cockpit = () => {
     const avgAvancement = total > 0
       ? Math.round(sites.reduce((sum, s) => sum + (s.conso_kwh_an > 500000 ? 65 : 40), 0) / total)
       : 0;
-    // Sub-indicators for "Maturite de pilotage"
     const couvertureDonnees = total > 0
       ? Math.round(sites.filter(s => s.conso_kwh_an > 0).length / total * 100)
       : 0;
@@ -41,12 +44,10 @@ const Cockpit = () => {
     return { total, conformes, nonConformes, aRisque, risqueTotal, avgAvancement, readinessScore, couvertureDonnees, suiviConformite, actionsActives };
   }, [scopedSites]);
 
-  // ── Scope label ──
   const scopeLabel = portefeuille
     ? `${org.nom} / ${portefeuille.nom}`
     : org.nom;
 
-  // ── Portefeuilles with site counts (from scopedSites) ──
   const ptfWithCounts = useMemo(() => {
     return portefeuilles.map(pf => {
       const count = scopedSites.filter(s => ((s.id - 1) % 5) + 1 === pf.id).length;
@@ -55,13 +56,12 @@ const Cockpit = () => {
   }, [portefeuilles, scopedSites]);
 
   const getBadgeConformite = (statut) => {
-    if (!statut) return <span className="px-2 py-1 text-xs rounded bg-gray-200 text-gray-700">Non defini</span>;
-    const styles = {
-      conforme: 'bg-green-100 text-green-800',
-      derogation: 'bg-blue-100 text-blue-800',
-      a_risque: 'bg-orange-100 text-orange-800',
-      non_conforme: 'bg-red-100 text-red-800',
-      a_evaluer: 'bg-gray-100 text-gray-700',
+    const statusMap = {
+      conforme: 'ok',
+      derogation: 'info',
+      a_risque: 'warn',
+      non_conforme: 'crit',
+      a_evaluer: 'neutral',
     };
     const labels = {
       conforme: 'Conforme',
@@ -70,58 +70,47 @@ const Cockpit = () => {
       non_conforme: 'Non conforme',
       a_evaluer: 'A evaluer',
     };
-    return (
-      <span className={`px-2 py-1 text-xs font-medium rounded ${styles[statut] || styles.a_evaluer}`}>
-        {labels[statut] || statut}
-      </span>
-    );
+    return <Badge status={statusMap[statut] || 'neutral'}>{labels[statut] || statut || 'Non defini'}</Badge>;
   };
 
   return (
-    <div className="px-6 py-6 space-y-6">
-      {/* Header */}
-      <div>
-        <h2 className="text-xl font-bold text-gray-900">Vue exécutive</h2>
-        <p className="text-sm text-gray-500 mt-0.5">
-          KPIs portefeuille & priorités multi-sites — {scopeLabel} · {kpis.total} sites
-        </p>
-      </div>
+    <PageShell
+      icon={FileText}
+      title="Vue executive"
+      subtitle={`KPIs portefeuille & priorites multi-sites — ${scopeLabel} · ${kpis.total} sites`}
+    >
+      {/* KPIs */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        <KpiCard
+          icon={Building2}
+          title="Sites Actifs"
+          value={kpis.total}
+          sub="dans le perimetre"
+          color="bg-blue-600"
+        />
+        <KpiCard
+          icon={Zap}
+          title="Avancement Decret 2030"
+          value={`${kpis.avgAvancement}%`}
+          sub="trajectoire moyenne"
+          color="bg-green-600"
+        />
+        <KpiCard
+          icon={ShieldCheck}
+          title="Sites Non Conformes"
+          value={kpis.nonConformes + kpis.aRisque}
+          sub={`Non conformes: ${kpis.nonConformes} | A risque: ${kpis.aRisque}`}
+          color="bg-orange-500"
+        />
+        <KpiCard
+          icon={ListChecks}
+          title="Risque Financier"
+          value={`${(kpis.risqueTotal / 1000).toFixed(0)}k EUR`}
+          sub={`${kpis.nonConformes + kpis.aRisque} sites a risque`}
+          color="bg-red-600"
+        />
 
-      {/* KPIs Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        {/* KPI 1: Sites Actifs */}
-        <div className="bg-white rounded-lg shadow p-5 border-l-4 border-blue-500">
-          <div className="text-xs text-gray-500 font-medium uppercase mb-1">Sites Actifs</div>
-          <div className="text-3xl font-bold text-gray-900">{kpis.total}</div>
-          <div className="text-xs text-gray-400 mt-1">dans le perimetre</div>
-        </div>
-
-        {/* KPI 2: Avancement Decret */}
-        <div className="bg-white rounded-lg shadow p-5 border-l-4 border-green-500">
-          <div className="text-xs text-gray-500 font-medium uppercase mb-1">Avancement Decret 2030</div>
-          <div className="text-3xl font-bold text-gray-900">{kpis.avgAvancement}%</div>
-          <div className="text-xs text-gray-400 mt-1">trajectoire moyenne</div>
-        </div>
-
-        {/* KPI 3: Sites Non Conformes */}
-        <div className="bg-white rounded-lg shadow p-5 border-l-4 border-orange-500">
-          <div className="text-xs text-gray-500 font-medium uppercase mb-1">Sites Non Conformes</div>
-          <div className="text-3xl font-bold text-gray-900">{kpis.nonConformes + kpis.aRisque}</div>
-          <div className="text-xs text-gray-400 mt-1">
-            Non conformes: {kpis.nonConformes} | A risque: {kpis.aRisque}
-          </div>
-        </div>
-
-        {/* KPI 4: Risque Financier */}
-        <div className="bg-white rounded-lg shadow p-5 border-l-4 border-red-500">
-          <div className="text-xs text-gray-500 font-medium uppercase mb-1">Risque Financier</div>
-          <div className="text-3xl font-bold text-gray-900">
-            {(kpis.risqueTotal / 1000).toFixed(0)}k EUR
-          </div>
-          <div className="text-xs text-gray-400 mt-1">{kpis.nonConformes + kpis.aRisque} sites a risque</div>
-        </div>
-
-        {/* KPI 5: Maturite de pilotage (click → detail modal) */}
+        {/* Maturite — special gradient card */}
         <div
           className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-lg shadow p-5 text-white cursor-pointer hover:shadow-lg transition"
           onClick={() => setShowMaturiteModal(true)}
@@ -136,7 +125,6 @@ const Cockpit = () => {
           </div>
           <div className="text-3xl font-bold">{kpis.readinessScore}%</div>
           <div className="text-xs opacity-70 mt-1">Donnees + conformite + actions</div>
-          {/* TrustBadge */}
           <div className="mt-2 flex items-center gap-1.5 text-xs opacity-60">
             <div className="w-1.5 h-1.5 rounded-full bg-yellow-300" />
             <span>RegOps + donnees · 30j · confiance moyenne</span>
@@ -155,150 +143,123 @@ const Cockpit = () => {
             </p>
           </div>
         </div>
-        <button
-          onClick={() => navigate('/actions')}
-          className="bg-white text-indigo-700 px-6 py-2.5 rounded-lg font-semibold hover:bg-indigo-50 transition flex items-center gap-2 shrink-0"
-        >
-          Plan d'action
-          <ArrowRight size={16} />
-        </button>
+        <Button variant="secondary" onClick={() => navigate('/actions')} className="bg-white text-indigo-700 hover:bg-indigo-50 border-0">
+          Plan d'action <ArrowRight size={16} />
+        </Button>
       </div>
 
-      {/* Portefeuilles Section (only if no specific PF selected) */}
+      {/* Portefeuilles (only if no specific PF selected) */}
       {!portefeuille && ptfWithCounts.length > 0 && (
-        <div className="bg-white rounded-lg shadow">
+        <Card>
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-lg font-semibold text-gray-800">Portefeuilles</h3>
           </div>
-          <div className="p-6">
+          <CardBody>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {ptfWithCounts.map(ptf => (
-                <div key={ptf.id} className="border rounded-lg p-4 hover:shadow-md transition">
+                <div key={ptf.id} className="border rounded-lg p-4 hover:shadow-md transition cursor-pointer">
                   <h4 className="font-semibold text-gray-900 mb-1">{ptf.nom}</h4>
                   <div className="text-2xl font-bold text-blue-600">{ptf.nb_sites} sites</div>
                 </div>
               ))}
             </div>
-          </div>
-        </div>
+          </CardBody>
+        </Card>
       )}
 
       {/* Sites Table */}
-      <div className="bg-white rounded-lg shadow">
+      <Card>
         <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
           <h3 className="text-lg font-semibold text-gray-800">Sites ({scopedSites.length})</h3>
         </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Site</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ville</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Surface</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Conformite</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Risque EUR</th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Anomalies</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {scopedSites.map(site => (
-                <tr key={site.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => navigate(`/sites/${site.id}`)}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{site.nom}</div>
-                    <div className="text-xs text-gray-400">{site.usage}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{site.ville}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{site.surface_m2?.toLocaleString()} m2</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {getBadgeConformite(site.statut_conformite)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-red-600">
-                    {site.risque_eur > 0 ? `${site.risque_eur.toLocaleString()} EUR` : '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
-                    {site.anomalies_count > 0 ? (
-                      <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700">
-                        {site.anomalies_count}
-                      </span>
-                    ) : (
-                      <span className="text-gray-400">0</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+        <Table>
+          <Thead>
+            <tr>
+              <Th>Site</Th>
+              <Th>Ville</Th>
+              <Th>Surface</Th>
+              <Th>Conformite</Th>
+              <Th className="text-right">Risque EUR</Th>
+              {isExpert && <Th className="text-right">Conso kWh/an</Th>}
+              <Th className="text-center">Anomalies</Th>
+            </tr>
+          </Thead>
+          <Tbody>
+            {scopedSites.map(site => (
+              <Tr key={site.id} onClick={() => navigate(`/sites/${site.id}`)}>
+                <Td>
+                  <div className="font-medium text-gray-900">{site.nom}</div>
+                  <div className="text-xs text-gray-400">{site.usage}</div>
+                </Td>
+                <Td>{site.ville}</Td>
+                <Td>{site.surface_m2?.toLocaleString()} m2</Td>
+                <Td>{getBadgeConformite(site.statut_conformite)}</Td>
+                <Td className="text-right font-medium text-red-600">
+                  {site.risque_eur > 0 ? `${site.risque_eur.toLocaleString()} EUR` : '-'}
+                </Td>
+                {isExpert && (
+                  <Td className="text-right text-gray-600">
+                    {site.conso_kwh_an > 0 ? site.conso_kwh_an.toLocaleString() : '-'}
+                  </Td>
+                )}
+                <Td className="text-center">
+                  {site.anomalies_count > 0 ? (
+                    <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700">
+                      {site.anomalies_count}
+                    </span>
+                  ) : (
+                    <span className="text-gray-400">0</span>
+                  )}
+                </Td>
+              </Tr>
+            ))}
+          </Tbody>
+        </Table>
+      </Card>
+
       {/* Maturite de pilotage — detail modal */}
       <Modal open={showMaturiteModal} onClose={() => setShowMaturiteModal(false)} title="Detail maturite de pilotage">
         <div className="space-y-5">
-          {/* Definition */}
           <p className="text-sm text-gray-600">
             % de sites avec donnees a jour, obligations suivies et plan d'action actif (pondere).
           </p>
 
-          {/* Score global */}
           <div className="text-center">
             <div className="text-4xl font-bold text-indigo-700">{kpis.readinessScore}%</div>
             <div className="text-xs text-gray-400 mt-1">Score global perimetre</div>
           </div>
 
-          {/* 3 sous-indicateurs */}
           <div className="space-y-4">
-            {/* Couverture donnees */}
             <div>
-              <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                  <Database size={16} className="text-blue-500" />
-                  Couverture donnees
-                </div>
-                <span className="text-sm font-bold text-gray-900">{kpis.couvertureDonnees}%</span>
+              <div className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
+                <Database size={16} className="text-blue-500" />
+                Couverture donnees
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="h-2 rounded-full bg-blue-500 transition-all" style={{ width: `${kpis.couvertureDonnees}%` }} />
-              </div>
-              <p className="text-xs text-gray-400 mt-1">Sites avec consommation renseignee (poids: 30%)</p>
+              <Progress value={kpis.couvertureDonnees} color="blue" label="Sites avec consommation renseignee (poids: 30%)" />
             </div>
 
-            {/* Suivi conformite */}
             <div>
-              <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                  <ShieldCheck size={16} className="text-green-500" />
-                  Suivi conformite
-                </div>
-                <span className="text-sm font-bold text-gray-900">{kpis.suiviConformite}%</span>
+              <div className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
+                <ShieldCheck size={16} className="text-green-500" />
+                Suivi conformite
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="h-2 rounded-full bg-green-500 transition-all" style={{ width: `${kpis.suiviConformite}%` }} />
-              </div>
-              <p className="text-xs text-gray-400 mt-1">Sites conformes / total (poids: 40%)</p>
+              <Progress value={kpis.suiviConformite} color="green" label="Sites conformes / total (poids: 40%)" />
             </div>
 
-            {/* Actions actives */}
             <div>
-              <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                  <ListChecks size={16} className="text-orange-500" />
-                  Actions actives
-                </div>
-                <span className="text-sm font-bold text-gray-900">{kpis.actionsActives}%</span>
+              <div className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
+                <ListChecks size={16} className="text-amber-500" />
+                Actions actives
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="h-2 rounded-full bg-orange-500 transition-all" style={{ width: `${kpis.actionsActives}%` }} />
-              </div>
-              <p className="text-xs text-gray-400 mt-1">Taux d'actions en cours sur sites a risque (poids: 30%)</p>
+              <Progress value={kpis.actionsActives} color="amber" label="Taux d'actions en cours sur sites a risque (poids: 30%)" />
             </div>
           </div>
 
-          {/* TrustBadge */}
           <div className="bg-gray-50 rounded-lg p-3 flex items-center gap-2 text-xs text-gray-500">
             <div className="w-2 h-2 rounded-full bg-yellow-400 shrink-0" />
             <span>Source: RegOps + donnees sites · Periode: 30 derniers jours · Confiance: moyenne</span>
           </div>
 
-          {/* Link to actions */}
           <button
             onClick={() => { setShowMaturiteModal(false); navigate('/actions'); }}
             className="w-full text-center py-2.5 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-100 transition flex items-center justify-center gap-2"
@@ -308,7 +269,7 @@ const Cockpit = () => {
           </button>
         </div>
       </Modal>
-    </div>
+    </PageShell>
   );
 };
 

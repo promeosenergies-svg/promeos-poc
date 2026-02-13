@@ -1,6 +1,6 @@
 /**
- * PROMEOS - Notifications & Alert Center V1 (/notifications)
- * Sprint 10.2: in-app alerts from 5 briques with severity, deeplinks, workflow.
+ * PROMEOS - Notifications & Alert Center V2 (/notifications)
+ * PageShell + KpiCard + FilterBar + useToast + Expert Mode
  */
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -10,16 +10,19 @@ import {
   patchNotification,
   getNotificationsSummary,
 } from '../services/api';
-import { Card, CardBody, Badge, Button } from '../ui';
+import { Card, CardBody, Badge, Button, PageShell, KpiCard, FilterBar, Select } from '../ui';
+import { useToast } from '../ui/ToastProvider';
+import { useExpertMode } from '../contexts/ExpertModeContext';
 import {
   Bell, AlertTriangle, AlertCircle, Info, RefreshCw,
-  ExternalLink, Check, X, Eye,
+  ExternalLink, Eye, X, Trash2,
 } from 'lucide-react';
+import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 
 const SEVERITY_META = {
-  critical: { label: 'Critique', color: 'bg-red-100 text-red-800', icon: AlertCircle, badge: 'crit' },
-  warn:     { label: 'Attention', color: 'bg-orange-100 text-orange-800', icon: AlertTriangle, badge: 'warn' },
-  info:     { label: 'Info', color: 'bg-blue-100 text-blue-800', icon: Info, badge: 'info' },
+  critical: { label: 'Critique', color: 'bg-red-100 text-red-800', icon: AlertCircle, badge: 'crit', kpiColor: 'bg-red-600' },
+  warn:     { label: 'Attention', color: 'bg-orange-100 text-orange-800', icon: AlertTriangle, badge: 'warn', kpiColor: 'bg-amber-600' },
+  info:     { label: 'Info', color: 'bg-blue-100 text-blue-800', icon: Info, badge: 'info', kpiColor: 'bg-blue-600' },
 };
 
 const SOURCE_LABELS = {
@@ -36,34 +39,18 @@ const STATUS_LABELS = {
   dismissed: 'Ignore',
 };
 
-function SeverityCard({ severity, count, newCount }) {
-  const meta = SEVERITY_META[severity] || SEVERITY_META.info;
-  const Icon = meta.icon;
-  return (
-    <Card>
-      <CardBody className={`${meta.color} bg-opacity-50`}>
-        <div className="flex items-center gap-3">
-          <Icon size={24} />
-          <div>
-            <p className="text-2xl font-bold">{count}</p>
-            <p className="text-xs">{meta.label}{newCount > 0 ? ` (${newCount} nouveau${newCount > 1 ? 'x' : ''})` : ''}</p>
-          </div>
-        </div>
-      </CardBody>
-    </Card>
-  );
-}
-
 export default function NotificationsPage() {
   const navigate = useNavigate();
+  const { isExpert } = useExpertMode();
+  const { toast } = useToast();
   const [events, setEvents] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
-  const [message, setMessage] = useState(null);
   const [filterSeverity, setFilterSeverity] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterSource, setFilterSource] = useState('');
+  const [selected, setSelected] = useState(new Set());
 
   const load = async () => {
     setLoading(true);
@@ -79,7 +66,7 @@ export default function NotificationsPage() {
       setEvents(evts);
       setSummary(sum);
     } catch (e) {
-      console.error(e);
+      toast('Erreur chargement alertes', 'error');
     } finally {
       setLoading(false);
     }
@@ -89,13 +76,12 @@ export default function NotificationsPage() {
 
   const handleSync = async () => {
     setSyncing(true);
-    setMessage(null);
     try {
       const r = await syncNotifications();
-      setMessage(`Sync terminee: ${r.created} creees, ${r.updated} maj, ${r.skipped} inchangees`);
+      toast(`Sync terminee: ${r.created} creees, ${r.updated} maj, ${r.skipped} inchangees`, 'success');
       await load();
     } catch (e) {
-      setMessage('Erreur: ' + (e.response?.data?.detail || e.message));
+      toast('Erreur: ' + (e.response?.data?.detail || e.message), 'error');
     } finally {
       setSyncing(false);
     }
@@ -105,42 +91,84 @@ export default function NotificationsPage() {
     try {
       await patchNotification(id, { status });
       setEvents(prev => prev.map(e => e.id === id ? { ...e, status } : e));
+      toast(`Alerte ${status === 'read' ? 'marquee lue' : 'ignoree'}`, 'success');
     } catch (e) {
-      console.error(e);
+      toast('Erreur mise a jour', 'error');
     }
+  };
+
+  const handleBulkDismiss = async () => {
+    const ids = Array.from(selected);
+    for (const id of ids) {
+      try {
+        await patchNotification(id, { status: 'dismissed' });
+      } catch {}
+    }
+    setEvents(prev => prev.map(e => ids.includes(e.id) ? { ...e, status: 'dismissed' } : e));
+    setSelected(new Set());
+    toast(`${ids.length} alerte(s) ignoree(s)`, 'success');
+  };
+
+  const hasFilters = filterSeverity || filterStatus || filterSource;
+  const resetFilters = () => { setFilterSeverity(''); setFilterStatus(''); setFilterSource(''); };
+
+  const toggleSelect = (id) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
   };
 
   const getSevMeta = (severity) => SEVERITY_META[severity] || SEVERITY_META.info;
 
   return (
-    <div className="px-6 py-6 space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">Alertes</h2>
-          <p className="text-sm text-gray-500 mt-0.5">Centre d'alertes : conformite, factures, contrats, conso, actions</p>
-        </div>
-        <Button size="sm" onClick={handleSync} disabled={syncing}>
-          <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />
-          {syncing ? 'Sync...' : 'Synchroniser'}
-        </Button>
-      </div>
-
-      {message && (
-        <div className="p-3 bg-blue-50 text-blue-800 rounded-lg text-sm">{message}</div>
-      )}
-
-      {/* Summary Cards */}
+    <PageShell
+      icon={Bell}
+      title="Alertes"
+      subtitle="Centre d'alertes : conformite, factures, contrats, conso, actions"
+      actions={
+        <>
+          {isExpert && selected.size > 0 && (
+            <Button variant="secondary" size="sm" onClick={handleBulkDismiss}>
+              <Trash2 size={14} /> Ignorer {selected.size}
+            </Button>
+          )}
+          <Button size="sm" onClick={handleSync} disabled={syncing}>
+            <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />
+            {syncing ? 'Sync...' : 'Synchroniser'}
+          </Button>
+        </>
+      }
+    >
+      {/* Summary KPIs */}
       {summary && (
         <div className="grid grid-cols-3 gap-4">
-          <SeverityCard severity="critical" count={summary.by_severity?.critical || 0} newCount={summary.new_critical || 0} />
-          <SeverityCard severity="warn" count={summary.by_severity?.warn || 0} newCount={summary.new_warn || 0} />
-          <SeverityCard severity="info" count={summary.by_severity?.info || 0} newCount={0} />
+          <KpiCard
+            icon={AlertCircle}
+            title="Critique"
+            value={summary.by_severity?.critical || 0}
+            sub={summary.new_critical > 0 ? `${summary.new_critical} nouveau${summary.new_critical > 1 ? 'x' : ''}` : undefined}
+            color="bg-red-600"
+          />
+          <KpiCard
+            icon={AlertTriangle}
+            title="Attention"
+            value={summary.by_severity?.warn || 0}
+            sub={summary.new_warn > 0 ? `${summary.new_warn} nouveau${summary.new_warn > 1 ? 'x' : ''}` : undefined}
+            color="bg-amber-600"
+          />
+          <KpiCard
+            icon={Info}
+            title="Info"
+            value={summary.by_severity?.info || 0}
+            color="bg-blue-600"
+          />
         </div>
       )}
 
       {/* Filters */}
-      <div className="flex items-center gap-3 flex-wrap">
+      <FilterBar onReset={hasFilters ? resetFilters : undefined} count={events.length}>
         <select
           value={filterSeverity}
           onChange={(e) => setFilterSeverity(e.target.value)}
@@ -173,8 +201,7 @@ export default function NotificationsPage() {
           <option value="consumption">Consommation</option>
           <option value="action_hub">Actions</option>
         </select>
-        <span className="text-xs text-gray-400 ml-2">{events.length} alerte(s)</span>
-      </div>
+      </FilterBar>
 
       {/* Events Table */}
       {loading ? (
@@ -192,91 +219,102 @@ export default function NotificationsPage() {
         </Card>
       ) : (
         <Card>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Severite</th>
-                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Titre</th>
-                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Source</th>
-                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Impact</th>
-                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Echeance</th>
-                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Statut</th>
-                  <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {events.map((evt) => {
-                  const meta = getSevMeta(evt.severity);
-                  const Icon = meta.icon;
-                  return (
-                    <tr key={evt.id} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="py-3 px-4">
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${meta.color}`}>
-                          <Icon size={12} /> {meta.label}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-sm text-gray-800 max-w-md">
-                        <p className="font-medium truncate">{evt.title}</p>
-                        {evt.message && (
-                          <p className="text-xs text-gray-500 mt-0.5 truncate">{evt.message}</p>
+          <Table>
+            <Thead>
+              <tr>
+                {isExpert && <Th className="w-8"><span className="sr-only">Select</span></Th>}
+                <Th>Severite</Th>
+                <Th>Titre</Th>
+                <Th>Source</Th>
+                <Th>Impact</Th>
+                <Th>Echeance</Th>
+                <Th>Statut</Th>
+                {isExpert && <Th>ID</Th>}
+                <Th className="text-right">Actions</Th>
+              </tr>
+            </Thead>
+            <Tbody>
+              {events.map((evt) => {
+                const meta = getSevMeta(evt.severity);
+                const Icon = meta.icon;
+                return (
+                  <Tr key={evt.id}>
+                    {isExpert && (
+                      <Td>
+                        <input
+                          type="checkbox"
+                          checked={selected.has(evt.id)}
+                          onChange={() => toggleSelect(evt.id)}
+                          className="rounded border-gray-300"
+                        />
+                      </Td>
+                    )}
+                    <Td>
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${meta.color}`}>
+                        <Icon size={12} /> {meta.label}
+                      </span>
+                    </Td>
+                    <Td className="max-w-md">
+                      <p className="font-medium text-gray-800 truncate">{evt.title}</p>
+                      {evt.message && (
+                        <p className="text-xs text-gray-500 mt-0.5 truncate">{evt.message}</p>
+                      )}
+                    </Td>
+                    <Td>
+                      <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">
+                        {SOURCE_LABELS[evt.source_type] || evt.source_type}
+                      </span>
+                    </Td>
+                    <Td className="text-red-600 font-medium">
+                      {evt.estimated_impact_eur ? `${Math.round(evt.estimated_impact_eur)} EUR` : '-'}
+                    </Td>
+                    <Td className="text-gray-600">{evt.due_date || '-'}</Td>
+                    <Td>
+                      <Badge status={evt.status === 'new' ? 'warn' : evt.status === 'read' ? 'neutral' : 'ok'}>
+                        {STATUS_LABELS[evt.status] || evt.status}
+                      </Badge>
+                    </Td>
+                    {isExpert && (
+                      <Td className="text-xs text-gray-400 font-mono">{evt.id}</Td>
+                    )}
+                    <Td className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        {evt.deeplink_path && (
+                          <button
+                            onClick={() => navigate(evt.deeplink_path)}
+                            className="p-1 text-blue-500 hover:bg-blue-50 rounded"
+                            title="Voir"
+                          >
+                            <ExternalLink size={14} />
+                          </button>
                         )}
-                      </td>
-                      <td className="py-3 px-4 text-sm">
-                        <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">
-                          {SOURCE_LABELS[evt.source_type] || evt.source_type}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-sm text-red-600 font-medium">
-                        {evt.estimated_impact_eur ? `${Math.round(evt.estimated_impact_eur)} EUR` : '-'}
-                      </td>
-                      <td className="py-3 px-4 text-sm text-gray-600">
-                        {evt.due_date || '-'}
-                      </td>
-                      <td className="py-3 px-4 text-sm">
-                        <Badge status={evt.status === 'new' ? 'warn' : evt.status === 'read' ? 'neutral' : 'ok'}>
-                          {STATUS_LABELS[evt.status] || evt.status}
-                        </Badge>
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          {evt.deeplink_path && (
-                            <button
-                              onClick={() => navigate(evt.deeplink_path)}
-                              className="p-1 text-blue-500 hover:bg-blue-50 rounded"
-                              title="Voir"
-                            >
-                              <ExternalLink size={14} />
-                            </button>
-                          )}
-                          {evt.status === 'new' && (
-                            <button
-                              onClick={() => handlePatch(evt.id, 'read')}
-                              className="p-1 text-green-500 hover:bg-green-50 rounded"
-                              title="Marquer lu"
-                            >
-                              <Eye size={14} />
-                            </button>
-                          )}
-                          {evt.status !== 'dismissed' && (
-                            <button
-                              onClick={() => handlePatch(evt.id, 'dismissed')}
-                              className="p-1 text-gray-400 hover:bg-gray-100 rounded"
-                              title="Ignorer"
-                            >
-                              <X size={14} />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                        {evt.status === 'new' && (
+                          <button
+                            onClick={() => handlePatch(evt.id, 'read')}
+                            className="p-1 text-green-500 hover:bg-green-50 rounded"
+                            title="Marquer lu"
+                          >
+                            <Eye size={14} />
+                          </button>
+                        )}
+                        {evt.status !== 'dismissed' && (
+                          <button
+                            onClick={() => handlePatch(evt.id, 'dismissed')}
+                            className="p-1 text-gray-400 hover:bg-gray-100 rounded"
+                            title="Ignorer"
+                          >
+                            <X size={14} />
+                          </button>
+                        )}
+                      </div>
+                    </Td>
+                  </Tr>
+                );
+              })}
+            </Tbody>
+          </Table>
         </Card>
       )}
-    </div>
+    </PageShell>
   );
 }

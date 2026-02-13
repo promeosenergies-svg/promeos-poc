@@ -1,39 +1,23 @@
 /**
- * PROMEOS - Command Center (/) V3
- * KPI cards + Top 3 actions recommandees + todos + anomalies + trust metadata
+ * PROMEOS - Command Center (/) V4
+ * PageShell + KpiCard + Expert Mode + Progress + useToast
  */
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ShieldCheck, BadgeEuro, AlertTriangle, ArrowRight, Scan, Clock,
-  Zap, Upload, CheckCircle2, Database, FileText,
+  LayoutDashboard, ShieldCheck, BadgeEuro, AlertTriangle, ArrowRight, Scan, Clock,
+  Zap, Upload, CheckCircle2, Database, FileText, RefreshCw,
 } from 'lucide-react';
-import { Card, CardBody, Badge, Button, SkeletonCard, TrustBadge } from '../ui';
+import { Card, CardBody, Badge, Button, SkeletonCard, TrustBadge, PageShell, KpiCard, Progress } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
+import { useToast } from '../ui/ToastProvider';
 import { mockKpis, mockTodos, mockTopAnomalies } from '../mocks/kpis';
 import { mockObligations } from '../mocks/obligations';
 import { mockActions } from '../mocks/actions';
 import { useScope } from '../contexts/ScopeContext';
+import { useExpertMode } from '../contexts/ExpertModeContext';
 
 const PRIORITY_RANK = { critical: 4, high: 3, medium: 2, low: 1 };
-
-function KpiCard({ icon: Icon, title, value, sub, badge, badgeStatus, color }) {
-  return (
-    <Card>
-      <CardBody className="flex items-start gap-4">
-        <div className={`p-3 rounded-lg ${color}`}>
-          <Icon size={22} className="text-white" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">{title}</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
-          {sub && <p className="text-sm text-gray-500 mt-0.5">{sub}</p>}
-        </div>
-        {badge && <Badge status={badgeStatus}>{badge}</Badge>}
-      </CardBody>
-    </Card>
-  );
-}
 
 function TodoItem({ item }) {
   const priorityColors = {
@@ -88,6 +72,8 @@ function RecommendedActionCard({ action, index, onClick }) {
 export default function CommandCenter() {
   const navigate = useNavigate();
   const { org, scopedSites } = useScope();
+  const { isExpert } = useExpertMode();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
 
@@ -99,7 +85,6 @@ export default function CommandCenter() {
     return () => clearTimeout(t);
   }, []);
 
-  // Build top 3 recommended actions from obligations + actions backlog
   const top3Actions = useMemo(() => {
     const fromObligations = mockObligations
       .filter(o => o.statut !== 'conforme')
@@ -129,33 +114,40 @@ export default function CommandCenter() {
       .slice(0, 3);
   }, []);
 
-  // Contextual CTA
   const hasSites = scopedSites.length > 0;
+
+  const handleSync = () => {
+    toast('Synchronisation des donnees en cours...', 'info');
+    setTimeout(() => toast('Donnees synchronisees', 'success'), 1500);
+  };
 
   if (loading) {
     return (
-      <div className="px-6 py-6">
-        <div className="grid grid-cols-3 gap-4 mb-6">
+      <PageShell icon={LayoutDashboard} title="Tableau de bord" subtitle="Chargement...">
+        <div className="grid grid-cols-3 gap-4">
           <SkeletonCard /><SkeletonCard /><SkeletonCard />
         </div>
-      </div>
+      </PageShell>
     );
   }
 
   const { kpis, todos, anomalies } = data;
 
   return (
-    <div className="px-6 py-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">Tableau de bord</h2>
-          <p className="text-sm text-gray-500 mt-0.5">Synthèse 2 minutes : conformité, pertes, actions — {org.nom} · {scopedSites.length} sites</p>
-        </div>
-        <div className="flex items-center gap-2">
+    <PageShell
+      icon={LayoutDashboard}
+      title="Tableau de bord"
+      subtitle={`Synthese 2 minutes : conformite, pertes, actions — ${org.nom} · ${scopedSites.length} sites`}
+      actions={
+        <>
           <Button variant="secondary" size="sm" onClick={() => navigate('/cockpit-2min')}>
             <FileText size={14} /> Briefing 2 min
           </Button>
+          {isExpert && (
+            <Button variant="secondary" size="sm" onClick={handleSync}>
+              <RefreshCw size={14} /> Sync donnees
+            </Button>
+          )}
           {!hasSites ? (
             <Button onClick={() => navigate('/import')}>
               <Upload size={16} /> Importer mes sites
@@ -165,9 +157,9 @@ export default function CommandCenter() {
               <Scan size={16} /> Lancer un scan
             </Button>
           )}
-        </div>
-      </div>
-
+        </>
+      }
+    >
       {/* 3 KPI cards */}
       <div className="grid grid-cols-3 gap-4">
         <KpiCard
@@ -199,25 +191,7 @@ export default function CommandCenter() {
         />
       </div>
 
-      {/* Top 3 recommended actions */}
-      <Card>
-        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Zap size={18} className="text-blue-600" />
-            <h3 className="font-semibold text-gray-800">Top 3 actions recommandees</h3>
-          </div>
-          <Button variant="ghost" size="sm" onClick={() => navigate('/actions')}>
-            Voir toutes <ArrowRight size={14} />
-          </Button>
-        </div>
-        <div className="p-4 grid grid-cols-3 gap-3">
-          {top3Actions.map((a, i) => (
-            <RecommendedActionCard key={a.id} action={a} index={i} onClick={() => navigate(a.route)} />
-          ))}
-        </div>
-      </Card>
-
-      {/* Derniere MAJ + Couverture donnees */}
+      {/* Data freshness + coverage */}
       <div className="grid grid-cols-2 gap-4">
         <Card>
           <CardBody className="flex items-center gap-4">
@@ -240,19 +214,30 @@ export default function CommandCenter() {
             </div>
             <div className="flex-1">
               <p className="text-xs text-gray-500 font-medium uppercase">Couverture donnees</p>
-              <div className="flex items-center gap-3 mt-1">
-                <div className="flex-1">
-                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-indigo-500 rounded-full" style={{ width: '72%' }} />
-                  </div>
-                </div>
-                <span className="text-sm font-bold text-indigo-700">72%</span>
-              </div>
-              <p className="text-xs text-gray-400 mt-1">{scopedSites.length} sites avec donnees / compteurs actifs</p>
+              <Progress value={72} color="blue" size={isExpert ? 'md' : 'sm'} label={isExpert ? 'Sites avec compteurs actifs' : undefined} className="mt-2" />
+              <p className="text-xs text-gray-400 mt-1">{scopedSites.length} sites dans le perimetre</p>
             </div>
           </CardBody>
         </Card>
       </div>
+
+      {/* Top 3 recommended actions */}
+      <Card>
+        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Zap size={18} className="text-blue-600" />
+            <h3 className="font-semibold text-gray-800">Top 3 actions recommandees</h3>
+          </div>
+          <Button variant="ghost" size="sm" onClick={() => navigate('/actions')}>
+            Voir toutes <ArrowRight size={14} />
+          </Button>
+        </div>
+        <div className="p-4 grid grid-cols-3 gap-3">
+          {top3Actions.map((a, i) => (
+            <RecommendedActionCard key={a.id} action={a} index={i} onClick={() => navigate(a.route)} />
+          ))}
+        </div>
+      </Card>
 
       <div className="grid grid-cols-2 gap-6">
         {/* A faire cette semaine */}
@@ -300,6 +285,6 @@ export default function CommandCenter() {
           </Table>
         </Card>
       </div>
-    </div>
+    </PageShell>
   );
 }
