@@ -20,6 +20,7 @@ import {
   getComplianceSites,
   patchComplianceFinding,
   recomputeComplianceRules,
+  getDataQuality,
 } from '../services/api';
 
 const REG_LABELS = {
@@ -513,6 +514,97 @@ function ObligationCard({ obligation, onCreateAction, onWorkflowAction, onUpload
   );
 }
 
+function DataQualityGate({ siteId }) {
+  const [dq, setDq] = useState(null);
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    if (!siteId) return;
+    getDataQuality('site', siteId)
+      .then(setDq)
+      .catch(() => {});
+  }, [siteId]);
+
+  if (!dq) return null;
+
+  const statusColors = {
+    OK: { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-700', badge: 'bg-green-100 text-green-800' },
+    WARNING: { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700', badge: 'bg-amber-100 text-amber-800' },
+    BLOCKED: { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700', badge: 'bg-red-100 text-red-800' },
+  };
+  const sc = statusColors[dq.gate_status] || statusColors.WARNING;
+
+  return (
+    <Card className={`border-l-4 ${sc.border}`}>
+      <CardBody className={sc.bg}>
+        <div className="flex items-center justify-between cursor-pointer" onClick={() => setExpanded(!expanded)}>
+          <div className="flex items-center gap-3">
+            <ShieldCheck size={18} className={sc.text} />
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-gray-900">Qualite des donnees</span>
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${sc.badge}`}>{dq.gate_status}</span>
+              </div>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Couverture : {dq.coverage_pct}% &middot; Confiance : {dq.confidence_score}%
+              </p>
+            </div>
+          </div>
+          <button className="p-1 text-gray-400 hover:text-gray-600">
+            {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </button>
+        </div>
+
+        {expanded && (
+          <div className="mt-3 pt-3 border-t border-gray-200 space-y-3">
+            {/* Per-regulation coverage */}
+            {dq.per_regulation && Object.entries(dq.per_regulation).map(([reg, info]) => (
+              <div key={reg} className="flex items-center gap-3">
+                <span className="text-xs font-medium text-gray-600 w-32 truncate">{REG_LABELS[`decret_${reg}`] || reg}</span>
+                <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full ${info.status === 'OK' ? 'bg-green-500' : info.status === 'WARNING' ? 'bg-amber-500' : 'bg-red-500'}`}
+                    style={{ width: `${info.critical_total > 0 ? (info.critical_ok / info.critical_total) * 100 : 100}%` }}
+                  />
+                </div>
+                <span className="text-xs text-gray-500 w-16 text-right">{info.critical_ok}/{info.critical_total}</span>
+              </div>
+            ))}
+
+            {/* Missing critical fields */}
+            {dq.missing_critical && dq.missing_critical.length > 0 && (
+              <div className="p-3 bg-red-50 rounded-lg">
+                <p className="text-xs font-semibold text-red-700 uppercase mb-1">Donnees critiques manquantes</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {dq.missing_critical.map((m, i) => (
+                    <span key={i} className="px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs font-medium">
+                      {m.field} ({m.regulation})
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Missing optional fields */}
+            {dq.missing_optional && dq.missing_optional.length > 0 && (
+              <div className="p-3 bg-amber-50 rounded-lg">
+                <p className="text-xs font-semibold text-amber-700 uppercase mb-1">Donnees optionnelles manquantes</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {dq.missing_optional.map((m, i) => (
+                    <span key={i} className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded text-xs font-medium">
+                      {m.field}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </CardBody>
+    </Card>
+  );
+}
+
 export default function ConformitePage() {
   const { org, scopedSites } = useScope();
   const [showCreate, setShowCreate] = useState(false);
@@ -694,6 +786,9 @@ export default function ConformitePage() {
           </CardBody>
         </Card>
       </div>
+
+      {/* Data Quality Gate */}
+      {scopedSites.length > 0 && <DataQualityGate siteId={scopedSites[0]?.id} />}
 
       {/* Active filter indicator */}
       {statusFilter && (

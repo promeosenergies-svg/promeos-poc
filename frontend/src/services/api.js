@@ -124,6 +124,9 @@ export const getRegOpsAssessment = (siteId) => api.get(`/regops/site/${siteId}`)
 export const getRegOpsCached = (siteId) => api.get(`/regops/site/${siteId}/cached`).then(r => r.data);
 export const recomputeRegOps = (params = {}) => api.post('/regops/recompute', null, { params }).then(r => r.data);
 export const getRegOpsDashboard = () => api.get('/regops/dashboard').then(r => r.data);
+export const getScoreExplain = (scopeType, scopeId) => api.get('/regops/score_explain', { params: { scope_type: scopeType, scope_id: scopeId } }).then(r => r.data);
+export const getDataQuality = (scopeType, scopeId) => api.get('/regops/data_quality', { params: { scope_type: scopeType, scope_id: scopeId } }).then(r => r.data);
+export const getDataQualitySpecs = () => api.get('/regops/data_quality/specs').then(r => r.data);
 
 // ========================================
 // CONNECTORS
