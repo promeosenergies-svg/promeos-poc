@@ -8,8 +8,9 @@ import {
   runConsumptionDiagnose,
   seedDemoConsumption,
 } from '../services/api';
-import { Card, CardBody, Badge, Button } from '../ui';
+import { Card, CardBody, Badge, Button, PageShell } from '../ui';
 import { Clock, Zap, ChevronDown, ChevronUp, Settings } from 'lucide-react';
+import { useExpertMode } from '../contexts/ExpertModeContext';
 import { track } from '../services/tracker';
 
 const SEVERITY_COLORS = {
@@ -166,6 +167,7 @@ function InsightRow({ insight }) {
 }
 
 export default function ConsumptionDiagPage() {
+  const { isExpert } = useExpertMode();
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [diagnosing, setDiagnosing] = useState(false);
@@ -220,13 +222,12 @@ export default function ConsumptionDiagPage() {
   const filtered = filterType ? insights.filter((i) => i.type === filterType) : insights;
 
   return (
-    <div className="px-6 py-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">Diagnostic</h2>
-          <p className="text-sm text-gray-500 mt-0.5">Détection automatique : horaires, talon, pointes, dérives</p>
-        </div>
-        <div className="flex gap-2">
+    <PageShell
+      icon={Zap}
+      title="Diagnostic"
+      subtitle="Detection automatique : horaires, talon, pointes, derives"
+      actions={
+        <>
           <Button variant="secondary" size="sm" onClick={handleSeedDemo} disabled={seeding}>
             {seeding ? 'Generation...' : 'Generer conso demo'}
           </Button>
@@ -234,8 +235,9 @@ export default function ConsumptionDiagPage() {
             <Zap size={14} />
             {diagnosing ? 'Analyse...' : 'Lancer diagnostic'}
           </Button>
-        </div>
-      </div>
+        </>
+      }
+    >
 
       {message && (
         <div className="p-3 bg-blue-50 text-blue-800 rounded-lg text-sm">{message}</div>
@@ -307,6 +309,6 @@ export default function ConsumptionDiagPage() {
           </Card>
         </>
       )}
-    </div>
+    </PageShell>
   );
 }

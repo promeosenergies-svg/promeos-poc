@@ -5,6 +5,8 @@
  */
 import { useState, useEffect, useCallback } from 'react';
 import { useScope } from '../contexts/ScopeContext';
+import { useExpertMode } from '../contexts/ExpertModeContext';
+import { PageShell } from '../ui';
 import {
   getPurchaseEstimate,
   getPurchaseAssumptions,
@@ -59,6 +61,7 @@ const TABS = [
 
 export default function PurchasePage() {
   const { scopedSites } = useScope();
+  const { isExpert } = useExpertMode();
 
   // Tab state
   const [activeTab, setActiveTab] = useState('simulation');
@@ -210,19 +213,11 @@ export default function PurchasePage() {
   };
 
   return (
-    <div className="px-6 py-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <ShoppingCart size={22} /> Achats énergie
-          </h2>
-          <p className="text-sm text-gray-500 mt-0.5">
-            Simuler & arbitrer vos stratégies d'achat
-          </p>
-        </div>
-      </div>
-
+    <PageShell
+      icon={ShoppingCart}
+      title="Achats energie"
+      subtitle="Simuler & arbitrer vos strategies d'achat"
+    >
       {/* Tab bar */}
       <div className="flex border-b border-gray-200">
         {TABS.map(tab => (
@@ -655,6 +650,6 @@ export default function PurchasePage() {
           )}
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

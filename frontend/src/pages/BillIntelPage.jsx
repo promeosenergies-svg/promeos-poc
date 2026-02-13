@@ -12,11 +12,12 @@ import {
   importInvoicesCsv,
   resolveBillingInsight,
 } from '../services/api';
-import { Card, CardBody, Badge, Button, TrustBadge } from '../ui';
+import { Card, CardBody, Badge, Button, TrustBadge, PageShell } from '../ui';
 import {
   FileText, AlertTriangle, CheckCircle, Upload, Play, Download,
   DollarSign, Zap, TrendingUp, RefreshCw, CheckCircle2,
 } from 'lucide-react';
+import { useExpertMode } from '../contexts/ExpertModeContext';
 import { track } from '../services/tracker';
 
 const SEVERITY_BADGE = {
@@ -67,6 +68,7 @@ const INSIGHT_FILTER_OPTIONS = [
 ];
 
 export default function BillIntelPage() {
+  const { isExpert } = useExpertMode();
   const [summary, setSummary] = useState(null);
   const [insights, setInsights] = useState([]);
   const [invoices, setInvoices] = useState([]);
@@ -137,14 +139,12 @@ export default function BillIntelPage() {
   const hasData = summary && summary.total_invoices > 0;
 
   return (
-    <div className="px-6 py-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">Facturation</h2>
-          <p className="text-sm text-gray-500 mt-0.5">Shadow billing, TURPE/ATRD/ATRT, écarts & anomalies</p>
-        </div>
-        <div className="flex items-center gap-2">
+    <PageShell
+      icon={FileText}
+      title="Facturation"
+      subtitle="Shadow billing, TURPE/ATRD/ATRT, ecarts & anomalies"
+      actions={
+        <>
           <label className="inline-flex items-center gap-2 cursor-pointer">
             <Button variant="secondary" size="sm" as="span">
               <Upload size={14} /> Importer CSV
@@ -164,8 +164,9 @@ export default function BillIntelPage() {
           <button onClick={fetchData} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600" title="Rafraichir">
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
           </button>
-        </div>
-      </div>
+        </>
+      }
+    >
 
       {/* Summary cards */}
       {summary && (
@@ -323,7 +324,7 @@ export default function BillIntelPage() {
           </Card>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }
 

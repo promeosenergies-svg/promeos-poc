@@ -12,9 +12,10 @@ import {
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
-import { Card, CardBody, Badge, Button, EmptyState, TrustBadge, Skeleton } from '../ui';
+import { Card, CardBody, Badge, Button, EmptyState, TrustBadge, Skeleton, PageShell } from '../ui';
 import { SkeletonCard } from '../ui';
 import { useScope } from '../contexts/ScopeContext';
+import { useExpertMode } from '../contexts/ExpertModeContext';
 import { track } from '../services/tracker';
 import {
   getMonitoringKpis,
@@ -176,6 +177,7 @@ function AlertCard({ alert, onAck, onResolve }) {
 
 export default function MonitoringPage() {
   const { scope, scopedSites, setSite } = useScope();
+  const { isExpert } = useExpertMode();
   const siteId = scope.siteId;
 
   const [kpis, setKpis] = useState(null);
@@ -291,17 +293,17 @@ export default function MonitoringPage() {
 
   if (!siteId) {
     return (
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="flex items-center gap-3 mb-8">
-          <Activity size={28} className="text-blue-600" />
-          <h1 className="text-2xl font-bold text-gray-800">Performance Electrique</h1>
-        </div>
+      <PageShell
+        icon={Activity}
+        title="Performance Electrique"
+        subtitle="KPIs, puissance, qualite de donnees & alertes"
+      >
         <EmptyState
           icon={Activity}
           title="Selectionnez un site"
           text="Choisissez un site dans le selecteur de perimetre pour voir les KPIs de performance electrique."
         />
-      </div>
+      </PageShell>
     );
   }
 
@@ -309,33 +311,28 @@ export default function MonitoringPage() {
 
   if (loading && !kpis && alerts.length === 0) {
     return (
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="flex items-center gap-3 mb-8">
-          <Activity size={28} className="text-blue-600" />
-          <h1 className="text-2xl font-bold text-gray-800">Performance Electrique</h1>
-        </div>
+      <PageShell
+        icon={Activity}
+        title="Performance Electrique"
+        subtitle="KPIs, puissance, qualite de donnees & alertes"
+      >
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           {[1, 2, 3, 4].map((i) => <SkeletonCard key={i} />)}
         </div>
         <Skeleton rows={6} />
-      </div>
+      </PageShell>
     );
   }
 
   const hasData = kpis || alerts.length > 0 || snapshots.length > 0;
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <Activity size={28} className="text-blue-600" />
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800">Performance Electrique</h1>
-            <p className="text-sm text-gray-500">KPIs, puissance, qualite de donnees & alertes</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
+    <PageShell
+      icon={Activity}
+      title="Performance Electrique"
+      subtitle="KPIs, puissance, qualite de donnees & alertes"
+      actions={
+        <>
           <select
             className="border rounded-lg px-3 py-2 text-sm"
             value={siteId || ''}
@@ -351,8 +348,9 @@ export default function MonitoringPage() {
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
             {loading ? 'Analyse...' : 'Lancer Analyse'}
           </Button>
-        </div>
-      </div>
+        </>
+      }
+    >
 
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4 text-red-700 text-sm">{error}</div>
@@ -560,6 +558,6 @@ export default function MonitoringPage() {
           </div>
         </>
       )}
-    </div>
+    </PageShell>
   );
 }

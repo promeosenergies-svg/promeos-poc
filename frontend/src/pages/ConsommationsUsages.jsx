@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Upload, BarChart3, AlertTriangle, Lightbulb, Database, Search, RefreshCw, CheckCircle } from 'lucide-react';
+import { Upload, BarChart3, AlertTriangle, Lightbulb, Database, Search, RefreshCw, CheckCircle, Zap } from 'lucide-react';
+import { PageShell } from '../ui';
+import { useExpertMode } from '../contexts/ExpertModeContext';
 import {
   getSites, getMeters, createMeter, uploadConsumptionData,
   runAnalysis, getAnalysisSummary, generateDemoEnergy,
@@ -560,11 +562,14 @@ function KBAdminPanel() {
 export default function ConsommationsUsages() {
   const [tab, setTab] = useState('import');
   const [analysisComplete, setAnalysisComplete] = useState(false);
+  const { isExpert } = useExpertMode();
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-6">
-      <h2 className="text-2xl font-bold mb-6">Consommations</h2>
-
+    <PageShell
+      icon={Zap}
+      title="Consommations"
+      subtitle="Import, analyse KB-driven & base de connaissances"
+    >
       {/* Tabs */}
       <div className="flex gap-2 mb-6">
         {[
@@ -594,6 +599,6 @@ export default function ConsommationsUsages() {
       {tab === 'kb' && (
         <KBAdminPanel />
       )}
-    </div>
+    </PageShell>
   );
 }
