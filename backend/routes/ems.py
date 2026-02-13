@@ -143,3 +143,75 @@ def run_energy_signature(
 
     result = run_signature(daily_kwh, daily_temp)
     return result
+
+
+# -------------------------------------------------------------------
+# Saved Views CRUD
+# -------------------------------------------------------------------
+@router.get("/views")
+def list_views(
+    user_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+):
+    from models.ems_models import EmsSavedView
+    q = db.query(EmsSavedView)
+    if user_id is not None:
+        # User's own views + shared views (user_id=null)
+        q = q.filter((EmsSavedView.user_id == user_id) | (EmsSavedView.user_id.is_(None)))
+    return [
+        {"id": v.id, "user_id": v.user_id, "name": v.name, "config_json": v.config_json}
+        for v in q.order_by(EmsSavedView.id).all()
+    ]
+
+
+@router.post("/views", status_code=201)
+def create_view(
+    name: str = Query(...),
+    config_json: str = Query(...),
+    user_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+):
+    from models.ems_models import EmsSavedView
+    view = EmsSavedView(name=name, config_json=config_json, user_id=user_id)
+    db.add(view)
+    db.flush()
+    return {"id": view.id, "name": view.name}
+
+
+@router.get("/views/{view_id}")
+def get_view(view_id: int, db: Session = Depends(get_db)):
+    from models.ems_models import EmsSavedView
+    view = db.query(EmsSavedView).filter(EmsSavedView.id == view_id).first()
+    if not view:
+        raise HTTPException(404, "View not found")
+    return {"id": view.id, "user_id": view.user_id, "name": view.name, "config_json": view.config_json}
+
+
+@router.put("/views/{view_id}")
+def update_view(
+    view_id: int,
+    name: Optional[str] = None,
+    config_json: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
+    from models.ems_models import EmsSavedView
+    view = db.query(EmsSavedView).filter(EmsSavedView.id == view_id).first()
+    if not view:
+        raise HTTPException(404, "View not found")
+    if name is not None:
+        view.name = name
+    if config_json is not None:
+        view.config_json = config_json
+    db.flush()
+    return {"id": view.id, "name": view.name}
+
+
+@router.delete("/views/{view_id}")
+def delete_view(view_id: int, db: Session = Depends(get_db)):
+    from models.ems_models import EmsSavedView
+    view = db.query(EmsSavedView).filter(EmsSavedView.id == view_id).first()
+    if not view:
+        raise HTTPException(404, "View not found")
+    db.delete(view)
+    db.flush()
+    return {"deleted": True}
