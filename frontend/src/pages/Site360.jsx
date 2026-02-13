@@ -2,15 +2,18 @@
  * PROMEOS - Site 360 (/sites/:siteId)
  * Header + badges + 3 mini KPIs + tabs (Resume, Conso, Factures, Conformite, Actions)
  */
-import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft, ShieldCheck, Zap, BadgeEuro, AlertTriangle,
   FileText, ListChecks, MapPin, Ruler,
+  BookOpen, ChevronDown, ChevronUp, Clock, ExternalLink, ClipboardCheck,
 } from 'lucide-react';
-import { Card, CardBody, Badge, Button, Tabs, EmptyState } from '../ui';
+import { Card, CardBody, Badge, Button, Tabs, EmptyState, TrustBadge } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { getMockSite } from '../mocks/sites';
+import { applyKB } from '../services/api';
+import IntakeWizard from '../components/IntakeWizard';
 
 const STATUT_BADGE = {
   conforme: { status: 'ok', label: 'Conforme' },
@@ -134,10 +137,219 @@ function TabStub({ title, text }) {
   );
 }
 
+const KB_SEV_ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
+const SEV_BADGE = { critical: 'crit', high: 'warn', medium: 'info', low: 'neutral' };
+
+function TabConformite({ site }) {
+  const [kbResult, setKbResult] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [expandedId, setExpandedId] = useState(null);
+
+  useEffect(() => {
+    const estHvacKw = Math.round((site.surface_m2 || 0) * 0.1);
+    const estParkingM2 = (site.surface_m2 || 0) >= 2000 ? Math.round(site.surface_m2 * 0.6) : 0;
+
+    applyKB({
+      site_context: {
+        surface_m2: site.surface_m2 || 0,
+        hvac_kw: estHvacKw,
+        building_type: site.usage || 'bureau',
+        parking_area_m2: estParkingM2,
+        tertiaire_area_m2: site.surface_m2 || 0,
+      },
+      allow_drafts: true,
+    })
+      .then((data) => { setKbResult(data); setError(false); })
+      .catch(() => setError(true))
+      .finally(() => setLoading(false));
+  }, [site]);
+
+  if (loading) {
+    return (
+      <div className="pt-6">
+        <Card>
+          <CardBody className="text-center py-8">
+            <BookOpen size={28} className="text-blue-300 mx-auto mb-2 animate-pulse" />
+            <p className="text-sm text-gray-400">Evaluation reglementaire en cours pour {site.nom}...</p>
+          </CardBody>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error || !kbResult) {
+    return (
+      <div className="pt-6">
+        <EmptyState
+          icon={ShieldCheck}
+          title="Analyse indisponible"
+          text="Impossible de contacter le moteur KB. Verifiez que le backend est demarre."
+        />
+      </div>
+    );
+  }
+
+  const items = kbResult.applicable_items || [];
+  const missing = kbResult.missing_fields || [];
+  const suggestions = kbResult.suggestions || [];
+  const validated = items.filter(i => i.status === 'validated');
+  const drafts = items.filter(i => i.status !== 'validated');
+
+  return (
+    <div className="pt-6 space-y-4">
+      {/* Summary */}
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          <BookOpen size={16} className="text-blue-600" />
+          <h3 className="text-sm font-semibold text-gray-700">
+            {items.length} obligations applicables
+          </h3>
+        </div>
+        {validated.length > 0 && <Badge status="ok">{validated.length} validees</Badge>}
+        {drafts.length > 0 && <Badge status="neutral">{drafts.length} exploration</Badge>}
+        <Link to="/kb" className="ml-auto text-xs text-blue-600 hover:underline flex items-center gap-1">
+          <BookOpen size={12} /> Explorer la KB
+        </Link>
+      </div>
+
+      {/* Validated items */}
+      {validated.length > 0 && (
+        <div className="space-y-2">
+          {validated
+            .sort((a, b) => (KB_SEV_ORDER[a.severity] ?? 9) - (KB_SEV_ORDER[b.severity] ?? 9))
+            .map((item) => (
+            <Card key={item.id} className="border-l-4 border-l-blue-400">
+              <CardBody className="py-3">
+                <div
+                  className="flex items-start gap-3 cursor-pointer"
+                  onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <Badge status={SEV_BADGE[item.severity] || 'neutral'}>{item.severity}</Badge>
+                      <Badge status="ok">Valide</Badge>
+                      {item.domain && (
+                        <span className="text-xs font-medium px-2 py-0.5 rounded bg-red-50 text-red-700">{item.domain}</span>
+                      )}
+                    </div>
+                    <h4 className="text-sm font-semibold text-gray-900">{item.title}</h4>
+                    {expandedId !== item.id && item.summary && (
+                      <p className="text-xs text-gray-500 mt-1 line-clamp-2">{item.summary}</p>
+                    )}
+                    {item.why && expandedId !== item.id && (
+                      <p className="text-xs text-blue-600 mt-1">{item.why}</p>
+                    )}
+                  </div>
+                  <button className="p-1 text-gray-400 hover:text-gray-600 shrink-0">
+                    {expandedId === item.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  </button>
+                </div>
+
+                {expandedId === item.id && (
+                  <div className="mt-3 pt-3 border-t border-gray-100 space-y-3">
+                    {item.why && (
+                      <div className="p-3 bg-blue-50 rounded-lg">
+                        <p className="text-xs font-semibold text-blue-600 uppercase mb-1">Pourquoi applicable</p>
+                        <p className="text-sm text-gray-700">{item.why}</p>
+                      </div>
+                    )}
+                    {item.logic?.then?.outputs && (
+                      <div className="p-3 bg-amber-50 rounded-lg">
+                        <p className="text-xs font-semibold text-amber-700 uppercase mb-1">Obligations</p>
+                        {item.logic.then.outputs.map((o, i) => (
+                          <div key={i} className="flex items-center gap-2 text-xs text-amber-800 mt-1">
+                            <span className={`w-2 h-2 rounded-full ${o.severity === 'critical' ? 'bg-red-500' : o.severity === 'high' ? 'bg-orange-500' : 'bg-blue-500'}`} />
+                            <span className="font-medium">{o.label}</span>
+                            {o.deadline && <span className="text-amber-600 flex items-center gap-1"><Clock size={11} /> {o.deadline}</span>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {item.sources && item.sources.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-gray-500 mb-1">Sources</p>
+                        {item.sources.map((src, i) => (
+                          <div key={i} className="flex items-center gap-2 text-xs text-gray-600">
+                            <ExternalLink size={12} />
+                            <span>{src.label}{src.section ? ` - ${src.section}` : ''}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {item.tags && (
+                      <div className="flex flex-wrap gap-1">
+                        {Object.entries(item.tags).map(([cat, values]) =>
+                          Array.isArray(values) && values.map((v) => (
+                            <span key={`${cat}-${v}`} className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">{cat}:{v}</span>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardBody>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Draft items (exploration) */}
+      {drafts.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs text-gray-400 font-medium">Items en exploration (drafts)</p>
+          {drafts.slice(0, 5).map((item) => (
+            <Card key={item.id} className="border-l-4 border-l-gray-200 opacity-80">
+              <CardBody className="py-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge status="neutral">draft</Badge>
+                  {item.domain && (
+                    <span className="text-xs px-2 py-0.5 rounded bg-gray-50 text-gray-600">{item.domain}</span>
+                  )}
+                  <span className="text-sm text-gray-700">{item.title}</span>
+                </div>
+                {item.summary && (
+                  <p className="text-xs text-gray-400 mt-1 line-clamp-1">{item.summary}</p>
+                )}
+              </CardBody>
+            </Card>
+          ))}
+          {drafts.length > 5 && (
+            <p className="text-xs text-gray-400 text-center">+{drafts.length - 5} autres items en exploration</p>
+          )}
+        </div>
+      )}
+
+      {/* Missing fields */}
+      {missing.length > 0 && (
+        <Card className="border-l-4 border-l-amber-300">
+          <CardBody className="py-3">
+            <div className="flex items-center gap-2 mb-2">
+              <AlertTriangle size={14} className="text-amber-500" />
+              <p className="text-xs font-semibold text-amber-700">Donnees manquantes</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {missing.map((f) => (
+                <span key={f} className="px-2 py-1 bg-amber-50 text-amber-700 rounded text-xs font-medium">{f}</span>
+              ))}
+            </div>
+            {suggestions.length > 0 && (
+              <p className="text-xs text-gray-500 mt-2">{suggestions.join(' ')}</p>
+            )}
+          </CardBody>
+        </Card>
+      )}
+
+      <TrustBadge source="PROMEOS KB" period={`Analyse pour ${site.nom}`} confidence="high" />
+    </div>
+  );
+}
+
 export default function Site360() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('resume');
+  const [showIntake, setShowIntake] = useState(false);
 
   const site = getMockSite(id);
 
@@ -178,9 +390,15 @@ export default function Site360() {
             <span className="flex items-center gap-1"><Ruler size={14} /> {site.surface_m2.toLocaleString()} m2</span>
           </div>
         </div>
-        <Button variant="secondary" onClick={() => navigate(`/regops/${site.id}`)}>
-          Evaluation RegOps
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setShowIntake(true)}>
+            <ClipboardCheck size={14} className="mr-1" />
+            Completer les donnees
+          </Button>
+          <Button variant="secondary" onClick={() => navigate(`/regops/${site.id}`)}>
+            Evaluation RegOps
+          </Button>
+        </div>
       </div>
 
       {/* 3 Mini KPIs */}
@@ -197,8 +415,13 @@ export default function Site360() {
       {activeTab === 'resume' && <TabResume site={site} />}
       {activeTab === 'conso' && <TabStub title="Consommation" text="Courbes de charge, historique et benchmark a venir." />}
       {activeTab === 'factures' && <TabStub title="Factures" text="Analyse factures, shadow billing et optimisation tarifaire a venir." />}
-      {activeTab === 'conformite' && <TabStub title="Conformite" text="Detail obligations reglementaires et echeances a venir." />}
+      {activeTab === 'conformite' && <TabConformite site={site} />}
       {activeTab === 'actions' && <TabStub title="Actions" text="Plan d'action et suivi des recommandations a venir." />}
+
+      {/* Smart Intake Wizard modal */}
+      {showIntake && (
+        <IntakeWizard siteId={site.id} onClose={() => setShowIntake(false)} />
+      )}
     </div>
   );
 }

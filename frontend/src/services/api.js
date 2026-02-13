@@ -13,6 +13,26 @@ const api = axios.create({
   },
 });
 
+// Auth interceptors
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('promeos_token');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 && !error.config?.url?.includes('/auth/')) {
+      localStorage.removeItem('promeos_token');
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 // ========================================
 // SITES
 // ========================================
@@ -149,6 +169,13 @@ export const getKBProvenance = (itemType, code) => api.get(`/kb/provenance/${ite
 export const getKBStats = () => api.get('/kb/stats').then(r => r.data);
 export const reloadKB = () => api.post('/kb/reload').then(r => r.data);
 
+// KB Explorer (structured KB system - FTS5 search + apply engine)
+export const getKBItemsList = (params = {}) => api.get('/kb/items', { params }).then(r => r.data);
+export const getKBItemDetail = (itemId) => api.get(`/kb/items/${itemId}`).then(r => r.data);
+export const searchKBItems = (body) => api.post('/kb/search', body).then(r => r.data);
+export const applyKB = (body) => api.post('/kb/apply', body).then(r => r.data);
+export const getKBFullStats = () => api.get('/kb/stats').then(r => r.data);
+
 // ========================================
 // ENERGY (Import & Analysis)
 // ========================================
@@ -231,6 +258,11 @@ export const getComplianceSites = (params = {}) => api.get('/compliance/sites', 
 export const recomputeComplianceRules = (orgId = null) => api.post('/compliance/recompute-rules', null, { params: { org_id: orgId } }).then(r => r.data);
 export const getComplianceRules = () => api.get('/compliance/rules').then(r => r.data);
 
+// Sprint 9: Compliance OPS workflow
+export const getComplianceFindings = (params = {}) => api.get('/compliance/findings', { params }).then(r => r.data);
+export const patchComplianceFinding = (id, data) => api.patch(`/compliance/findings/${id}`, data).then(r => r.data);
+export const getComplianceBatches = (orgId = null) => api.get('/compliance/batches', { params: { org_id: orgId } }).then(r => r.data);
+
 // ========================================
 // CONSUMPTION DIAGNOSTIC
 // ========================================
@@ -268,5 +300,138 @@ export const importInvoicesCsv = (file) => {
     headers: { 'Content-Type': 'multipart/form-data' },
   }).then(r => r.data);
 };
+export const patchBillingInsight = (insightId, data) => api.patch(`/billing/insights/${insightId}`, data).then(r => r.data);
+export const resolveBillingInsight = (insightId, notes = null) => api.post(`/billing/insights/${insightId}/resolve`, null, { params: notes ? { notes } : {} }).then(r => r.data);
+export const getImportBatches = (params = {}) => api.get('/billing/import/batches', { params }).then(r => r.data);
+
+// ========================================
+// ACHAT ENERGIE
+// ========================================
+
+export const getPurchaseEstimate = (siteId) => api.get(`/purchase/estimate/${siteId}`).then(r => r.data);
+export const getPurchaseAssumptions = (siteId) => api.get(`/purchase/assumptions/${siteId}`).then(r => r.data);
+export const putPurchaseAssumptions = (siteId, data) => api.put(`/purchase/assumptions/${siteId}`, data).then(r => r.data);
+export const getPurchasePreferences = (params = {}) => api.get('/purchase/preferences', { params }).then(r => r.data);
+export const putPurchasePreferences = (data) => api.put('/purchase/preferences', data).then(r => r.data);
+export const computePurchaseScenarios = (siteId) => api.post(`/purchase/compute/${siteId}`).then(r => r.data);
+export const getPurchaseResults = (siteId) => api.get(`/purchase/results/${siteId}`).then(r => r.data);
+export const acceptPurchaseResult = (resultId) => api.patch(`/purchase/results/${resultId}/accept`).then(r => r.data);
+export const seedPurchaseDemo = () => api.post('/purchase/seed-demo').then(r => r.data);
+
+// Sprint 8.1: Portfolio, Renewals, History, Actions
+export const computePortfolio = (orgId) => api.post('/purchase/compute', null, { params: { org_id: orgId, scope: 'org' } }).then(r => r.data);
+export const getPortfolioResults = (orgId) => api.get('/purchase/results', { params: { org_id: orgId } }).then(r => r.data);
+export const getPurchaseRenewals = (orgId = null) => api.get('/purchase/renewals', { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);
+export const getPurchaseHistory = (siteId) => api.get(`/purchase/history/${siteId}`).then(r => r.data);
+export const getPurchaseActions = (orgId = null) => api.get('/purchase/actions', { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);
+
+// ========================================
+// ACTION HUB (Sprint 10)
+// ========================================
+
+export const syncActions = (orgId = null) => api.post('/actions/sync', null, { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);
+export const getActionsList = (params = {}) => api.get('/actions/list', { params }).then(r => r.data);
+export const getActionsSummary = (orgId = null) => api.get('/actions/summary', { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);
+export const patchAction = (id, data) => api.patch(`/actions/${id}`, data).then(r => r.data);
+export const getActionBatches = (orgId = null) => api.get('/actions/batches', { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);
+export const exportActionsCSV = (params = {}) => api.get('/actions/export.csv', { params, responseType: 'blob' });
+
+// ========================================
+// REPORTS (Sprint 10.1)
+// ========================================
+
+export const getAuditReportJSON = (orgId = null) => api.get('/reports/audit.json', { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);
+export const downloadAuditPDF = (orgId = null) => api.get('/reports/audit.pdf', { params: orgId ? { org_id: orgId } : {}, responseType: 'blob' });
+
+// ========================================
+// NOTIFICATIONS (Sprint 10.2)
+// ========================================
+
+export const syncNotifications = (orgId = null) => api.post('/notifications/sync', null, { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);
+export const getNotificationsList = (params = {}) => api.get('/notifications/list', { params }).then(r => r.data);
+export const getNotificationsSummary = (orgId = null) => api.get('/notifications/summary', { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);
+export const patchNotification = (id, data) => api.patch(`/notifications/${id}`, data).then(r => r.data);
+export const getNotificationPreferences = (orgId = null) => api.get('/notifications/preferences', { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);
+export const putNotificationPreferences = (data, orgId = null) => api.put('/notifications/preferences', data, { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);
+
+// ========================================
+// IAM — Auth (Sprint 11)
+// ========================================
+
+export const loginAuth = (email, password) => api.post('/auth/login', { email, password }).then(r => r.data);
+export const refreshAuth = () => api.post('/auth/refresh').then(r => r.data);
+export const getAuthMe = () => api.get('/auth/me').then(r => r.data);
+export const logoutAuth = () => api.post('/auth/logout').then(r => r.data);
+export const changePassword = (currentPassword, newPassword) => api.put('/auth/password', { current_password: currentPassword, new_password: newPassword }).then(r => r.data);
+export const switchOrg = (orgId) => api.post('/auth/switch-org', { org_id: orgId }).then(r => r.data);
+
+// ========================================
+// IAM — Admin Users (Sprint 11)
+// ========================================
+
+export const getAdminUsers = () => api.get('/admin/users').then(r => r.data);
+export const createAdminUser = (data) => api.post('/admin/users', data).then(r => r.data);
+export const getAdminUser = (id) => api.get(`/admin/users/${id}`).then(r => r.data);
+export const patchAdminUser = (id, data) => api.patch(`/admin/users/${id}`, data).then(r => r.data);
+export const changeAdminRole = (id, role) => api.put(`/admin/users/${id}/role`, { role }).then(r => r.data);
+export const setAdminScopes = (id, scopes) => api.put(`/admin/users/${id}/scopes`, { scopes }).then(r => r.data);
+export const deleteAdminUser = (id) => api.delete(`/admin/users/${id}`).then(r => r.data);
+export const getAdminRoles = () => api.get('/admin/roles').then(r => r.data);
+export const getEffectiveAccess = (id) => api.get(`/admin/users/${id}/effective-access`).then(r => r.data);
+
+// ========================================
+// IAM — Audit Log (Sprint 11)
+// ========================================
+
+export const getAuditLogs = (params = {}) => api.get('/auth/audit', { params }).then(r => r.data);
+
+// ========================================
+// IAM — Demo Mode (Sprint 11)
+// ========================================
+
+export const impersonateUser = (email) => api.post('/auth/impersonate', { email }).then(r => r.data);
+export const resetDemo = () => api.post('/auth/reset-demo').then(r => r.data);
+
+// ========================================
+// PATRIMOINE STAGING (DIAMANT)
+// ========================================
+
+export const stagingImport = (file, mode = 'import') => {
+  const fd = new FormData();
+  fd.append('file', file);
+  return api.post('/patrimoine/staging/import', fd, {
+    params: { mode },
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }).then(r => r.data);
+};
+export const stagingImportInvoices = (invoices) => api.post('/patrimoine/staging/import-invoices', { invoices }).then(r => r.data);
+export const stagingSummary = (batchId) => api.get(`/patrimoine/staging/${batchId}/summary`).then(r => r.data);
+export const stagingValidate = (batchId) => api.post(`/patrimoine/staging/${batchId}/validate`).then(r => r.data);
+export const stagingFix = (batchId, fixType, params) => api.put(`/patrimoine/staging/${batchId}/fix`, { fix_type: fixType, params }).then(r => r.data);
+export const stagingActivate = (batchId, portefeuilleId) => api.post(`/patrimoine/staging/${batchId}/activate`, { portefeuille_id: portefeuilleId }).then(r => r.data);
+export const stagingAbandon = (batchId) => api.delete(`/patrimoine/staging/${batchId}`).then(r => r.data);
+export const loadPatrimoineDemo = () => api.post('/patrimoine/demo/load').then(r => r.data);
+export const portfolioSync = (portfolioId, file, dryRun = true) => {
+  const fd = new FormData();
+  fd.append('file', file);
+  return api.post(`/patrimoine/${portfolioId}/sync`, fd, {
+    params: { dry_run: dryRun },
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }).then(r => r.data);
+};
+
+// ========================================
+// SMART INTAKE (DIAMANT)
+// ========================================
+
+export const getIntakeQuestions = (siteId) => api.get(`/intake/${siteId}/questions`).then(r => r.data);
+export const submitIntakeAnswer = (siteId, fieldPath, value, source = 'user') =>
+  api.post(`/intake/${siteId}/answers`, { field_path: fieldPath, value, source }).then(r => r.data);
+export const applyIntakeSuggestions = (siteId, fieldPaths) =>
+  api.post(`/intake/${siteId}/apply-suggestions`, { field_paths: fieldPaths }).then(r => r.data);
+export const intakeDemoAutofill = (siteId) => api.post(`/intake/${siteId}/demo-autofill`).then(r => r.data);
+export const completeIntake = (siteId) => api.post(`/intake/${siteId}/complete`).then(r => r.data);
+export const getIntakeSession = (sessionId) => api.get(`/intake/session/${sessionId}`).then(r => r.data);
+export const purgeIntakeDemo = () => api.delete('/intake/demo/purge').then(r => r.data);
 
 export default api;
