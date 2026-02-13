@@ -1,0 +1,37 @@
+id: MARCHE_ENERGIE_2025_5
+type: knowledge
+domain: usages
+title: 'France : Position Favorable mais Fragile'
+summary: 'Stabilité RTE : parc nucléaire 51 GW garantis + hydraulique 16 GW + gaz
+  11 GW = 83 GW de capacité régulée. Pic consommation hiver ~95 GW (cas froid extrême)
+  couvrable par imports. Bilan prévisionnel R...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Stabilité RTE : parc nucléaire 51 GW garantis + hydraulique 16 GW + gaz\
+  \ 11 GW = 83 GW de capacité régulée. Pic consommation hiver ~95 GW (cas froid extrême)\
+  \ couvrable par imports. Bilan prévisionnel RTE 2025-2035 : position avantageuse,\
+  \ abondance électricité. \n\nMais fragile : dépendance imports allemands en cas\
+  \ déficit ENRi hivernaux. RTE redoute scénarios « wind drought » = demande haute,\
+  \ peu vent/soleil ailleurs = pics prix européens touchent France via interconnexions.\
+  \ \n\nImplication PROMEOS : France bénéficie prix bas moyen terme (nucléaire stable),\
+  \ mais risque pics hivernaux imprévisibles (2-3 fois/hiver). Contrats couvrant hiver\
+  \ obligatoires, pas court terme."
+logic: null
+sources:
+- doc_id: MARCHE_ENERGIE_2025
+  label: Analyse marche energie France-Europe 2025
+  section: 'France : Position Favorable mais Fragile'
+  anchor: '#france-position-favorable-mais-fragile'
+  excerpt_short: 'Stabilité RTE : parc nucléaire 51 GW garantis + hydraulique 16 GW
+    + gaz 11 GW = 83 GW de capacité ré...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

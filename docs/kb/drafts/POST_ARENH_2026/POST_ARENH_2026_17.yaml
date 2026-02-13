@@ -1,0 +1,39 @@
+id: POST_ARENH_2026_17
+type: rule
+domain: usages
+title: Rupture des Régimes d’Approvisionnement
+summary: La fin de l’ARENH marque une rupture structurelle pour les 250 000+ sites
+  professionnels qui bénéficiaient indirectement du dispositif via leurs fournisseurs.
+  Jusqu’à fin 2025, les fournisseurs altern...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "La fin de l’ARENH marque une rupture structurelle pour les 250 000+ sites\
+  \ professionnels qui bénéficiaient indirectement du dispositif via leurs fournisseurs.\
+  \ Jusqu’à fin 2025, les fournisseurs alternatifs pouvaient accéder à environ 25%\
+  \ de la production nucléaire d’EDF à 42 €/MWh (avec plafond de 100 TWh/an). À partir\
+  \ de 2026, cette protection disparaît : 36 37 \n- Fin des contrats indexés ARENH\
+  \ : Les offres tarifaires proposées par les fournisseurs ne pourront plus s’appuyer\
+  \ sur ce tarif administré. \n- Exposition intégrale au marché de gros : Les fournisseurs\
+  \ doivent anticiper leurs besoins de couverture selon les prix de marché à terme\
+  \ (60-70 €/MWh observés début 2025 pour 2026-2028). 38 \n- Complexité contractuelle\
+  \ accrue : Les clauses incluront de nouveaux paramètres (seuils VNU, profils de\
+  \ consommation, périodes d’application) difficilement comparables entre fournisseurs."
+logic: null
+sources:
+- doc_id: POST_ARENH_2026
+  label: Post-ARENH 2026
+  section: Rupture des Régimes d’Approvisionnement
+  anchor: '#rupture-des-rgimes-dapprovisionnement'
+  excerpt_short: La fin de l’ARENH marque une rupture structurelle pour les 250 000+
+    sites professionnels qui bénéfic...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

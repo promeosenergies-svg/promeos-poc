@@ -1,0 +1,33 @@
+id: LEVIERS_MARCHE_2025_15
+type: rule
+domain: acc
+title: 6. Conformité multi-réglementation natif (Décret Tertiaire, BACS, APER, accise)
+summary: "- Action : Module “Compliance ACC” intégré PROMEOS : suivi obligation, alertes\
+  \ automatiques, preuve générée \n- Gain : Sécurité légale PMO, audit trail complet\
+  \ \n- Impact : Réduction litiges 50%, confia..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Action : Module “Compliance ACC” intégré PROMEOS : suivi obligation,\
+  \ alertes automatiques, preuve générée \n- Gain : Sécurité légale PMO, audit trail\
+  \ complet \n- Impact : Réduction litiges 50%, confiance bailleurs/collectivités\
+  \ +40%"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: 6. Conformité multi-réglementation natif (Décret Tertiaire, BACS, APER,
+    accise)
+  anchor: '#6-conformit-multi-rglementation-natif-dcret-tertiaire-bacs-aper-accise'
+  excerpt_short: '- Action : Module “Compliance ACC” intégré PROMEOS : suivi obligation,
+    alertes automatiques, preuve ...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,42 @@
+id: POST_ARENH_2026_2
+type: rule
+domain: acc
+title: Seuils de Taxation et Mécanisme de Prélèvement
+summary: La structure du VNU s’articule autour de deux seuils de taxation, fixés par
+  arrêté ministériel en application de la loi de finances 2025. Ces seuils sont déterminés
+  en fonction du coût complet de prod...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "La structure du VNU s’articule autour de deux seuils de taxation, fixés\
+  \ par arrêté ministériel en application de la loi de finances 2025. Ces seuils sont\
+  \ déterminés en fonction du coût complet de production du parc nucléaire historique\
+  \ (incluant Flamanville 3), évalué par la Commission de Régulation de l’Énergie\
+  \ (CRE). 7 \n\nDans son évaluation du 30 septembre 2025, la CRE a fixé ce coût complet\
+  \ à 60,3 €/MWh (ou 61,5 €courants/MWh) pour la période 2026-2028. Sur cette base,\
+  \ les seuils de déclenchement des prélèvements ont été arrêtés comme suit : 8 9\
+  \ 10 Palier de prix du MWh Part EDF Prélèvement État < 78 €/MWh 100% 0% 78 € à 110\
+  \ €/MWh 50% 50% > 110 €/MWh 10% 90% \n\nLe premier seuil (78 €/MWh) correspond au\
+  \ coût complet majoré d’environ 18 €/MWh, le second seuil (110 €/MWh) au coût complet\
+  \ majoré d’environ 50 €/MWh. Ces marges, comprises dans des fourchettes légales\
+  \ (respectivement [5-25] €/MWh et [35-55] €/MWh), offrent à EDF une rémunération\
+  \ cohérente de son parc tout en limitant l’accumulation de rentes exceptionnelles.\
+  \ 11"
+logic: null
+sources:
+- doc_id: POST_ARENH_2026
+  label: Post-ARENH 2026
+  section: Seuils de Taxation et Mécanisme de Prélèvement
+  anchor: '#seuils-de-taxation-et-mcanisme-de-prlvement'
+  excerpt_short: La structure du VNU s’articule autour de deux seuils de taxation,
+    fixés par arrêté ministériel en ap...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

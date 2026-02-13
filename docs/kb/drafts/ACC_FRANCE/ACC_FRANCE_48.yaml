@@ -1,0 +1,47 @@
+id: ACC_FRANCE_48
+type: knowledge
+domain: acc
+title: 4. 12-Month v2.0 (Q4 2026–Q1 2027)
+summary: "Goal : Premium features (Optim), market leadership, ecosystem lock-in \n\
+  \nScope : \n- ✅ Flex Dashboard + Price Arbitrage (RTE spot feed, alert producer,\
+  \ recommendation engine) \n- ✅ Implicit flex (IRVE + ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Goal : Premium features (Optim), market leadership, ecosystem lock-in\
+  \ \n\nScope : \n- ✅ Flex Dashboard + Price Arbitrage (RTE spot feed, alert producer,\
+  \ recommendation engine) \n- ✅ Implicit flex (IRVE + EMS partners, auto-pilot consumption,\
+  \ load shift scoring) \n- ✅ Advanced analytics (predictive TAc forecasting, anomaly\
+  \ detection, benchmarking vs similar projects) \n- ✅ Multi-site aggregation (group\
+  \ clés optimizer for 3+ sites, maximize collective TAc) \n- ✅ Marketplace (templates,\
+  \ integrations, partners: onduleurs, IRVE, GTB) — small commission \n- ✅ Open API\
+  \ (REST/GraphQL for PMO white-label, fournisseur integrations) \n\nTech Stack :\
+  \ \n- ML/AI : Time-series forecasting (Prophet or similar), clustering (K-means\
+  \ for benchmarking) \n- Real-time : WebSocket (Fastify or GraphQL subscriptions\
+  \ for price alerts) \n- Partner ecosystem : Stripe for marketplace, OAuth2 for 3P\
+  \ integrations \n- Cost : ~€15–20k/mth infra + ~600h dev \n\nGo-to-Market : \n-\
+  \ Acquire 2,000+ PMO accounts (500–800 live operations) \n- Launch Optim premium\
+  \ (30% upsell target = 400–500 accounts) \n- Partner integrations (2–3 major EMS,\
+  \ 5+ IRVE suppliers) \n- Thought leadership (case studies, whitepapers, speaking\
+  \ CRE) \n- Pricing : €300–500/mth Ops (expanded), €600–1500/mth Optim (flex) \n\n\
+  Success Criteria : \n- MRR €250–350k (goal for year-end 2027) \n- ARPU €300–400\
+  \ (expansion revenue +20%) \n- NPS 50+ \n- CAC payback <10 months \n- Profitability\
+  \ target (depending on VC/bootstrap trajectory)"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: 4. 12-Month v2.0 (Q4 2026–Q1 2027)
+  anchor: '#4-12-month-v20-q4-2026q1-2027'
+  excerpt_short: "Goal : Premium features (Optim), market leadership, ecosystem lock-in\
+    \ \n\nScope : \n- ✅ Flex Dashboard ..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,35 @@
+id: STRATEGIE_NEBCO_4
+type: rule
+domain: usages
+title: Éligibilité & Prérequis
+summary: "Tous les sites France métropolitaine continentale éligibles si : \n- Accord\
+  \ écrit du titulaire CART/CARD 10 \n- Puissance effaçable ≥ 100 kW minimum \n- Data\
+  \ : Télérelevé (PS ≥ seuil profilage) OU Profil..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Tous les sites France métropolitaine continentale éligibles si : \n-\
+  \ Accord écrit du titulaire CART/CARD 10 \n- Puissance effaçable ≥ 100 kW minimum\
+  \ \n- Data : Télérelevé (PS ≥ seuil profilage) OU Profilé (<seuil) OU sous-mesure\
+  \ expérimentale (jusqu’au 31/12/2025, limites 100 sites/OE) \n- Agrément Technique\
+  \ Modulation Consommation (OE must pass RTE tests ; fiabilité ≥50%) 11 \n- Conformité\
+  \ bilan énergétique : Volumes hausse ≤ volumes baisse (7–2 jours glissants) ; bilan\
+  \ mensuel/annuel ≥ -5%, sinon suspension M+2 (capacité réduite 60%) 12"
+logic: null
+sources:
+- doc_id: STRATEGIE_NEBCO
+  label: Analyse strategique NEBCO
+  section: Éligibilité & Prérequis
+  anchor: '#ligibilit-prrequis'
+  excerpt_short: "Tous les sites France métropolitaine continentale éligibles si :\
+    \ \n- Accord écrit du titulaire CART/C..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

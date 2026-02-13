@@ -1,0 +1,39 @@
+id: ACC_FRANCE_15
+type: rule
+domain: reglementaire
+title: A. Bailleurs Sociaux (40–45% du marché 2025) 59 60
+summary: "Cas type : Immeuble collectif HLM 100+ logements + toit PV 50–150 kWc \n\
+  \nModèle opérationnel : \n- PMO = bailleur lui-même (exception légale, bailleurs\
+  \ sociaux) \n- Électricité produite → priorité charge..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Cas type : Immeuble collectif HLM 100+ logements + toit PV 50–150 kWc\
+  \ \n\nModèle opérationnel : \n- PMO = bailleur lui-même (exception légale, bailleurs\
+  \ sociaux) \n- Électricité produite → priorité charges communes (ascenseurs, couloirs,\
+  \ eau chaude) \n- Surplus → participants logements (consentants parmi locataires)\
+  \ \n- Bénéfice : réduction charges communes ~15–25%/an, lutte précarité énergétique\
+  \ \n\nROI économique : 61 62 \n- Investissement CAPEX : ~€80–120k pour 50 kWc (aides\
+  \ CRE/régionales : €20–40k) \n- Économies annuelles : €12–18k (conso communes +\
+  \ survalue locataires) \n- Payback : 5–8 ans (avec aides); 10–12 ans (sans) \n-\
+  \ Sensibilité : très bonne si > 30% taux autocons. \n\nCas clients réels : \n- Habitat\
+  \ 17 (78m² PV, 78 logements) \n- Habitat Hauts-de-France (exploitée via Enogrid)\
+  \ \n- RIVP Nord (Paris, multi-sites)"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: A. Bailleurs Sociaux (40–45% du marché 2025) 59 60
+  anchor: '#a-bailleurs-sociaux-4045-du-march-2025-59-60'
+  excerpt_short: "Cas type : Immeuble collectif HLM 100+ logements + toit PV 50–150\
+    \ kWc \n\nModèle opérationnel : \n- PMO..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

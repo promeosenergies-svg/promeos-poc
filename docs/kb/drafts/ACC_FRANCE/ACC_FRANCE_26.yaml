@@ -1,0 +1,40 @@
+id: ACC_FRANCE_26
+type: knowledge
+domain: acc
+title: '1. Positionnement Stratégique : PROMEOS = “Cockpit Local Energy 2.0”'
+summary: "Avant PROMEOS : \n- Fournisseurs classiques = fourniture + facturation (baseline)\
+  \ \n- Agrégateurs flex = marché spot + services système (haut-débit) \n- Gap : pas\
+  \ de “single pane of glass” pour collectif..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Avant PROMEOS : \n- Fournisseurs classiques = fourniture + facturation\
+  \ (baseline) \n- Agrégateurs flex = marché spot + services système (haut-débit)\
+  \ \n- Gap : pas de “single pane of glass” pour collectifs locaux + settlement robuste\
+  \ + micro-transactions \n\nAprès PROMEOS + brique ACC : \n- Micro-fournisseur augmenté\
+  \ : “fourniture complément local + settlement ACC + flex implicite + cockpit décision”\
+  \ \n- Différenciation : \n- ✅ Upsell PMO vers “ABC Ops” (data+facturation) \n- ✅\
+  \ Cross-sell flex/IRVE (services additionnels) \n- ✅ Valeur PMO = “time ROI” (10h/mois\
+  \ économisées = €400–600/mois) \n- ✅ Valeur consommateurs = “transparency + economie\
+  \ 15–30% vs marché” \n\nTarget customer : \n- PMO startup (300–400 projets/an nouveaux)\
+  \ : besoin help desk + legal template \n- PMO établie (bailleurs, SEM) : besoin\
+  \ DP optimization + multi-sites \n- Fournisseur micro : besoin settlement + facturation\
+  \ décorrelée fourniture"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: '1. Positionnement Stratégique : PROMEOS = “Cockpit Local Energy 2.0”'
+  anchor: '#1-positionnement-stratgique-promeos-cockpit-local-energy-20'
+  excerpt_short: "Avant PROMEOS : \n- Fournisseurs classiques = fourniture + facturation\
+    \ (baseline) \n- Agrégateurs flex..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

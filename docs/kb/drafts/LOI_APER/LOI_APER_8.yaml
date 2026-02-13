@@ -1,0 +1,32 @@
+id: LOI_APER_8
+type: rule
+domain: reglementaire
+title: 'Veille 2025 : Décrets ACC attendus 18'
+summary: "- Clarification PMO statut vs fournisseur (article 88 APER) \n- Convention\
+  \ GRD standardisée (modèle Enedis mis à jour ?) \n- Responsable périmètre équilibre\
+  \ : obligations précises (article 86) \n- Délai ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Clarification PMO statut vs fournisseur (article 88 APER) \n- Convention\
+  \ GRD standardisée (modèle Enedis mis à jour ?) \n- Responsable périmètre équilibre\
+  \ : obligations précises (article 86) \n- Délai convention GRD (actuellement 4-8\
+  \ semaines ; cible 2 semaines ?)"
+logic: null
+sources:
+- doc_id: LOI_APER
+  label: Loi APER - Acceleration Production Energies Renouvelables
+  section: 'Veille 2025 : Décrets ACC attendus 18'
+  anchor: '#veille-2025-dcrets-acc-attendus-18'
+  excerpt_short: "- Clarification PMO statut vs fournisseur (article 88 APER) \n-\
+    \ Convention GRD standardisée (modèle E..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

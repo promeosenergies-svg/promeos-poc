@@ -1,0 +1,39 @@
+id: LEVIERS_MARCHE_2025_9
+type: knowledge
+domain: usages
+title: 'Scénario 3 : ACCÉLÉRÉ (Croissance 150% annuelle)'
+summary: "Hypothèses : \n- Réforme majeure : suppression licence fournisseur pour\
+  \ PMO < 5 MW (demande SER/Enerplan) \n- Directive UE energy sharing transposée (Allemagne\
+  \ modèle) \n- Clés de répartition dynamiques ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Hypothèses : \n- Réforme majeure : suppression licence fournisseur pour\
+  \ PMO < 5 MW (demande SER/Enerplan) \n- Directive UE energy sharing transposée (Allemagne\
+  \ modèle) \n- Clés de répartition dynamiques pilotées IA standard (accroît attractivité\
+  \ + 5–10% autoconso supplémentaire) \n- Stockage distribué (batteries, IRVE) intégré\
+  \ opérations (25% opérations + stockage 2030) \n- PV raccordé + autoconso collective\
+  \ = modèle dominant tertiaire/résidentiel \n- Électrification chauffage (PAC) +\
+  \ VE crée profils demande favorables ACC (lissage demande) \n\nProjections 2030:\
+  \ \n- Opérations : ~25 000 (vs 1 100 en 2025) \n- Puissance : ~3 500–4 000 MW (vs\
+  \ 161 MW 2025) \n- Participants : ~250 000 (vs 10 600 en 2025) \n- % PV France en\
+  \ ACC : 40–50% (vs ~6% 2025) \n- Modèle économique stabilisé (prix marché spot +\
+  \ primes flexibilité)"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: 'Scénario 3 : ACCÉLÉRÉ (Croissance 150% annuelle)'
+  anchor: '#scnario-3-acclr-croissance-150-annuelle'
+  excerpt_short: "Hypothèses : \n- Réforme majeure : suppression licence fournisseur\
+    \ pour PMO < 5 MW (demande SER/Enerp..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

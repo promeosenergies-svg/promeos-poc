@@ -1,0 +1,36 @@
+id: DT_SYNTHESE_16
+type: knowledge
+domain: facturation
+title: 'Phase 1 : Diagnostic (Jan-Mar 2026)'
+summary: "- Cartographie assujettis \n- Lister tous sites > 1 000 m² tertiaires \n\
+  - Identifier année référence déjà sélectionnée (si déclaration antérieure) \n- Noter\
+  \ catégories d’activité précises (critical pour ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Cartographie assujettis \n- Lister tous sites > 1 000 m² tertiaires\
+  \ \n- Identifier année référence déjà sélectionnée (si déclaration antérieure) \n\
+  - Noter catégories d’activité précises (critical pour VAL VI) \n- Audit données\
+  \ \n- Reconstituer factures énergie 2015-2025 \n- Identifier données manquantes\
+  \ (gaz, eau, déchets si inclus) \n- Organiser collecte 2024-2025 dès janvier 2026\
+  \ \n- Analyse de gap \n- Pour chaque site : conso actuelle vs objectif 2030 \n-\
+  \ Évaluer trajectoire naturelle (inflation énergie crée économies de facto) \n-\
+  \ Identifier top 20% sites critiques (plus haut gisement)"
+logic: null
+sources:
+- doc_id: DT_SYNTHESE
+  label: Decret Tertiaire - Synthese PROMEOS
+  section: 'Phase 1 : Diagnostic (Jan-Mar 2026)'
+  anchor: '#phase-1-diagnostic-jan-mar-2026'
+  excerpt_short: "- Cartographie assujettis \n- Lister tous sites > 1 000 m² tertiaires\
+    \ \n- Identifier année référence d..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

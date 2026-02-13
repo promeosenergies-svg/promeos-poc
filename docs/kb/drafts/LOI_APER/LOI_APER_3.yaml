@@ -1,0 +1,48 @@
+id: LOI_APER_3
+type: knowledge
+domain: reglementaire
+title: 'Cartographie actualisée (Décembre 2024) 5 6 7 Région/Département Statut 1ère
+  relève Statut 2e relève Avis CRE Notes Bretagne 20% communes (janvier 2024) 63%
+  communes (octobre 2024) ; 110 804 ZAENR déposées 1ère relève ; CRE jugé insuffisant
+  CRE vote relève complémentaire 2e relève deadline : 31/12/2024 (avis CRE 15 janv
+  2025) Hérault 23 communes ; cartographie 4 juin 2024 2e relève 14 oct - 31 déc 2024
+  19 juillet 2024 : jugé insuffisant vs objectifs Besoin +++ zones Morbihan 23 communes
+  ; 526 ZAENR ; arrêté 4 juin 2024 En cours 2e relève 2 oct 2024 : insuffisant (région
+  Bretagne) Guide DREAL agrivoltaïsme dispo Nationale (moyenne) ~10% communes engagées
+  (31 déc 2023) ~35-40% communes (nov 2024) selon WWF Très variable par région'
+summary: 'Conclusion ZAENR : Cartographie très inachevée fin 2024. Beaucoup communes
+  n’ont pas encore délibéré. Attendre avis CRE 2e relève (janvier 2025) pour clarification
+  suffisance régionale.'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: 'Conclusion ZAENR : Cartographie très inachevée fin 2024. Beaucoup communes
+  n’ont pas encore délibéré. Attendre avis CRE 2e relève (janvier 2025) pour clarification
+  suffisance régionale.'
+logic: null
+sources:
+- doc_id: LOI_APER
+  label: Loi APER - Acceleration Production Energies Renouvelables
+  section: 'Cartographie actualisée (Décembre 2024) 5 6 7 Région/Département Statut
+    1ère relève Statut 2e relève Avis CRE Notes Bretagne 20% communes (janvier 2024)
+    63% communes (octobre 2024) ; 110 804 ZAENR déposées 1ère relève ; CRE jugé insuffisant
+    CRE vote relève complémentaire 2e relève deadline : 31/12/2024 (avis CRE 15 janv
+    2025) Hérault 23 communes ; cartographie 4 juin 2024 2e relève 14 oct - 31 déc
+    2024 19 juillet 2024 : jugé insuffisant vs objectifs Besoin +++ zones Morbihan
+    23 communes ; 526 ZAENR ; arrêté 4 juin 2024 En cours 2e relève 2 oct 2024 : insuffisant
+    (région Bretagne) Guide DREAL agrivoltaïsme dispo Nationale (moyenne) ~10% communes
+    engagées (31 déc 2023) ~35-40% communes (nov 2024) selon WWF Très variable par
+    région'
+  anchor: '#cartographie-actualise-dcembre-2024-5-6-7-rgiondpartement-statut-1re-relve-statut-2e-relve-avis-cre-notes-bretagne-20-communes-janvier-2024-63-communes-octobre-2024-110-804-zaenr-dposes-1re-relve-cre-jug-insuffisant-cre-vote-relve-complmentaire-2e-relve-deadline-31122024-avis-cre-15-janv-2025-hrault-23-communes-cartographie-4-juin-2024-2e-relve-14-oct---31-dc-2024-19-juillet-2024-jug-insuffisant-vs-objectifs-besoin-zones-morbihan-23-communes-526-zaenr-arrt-4-juin-2024-en-cours-2e-relve-2-oct-2024-insuffisant-rgion-bretagne-guide-dreal-agrivoltasme-dispo-nationale-moyenne-10-communes-engages-31-dc-2023-35-40-communes-nov-2024-selon-wwf-trs-variable-par-rgion'
+  excerpt_short: 'Conclusion ZAENR : Cartographie très inachevée fin 2024. Beaucoup
+    communes n’ont pas encore délibéré...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

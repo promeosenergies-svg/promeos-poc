@@ -1,0 +1,36 @@
+id: ARRETE_ACC_2025_5
+type: checklist
+domain: reglementaire
+title: 2.2 Dérogations de périmètre — Typologies et procédures
+summary: 'L’arrêté confirme et précise l’applicabilité des dérogations existantes,
+  tout en en créant une nouvelle : Régime de dérogation Distance Conditions Procédure
+  Effectif De base 2 km Aucune — Depuis origi...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: 'L’arrêté confirme et précise l’applicabilité des dérogations existantes,
+  tout en en créant une nouvelle : Régime de dérogation Distance Conditions Procédure
+  Effectif De base 2 km Aucune — Depuis origine Zones semi-urbaines/périurbaines 10
+  km Codes INSEE 3-7 Demande dérogatoire Depuis sept. 2023 13 Zones rurales 20 km
+  Codes INSEE 5-7 Demande dérogatoire Depuis sept. 2023 14 SIS 20 km Service incendie/secours
+  Automatique (pas demande) Depuis 2 mai 2025 15 EPCI/Commune Périmètre total EPCI
+  EPCI à fiscalité propre + critères cumulatifs Demande dérogatoire Depuis 21 février
+  2025'
+logic: null
+sources:
+- doc_id: ARRETE_ACC_2025
+  label: Arrete 21 fevrier 2025 - ACC 5MW/10MW
+  section: 2.2 Dérogations de périmètre — Typologies et procédures
+  anchor: '#22-drogations-de-primtre-typologies-et-procdures'
+  excerpt_short: L’arrêté confirme et précise l’applicabilité des dérogations existantes,
+    tout en en créant une nouve...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

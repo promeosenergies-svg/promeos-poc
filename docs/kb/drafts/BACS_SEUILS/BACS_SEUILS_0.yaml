@@ -1,0 +1,32 @@
+id: BACS_SEUILS_0
+type: rule
+domain: reglementaire
+title: Décret BACS — seuils, dates, exemptions TRI
+summary: "“Synthèse officielle décret BACS : seuils 290 kW/70 kW, dates applicables,\
+  \ exemptions TRI, inspections, citer Legifrance.” \n\nExcellent! Now I have all\
+  \ the official information from Legifrance. Let me ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "“Synthèse officielle décret BACS : seuils 290 kW/70 kW, dates applicables,\
+  \ exemptions TRI, inspections, citer Legifrance.” \n\nExcellent! Now I have all\
+  \ the official information from Legifrance. Let me compile this into a comprehensive\
+  \ synthesis document."
+logic: null
+sources:
+- doc_id: BACS_SEUILS
+  label: Decret BACS - Seuils, dates, exemptions
+  section: Décret BACS — seuils, dates, exemptions TRI
+  anchor: '#dcret-bacs-seuils-dates-exemptions-tri'
+  excerpt_short: '“Synthèse officielle décret BACS : seuils 290 kW/70 kW, dates applicables,
+    exemptions TRI, inspectio...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

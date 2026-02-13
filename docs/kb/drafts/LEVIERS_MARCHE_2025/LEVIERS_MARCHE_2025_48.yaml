@@ -1,0 +1,50 @@
+id: LEVIERS_MARCHE_2025_48
+type: rule
+domain: acc
+title: T1 Phase Extend (Sprint 10–15, Apr–Jun 2025) US-011 [S] En tant que PMO, j'intègre
+  courbes Enedis via API (Data Connect)
+summary: "AC:\n - Authentification Enedis (OAuth2 client cred)\n - Subscription à\
+  \ endpoints \"participants\" (prod + conso)\n - Récupe courbes 15 min auto (scheduled\
+  \ daily 2 AM)\n - Stockage BD + alert si fetch fail\n..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "AC:\n - Authentification Enedis (OAuth2 client cred)\n - Subscription\
+  \ à endpoints \"participants\" (prod + conso)\n - Récupe courbes 15 min auto (scheduled\
+  \ daily 2 AM)\n - Stockage BD + alert si fetch fail\n - Dashboard : \"Données Enedis\
+  \ à jour : [timestamp]\"\n\nUS-012 [S] En tant que PMO, je déclare opération via\
+  \ API Enedis\n AC:\n - Submit dossier opération ACC (US-009) lance API call\n -\
+  \ Body : PMO data, participants list, clés, convention\n - Récep response Enedis\
+  \ : request ID + status \"en attente validation\"\n - Polling status quotidien (via\
+  \ API)\n - Alert PMO si status change (ex: \"validée\" ou \"demande info supplémentaire\"\
+  )\n\nUS-013 [S] En tant que PMO, je mets en place SEPA\n AC:\n - Section \"Paiements\
+  \ SEPA\" dans PMO workspace\n - Générer mandats SDD (texte standard + code mandat)\n\
+  \ - Participant signe mandat (e-sig, ou print+post)\n - Mandat stocké encrypted\
+  \ vault\n - Test prélèvement € (crédit sample, reversible)\n - Prélèvements auto\
+  \ chaque mois (batch, post-facturation)\n - Dashboard \"Prélèvements\" : list mandates,\
+  \ % collectés, failures + retry logic\n\nUS-014 [S] En tant que energy manager,\
+  \ je suivi conformité Décret Tertiaire (bêta)\n AC:\n - Import site tertiaire (surface\
+  \ m², année référence, type [bureaux|école|etc])\n - Baseline : 2010–2019 conso\
+  \ (upload historique ou estimation)\n - Trajectory compute : (conso 2025 climate-corrigée)\
+  \ vs (baseline × (100–40)%)\n - Dashboard : % atteinte objectif 2030\n - Alert si\
+  \ risque dépassement\n - Export report (simple pour T0)\n - (T1 : intégration full\
+  \ OPERAT API)"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: T1 Phase Extend (Sprint 10–15, Apr–Jun 2025) US-011 [S] En tant que PMO,
+    j'intègre courbes Enedis via API (Data Connect)
+  anchor: '#t1-phase-extend-sprint-1015-aprjun-2025-us-011-s-en-tant-que-pmo-jintgre-courbes-enedis-via-api-data-connect'
+  excerpt_short: "AC:\n - Authentification Enedis (OAuth2 client cred)\n - Subscription\
+    \ à endpoints \"participants\" (prod..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

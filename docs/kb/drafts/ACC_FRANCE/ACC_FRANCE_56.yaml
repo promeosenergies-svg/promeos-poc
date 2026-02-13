@@ -1,0 +1,32 @@
+id: ACC_FRANCE_56
+type: knowledge
+domain: acc
+title: 'Moyen terme (Q4 2026–2027) :'
+summary: "- Scale GTM : partnerships ELD (white-label), direct sales to VC-backed\
+  \ ACC companies (Bohr, Animergy) \n- Expand features : Optim module (flex) → 30%\
+  \ of base upsell = €80k MRR incrementally \n- Target ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Scale GTM : partnerships ELD (white-label), direct sales to VC-backed\
+  \ ACC companies (Bohr, Animergy) \n- Expand features : Optim module (flex) → 30%\
+  \ of base upsell = €80k MRR incrementally \n- Target 2,000 PMOs by end-2027 (500–800\
+  \ live operations, 300+ MWc enabled)"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: 'Moyen terme (Q4 2026–2027) :'
+  anchor: '#moyen-terme-q4-20262027-'
+  excerpt_short: '- Scale GTM : partnerships ELD (white-label), direct sales to VC-backed
+    ACC companies (Bohr, Animerg...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

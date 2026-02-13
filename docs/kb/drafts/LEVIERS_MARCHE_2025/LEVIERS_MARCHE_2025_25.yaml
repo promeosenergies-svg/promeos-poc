@@ -1,0 +1,34 @@
+id: LEVIERS_MARCHE_2025_25
+type: rule
+domain: acc
+title: 'Package 3 : Data & Conformité (Réglementation B2B, toutes organisations)'
+summary: "- Clients : Collectivités, bailleurs, tertiaire multi-sites (avec/sans ACC)\
+  \ \n- Features MVP : \n- Import Enedis + GTB (données conso multi-site) \n- Dashboard\
+  \ conformité Décret Tertiaire (-40% 2030), BA..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Clients : Collectivités, bailleurs, tertiaire multi-sites (avec/sans\
+  \ ACC) \n- Features MVP : \n- Import Enedis + GTB (données conso multi-site) \n\
+  - Dashboard conformité Décret Tertiaire (-40% 2030), BACS, APER \n- Alerts automatiques\
+  \ (dérive, échéances) \n- Rapports OPERAT, CO₂, émissions \n- Recommandations sobriété/investissement\
+  \ (PV, acc, stockage) \n- Tarif : €400–2000/mois (échelle nombre sites + energy)\
+  \ \n- Success metrics : % conformité 100%, audit time –50%, recos adoption > 30%"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: 'Package 3 : Data & Conformité (Réglementation B2B, toutes organisations)'
+  anchor: '#package-3-data-conformit-rglementation-b2b-toutes-organisations'
+  excerpt_short: "- Clients : Collectivités, bailleurs, tertiaire multi-sites (avec/sans\
+    \ ACC) \n- Features MVP : \n- Imp..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

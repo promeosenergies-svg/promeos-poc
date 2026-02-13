@@ -1,0 +1,713 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><title>Décret tertiaire _ OPERAT — obligations 2026 et 20</title><style>
+/* cspell:disable-file */
+/* webkit printing magic: print all background colors */
+html {
+	-webkit-print-color-adjust: exact;
+}
+* {
+	box-sizing: border-box;
+	-webkit-print-color-adjust: exact;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+}
+@media only screen {
+	body {
+		margin: 2em auto;
+		max-width: 900px;
+		color: rgb(55, 53, 47);
+	}
+}
+
+body {
+	line-height: 1.5;
+	white-space: pre-wrap;
+}
+
+a,
+a.visited {
+	color: inherit;
+	text-decoration: underline;
+}
+
+.pdf-relative-link-path {
+	font-size: 80%;
+	color: #444;
+}
+
+h1,
+h2,
+h3 {
+	letter-spacing: -0.01em;
+	line-height: 1.2;
+	font-weight: 600;
+	margin-bottom: 0;
+}
+
+/* Override strong tags inside headings to maintain consistent weight */
+h1 strong,
+h2 strong,
+h3 strong {
+	font-weight: 600;
+}
+
+.page-title {
+	font-size: 2.5rem;
+	font-weight: 700;
+	margin-top: 0;
+	margin-bottom: 0.75em;
+}
+
+h1 {
+	font-size: 1.875rem;
+	margin-top: 1.875rem;
+}
+
+h2 {
+	font-size: 1.5rem;
+	margin-top: 1.5rem;
+}
+
+h3 {
+	font-size: 1.25rem;
+	margin-top: 1.25rem;
+}
+
+.source {
+	border: 1px solid #ddd;
+	border-radius: 3px;
+	padding: 1.5em;
+	word-break: break-all;
+}
+
+.callout {
+	border-radius: 10px;
+	padding: 1rem;
+}
+
+figure {
+	margin: 1.25em 0;
+	page-break-inside: avoid;
+}
+
+figcaption {
+	opacity: 0.5;
+	font-size: 85%;
+	margin-top: 0.5em;
+}
+
+mark {
+	background-color: transparent;
+}
+
+.indented {
+	padding-left: 1.5em;
+}
+
+hr {
+	background: transparent;
+	display: block;
+	width: 100%;
+	height: 1px;
+	visibility: visible;
+	border: none;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.09);
+}
+
+img {
+	max-width: 100%;
+}
+
+@media only print {
+	img {
+		max-height: 100vh;
+		object-fit: contain;
+	}
+}
+
+@page {
+	margin: 1in;
+}
+
+.collection-content {
+	font-size: 0.875rem;
+}
+
+.collection-content td {
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.column-list {
+	display: flex;
+	justify-content: space-between;
+}
+
+.column {
+	padding: 0 1em;
+}
+
+.column:first-child {
+	padding-left: 0;
+}
+
+.column:last-child {
+	padding-right: 0;
+}
+
+.table_of_contents-item {
+	display: block;
+	font-size: 0.875rem;
+	line-height: 1.3;
+	padding: 0.125rem;
+}
+
+.table_of_contents-indent-1 {
+	margin-left: 1.5rem;
+}
+
+.table_of_contents-indent-2 {
+	margin-left: 3rem;
+}
+
+.table_of_contents-indent-3 {
+	margin-left: 4.5rem;
+}
+
+.table_of_contents-link {
+	text-decoration: none;
+	opacity: 0.7;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.18);
+}
+
+table,
+th,
+td {
+	border: 1px solid rgba(55, 53, 47, 0.09);
+	border-collapse: collapse;
+}
+
+table {
+	border-left: none;
+	border-right: none;
+}
+
+th,
+td {
+	font-weight: normal;
+	padding: 0.25em 0.5em;
+	line-height: 1.5;
+	min-height: 1.5em;
+	text-align: left;
+}
+
+th {
+	color: rgba(55, 53, 47, 0.6);
+}
+
+ol,
+ul {
+	margin: 0;
+	margin-block-start: 0.6em;
+	margin-block-end: 0.6em;
+}
+
+li > ol:first-child,
+li > ul:first-child {
+	margin-block-start: 0.6em;
+}
+
+ul > li {
+	list-style: disc;
+}
+
+ul.to-do-list {
+	padding-inline-start: 0;
+}
+
+ul.to-do-list > li {
+	list-style: none;
+}
+
+.to-do-children-checked {
+	text-decoration: line-through;
+	opacity: 0.375;
+}
+
+ul.toggle > li {
+	list-style: none;
+}
+
+ul {
+	padding-inline-start: 1.7em;
+}
+
+ul > li {
+	padding-left: 0.1em;
+}
+
+ol {
+	padding-inline-start: 1.6em;
+}
+
+ol > li {
+	padding-left: 0.2em;
+}
+
+.mono ol {
+	padding-inline-start: 2em;
+}
+
+.mono ol > li {
+	text-indent: -0.4em;
+}
+
+.toggle {
+	padding-inline-start: 0em;
+	list-style-type: none;
+}
+
+/* Indent toggle children */
+.toggle > li > details {
+	padding-left: 1.7em;
+}
+
+.toggle > li > details > summary {
+	margin-left: -1.1em;
+}
+
+.selected-value {
+	display: inline-block;
+	padding: 0 0.5em;
+	background: rgba(206, 205, 202, 0.5);
+	border-radius: 3px;
+	margin-right: 0.5em;
+	margin-top: 0.3em;
+	margin-bottom: 0.3em;
+	white-space: nowrap;
+}
+
+.collection-title {
+	display: inline-block;
+	margin-right: 1em;
+}
+
+.page-description {
+	margin-bottom: 2em;
+}
+
+.simple-table {
+	margin-top: 1em;
+	font-size: 0.875rem;
+	empty-cells: show;
+}
+.simple-table td {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table th {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table-header-color {
+	background: rgb(247, 246, 243);
+	color: black;
+}
+.simple-table-header {
+	font-weight: 500;
+}
+
+time {
+	opacity: 0.5;
+}
+
+.icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	max-width: 1.2em;
+	max-height: 1.2em;
+	text-decoration: none;
+	vertical-align: text-bottom;
+	margin-right: 0.5em;
+}
+
+img.icon {
+	border-radius: 3px;
+}
+
+.callout img.notion-static-icon {
+	width: 1em;
+	height: 1em;
+}
+
+.callout p {
+	margin: 0;
+}
+
+.callout h1,
+.callout h2,
+.callout h3 {
+	margin: 0 0 0.6rem;
+}
+
+.user-icon {
+	width: 1.5em;
+	height: 1.5em;
+	border-radius: 100%;
+	margin-right: 0.5rem;
+}
+
+.user-icon-inner {
+	font-size: 0.8em;
+}
+
+.text-icon {
+	border: 1px solid #000;
+	text-align: center;
+}
+
+.page-cover-image {
+	display: block;
+	object-fit: cover;
+	width: 100%;
+	max-height: 30vh;
+}
+
+.page-header-icon {
+	font-size: 3rem;
+	margin-bottom: 1rem;
+}
+
+.page-header-icon-with-cover {
+	margin-top: -0.72em;
+	margin-left: 0.07em;
+}
+
+.page-header-icon img {
+	border-radius: 3px;
+}
+
+.link-to-page {
+	margin: 1em 0;
+	padding: 0;
+	border: none;
+	font-weight: 500;
+}
+
+p > .user {
+	opacity: 0.5;
+}
+
+td > .user,
+td > time {
+	white-space: nowrap;
+}
+
+input[type="checkbox"] {
+	transform: scale(1.5);
+	margin-right: 0.6em;
+	vertical-align: middle;
+}
+
+p {
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+}
+
+.image {
+	border: none;
+	margin: 1.5em 0;
+	padding: 0;
+	border-radius: 0;
+	text-align: center;
+}
+
+.code,
+code {
+	background: rgba(135, 131, 120, 0.15);
+	border-radius: 3px;
+	padding: 0.2em 0.4em;
+	border-radius: 3px;
+	font-size: 85%;
+	tab-size: 2;
+}
+
+code {
+	color: #eb5757;
+}
+
+.code {
+	padding: 1.5em 1em;
+}
+
+.code-wrap {
+	white-space: pre-wrap;
+	word-break: break-all;
+}
+
+.code > code {
+	background: none;
+	padding: 0;
+	font-size: 100%;
+	color: inherit;
+}
+
+blockquote {
+	font-size: 1em;
+	margin: 1em 0;
+	padding-left: 1em;
+	border-left: 3px solid rgb(55, 53, 47);
+}
+
+blockquote.quote-large {
+	font-size: 1.25em;
+}
+
+.bookmark {
+	text-decoration: none;
+	max-height: 8em;
+	padding: 0;
+	display: flex;
+	width: 100%;
+	align-items: stretch;
+}
+
+.bookmark-title {
+	font-size: 0.85em;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	height: 1.75em;
+	white-space: nowrap;
+}
+
+.bookmark-text {
+	display: flex;
+	flex-direction: column;
+}
+
+.bookmark-info {
+	flex: 4 1 180px;
+	padding: 12px 14px 14px;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+}
+
+.bookmark-image {
+	width: 33%;
+	flex: 1 1 180px;
+	display: block;
+	position: relative;
+	object-fit: cover;
+	border-radius: 1px;
+}
+
+.bookmark-description {
+	color: rgba(55, 53, 47, 0.6);
+	font-size: 0.75em;
+	overflow: hidden;
+	max-height: 4.5em;
+	word-break: break-word;
+}
+
+.bookmark-href {
+	font-size: 0.75em;
+	margin-top: 0.25em;
+}
+
+.sans { font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"; }
+.code { font-family: "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace; }
+.serif { font-family: Lyon-Text, Georgia, ui-serif, serif; }
+.mono { font-family: iawriter-mono, Nitti, Menlo, Courier, monospace; }
+.pdf .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK JP'; }
+.pdf:lang(zh-CN) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK SC'; }
+.pdf:lang(zh-TW) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK TC'; }
+.pdf:lang(ko-KR) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK KR'; }
+.pdf .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.pdf .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK JP'; }
+.pdf:lang(zh-CN) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK SC'; }
+.pdf:lang(zh-TW) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK TC'; }
+.pdf:lang(ko-KR) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK KR'; }
+.pdf .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.highlight-default {
+	color: rgba(44, 44, 43, 1);
+}
+.highlight-gray {
+	color: rgba(125, 122, 117, 1);
+	fill: rgba(125, 122, 117, 1);
+}
+.highlight-brown {
+	color: rgba(159, 118, 90, 1);
+	fill: rgba(159, 118, 90, 1);
+}
+.highlight-orange {
+	color: rgba(210, 123, 45, 1);
+	fill: rgba(210, 123, 45, 1);
+}
+.highlight-yellow {
+	color: rgba(203, 148, 52, 1);
+	fill: rgba(203, 148, 52, 1);
+}
+.highlight-teal {
+	color: rgba(80, 148, 110, 1);
+	fill: rgba(80, 148, 110, 1);
+}
+.highlight-blue {
+	color: rgba(56, 125, 201, 1);
+	fill: rgba(56, 125, 201, 1);
+}
+.highlight-purple {
+	color: rgba(154, 107, 180, 1);
+	fill: rgba(154, 107, 180, 1);
+}
+.highlight-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.highlight-red {
+	color: rgba(207, 81, 72, 1);
+	fill: rgba(207, 81, 72, 1);
+}
+.highlight-default_background {
+	color: rgba(44, 44, 43, 1);
+}
+.highlight-gray_background {
+	background: rgba(42, 28, 0, 0.07);
+}
+.highlight-brown_background {
+	background: rgba(139, 46, 0, 0.086);
+}
+.highlight-orange_background {
+	background: rgba(224, 101, 1, 0.129);
+}
+.highlight-yellow_background {
+	background: rgba(211, 168, 0, 0.137);
+}
+.highlight-teal_background {
+	background: rgba(0, 100, 45, 0.09);
+}
+.highlight-blue_background {
+	background: rgba(0, 124, 215, 0.094);
+}
+.highlight-purple_background {
+	background: rgba(102, 0, 178, 0.078);
+}
+.highlight-pink_background {
+	background: rgba(197, 0, 93, 0.086);
+}
+.highlight-red_background {
+	background: rgba(223, 22, 0, 0.094);
+}
+.block-color-default {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray {
+	color: rgba(125, 122, 117, 1);
+	fill: rgba(125, 122, 117, 1);
+}
+.block-color-brown {
+	color: rgba(159, 118, 90, 1);
+	fill: rgba(159, 118, 90, 1);
+}
+.block-color-orange {
+	color: rgba(210, 123, 45, 1);
+	fill: rgba(210, 123, 45, 1);
+}
+.block-color-yellow {
+	color: rgba(203, 148, 52, 1);
+	fill: rgba(203, 148, 52, 1);
+}
+.block-color-teal {
+	color: rgba(80, 148, 110, 1);
+	fill: rgba(80, 148, 110, 1);
+}
+.block-color-blue {
+	color: rgba(56, 125, 201, 1);
+	fill: rgba(56, 125, 201, 1);
+}
+.block-color-purple {
+	color: rgba(154, 107, 180, 1);
+	fill: rgba(154, 107, 180, 1);
+}
+.block-color-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.block-color-red {
+	color: rgba(207, 81, 72, 1);
+	fill: rgba(207, 81, 72, 1);
+}
+.block-color-default_background {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray_background {
+	background: rgba(240, 239, 237, 1);
+}
+.block-color-brown_background {
+	background: rgba(245, 237, 233, 1);
+}
+.block-color-orange_background {
+	background: rgba(251, 235, 222, 1);
+}
+.block-color-yellow_background {
+	background: rgba(249, 243, 220, 1);
+}
+.block-color-teal_background {
+	background: rgba(232, 241, 236, 1);
+}
+.block-color-blue_background {
+	background: rgba(229, 242, 252, 1);
+}
+.block-color-purple_background {
+	background: rgba(243, 235, 249, 1);
+}
+.block-color-pink_background {
+	background: rgba(250, 233, 241, 1);
+}
+.block-color-red_background {
+	background: rgba(252, 233, 231, 1);
+}
+.select-value-color-default { background-color: rgba(42, 28, 0, 0.07); }
+.select-value-color-gray { background-color: rgba(28, 19, 1, 0.11); }
+.select-value-color-brown { background-color: rgba(127, 51, 0, 0.156); }
+.select-value-color-orange { background-color: rgba(196, 88, 0, 0.203); }
+.select-value-color-yellow { background-color: rgba(209, 156, 0, 0.282); }
+.select-value-color-green { background-color: rgba(0, 96, 38, 0.156); }
+.select-value-color-blue { background-color: rgba(0, 118, 217, 0.203); }
+.select-value-color-purple { background-color: rgba(92, 0, 163, 0.141); }
+.select-value-color-pink { background-color: rgba(183, 0, 78, 0.152); }
+.select-value-color-red { background-color: rgba(206, 24, 0, 0.164); }
+
+.checkbox {
+	display: inline-flex;
+	vertical-align: text-bottom;
+	width: 16;
+	height: 16;
+	background-size: 16px;
+	margin-left: 2px;
+	margin-right: 5px;
+}
+
+.checkbox-on {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20width%3D%2216%22%20height%3D%2216%22%20fill%3D%22%2358A9D7%22%2F%3E%0A%3Cpath%20d%3D%22M6.71429%2012.2852L14%204.9995L12.7143%203.71436L6.71429%209.71378L3.28571%206.2831L2%207.57092L6.71429%2012.2852Z%22%20fill%3D%22white%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+
+.checkbox-off {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20x%3D%220.75%22%20y%3D%220.75%22%20width%3D%2214.5%22%20height%3D%2214.5%22%20fill%3D%22white%22%20stroke%3D%22%2336352F%22%20stroke-width%3D%221.5%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+	
+</style></head><body><article id="2ec6971c-72e7-8010-aad5-ebbe0e60413f" class="page sans"><header><h1 class="page-title" dir="auto">Décret tertiaire _ OPERAT — obligations 2026 et 20</h1><p class="page-description" dir="auto"></p></header><div class="page-body"><div style="display:contents" dir="ltr"><figure id="2ec6971c-72e7-81fb-ad53-e1dc89411cb7" class="image"><a href="https://r2cdn.perplexity.ai/pplx-full-logo-primary-dark%402x.png"><img src="https://r2cdn.perplexity.ai/pplx-full-logo-primary-dark%402x.png"/></a></figure></div><div style="display:contents" dir="auto"><h1 id="2ec6971c-72e7-816c-a286-d694bb58dab7" class="">Décret tertiaire / OPERAT — obligations 2026 et 2030</h1></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8186-847b-c708ff4bc9b7" class="">“Récapitulatif officiel décret tertiaire : obligations OPERAT, échéances, sanctions, évolutions 2025 (valeurs absolues), citer ADEME/Legifrance.</p></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-815e-90f9-f8da69c2d965" class="">Très bien. J’ai maintenant suffisamment d’informations précises. Laissez-moi créer un rapport complet et officiel sur le Décret tertiaire et OPERAT avec les obligations 2026 et 2030.</p></div><div style="display:contents" dir="auto"><h1 id="2ec6971c-72e7-8142-a76a-e56684e167a5" class="">Décret Tertiaire / OPERAT : Obligations, Échéances et Sanctions — Récapitulatif Officiel 2025-2030</h1></div><div style="display:contents" dir="auto"><h2 id="2ec6971c-72e7-816e-a9ab-dabae1c8fe26" class="">Executive Summary</h2></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8176-ba0c-ed99b37439f4" class="">Le Décret tertiaire (décret n° 2019-771 du 23 juillet 2019), aussi appelé dispositif Éco-Énergie Tertiaire (EET), impose aux propriétaires et locataires de bâtiments tertiaires de réduire progressivement leur consommation d’énergie finale selon trois paliers décennaux. Depuis 2025, le cadre s’est précisé avec la publication de l’arrêté « Valeurs Absolues VI » (septembre 2025), qui couvre désormais 100% des catégories d’activité. Les obligations actuelles et les échéances critiques de 2026 et 2030 imposent une action immédiate pour les entités assujetties.</p></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-81fc-ac5b-ca26019e448a"/></div><div style="display:contents" dir="auto"><h2 id="2ec6971c-72e7-81a9-81cb-e59cb968c5c5" class="">1. Périmètre et Assujettissement</h2></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-81a6-a8c4-e66e65ce67b4" class="">Qui est concerné ?</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8149-a7ea-cd31a13727c3" class="">Le Décret tertiaire s’applique à :</p></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8122-b904-cdfe8ae0dece" class="bulleted-list"><li style="list-style-type:disc"><strong>Tous les bâtiments ou parties de bâtiments à usage tertiaire</strong> dont la surface de plancher cumul ≥ <strong>1 000 m²</strong><a href="about:blank#fn1">1</a></li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8139-9ac8-c79bb9fe3f64" class="bulleted-list"><li style="list-style-type:disc">Propriétaires, locataires et occupants ayant la responsabilité de la gestion énergétique<a href="about:blank#fn2">2</a></li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8152-84cf-fa054dbceb9c" class="bulleted-list"><li style="list-style-type:disc">Secteurs types : bureaux, enseignement, commerce, santé, logistique, hôtellerie, établissements publics, logements avec parties communes tertiaires<a href="about:blank#fn3">3</a></li></ul></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-81a2-9b3c-c9872ee4758c" class="">Année de référence et méthodes de calcul</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8164-aa2e-dcb08426b465" class="">Les assujettis doivent choisir une année de référence entre <strong>2010 et 2019</strong> (éventuellement 2020 sous conditions). Deux méthodes concurrentes sont possibles :<a href="about:blank#fn4">4</a></p></div><div style="display:contents" dir="ltr"><table id="2ec6971c-72e7-81a6-a0ab-d2bc123ad532" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-810f-a8cb-f7f4c790832c"><th id="}Mvb" class="simple-table-header-color simple-table-header">Méthode</th><th id="YTjt" class="simple-table-header-color simple-table-header">Définition</th><th id="hxyL" class="simple-table-header-color simple-table-header">Avantage</th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81ed-ac1e-c7547877163a"><td id="}Mvb" class=""><strong>Crelat</strong> (Valeur relative)</td><td id="YTjt" class="">Réduction en % vs année de référence</td><td id="hxyL" class="">Favorable aux bâtiments anciens/énergivores</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81a7-b7f7-eb709c846dd7"><td id="}Mvb" class=""><strong>Cabs</strong> (Valeur absolue)</td><td id="YTjt" class="">Seuil maximal en kWh/m²/an par catégorie</td><td id="hxyL" class="">Favorable aux bâtiments performants/neufs</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8198-bb1e-f72e18bc264b" class="">L’assujetti peut choisir la méthode la plus favorable pour chaque entité fonctionnelle.<a href="about:blank#fn5">5</a></p></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-8125-8e9b-d299b149f2be"/></div><div style="display:contents" dir="auto"><h2 id="2ec6971c-72e7-81d5-85b5-c9f48b083c24" class="">2. Obligations de Réduction : Paliers 2030, 2040, 2050</h2></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-8155-84a0-dd3e51940752" class="">Objectifs décennaux</h3></div><div style="display:contents" dir="ltr"><table id="2ec6971c-72e7-81b8-86ba-cbb84b4eaf2d" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81c9-989a-f6420a3fc857"><th id="ZuAg" class="simple-table-header-color simple-table-header">Échéance</th><th id="WlE_" class="simple-table-header-color simple-table-header">Réduction (Crelat)</th><th id="}b]m" class="simple-table-header-color simple-table-header">Statut</th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-8138-bc6b-f3e1108c2ad0"><td id="ZuAg" class=""><strong>31 décembre 2030</strong></td><td id="WlE_" class=""><strong>−40%</strong></td><td id="}b]m" class="">En cours d’atteinte ; premiers bilans prévus après 2031</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-815b-ab4f-d80afbc5bf20"><td id="ZuAg" class=""><strong>31 décembre 2040</strong></td><td id="WlE_" class=""><strong>−50%</strong></td><td id="}b]m" class="">Objectif intermédiaire</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-8140-b160-e8abb3ecfe1b"><td id="ZuAg" class=""><strong>31 décembre 2050</strong></td><td id="WlE_" class=""><strong>−60%</strong></td><td id="}b]m" class="">Trajectoire long terme vers neutralité carbone</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8126-ba71-f3f5f870c553" class=""><strong>Source</strong> : Décret n° 2019-771, articles 1-3 ; Arrêté du 10 avril 2020<a href="about:blank#fn6">6</a><a href="about:blank#fn7">7</a></p></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-81cb-bf86-d821cb6183fc" class="">Valeurs absolues (Cabs) 2030 — Dernières catégories définies (septembre 2025)</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8105-b45c-d9d8d557e367" class="">L’arrêté « Valeurs Absolues VI » (publié 6 septembre 2025) complète le cadre réglementaire en fixant les seuils pour les <strong>dernières catégories manquantes</strong>, permettant aux <strong>100% des assujettis</strong> de se projeter vers 2030.<a href="about:blank#fn8">8</a></p></div><div style="display:contents" dir="ltr"><table id="2ec6971c-72e7-814a-aad0-d40c60e8ff5b" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81f4-bcd2-d15541cad480"><th id=";g=h" class="simple-table-header-color simple-table-header">Catégorie d’activité</th><th id="?`}}" class="simple-table-header-color simple-table-header">Cabs 2030 (kWh/m²/an)</th><th id="Pq=O" class="simple-table-header-color simple-table-header">Zone climatique</th><th id="&lt;?d~" class="simple-table-header-color simple-table-header">Notes</th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81a8-93e4-ffd3d8c1745d"><td id=";g=h" class=""><strong>Bureaux standards</strong></td><td id="?`}}" class="">~70</td><td id="Pq=O" class="">H1a–H3</td><td id="&lt;?d~" class="">CVC : 40–66 kWh/m² + USE : ~20–30 kWh/m² selon occupation</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-8124-90da-f839c6ab22c4"><td id=";g=h" class=""><strong>Enseignement</strong></td><td id="?`}}" class="">~100</td><td id="Pq=O" class="">H1–H3</td><td id="&lt;?d~" class="">Écoles, lycées, enseignement professionnel</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-815f-8368-d501e7bf4101"><td id=";g=h" class=""><strong>Logistique / Entreposage</strong></td><td id="?`}}" class="">~50</td><td id="Pq=O" class="">H1–H3</td><td id="&lt;?d~" class="">Entrepôts, magasins de stockage</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81b9-9605-c0c0e1d85777"><td id=";g=h" class=""><strong>Commerces</strong> (6 catégories)</td><td id="?`}}" class="">240–270</td><td id="Pq=O" class="">H1–H3</td><td id="&lt;?d~" class="">Supermarchés, petits commerces, galeries marchandes</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81fa-85a5-e51ed63f0a0c"><td id=";g=h" class=""><strong>Cinémas</strong></td><td id="?`}}" class="">~200</td><td id="Pq=O" class="">H1–H3</td><td id="&lt;?d~" class="">Nouvelle catégorie (sept. 2025)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-8197-b232-c1ee09c2cc1d"><td id=";g=h" class=""><strong>Services funéraires</strong></td><td id="?`}}" class="">~150</td><td id="Pq=O" class="">H1–H3</td><td id="&lt;?d~" class="">Nouvelle catégorie (sept. 2025)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-813c-9e88-c8d7844c589b"><td id=";g=h" class=""><strong>Banques</strong></td><td id="?`}}" class="">~130</td><td id="Pq=O" class="">H1–H3</td><td id="&lt;?d~" class="">Nouvelle catégorie (sept. 2025)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-8143-8410-dccae7e1705a"><td id=";g=h" class=""><strong>Santé / Médico-social</strong></td><td id="?`}}" class="">~300</td><td id="Pq=O" class="">H1–H3</td><td id="&lt;?d~" class="">Hôpitaux, cliniques, établissements de soins</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-815f-9100-e7e6d478c072" class=""><strong>Structure de Cabs</strong> : Chaque seuil se compose de deux composantes :</p></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8192-8359-e47e90fffa57" class="bulleted-list"><li style="list-style-type:disc"><strong>CVC</strong> (Chauffage, Ventilation, Climatisation) : varie selon zone climatique et altitude (H1a–H3, &lt;400 m, 400–800 m, &gt;800 m)</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8192-a885-dd15d3f3192a" class="bulleted-list"><li style="list-style-type:disc"><strong>USE</strong> (Usages Spécifiques Énergétiques) : éclairage, eau chaude sanitaire, usages métier (intensité dépendante des heures d’exploitation, taux d’occupation, etc.)<a href="about:blank#fn9">9</a></li></ul></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8112-a4cb-d6eef0df6a4e" class=""><strong>Source</strong> : Arrêté du 6 septembre 2025 (Valeurs Absolues VI) ; ADEME/Legifrance<a href="about:blank#fn10">10</a><a href="about:blank#fn11">11</a><a href="about:blank#fn12">12</a></p></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-81e1-a2c2-ec9798deb3be"/></div><div style="display:contents" dir="auto"><h2 id="2ec6971c-72e7-818d-944b-de45be865bb9" class="">3. Obligations de Suivi et Déclaration OPERAT</h2></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-813c-bd20-c0742d174966" class="">Plateforme OPERAT (ADEME)</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81ef-ab4c-f6a0befa2fb6" class=""><strong>OPERAT</strong> (Observatoire de la Performance Énergétique de la Rénovation et des Actions du Tertiaire) est la <strong>plateforme officielle et obligatoire</strong> de l’ADEME pour :</p></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81de-9369-dd7bd00c47fa" class="bulleted-list"><li style="list-style-type:disc">Déclarer les consommations annuelles d’énergie finale</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81a5-9e8c-e10b82d9552b" class="bulleted-list"><li style="list-style-type:disc">Calculer automatiquement les trajectoires et objectifs</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-811e-8274-fac646ba1748" class="bulleted-list"><li style="list-style-type:disc">Générer des attestations de performance</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8172-96d6-dc0045f56aae" class="bulleted-list"><li style="list-style-type:disc">Assigner une notation Éco-Énergie Tertiaire (feuilles : 🌿 à 🌿🌿🌿)<a href="about:blank#fn13">13</a><a href="about:blank#fn14">14</a></li></ul></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-81fa-832d-e732b1572777" class="">Échéances de déclaration annuelle</h3></div><div style="display:contents" dir="ltr"><table id="2ec6971c-72e7-81b4-856b-f09bd4aebb32" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81d2-aaa1-dbf1be078152"><th id="^fhv" class="simple-table-header-color simple-table-header">Année de consommation</th><th id="xNFZ" class="simple-table-header-color simple-table-header">Date limite de dépôt</th><th id="vmOv" class="simple-table-header-color simple-table-header">Statut</th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81a0-a932-e97270d42338"><td id="^fhv" class=""><strong>2024</strong></td><td id="xNFZ" class="">30 septembre 2025</td><td id="vmOv" class=""><strong>En cours</strong></td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-813a-80ca-f87ac7262361"><td id="^fhv" class=""><strong>2025</strong></td><td id="xNFZ" class="">30 septembre 2026</td><td id="vmOv" class="">Prochaine échéance</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81b9-9018-f5bb0efea920"><td id="^fhv" class=""><strong>2026–2030</strong></td><td id="xNFZ" class="">30 septembre (N+1)</td><td id="vmOv" class="">Annuel jusqu’à bilan 2030</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81c5-a955-cddcd5c98b2a" class=""><strong>Important</strong> : Après le <strong>1er juillet 2026</strong>, l’utilisation de l’<strong>attestation numérique OPERAT</strong> (modèle standardisé intégré à la plateforme) devient <strong>obligatoire</strong> en lieu et place des anciens modèles PDF manuels.<a href="about:blank#fn15">15</a></p></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-812d-a95f-d6008ae1c370" class=""><strong>Source</strong> : Arrêté du 1er août 2025 (modifications OPERAT) ; ADEME<a href="about:blank#fn16">16</a><a href="about:blank#fn17">17</a></p></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-814b-8abc-dc1f1b2b585f" class="">Données à déclarer annuellement</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-819d-b54d-d20e50a138c4" class="">Pour chaque Entité Fonctionnelle Assujettie (EFA = bâtiment ou ensemble) :</p></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8111-bd47-fb5dd316d32c" class="bulleted-list"><li style="list-style-type:disc"><strong>Consommations énergétiques finales par vecteur</strong> (électricité, gaz, chaleur réseau, fioul, biomasse) en kWh</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8184-b32b-ff4cbcc1ab45" class="bulleted-list"><li style="list-style-type:disc"><strong>Surface de plancher tertiaire</strong> (m²)</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81f9-a381-ec8c776812d7" class="bulleted-list"><li style="list-style-type:disc"><strong>Année de référence choisie</strong> et consommation de référence</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-817c-9d1d-d4374979a4d7" class="bulleted-list"><li style="list-style-type:disc"><strong>Facteurs d’ajustement</strong> (variations climatiques via DJU — Degrés-Jours Unifis — fournis par Météo-France)</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81f1-bd83-d60cf8435a11" class="bulleted-list"><li style="list-style-type:disc"><strong>Changements structurels</strong> (travaux effectués, modifications d’usage, changements d’occupation)</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8127-b06a-e7d6d5064683" class="bulleted-list"><li style="list-style-type:disc"><strong>Indicateurs de modulation</strong> (si applicable : changement d’activité, intensité d’usage)<a href="about:blank#fn18">18</a><a href="about:blank#fn19">19</a></li></ul></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-816d-bfa8-de0bd5e8262c" class=""><strong>Source</strong> : ADEME ; Arrêté du 10 avril 2020, art. 3-4<a href="about:blank#fn20">20</a><a href="about:blank#fn21">21</a></p></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-8129-87e6-c7e9bdc29e62"/></div><div style="display:contents" dir="auto"><h2 id="2ec6971c-72e7-8112-883d-c40276028392" class="">4. Jalons Critiques 2026</h2></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-81ec-9c6c-e0a499ca22b0" class="">30 septembre 2026 : Dossier technique de modulation</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8128-892c-f89b28207171" class=""><strong>Date limite pour déposer un dossier de modulation</strong> des objectifs 2030 auprès de l’ADEME via OPERAT.<a href="about:blank#fn22">22</a><a href="about:blank#fn23">23</a></p></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-81bb-bfa0-dd570fb0d104" class="">Qui peut moduler ?</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-813e-99d1-fc8ded11c8c5" class="">Les assujettis qui justifient de contraintes :</p></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8132-b619-cecdba9c15e9" class="bulleted-list"><li style="list-style-type:disc"><strong>Techniques</strong> : impossibilité techniquement réalisable (ex. bâtiment avec fondations fragiles empêchant isolation)</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-810e-a992-fcb8559a1652" class="bulleted-list"><li style="list-style-type:disc"><strong>Architecturales/Patrimoniales</strong> : bâtiment classé, protection ABF (Architecte Bâtiments de France)</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-810b-b458-d83474635fe0" class="bulleted-list"><li style="list-style-type:disc"><strong>Économiques</strong> : temps de retour sur investissement (TRB) &gt; 10 ans pour les opérations proposées<a href="about:blank#fn24">24</a></li></ul></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-8138-9601-d904728cfbab" class="">Contenu du dossier</h3></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8139-881e-ec5b78b96640" class="bulleted-list"><li style="list-style-type:disc">Étude énergétique du bâtiment (référence, contraintes, actions envisagées)</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81ff-88c1-d7404d30e27e" class="bulleted-list"><li style="list-style-type:disc">Étude spécifique des équipements (usages énergétiques)</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8172-b6e1-d2789f8fb43c" class="bulleted-list"><li style="list-style-type:disc">Programme d’actions avec gains énergétiques et calendrier de mise en œuvre</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81a2-8380-e16fa308d41d" class="bulleted-list"><li style="list-style-type:disc">Note technique justifiant l’impossibilité d’atteindre −40% ou les valeurs absolues</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81e4-bcde-c600199abdfd" class="bulleted-list"><li style="list-style-type:disc">Calcul des TRB des actions envisagées</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-815e-8ec7-db2d1cfdccfb" class="bulleted-list"><li style="list-style-type:disc">Avis circonstancié d’un expert (en cas de contraintes architecturales)<a href="about:blank#fn25">25</a></li></ul></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81cf-9f38-dd50119284e8" class=""><strong>Important</strong> : Absence de dossier avant le <strong>30 septembre 2026</strong> → objectif −40% 2030 demeure <strong>pleinement applicable</strong> sans droit à modulation.<a href="about:blank#fn26">26</a><a href="about:blank#fn27">27</a></p></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-812c-b37c-f4178a0c2eb1" class=""><strong>Source</strong> : Arrêté du 10 avril 2020, art. 7 ; ADEME ; Legifrance<a href="about:blank#fn28">28</a><a href="about:blank#fn29">29</a></p></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-81db-8f85-ea01f6473ea4"/></div><div style="display:contents" dir="auto"><h2 id="2ec6971c-72e7-81f2-bca2-e3543b3c2854" class="">5. Réglementation 2030 : Échéance Majeure</h2></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-8117-91b2-ded2fe3933be" class="">31 décembre 2030 : Bilan décennal</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81b0-aa24-f0f917c3f4e2" class="">Les assujettis doivent avoir atteint <strong>au minimum l’une des deux conditions</strong> :</p></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8114-954f-f2f74eb13e50" class="numbered-list" start="1"><li><strong>Réduction de −40%</strong> en valeur relative vs année de référence, <strong>OU</strong></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8129-9129-d4e48ac7f0de" class="numbered-list" start="2"><li><strong>Seuil de consommation</strong> fixé en valeur absolue (Cabs) selon leur catégorie d’activité<a href="about:blank#fn30">30</a><a href="about:blank#fn31">31</a></li></ol></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-81b1-a0f6-c25935fadd5e" class="">Contrôle et sanctions post-2030</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81a6-ad03-f8c52fec7c7b" class="">Le <strong>premier contrôle officiel</strong> des objectifs 2030 se fera sur la base du <strong>bilan au 31 décembre 2031</strong>. Avant cette date (jusqu’à fin 2030), les assujettis sont en phase de <strong>suivi trajectoire</strong> et ajustement de plans d’action.<a href="about:blank#fn32">32</a></p></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-81b8-924c-c79877278345"/></div><div style="display:contents" dir="auto"><h2 id="2ec6971c-72e7-813f-bffc-ecb1ace57b7a" class="">6. Décret BACS (Gestion Technique des Bâtiments — GTB)</h2></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8112-9d86-d80cf1f09172" class="">Le Décret BACS (n° 2020-887, modifié par n° 2023-259) <strong>complète et conditionne partiellement</strong> le Décret tertiaire en imposant des systèmes de pilotage automatisé (GTB/BACS).</p></div><div style="display:contents" dir="ltr"><table id="2ec6971c-72e7-818f-89ba-d151d5996d1e" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81a9-876f-e0ba37500aad"><th id="m[qi" class="simple-table-header-color simple-table-header">Puissance CVC</th><th id="_|BF" class="simple-table-header-color simple-table-header">Échéance</th><th id="s=b^" class="simple-table-header-color simple-table-header">Obligation</th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-8152-9e1c-d1b056a5128d"><td id="m[qi" class=""><strong>≥ 290 kW</strong></td><td id="_|BF" class="">1er janvier 2025</td><td id="s=b^" class="">GTB opérationnelle requise</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-8168-b221-e7a7efb4c2f9"><td id="m[qi" class=""><strong>70–290 kW</strong></td><td id="_|BF" class="">1er janvier 2027</td><td id="s=b^" class="">GTB opérationnelle requise</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-81f9-a342-db0dab6b2c0f" class="">Fonctionnalités minimales de la GTB</h3></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-817e-9019-e613860da93a" class="bulleted-list"><li style="list-style-type:disc">Suivi en continu et enregistrement des consommations (pas &lt; horaire)</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8181-b138-c5a4795f2fe6" class="bulleted-list"><li style="list-style-type:disc">Pilotage automatique des consignes chauffage/clim selon occupationGTB</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8166-bd45-cd43b6185c70" class="bulleted-list"><li style="list-style-type:disc">Détection des pertes d’efficacité et alertes aux exploitants</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81d3-8e13-e789345cabbf" class="bulleted-list"><li style="list-style-type:disc">Interoprabilité avec équipements multiples (chauffage, clim, ventilation, éclairage)</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8108-9b38-dc662c9f7e9e" class="bulleted-list"><li style="list-style-type:disc">Classe de performance ≥ B selon norme NF EN ISO 52120-1:2022<a href="about:blank#fn33">33</a><a href="about:blank#fn34">34</a></li></ul></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-8158-a2c7-fbb07353763f" class="">Inspections obligatoires (depuis 2023)</h3></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-814b-a305-f33dff37c879" class="bulleted-list"><li style="list-style-type:disc">Première inspection : dans les <strong>2 ans</strong> suivant mise en service</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-815f-a61a-fc28c873d2fc" class="bulleted-list"><li style="list-style-type:disc">Inspections ultérieures : tous les <strong>2–5 ans</strong> maximum</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81dc-9ab5-ea94f9711f37" class="bulleted-list"><li style="list-style-type:disc">Rapport d’inspection : preuve de conformité aux contrôles publics<a href="about:blank#fn35">35</a></li></ul></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81ea-b7c0-ce7f5f53462a" class=""><strong>Source</strong> : Décret n° 2020-887 (20 juillet 2020) ; Décret n° 2023-259 (7 avril 2023)<a href="about:blank#fn36">36</a><a href="about:blank#fn37">37</a><a href="about:blank#fn38">38</a></p></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-818d-a3b1-c2168059fcac"/></div><div style="display:contents" dir="auto"><h2 id="2ec6971c-72e7-8193-8e6f-ff5339e52ca2" class="">7. Loi APER : Obligation de Solarisation des Parkings</h2></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8110-a432-ef9e0550d335" class="">La <strong>Loi APER</strong> (Accélération de la Production d’Énergies Renouvelables, 10 mars 2023) impose la couverture par ombrières photovoltaïques d’au moins <strong>50% de la surface</strong> des grands parkings extérieurs.</p></div><div style="display:contents" dir="ltr"><table id="2ec6971c-72e7-8112-bf1f-fec77641c670" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-8173-91ac-d478ae089392"><th id="`=iZ" class="simple-table-header-color simple-table-header">Taille du parking</th><th id="u;{p" class="simple-table-header-color simple-table-header">Deadline</th><th id="tsRo" class="simple-table-header-color simple-table-header">Amende annuelle</th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-818c-a925-f3b8f4db54ed"><td id="`=iZ" class=""><strong>≥ 10 000 m²</strong></td><td id="u;{p" class="">1er juillet 2026</td><td id="tsRo" class="">Jusqu’à <strong>40 000 €/an</strong></td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81eb-9034-fde3165ea941"><td id="`=iZ" class=""><strong>1 500–10 000 m²</strong></td><td id="u;{p" class="">1er juillet 2028</td><td id="tsRo" class="">Jusqu’à <strong>20 000 €/an</strong></td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-8167-a64f-fd140315baab" class="">Exemptions possibles</h3></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81b8-90b8-d1e0a54f849a" class="bulleted-list"><li style="list-style-type:disc">Contraintes techniques ou de sécurité insurmontables</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8185-be93-c65a8d531583" class="bulleted-list"><li style="list-style-type:disc">Patrimoine protégé (avis négatif ABF)</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81be-aa4e-c89e62fb293b" class="bulleted-list"><li style="list-style-type:disc">Parking déjà ombragé ≥ 50% par arbres matures</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8149-9118-d13cd5475169" class="bulleted-list"><li style="list-style-type:disc">Démantèlement programmé du parking (autorisation urbanisme antérieure)</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8125-bba0-f79f2bbcf0a4" class="bulleted-list"><li style="list-style-type:disc">Production ENR alternative équivalente sur le site (éoliennes, etc.)</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8107-9d59-c219c7be708e" class="bulleted-list"><li style="list-style-type:disc">Viabilité économique insuffisante (cas exceptionnel)</li></ul></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81e3-8ef5-d68ff2b58a7a" class=""><strong>Important (janvier 2026)</strong> : La Loi DDADUE (30 avril 2025) a introduit un <strong>sursis</strong> pour les parkings ≥ 10 000 m² ayant signé un contrat d’engagement avant le <strong>31 décembre 2025</strong>, autorisant report de l’installation jusqu’au <strong>1er janvier 2028</strong>.<a href="about:blank#fn39">39</a></p></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8118-bf42-f70c1b7bca38" class=""><strong>Source</strong> : Loi n° 2023-175 (APER) ; Décret n° 2024-1023 (13 novembre 2024) ; Loi du 30 avril 2025 (DDADUE)<a href="about:blank#fn40">40</a><a href="about:blank#fn41">41</a><a href="about:blank#fn42">42</a></p></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-81ce-b4b3-efb45320cd32"/></div><div style="display:contents" dir="auto"><h2 id="2ec6971c-72e7-81b9-8698-dc62e50d9261" class="">8. Système de Sanctions et Mise en Conformité</h2></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-8152-a5e0-cb9accc2e89e" class="">Non-déclaration ou déclaration incomplète sur OPERAT</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81ae-8ad7-fa8d11ca6038" class=""><strong>Processus</strong> :</p></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81b0-918b-f1ed84418109" class="numbered-list" start="1"><li><strong>Mise en demeure</strong> envoyée par le préfet → délai 3 mois pour régulariser</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8184-a2ec-e0a33e7e9918" class="numbered-list" start="2"><li><strong>Publication « Name and Shame »</strong> sur site officiel si non-respect après mise en demeure</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81a8-a322-cc69871407c2" class="numbered-list" start="3"><li><strong>Amende administrative</strong> (après procédure contradictoire)</li></ol></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8123-bc4c-cff1ce1cc99a" class=""><strong>Montant</strong> : Jusqu’à <strong>7 500 € pour personne morale</strong> (par EFA en infraction)<a href="about:blank#fn43">43</a><a href="about:blank#fn44">44</a></p></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-81ce-bd67-c7d3861104c7" class="">Non-respect des objectifs de réduction 2030</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81d8-9599-cb803cdfce2f" class=""><strong>Conditions</strong> :</p></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81c6-b4be-e0d07ff31db8" class="bulleted-list"><li style="list-style-type:disc">Absence de justification recevable (modulation non approuvée, pas de plan d’action)</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8118-949c-c807bd5a097f" class="bulleted-list"><li style="list-style-type:disc">Non-réalisation du programme d’actions validé par le préfet</li></ul></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8184-9c1e-d89ad404158a" class=""><strong>Sanctions</strong> :</p></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8153-b45f-f5efa6cbcefd" class="bulleted-list"><li style="list-style-type:disc"><strong>Mise en demeure</strong> pour présenter un plan d’actions sous <strong>6 mois</strong></li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81eb-b75a-fcb711481e38" class="bulleted-list"><li style="list-style-type:disc"><strong>Publication « Name and Shame »</strong> (réputation/RSE)</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81d4-8771-c57c1cd73a7f" class="bulleted-list"><li style="list-style-type:disc"><strong>Amende administrative</strong> : jusqu’à <strong>7 500 € par personne morale</strong> (par EFA)<a href="about:blank#fn45">45</a><a href="about:blank#fn46">46</a></li></ul></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8168-9eb0-c4e29b04f3dd" class=""><strong>Note</strong> : Le gouvernement a signalé dans le PNIEC 2024 un potentiel <strong>renforcement</strong> des sanctions post-2026 pour garantir l’efficacité du dispositif.<a href="about:blank#fn47">47</a></p></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81da-8992-da2eb8781a15" class=""><strong>Source</strong> : Décret n° 2019-771, art. 13–15 ; Arrêtés d’application ; Legifrance<a href="about:blank#fn48">48</a><a href="about:blank#fn49">49</a><a href="about:blank#fn50">50</a></p></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-81b6-99c8-e6562d5d7a32"/></div><div style="display:contents" dir="auto"><h2 id="2ec6971c-72e7-8176-8170-d7f4b2ef26bf" class="">9. Évolutions et Changements 2025</h2></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-8149-bb02-cea95f752831" class="">Arrêté du 1er août 2025 (modifications OPERAT)</h3></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81cf-b127-f235358cf551" class="bulleted-list"><li style="list-style-type:disc"><strong>Attestation numérique standardisée</strong> intégrée à OPERAT (obligatoire après 1er juillet 2026)</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8176-82ef-f124ca97dac6" class="bulleted-list"><li style="list-style-type:disc">Clarification des zones climatiques pour calcul CVC</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-815a-a6aa-e4bd934fd0a2" class="bulleted-list"><li style="list-style-type:disc">Précisions sur mutualisation des résultats multi-sites</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81fb-9aa7-ddac226f2cef" class="bulleted-list"><li style="list-style-type:disc">Adaptation des coefficients de conversion énergie finale</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-817b-843b-dc596b0e7f7a" class="bulleted-list"><li style="list-style-type:disc"><strong>Phase transitoire</strong> (jusqu’au 1er juillet 2026) : affichage et export attestation restent facultatifs<a href="about:blank#fn51">51</a></li></ul></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-81ea-820a-e8d9ade8f4bd" class="">Arrêté « Valeurs Absolues VI » (6 septembre 2025)</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-818a-9c95-c7391d78f2ec" class="">100% des catégories d’activité désormais couvertes (commerces, cinémas, services funéraires, banques).<a href="about:blank#fn52">52</a><a href="about:blank#fn53">53</a><a href="about:blank#fn54">54</a></p></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-81ca-9a25-f15a4ca73ef6" class="">Prochaines étapes</h3></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8121-b1af-c6dadd7e73d0" class="bulleted-list"><li style="list-style-type:disc"><strong>Années 2026–2029</strong> : Poursuite des déclarations annuelles et ajustement trajectoriesPAR</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-819c-a0a3-e93995759dda" class="bulleted-list"><li style="list-style-type:disc"><strong>30 septembre 2027</strong> : Dernier délai pour dépôt dossiers modulation 2030 (le 30 septembre 2026 pour certains cas particuliers)<a href="about:blank#fn55">55</a><a href="about:blank#fn56">56</a></li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81fa-9d92-e6bf529bd6f6" class="bulleted-list"><li style="list-style-type:disc"><strong>31 décembre 2030</strong> : Bilan officiel et premiers contrôles réglementaires</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81c0-bbe6-dee10533079f" class="bulleted-list"><li style="list-style-type:disc"><strong>Renforcement potentiel des sanctions</strong> envisagé par le gouvernement (objectif : accélérer conformité)<a href="about:blank#fn57">57</a></li></ul></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-8196-b97b-f82eab017f7a"/></div><div style="display:contents" dir="auto"><h2 id="2ec6971c-72e7-81fe-bdfb-fcd9b70de2ba" class="">10. Points Clés pour Agir en 2026</h2></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-81ff-9461-c29dcd063fa2" class="">Checklist immédiate</h3></div><div style="display:contents" dir="ltr"><table id="2ec6971c-72e7-8179-8bef-d2a06634d3ac" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81ad-a1c3-f1d7ca28922e"><th id="I]CO" class="simple-table-header-color simple-table-header">Action</th><th id="[I~a" class="simple-table-header-color simple-table-header">Échéance</th><th id="|Q]q" class="simple-table-header-color simple-table-header">Impact</th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-8127-835b-e68273a3a7f6"><td id="I]CO" class="">Déclarer consommations 2024 sur OPERAT</td><td id="[I~a" class="">30 sept. 2025</td><td id="|Q]q" class="">Obligation légale ; non-déclaration = sanction</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-8186-a894-cf74b6d27045"><td id="I]CO" class="">Choisir année référence + méthode (Crelat/Cabs)</td><td id="[I~a" class="">Avant 30 sept. 2025</td><td id="|Q]q" class="">Détermine objectif applicable</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-8137-a609-f45eeb988351"><td id="I]CO" class="">Lancer audit énergétique tertiaire ou DPE</td><td id="[I~a" class="">Dès maintenant</td><td id="|Q]q" class="">Prérequis pour plan d’actions / modulation</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-8129-bf60-d2e034a0e007"><td id="I]CO" class="">Si → modulation probable : constituer dossier</td><td id="[I~a" class="">Avant 30 sept. 2026</td><td id="|Q]q" class="">Justifier impossibilité technique/économique</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-817d-ad72-d58163f8941f"><td id="I]CO" class="">Mettre en place GTB (CVC ≥ 290 kW)</td><td id="[I~a" class="">Avant 1er janv. 2025</td><td id="|Q]q" class="">Obligation BACS (déjà en cours)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-811c-9c60-d910283d1238"><td id="I]CO" class="">Planifier travaux rénovation (−40%)</td><td id="[I~a" class="">2025–2030</td><td id="|Q]q" class="">Atteindre objectif 2030</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-8115-9fb4-f0346cee7b82"><td id="I]CO" class="">Si parking ≥ 10 000 m² : lancer étude faisabilité PV</td><td id="[I~a" class="">Dès maintenant</td><td id="|Q]q" class="">Deadline 1er juillet 2026 (ou sursis jusqu’jan. 2028)</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-8174-abaf-cf14133a1e3f"/></div><div style="display:contents" dir="auto"><h2 id="2ec6971c-72e7-8191-abbc-da3fa332693e" class="">11. Ressources Officielles</h2></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8153-8363-c6e1b3093fa6" class="bulleted-list"><li style="list-style-type:disc"><strong>Plateforme OPERAT</strong> : https://www.operateur-tertiaire.ademe.fr</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8117-bc22-cc030d0d09db" class="bulleted-list"><li style="list-style-type:disc"><strong>ADEME — Décret tertiaire</strong> : https://www.ademe.fr (rubrique Efficacité énergétique/Tertiaire)</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8111-b4a0-c7b121c1dae7" class="bulleted-list"><li style="list-style-type:disc"><strong>Legifrance — Décret n° 2019-771</strong> : https://www.legifrance.gouv.fr</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8168-90f6-cc96ca1d9cd3" class="bulleted-list"><li style="list-style-type:disc"><strong>Legifrance — Arrêtés modification</strong> (Valeurs Absolues VI, etc.) : https://www.legifrance.gouv.fr</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81df-a067-c20a0a66da15" class="bulleted-list"><li style="list-style-type:disc"><strong>Guide ADEME “Éco-Énergie Tertiaire”</strong> : Documentation téléchargeable sur OPERAT</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8142-aba9-f2f4f0e0b212" class="bulleted-list"><li style="list-style-type:disc"><strong>Site dédié Décret BACS</strong> : https://www.decret-bacs.fr</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8125-9f87-c3f9ff29f267" class="bulleted-list"><li style="list-style-type:disc"><strong>Site dédié Loi APER parkings</strong> : Informations ADEME / Collectivités</li></ul></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-8181-86fb-cd647da654a3"/></div><div style="display:contents" dir="auto"><h2 id="2ec6971c-72e7-810f-9a35-eea038566bcf" class="">Conclusion</h2></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8163-9ae2-cc048f9e0acd" class="">Le Décret tertiaire entre en 2026 dans une <strong>phase décisive</strong> : tous les seuils de conformité 2030 sont désormais connus (Valeurs Absolues VI publiée septembre 2025), les échéances critiques de dépôt (modulation : 30 sept. 2026) approchent, et le premier <strong>bilan réglementaire officiel</strong> aura lieu fin 2031. Les assujettis doivent <strong>sans délai</strong> :</p></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8111-a08b-c331d33fdaeb" class="numbered-list" start="1"><li>Déclarer leurs données annuelles sur OPERAT (30 sept. 2025 pour 2024)</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81bc-9dd2-cb8d11d0545a" class="numbered-list" start="2"><li>Évaluer leur trajectoire vs −40% / valeur absolue</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8122-b288-c6dbb214440d" class="numbered-list" start="3"><li>Lancer des audits énergétiques et plans d’action</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8127-ba0f-ea5d9bae57a5" class="numbered-list" start="4"><li>Demander modulation si impossibilité justifiée (avant 30 sept. 2026)</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81f6-a867-dc26463550c5" class="numbered-list" start="5"><li>Investir dans GTB, rénovation, PV selon calendrier 2025–2030</li></ol></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81c4-acde-eed69af775f0" class=""><strong>L’inaction expose à des sanctions progressives (mises en demeure, « name and shame », amendes jusqu’à 7 500 €/EFA)</strong> et à un risque réputationnel/ESG majeur pour les entreprises.</p></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-8170-8476-cbad4a039bcb"/></div><div style="display:contents" dir="auto"><h2 id="2ec6971c-72e7-8140-8e61-fb4c1358cd49" class="">Références</h2></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-812c-a85d-c647891d7bf6" class="">Décret n° 2019-771 du 23 juillet 2019 (JORF) ; Loi ELAN 2018, art. 175<a href="about:blank#fn58">58</a><br/>Arrêté du 10 avril 2020 (Méthode) ; ADEME ; Legifrance<a href="about:blank#fn59">59</a><br/>Arrêtés Valeurs Absolues I–VI (2020–2025) ; dernière : 6 septembre 2025<a href="about:blank#fn60">60</a><br/>— le-decret-tertiaire.fr<a href="about:blank#fn61">61</a><br/>— opera-energie.com (Sanctions)<a href="about:blank#fn62">62</a><br/>— championnatdefrancedeseconomiesdenergie.org<a href="about:blank#fn63">63</a><br/>— solutions.acciona-energia.fr<a href="about:blank#fn64">64</a><br/>— sobre-energie.com (Valeurs Absolues VI)<a href="about:blank#fn65">65</a><br/>— solutions.acciona-energia.fr (Obligations)<a href="about:blank#fn66">66</a><br/>— entreprendre.service-public.gouv.fr<a href="about:blank#fn67">67</a><br/>— optima-energie.fr<a href="about:blank#fn68">68</a><br/>— calculcee.fr (BACS)<a href="about:blank#fn69">69</a><br/>— chargeguru.com (APER)<a href="about:blank#fn70">70</a><br/>— opera-energie.com (OPERAT)<a href="about:blank#fn71">71</a><br/>— akea-energies.com (BACS)<a href="about:blank#fn72">72</a><br/>— soregies.fr (APER)<a href="about:blank#fn73">73</a><br/>— decret-bacs.fr<a href="about:blank#fn74">74</a><br/>— degaullefleurance.com (DDADUE)<a href="about:blank#fn75">75</a><br/>— opera-energie.com (Modulation)<a href="about:blank#fn76">76</a><br/>— opera-energie.com (Guide 2026)<a href="about:blank#fn77">77</a><br/>— cegibat.grdf.fr (Valeurs CVC/USE)<a href="about:blank#fn78">78</a><a href="about:blank#fn79">79</a><a href="about:blank#fn80">80</a><a href="about:blank#fn81">81</a><a href="about:blank#fn82">82</a><a href="about:blank#fn83">83</a><a href="about:blank#fn84">84</a><a href="about:blank#fn85">85</a><a href="about:blank#fn86">86</a><a href="about:blank#fn87">87</a><a href="about:blank#fn88">88</a><a href="about:blank#fn89">89</a><a href="about:blank#fn90">90</a><a href="about:blank#fn91">91</a><a href="about:blank#fn92">92</a><a href="about:blank#fn93">93</a><a href="about:blank#fn94">94</a><a href="about:blank#fn95">95</a><a href="about:blank#fn96">96</a><a href="about:blank#fn97">97</a><a href="about:blank#fn98">98</a><a href="about:blank#fn99">99</a><a href="about:blank#fn100">100</a><a href="about:blank#fn101">101</a><a href="about:blank#fn102">102</a><a href="about:blank#fn103">103</a><a href="about:blank#fn104">104</a><a href="about:blank#fn105">105</a><a href="about:blank#fn106">106</a><a href="about:blank#fn107">107</a><a href="about:blank#fn108">108</a><a href="about:blank#fn109">109</a><a href="about:blank#fn110">110</a><a href="about:blank#fn111">111</a><a href="about:blank#fn112">112</a><a href="about:blank#fn113">113</a><a href="about:blank#fn114">114</a><a href="about:blank#fn115">115</a><a href="about:blank#fn116">116</a><a href="about:blank#fn117">117</a><a href="about:blank#fn118">118</a><a href="about:blank#fn119">119</a><a href="about:blank#fn120">120</a></p></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8141-a03a-f36eefd8d1da" class="">⁂</p></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-810e-b97b-d38e17e8d1d6"/></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8189-ad2c-e741dccced5a" class="numbered-list" start="1"><li>Guide Utilisation Archelios Pro.pptx<a href="about:blank#fnref1">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8136-bb89-d97a96f9982d" class="numbered-list" start="2"><li>Profil_Conso.csv<a href="about:blank#fnref2">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8121-a862-df8da6f24056" class="numbered-list" start="3"><li>Guide Utilisation Archelios Pro.pptx<a href="about:blank#fnref3">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81a2-8f82-dc0f97498c0d" class="numbered-list" start="4"><li>Guide Utilisation Archelios Pro.pptx<a href="about:blank#fnref4">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81f9-b99d-f3d2bc9290e8" class="numbered-list" start="5"><li>Guide Archelios Pro et Etudes de cas.docx<a href="about:blank#fnref5">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-811a-aa65-e22c40076071" class="numbered-list" start="6"><li>Profil_Conso.csv<a href="about:blank#fnref6">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8171-b807-c058d97705d1" class="numbered-list" start="7"><li>Guide Utilisation Archelios Pro.pptx<a href="about:blank#fnref7">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-810d-b39f-d6c02ec90bf0" class="numbered-list" start="8"><li>https://championnatdefrancedeseconomiesdenergie.org/decret-tertiaire-2030-valeurs-absolues/<a href="about:blank#fnref8">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81d5-bf8e-eb1166d9fa88" class="numbered-list" start="9"><li>https://cegibat.grdf.fr/reglementation/energetique/decret-tertiaire-les-grands-principes<a href="about:blank#fnref9">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8150-b30c-cf2ca787eb2d" class="numbered-list" start="10"><li>https://solutions.acciona-energia.fr/blog/economies-denergie-dans-limmobilier-tertiaire-la-reglementation-se-precise/<a href="about:blank#fnref10">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8134-94d5-f18dadd7a87b" class="numbered-list" start="11"><li>https://www.sobre-energie.com/actus/nouvel-arrete-valeur-absolue-vi-et-objectifs-du-decret-tertiaire/<a href="about:blank#fnref11">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8194-ba13-e2f1589cba8e" class="numbered-list" start="12"><li>https://championnatdefrancedeseconomiesdenergie.org/decret-tertiaire-2030-valeurs-absolues/<a href="about:blank#fnref12">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-818e-bf1a-fc1b61202a71" class="numbered-list" start="13"><li>https://www.optima-energie.fr/blog/decret-tertiaire/operat-ademe/<a href="about:blank#fnref13">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81b9-bb89-c28b382b5351" class="numbered-list" start="14"><li>https://opera-energie.com/operat-ademe/<a href="about:blank#fnref14">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81a6-8fc0-d84b5b354ada" class="numbered-list" start="15"><li>https://opera-energie.com/operat-ademe/<a href="about:blank#fnref15">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81d3-aaa7-f1de61e43a8e" class="numbered-list" start="16"><li>https://www.optima-energie.fr/blog/decret-tertiaire/operat-ademe/<a href="about:blank#fnref16">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8179-b055-fb94cef29aad" class="numbered-list" start="17"><li>https://opera-energie.com/operat-ademe/<a href="about:blank#fnref17">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8188-a4d7-e904d608f8b9" class="numbered-list" start="18"><li>https://entreprendre.service-public.gouv.fr/vosdroits/F38065<a href="about:blank#fnref18">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-817b-bdb4-cc4f86ebbb68" class="numbered-list" start="19"><li>https://www.optima-energie.fr/blog/decret-tertiaire/operat-ademe/<a href="about:blank#fnref19">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8176-b55a-e29b73317252" class="numbered-list" start="20"><li>https://opera-energie.com/operat-ademe/<a href="about:blank#fnref20">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-811f-8b4f-ed4a610f5f6e" class="numbered-list" start="21"><li>https://www.optima-energie.fr/blog/decret-tertiaire/operat-ademe/<a href="about:blank#fnref21">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8183-b2e7-d1c1ee9913b6" class="numbered-list" start="22"><li>https://opera-energie.com/dossier-technique-de-modulation-decret-tertiaire/<a href="about:blank#fnref22">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-813f-9bef-c7f5de724194" class="numbered-list" start="23"><li>https://opera-energie.com/decret-tertiaire-obligations-renovation-energetique/<a href="about:blank#fnref23">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8105-8be6-dba26a6d308d" class="numbered-list" start="24"><li>https://opera-energie.com/dossier-technique-de-modulation-decret-tertiaire/<a href="about:blank#fnref24">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8160-aaa2-ef0219fb076c" class="numbered-list" start="25"><li>https://opera-energie.com/dossier-technique-de-modulation-decret-tertiaire/<a href="about:blank#fnref25">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8130-a313-d86a82c311cb" class="numbered-list" start="26"><li>https://opera-energie.com/sanctions-decret-tertiaire/<a href="about:blank#fnref26">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81a5-9e61-ccecc46c915e" class="numbered-list" start="27"><li>https://opera-energie.com/dossier-technique-de-modulation-decret-tertiaire/<a href="about:blank#fnref27">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81b2-ada7-ff6e9d332281" class="numbered-list" start="28"><li>https://opera-energie.com/decret-tertiaire-obligations-renovation-energetique/<a href="about:blank#fnref28">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8165-8d0b-e1f8ba5e352c" class="numbered-list" start="29"><li>https://opera-energie.com/dossier-technique-de-modulation-decret-tertiaire/<a href="about:blank#fnref29">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-819a-a73b-d565df10ae72" class="numbered-list" start="30"><li>https://www.le-decret-tertiaire.fr/obligation-decret-tertiaire/<a href="about:blank#fnref30">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81c3-a28c-c432d856e8ba" class="numbered-list" start="31"><li>Guide Utilisation Archelios Pro.pptx<a href="about:blank#fnref31">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-817d-bcfd-f33b318204d2" class="numbered-list" start="32"><li>https://opera-energie.com/sanctions-decret-tertiaire/<a href="about:blank#fnref32">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81e1-8b8e-e2f2c55dca2f" class="numbered-list" start="33"><li>https://www.calculcee.fr/article/decret-bacs-gtb/<a href="about:blank#fnref33">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81ed-a417-f78fe0cbce24" class="numbered-list" start="34"><li>https://www.akea-energies.com/blog/decret-bacs<a href="about:blank#fnref34">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81af-abc4-cc92336031ce" class="numbered-list" start="35"><li>https://www.calculcee.fr/article/decret-bacs-gtb/<a href="about:blank#fnref35">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8131-8f4c-e92d6a0b8e96" class="numbered-list" start="36"><li>https://www.akea-energies.com/blog/decret-bacs<a href="about:blank#fnref36">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81b4-866e-f70ef426eef5" class="numbered-list" start="37"><li>https://decret-bacs.fr<a href="about:blank#fnref37">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-818c-9dd7-d5fcf1d114e4" class="numbered-list" start="38"><li>https://www.calculcee.fr/article/decret-bacs-gtb/<a href="about:blank#fnref38">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-812a-8f8d-d70cdfb638a6" class="numbered-list" start="39"><li>https://www.degaullefleurance.com/actualites/solarisation-des-parkings-la-loi-ddadue-offre-un-sursis-conditionnel/<a href="about:blank#fnref39">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8153-b984-d5fb922f8fbf" class="numbered-list" start="40"><li>https://chargeguru.com/fr/fiches-pratiques/obligations-ombrieres-photovoltaiques/<a href="about:blank#fnref40">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81ce-a830-fbbff3ef6b03" class="numbered-list" start="41"><li>https://www.soregies.fr/ombrieres-photovoltaiques-de-parking-une-solution-cle-en-main-pour-les-collectivites/<a href="about:blank#fnref41">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81af-89b2-c1a543e99f5a" class="numbered-list" start="42"><li>https://www.degaullefleurance.com/actualites/solarisation-des-parkings-la-loi-ddadue-offre-un-sursis-conditionnel/<a href="about:blank#fnref42">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-811f-a311-fb7b5724864a" class="numbered-list" start="43"><li>https://ilexenvironnement.fr/decret-tertiaire/<a href="about:blank#fnref43">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81da-87e4-dde67bedfdeb" class="numbered-list" start="44"><li>https://opera-energie.com/sanctions-decret-tertiaire/<a href="about:blank#fnref44">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8162-b314-c97fe7077648" class="numbered-list" start="45"><li>https://solutions.acciona-energia.fr/blog/decret-tertiaire-obligation/<a href="about:blank#fnref45">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81df-bf1f-edd1322a28ce" class="numbered-list" start="46"><li>https://opera-energie.com/sanctions-decret-tertiaire/<a href="about:blank#fnref46">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8154-9bf9-ecfb494c7d14" class="numbered-list" start="47"><li>https://solutions.acciona-energia.fr/blog/decret-tertiaire-obligation/<a href="about:blank#fnref47">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81e8-b756-d1fe461cc319" class="numbered-list" start="48"><li>https://ilexenvironnement.fr/decret-tertiaire/<a href="about:blank#fnref48">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-818d-9ebc-de162afb8a04" class="numbered-list" start="49"><li>https://opera-energie.com/sanctions-decret-tertiaire/<a href="about:blank#fnref49">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8127-a7fe-ee00d343ef4c" class="numbered-list" start="50"><li>https://solutions.acciona-energia.fr/blog/decret-tertiaire-obligation/<a href="about:blank#fnref50">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81ed-bfe1-fb0ce1a2c5fc" class="numbered-list" start="51"><li>https://opera-energie.com/operat-ademe/<a href="about:blank#fnref51">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8125-a9d6-d6a71a495247" class="numbered-list" start="52"><li>https://www.sobre-energie.com/actus/nouvel-arrete-valeur-absolue-vi-et-objectifs-du-decret-tertiaire/<a href="about:blank#fnref52">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-817c-8908-f79456608601" class="numbered-list" start="53"><li>https://championnatdefrancedeseconomiesdenergie.org/decret-tertiaire-2030-valeurs-absolues/<a href="about:blank#fnref53">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8189-8e43-e069febe4b3f" class="numbered-list" start="54"><li>https://solutions.acciona-energia.fr/blog/economies-denergie-dans-limmobilier-tertiaire-la-reglementation-se-precise/<a href="about:blank#fnref54">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8107-8b04-c008bda6a41d" class="numbered-list" start="55"><li>https://opera-energie.com/decret-tertiaire-obligations-renovation-energetique/<a href="about:blank#fnref55">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81c8-96bb-d7b0583895f0" class="numbered-list" start="56"><li>https://opera-energie.com/dossier-technique-de-modulation-decret-tertiaire/<a href="about:blank#fnref56">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81d8-9750-f1575d14da74" class="numbered-list" start="57"><li>https://solutions.acciona-energia.fr/blog/decret-tertiaire-obligation/<a href="about:blank#fnref57">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8160-ac05-e5e5496e0bfe" class="numbered-list" start="58"><li>Guide Utilisation Archelios Pro.pptx<a href="about:blank#fnref58">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8108-9b14-dcdf9a77edff" class="numbered-list" start="59"><li>Profil_Conso.csv<a href="about:blank#fnref59">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-814a-a89d-dc4e56b14d34" class="numbered-list" start="60"><li>Guide Archelios Pro et Etudes de cas.docx<a href="about:blank#fnref60">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8129-8bf2-e4a8397047d9" class="numbered-list" start="61"><li>https://www.le-decret-tertiaire.fr/obligation-decret-tertiaire/<a href="about:blank#fnref61">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8102-90a5-e4cd417d290f" class="numbered-list" start="62"><li>https://opera-energie.com/sanctions-decret-tertiaire/<a href="about:blank#fnref62">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-817a-a284-e29535c0319e" class="numbered-list" start="63"><li>https://championnatdefrancedeseconomiesdenergie.org/decret-tertiaire-2030-valeurs-absolues/<a href="about:blank#fnref63">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81d1-b9ab-cca0f1e5038c" class="numbered-list" start="64"><li>https://solutions.acciona-energia.fr/blog/economies-denergie-dans-limmobilier-tertiaire-la-reglementation-se-precise/<a href="about:blank#fnref64">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-816e-86ee-fb131cefdaf2" class="numbered-list" start="65"><li>https://www.sobre-energie.com/actus/nouvel-arrete-valeur-absolue-vi-et-objectifs-du-decret-tertiaire/<a href="about:blank#fnref65">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81f2-9543-cca0b7eb79fd" class="numbered-list" start="66"><li>https://solutions.acciona-energia.fr/blog/decret-tertiaire-obligation/<a href="about:blank#fnref66">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-812f-ba31-d013b6de6f4e" class="numbered-list" start="67"><li>https://entreprendre.service-public.gouv.fr/vosdroits/F38065<a href="about:blank#fnref67">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8120-bb5d-c4e9f3339eb7" class="numbered-list" start="68"><li>https://www.optima-energie.fr/blog/decret-tertiaire/operat-ademe/<a href="about:blank#fnref68">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81b1-9bd1-cd7d2ee70ae1" class="numbered-list" start="69"><li>https://www.calculcee.fr/article/decret-bacs-gtb/<a href="about:blank#fnref69">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8114-932a-c7bd90ab27a9" class="numbered-list" start="70"><li>https://chargeguru.com/fr/fiches-pratiques/obligations-ombrieres-photovoltaiques/<a href="about:blank#fnref70">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81c9-8e86-cb24309649d6" class="numbered-list" start="71"><li>https://opera-energie.com/operat-ademe/<a href="about:blank#fnref71">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8187-a3d3-c5e7b902f225" class="numbered-list" start="72"><li>https://www.akea-energies.com/blog/decret-bacs<a href="about:blank#fnref72">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81fe-9077-f2f356399fe6" class="numbered-list" start="73"><li>https://www.soregies.fr/ombrieres-photovoltaiques-de-parking-une-solution-cle-en-main-pour-les-collectivites/<a href="about:blank#fnref73">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81a2-8c12-c2397c7cf579" class="numbered-list" start="74"><li>https://decret-bacs.fr<a href="about:blank#fnref74">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8160-ac7d-dc538539424d" class="numbered-list" start="75"><li>https://www.degaullefleurance.com/actualites/solarisation-des-parkings-la-loi-ddadue-offre-un-sursis-conditionnel/<a href="about:blank#fnref75">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8195-8bb3-d2aea15b5022" class="numbered-list" start="76"><li>https://opera-energie.com/dossier-technique-de-modulation-decret-tertiaire/<a href="about:blank#fnref76">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81cd-b387-e77a8d06c5d9" class="numbered-list" start="77"><li>https://opera-energie.com/decret-tertiaire-obligations-renovation-energetique/<a href="about:blank#fnref77">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8189-afc3-c9e3e57d6df2" class="numbered-list" start="78"><li>https://cegibat.grdf.fr/reglementation/energetique/decret-tertiaire-les-grands-principes<a href="about:blank#fnref78">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8194-adfc-fa1f46c0ea04" class="numbered-list" start="79"><li>Présentation advizeo V2025.pdf<a href="about:blank#fnref79">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81b0-9367-e7c9258df12b" class="numbered-list" start="80"><li>Devis-ENDESA ENERGIA-ENOGRID-2025-03-1423.pdf<a href="about:blank#fnref80">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81d1-8f54-c70c3e2dc441" class="numbered-list" start="81"><li>Plaquette EnoPower.pdf<a href="about:blank#fnref81">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81a6-a2e2-d285ee20f8f3" class="numbered-list" start="82"><li>Présentation Enogrid.pdf<a href="about:blank#fnref82">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8139-b7ef-cee20a43f220" class="numbered-list" start="83"><li>Plaquette EnoLab.pdf<a href="about:blank#fnref83">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8108-8e23-e9e157e08b78" class="numbered-list" start="84"><li>Note ACC ENOGRID.docx<a href="about:blank#fnref84">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81a8-8e01-e095049ea1e7" class="numbered-list" start="85"><li>Présentation advizeo V2025 (002).pdf<a href="about:blank#fnref85">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8103-93fb-fc4e017bb1e4" class="numbered-list" start="86"><li>advizeo - Schéma économique Partenaires.pdf<a href="about:blank#fnref86">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-815f-93d8-e407c5a18703" class="numbered-list" start="87"><li>Energy management avec advizeo.pdf<a href="about:blank#fnref87">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81cc-8902-cee44a3113d1" class="numbered-list" start="88"><li>Présentation advizeo cockpit.pdf<a href="about:blank#fnref88">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8183-9981-ddd475cd8a81" class="numbered-list" start="89"><li>Advizeo.docx<a href="about:blank#fnref89">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-814b-8025-c9678851f2d4" class="numbered-list" start="90"><li>Présentation Tilt.pdf<a href="about:blank#fnref90">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8140-9714-df5a6f09e929" class="numbered-list" start="91"><li>Tilt X Endesa I Intégration technique v2.docx.pdf<a href="about:blank#fnref91">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-812b-b281-f10b490641c3" class="numbered-list" start="92"><li>Tilt X Endesa I Kick-off 0307 (1).docx<a href="about:blank#fnref92">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8105-9b74-f51f658f9709" class="numbered-list" start="93"><li>Tilt X Endesa I Intégration technique.docx<a href="about:blank#fnref93">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-819b-8d6d-d5a1a1279c00" class="numbered-list" start="94"><li>Flux projet TILT - version finale.docx<a href="about:blank#fnref94">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-819b-8054-c858a7ad7dfa" class="numbered-list" start="95"><li>Tilt Energy X Endesa I Proposition commerciale.pdf<a href="about:blank#fnref95">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81a8-8be7-f8f1d3e5f1d4" class="numbered-list" start="96"><li>Analyse-experte-Obligations-reglementaires-module-Data-Conformite-multi-energie-France-B2B.pdf<a href="about:blank#fnref96">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8112-934e-d246b8cb8015" class="numbered-list" start="97"><li>Reglementations-energetiques-_-donnees-a-surveiller-et-formules-de-calcul.pdf<a href="about:blank#fnref97">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8102-b684-d0d3be55eb8c" class="numbered-list" start="98"><li>PROMEOS-Simulateur-ACC-Conformite-v0.md<a href="about:blank#fnref98">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81a8-96ed-c594204397cb" class="numbered-list" start="99"><li>Brique-4-Flexibilite-Stockage-Optimisation-Temps-Reel-_-Cahier-des-Charges-Strategique.pdf<a href="about:blank#fnref99">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81c0-86dd-d82b36edd6bd" class="numbered-list" start="100"><li>Catalogue-produit-Energisme.pdf<a href="about:blank#fnref100">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-816e-b93d-fd089f0d67de" class="numbered-list" start="101"><li>https://www.wattvalue.fr/decret-tertiaire/<a href="about:blank#fnref101">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81d1-b030-fa0c8960f689" class="numbered-list" start="102"><li>https://www.hellio.com/actualites/reglementation/changements-decret-tertiaire-2025<a href="about:blank#fnref102">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81cf-bece-e2a52fac291d" class="numbered-list" start="103"><li>https://intent.tech/blog/2026/01/05/plan-action-conformite-decret-tertiaire/<a href="about:blank#fnref103">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81c9-b662-e27fc5f5e9b1" class="numbered-list" start="104"><li>https://opera-energie.com/arrete-valeurs-absolues-v/<a href="about:blank#fnref104">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81fc-9c16-c6fbf72c44e1" class="numbered-list" start="105"><li>https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000049950583<a href="about:blank#fnref105">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81e3-8b5b-d42f56cffd42" class="numbered-list" start="106"><li>https://www.deltaconso-expert.fr/blog/plateforme-operat<a href="about:blank#fnref106">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8157-a756-fbe3751ec446" class="numbered-list" start="107"><li>https://www.deltaconso-expert.fr/blog/arrete-valeurs-absolues-vi<a href="about:blank#fnref107">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81be-8a6c-cf62541297f2" class="numbered-list" start="108"><li>https://www.datanumia.com/fr/actualites/decret-bacs-ce-qui-change-en-2025-et-pourquoi-agir-des-maintenant<a href="about:blank#fnref108">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8127-b200-cfbc9bea178a" class="numbered-list" start="109"><li>https://transitions.landot-avocats.net/2024/11/15/parcs-de-stationnement-et-photovoltaique-apres-les-grandes-manoeuvres-voici-le-decret-bien-gare-au-jo/<a href="about:blank#fnref109">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8124-94b3-e5559e10cfa5" class="numbered-list" start="110"><li>https://www.greenta.fr/decret-tertiaire-les-nouveautes-de-la-rentree-2025/<a href="about:blank#fnref110">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-816f-bce7-fb48a010babb" class="numbered-list" start="111"><li>https://rt-re-batiment.developpement-durable.gouv.fr/presentation-et-guide-du-decret-bacs-a712.html<a href="about:blank#fnref111">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8186-95c3-d278af2d1cca" class="numbered-list" start="112"><li>https://cidefe.fr/2024/11/26/ombrieres-photovoltaiques-sur-parkings-le-decret-pris-en-application-de-larticle-40-de-la-loi-aper-est-paru/<a href="about:blank#fnref112">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81ad-97fe-e4e02f257614" class="numbered-list" start="113"><li>https://fairspace.fr/ecosysteme/tout-savoir-sur-le-decret-tertiaire-valeur-absolue-seuils/<a href="about:blank#fnref113">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-812e-96b3-ce3c0401d91a" class="numbered-list" start="114"><li>https://decret-tertiaire-2030.org/operat/<a href="about:blank#fnref114">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8108-bc3c-f742a8ce5587" class="numbered-list" start="115"><li>https://citron.io/le-dossier-technique-de-modulation-un-incontournable-strategique-pour-se-conformer-au-decret-tertiaire-en-2025/<a href="about:blank#fnref115">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81c0-b233-c22fc0638c4d" class="numbered-list" start="116"><li>https://www.alterea.fr/le-lab/nouvel-arrêté-concernant-le-décret-tertiaire-tout-ce-quil-faut-savoir<a href="about:blank#fnref116">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-810e-a20c-fb7e16296679" class="numbered-list" start="117"><li>https://www.ubigreen.com/2025/02/03/dossier-de-modulation-decret-tertiaire/<a href="about:blank#fnref117">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8192-9e18-e3b189c4913c" class="numbered-list" start="118"><li>https://www.le-decret-tertiaire.fr/comprendre-les-valeurs-absolues-du-decret-tertiaire/<a href="about:blank#fnref118">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8123-991c-f62ff5d9c538" class="numbered-list" start="119"><li>https://www.quotidiag.fr/decret-tertiaire-dispositif-eet-arrete-du-1er-aout-2025/<a href="about:blank#fnref119">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-812c-9b53-f1b35e3d44a4" class="numbered-list" start="120"><li>https://www.alter-watt.com/post/décret-tertiaire-tout-comprendre-au-dossier-technique-de-modulation-pour-optimiser-ses-objectifs<a href="about:blank#fnref120">↩︎</a></li></ol></div></div></article><span class="sans" style="font-size:14px;padding-top:2em"></span></body></html>

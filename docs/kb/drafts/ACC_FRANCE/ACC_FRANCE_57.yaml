@@ -1,0 +1,37 @@
+id: ACC_FRANCE_57
+type: knowledge
+domain: reglementaire
+title: 3. Financial Projection (Unit Economics) 107 108 109
+summary: "Assumptions : \n- CAC : €500 per PMO (direct sales + partnerships, amortized\
+  \ 18 months) \n- ARPU : €300/mth base, +20% expansion (Optim + multi-site) \n- Churn\
+  \ : 4% MoM (target, SaaS SMB standard) \n- Gro..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Assumptions : \n- CAC : €500 per PMO (direct sales + partnerships, amortized\
+  \ 18 months) \n- ARPU : €300/mth base, +20% expansion (Optim + multi-site) \n- Churn\
+  \ : 4% MoM (target, SaaS SMB standard) \n- Gross margin : 80% (SaaS software, low\
+  \ variable cost) \n\nYear 1 (2026) : \n- Customer acquisition : 100–200 PMOs (end\
+  \ of year) \n- MRR : €20–40k \n- ARR : €240–480k \n- Unit economics : LTV (€16.7k\
+  \ annualized) / CAC (€500) = 33x ✅ (attractive) \n\nYear 2 (2027) : \n- Customer\
+  \ base : 500–1000 PMOs \n- MRR : €100–200k \n- ARR : €1.2–2.4M \n- Blended ARPU\
+  \ : €350 (after churn/expansion) \n- Profitability : EBITDA positive likely (team\
+  \ of 5–8)"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: 3. Financial Projection (Unit Economics) 107 108 109
+  anchor: '#3-financial-projection-unit-economics-107-108-109'
+  excerpt_short: "Assumptions : \n- CAC : €500 per PMO (direct sales + partnerships,\
+    \ amortized 18 months) \n- ARPU : €30..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

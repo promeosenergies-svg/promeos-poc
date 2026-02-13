@@ -1,0 +1,38 @@
+id: LEVIERS_MARCHE_2025_41
+type: knowledge
+domain: acc
+title: 'Q1 : 10 Leviers Concrets Accélération ACC 2025'
+summary: "- Automatisation API Enedis (DataConnect + ACC) : –3 mois montage, zéro\
+  \ ressaisie \n- Template PMO standardisé : montage juridique < 1 mois vs 2–4 mois\
+  \ \n- Clés dynamiques IA : +5–15% autoconso, attract..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Automatisation API Enedis (DataConnect + ACC) : –3 mois montage, zéro\
+  \ ressaisie \n- Template PMO standardisé : montage juridique < 1 mois vs 2–4 mois\
+  \ \n- Clés dynamiques IA : +5–15% autoconso, attractivité +30% \n- Shadow billing\
+  \ + SEPA auto : OPEX PMO –€5–8k/an, recouvrement 95%+ \n- Intégration ERP/GTB :\
+  \ zéro double-saisie, optimisation data temps réel \n- Conformité multi-réglementation\
+  \ native : audit trail complet, risque litige –50% \n- Onboarding participant digital\
+  \ : KYC express < 5 min, churn –30% \n- Agrégation multi-ACC : gestion coûts OPEX\
+  \ < €2k/opération/an \n- Standardisation données comptables : audit < 1 jour vs\
+  \ 3–5 jours \n- Marché flex/data : revenue additionnelle €500–2000/opération/an\
+  \ pour PMO"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: 'Q1 : 10 Leviers Concrets Accélération ACC 2025'
+  anchor: '#q1-10-leviers-concrets-acclration-acc-2025'
+  excerpt_short: "- Automatisation API Enedis (DataConnect + ACC) : –3 mois montage,\
+    \ zéro ressaisie \n- Template PMO st..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

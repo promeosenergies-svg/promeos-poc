@@ -10,6 +10,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from database import get_db
+from middleware.auth import get_optional_auth, AuthContext
+from services.iam_scope import check_site_access
 from models import Organisation, Site, ConsumptionInsight
 from services.consumption_diagnostic import (
     generate_demo_consumption,
@@ -25,8 +27,11 @@ router = APIRouter(prefix="/api/consumption", tags=["Consumption Diagnostic"])
 def consumption_insights(
     org_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Aggregate consumption insights for an organisation."""
+    if auth:
+        org_id = auth.org_id
     if org_id is None:
         org = db.query(Organisation).first()
         if not org:
@@ -41,8 +46,9 @@ def consumption_insights(
 
 
 @router.get("/site/{site_id}")
-def site_insights(site_id: int, db: Session = Depends(get_db)):
+def site_insights(site_id: int, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
     """Get consumption insights for a specific site."""
+    check_site_access(auth, site_id)
     import json
     site = db.query(Site).filter(Site.id == site_id).first()
     if not site:
@@ -80,8 +86,11 @@ def diagnose(
     org_id: Optional[int] = Query(None),
     days: int = Query(30),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Run diagnostics for all sites of an organisation."""
+    if auth:
+        org_id = auth.org_id
     if org_id is None:
         org = db.query(Organisation).first()
         if not org:

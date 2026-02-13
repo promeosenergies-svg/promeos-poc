@@ -1,0 +1,31 @@
+id: BACS_SEUILS_9
+type: knowledge
+domain: reglementaire
+title: Responsabilités & Délais de remise
+summary: "- Charge : Propriétaire du BACS \n- Professionnel requis : Prestataire externe\
+  \ ou personnel interne compétent \n- Délai de remise du rapport : 1 mois après inspection\
+  \ au propriétaire \n- Conservation : R..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Charge : Propriétaire du BACS \n- Professionnel requis : Prestataire\
+  \ externe ou personnel interne compétent \n- Délai de remise du rapport : 1 mois\
+  \ après inspection au propriétaire \n- Conservation : Rapport conservé 10 ans minimum"
+logic: null
+sources:
+- doc_id: BACS_SEUILS
+  label: Decret BACS - Seuils, dates, exemptions
+  section: Responsabilités & Délais de remise
+  anchor: '#responsabilits-dlais-de-remise'
+  excerpt_short: "- Charge : Propriétaire du BACS \n- Professionnel requis : Prestataire\
+    \ externe ou personnel interne c..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

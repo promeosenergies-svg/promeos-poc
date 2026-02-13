@@ -223,8 +223,8 @@ export default function ConsumptionDiagPage() {
     <div className="px-6 py-6 space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Diagnostic Consommation</h2>
-          <p className="text-sm text-gray-500 mt-0.5">Analyse automatique V1.1 — horaires, talon, pointes, derive, donnees</p>
+          <h2 className="text-xl font-bold text-gray-900">Diagnostic</h2>
+          <p className="text-sm text-gray-500 mt-0.5">Détection automatique : horaires, talon, pointes, dérives</p>
         </div>
         <div className="flex gap-2">
           <Button variant="secondary" size="sm" onClick={handleSeedDemo} disabled={seeding}>

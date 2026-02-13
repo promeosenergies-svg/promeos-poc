@@ -1,0 +1,33 @@
+id: DT_SYNTHESE_15
+type: knowledge
+domain: acc
+title: Risque opérationnel
+summary: "- Modulation objectifs : Dossier technique doit justifier impossibilité\
+  \ justifiée. Critères stricts (architecte classé, TRI > 10 ans, etc.) \n- Multi-occupation\
+  \ : Responsabilité partagée propriétaire/l..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Modulation objectifs : Dossier technique doit justifier impossibilité\
+  \ justifiée. Critères stricts (architecte classé, TRI > 10 ans, etc.) \n- Multi-occupation\
+  \ : Responsabilité partagée propriétaire/locataires. Nouvelle IUB aide mais clarté\
+  \ contractuelle reste essentielle \n- Données rétrospectives : Accès factures anciennes\
+  \ parfois compliqué. Commencer reconstruction base données dès novembre 2025"
+logic: null
+sources:
+- doc_id: DT_SYNTHESE
+  label: Decret Tertiaire - Synthese PROMEOS
+  section: Risque opérationnel
+  anchor: '#risque-oprationnel'
+  excerpt_short: '- Modulation objectifs : Dossier technique doit justifier impossibilité
+    justifiée. Critères stricts ...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

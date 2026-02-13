@@ -1,0 +1,39 @@
+id: FLEX_EFFACEMENT_7
+type: knowledge
+domain: facturation
+title: 1.7 Stacking & Cumul Mécanismes
+summary: "Possible avec : \n- ✅ Réserves (FCR, aFRR) : Oui (simultané si contrats\
+  \ cohérents, ex. flexi downside pour aFRR + NEBEF downside). \n- ✅ Mécanisme d’Ajustement\
+  \ (MA) : Oui (déclaration parallèle, priorit..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Possible avec : \n- ✅ Réserves (FCR, aFRR) : Oui (simultané si contrats\
+  \ cohérents, ex. flexi downside pour aFRR + NEBEF downside). \n- ✅ Mécanisme d’Ajustement\
+  \ (MA) : Oui (déclaration parallèle, priorité réserves > ajustement). \n- ✅ Capacité\
+  \ : Oui (certification indépendante, engagement certaine heures, NEBEF hors engagement).\
+  \ \n- ✅ Flexibilité locale (congestion) : Oui (zones disjointes généralement). \n\
+  - ⚠️ Arbitrage Prix implicite : Oui (pilotage hors offre formelle), mais caution\
+  \ contractuelle fournisseur. \n\nLimites : \n- Double-comptage énergétique interdit\
+  \ (ex. même kWh ne peut être effacé 2× dans MA + NEBEF J-1). \n- Priorité réglementaire\
+  \ : Réglage Primaire > Secondaire > mFRR > Ajustement/NEBEF (activation séquentielle).\
+  \ \n- Cohérence contractuelle : Engagements doivent être compatibles (ex. 3 MW réserves\
+  \ + 2 MW NEBEF max = possible)."
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: 1.7 Stacking & Cumul Mécanismes
+  anchor: '#17-stacking-cumul-mcanismes'
+  excerpt_short: "Possible avec : \n- ✅ Réserves (FCR, aFRR) : Oui (simultané si contrats\
+    \ cohérents, ex. flexi downside..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

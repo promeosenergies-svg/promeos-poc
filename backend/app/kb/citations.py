@@ -381,6 +381,92 @@ def add_citation_to_rule_card(rule_card_id: str, citation_id: str) -> bool:
         return False
 
 
+def validate_citation_proof(citation: Dict[str, Any]) -> bool:
+    """
+    P5: A citation is valid if it has doc_id, at least one pointer field,
+    and a non-empty excerpt_hash.
+    """
+    if not citation.get("doc_id"):
+        return False
+    if not citation.get("excerpt_hash"):
+        return False
+    pointer = citation.get("pointer", {})
+    if not any(pointer.get(k) for k in ("page", "section", "article", "table", "line_range")):
+        return False
+    return True
+
+
+def enforce_p5_status() -> Dict[str, Any]:
+    """
+    P5 enforcement: set all normative RuleCards without valid citations
+    to NEEDS_REVIEW status. Returns enforcement summary.
+    """
+    db = get_kb_db()
+    if not db.conn:
+        db.connect()
+    cursor = db.conn.cursor()
+
+    # Find rule cards without any citation
+    cursor.execute("""
+        SELECT rc.rule_card_id, rc.status FROM kb_rule_cards rc
+        WHERE NOT EXISTS (
+            SELECT 1 FROM kb_rule_card_citations rcc
+            WHERE rcc.rule_card_id = rc.rule_card_id
+        ) AND rc.status = 'ACTIVE'
+    """)
+    uncited = cursor.fetchall()
+    downgraded = []
+
+    for row in uncited:
+        cursor.execute(
+            "UPDATE kb_rule_cards SET status = 'NEEDS_REVIEW', updated_at = ? WHERE rule_card_id = ?",
+            (datetime.now(timezone.utc).isoformat(), row[0]),
+        )
+        downgraded.append(row[0])
+
+    # Also validate existing citations — cards where all citations are invalid
+    cursor.execute("""
+        SELECT DISTINCT rc.rule_card_id FROM kb_rule_cards rc
+        JOIN kb_rule_card_citations rcc ON rc.rule_card_id = rcc.rule_card_id
+        WHERE rc.status = 'ACTIVE'
+    """)
+    for row in cursor.fetchall():
+        card = get_rule_card(row[0])
+        if card and card.get("citations"):
+            all_invalid = all(not validate_citation_proof(c) for c in card["citations"])
+            if all_invalid:
+                cursor.execute(
+                    "UPDATE kb_rule_cards SET status = 'NEEDS_REVIEW', updated_at = ? WHERE rule_card_id = ?",
+                    (datetime.now(timezone.utc).isoformat(), row[0]),
+                )
+                downgraded.append(row[0])
+
+    db.conn.commit()
+    return {"downgraded_count": len(downgraded), "downgraded_ids": downgraded}
+
+
+def get_active_rule_card_ids() -> set:
+    """Return set of rule_card_ids with status=ACTIVE (citation-backed)."""
+    db = get_kb_db()
+    if not db.conn:
+        db.connect()
+    cursor = db.conn.cursor()
+
+    try:
+        cursor.execute("SELECT rule_card_id FROM kb_rule_cards WHERE status = 'ACTIVE'")
+        return {row[0] for row in cursor.fetchall()}
+    except sqlite3.OperationalError:
+        return set()
+
+
+def get_citations_for_rule(rule_card_id: str) -> List[Dict[str, Any]]:
+    """Get all valid citations for a rule card."""
+    card = get_rule_card(rule_card_id)
+    if not card:
+        return []
+    return [c for c in card.get("citations", []) if validate_citation_proof(c)]
+
+
 def get_rule_card_stats() -> Dict[str, Any]:
     """Get statistics on rule cards and citations."""
     db = get_kb_db()

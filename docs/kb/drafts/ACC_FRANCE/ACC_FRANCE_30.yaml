@@ -1,0 +1,47 @@
+id: ACC_FRANCE_30
+type: knowledge
+domain: acc
+title: 3. Modules Logiciels (MVP → v1 → v2)
+summary: "Tech Stack (proposed): \n- Frontend : React (Acc Starter web form), Next.js\
+  \ (Ops + Optim dashboards) \n- Backend : Node.js + FastAPI (Python for data science),\
+  \ PostgreSQL \n- Integrations : Enedis API Da..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Tech Stack (proposed): \n- Frontend : React (Acc Starter web form), Next.js\
+  \ (Ops + Optim dashboards) \n- Backend : Node.js + FastAPI (Python for data science),\
+  \ PostgreSQL \n- Integrations : Enedis API DataHub (OAuth2), Docusign API (e-sig),\
+  \ SEPA/bank APIs (settlement), Strapi CMS (template library) \n- Security : ISO\
+  \ 27001, encryption AES-256, audit logs, rate-limit Enedis API \n\nModule Roadmap\
+  \ : Phase Timeline MVP Scope v1 Scope v2 Scope (optional) PMO Workspace 0–90d Statuts\
+  \ templates, registre participants (spreadsheet export), contact directory E-sign\
+  \ integr., auto-notification Enedis, versioning doc Blockchain audit trail, instant\
+  \ notary integration Data & Monitoring 30–90d Manual P30 upload (CSV), basic dashboard\
+  \ (Grafana clone) Enedis DataHub API auto-pull (RGPD consent gate), alerts Predictive\
+  \ models (ML) for TAc forecasting, anomaly detection Clés & Settlement 60–150d Calc\
+  \ tool (spreadsheet + validation) Auto-calc from P30, Enedis API notify, scenario\
+  \ sim Full optimizer (mixed-integer programming) for > 3 producteurs Shadow Billing\
+  \ 90–180d Template factures Word/PDF Auto-gen from settlement logs, XML export,\
+  \ SEPA batch files Real-time billing (P15 if Enedis allows), instant invoice delivery\
+  \ Compliance Add-ons 120–180d Manual OPERAT export Auto-export structure (CSV format\
+  \ CRE), audit UI Integration BACS/OPERAT APIs API & Integrations 90–180d Webhook\
+  \ for Enedis events (polling) REST API for partners (PMO embedding), OAuth GraphQL,\
+  \ real-time subscriptions, Enedis <> PROMEOS sync"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: 3. Modules Logiciels (MVP → v1 → v2)
+  anchor: '#3-modules-logiciels-mvp-v1-v2'
+  excerpt_short: "Tech Stack (proposed): \n- Frontend : React (Acc Starter web form),\
+    \ Next.js (Ops + Optim dashboards) ..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

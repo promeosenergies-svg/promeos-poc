@@ -1,0 +1,36 @@
+id: DT_OPERAT_2026_8
+type: knowledge
+domain: usages
+title: Données à déclarer annuellement
+summary: "Pour chaque Entité Fonctionnelle Assujettie (EFA = bâtiment ou ensemble)\
+  \ : \n- Consommations énergétiques finales par vecteur (électricité, gaz, chaleur\
+  \ réseau, fioul, biomasse) en kWh \n- Surface de pl..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Pour chaque Entité Fonctionnelle Assujettie (EFA = bâtiment ou ensemble)\
+  \ : \n- Consommations énergétiques finales par vecteur (électricité, gaz, chaleur\
+  \ réseau, fioul, biomasse) en kWh \n- Surface de plancher tertiaire (m²) \n- Année\
+  \ de référence choisie et consommation de référence \n- Facteurs d’ajustement (variations\
+  \ climatiques via DJU — Degrés-Jours Unifis — fournis par Météo-France) \n- Changements\
+  \ structurels (travaux effectués, modifications d’usage, changements d’occupation)\
+  \ \n- Indicateurs de modulation (si applicable : changement d’activité, intensité\
+  \ d’usage) 18 19 \n\nSource : ADEME ; Arrêté du 10 avril 2020, art. 3-4 20 21"
+logic: null
+sources:
+- doc_id: DT_OPERAT_2026
+  label: Decret Tertiaire / OPERAT - Obligations 2026
+  section: Données à déclarer annuellement
+  anchor: '#donnes-dclarer-annuellement'
+  excerpt_short: "Pour chaque Entité Fonctionnelle Assujettie (EFA = bâtiment ou ensemble)\
+    \ : \n- Consommations énergéti..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

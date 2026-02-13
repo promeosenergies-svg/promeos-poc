@@ -1,0 +1,32 @@
+id: LEVIERS_MARCHE_2025_17
+type: knowledge
+domain: acc
+title: 8. Agrégation multi-ACC pour PMO portfolio (reporting centralisé)
+summary: "- Action : Cockpit group pour PMO gérant 5–50 opérations ACC : KPIs consolidated,\
+  \ gestion clés batch, reporting unique \n- Gain : Mutualisation expertise, gestion\
+  \ coûts OPEX < €2k/an par opération \n- I..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Action : Cockpit group pour PMO gérant 5–50 opérations ACC : KPIs consolidated,\
+  \ gestion clés batch, reporting unique \n- Gain : Mutualisation expertise, gestion\
+  \ coûts OPEX < €2k/an par opération \n- Impact : Business model PMO-as-a-service\
+  \ viable (revenus €1–3k/opération/an)"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: 8. Agrégation multi-ACC pour PMO portfolio (reporting centralisé)
+  anchor: '#8-agrgation-multi-acc-pour-pmo-portfolio-reporting-centralis'
+  excerpt_short: '- Action : Cockpit group pour PMO gérant 5–50 opérations ACC : KPIs
+    consolidated, gestion clés batch...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

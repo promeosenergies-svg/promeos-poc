@@ -1,0 +1,35 @@
+id: DT_OPERAT_2026_3
+type: rule
+domain: reglementaire
+title: Année de référence et méthodes de calcul
+summary: 'Les assujettis doivent choisir une année de référence entre 2010 et 2019
+  (éventuellement 2020 sous conditions). Deux méthodes concurrentes sont possibles
+  : 4 Méthode Définition Avantage Crelat (Valeur...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Les assujettis doivent choisir une année de référence entre 2010 et 2019\
+  \ (éventuellement 2020 sous conditions). Deux méthodes concurrentes sont possibles\
+  \ : 4 Méthode Définition Avantage Crelat (Valeur relative) Réduction en % vs année\
+  \ de référence Favorable aux bâtiments anciens/énergivores Cabs (Valeur absolue)\
+  \ Seuil maximal en kWh/m²/an par catégorie Favorable aux bâtiments performants/neufs\
+  \ \n\nL’assujetti peut choisir la méthode la plus favorable pour chaque entité fonctionnelle.\
+  \ 5"
+logic: null
+sources:
+- doc_id: DT_OPERAT_2026
+  label: Decret Tertiaire / OPERAT - Obligations 2026
+  section: Année de référence et méthodes de calcul
+  anchor: '#anne-de-rfrence-et-mthodes-de-calcul'
+  excerpt_short: Les assujettis doivent choisir une année de référence entre 2010
+    et 2019 (éventuellement 2020 sous c...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

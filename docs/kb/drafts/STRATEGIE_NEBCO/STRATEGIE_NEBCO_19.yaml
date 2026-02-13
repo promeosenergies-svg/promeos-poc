@@ -1,0 +1,31 @@
+id: STRATEGIE_NEBCO_19
+type: knowledge
+domain: reglementaire
+title: 1. Retail Froid Alimentaire (Supermarchés 3k–5k m²)
+summary: "- Flexibilité : Arrêt réfrigérateurs 30–60 min; inertie thermale maintient\
+  \ T° \n- Gisement : 500 kW–1.5 MW ; ~50 jours/an profitable \n- Revenu/site : €8–20k/an\
+  \ (30 sites cluster = €240k–600k potentiel)"
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Flexibilité : Arrêt réfrigérateurs 30–60 min; inertie thermale maintient\
+  \ T° \n- Gisement : 500 kW–1.5 MW ; ~50 jours/an profitable \n- Revenu/site : €8–20k/an\
+  \ (30 sites cluster = €240k–600k potentiel)"
+logic: null
+sources:
+- doc_id: STRATEGIE_NEBCO
+  label: Analyse strategique NEBCO
+  section: 1. Retail Froid Alimentaire (Supermarchés 3k–5k m²)
+  anchor: '#1-retail-froid-alimentaire-supermarchs-3k5k-m'
+  excerpt_short: "- Flexibilité : Arrêt réfrigérateurs 30–60 min; inertie thermale\
+    \ maintient T° \n- Gisement : 500 kW–1..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

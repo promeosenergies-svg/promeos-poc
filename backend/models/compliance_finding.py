@@ -2,10 +2,11 @@
 PROMEOS - Modele ComplianceFinding
 Resultat persistant d'une evaluation de conformite par regle.
 """
-from sqlalchemy import Column, Integer, String, Float, Text, Date, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, Text, Date, ForeignKey, Enum as SAEnum
 from sqlalchemy.orm import relationship
 
 from .base import Base, TimestampMixin
+from .enums import InsightStatus
 
 
 class ComplianceFinding(Base, TimestampMixin):
@@ -60,5 +61,31 @@ class ComplianceFinding(Base, TimestampMixin):
         comment="Actions recommandees (JSON array de strings)",
     )
 
-    # Relation
+    # OPS workflow (pattern BillingInsight — Sprint 9)
+    insight_status = Column(
+        SAEnum(InsightStatus),
+        default=InsightStatus.OPEN,
+        nullable=False,
+        comment="Statut workflow: open, ack, resolved, false_positive",
+    )
+    owner = Column(
+        String(100),
+        nullable=True,
+        comment="Responsable assigne (email ou nom)",
+    )
+    notes = Column(
+        Text,
+        nullable=True,
+        comment="Notes operateur (motif de resolution, etc.)",
+    )
+    run_batch_id = Column(
+        Integer,
+        ForeignKey("compliance_run_batches.id"),
+        nullable=True,
+        index=True,
+        comment="Batch d'evaluation parent",
+    )
+
+    # Relations
     site = relationship("Site", backref="compliance_findings")
+    run_batch = relationship("ComplianceRunBatch", backref="findings")

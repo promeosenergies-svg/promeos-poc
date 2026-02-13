@@ -1,0 +1,34 @@
+id: BACS_COMPLET_61
+type: rule
+domain: usages
+title: 2. Calcul TRI Automatisé
+summary: "- Interface saisie : Consommations 2 ans + tarifs énergie + devis BACS →\
+  \ Calcul TRI instantané \n- Sensibilité analyse : “Si gain 15% → TRI = X ans ; si\
+  \ gain 12% → TRI = Y ans” (montre seuil critique) ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Interface saisie : Consommations 2 ans + tarifs énergie + devis BACS\
+  \ → Calcul TRI instantané \n- Sensibilité analyse : “Si gain 15% → TRI = X ans ;\
+  \ si gain 12% → TRI = Y ans” (montre seuil critique) \n- Recommandation : “BACS\
+  \ obligatoire” vs “Exemption possible (TRI > 10 ans)” + lien dossier TRI à archiver\
+  \ \n- Cas d’usage : Directeur immobilier évalue 30 sites rapidement, identifie 5\
+  \ exemptions légitimes"
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: 2. Calcul TRI Automatisé
+  anchor: '#2-calcul-tri-automatis'
+  excerpt_short: "- Interface saisie : Consommations 2 ans + tarifs énergie + devis\
+    \ BACS → Calcul TRI instantané \n- Se..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

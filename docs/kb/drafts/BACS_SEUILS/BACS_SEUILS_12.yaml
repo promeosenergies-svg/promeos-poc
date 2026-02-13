@@ -1,0 +1,37 @@
+id: BACS_SEUILS_12
+type: rule
+domain: reglementaire
+title: 8. MODALITÉS DE CONFORMITÉ & PREUVES REQUISES
+summary: "Pas de déclaration centralisée (contrairement au décret Tertiaire/OPERAT)\
+  \ \n\nPreuves à conserver : \n- Attestation d’installation/mise en service fournie\
+  \ par l’intégrateur \n- Spécifications techniques d..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Pas de déclaration centralisée (contrairement au décret Tertiaire/OPERAT)\
+  \ \n\nPreuves à conserver : \n- Attestation d’installation/mise en service fournie\
+  \ par l’intégrateur \n- Spécifications techniques du BACS (classe de performance\
+  \ atteinte, fonctions mises en œuvre) \n- Rapports d’inspection périodique (tous\
+  \ les 2–5 ans) \n- Étude de TRI justificative (si exemption revendiquée) \n- Documentation\
+  \ du paramétrage et consignes écrites au gestionnaire \n\nVérification administrative\
+  \ : Contrôle possible par : \n- Agents de la DREAL (Direction Régionale de l’Environnement,\
+  \ de l’Aménagement et du Logement) \n- Agents assermentés \n- Inspections liées\
+  \ aux permis d’exploiter (ERP), audits énergétiques, audits ISO 50001"
+logic: null
+sources:
+- doc_id: BACS_SEUILS
+  label: Decret BACS - Seuils, dates, exemptions
+  section: 8. MODALITÉS DE CONFORMITÉ & PREUVES REQUISES
+  anchor: '#8-modalits-de-conformit-preuves-requises'
+  excerpt_short: "Pas de déclaration centralisée (contrairement au décret Tertiaire/OPERAT)\
+    \ \n\nPreuves à conserver : \n-..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

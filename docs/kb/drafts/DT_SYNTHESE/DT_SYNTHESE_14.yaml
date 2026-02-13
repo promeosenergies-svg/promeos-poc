@@ -1,0 +1,34 @@
+id: DT_SYNTHESE_14
+type: rule
+domain: reglementaire
+title: Risque juridique/financier
+summary: "- Non-déclaration OPERAT : Poursuite possible, pénalité jusqu’à 1 500€ par\
+  \ jour \n- Non-atteinte objectifs 2030 : Sanction administrative possible (décalage\
+  \ vers 2035 reconnu en jurisprudence Conseil d..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Non-déclaration OPERAT : Poursuite possible, pénalité jusqu’à 1 500€\
+  \ par jour \n- Non-atteinte objectifs 2030 : Sanction administrative possible (décalage\
+  \ vers 2035 reconnu en jurisprudence Conseil d’État, mais incertain 2025) \n- Données\
+  \ incorrectes : Rejet déclaration, délai pour correction, impact score établissement\
+  \ \n\nPrévention : Processus robuste collecte données, tiers de confiance (auditeur\
+  \ externalisé) si complexité multi-sites."
+logic: null
+sources:
+- doc_id: DT_SYNTHESE
+  label: Decret Tertiaire - Synthese PROMEOS
+  section: Risque juridique/financier
+  anchor: '#risque-juridiquefinancier'
+  excerpt_short: "- Non-déclaration OPERAT : Poursuite possible, pénalité jusqu’à\
+    \ 1 500€ par jour \n- Non-atteinte obje..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

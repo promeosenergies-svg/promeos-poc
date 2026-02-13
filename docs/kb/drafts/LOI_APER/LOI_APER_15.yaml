@@ -1,0 +1,36 @@
+id: LOI_APER_15
+type: rule
+domain: reglementaire
+title: Points de vigilance réglementaire post-février 2025
+summary: "- Double obligation (parking + toiture) : Bâtiment avec parking annexe >500\
+  \ m² = cumul obligations ? \n- Calendrier chevauchant : Parkings >10k m² (2026)\
+  \ + toitures existants (2028) + escalade 2025-202..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Double obligation (parking + toiture) : Bâtiment avec parking annexe\
+  \ >500 m² = cumul obligations ? \n- Calendrier chevauchant : Parkings >10k m² (2026)\
+  \ + toitures existants (2028) + escalade 2025-2027 = congestion travaux \n- Contrats\
+  \ long-terme (PPA/AO 20+ ans) : Flexibilité limitée pour pivots technologiques (batterie,\
+  \ flex demand) dans 2035+ \n- Régimes outre-mer : Seuils parkings/puissances adaptés\
+  \ (ex. Réunion <2 500 m² au lieu 1 500) = conformité locale requise \n- Risque contentieux\
+  \ AO CRE : Cahier des charges partage valeur contesté si non-transparent ; premiers\
+  \ jugements attendus 2025+"
+logic: null
+sources:
+- doc_id: LOI_APER
+  label: Loi APER - Acceleration Production Energies Renouvelables
+  section: Points de vigilance réglementaire post-février 2025
+  anchor: '#points-de-vigilance-rglementaire-post-fvrier-2025'
+  excerpt_short: '- Double obligation (parking + toiture) : Bâtiment avec parking
+    annexe >500 m² = cumul obligations ?...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

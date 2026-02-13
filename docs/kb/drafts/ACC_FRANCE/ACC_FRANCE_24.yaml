@@ -1,0 +1,35 @@
+id: ACC_FRANCE_24
+type: rule
+domain: acc
+title: 3. Signaux Faibles à Surveiller 2026+
+summary: "Monitoring clé pour PROMEOS : \n- RED III transposition (Directive UE énergie\
+  \ renouvelable 2023/2413) : communautés énergie peuvent élargir périmètre 10+ km\
+  \ (France attendu 2026) \n- Arrêté flex/prix né..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Monitoring clé pour PROMEOS : \n- RED III transposition (Directive UE\
+  \ énergie renouvelable 2023/2413) : communautés énergie peuvent élargir périmètre\
+  \ 10+ km (France attendu 2026) \n- Arrêté flex/prix négatifs (loi finances 2025,\
+  \ art. 175) : pilotabilité production >10MW → ACC <10MW reste “demandeur” flex ,\
+  \ mais nouvel arbitrage économique PV vs stockage vs flex \n- TICFE taux révisé\
+  \ (2027) : impact fiscal ACC si évolution \n- Évolution TURPE 8 (post-2029) : signal\
+  \ prix négatif vs TAc intégré? → tester hypothèse"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: 3. Signaux Faibles à Surveiller 2026+
+  anchor: '#3-signaux-faibles-surveiller-2026'
+  excerpt_short: "Monitoring clé pour PROMEOS : \n- RED III transposition (Directive\
+    \ UE énergie renouvelable 2023/2413)..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

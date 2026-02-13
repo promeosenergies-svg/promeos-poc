@@ -3,11 +3,13 @@ PROMEOS — Bill Intelligence SQLAlchemy models
 Persisted: EnergyContract, EnergyInvoice, EnergyInvoiceLine, BillingInsight.
 Complement the dataclass-based domain model in app/bill_intelligence/domain.py.
 """
-from sqlalchemy import Column, Integer, String, Float, Text, ForeignKey, Date, Enum
+from datetime import datetime
+
+from sqlalchemy import Column, Integer, String, Float, Text, Boolean, ForeignKey, Date, DateTime, Enum, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from .base import Base, TimestampMixin
-from .enums import BillingEnergyType, InvoiceLineType, BillingInvoiceStatus
+from .enums import BillingEnergyType, InvoiceLineType, BillingInvoiceStatus, InsightStatus
 
 
 class EnergyContract(Base, TimestampMixin):
@@ -41,6 +43,14 @@ class EnergyContract(Base, TimestampMixin):
         comment="Abonnement mensuel EUR HT",
     )
     metadata_json = Column(Text, nullable=True, comment="Metadata libre (JSON)")
+    notice_period_days = Column(
+        Integer, nullable=False, default=90,
+        comment="Preavis de resiliation en jours",
+    )
+    auto_renew = Column(
+        Boolean, nullable=False, default=False,
+        comment="Reconduction tacite",
+    )
 
     # Relations
     site = relationship("Site", backref="energy_contracts")
@@ -56,6 +66,12 @@ class EnergyInvoice(Base, TimestampMixin):
     Chaque facture peut porter N lignes (EnergyInvoiceLine).
     """
     __tablename__ = "energy_invoices"
+    __table_args__ = (
+        UniqueConstraint(
+            "site_id", "invoice_number", "period_start", "period_end",
+            name="uq_invoice_site_number_period",
+        ),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     site_id = Column(
@@ -155,7 +171,76 @@ class BillingInsight(Base, TimestampMixin):
         Text, nullable=True,
         comment="Actions recommandees (JSON array)",
     )
+    insight_status = Column(
+        Enum(InsightStatus), default=InsightStatus.OPEN, nullable=False,
+        comment="Statut workflow: open, ack, resolved, false_positive",
+    )
+    owner = Column(
+        String(100), nullable=True,
+        comment="Responsable assigne (email ou nom)",
+    )
+    notes = Column(
+        Text, nullable=True,
+        comment="Notes operateur (motif de resolution, etc.)",
+    )
 
     # Relations
     site = relationship("Site", backref="billing_insights")
     invoice = relationship("EnergyInvoice", backref="billing_insights")
+
+
+class ConceptAllocation(Base, TimestampMixin):
+    """
+    Allocation d'une ligne de facture a un concept de facturation.
+    Chaque EnergyInvoiceLine peut avoir 1 ConceptAllocation.
+    concept_id mappe vers BillingConcept (fourniture, acheminement, taxes, tva, ...).
+    """
+    __tablename__ = "concept_allocations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    invoice_line_id = Column(
+        Integer, ForeignKey("energy_invoice_lines.id"), nullable=False, index=True,
+        comment="Ligne de facture allouee",
+    )
+    concept_id = Column(
+        String(50), nullable=False, index=True,
+        comment="Concept de facturation (fourniture, acheminement, taxes, tva, abonnement...)",
+    )
+    confidence = Column(
+        Float, nullable=False, default=1.0,
+        comment="Confiance de l'allocation (0.0-1.0)",
+    )
+    matched_rules_json = Column(
+        Text, nullable=True,
+        comment="Regles ayant contribue a l'allocation (JSON array)",
+    )
+
+    # Relations
+    line = relationship("EnergyInvoiceLine", backref="allocations")
+
+
+class BillingImportBatch(Base, TimestampMixin):
+    """
+    Batch d'import CSV avec hash de contenu pour idempotence.
+    Un re-upload du meme fichier (meme org + meme hash) est rejete.
+    """
+    __tablename__ = "billing_import_batches"
+
+    id = Column(Integer, primary_key=True, index=True)
+    org_id = Column(
+        Integer, nullable=True, index=True,
+        comment="Organisation d'import (None si single-tenant)",
+    )
+    filename = Column(String(500), nullable=True, comment="Nom du fichier uploade")
+    content_hash = Column(
+        String(64), nullable=False, index=True,
+        comment="SHA-256 du contenu CSV brut",
+    )
+    imported_at = Column(
+        DateTime, default=datetime.utcnow, nullable=False,
+        comment="Date d'import",
+    )
+    rows_total = Column(Integer, nullable=False, default=0)
+    rows_inserted = Column(Integer, nullable=False, default=0)
+    rows_skipped = Column(Integer, nullable=False, default=0)
+    errors_json = Column(Text, nullable=True, comment="Erreurs d'import (JSON array)")

@@ -1,0 +1,34 @@
+id: STRATEGIE_NEBCO_9
+type: knowledge
+domain: reglementaire
+title: Formule Différenciation
+summary: "PROMEOS = “Cockpit + Readiness Audit + Light Ops + Revenue Share Transparent”\
+  \ \n\nAvantage compétitif unique : \n- Intégration complète : données advizeo existantes\
+  \ → identif. gisements → pilotage contin..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "PROMEOS = “Cockpit + Readiness Audit + Light Ops + Revenue Share Transparent”\
+  \ \n\nAvantage compétitif unique : \n- Intégration complète : données advizeo existantes\
+  \ → identif. gisements → pilotage continu \n- Modèle économique clair : client retient\
+  \ 70–80% spread (vs. agrégateurs 20–30% marge OE) \n- Non-OE burden : PROMEOS advisor\
+  \ role → flexibility légale, pas risk-bearing pénalités RTE \n- Bundle opérationnel\
+  \ : efficacité énergétique + flexibilité = ROI 3 ans combiné"
+logic: null
+sources:
+- doc_id: STRATEGIE_NEBCO
+  label: Analyse strategique NEBCO
+  section: Formule Différenciation
+  anchor: '#formule-diffrenciation'
+  excerpt_short: "PROMEOS = “Cockpit + Readiness Audit + Light Ops + Revenue Share\
+    \ Transparent” \n\nAvantage compétitif ..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

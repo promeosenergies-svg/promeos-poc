@@ -1,0 +1,32 @@
+id: ACC_FRANCE_4
+type: knowledge
+domain: acc
+title: Fournisseur de Complément (électricité alloconsommée) 21 22
+summary: "- Client conserve liberté choix fournisseur \n- Reçoit de Enedis données\
+  \ TAp (part fournie par lui) chaque mois \n- Facture = TAp × prix client-PMO + TURPE\
+  \ + taxes \n- TURPE 7 option ACC (depuis août 202..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Client conserve liberté choix fournisseur \n- Reçoit de Enedis données\
+  \ TAp (part fournie par lui) chaque mois \n- Facture = TAp × prix client-PMO + TURPE\
+  \ + taxes \n- TURPE 7 option ACC (depuis août 2025) : majoration fixe « gestion\
+  \ » mais rabais possible si taux autocons. élevé"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: Fournisseur de Complément (électricité alloconsommée) 21 22
+  anchor: '#fournisseur-de-complment-lectricit-alloconsomme-21-22'
+  excerpt_short: "- Client conserve liberté choix fournisseur \n- Reçoit de Enedis\
+    \ données TAp (part fournie par lui) c..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

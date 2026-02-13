@@ -1,0 +1,34 @@
+id: LEVIERS_MARCHE_2025_51
+type: knowledge
+domain: usages
+title: K.3 – Ressources Marché & Secteur
+summary: "- Enerplan / SER : baromètre ACC annuel, positionnement réglementaire \n\
+  - FNCCR : appuis collectivités, montage ACC, bases données \n- ADEME : aides financières,\
+  \ guides économie, plateforme OPERAT \n- RT..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Enerplan / SER : baromètre ACC annuel, positionnement réglementaire\
+  \ \n- FNCCR : appuis collectivités, montage ACC, bases données \n- ADEME : aides\
+  \ financières, guides économie, plateforme OPERAT \n- RTE : bilans électriques,\
+  \ prévisions consommation 2030, scenarios mix \n- CRE : tarifs achat, appels d’offres,\
+  \ décisions régulatoires \n- PV Magazine / Les Échos : actualité secteur, analyses\
+  \ marché"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: K.3 – Ressources Marché & Secteur
+  anchor: '#k3-ressources-march-secteur'
+  excerpt_short: "- Enerplan / SER : baromètre ACC annuel, positionnement réglementaire\
+    \ \n- FNCCR : appuis collectivité..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

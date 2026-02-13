@@ -1,0 +1,33 @@
+id: DT_OPERAT_2026_23
+type: rule
+domain: acc
+title: Prochaines étapes
+summary: "- Années 2026–2029 : Poursuite des déclarations annuelles et ajustement\
+  \ trajectoriesPAR \n- 30 septembre 2027 : Dernier délai pour dépôt dossiers modulation\
+  \ 2030 (le 30 septembre 2026 pour certains cas..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Années 2026–2029 : Poursuite des déclarations annuelles et ajustement\
+  \ trajectoriesPAR \n- 30 septembre 2027 : Dernier délai pour dépôt dossiers modulation\
+  \ 2030 (le 30 septembre 2026 pour certains cas particuliers) 55 56 \n- 31 décembre\
+  \ 2030 : Bilan officiel et premiers contrôles réglementaires \n- Renforcement potentiel\
+  \ des sanctions envisagé par le gouvernement (objectif : accélérer conformité) 57"
+logic: null
+sources:
+- doc_id: DT_OPERAT_2026
+  label: Decret Tertiaire / OPERAT - Obligations 2026
+  section: Prochaines étapes
+  anchor: '#prochaines-tapes'
+  excerpt_short: "- Années 2026–2029 : Poursuite des déclarations annuelles et ajustement\
+    \ trajectoriesPAR \n- 30 septem..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

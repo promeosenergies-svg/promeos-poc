@@ -18,19 +18,57 @@ from .parsers.json_parser import parse_json_file, parse_json_invoice, load_all_d
 ENGINE_VERSION = "0.1.0-poc"
 
 
+def _check_l2_availability() -> bool:
+    """Check if L2-min RuleCards are available in KB."""
+    try:
+        from .tariff_bridge import get_l2_rule_card_ids
+        return len(get_l2_rule_card_ids()) > 0
+    except Exception:
+        return False
+
+
+def _enrich_anomalies_with_citations(anomalies: List[InvoiceAnomaly]) -> List[InvoiceAnomaly]:
+    """
+    P5: attach KB citations to anomalies when their rule_card_id
+    maps to a citation-backed RuleCard in the KB.
+    Gracefully returns unmodified anomalies if KB is unavailable.
+    """
+    try:
+        from ..kb.citations import get_citations_for_rule
+        for anom in anomalies:
+            if anom.rule_card_id and not anom.citations:
+                try:
+                    cites = get_citations_for_rule(anom.rule_card_id)
+                    if cites:
+                        anom.citations = cites
+                except Exception:
+                    pass
+    except Exception:
+        pass
+    return anomalies
+
+
 def audit_invoice(invoice: Invoice) -> Invoice:
     """
     Run all V0 audit rules on an invoice.
     Sets shadow_level to L1 (partial shadow) after audit.
     """
     anomalies = run_all_rules(invoice)
+    anomalies = _enrich_anomalies_with_citations(anomalies)
     invoice.anomalies = anomalies
     invoice.status = InvoiceStatus.AUDITED
     invoice.audit_timestamp = datetime.now(timezone.utc).isoformat()
     invoice.engine_version = ENGINE_VERSION
 
     # Determine shadow level
-    if anomalies:
+    l2_available = _check_l2_availability()
+    if l2_available:
+        invoice.shadow_level = ShadowLevel.L1_PARTIAL
+        invoice.why_not_higher = (
+            "L2-min: grilles TURPE/CTA presentes dans la KB. "
+            "L2 complet necessite offre fournisseur + contrat."
+        )
+    elif anomalies:
         invoice.shadow_level = ShadowLevel.L1_PARTIAL
         invoice.why_not_higher = "Audit L1 (arithmetique + TVA + coherences). L2 necessite grilles TURPE dans la KB."
     else:
@@ -115,7 +153,11 @@ def shadow_billing_l1(invoice: Invoice) -> ShadowResult:
         delta_ttc=delta_ttc,
         delta_percent=delta_percent,
         explain=explain,
-        why_not_higher="L2 necessite grilles TURPE/ATRD dans la KB",
+        why_not_higher=(
+            "L2-min: grilles TURPE/CTA presentes. L2 complet necessite offre fournisseur."
+            if _check_l2_availability()
+            else "L2 necessite grilles TURPE/ATRD dans la KB"
+        ),
         rule_cards_used=[f"RULE_{r[0]}" for r in ALL_RULES],
         engine_version=ENGINE_VERSION,
         computed_at=datetime.now(timezone.utc).isoformat(),
@@ -142,6 +184,13 @@ def full_pipeline(invoice: Invoice) -> AuditReport:
         if a.anomaly_type.value in ("tva_error", "arithmetic_error") and a.difference
     )
 
+    # Allocation summary by concept
+    concept_totals: Dict[str, float] = {}
+    for comp in invoice.components:
+        if comp.allocation:
+            cid = comp.allocation.concept_id
+            concept_totals[cid] = concept_totals.get(cid, 0.0) + (comp.amount_ht or 0.0)
+
     report = AuditReport(
         invoice_id=invoice.invoice_id,
         invoice=invoice.to_dict(),
@@ -154,6 +203,7 @@ def full_pipeline(invoice: Invoice) -> AuditReport:
         explain_log=shadow.explain,
         generated_at=datetime.now(timezone.utc).isoformat(),
         engine_version=ENGINE_VERSION,
+        concept_allocations={k: round(v, 2) for k, v in concept_totals.items()},
     )
 
     return report
@@ -181,6 +231,38 @@ def anomalies_to_csv(anomalies: List[Dict[str, Any]], invoice_id: str = "") -> s
             a.get("rule_card_id", ""),
         ])
     return output.getvalue()
+
+
+def _build_kb_evidence_html(anomalies: List[Dict[str, Any]]) -> str:
+    """Build KB Evidence HTML block showing citations backing each rule."""
+    cited_rules = {}
+    uncited_rules = set()
+    for a in anomalies:
+        rule_id = a.get("rule_card_id", "")
+        cites = a.get("citations", [])
+        if cites:
+            cited_rules[rule_id] = cites
+        elif rule_id:
+            uncited_rules.add(rule_id)
+
+    if not cited_rules and not uncited_rules:
+        return '<p style="color:#6b7280">Aucune regle normative KB utilisee. Les 20 regles V0 sont des controles arithmetiques universels.</p>'
+
+    html_parts = []
+    if cited_rules:
+        html_parts.append('<table><tr><th>Regle</th><th>Document</th><th>Section</th><th>Extrait</th><th>Confiance</th></tr>')
+        for rule_id, cites in cited_rules.items():
+            for c in cites:
+                ptr = c.get("pointer", {})
+                section = ptr.get("section") or ptr.get("article") or ptr.get("page") or "-"
+                excerpt = (c.get("excerpt_text", "")[:80] + "...") if len(c.get("excerpt_text", "")) > 80 else c.get("excerpt_text", "")
+                html_parts.append(f'<tr><td style="font-family:monospace">{rule_id}</td><td>{c.get("doc_title","")}</td><td>{section}</td><td style="font-size:0.85em">{excerpt}</td><td>{c.get("confidence","")}</td></tr>')
+        html_parts.append('</table>')
+
+    if uncited_rules:
+        html_parts.append(f'<div class="explain">Regles sans citation KB (P5 non verifiable): {", ".join(sorted(uncited_rules))}</div>')
+
+    return "\n".join(html_parts)
 
 
 def report_to_html(report: AuditReport) -> str:
@@ -213,6 +295,11 @@ def report_to_html(report: AuditReport) -> str:
 
     component_rows = ""
     for c in inv.get("components", []):
+        alloc = c.get("allocation") or {}
+        concept = alloc.get("concept_id", "-")
+        conf = alloc.get("confidence")
+        conf_str = f"{conf:.0%}" if conf is not None else "-"
+        rules_str = ", ".join(alloc.get("matched_rules", [])) or "-"
         component_rows += f"""
         <tr>
             <td>{c.get('component_type','')}</td>
@@ -223,6 +310,8 @@ def report_to_html(report: AuditReport) -> str:
             <td>{c.get('amount_ht','') or '-'}</td>
             <td>{c.get('tva_rate','') or '-'}%</td>
             <td>{c.get('tva_amount','') or '-'}</td>
+            <td style="font-weight:bold">{concept}</td>
+            <td>{conf_str}</td>
         </tr>"""
 
     html = f"""<!DOCTYPE html>
@@ -288,8 +377,14 @@ def report_to_html(report: AuditReport) -> str:
 
     <h2>Composantes ({inv.get('nb_components',0)})</h2>
     <table>
-        <tr><th>Type</th><th>Label</th><th>Qty</th><th>Unite</th><th>PU</th><th>HT</th><th>TVA%</th><th>TVA</th></tr>
+        <tr><th>Type</th><th>Label</th><th>Qty</th><th>Unite</th><th>PU</th><th>HT</th><th>TVA%</th><th>TVA</th><th>Concept</th><th>Conf.</th></tr>
         {component_rows}
+    </table>
+
+    <h2>Allocation par concept</h2>
+    <table>
+        <tr><th>Concept</th><th>Montant HT (EUR)</th></tr>
+        {''.join(f'<tr><td>{k}</td><td>{v:.2f}</td></tr>' for k, v in sorted(report.concept_allocations.items()))}
     </table>
 
     <h2>Anomalies ({report.total_anomalies})</h2>
@@ -308,6 +403,9 @@ def report_to_html(report: AuditReport) -> str:
     {''.join(f'<div class="explain">{e}</div>' for e in report.explain_log)}
 
     {f'<h2>Economies potentielles</h2><p style="font-size:1.5em;color:#065f46;font-weight:bold">{report.potential_savings_eur} EUR</p>' if report.potential_savings_eur else ''}
+
+    <h2>KB Evidence (P5)</h2>
+    {_build_kb_evidence_html(anomalies)}
 
     <footer>
         <p>PROMEOS Bill Intelligence v{ENGINE_VERSION} — Genere le {report.generated_at or ''}</p>

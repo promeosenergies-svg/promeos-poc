@@ -1,0 +1,34 @@
+id: ACC_FRANCE_37
+type: knowledge
+domain: usages
+title: Pricing Model (recommended SaaS hybrid)
+summary: "Opción A : Seat-based + Usage \n- Base : €200/mth per operation (includes\
+  \ 1 PMO user, 100 participants) \n- Overage : +€50 per 50 participants \n- Premium\
+  \ : +€300/mth for Optim module (flex + arbitrage) ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Opción A : Seat-based + Usage \n- Base : €200/mth per operation (includes\
+  \ 1 PMO user, 100 participants) \n- Overage : +€50 per 50 participants \n- Premium\
+  \ : +€300/mth for Optim module (flex + arbitrage) \n- Setup : €500 (one-shot) \n\
+  \nARR example : \n- 500 opérations × €200 = €100k/mth baseline \n- 150 opérations\
+  \ Optim × €300 = €45k premium \n- Setup revenue : ~€5k/mth amortized \n- Total MRR\
+  \ target : €150k (€1.8M ARR, year 2)"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: Pricing Model (recommended SaaS hybrid)
+  anchor: '#pricing-model-recommended-saas-hybrid'
+  excerpt_short: "Opción A : Seat-based + Usage \n- Base : €200/mth per operation\
+    \ (includes 1 PMO user, 100 participant..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

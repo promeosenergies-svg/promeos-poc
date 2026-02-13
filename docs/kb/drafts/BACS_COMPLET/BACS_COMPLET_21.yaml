@@ -1,0 +1,33 @@
+id: BACS_COMPLET_21
+type: knowledge
+domain: usages
+title: Vérification bon fonctionnement (ALL inspections)
+summary: "- Test appareil de mesure (capteurs température, humidité, compteurs kWh)\
+  \ → étalonnage ✓/✗ \n- Vérification algorithmes de régulation (chaud/froid/ventilation\
+  \ réagissent normally) \n- Détection dérives ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Test appareil de mesure (capteurs température, humidité, compteurs\
+  \ kWh) → étalonnage ✓/✗ \n- Vérification algorithmes de régulation (chaud/froid/ventilation\
+  \ réagissent normally) \n- Détection dérives actives (alertes lorsque consommation\
+  \ dépasse +X%) \n- Archivage données fonctionne (historiques consultables, 5 ans\
+  \ présent)"
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Vérification bon fonctionnement (ALL inspections)
+  anchor: '#vrification-bon-fonctionnement-all-inspections'
+  excerpt_short: "- Test appareil de mesure (capteurs température, humidité, compteurs\
+    \ kWh) → étalonnage ✓/✗ \n- Vérifi..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

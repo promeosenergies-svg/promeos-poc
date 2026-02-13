@@ -1,0 +1,28 @@
+id: LEVIERS_MARCHE_2025_0
+type: knowledge
+domain: reglementaire
+title: Autoconsommation Collective en France – État 2025, Leviers de Marché & Plan
+  de Simplification (2026–2030)
+summary: Dossier Stratégique & Feuille de Route PROMEOS
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: Dossier Stratégique & Feuille de Route PROMEOS
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: Autoconsommation Collective en France – État 2025, Leviers de Marché &
+    Plan de Simplification (2026–2030)
+  anchor: '#autoconsommation-collective-en-france-tat-2025-leviers-de-march-plan-de-simplification-20262030'
+  excerpt_short: Dossier Stratégique & Feuille de Route PROMEOS...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

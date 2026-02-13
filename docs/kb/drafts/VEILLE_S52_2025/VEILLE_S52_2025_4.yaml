@@ -1,0 +1,34 @@
+id: VEILLE_S52_2025_4
+type: rule
+domain: acc
+title: CRE Watch — Délibérations & Consultations Clés
+summary: "- Délibération 2025-274 (17 déc.) : Zone de mutualisation RTE « Plan de\
+  \ Campagne ». Densification des raccordements EnR territoriaux. \n- FPE 2026-2029\
+  \ : EEWF (+35 % stockage), EDF SEI (−22 %), Gérédis..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Délibération 2025-274 (17 déc.) : Zone de mutualisation RTE « Plan\
+  \ de Campagne ». Densification des raccordements EnR territoriaux. \n- FPE 2026-2029\
+  \ : EEWF (+35 % stockage), EDF SEI (−22 %), Gérédis (−14 %). La tarification flex+stockage\
+  \ remonte. \n- Fin ARENH (31 déc. 2025) : Le VNU remplace l'ARENH. Seuils 78/110\
+  \ €/MWh. TRV stable 2026-27. \n- Mécanisme Capacité : Le prix chute à 0 €/MW (2025)\
+  \ vs 6 192 €/MW (oct. 2024). Baisse de 42 % attendue en 2026."
+logic: null
+sources:
+- doc_id: VEILLE_S52_2025
+  label: Semaine 52 2025 - Veille Marche Energie PROMEOS
+  section: CRE Watch — Délibérations & Consultations Clés
+  anchor: '#cre-watch-dlibrations-consultations-cls'
+  excerpt_short: '- Délibération 2025-274 (17 déc.) : Zone de mutualisation RTE «
+    Plan de Campagne ». Densification de...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

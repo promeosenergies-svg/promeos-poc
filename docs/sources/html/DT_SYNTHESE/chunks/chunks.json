@@ -1,0 +1,182 @@
+[
+  {
+    "chunk_id": "DT_SYNTHESE_chunk_0",
+    "doc_id": "DT_SYNTHESE",
+    "section_path": "RÉSUMÉ EXÉCUTIF",
+    "anchor": "#rsum-excutif",
+    "text": "Le décret tertiaire franchit un cap décisif en 2025 avec la finalisation des cadres réglementaires. L’arrêté Valeurs Absolues VI (septembre 2025) et les améliorations de la plateforme OPERAT offrent désormais une certitude complète sur les objectifs à atteindre. Pour PROMEOS—opérateur immobilier multi-sites—cette clarification crée une fenêtre critique pour planifier la transition énergétique avant l’échéance majeure de 2030.",
+    "word_count": 57,
+    "chunk_index": 0
+  },
+  {
+    "chunk_id": "DT_SYNTHESE_chunk_1",
+    "doc_id": "DT_SYNTHESE",
+    "section_path": "Objectifs inchangés",
+    "anchor": "#objectifs-inchangs",
+    "text": "- 2030 : Réduction 40% des consommations énergétiques \n- 2040 : Réduction 50% \n- 2050 : Réduction 60% \n- Base de référence : Année 2010-2019 au choix de l’assujetti",
+    "word_count": 29,
+    "chunk_index": 1
+  },
+  {
+    "chunk_id": "DT_SYNTHESE_chunk_2",
+    "doc_id": "DT_SYNTHESE",
+    "section_path": "Périmètre d’application",
+    "anchor": "#primtre-dapplication",
+    "text": "Tous les bâtiments tertiaires ≥ 1 000 m² incluant : \n- Bureaux, commerces, hôtels, restaurants \n- Établissements scolaires, de santé, administratifs \n- Infrastructures logistiques de froid \n\nExemptions : Constructions précaires, édifices cultuels, bâtiments défense/sécurité.",
+    "word_count": 34,
+    "chunk_index": 2
+  },
+  {
+    "chunk_id": "DT_SYNTHESE_chunk_3",
+    "doc_id": "DT_SYNTHESE",
+    "section_path": "A. Publication complète des valeurs absolues (Arrêté VI - 6 septembre 2025)",
+    "anchor": "#a-publication-complte-des-valeurs-absolues-arrt-vi---6-septembre-2025",
+    "text": "Après cinq arrêtés précédents, le sixième arrêté finalise le cadre. Pour la première fois, 100% des catégories d’activité ont leurs seuils 2030 définis. Catégories nouvellement couverte Pertinence pour PROMEOS 14 sous-catégories commerces Si centres commerciaux Cinémas Si équipements loisirs Services funéraires Faible probabilité Banques Si locaux financiers Administration & Bureaux (all branches) ✓ PRIORITAIRE DROM (régions outre-mer) Si implantations OM \n\nImpact pour PROMEOS : Fin de l’incertitude. Tous vos bâtiments ont désormais des cibles mesurables et comparables au marché.",
+    "word_count": 79,
+    "chunk_index": 3
+  },
+  {
+    "chunk_id": "DT_SYNTHESE_chunk_4",
+    "doc_id": "DT_SYNTHESE",
+    "section_path": "Innovation : Identifiant Unique Bâtimentaire (IUB)",
+    "anchor": "#innovation-identifiant-unique-btimentaire-iub",
+    "text": "- Résout : Problèmes déclaration multi-occupation (plusieurs entreprises dans même immeuble) \n- Mécanisme : Intégration Référentiel National Bâtiments (RNB) \n- Avantage : Consolidation automatique données par bâtiment \n- Impact PROMEOS : Si portefeuille multi-locataires, réduction drastique risques erreurs déclaratives",
+    "word_count": 39,
+    "chunk_index": 4
+  },
+  {
+    "chunk_id": "DT_SYNTHESE_chunk_5",
+    "doc_id": "DT_SYNTHESE",
+    "section_path": "Nouvelle attestation numérique",
+    "anchor": "#nouvelle-attestation-numrique",
+    "text": "- Génération automatique sur OPERAT \n- Accessible immédiatement post-déclaration \n- Format PDF standardisé \n- Contenu : Consommations annuelles par fluide + indicateurs d’usage (USE) + performance relative",
+    "word_count": 27,
+    "chunk_index": 5
+  },
+  {
+    "chunk_id": "DT_SYNTHESE_chunk_6",
+    "doc_id": "DT_SYNTHESE",
+    "section_path": "C. Report affichage obligatoire",
+    "anchor": "#c-report-affichage-obligatoire",
+    "text": "- Ancien délai : À définir immédiatement \n- Nouveau délai : 1er juillet 2026 \n- Implication : Temps supplémentaire pour préparer communications occupants/stakeholders",
+    "word_count": 23,
+    "chunk_index": 6
+  },
+  {
+    "chunk_id": "DT_SYNTHESE_chunk_7",
+    "doc_id": "DT_SYNTHESE",
+    "section_path": "D. Coefficients climatiques raffinés",
+    "anchor": "#d-coefficients-climatiques-raffins",
+    "text": "- Changement : Nouveaux coefficients d’ajustement régionaux \n- Raison : Reconnaissance variations météorologiques inter-régionales \n- Effet : Calculs plus justes, moins de pénalité pour régions froides",
+    "word_count": 26,
+    "chunk_index": 7
+  },
+  {
+    "chunk_id": "DT_SYNTHESE_chunk_8",
+    "doc_id": "DT_SYNTHESE",
+    "section_path": "Diagnostic initial requis",
+    "anchor": "#diagnostic-initial-requis",
+    "text": "Questions préalables pour chaque actif : \n- Périmètre assujetti : \n- Surface tertiaire > 1 000 m² ? \n- Catégorie d’activité (bureaux, commerce, enseignement, etc.) ? \n- Multi-occupation ou monolocation ? \n- Données existantes : \n- Année référence sélectionnée (2010-2019) ? \n- Historique consommations 2024-2025 par fluide (élec, gaz, fioul) ? \n- Données d’usage (USE) : occupants, horaires, taux occupation ? \n- Performance actuelle : \n- Distance à objectif 2030 ? \n- Trajectoire naturelle (ex. inflation énergétique, optimisations passées) ? \n- Potentiel gisement d’économies ?",
+    "word_count": 85,
+    "chunk_index": 8
+  },
+  {
+    "chunk_id": "DT_SYNTHESE_chunk_9",
+    "doc_id": "DT_SYNTHESE",
+    "section_path": "Scénario 1 : Méthode relative (baisse %)",
+    "anchor": "#scnario-1-mthode-relative-baisse-",
+    "text": "- Applicable si : Bâtiment ancien, performance faible/moyenne \n- Calcul : 40% de réduction vs année référence \n- Avantage : Moins exigeant pour bâtiments très performants (comparaison régressive) \n- Exemple : Bâtiment 2000 | Conso 2015 (ref) : 200 kWh/m²/an | Cible 2030 : 120 kWh/m²/an (-40%)",
+    "word_count": 47,
+    "chunk_index": 9
+  },
+  {
+    "chunk_id": "DT_SYNTHESE_chunk_10",
+    "doc_id": "DT_SYNTHESE",
+    "section_path": "Scénario 2 : Méthode absolue (seuils fixes)",
+    "anchor": "#scnario-2-mthode-absolue-seuils-fixes",
+    "text": "- Applicable si : Bâtiment neuf ou très performant \n- Calcul : Atteindre seuil en kWh/m²/an défini par catégorie/région \n- Avantage : Benchmark transparent vs meilleurs du marché \n- Exigence : Plus stricte pour immeubles modernes \n- Exemple : Bureau Île-de-France | Seuil 2030 : ~90 kWh/m²/an (VAL VI) \n\nRecommandation PROMEOS : Analyser mixte approche pour chaque actif (choisir la plus favorable pour assujetti).",
+    "word_count": 64,
+    "chunk_index": 10
+  },
+  {
+    "chunk_id": "DT_SYNTHESE_chunk_11",
+    "doc_id": "DT_SYNTHESE",
+    "section_path": "Levier d’action identifiés",
+    "anchor": "#levier-daction-identifis",
+    "text": "Hiérarchie d’impact économique (court → long terme) : \n- Optimisation exploitation (6-12 mois, ROI 2-3 ans) \n- Gestion active équipements (chauffage/clim/éclairage) \n- Contrats maintenance avec objectifs réduction \n- Sous-comptage énergie pour identification gaspillages \n- Gain estimé : 10-15% économies \n- Rénovation équipements (12-24 mois, ROI 5-8 ans) \n- Éclairage LED + capteurs présence/luminosité \n- Chaufferie/climatisation haute performance \n- Eau chaude sanitaire pompe à chaleur \n- Systèmes GTB/GTC (gestion centralisée) \n- Gain estimé : 20-30% économies + conformité durable \n- Rénovation enveloppe bâtie (24+ mois, ROI 8-15 ans) \n- Isolation toiture/murs \n- Menuiseries performantes \n- Protection solaire \n- Gain estimé : 30-40%+ (mais investissement majeur)",
+    "word_count": 104,
+    "chunk_index": 11
+  },
+  {
+    "chunk_id": "DT_SYNTHESE_chunk_12",
+    "doc_id": "DT_SYNTHESE",
+    "section_path": "Dispositifs de financement activables Dispositif Montant typique Conditions Délai Certificats Économie Énergie (CEE) P6 10-30% CAPEX Travaux éligibles listés Rapide (60j) MaPrimeRénov Tertiaire 10-25% CAPEX Audit préalable requis 2-3 mois Éco-PTZ Jusqu’à 300 k€ Si bouquet travaux 1-2 mois ADEME Accompagnement Audit : 30-50% financé Petits/moyens projets Sur dossier",
+    "anchor": "#dispositifs-de-financement-activables-dispositif-montant-typique-conditions-dlai-certificats-conomie-nergie-cee-p6-10-30-capex-travaux-ligibles-lists-rapide-60j-maprimernov-tertiaire-10-25-capex-audit-pralable-requis-2-3-mois-co-ptz-jusqu-300-k-si-bouquet-travaux-1-2-mois-ademe-accompagnement-audit-30-50-financ-petitsmoyens-projets-sur-dossier",
+    "text": "Opportunité majeure : Cumul CEE + MaPrimeRénov sur même projet peut financer 30-50% du CAPEX travaux.",
+    "word_count": 16,
+    "chunk_index": 12
+  },
+  {
+    "chunk_id": "DT_SYNTHESE_chunk_13",
+    "doc_id": "DT_SYNTHESE",
+    "section_path": "Modèles d’économies réalisables",
+    "anchor": "#modles-dconomies-ralisables",
+    "text": "Cas d’école bureau 5 000 m² (Île-de-France, conso ref 180 kWh/m²/an) : \n- Cible 2030 : 108 kWh/m²/an (méthode relative -40%) \n- Gisement : 72 kWh/m²/an = 360 000 kWh/an \n- Valeur énergétique annuelle : ~72 000€ (200€/MWh moyen) \n- Bilan CAPEX optimal : 300-400k€ d’investissements (gestion + équip), ROI 5-6 ans",
+    "word_count": 52,
+    "chunk_index": 13
+  },
+  {
+    "chunk_id": "DT_SYNTHESE_chunk_14",
+    "doc_id": "DT_SYNTHESE",
+    "section_path": "Risque juridique/financier",
+    "anchor": "#risque-juridiquefinancier",
+    "text": "- Non-déclaration OPERAT : Poursuite possible, pénalité jusqu’à 1 500€ par jour \n- Non-atteinte objectifs 2030 : Sanction administrative possible (décalage vers 2035 reconnu en jurisprudence Conseil d’État, mais incertain 2025) \n- Données incorrectes : Rejet déclaration, délai pour correction, impact score établissement \n\nPrévention : Processus robuste collecte données, tiers de confiance (auditeur externalisé) si complexité multi-sites.",
+    "word_count": 57,
+    "chunk_index": 14
+  },
+  {
+    "chunk_id": "DT_SYNTHESE_chunk_15",
+    "doc_id": "DT_SYNTHESE",
+    "section_path": "Risque opérationnel",
+    "anchor": "#risque-oprationnel",
+    "text": "- Modulation objectifs : Dossier technique doit justifier impossibilité justifiée. Critères stricts (architecte classé, TRI > 10 ans, etc.) \n- Multi-occupation : Responsabilité partagée propriétaire/locataires. Nouvelle IUB aide mais clarté contractuelle reste essentielle \n- Données rétrospectives : Accès factures anciennes parfois compliqué. Commencer reconstruction base données dès novembre 2025",
+    "word_count": 49,
+    "chunk_index": 15
+  },
+  {
+    "chunk_id": "DT_SYNTHESE_chunk_16",
+    "doc_id": "DT_SYNTHESE",
+    "section_path": "Phase 1 : Diagnostic (Jan-Mar 2026)",
+    "anchor": "#phase-1-diagnostic-jan-mar-2026",
+    "text": "- Cartographie assujettis \n- Lister tous sites > 1 000 m² tertiaires \n- Identifier année référence déjà sélectionnée (si déclaration antérieure) \n- Noter catégories d’activité précises (critical pour VAL VI) \n- Audit données \n- Reconstituer factures énergie 2015-2025 \n- Identifier données manquantes (gaz, eau, déchets si inclus) \n- Organiser collecte 2024-2025 dès janvier 2026 \n- Analyse de gap \n- Pour chaque site : conso actuelle vs objectif 2030 \n- Évaluer trajectoire naturelle (inflation énergie crée économies de facto) \n- Identifier top 20% sites critiques (plus haut gisement)",
+    "word_count": 87,
+    "chunk_index": 16
+  },
+  {
+    "chunk_id": "DT_SYNTHESE_chunk_17",
+    "doc_id": "DT_SYNTHESE",
+    "section_path": "Phase 2 : Planification (Mar-Jun 2026)",
+    "anchor": "#phase-2-planification-mar-jun-2026",
+    "text": "- Stratégie par site \n- Sites low-hanging : optimisation exploitation + LED \n- Sites mid-range : rénovation équipements (GTB, chaufferie) \n- Sites exigeants : dossier modulation justifiée vs travaux majeurs \n- Calendrier d’investissement \n- Frontcharger projets pour bénéfices 2025-2026 (inertie thermique) \n- Aligner avec renouvellement baux (fenêtres de restriction réduites) \n- Phasage CEE/Aides max. d’impact \n- Gouvernance \n- Désigner pilote décret tertiaire (responsabilité OPERAT) \n- Contrats prestataires énergie avec objectifs résultats \n- Audit interne annuel avant déclaration 30 sept",
+    "word_count": 79,
+    "chunk_index": 17
+  },
+  {
+    "chunk_id": "DT_SYNTHESE_chunk_18",
+    "doc_id": "DT_SYNTHESE",
+    "section_path": "Phase 3 : Déclaration & Suivi (Sept 2026+)",
+    "anchor": "#phase-3-dclaration-suivi-sept-2026",
+    "text": "- Déclaration 2025 robuste \n- Vérifier via test OPERAT avant submission finale \n- Documenter hypothèses (années ref, USE, coefficients climat) \n- Archiver attestation générée (proof of compliance) \n- Suivi continu \n- Dashboard équipe interne post-déclaration \n- Ajustements contrats prestataires basé sur donnée réelle \n- Anticipation 2027 (nouvelle déclaration)",
+    "word_count": 48,
+    "chunk_index": 18
+  },
+  {
+    "chunk_id": "DT_SYNTHESE_chunk_19",
+    "doc_id": "DT_SYNTHESE",
+    "section_path": "CONCLUSION",
+    "anchor": "#conclusion",
+    "text": "Le décret tertiaire 2025 n’est plus une menace, c’est une opportunité pour PROMEOS : \n- Cadre finalisé : Fin de l’incertitude réglementaire. PROMEOS peut investir avec visibilité 5 ans. \n- ROI démontrables : Travaux énergétiques génèrent 5-8% réductions factures annuelles. CEE/MaPrimeRénov financent 30-50% CAPEX. \n- Valeur patrimoniale : Bâtiments conformes 2030 = attractivité occupants, prime location, facilité refinancement. \n- Avantage concurrentiel : Promoteur immobilier affichant performance énergétique certifiée 2030 = différenciation marché résidentiel/tertiaire. \n\nDélai critique : 30 septembre 2026 pour déclaration 2025. La fenêtre 2026 doit servir à cristalliser stratégie d’investissement pour boucler 40% réductions avant fin 2030. \n\nPour support technique OPERAT et modulations : Contacter ADEME (ademe.fr)Pour financements : Référer MaPrimeRénov et CEE dès audit lancé (6-9 mois avant travaux) \n\nDocument préparé janvier 2026 | Décret tertiaire décret n°2019-771, arrêtés VAL I-VI Décret tertiaire _ OPERAT — obligations 2026 et 20",
+    "word_count": 142,
+    "chunk_index": 19
+  }
+]

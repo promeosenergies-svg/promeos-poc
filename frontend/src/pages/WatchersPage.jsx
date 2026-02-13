@@ -70,9 +70,9 @@ export default function WatchersPage() {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Veille Réglementaire</h1>
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">Veille</h1>
           <p className="text-gray-600">
-            Surveillance automatique des changements réglementaires (Légifrance, CRE, RTE)
+            Réglementaire & marché : alertes et synthèses
           </p>
         </div>
 

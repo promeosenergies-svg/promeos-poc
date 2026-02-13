@@ -1,0 +1,116 @@
+id: BACS_COMPLET_6
+type: rule
+domain: reglementaire
+title: 'DECISION TREE : “SUIS-JE CONCERNÉ ?” ┌─ BÂTIMENT TERTIAIRE NON-RÉSIDENTIEL
+  ?'
+summary: '│ ├─ NON → Pas concerné (BACS non obligatoire)
+
+  │ └─ OUI
+
+  │ ├─ SYSTÈME CHAUFFAGE OU CLIMATISATION (combiné ou non ventilation) ?
+
+  │ │ ├─ NON → Pas concerné
+
+  │ │ └─ OUI
+
+  │ │ ├─ CALCUL PUISSANCE UTILE (Putil...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: '│ ├─ NON → Pas concerné (BACS non obligatoire)
+
+  │ └─ OUI
+
+  │ ├─ SYSTÈME CHAUFFAGE OU CLIMATISATION (combiné ou non ventilation) ?
+
+  │ │ ├─ NON → Pas concerné
+
+  │ │ └─ OUI
+
+  │ │ ├─ CALCUL PUISSANCE UTILE (Putile) :
+
+  │ │ │ Additionner puissances (kW) selon règles :
+
+  │ │ │ • Chaud : max(systèmes distincts) OU somme(systèmes réseau/cascade)
+
+  │ │ │ • Froid : somme(thermodynamiques même bâtiment)
+
+  │ │ │ • Si plusieurs systèmes : comparer chaud vs froid, retenir le plus élevé
+
+  │ │ │
+
+  │ │ ├─ Putile > 290 kW ?
+
+  │ │ │ ├─ OUI → OBLIGATION 01/01/2025 (URGENCE IMMÉDIATE)
+
+  │ │ │ │ ├─ Bâtiment neuf (PC post-21/07/2021) : BACS obligatoire
+
+  │ │ │ │ └─ Bâtiment existant : BACS si TRI < 10 ans OU avant 01/01/2025
+
+  │ │ │ │
+
+  │ │ │ └─ NON (≤290 kW), Putile > 70 kW ?
+
+  │ │ │ ├─ OUI → OBLIGATION 01/01/2030 (Report novembre 2025)
+
+  │ │ │ │ ├─ Bâtiment neuf (PC post-08/04/2024) : BACS obligatoire
+
+  │ │ │ │ ├─ Bâtiment existant (renouvellement post-09/04/2023) : BACS
+
+  │ │ │ │ └─ Bâtiment existant (sans renouvellement) : Avant 01/01/2030 OU audit TRI
+  exemption
+
+  │ │ │ │
+
+  │ │ │ └─ NON (≤70 kW) → Pas concerné décret BACS
+
+  │ │ │
+
+  │ │ ├─ BÂTIMENT NEUF OU EXISTANT ?
+
+  │ │ │ ├─ NEUF (PC déposé après 21/07/2021 seuil 290 kW, après 08/04/2024 seuil 70
+  kW)
+
+  │ │ │ │ └─ BACS obligatoire SANS exemption TRI
+
+  │ │ │ └─ EXISTANT
+
+  │ │ │ ├─ Renouvellement équipement post-09/04/2023 ?
+
+  │ │ │ │ ├─ OUI → BACS obligatoire, seuil 70 kW si renouvellement ≥09/04/2023
+
+  │ │ │ │ └─ NON (ancien système)
+
+  │ │ │ │ ├─ Putile > 290 kW → Avant 01/01/2025 (sauf TRI > 10 ans)
+
+  │ │ │ │ └─ Putile 70-290 kW → Avant 01/01/2030 (sauf TRI > 10 ans)
+
+  │ │ │
+
+  │ │ └─ TRI > 10 ANS JUSTIFIÉ ?
+
+  │ │ ├─ OUI (audit + documentation) → EXEMPTION VALIDE (conservation 10 ans)
+
+  │ │ └─ NON → OBLIGATION BACS s''applique'
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: 'DECISION TREE : “SUIS-JE CONCERNÉ ?” ┌─ BÂTIMENT TERTIAIRE NON-RÉSIDENTIEL
+    ?'
+  anchor: '#decision-tree-suis-je-concern-btiment-tertiaire-non-rsidentiel-'
+  excerpt_short: '│ ├─ NON → Pas concerné (BACS non obligatoire)
+
+    │ └─ OUI
+
+    │ ├─ SYSTÈME CHAUFFAGE OU CLIMATISATION (com...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

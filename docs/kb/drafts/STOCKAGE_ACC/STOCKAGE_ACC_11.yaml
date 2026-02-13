@@ -1,0 +1,58 @@
+id: STOCKAGE_ACC_11
+type: rule
+domain: usages
+title: E.2 Revenus Empilables (Stacking) & Modélisation Financière
+summary: "Pile de Revenus Typique (Hiérarchie Valeur) : \n- Autoconsommation directe\
+  \ (TAc amélioration) \n- Coût évité = (ΔkWh stocké/utilisé) × (tarif fournisseur\
+  \ local) \n- Exemple : +1000 kWh/an × 0.10 €/kWh = ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Pile de Revenus Typique (Hiérarchie Valeur) : \n- Autoconsommation directe\
+  \ (TAc amélioration) \n- Coût évité = (ΔkWh stocké/utilisé) × (tarif fournisseur\
+  \ local) \n- Exemple : +1000 kWh/an × 0.10 €/kWh = +100 €/an (marges) \n- Revenu\
+  \ par kWh de batterie ~ 5–10 €/(kWh batterie·an) \n- Valeur la plus stab \n- TURPE\
+  \ / Peak Shaving (réduction dépassement puissance) \n- Coût évité = réduction pics\
+  \ × tarif dépassement TURPE (0.50–1.50 €/kWh pic) \n- Exemple : 10 pic/an élevés\
+  \ × 10 kW × 50 €/kW = +5 k€/an \n- Revenu par kW ~ 500–1500 €/(kW batterie·an) si\
+  \ pics significatifs \n- Dépend fortement du site (industrie >> tertiaire) \n- Services\
+  \ Flexibilité / Balancing (mFRR, réserves) ← Nécessite > 1 MW batterie aggrégée\
+  \ \n- Revenu = participation marchés mFRR, capacité, frequency response \n- France\
+  \ 2026 : ~10–30 k€/an par 50 MW (petit), seuil entrée 1 MWh \n- Revenu moyen 20–100\
+  \ €/(kWh batterie·an) si certifiée VPP \n- Volatilité élevée, dépend prix réseau\
+  \ \n- Arbitrage Prix (charge bas, décharge haut) ← Marginal pour ACC court-terme\
+  \ \n- Revenu = Δprix × kWh arbitré × efficacité batterie \n- Exemple : 100 cycles/an\
+  \ × 5 kWh × (prix max – prix min) × 90% = 1–3 k€/an max \n- Revenu moyen ~30–50\
+  \ €/(kWh batterie·an), très volatile \n- Pertinent seulement si Enedis API temps-réel\
+  \ ouvert (2026+) \n- Réduction Injection / Curtailment (limitation GRD) \n- Revenu\
+  \ = économie coûts dépassement / limitation injection \n- Exemple : limite GRD 30\
+  \ kW mais PV 60 kW → batterie absorbe 30 kW 2h/j = avoid coûts extension \n- Valeur\
+  \ ponctuelle 5–20 k€/an par site, diminue au fil du temps (une fois infrastructure\
+  \ stabilisée) \n- Résilience / Assurance (coût indirect : réduction sinistre, PRA)\
+  \ \n- Valeur non-marchande : impact coupure > 100 k€/h datacenters, hôpitaux \n\
+  - Valeur imputable 10–30% du CAPEX batterie sur durée (assurance réduite ~20%) \n\
+  - Pertinent pour usages critiques \n\nModèle de Revenue Stacking (Cas Tertiaire\
+  \ Type 50 kWc + 15 kWh batterie) : Autoconsommation : 1200 kWh/an additionnel ×\
+  \ 0.10 € = +120 €\nTURPE peak shaving: 8 dépassement/an × 5 kW × 50 € = +2000 €\n\
+  Arbitrage prix : 50 cycles × 8 kWh × 15 % gain × 90% = +540 €\nRésilience (imputable)\
+  \ : 15 k€ CAPEX × 2 % valeur/an = +300 €\n---\nTOTAL / AN BRUT = +2960 €\nOPEX (1.5\
+  \ % CAPEX) = 15 k€ × 1.5 % = -225 €\nNET ANNUEL = +2735 €\nPayback = 15 k€ / 2.7\
+  \ k€ = **5.5 ans OK**"
+logic: null
+sources:
+- doc_id: STOCKAGE_ACC
+  label: Stockage et Autoconsommation Collective
+  section: E.2 Revenus Empilables (Stacking) & Modélisation Financière
+  anchor: '#e2-revenus-empilables-stacking-modlisation-financire'
+  excerpt_short: "Pile de Revenus Typique (Hiérarchie Valeur) : \n- Autoconsommation\
+    \ directe (TAc amélioration) \n- Coût..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

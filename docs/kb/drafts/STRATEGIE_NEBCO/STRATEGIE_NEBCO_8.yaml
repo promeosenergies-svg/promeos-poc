@@ -1,0 +1,33 @@
+id: STRATEGIE_NEBCO_8
+type: knowledge
+domain: reglementaire
+title: 'Scénario 3: OFFENSIF (Multi-équipement Optimisé, 50+ sites agrégés)'
+summary: "- Amplitude : 5 MW | Durée : 3h/evt | Fréquence : 60 evt/an | Spread : 100\
+  \ €/MWh | Taux réussite : 92% \n- Énergie modulée : 828 MWh/an \n- Revenu brut :\
+  \ €82,800 \n- Après coûts (scale economies SaaS): €..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Amplitude : 5 MW | Durée : 3h/evt | Fréquence : 60 evt/an | Spread\
+  \ : 100 €/MWh | Taux réussite : 92% \n- Énergie modulée : 828 MWh/an \n- Revenu\
+  \ brut : €82,800 \n- Après coûts (scale economies SaaS): €55,565 client net \n\n\
+  Insight clé : Fréquence & amplitude dominent. PROMEOS doit viser ≥50 sites pour\
+  \ amortir infrastructure."
+logic: null
+sources:
+- doc_id: STRATEGIE_NEBCO
+  label: Analyse strategique NEBCO
+  section: 'Scénario 3: OFFENSIF (Multi-équipement Optimisé, 50+ sites agrégés)'
+  anchor: '#scnario-3-offensif-multi-quipement-optimis-50-sites-agrgs'
+  excerpt_short: '- Amplitude : 5 MW | Durée : 3h/evt | Fréquence : 60 evt/an | Spread
+    : 100 €/MWh | Taux réussite : 9...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

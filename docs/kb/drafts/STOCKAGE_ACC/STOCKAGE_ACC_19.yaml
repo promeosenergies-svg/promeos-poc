@@ -1,0 +1,66 @@
+id: STOCKAGE_ACC_19
+type: rule
+domain: usages
+title: 'Playbook B : ACC Multi-Sites Tertiaire/Industrie (5–10 entités, 80–200 kWc,
+  budget 50+ k€)'
+summary: "Phase 0 (Mois -2 à 0) : Gouvernance Lourde \n- Réunion plénière : accord\
+  \ vision ACC (propriété, durée, objectif) \n- Constitution PMO officielle (ou mandater\
+  \ gestionnaire) \n- Rédaction statuts ACC, cont..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Phase 0 (Mois -2 à 0) : Gouvernance Lourde \n- Réunion plénière : accord\
+  \ vision ACC (propriété, durée, objectif) \n- Constitution PMO officielle (ou mandater\
+  \ gestionnaire) \n- Rédaction statuts ACC, contrats inter-participants (légal 8\
+  \ k€) \n- Signature conventions ACC (Enedis approval préalable) \n- Livrables :\
+  \ statuts signés, convention PMO, mandat gestionnaire \n\nPhase 1 (Mois 0–2) : Étude\
+  \ Technique Approfondie \n- Audit énergétique complet (72 k€ consultant si heavy)\
+  \ ou lite (8 k€) \n- Courbes 24 mois PV/conso, variabilité saisonnière \n- Profils\
+  \ de charge par participant, pics simultanéité \n- Constrainte GRD fine, limite\
+  \ injection par zone \n- Tarifs TURPE 7 zone exacte \n- Modelage multi-scénario\
+  \ batterie (10, 20, 30 kWh options, kW puissance) \n- Comparatif business models\
+  \ (propriété vs BaaS vs distribué) \n- Sélection modèle gouvernance valeur partage\
+  \ \n- Livrables : rapport audit 30 pages, 3 scénarios batterie, analyse comparative\
+  \ \n\nPhase 2 (Mois 2–4) : Conception & Approvals \n- Spécifications batterie/onduleur\
+  \ (RFQ tender 3 suppliers) \n- Schema raccordement, diagramme unifilaire \n- Pré-accord\
+  \ GRD/Enedis (dossier désa, délai 6–8 semaines) \n- Pré-accord assurance batterie\
+  \ (ICPE si dépassement) \n- Finalisation contrats BaaS (if applicable) vs achat\
+  \ outright \n- Négociation finale suppliers \n- Livrables : cahier charge technique,\
+  \ contrats signés suppliers, approbation GRD \n\nPhase 3 (Mois 4–8) : Mise en Oeuvre\
+  \ Infrastructure \n- Commande (lead time 8–12 semaines batterie) \n- Travaux génie\
+  \ civil (fondations batterie, câblage) 4–6 semaines parallèle \n- Installation système\
+  \ (batterie, onduleur, EMS) 2–4 semaines \n- Commissionning et tests 2 semaines\
+  \ \n- Formation PMO, participants (workshop 2 jours) \n- Livrables : batterie opérationnelle,\
+  \ formation vidéo, manuels \n\nPhase 4 (Mois 8–18) : Pilot Opérationnel (10 mois)\
+  \ \n- Fonctionnement nominal, monitoring KPI quotidien \n- Ajustement algorithme\
+  \ dispatch EMS (ex. seuil charge/décharge) \n- Feedback participants (forums, enquêtes)\
+  \ \n- Rapports mensuels PMO (transparence valeur créée) \n- Ajustement règles si\
+  \ dérives détectées \n- Livrables : dashboard KPI, rapports mensuels, retours utilisateurs\
+  \ \n\nPhase 5+ (Mois 18–36) : Optimisation & Scaling \n- Intégration services flexibilité\
+  \ (mFRR si > 1 MWh) \n- Ajustement tarif batterie si ROI dégradé (TURPE changes)\
+  \ \n- Plans évolution PV/batterie supplémentaire (extension) \n- Transition post-pilot\
+  \ à gestion de routine annuelle \n- Livrables : roadmap 3 ans, contrats renouvellement,\
+  \ stratégie flexibilité \n\nBudget Timing Typique : \n- Étude technique : 8–15 k€\
+  \ \n- Batteries/onduleur (25 kWh LFP) : 25–30 k€ \n- EMS + architecture : 8–12 k€\
+  \ \n- Installation/travaux : 8–12 k€ \n- Assurance/légal : 5–8 k€ \n- Pilot management\
+  \ : 0 (inclus opération) \n- Total : 54–77 k€ \n- Timeline : 6 mois étude + 6 mois\
+  \ implémentation + 10 mois pilot = 22 mois total"
+logic: null
+sources:
+- doc_id: STOCKAGE_ACC
+  label: Stockage et Autoconsommation Collective
+  section: 'Playbook B : ACC Multi-Sites Tertiaire/Industrie (5–10 entités, 80–200
+    kWc, budget 50+ k€)'
+  anchor: '#playbook-b-acc-multi-sites-tertiaireindustrie-510-entits-80200-kwc-budget-50-k'
+  excerpt_short: "Phase 0 (Mois -2 à 0) : Gouvernance Lourde \n- Réunion plénière\
+    \ : accord vision ACC (propriété, durée..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,52 @@
+id: STOCKAGE_ACC_12
+type: knowledge
+domain: usages
+title: E.3 Partage de Valeur dans ACC (Gouvernance + Transparence)
+summary: "Enjeu Principal : batterie commune create valeur (économies), faut règle\
+  \ claire « qui reçoit », sinon conflit. \n\nTrois Approches Partage : \n\nApproche\
+  \ 1 : Partage Proportionnel (Simple) Bénéfice global..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Enjeu Principal : batterie commune create valeur (économies), faut règle\
+  \ claire « qui reçoit », sinon conflit. \n\nTrois Approches Partage : \n\nApproche\
+  \ 1 : Partage Proportionnel (Simple) Bénéfice global batterie = 2.7 k€/an (cf. exemple\
+  \ ci-dessus)\nClé répartition : 30 % Site A, 50 % Site B, 20 % Site C\n→ Site A\
+  \ reçoit 810 €/an, B reçoit 1350 €/an, C reçoit 540 €/an\nAvantage : transparent,\
+  \ prévisible\nInconvénient : ne récompense pas « utilisation réelle » batterie \n\
+  \nApproche 2 : Partage Performance (Complexe mais Juste) Bénéfice global = 2.7 k€/an,\
+  \ alloué par :\n- (40 %) TAc amélioration → part proportionnelle consommation autoconsommée\n\
+  - (40 %) TURPE reduction → part proportionnelle pic shaving contribution\n- (20\
+  \ %) Arbitrage/services → part proportionnelle cycles/utilisation\n\nNécessite mesure\
+  \ fine EMS (14 données 15-min par participant).\nAvantage : incite optimisation,\
+  \ équité dynamique\nInconvénient : coût EMS +3–5 k€/an, audit annuel, risque dispute\
+  \ algorithme \n\nApproche 3 : Fonds Amortissement + Redistribution Surplus Bénéfice\
+  \ 2.7 k€/an\n- Amortissement batterie : 1.5 k€/an (15 k€ / 10 ans) → fonds PMO\n\
+  - Surplus revenu : 1.2 k€/an → redistribué participants pro-rata TAc\nSite A reçoit\
+  \ dividende 1.2 k€ × 30 % = 360 €/an\nAvantage : batterie « transparente » (propriété\
+  \ commune claire), surplus gain\nInconvénient : PMO doit gérer trésorerie, besoin\
+  \ comptabilité annuelle \n\nRecommandation : Approche 1 (Simple) si ACC petit <\
+  \ 5 entités, Approche 2 (Performance) si ACC professionnel avec EMS robuste, Approche\
+  \ 3 (Fonds) si ACC collectivité/bailleurs (gouvernance public). \n\nCockpit Transparence\
+  \ (PROMEOS-type) : \n- Tableau de bord temps-réel : bénéfice accumulé, par site,\
+  \ par mois \n- Projection annuelle et prévision tarif batterie payback \n- Alertes\
+  \ si batterie underutilisée (ex. cycle < 1/j moyenne) \n- Votes participants annuels\
+  \ si modification clé"
+logic: null
+sources:
+- doc_id: STOCKAGE_ACC
+  label: Stockage et Autoconsommation Collective
+  section: E.3 Partage de Valeur dans ACC (Gouvernance + Transparence)
+  anchor: '#e3-partage-de-valeur-dans-acc-gouvernance-transparence'
+  excerpt_short: 'Enjeu Principal : batterie commune create valeur (économies), faut
+    règle claire « qui reçoit », sino...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

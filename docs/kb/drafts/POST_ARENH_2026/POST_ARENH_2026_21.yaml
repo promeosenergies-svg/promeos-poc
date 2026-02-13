@@ -1,0 +1,33 @@
+id: POST_ARENH_2026_21
+type: knowledge
+domain: reglementaire
+title: Améliorations de la Liquidité Attendues
+summary: Dès le premier trimestre 2025, la CRE observait une amélioration significative
+  de la liquidité des marchés à terme français, avec des volumes et des offres suffisants
+  jusqu’à l’échéance n+3. Cependant...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: Dès le premier trimestre 2025, la CRE observait une amélioration significative
+  de la liquidité des marchés à terme français, avec des volumes et des offres suffisants
+  jusqu’à l’échéance n+3. Cependant, la liquidité demeure limitée à plus long terme
+  (n+4, n+5), posant des risques de couverture pour les clients professionnels recherchant
+  des contrats pluriannuels fermes. 43
+logic: null
+sources:
+- doc_id: POST_ARENH_2026
+  label: Post-ARENH 2026
+  section: Améliorations de la Liquidité Attendues
+  anchor: '#amliorations-de-la-liquidit-attendues'
+  excerpt_short: Dès le premier trimestre 2025, la CRE observait une amélioration
+    significative de la liquidité des m...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

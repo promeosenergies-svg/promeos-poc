@@ -1,0 +1,31 @@
+id: STRATEGIE_NEBCO_11
+type: knowledge
+domain: reglementaire
+title: B) Opérationnel
+summary: "- Risque : Dérives baseline, non-disponibilité sites, bruit données → réalisé\
+  \ invalide \n- Mitigation : Sub-comptage qualifié (IoT) + validation pré-activation\
+  \ ; redundancy data"
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Risque : Dérives baseline, non-disponibilité sites, bruit données →\
+  \ réalisé invalide \n- Mitigation : Sub-comptage qualifié (IoT) + validation pré-activation\
+  \ ; redundancy data"
+logic: null
+sources:
+- doc_id: STRATEGIE_NEBCO
+  label: Analyse strategique NEBCO
+  section: B) Opérationnel
+  anchor: '#b-oprationnel'
+  excerpt_short: "- Risque : Dérives baseline, non-disponibilité sites, bruit données\
+    \ → réalisé invalide \n- Mitigation..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

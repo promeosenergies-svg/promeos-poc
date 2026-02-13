@@ -12,9 +12,9 @@ from sqlalchemy.orm import Session
 
 from models import (
     Site, Batiment, Obligation, Evidence, ComplianceFinding, Organisation,
-    Portefeuille, EntiteJuridique,
+    Portefeuille, EntiteJuridique, ComplianceRunBatch,
     StatutConformite, TypeObligation, TypeEvidence, StatutEvidence,
-    OperatStatus, ParkingType,
+    OperatStatus, ParkingType, InsightStatus,
 )
 
 RULES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "rules")
@@ -310,7 +310,7 @@ def _eval_aper(ctx: dict) -> List[dict]:
 _SEVERITY_ORDER = {"critical": 4, "high": 3, "medium": 2, "low": 1}
 
 
-def evaluate_site(db: Session, site_id: int) -> List[ComplianceFinding]:
+def evaluate_site(db: Session, site_id: int, run_batch_id: int = None) -> List[ComplianceFinding]:
     """Evaluate all rules for a site and persist ComplianceFinding rows.
 
     Returns the list of created ComplianceFinding objects.
@@ -351,6 +351,8 @@ def evaluate_site(db: Session, site_id: int) -> List[ComplianceFinding]:
             deadline=deadline,
             evidence=f.get("evidence", ""),
             recommended_actions_json=json.dumps(actions, ensure_ascii=False) if actions else None,
+            insight_status=InsightStatus.OPEN,
+            run_batch_id=run_batch_id,
         )
         db.add(cf)
         result.append(cf)
@@ -362,8 +364,19 @@ def evaluate_site(db: Session, site_id: int) -> List[ComplianceFinding]:
 def evaluate_organisation(db: Session, org_id: int) -> dict:
     """Evaluate all sites for an organisation.
 
-    Returns summary: {sites_evaluated, total_findings, nok_count, unknown_count}.
+    Returns summary: {sites_evaluated, total_findings, nok_count, unknown_count, batch_id}.
     """
+    from datetime import datetime
+
+    # Create run batch
+    batch = ComplianceRunBatch(
+        org_id=org_id,
+        triggered_by="api",
+        started_at=datetime.utcnow(),
+    )
+    db.add(batch)
+    db.flush()
+
     # Get all site IDs for the org
     site_ids = [
         row[0] for row in
@@ -379,10 +392,17 @@ def evaluate_organisation(db: Session, org_id: int) -> dict:
     unknown_count = 0
 
     for sid in site_ids:
-        findings = evaluate_site(db, sid)
+        findings = evaluate_site(db, sid, run_batch_id=batch.id)
         total_findings += len(findings)
         nok_count += sum(1 for f in findings if f.status == "NOK")
         unknown_count += sum(1 for f in findings if f.status == "UNKNOWN")
+
+    # Update batch with results
+    batch.completed_at = datetime.utcnow()
+    batch.sites_count = len(site_ids)
+    batch.findings_count = total_findings
+    batch.nok_count = nok_count
+    batch.unknown_count = unknown_count
 
     db.commit()
 
@@ -392,6 +412,7 @@ def evaluate_organisation(db: Session, org_id: int) -> dict:
         "total_findings": total_findings,
         "nok_count": nok_count,
         "unknown_count": unknown_count,
+        "batch_id": batch.id,
     }
 
 

@@ -1,0 +1,50 @@
+id: STOCKAGE_ACC_6
+type: knowledge
+domain: acc
+title: 'B.3 Schémas Raccordement : Où Placer la Batterie ?'
+summary: "Trois architectures (impacts sur comptage/facturation) : \n\nCas 1 : Batterie\
+  \ « côté producteur » (derrière onduleur) Panneaux PV → Onduleur → Batterie+Convertisseur\
+  \ → Compteur GRD (1 PDL)\n ↓\n Réseau in..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Trois architectures (impacts sur comptage/facturation) : \n\nCas 1 :\
+  \ Batterie « côté producteur » (derrière onduleur) Panneaux PV → Onduleur → Batterie+Convertisseur\
+  \ → Compteur GRD (1 PDL)\n ↓\n Réseau interne ACC \n\n✅ Avantage : une batterie\
+  \ centralise, simple opération, optimisation claire (charge/décharge pilotable)\
+  \ \n❌ Inconvénient : si producteur = 1 entité, tout surplus dépend de sa batterie\
+  \ (mutuabilité réduite) \n→ Applicable : ACC petit (1 producteur majeur, 3–5 consommateurs)\
+  \ ou communautaire propriétaire batterie \n\nCas 2 : Batterie « commune » sur site\
+  \ (en parallèle réseau ACC) Pandeaux → Onduleur → Compteur prod (PDL1)\n ↓\n Batterie\
+  \ + EMS\n ↓\nConsommateurs (PDL2, PDL3...) ← Compteur conso\n ↓\n Réseau → Enedis\
+  \ \n\n✅ Avantage : batterie partagée, facile d’ajouter consommateurs ACC, EMS pilote\
+  \ carga optimisée \n❌ Inconvénient : comptage complexe (batterie ne doit pas rompre\
+  \ la clé de répartition), raccordement électrique lourd \n→ Applicable : ACC multi-sites\
+  \ (école + mairie + bâtiment tiers) avec batterie poolée \n\nCas 3 : Batteries réparties\
+  \ (chez certains participants, agrégation virtuelle) Site A (PV + batterie 5 kWh)\
+  \ ← Virtuel VPP → Compte Agent\nSite B (Conso) ← Virtuel VPP\nSite C (PV + batterie\
+  \ 8 kWh) ← Virtuel VPP\n\nEMS centralisé pilote toutes batteries en temps réel (MQTT/API)\
+  \ \n\n✅ Avantage : flexibilité, résilience site-by-site, facile scaling (ajouter\
+  \ batterie à un site = autonomie) \n❌ Inconvénient : synchronisation complexe, perte\
+  \ réseau (transmission données, algorithme), coût EMS élevé \n→ Applicable : ACC\
+  \ multi-sites large (10+), secteur industriel, PME dispersées \n\nSchéma recommandé\
+  \ B2B ACC : Cas 2 (batterie commune + EMS local), moins coûteux en data/cyber, plus\
+  \ transparent pour Enedis."
+logic: null
+sources:
+- doc_id: STOCKAGE_ACC
+  label: Stockage et Autoconsommation Collective
+  section: 'B.3 Schémas Raccordement : Où Placer la Batterie ?'
+  anchor: '#b3-schmas-raccordement-o-placer-la-batterie-'
+  excerpt_short: "Trois architectures (impacts sur comptage/facturation) : \n\nCas\
+    \ 1 : Batterie « côté producteur » (der..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

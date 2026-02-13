@@ -1,0 +1,45 @@
+id: FLEX_EFFACEMENT_40
+type: rule
+domain: acc
+title: 10 Features Priorisées
+summary: "- Forecast Demand-Response : ML prévision activations (J+1 à J+7) prix SPOT\
+  \ + RTE signals. KPI : Accuracy >80%. \n- Baseline Optimizer : Comparaison 4 méthodes\
+  \ (Rectangle double ref., algébrique, prévi..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Forecast Demand-Response : ML prévision activations (J+1 à J+7) prix\
+  \ SPOT + RTE signals. KPI : Accuracy >80%. \n- Baseline Optimizer : Comparaison\
+  \ 4 méthodes (Rectangle double ref., algébrique, prévision, histo) ; détection anomalies\
+  \ ; suggestion switch (gain −5% écarts). \n- M&V Proof Engine : Génération automatique\
+  \ chroniques réalisés, contrôles fiabilité, export format CRE-auditables. KPI :\
+  \ 99% taux acceptation RTE. \n- Flex Scoring : Dashboard par site : “Flex-readiness”\
+  \ (score 0–100 basé historique, équipements, contrats). Aide priorisation clients.\
+  \ \n- Alerts & Triggers : Notifications prix spot <€0/MWh, jours PP2 signalés, pénalités\
+  \ écarts détectés, deadlines dépôts offres AOP. \n- Multi-Product Orchestration\
+  \ : Allocation capacity sites across NEBEF/MA/Réserves/Capacité. Solver optimise\
+  \ cumul sans conflits. \n- Settlements & Reporting : Reconciliation automatique\
+  \ payements RTE/EPEX, facturation clients, rapport annuel traçabilité. \n- Interop\
+  \ Gateway : APIs standardisées (Enedis, RTE, EPEX), protocoles (Modbus, OPC-UA,\
+  \ REST), conversion formats données. \n- Compliance Audit Trail : Logs immuables\
+  \ (blockchain optional) tous ordres, mesures, déclarations. Export format légal\
+  \ (CRE, avocat). \n- Simulation Engine : Backtesting 3–5 ans : “Si j’avais soumis\
+  \ offre prix X, revenue aurait été Y”. Aide pricing stratégie."
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: 10 Features Priorisées
+  anchor: '#10-features-priorises'
+  excerpt_short: '- Forecast Demand-Response : ML prévision activations (J+1 à J+7)
+    prix SPOT + RTE signals. KPI : Acc...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

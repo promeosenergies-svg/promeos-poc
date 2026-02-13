@@ -1,0 +1,37 @@
+id: ARRETE_ACC_2025_9
+type: rule
+domain: usages
+title: 3.2 Personne Morale Organisatrice (PMO)
+summary: "La PMO est l’élément central de la gouvernance d’une opération ACC : \n\
+  - Définition: Entité juridique liant contractuellement producteurs et consommateurs\
+  \ finaux (forme libre : association, coopérative..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "La PMO est l’élément central de la gouvernance d’une opération ACC :\
+  \ \n- Définition: Entité juridique liant contractuellement producteurs et consommateurs\
+  \ finaux (forme libre : association, coopérative, copropriété, SEM, etc.) \n- Responsabilités\
+  \ principales: \n- Choix et transmission des clés de répartition de l’électricité\
+  \ à Enedis 23 \n- Gestion administrative de l’opération et communication avec les\
+  \ participants \n- Signature de la convention d’autoconsommation collective avec\
+  \ le fournisseur (EDF obligation d’achat pour métropole continentale) \n- Dépôt\
+  \ et suivi des demandes de dérogation auprès du ministère chargé de l’Énergie (si\
+  \ applicable)"
+logic: null
+sources:
+- doc_id: ARRETE_ACC_2025
+  label: Arrete 21 fevrier 2025 - ACC 5MW/10MW
+  section: 3.2 Personne Morale Organisatrice (PMO)
+  anchor: '#32-personne-morale-organisatrice-pmo'
+  excerpt_short: "La PMO est l’élément central de la gouvernance d’une opération ACC\
+    \ : \n- Définition: Entité juridique..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

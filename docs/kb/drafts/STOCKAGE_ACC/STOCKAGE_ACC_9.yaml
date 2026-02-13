@@ -1,0 +1,61 @@
+id: STOCKAGE_ACC_9
+type: knowledge
+domain: facturation
+title: D.2 Processus de Dimensionnement (Étapes 1-6)
+summary: 'Étape 1 : Nettoyage Données & Calculs Basiques - Éliminer anomalies (0 W
+  nuit erreur, pics outliers)
+
+  - Calculer PV moyen jour/mois, conso idem
+
+  - TAp = sum(PV) / sum(Conso) × 100
+
+  - TAc brut sans batter...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Étape 1 : Nettoyage Données & Calculs Basiques - Éliminer anomalies (0\
+  \ W nuit erreur, pics outliers)\n- Calculer PV moyen jour/mois, conso idem\n- TAp\
+  \ = sum(PV) / sum(Conso) × 100\n- TAc brut sans batterie = min(PV prod 15-min, Conso\
+  \ 15-min) / PV × 100\n (= part PV autoconsommée sur place, sans décalage) \n\nÉtape\
+  \ 2 : Identification Besoins Stockage Surplus horaire = max(0, PV(t) - Conso(t))\n\
+  Deficit horaire = max(0, Conso(t) - PV(t))\n\nSurplus journalier = sum(Surplus horaire)\n\
+  Deficit décalé soir/nuit = sum(Deficit 20:00-07:00)\n\nRatio = Surplus journalier\
+  \ / Conso journalière\nSi Ratio > 30 % : stockage pertinent \n\nÉtape 3 : Calcul\
+  \ Batterie kWh (Capacité) Batterie kWh min = 0.15 × Esurplus,mois,max\n (stock 15%\
+  \ des surplus pointe, reste injection)\n\nBatterie kWh mid = 0.25 × Esurplus,mois,max\n\
+  \ (stock 25%, ~optimal)\n\nBatterie kWh max = 0.40 × Esurplus,mois,max\n (stock\
+  \ 40%, oversized, ROI marginal)\n\nSélection : kWh mid, valider ROI après \n\nÉtape\
+  \ 4 : Calcul Batterie kW (Puissance) Batterie kW min = 0.15 × PV_max\n (15% puissance\
+  \ crête, lissage léger)\n\nBatterie kW mid = 0.25 × PV_max\n (25%, lissage significatif)\n\
+  \nBatterie kW max = 0.35 × PV_max\n (35%, lissage agressif, cher)\n\nSélection :\
+  \ kW mid, vérifier pas undersized pour charge/décharge\nrapide (ex. 4h cycle → kW\
+  \ ≥ kWh/4) \n\nÉtape 5 : Calcul ROI / LCOE CAPEX batterie = kWh × 130 €/kWh + 25\
+  \ k€ (onduleur install) + 5 k€ (EMS)\nOPEX = 1.5 % CAPEX/an (maintenance, assurance)\n\
+  \nBénéfice annuel brut =\n + TAc amélioration (ΔkWh × tarif local 0.08–0.12 €/kWh)\n\
+  \ + TURPE baisse (réduction dépassement, injection smarte)\n + Services RES (mFRR\
+  \ si applicable, 10–20 k€/an)\n + Résilience (pondération interne)\n - OPEX\n\n\
+  ROI payback = CAPEX / Bénéfice annuel net\n\nGo si ROI < 10 ans, Prudence si 10–15\
+  \ ans, NO-GO si > 15 ans \n\nÉtape 6 : Sensibilités et Scénarios Variances clés\
+  \ :\n- Coût batterie -10 % (120 €/kWh) → payback -1.5 ans\n- Coût batterie +20 %\
+  \ (156 €/kWh) → payback +2 ans\n- Tarif local électricité -5 % → payback +1.5 ans\n\
+  - Tarif local +5 % → payback -1.5 ans\n- Cycles batterie -20 % (charge moins souvent)\
+  \ → revenu décalé\n- TURPE 7 impact +50 % (injection smarte récompensée) → payback\
+  \ -2 ans\n\nRéaliser courbe sensibilité 2D (CAPEX × Tarif) pour clarté décision."
+logic: null
+sources:
+- doc_id: STOCKAGE_ACC
+  label: Stockage et Autoconsommation Collective
+  section: D.2 Processus de Dimensionnement (Étapes 1-6)
+  anchor: '#d2-processus-de-dimensionnement-tapes-1-6'
+  excerpt_short: 'Étape 1 : Nettoyage Données & Calculs Basiques - Éliminer anomalies
+    (0 W nuit erreur, pics outliers)...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

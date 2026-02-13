@@ -1,0 +1,29 @@
+id: BACS_SEUILS_7
+type: rule
+domain: reglementaire
+title: 6. INSPECTIONS PÉRIODIQUES OBLIGATOIRES
+summary: Le Décret n° 2023-259 (article R.175-5) introduit une obligation d’inspection
+  régulière , supprimant l’exemption antérieure relative à l’entretien. 7
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: Le Décret n° 2023-259 (article R.175-5) introduit une obligation d’inspection
+  régulière , supprimant l’exemption antérieure relative à l’entretien. 7
+logic: null
+sources:
+- doc_id: BACS_SEUILS
+  label: Decret BACS - Seuils, dates, exemptions
+  section: 6. INSPECTIONS PÉRIODIQUES OBLIGATOIRES
+  anchor: '#6-inspections-priodiques-obligatoires'
+  excerpt_short: Le Décret n° 2023-259 (article R.175-5) introduit une obligation
+    d’inspection régulière , supprimant...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

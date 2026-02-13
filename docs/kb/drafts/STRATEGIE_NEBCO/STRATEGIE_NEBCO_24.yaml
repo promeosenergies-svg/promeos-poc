@@ -1,0 +1,32 @@
+id: STRATEGIE_NEBCO_24
+type: knowledge
+domain: reglementaire
+title: 'Décision 1: Partenariat OE — Make vs. Partner'
+summary: "Recommandation : ✅ PARTNER (Energy Pool ou Enerdigit) \n- Why : CapEx €50–100k\
+  \ (vs. €200–500k in-house) ; timeline 6–8 sem (vs. 12 mois) \n- Action : Contact\
+  \ Energy Pool partnership director J1 ; propos..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Recommandation : ✅ PARTNER (Energy Pool ou Enerdigit) \n- Why : CapEx\
+  \ €50–100k (vs. €200–500k in-house) ; timeline 6–8 sem (vs. 12 mois) \n- Action\
+  \ : Contact Energy Pool partnership director J1 ; propose pilot mutualisé 50–100\
+  \ sites Q2 2026"
+logic: null
+sources:
+- doc_id: STRATEGIE_NEBCO
+  label: Analyse strategique NEBCO
+  section: 'Décision 1: Partenariat OE — Make vs. Partner'
+  anchor: '#dcision-1-partenariat-oe-make-vs-partner'
+  excerpt_short: "Recommandation : ✅ PARTNER (Energy Pool ou Enerdigit) \n- Why :\
+    \ CapEx €50–100k (vs. €200–500k in-hous..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

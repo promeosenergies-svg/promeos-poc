@@ -2,9 +2,13 @@
  * PROMEOS - Scope Context
  * Global context switcher: Organisation → Portefeuille → Site (optional).
  * Persisted in localStorage. Filters Dashboard, Patrimoine, Site360.
+ *
+ * When authenticated: uses org/scopes from AuthContext.
+ * When not authenticated (demo mode): falls back to mock data.
  */
 import { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { mockSites } from '../mocks/sites';
+import { useAuth } from './AuthContext';
 
 const STORAGE_KEY = 'promeos_scope';
 
@@ -42,6 +46,12 @@ const ScopeContext = createContext(null);
 
 export function ScopeProvider({ children }) {
   const [scope, setScope] = useState(loadScope);
+  const auth = useAuth();
+
+  const isAuth = auth && auth.isAuthenticated;
+
+  // When authenticated, override orgId from auth context
+  const effectiveOrgId = isAuth && auth.org ? auth.org.id : scope.orgId;
 
   const setOrg = useCallback((orgId) => {
     const next = { orgId, portefeuilleId: null, siteId: null };
@@ -66,13 +76,18 @@ export function ScopeProvider({ children }) {
   }, []);
 
   const resetScope = useCallback(() => {
-    const next = { orgId: scope.orgId, portefeuilleId: null, siteId: null };
+    const next = { orgId: effectiveOrgId, portefeuilleId: null, siteId: null };
     setScope(next);
     saveScope(next);
-  }, [scope.orgId]);
+  }, [effectiveOrgId]);
 
-  const org = MOCK_ORGS.find((o) => o.id === scope.orgId) || MOCK_ORGS[0];
-  const portefeuilles = MOCK_PORTEFEUILLES.filter((p) => p.org_id === scope.orgId);
+  // When authenticated, use auth orgs; otherwise mock
+  const orgsData = isAuth && auth.orgs && auth.orgs.length > 0
+    ? auth.orgs.map(o => ({ id: o.id, nom: o.nom }))
+    : MOCK_ORGS;
+
+  const org = orgsData.find((o) => o.id === effectiveOrgId) || orgsData[0];
+  const portefeuilles = MOCK_PORTEFEUILLES.filter((p) => p.org_id === effectiveOrgId);
   const portefeuille = scope.portefeuilleId
     ? MOCK_PORTEFEUILLES.find((p) => p.id === scope.portefeuilleId)
     : null;
@@ -82,7 +97,7 @@ export function ScopeProvider({ children }) {
     let sites = mockSites.filter((s) => {
       const pfId = sitePortefeuille(s);
       const pf = MOCK_PORTEFEUILLES.find((p) => p.id === pfId);
-      return pf && pf.org_id === scope.orgId;
+      return pf && pf.org_id === effectiveOrgId;
     });
     if (scope.portefeuilleId) {
       sites = sites.filter((s) => sitePortefeuille(s) === scope.portefeuilleId);
@@ -91,11 +106,12 @@ export function ScopeProvider({ children }) {
       sites = sites.filter((s) => s.id === scope.siteId);
     }
     return sites;
-  }, [scope.orgId, scope.portefeuilleId, scope.siteId]);
+  }, [effectiveOrgId, scope.portefeuilleId, scope.siteId]);
 
   const value = {
-    scope, org, portefeuille, portefeuilles, scopedSites,
-    orgs: MOCK_ORGS,
+    scope: { ...scope, orgId: effectiveOrgId },
+    org, portefeuille, portefeuilles, scopedSites,
+    orgs: orgsData,
     setOrg, setPortefeuille, setSite, resetScope,
   };
 

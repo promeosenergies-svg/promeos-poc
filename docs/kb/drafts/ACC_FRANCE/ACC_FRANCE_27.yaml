@@ -1,0 +1,34 @@
+id: ACC_FRANCE_27
+type: knowledge
+domain: usages
+title: ACC Starter (MVP Focus, Q1 2026)
+summary: "Positioning : “Diagnostic + kit PMO + validation conformité” \n\nFeatures\
+  \ : \n- ACC viability check (input: adresses, conso profiles Linky) → output : “go/no-go\
+  \ + devis temps” \n- Modèle statuts PMO compa..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Positioning : “Diagnostic + kit PMO + validation conformité” \n\nFeatures\
+  \ : \n- ACC viability check (input: adresses, conso profiles Linky) → output : “go/no-go\
+  \ + devis temps” \n- Modèle statuts PMO compatible Enedis (downloadable, e-signable)\
+  \ \n- RGPD consent kit (templates, DocuSign integr.) \n- Pre-filled Enedis “demande\
+  \ d’entrée acc” form \n- Cost : €500–1,500/projet (one-shot) OR subscription €100/mois\
+  \ lock-in \n- Audience : petits collectifs, bailleurs exploring"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: ACC Starter (MVP Focus, Q1 2026)
+  anchor: '#acc-starter-mvp-focus-q1-2026'
+  excerpt_short: "Positioning : “Diagnostic + kit PMO + validation conformité” \n\n\
+    Features : \n- ACC viability check (in..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

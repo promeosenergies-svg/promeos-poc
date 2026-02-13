@@ -1,0 +1,32 @@
+id: STRATEGIE_NEBCO_16
+type: knowledge
+domain: reglementaire
+title: Capacité Pilotage
+summary: "- GTB/BMS : Contrôle automates ; commande distance \n- IoT : Sous-comptage,\
+  \ capteurs T°, présence (optionnel, +précision) \n- Contraintes métier : Confort\
+  \ min, % production loss toléré \n- Horaires : Fen..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- GTB/BMS : Contrôle automates ; commande distance \n- IoT : Sous-comptage,\
+  \ capteurs T°, présence (optionnel, +précision) \n- Contraintes métier : Confort\
+  \ min, % production loss toléré \n- Horaires : Fenêtres opérationnelles (7h–20h?\
+  \ Weekends? Vacances?)"
+logic: null
+sources:
+- doc_id: STRATEGIE_NEBCO
+  label: Analyse strategique NEBCO
+  section: Capacité Pilotage
+  anchor: '#capacit-pilotage'
+  excerpt_short: "- GTB/BMS : Contrôle automates ; commande distance \n- IoT : Sous-comptage,\
+    \ capteurs T°, présence (op..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

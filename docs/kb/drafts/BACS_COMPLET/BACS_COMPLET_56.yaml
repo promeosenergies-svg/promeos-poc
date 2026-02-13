@@ -1,0 +1,36 @@
+id: BACS_COMPLET_56
+type: rule
+domain: acc
+title: Q7. « Inspection prévue janvier 2025. Intégrateur pas livré à temps. Que faire
+  ? »
+summary: 'R7. Non-conformité risquée . Deadline inspection = 01/01/2025 (si BACS existant).
+  Si pas encore installé janvier → Site “pas conforme” légalement, même si travaux
+  en cours. Solution : (1) Report date ...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: 'R7. Non-conformité risquée . Deadline inspection = 01/01/2025 (si BACS
+  existant). Si pas encore installé janvier → Site “pas conforme” légalement, même
+  si travaux en cours. Solution : (1) Report date inspection formalité (accord inspecteur)
+  ; (2) Mise en place système provisoire conforme minimal (capteurs de base) avant
+  jan 2025 ; (3) Inspection complète février → Rapport en retard mais site ” en voie
+  de conformité “. Risque : pénalité administrative si delay > 3 mois post-deadline.'
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Q7. « Inspection prévue janvier 2025. Intégrateur pas livré à temps. Que
+    faire ? »
+  anchor: '#q7-inspection-prvue-janvier-2025-intgrateur-pas-livr-temps-que-faire-'
+  excerpt_short: R7. Non-conformité risquée . Deadline inspection = 01/01/2025 (si
+    BACS existant). Si pas encore inst...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,33 @@
+id: MARCHE_ENERGIE_2025_19
+type: rule
+domain: usages
+title: 'Phase 3 : Moyen Terme (Juillet 2026-2027)'
+summary: "Décret tertiaire éxecution \n- Lancercrénovations phases 2-3 selon budget/priorités\
+  \ \n- Suivi consommations : dashboard équipe interne \n- Renouvellement contrats\
+  \ énergie anticipant -20 à -30% volumes po..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Décret tertiaire éxecution \n- Lancercrénovations phases 2-3 selon budget/priorités\
+  \ \n- Suivi consommations : dashboard équipe interne \n- Renouvellement contrats\
+  \ énergie anticipant -20 à -30% volumes post-réno \n\nPortfolio énergétique \n-\
+  \ Évaluer renégociation moyen terme si PPA lancés (potentiel réduction prix second\
+  \ contrat) \n- Ajuster mix court/moyen/long selon réalité VNU et volatilité observée"
+logic: null
+sources:
+- doc_id: MARCHE_ENERGIE_2025
+  label: Analyse marche energie France-Europe 2025
+  section: 'Phase 3 : Moyen Terme (Juillet 2026-2027)'
+  anchor: '#phase-3-moyen-terme-juillet-2026-2027'
+  excerpt_short: "Décret tertiaire éxecution \n- Lancercrénovations phases 2-3 selon\
+    \ budget/priorités \n- Suivi consomma..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

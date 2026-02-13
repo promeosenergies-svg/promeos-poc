@@ -1,0 +1,46 @@
+id: BACS_COMPLET_42
+type: knowledge
+domain: usages
+title: Première inspection (obligatoire avant 01/01/2025 si BACS déjà installé)
+summary: '- ⬜ Inspecteur certifié sélectionné (interne/externe, accrédité NF, AFNOR,
+  ou équivalent)
+
+  - ⬜ Inspection planifiée & site accessible (2-6h selon complexité)
+
+  - ⬜ Examen fonctionnel BACS complet (archit...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: '- ⬜ Inspecteur certifié sélectionné (interne/externe, accrédité NF, AFNOR,
+  ou équivalent)
+
+  - ⬜ Inspection planifiée & site accessible (2-6h selon complexité)
+
+  - ⬜ Examen fonctionnel BACS complet (architecture, plans, équipements)
+
+  - ⬜ Vérification bon fonctionnement (capteurs, actionneurs, data archivage, alertes)
+
+  - ⬜ Paramètres vs usage bâtiment validés (T consignes OK ?, saisonnalité ?, occupancy
+  ?)
+
+  - ⬜ Étalonnage capteurs vérifié (température, humidité, compteurs kWh = acceptable)'
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Première inspection (obligatoire avant 01/01/2025 si BACS déjà installé)
+  anchor: '#premire-inspection-obligatoire-avant-01012025-si-bacs-dj-install'
+  excerpt_short: '- ⬜ Inspecteur certifié sélectionné (interne/externe, accrédité
+    NF, AFNOR, ou équivalent)
+
+    - ⬜ Inspec...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

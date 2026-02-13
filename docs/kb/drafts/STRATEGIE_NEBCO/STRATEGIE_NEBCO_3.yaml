@@ -1,0 +1,33 @@
+id: STRATEGIE_NEBCO_3
+type: knowledge
+domain: reglementaire
+title: Marché & Dynamique 2024–2025
+summary: "- Capacité totale (2024) : 2,9 GW (+8% YoY, 4e augmentation consécutive)\
+  \ 6 \n- Objectif 2028 : 6,5 GW 7 \n- Gisement géographique : Anciennement industrie\
+  \ lourde ; nouvelle opportunité en tertiaire (bur..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Capacité totale (2024) : 2,9 GW (+8% YoY, 4e augmentation consécutive)\
+  \ 6 \n- Objectif 2028 : 6,5 GW 7 \n- Gisement géographique : Anciennement industrie\
+  \ lourde ; nouvelle opportunité en tertiaire (bureaux, retail, hôtellerie) \n- Prices\
+  \ EPEX spot : 72,89 €/MWh (jan 2026) ; pics 122 €/MWh (fév 2025) ; spreads volatiles\
+  \ 8 \n- Mécanisme capacité (2025) : 0 €/MW (suroffre) ; refonte prévue 2026 9"
+logic: null
+sources:
+- doc_id: STRATEGIE_NEBCO
+  label: Analyse strategique NEBCO
+  section: Marché & Dynamique 2024–2025
+  anchor: '#march-dynamique-20242025'
+  excerpt_short: "- Capacité totale (2024) : 2,9 GW (+8% YoY, 4e augmentation consécutive)\
+    \ 6 \n- Objectif 2028 : 6,5 GW..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

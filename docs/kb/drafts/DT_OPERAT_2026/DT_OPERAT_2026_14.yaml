@@ -1,0 +1,32 @@
+id: DT_OPERAT_2026_14
+type: rule
+domain: reglementaire
+title: 6. Décret BACS (Gestion Technique des Bâtiments — GTB)
+summary: Le Décret BACS (n° 2020-887, modifié par n° 2023-259) complète et conditionne
+  partiellement le Décret tertiaire en imposant des systèmes de pilotage automatisé
+  (GTB/BACS). Puissance CVC Échéance Oblig...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: Le Décret BACS (n° 2020-887, modifié par n° 2023-259) complète et conditionne
+  partiellement le Décret tertiaire en imposant des systèmes de pilotage automatisé
+  (GTB/BACS). Puissance CVC Échéance Obligation ≥ 290 kW 1er janvier 2025 GTB opérationnelle
+  requise 70–290 kW 1er janvier 2027 GTB opérationnelle requise
+logic: null
+sources:
+- doc_id: DT_OPERAT_2026
+  label: Decret Tertiaire / OPERAT - Obligations 2026
+  section: 6. Décret BACS (Gestion Technique des Bâtiments — GTB)
+  anchor: '#6-dcret-bacs-gestion-technique-des-btiments-gtb'
+  excerpt_short: Le Décret BACS (n° 2020-887, modifié par n° 2023-259) complète et
+    conditionne partiellement le Décre...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

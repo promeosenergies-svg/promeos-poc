@@ -1,0 +1,36 @@
+id: ACC_FRANCE_17
+type: knowledge
+domain: acc
+title: C. Tertiaire Multi-Sites & Entreprises Privées (15–20%) 65 66
+summary: "Cas type : Groupe immobilier/retail > 3 sites dans même commune \n- Production\
+  \ : toitures sites A/B + ombrières parking C \n- Consommateurs : bureaux, stockages,\
+  \ charges communes \n- Besoin clé : flex im..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Cas type : Groupe immobilier/retail > 3 sites dans même commune \n- Production\
+  \ : toitures sites A/B + ombrières parking C \n- Consommateurs : bureaux, stockages,\
+  \ charges communes \n- Besoin clé : flex implicite (modulation conso lors pics PV)\
+  \ \n- Pénalité : prix négatifs (récurrent 2025+) = perte €/MWh pour producteur →\
+  \ nécessite contrat « prix minimum » ou pilotage actif \n\nSens économique : \n\
+  - Sans ACC : marché spot ~€55–65/MWh (2025) avec risque négatif \n- Avec ACC : €0.15–0.18/kWh\
+  \ (localisé) → economie 20–35% vs marché spot \n- Caveat : nécessite synchronisation\
+  \ conso/production (~50% taux ok; >70% = très bon)"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: C. Tertiaire Multi-Sites & Entreprises Privées (15–20%) 65 66
+  anchor: '#c-tertiaire-multi-sites-entreprises-prives-1520-65-66'
+  excerpt_short: "Cas type : Groupe immobilier/retail > 3 sites dans même commune\
+    \ \n- Production : toitures sites A/B +..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

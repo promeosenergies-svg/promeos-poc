@@ -1,0 +1,713 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><title>synthese_decret_tertiaire_PROMEOS</title><style>
+/* cspell:disable-file */
+/* webkit printing magic: print all background colors */
+html {
+	-webkit-print-color-adjust: exact;
+}
+* {
+	box-sizing: border-box;
+	-webkit-print-color-adjust: exact;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+}
+@media only screen {
+	body {
+		margin: 2em auto;
+		max-width: 900px;
+		color: rgb(55, 53, 47);
+	}
+}
+
+body {
+	line-height: 1.5;
+	white-space: pre-wrap;
+}
+
+a,
+a.visited {
+	color: inherit;
+	text-decoration: underline;
+}
+
+.pdf-relative-link-path {
+	font-size: 80%;
+	color: #444;
+}
+
+h1,
+h2,
+h3 {
+	letter-spacing: -0.01em;
+	line-height: 1.2;
+	font-weight: 600;
+	margin-bottom: 0;
+}
+
+/* Override strong tags inside headings to maintain consistent weight */
+h1 strong,
+h2 strong,
+h3 strong {
+	font-weight: 600;
+}
+
+.page-title {
+	font-size: 2.5rem;
+	font-weight: 700;
+	margin-top: 0;
+	margin-bottom: 0.75em;
+}
+
+h1 {
+	font-size: 1.875rem;
+	margin-top: 1.875rem;
+}
+
+h2 {
+	font-size: 1.5rem;
+	margin-top: 1.5rem;
+}
+
+h3 {
+	font-size: 1.25rem;
+	margin-top: 1.25rem;
+}
+
+.source {
+	border: 1px solid #ddd;
+	border-radius: 3px;
+	padding: 1.5em;
+	word-break: break-all;
+}
+
+.callout {
+	border-radius: 10px;
+	padding: 1rem;
+}
+
+figure {
+	margin: 1.25em 0;
+	page-break-inside: avoid;
+}
+
+figcaption {
+	opacity: 0.5;
+	font-size: 85%;
+	margin-top: 0.5em;
+}
+
+mark {
+	background-color: transparent;
+}
+
+.indented {
+	padding-left: 1.5em;
+}
+
+hr {
+	background: transparent;
+	display: block;
+	width: 100%;
+	height: 1px;
+	visibility: visible;
+	border: none;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.09);
+}
+
+img {
+	max-width: 100%;
+}
+
+@media only print {
+	img {
+		max-height: 100vh;
+		object-fit: contain;
+	}
+}
+
+@page {
+	margin: 1in;
+}
+
+.collection-content {
+	font-size: 0.875rem;
+}
+
+.collection-content td {
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.column-list {
+	display: flex;
+	justify-content: space-between;
+}
+
+.column {
+	padding: 0 1em;
+}
+
+.column:first-child {
+	padding-left: 0;
+}
+
+.column:last-child {
+	padding-right: 0;
+}
+
+.table_of_contents-item {
+	display: block;
+	font-size: 0.875rem;
+	line-height: 1.3;
+	padding: 0.125rem;
+}
+
+.table_of_contents-indent-1 {
+	margin-left: 1.5rem;
+}
+
+.table_of_contents-indent-2 {
+	margin-left: 3rem;
+}
+
+.table_of_contents-indent-3 {
+	margin-left: 4.5rem;
+}
+
+.table_of_contents-link {
+	text-decoration: none;
+	opacity: 0.7;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.18);
+}
+
+table,
+th,
+td {
+	border: 1px solid rgba(55, 53, 47, 0.09);
+	border-collapse: collapse;
+}
+
+table {
+	border-left: none;
+	border-right: none;
+}
+
+th,
+td {
+	font-weight: normal;
+	padding: 0.25em 0.5em;
+	line-height: 1.5;
+	min-height: 1.5em;
+	text-align: left;
+}
+
+th {
+	color: rgba(55, 53, 47, 0.6);
+}
+
+ol,
+ul {
+	margin: 0;
+	margin-block-start: 0.6em;
+	margin-block-end: 0.6em;
+}
+
+li > ol:first-child,
+li > ul:first-child {
+	margin-block-start: 0.6em;
+}
+
+ul > li {
+	list-style: disc;
+}
+
+ul.to-do-list {
+	padding-inline-start: 0;
+}
+
+ul.to-do-list > li {
+	list-style: none;
+}
+
+.to-do-children-checked {
+	text-decoration: line-through;
+	opacity: 0.375;
+}
+
+ul.toggle > li {
+	list-style: none;
+}
+
+ul {
+	padding-inline-start: 1.7em;
+}
+
+ul > li {
+	padding-left: 0.1em;
+}
+
+ol {
+	padding-inline-start: 1.6em;
+}
+
+ol > li {
+	padding-left: 0.2em;
+}
+
+.mono ol {
+	padding-inline-start: 2em;
+}
+
+.mono ol > li {
+	text-indent: -0.4em;
+}
+
+.toggle {
+	padding-inline-start: 0em;
+	list-style-type: none;
+}
+
+/* Indent toggle children */
+.toggle > li > details {
+	padding-left: 1.7em;
+}
+
+.toggle > li > details > summary {
+	margin-left: -1.1em;
+}
+
+.selected-value {
+	display: inline-block;
+	padding: 0 0.5em;
+	background: rgba(206, 205, 202, 0.5);
+	border-radius: 3px;
+	margin-right: 0.5em;
+	margin-top: 0.3em;
+	margin-bottom: 0.3em;
+	white-space: nowrap;
+}
+
+.collection-title {
+	display: inline-block;
+	margin-right: 1em;
+}
+
+.page-description {
+	margin-bottom: 2em;
+}
+
+.simple-table {
+	margin-top: 1em;
+	font-size: 0.875rem;
+	empty-cells: show;
+}
+.simple-table td {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table th {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table-header-color {
+	background: rgb(247, 246, 243);
+	color: black;
+}
+.simple-table-header {
+	font-weight: 500;
+}
+
+time {
+	opacity: 0.5;
+}
+
+.icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	max-width: 1.2em;
+	max-height: 1.2em;
+	text-decoration: none;
+	vertical-align: text-bottom;
+	margin-right: 0.5em;
+}
+
+img.icon {
+	border-radius: 3px;
+}
+
+.callout img.notion-static-icon {
+	width: 1em;
+	height: 1em;
+}
+
+.callout p {
+	margin: 0;
+}
+
+.callout h1,
+.callout h2,
+.callout h3 {
+	margin: 0 0 0.6rem;
+}
+
+.user-icon {
+	width: 1.5em;
+	height: 1.5em;
+	border-radius: 100%;
+	margin-right: 0.5rem;
+}
+
+.user-icon-inner {
+	font-size: 0.8em;
+}
+
+.text-icon {
+	border: 1px solid #000;
+	text-align: center;
+}
+
+.page-cover-image {
+	display: block;
+	object-fit: cover;
+	width: 100%;
+	max-height: 30vh;
+}
+
+.page-header-icon {
+	font-size: 3rem;
+	margin-bottom: 1rem;
+}
+
+.page-header-icon-with-cover {
+	margin-top: -0.72em;
+	margin-left: 0.07em;
+}
+
+.page-header-icon img {
+	border-radius: 3px;
+}
+
+.link-to-page {
+	margin: 1em 0;
+	padding: 0;
+	border: none;
+	font-weight: 500;
+}
+
+p > .user {
+	opacity: 0.5;
+}
+
+td > .user,
+td > time {
+	white-space: nowrap;
+}
+
+input[type="checkbox"] {
+	transform: scale(1.5);
+	margin-right: 0.6em;
+	vertical-align: middle;
+}
+
+p {
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+}
+
+.image {
+	border: none;
+	margin: 1.5em 0;
+	padding: 0;
+	border-radius: 0;
+	text-align: center;
+}
+
+.code,
+code {
+	background: rgba(135, 131, 120, 0.15);
+	border-radius: 3px;
+	padding: 0.2em 0.4em;
+	border-radius: 3px;
+	font-size: 85%;
+	tab-size: 2;
+}
+
+code {
+	color: #eb5757;
+}
+
+.code {
+	padding: 1.5em 1em;
+}
+
+.code-wrap {
+	white-space: pre-wrap;
+	word-break: break-all;
+}
+
+.code > code {
+	background: none;
+	padding: 0;
+	font-size: 100%;
+	color: inherit;
+}
+
+blockquote {
+	font-size: 1em;
+	margin: 1em 0;
+	padding-left: 1em;
+	border-left: 3px solid rgb(55, 53, 47);
+}
+
+blockquote.quote-large {
+	font-size: 1.25em;
+}
+
+.bookmark {
+	text-decoration: none;
+	max-height: 8em;
+	padding: 0;
+	display: flex;
+	width: 100%;
+	align-items: stretch;
+}
+
+.bookmark-title {
+	font-size: 0.85em;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	height: 1.75em;
+	white-space: nowrap;
+}
+
+.bookmark-text {
+	display: flex;
+	flex-direction: column;
+}
+
+.bookmark-info {
+	flex: 4 1 180px;
+	padding: 12px 14px 14px;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+}
+
+.bookmark-image {
+	width: 33%;
+	flex: 1 1 180px;
+	display: block;
+	position: relative;
+	object-fit: cover;
+	border-radius: 1px;
+}
+
+.bookmark-description {
+	color: rgba(55, 53, 47, 0.6);
+	font-size: 0.75em;
+	overflow: hidden;
+	max-height: 4.5em;
+	word-break: break-word;
+}
+
+.bookmark-href {
+	font-size: 0.75em;
+	margin-top: 0.25em;
+}
+
+.sans { font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"; }
+.code { font-family: "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace; }
+.serif { font-family: Lyon-Text, Georgia, ui-serif, serif; }
+.mono { font-family: iawriter-mono, Nitti, Menlo, Courier, monospace; }
+.pdf .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK JP'; }
+.pdf:lang(zh-CN) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK SC'; }
+.pdf:lang(zh-TW) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK TC'; }
+.pdf:lang(ko-KR) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK KR'; }
+.pdf .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.pdf .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK JP'; }
+.pdf:lang(zh-CN) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK SC'; }
+.pdf:lang(zh-TW) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK TC'; }
+.pdf:lang(ko-KR) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK KR'; }
+.pdf .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.highlight-default {
+	color: rgba(44, 44, 43, 1);
+}
+.highlight-gray {
+	color: rgba(125, 122, 117, 1);
+	fill: rgba(125, 122, 117, 1);
+}
+.highlight-brown {
+	color: rgba(159, 118, 90, 1);
+	fill: rgba(159, 118, 90, 1);
+}
+.highlight-orange {
+	color: rgba(210, 123, 45, 1);
+	fill: rgba(210, 123, 45, 1);
+}
+.highlight-yellow {
+	color: rgba(203, 148, 52, 1);
+	fill: rgba(203, 148, 52, 1);
+}
+.highlight-teal {
+	color: rgba(80, 148, 110, 1);
+	fill: rgba(80, 148, 110, 1);
+}
+.highlight-blue {
+	color: rgba(56, 125, 201, 1);
+	fill: rgba(56, 125, 201, 1);
+}
+.highlight-purple {
+	color: rgba(154, 107, 180, 1);
+	fill: rgba(154, 107, 180, 1);
+}
+.highlight-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.highlight-red {
+	color: rgba(207, 81, 72, 1);
+	fill: rgba(207, 81, 72, 1);
+}
+.highlight-default_background {
+	color: rgba(44, 44, 43, 1);
+}
+.highlight-gray_background {
+	background: rgba(42, 28, 0, 0.07);
+}
+.highlight-brown_background {
+	background: rgba(139, 46, 0, 0.086);
+}
+.highlight-orange_background {
+	background: rgba(224, 101, 1, 0.129);
+}
+.highlight-yellow_background {
+	background: rgba(211, 168, 0, 0.137);
+}
+.highlight-teal_background {
+	background: rgba(0, 100, 45, 0.09);
+}
+.highlight-blue_background {
+	background: rgba(0, 124, 215, 0.094);
+}
+.highlight-purple_background {
+	background: rgba(102, 0, 178, 0.078);
+}
+.highlight-pink_background {
+	background: rgba(197, 0, 93, 0.086);
+}
+.highlight-red_background {
+	background: rgba(223, 22, 0, 0.094);
+}
+.block-color-default {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray {
+	color: rgba(125, 122, 117, 1);
+	fill: rgba(125, 122, 117, 1);
+}
+.block-color-brown {
+	color: rgba(159, 118, 90, 1);
+	fill: rgba(159, 118, 90, 1);
+}
+.block-color-orange {
+	color: rgba(210, 123, 45, 1);
+	fill: rgba(210, 123, 45, 1);
+}
+.block-color-yellow {
+	color: rgba(203, 148, 52, 1);
+	fill: rgba(203, 148, 52, 1);
+}
+.block-color-teal {
+	color: rgba(80, 148, 110, 1);
+	fill: rgba(80, 148, 110, 1);
+}
+.block-color-blue {
+	color: rgba(56, 125, 201, 1);
+	fill: rgba(56, 125, 201, 1);
+}
+.block-color-purple {
+	color: rgba(154, 107, 180, 1);
+	fill: rgba(154, 107, 180, 1);
+}
+.block-color-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.block-color-red {
+	color: rgba(207, 81, 72, 1);
+	fill: rgba(207, 81, 72, 1);
+}
+.block-color-default_background {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray_background {
+	background: rgba(240, 239, 237, 1);
+}
+.block-color-brown_background {
+	background: rgba(245, 237, 233, 1);
+}
+.block-color-orange_background {
+	background: rgba(251, 235, 222, 1);
+}
+.block-color-yellow_background {
+	background: rgba(249, 243, 220, 1);
+}
+.block-color-teal_background {
+	background: rgba(232, 241, 236, 1);
+}
+.block-color-blue_background {
+	background: rgba(229, 242, 252, 1);
+}
+.block-color-purple_background {
+	background: rgba(243, 235, 249, 1);
+}
+.block-color-pink_background {
+	background: rgba(250, 233, 241, 1);
+}
+.block-color-red_background {
+	background: rgba(252, 233, 231, 1);
+}
+.select-value-color-default { background-color: rgba(42, 28, 0, 0.07); }
+.select-value-color-gray { background-color: rgba(28, 19, 1, 0.11); }
+.select-value-color-brown { background-color: rgba(127, 51, 0, 0.156); }
+.select-value-color-orange { background-color: rgba(196, 88, 0, 0.203); }
+.select-value-color-yellow { background-color: rgba(209, 156, 0, 0.282); }
+.select-value-color-green { background-color: rgba(0, 96, 38, 0.156); }
+.select-value-color-blue { background-color: rgba(0, 118, 217, 0.203); }
+.select-value-color-purple { background-color: rgba(92, 0, 163, 0.141); }
+.select-value-color-pink { background-color: rgba(183, 0, 78, 0.152); }
+.select-value-color-red { background-color: rgba(206, 24, 0, 0.164); }
+
+.checkbox {
+	display: inline-flex;
+	vertical-align: text-bottom;
+	width: 16;
+	height: 16;
+	background-size: 16px;
+	margin-left: 2px;
+	margin-right: 5px;
+}
+
+.checkbox-on {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20width%3D%2216%22%20height%3D%2216%22%20fill%3D%22%2358A9D7%22%2F%3E%0A%3Cpath%20d%3D%22M6.71429%2012.2852L14%204.9995L12.7143%203.71436L6.71429%209.71378L3.28571%206.2831L2%207.57092L6.71429%2012.2852Z%22%20fill%3D%22white%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+
+.checkbox-off {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20x%3D%220.75%22%20y%3D%220.75%22%20width%3D%2214.5%22%20height%3D%2214.5%22%20fill%3D%22white%22%20stroke%3D%22%2336352F%22%20stroke-width%3D%221.5%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+	
+</style></head><body><article id="2d86971c-72e7-80be-9fb1-cd121e287c13" class="page sans"><header><div class="page-header-icon undefined"><span class="icon">2️⃣</span></div><h1 class="page-title" dir="auto">synthese_decret_tertiaire_PROMEOS</h1><p class="page-description" dir="auto"></p></header><div class="page-body"><div style="display:contents" dir="auto"><h1 id="2d86971c-72e7-81ae-8cc2-c411914816ff" class="">SYNTHÈSE EXÉCUTIVE : DÉCRET TERTIAIRE 2025</h1></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-81f6-9068-c3d7d95bc722" class="">Évolutions et implications pour PROMEOS</h2></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-81fc-8be3-f91c16b1dbb8"/></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-81cf-8270-dce5026d3520" class="">RÉSUMÉ EXÉCUTIF</h2></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8130-a5ba-f4739727e56b" class="">Le décret tertiaire franchit un cap décisif en 2025 avec la finalisation des cadres réglementaires. L’arrêté Valeurs Absolues VI (septembre 2025) et les améliorations de la plateforme OPERAT offrent désormais une certitude complète sur les objectifs à atteindre. Pour PROMEOS—opérateur immobilier multi-sites—cette clarification crée une fenêtre critique pour planifier la transition énergétique avant l’échéance majeure de 2030.</p></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-811f-a87e-c49ce4749df5"/></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-8114-93d7-dc3f03fce18d" class="">1. CONTEXTE RÉGLEMENTAIRE STABILISÉ</h2></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81ab-9f82-e86365c29775" class="">Objectifs inchangés</h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8130-a588-e35cd1d735e5" class="bulleted-list"><li style="list-style-type:disc"><strong>2030</strong> : Réduction 40% des consommations énergétiques</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-817d-b2fe-eb145833e11c" class="bulleted-list"><li style="list-style-type:disc"><strong>2040</strong> : Réduction 50%</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81bc-822a-ddfb1990471c" class="bulleted-list"><li style="list-style-type:disc"><strong>2050</strong> : Réduction 60%</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-819c-aab5-ed24ea86db02" class="bulleted-list"><li style="list-style-type:disc">Base de référence : Année 2010-2019 au choix de l’assujetti</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-812d-b6fc-fc221c320a47" class="">Périmètre d’application</h3></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81a1-b8a9-f4e13170b323" class=""><strong>Tous les bâtiments tertiaires ≥ 1 000 m²</strong> incluant :<br/>- Bureaux, commerces, hôtels, restaurants<br/>- Établissements scolaires, de santé, administratifs<br/>- Infrastructures logistiques de froid</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8169-94a8-ecc58dd4f951" class=""><em>Exemptions</em> : Constructions précaires, édifices cultuels, bâtiments défense/sécurité.</p></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-8162-9eb1-ead853c78302"/></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-81b5-a0fe-ee0123fe369d" class="">2. AVANCÉES MAJEURE 2025</h2></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-8157-a596-e133910982d0" class="">A. Publication complète des valeurs absolues (Arrêté VI - 6 septembre 2025)</h3></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81b7-8816-c52b491d5f53" class="">Après cinq arrêtés précédents, le sixième arrêté finalise le cadre. <strong>Pour la première fois, 100% des catégories d’activité ont leurs seuils 2030 définis.</strong></p></div><div style="display:contents" dir="ltr"><table id="2d86971c-72e7-81ac-b202-c786610fba5f" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81b3-83c9-db6c0d4524c6"><th id="YRAm" class="simple-table-header-color simple-table-header">Catégories nouvellement couverte</th><th id="PkBV" class="simple-table-header-color simple-table-header">Pertinence pour PROMEOS</th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8113-ac77-fa2981fba0b5"><td id="YRAm" class="">14 sous-catégories commerces</td><td id="PkBV" class="">Si centres commerciaux</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8125-80ac-f4c33be7f499"><td id="YRAm" class="">Cinémas</td><td id="PkBV" class="">Si équipements loisirs</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81d3-a8ea-da08a4535b62"><td id="YRAm" class="">Services funéraires</td><td id="PkBV" class="">Faible probabilité</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-818e-9237-e95d0aaa340a"><td id="YRAm" class="">Banques</td><td id="PkBV" class="">Si locaux financiers</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81f7-a6da-df567d2458fc"><td id="YRAm" class="">Administration &amp; Bureaux (all branches)</td><td id="PkBV" class="">✓ <strong>PRIORITAIRE</strong></td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81e8-9e39-fd7c39ed9cfb"><td id="YRAm" class="">DROM (régions outre-mer)</td><td id="PkBV" class="">Si implantations OM</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8159-916f-f1c7ed095c4d" class=""><strong>Impact pour PROMEOS</strong> : Fin de l’incertitude. Tous vos bâtiments ont désormais des cibles mesurables et comparables au marché.</p></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-8174-878a-f55233827ea0" class="">B. Amélioration plateforme OPERAT</h3></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-815b-87f0-ffedacf2acf8" class="">Innovation : Identifiant Unique Bâtimentaire (IUB)</h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8165-a181-cdc23d991879" class="bulleted-list"><li style="list-style-type:disc"><strong>Résout</strong> : Problèmes déclaration multi-occupation (plusieurs entreprises dans même immeuble)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8115-8643-e349e052215d" class="bulleted-list"><li style="list-style-type:disc"><strong>Mécanisme</strong> : Intégration Référentiel National Bâtiments (RNB)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81b4-b3e4-d600b480d6bd" class="bulleted-list"><li style="list-style-type:disc"><strong>Avantage</strong> : Consolidation automatique données par bâtiment</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81a9-9733-dc820c3e6775" class="bulleted-list"><li style="list-style-type:disc"><strong>Impact PROMEOS</strong> : Si portefeuille multi-locataires, réduction drastique risques erreurs déclaratives</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81cf-9133-e8613fb2103e" class="">Nouvelle attestation numérique</h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8174-8a70-c22a0a9595bc" class="bulleted-list"><li style="list-style-type:disc">Génération automatique sur OPERAT</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8160-bb35-cbca6a731174" class="bulleted-list"><li style="list-style-type:disc">Accessible immédiatement post-déclaration</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81ab-855a-e7791eedc25f" class="bulleted-list"><li style="list-style-type:disc">Format PDF standardisé</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81b9-88f4-e56d995b4b02" class="bulleted-list"><li style="list-style-type:disc">Contenu : Consommations annuelles par fluide + indicateurs d’usage (USE) + performance relative</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-812f-ab85-eed65994215e" class="">C. Report affichage obligatoire</h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81e8-965b-c433e8205a9b" class="bulleted-list"><li style="list-style-type:disc"><strong>Ancien délai</strong> : À définir immédiatement</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-816e-9e33-fe865a1d71e2" class="bulleted-list"><li style="list-style-type:disc"><strong>Nouveau délai</strong> : 1er juillet 2026</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-819a-adfa-f479489dd673" class="bulleted-list"><li style="list-style-type:disc"><strong>Implication</strong> : Temps supplémentaire pour préparer communications occupants/stakeholders</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-814c-94b5-fd9cf4e132b1" class="">D. Coefficients climatiques raffinés</h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8159-b40e-fc0d94844210" class="bulleted-list"><li style="list-style-type:disc"><strong>Changement</strong> : Nouveaux coefficients d’ajustement régionaux</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-812f-8902-d0d1868b8b37" class="bulleted-list"><li style="list-style-type:disc"><strong>Raison</strong> : Reconnaissance variations météorologiques inter-régionales</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8155-b6d2-c5ceeb08a32e" class="bulleted-list"><li style="list-style-type:disc"><strong>Effet</strong> : Calculs plus justes, moins de pénalité pour régions froides</li></ul></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-8111-ad6f-d3ed18590d7c"/></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-8126-80c2-e05bb3abebb5" class="">3. CALENDRIER CRITIQUE 2026</h2></div><div style="display:contents" dir="ltr"><table id="2d86971c-72e7-8177-a7ad-eb109609d406" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-815f-889a-cd360a3f7fb0"><th id="yA@k" class="simple-table-header-color simple-table-header">Date</th><th id="_&gt;iy" class="simple-table-header-color simple-table-header">Obligation</th><th id="orwI" class="simple-table-header-color simple-table-header">Impact PROMEOS</th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8188-98ca-f6725990de13"><td id="yA@k" class=""><strong>30 sept 2026</strong></td><td id="_&gt;iy" class="">Déclaration consommations 2025</td><td id="orwI" class="">Préparer collecte données 2025 dès maintenant</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8192-bef9-f92cf7a8f323"><td id="yA@k" class=""><strong>30 sept 2026</strong></td><td id="_&gt;iy" class="">Dépôt dossier modulation (si applicable)</td><td id="orwI" class="">Identifier immeubles avec contraintes</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81c1-aca5-f4e43146a636"><td id="yA@k" class=""><strong>1er juillet 2026</strong></td><td id="_&gt;iy" class="">Affichage attestation OPERAT (report)</td><td id="orwI" class="">Temps supplémentaire pour stratégie com</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8168-a3aa-c54a3666e1c9"><td id="yA@k" class=""><strong>31 déc 2030</strong></td><td id="_&gt;iy" class=""><strong>Atteinte -40% (1ère échéance)</strong></td><td id="orwI" class=""><strong>Horizon pour tous les investissements</strong></td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-8120-be24-d773ec9a9a64"/></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-81b7-be71-e124e59dfe09" class="">4. IMPLICATIONS STRATÉGIQUES POUR PROMEOS</h2></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-8100-9584-e6be7b65d9dd" class="">Diagnostic initial requis</h3></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81ea-87d8-f23714cc12f7" class=""><strong>Questions préalables pour chaque actif :</strong></p></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-8137-890b-e6eb625f5866" class="numbered-list" start="1"><li><strong>Périmètre assujetti</strong> :<div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8191-b2a8-ee5c419d5958" class="bulleted-list"><li style="list-style-type:disc">Surface tertiaire &gt; 1 000 m² ?</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-817b-828b-ec1f75244f11" class="bulleted-list"><li style="list-style-type:disc">Catégorie d’activité (bureaux, commerce, enseignement, etc.) ?</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8141-98a6-c0fcea49369b" class="bulleted-list"><li style="list-style-type:disc">Multi-occupation ou monolocation ?</li></ul></div></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-81d4-983e-dd4eb1fd2dc6" class="numbered-list" start="2"><li><strong>Données existantes</strong> :<div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81e8-8c73-e09dd7409849" class="bulleted-list"><li style="list-style-type:disc">Année référence sélectionnée (2010-2019) ?</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81a1-aefd-f4546945475e" class="bulleted-list"><li style="list-style-type:disc">Historique consommations 2024-2025 par fluide (élec, gaz, fioul) ?</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8145-95a1-fe3b4378d18a" class="bulleted-list"><li style="list-style-type:disc">Données d’usage (USE) : occupants, horaires, taux occupation ?</li></ul></div></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-81e9-9139-f8c1e77f6b2e" class="numbered-list" start="3"><li><strong>Performance actuelle</strong> :<div style="display:contents" dir="auto"><ul id="2d86971c-72e7-812b-be22-cdd44f8d7a41" class="bulleted-list"><li style="list-style-type:disc">Distance à objectif 2030 ?</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8149-9237-f7a1d37f9dd1" class="bulleted-list"><li style="list-style-type:disc">Trajectoire naturelle (ex. inflation énergétique, optimisations passées) ?</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8120-a9fb-ee6e55ac4ef2" class="bulleted-list"><li style="list-style-type:disc">Potentiel gisement d’économies ?</li></ul></div></li></ol></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-8148-9d39-d583f559d9e7" class="">Deux scénarios de calcul à comprendre</h3></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81b4-8236-eac7e4645cc3" class="">Scénario 1 : Méthode relative (baisse %)</h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8152-b6e2-d54bff036933" class="bulleted-list"><li style="list-style-type:disc">Applicable si : Bâtiment ancien, performance faible/moyenne</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81e1-ae46-eb2155e25539" class="bulleted-list"><li style="list-style-type:disc">Calcul : 40% de réduction vs année référence</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-815e-8059-f5529a9b330b" class="bulleted-list"><li style="list-style-type:disc">Avantage : Moins exigeant pour bâtiments très performants (comparaison régressive)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8123-ba25-c72d2aaacd99" class="bulleted-list"><li style="list-style-type:disc">Exemple : Bâtiment 2000 | Conso 2015 (ref) : 200 kWh/m²/an | Cible 2030 : 120 kWh/m²/an (-40%)</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-814e-8e78-d856d5883538" class="">Scénario 2 : Méthode absolue (seuils fixes)</h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8108-9c22-fe2235623af6" class="bulleted-list"><li style="list-style-type:disc">Applicable si : Bâtiment neuf ou très performant</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8125-a421-d1c84541e2e5" class="bulleted-list"><li style="list-style-type:disc">Calcul : Atteindre seuil en kWh/m²/an défini par catégorie/région</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8169-9616-e28055f7ba08" class="bulleted-list"><li style="list-style-type:disc">Avantage : Benchmark transparent vs meilleurs du marché</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8174-849a-dc7c96c035e7" class="bulleted-list"><li style="list-style-type:disc">Exigence : Plus stricte pour immeubles modernes</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-815f-9882-c3b04df66424" class="bulleted-list"><li style="list-style-type:disc">Exemple : Bureau Île-de-France | Seuil 2030 : ~90 kWh/m²/an (VAL VI)</li></ul></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8185-9003-e072528842de" class=""><strong>Recommandation PROMEOS</strong> : Analyser mixte approche pour chaque actif (choisir la plus favorable pour assujetti).</p></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-8100-91ee-ccb2e7ec87b1" class="">Levier d’action identifiés</h3></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81f9-8d22-efe30e88f35b" class=""><strong>Hiérarchie d’impact économique</strong> (court → long terme) :</p></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-8183-8220-c59a7f591249" class="numbered-list" start="1"><li><strong>Optimisation exploitation</strong> (6-12 mois, ROI 2-3 ans)<div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81ab-a2e2-f34275983b09" class="bulleted-list"><li style="list-style-type:disc">Gestion active équipements (chauffage/clim/éclairage)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81f7-901e-fba41d78a668" class="bulleted-list"><li style="list-style-type:disc">Contrats maintenance avec objectifs réduction</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-810d-9ecc-c059597ccf44" class="bulleted-list"><li style="list-style-type:disc">Sous-comptage énergie pour identification gaspillages</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81a3-9b4e-dc2a1d8cd3b5" class="bulleted-list"><li style="list-style-type:disc"><strong>Gain estimé</strong> : 10-15% économies</li></ul></div></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-81c7-a554-dc4bf4baab4d" class="numbered-list" start="2"><li><strong>Rénovation équipements</strong> (12-24 mois, ROI 5-8 ans)<div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81a8-9466-d283009742cb" class="bulleted-list"><li style="list-style-type:disc">Éclairage LED + capteurs présence/luminosité</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-811a-8258-c29f7b80299e" class="bulleted-list"><li style="list-style-type:disc">Chaufferie/climatisation haute performance</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8139-a0cd-ffc74837bb9e" class="bulleted-list"><li style="list-style-type:disc">Eau chaude sanitaire pompe à chaleur</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-819f-aab5-e22f217d77c3" class="bulleted-list"><li style="list-style-type:disc">Systèmes GTB/GTC (gestion centralisée)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8147-a83f-c9514ac38b27" class="bulleted-list"><li style="list-style-type:disc"><strong>Gain estimé</strong> : 20-30% économies + conformité durable</li></ul></div></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-8110-8ab6-e401a837e1a2" class="numbered-list" start="3"><li><strong>Rénovation enveloppe bâtie</strong> (24+ mois, ROI 8-15 ans)<div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8153-bffa-d0e3cb76a133" class="bulleted-list"><li style="list-style-type:disc">Isolation toiture/murs</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81cd-a5e4-c46856e075b4" class="bulleted-list"><li style="list-style-type:disc">Menuiseries performantes</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81f6-b569-fc3e3304fa53" class="bulleted-list"><li style="list-style-type:disc">Protection solaire</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-818f-a2b6-c4ddc23f5406" class="bulleted-list"><li style="list-style-type:disc"><strong>Gain estimé</strong> : 30-40%+ (mais investissement majeur)</li></ul></div></li></ol></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-810f-a66d-ff5ac45afdc5"/></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-81ba-a53a-ce4959d9c427" class="">5. OPPORTUNITÉS FINANCIÈRES 2025-2030</h2></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-811c-b349-cc49a2a090c1" class="">Dispositifs de financement activables</h3></div><div style="display:contents" dir="ltr"><table id="2d86971c-72e7-8101-be21-cb56ce5dc5b9" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81aa-ab76-dec3e9b9c1a5"><th id="]vIt" class="simple-table-header-color simple-table-header">Dispositif</th><th id="JGj&lt;" class="simple-table-header-color simple-table-header">Montant typique</th><th id="Ek&lt;F" class="simple-table-header-color simple-table-header">Conditions</th><th id="EKYe" class="simple-table-header-color simple-table-header">Délai</th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8133-8568-f3de974eabc0"><td id="]vIt" class=""><strong>Certificats Économie Énergie (CEE) P6</strong></td><td id="JGj&lt;" class="">10-30% CAPEX</td><td id="Ek&lt;F" class="">Travaux éligibles listés</td><td id="EKYe" class="">Rapide (60j)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-818a-b992-c6cbff402dbb"><td id="]vIt" class=""><strong>MaPrimeRénov Tertiaire</strong></td><td id="JGj&lt;" class="">10-25% CAPEX</td><td id="Ek&lt;F" class="">Audit préalable requis</td><td id="EKYe" class="">2-3 mois</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-811f-ae20-ccf1b58fbc7a"><td id="]vIt" class=""><strong>Éco-PTZ</strong></td><td id="JGj&lt;" class="">Jusqu’à 300 k€</td><td id="Ek&lt;F" class="">Si bouquet travaux</td><td id="EKYe" class="">1-2 mois</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8132-ba2b-e87f40ef0441"><td id="]vIt" class=""><strong>ADEME Accompagnement</strong></td><td id="JGj&lt;" class="">Audit : 30-50% financé</td><td id="Ek&lt;F" class="">Petits/moyens projets</td><td id="EKYe" class="">Sur dossier</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81e4-a61e-f318d52c8714" class=""><strong>Opportunité majeure</strong> : Cumul CEE + MaPrimeRénov sur même projet peut financer 30-50% du CAPEX travaux.</p></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-8183-a0ce-c3b5ea2e4d0a" class="">Modèles d’économies réalisables</h3></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81bf-aa7f-f60ad575a60a" class=""><strong>Cas d’école bureau 5 000 m² (Île-de-France, conso ref 180 kWh/m²/an)</strong> :<br/>- Cible 2030 : 108 kWh/m²/an (méthode relative -40%)<br/>- Gisement : 72 kWh/m²/an = 360 000 kWh/an<br/>- Valeur énergétique annuelle : ~72 000€ (200€/MWh moyen)<br/>- <strong>Bilan CAPEX optimal</strong> : 300-400k€ d’investissements (gestion + équip), ROI 5-6 ans</p></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-81d7-ba26-ee0ce687cb27"/></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-81ac-8cff-e3a0b2939732" class="">6. POINTS D’VIGILANCE ET RISQUES</h2></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-8197-b22d-ca173c01967b" class="">Risque juridique/financier</h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-814a-a822-d88d92530d92" class="bulleted-list"><li style="list-style-type:disc"><strong>Non-déclaration OPERAT</strong> : Poursuite possible, pénalité jusqu’à 1 500€ par jour</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81d5-8156-fc0fd39adf2f" class="bulleted-list"><li style="list-style-type:disc"><strong>Non-atteinte objectifs 2030</strong> : Sanction administrative possible (décalage vers 2035 reconnu en jurisprudence Conseil d’État, mais incertain 2025)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8181-9832-cc4296ebc747" class="bulleted-list"><li style="list-style-type:disc"><strong>Données incorrectes</strong> : Rejet déclaration, délai pour correction, impact score établissement</li></ul></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8170-9fd5-d44e1821e0c6" class=""><strong>Prévention</strong> : Processus robuste collecte données, tiers de confiance (auditeur externalisé) si complexité multi-sites.</p></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-8164-b66d-d61e1bef5024" class="">Risque opérationnel</h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81a6-931c-cf4aded5cc94" class="bulleted-list"><li style="list-style-type:disc"><strong>Modulation objectifs</strong> : Dossier technique doit justifier impossibilité justifiée. Critères stricts (architecte classé, TRI &gt; 10 ans, etc.)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8111-b216-d3447ea128ee" class="bulleted-list"><li style="list-style-type:disc"><strong>Multi-occupation</strong> : Responsabilité partagée propriétaire/locataires. Nouvelle IUB aide mais clarté contractuelle reste essentielle</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-814c-bc73-fb70d1517a39" class="bulleted-list"><li style="list-style-type:disc"><strong>Données rétrospectives</strong> : Accès factures anciennes parfois compliqué. Commencer reconstruction base données dès novembre 2025</li></ul></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-8117-a572-fd1ea337083e"/></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-81c0-8bf8-d44277eb498b" class="">7. RECOMMANDATIONS ACTION PROMEOS</h2></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-8105-b4a7-e5da3e2b08db" class="">Phase 1 : Diagnostic (Jan-Mar 2026)</h3></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-815f-b3d0-d4cb68464200" class="numbered-list" start="1"><li><strong>Cartographie assujettis</strong><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81f6-81ba-fcb12520e8bb" class="bulleted-list"><li style="list-style-type:disc">Lister tous sites &gt; 1 000 m² tertiaires</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-817a-a23f-dcae8d90d40b" class="bulleted-list"><li style="list-style-type:disc">Identifier année référence déjà sélectionnée (si déclaration antérieure)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-813b-aaf3-fd938745b432" class="bulleted-list"><li style="list-style-type:disc">Noter catégories d’activité précises (critical pour VAL VI)</li></ul></div></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-8182-90ec-fff8aeecc597" class="numbered-list" start="2"><li><strong>Audit données</strong><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8114-bc14-e2e118aedce9" class="bulleted-list"><li style="list-style-type:disc">Reconstituer factures énergie 2015-2025</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8129-b6a5-f32c5e01de78" class="bulleted-list"><li style="list-style-type:disc">Identifier données manquantes (gaz, eau, déchets si inclus)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81fc-831a-e01ecfbd0d92" class="bulleted-list"><li style="list-style-type:disc">Organiser collecte 2024-2025 dès janvier 2026</li></ul></div></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-8152-a9e4-cf2bbebd2d61" class="numbered-list" start="3"><li><strong>Analyse de gap</strong><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-816f-a184-f0be5d0fb816" class="bulleted-list"><li style="list-style-type:disc">Pour chaque site : conso actuelle vs objectif 2030</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81c3-8e13-ed39621b164a" class="bulleted-list"><li style="list-style-type:disc">Évaluer trajectoire naturelle (inflation énergie crée économies de facto)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8188-9c2e-f3661541cdf4" class="bulleted-list"><li style="list-style-type:disc">Identifier top 20% sites critiques (plus haut gisement)</li></ul></div></li></ol></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81a6-a6bf-e21738247d4f" class="">Phase 2 : Planification (Mar-Jun 2026)</h3></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-817e-a06c-cec6a8ca8d53" class="numbered-list" start="1"><li><strong>Stratégie par site</strong><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8194-abd9-c8062b98b8c2" class="bulleted-list"><li style="list-style-type:disc">Sites low-hanging : optimisation exploitation + LED</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81b6-9601-d2dd4d7c6e3b" class="bulleted-list"><li style="list-style-type:disc">Sites mid-range : rénovation équipements (GTB, chaufferie)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-818a-a73d-e37f49bdc640" class="bulleted-list"><li style="list-style-type:disc">Sites exigeants : dossier modulation justifiée vs travaux majeurs</li></ul></div></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-8126-85e1-f05541859ad3" class="numbered-list" start="2"><li><strong>Calendrier d’investissement</strong><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81e5-95e7-ea8454ed3949" class="bulleted-list"><li style="list-style-type:disc">Frontcharger projets pour bénéfices 2025-2026 (inertie thermique)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8173-bff0-c67743dcc9d0" class="bulleted-list"><li style="list-style-type:disc">Aligner avec renouvellement baux (fenêtres de restriction réduites)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8114-85c6-d807ac0085d5" class="bulleted-list"><li style="list-style-type:disc">Phasage CEE/Aides max. d’impact</li></ul></div></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-8194-95f9-f0316203af74" class="numbered-list" start="3"><li><strong>Gouvernance</strong><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8165-818c-cc8bbaa1b0ab" class="bulleted-list"><li style="list-style-type:disc">Désigner pilote décret tertiaire (responsabilité OPERAT)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8190-ba9b-dbb876b6d9ba" class="bulleted-list"><li style="list-style-type:disc">Contrats prestataires énergie avec objectifs résultats</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8114-96f6-fee274207fac" class="bulleted-list"><li style="list-style-type:disc">Audit interne annuel avant déclaration 30 sept</li></ul></div></li></ol></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81bd-ad23-c1e1a8ba29ec" class="">Phase 3 : Déclaration &amp; Suivi (Sept 2026+)</h3></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-81ea-b5c2-c2b629ee612e" class="numbered-list" start="1"><li><strong>Déclaration 2025 robuste</strong><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-819d-a432-d749b1790b01" class="bulleted-list"><li style="list-style-type:disc">Vérifier via test OPERAT avant submission finale</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81dc-a173-dde0f07fd045" class="bulleted-list"><li style="list-style-type:disc">Documenter hypothèses (années ref, USE, coefficients climat)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81b9-b8a4-d34d575a8c70" class="bulleted-list"><li style="list-style-type:disc">Archiver attestation générée (proof of compliance)</li></ul></div></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-8139-8612-cea53a1685c2" class="numbered-list" start="2"><li><strong>Suivi continu</strong><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8184-ad6f-d4dd0a00ec36" class="bulleted-list"><li style="list-style-type:disc">Dashboard équipe interne post-déclaration</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81bd-9fe2-f3be75a64421" class="bulleted-list"><li style="list-style-type:disc">Ajustements contrats prestataires basé sur donnée réelle</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81a8-862d-e6ff1d72b005" class="bulleted-list"><li style="list-style-type:disc">Anticipation 2027 (nouvelle déclaration)</li></ul></div></li></ol></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-8166-949f-e48c044dcad3"/></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-8140-a4ce-d21071570a14" class="">8. PRINCIPAUX CHANGEMENTS 2025 RÉSUMÉ</h2></div><div style="display:contents" dir="ltr"><table id="2d86971c-72e7-8142-a77d-f7013dc8c877" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81a6-8ae3-fb04a6cf4087"><th id="R\K]" class="simple-table-header-color simple-table-header">Ancien état (2024)</th><th id="T&lt;JS" class="simple-table-header-color simple-table-header">Nouveau état (2025)</th><th id="QCKN" class="simple-table-header-color simple-table-header">Implication</th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81e8-b18a-f0c40f4dee5c"><td id="R\K]" class="">80% catégories avec VAL définie</td><td id="T&lt;JS" class="">100% catégories avec VAL définie</td><td id="QCKN" class="">Planification certain</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81fb-8104-c9d819fd1acc"><td id="R\K]" class="">Affichage attestation obligation imm.</td><td id="T&lt;JS" class="">Report 1er juill 2026</td><td id="QCKN" class="">Délai supplémentaire</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81e9-8781-f4161a3924d7"><td id="R\K]" class="">IUB optionnel/confus</td><td id="T&lt;JS" class="">IUB intégré OPERAT (RNB)</td><td id="QCKN" class="">Multi-occupation simplifiée</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-816a-9f79-d9e836d00d31"><td id="R\K]" class="">Coefficients climat anciens</td><td id="T&lt;JS" class="">Coefficients régionaux raffinés</td><td id="QCKN" class="">Calc plus juste</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8122-9987-c9a8e8b49e14"><td id="R\K]" class="">Doute sur trajectoire 2030</td><td id="T&lt;JS" class="">Clarté complète : -40% validé</td><td id="QCKN" class="">Confiabilité investissements</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-816c-877d-d741623fed96"/></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-81b2-b197-fddd3ac93ff0" class="">CONCLUSION</h2></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81ba-8306-c8ffee1df5e8" class=""><strong>Le décret tertiaire 2025 n’est plus une menace, c’est une opportunité</strong> pour PROMEOS :</p></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-81a2-87ba-ffe58d2bd027" class="numbered-list" start="1"><li><strong>Cadre finalisé</strong> : Fin de l’incertitude réglementaire. PROMEOS peut investir avec visibilité 5 ans.</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-8143-84a2-fc213b3dfd36" class="numbered-list" start="2"><li><strong>ROI démontrables</strong> : Travaux énergétiques génèrent 5-8% réductions factures annuelles. CEE/MaPrimeRénov financent 30-50% CAPEX.</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-81dd-9d41-ddd291de4143" class="numbered-list" start="3"><li><strong>Valeur patrimoniale</strong> : Bâtiments conformes 2030 = attractivité occupants, prime location, facilité refinancement.</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-8176-b329-c27be7f94993" class="numbered-list" start="4"><li><strong>Avantage concurrentiel</strong> : Promoteur immobilier affichant performance énergétique certifiée 2030 = différenciation marché résidentiel/tertiaire.</li></ol></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81bb-b73a-c5abdd71b045" class=""><strong>Délai critique : 30 septembre 2026 pour déclaration 2025.</strong> La fenêtre 2026 doit servir à cristalliser stratégie d’investissement pour boucler 40% réductions avant fin 2030.</p></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-8105-8fd3-e683bbffdfa1"/></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81fe-ac43-c6e980255de1" class=""><strong>Pour support technique OPERAT et modulations : Contacter ADEME (ademe.fr)Pour financements : Référer MaPrimeRénov et CEE dès audit lancé (6-9 mois avant travaux)</strong></p></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-814f-9feb-f5eb9bbac065"/></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-812a-86ad-e19be9c5623d" class=""><em>Document préparé janvier 2026 | Décret tertiaire décret n°2019-771, arrêtés VAL I-VI</em></p></div><div style="display:contents" dir="ltr"><figure id="2ec6971c-72e7-8010-aad5-ebbe0e60413f" class="link-to-page"><a href="D%C3%A9cret%20tertiaire%20_%20OPERAT%20%E2%80%94%20obligations%202026%20et%2020%202ec6971c72e78010aad5ebbe0e60413f.html">Décret tertiaire _ OPERAT — obligations 2026 et 20</a></figure></div></div></article><span class="sans" style="font-size:14px;padding-top:2em"></span></body></html>

@@ -1,0 +1,33 @@
+id: POST_ARENH_2026_11
+type: knowledge
+domain: usages
+title: Guichet de Compensation Finale
+summary: Après chaque année d’application, un guichet de compensation finale ouvre
+  en avril de l’année suivante. Sur la base des consommations consolidées ex-post
+  remontées par RTE et les gestionnaires de rése...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: Après chaque année d’application, un guichet de compensation finale ouvre
+  en avril de l’année suivante. Sur la base des consommations consolidées ex-post
+  remontées par RTE et les gestionnaires de réseaux, la CRE régularise les acomptes
+  versés. Les fournisseurs peuvent être amenés à rembourser des excédents ou recevoir
+  des régularisations positives.
+logic: null
+sources:
+- doc_id: POST_ARENH_2026
+  label: Post-ARENH 2026
+  section: Guichet de Compensation Finale
+  anchor: '#guichet-de-compensation-finale'
+  excerpt_short: Après chaque année d’application, un guichet de compensation finale
+    ouvre en avril de l’année suivan...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,40 @@
+id: ACC_FRANCE_7
+type: rule
+domain: acc
+title: '4. Cadre Contractuel : Convention Enedis & Obligations Spécifiques 32 33 34'
+summary: "Convention ACC (1 par opération) doit préciser : \n- Identité PMO, producteurs,\
+  \ consommateurs, coordonnées bancaires \n- Localisation injection/soutirage, PRM\
+  \ identifiants \n- Clé de répartition choisie ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Convention ACC (1 par opération) doit préciser : \n- Identité PMO, producteurs,\
+  \ consommateurs, coordonnées bancaires \n- Localisation injection/soutirage, PRM\
+  \ identifiants \n- Clé de répartition choisie + modalités modification \n- Responsabilité\
+  \ d’équilibre (qui = fournisseur complément) \n- Durée, conditions résiliation \n\
+  \nPrérequis avant signature avec Enedis : 35 \n- Tous participants équipés Linky\
+  \ (obligatoire pour ACC) \n- Consentement écrit conso/producteur (RGPD courbes charge)\
+  \ \n- CAE (Contrat Accès Exploitation) producteur déjà en place \n- PMO prouve en\
+  \ capacité (statuts, trésorerie, mandat direction) \n\nDélais typiques : 36 37 \n\
+  - Instruction Enedis : 5 jours ouvrés (notification date démarrage) \n- Raccordement\
+  \ « simple » : 2 mois \n- Raccordement « complexe » (HTA, travaux réseau) : 12–18\
+  \ mois"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: '4. Cadre Contractuel : Convention Enedis & Obligations Spécifiques 32
+    33 34'
+  anchor: '#4-cadre-contractuel-convention-enedis-obligations-spcifiques-32-33-34'
+  excerpt_short: "Convention ACC (1 par opération) doit préciser : \n- Identité PMO,\
+    \ producteurs, consommateurs, coordo..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,38 @@
+id: LOI_APER_7
+type: rule
+domain: facturation
+title: Cas d’usage ACC multi-sites B2B 16 17
+summary: "Exemple : Parc industriel 10 ha, 5 entreprises, distance max 1 km \n- PMO\
+  \ créée (association ou SAS) \n- Producteur (T1) = ombrière parking ou toiture usine\
+  \ T1 \n- Consommateurs : T1, T2, T3, T4, T5 \n- C..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Exemple : Parc industriel 10 ha, 5 entreprises, distance max 1 km \n\
+  - PMO créée (association ou SAS) \n- Producteur (T1) = ombrière parking ou toiture\
+  \ usine T1 \n- Consommateurs : T1, T2, T3, T4, T5 \n- Contrats producteurs-consommateurs\
+  \ : clés répartition mensuel (≈50% T1, 20% T2, 15% T3, etc., selon production/conso)\
+  \ \n- Fournisseur surplus (EDF ou tiers acheteur) : contrat appel d’offres ou obligation\
+  \ d’achat \n- GRD (Enedis) : mesures injection/soutrage, calcule répartition, facture\
+  \ couronne normale + réduction autoconso \n\nRisques : \n- Surplus fluctue = flux\
+  \ contrats variables = PMO doit assurer stabilité \n- Défaillance producteur = perte\
+  \ courant consommateurs (coupure non-autorisée) = fournisseur tiers décale approvisionnement\
+  \ \n- Clés répartition contestées (météo, maintenance, variations) = conflits participants"
+logic: null
+sources:
+- doc_id: LOI_APER
+  label: Loi APER - Acceleration Production Energies Renouvelables
+  section: Cas d’usage ACC multi-sites B2B 16 17
+  anchor: '#cas-dusage-acc-multi-sites-b2b-16-17'
+  excerpt_short: "Exemple : Parc industriel 10 ha, 5 entreprises, distance max 1 km\
+    \ \n- PMO créée (association ou SAS) ..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

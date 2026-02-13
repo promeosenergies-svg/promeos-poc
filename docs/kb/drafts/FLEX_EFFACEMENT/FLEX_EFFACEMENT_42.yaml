@@ -1,0 +1,40 @@
+id: FLEX_EFFACEMENT_42
+type: knowledge
+domain: acc
+title: Hiérarchie Mécanismes (Valeur vs. Complexité)
+summary: "Pour portfolio 10–50 MW, multi-sites tertiaire/industrie (cas “Factory 38”\
+  \ SIA Partners)[artifact:] : \n\nTier 1 – Cœur du revenu (60–70%) : \n- \U0001F3AF\
+  \ NEBEF : Simplicité contractuelle, accès agrégateurs, act..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Pour portfolio 10–50 MW, multi-sites tertiaire/industrie (cas “Factory\
+  \ 38” SIA Partners)[artifact:] : \n\nTier 1 – Cœur du revenu (60–70%) : \n- \U0001F3AF\
+  \ NEBEF : Simplicité contractuelle, accès agrégateurs, activations fréquentes (tempêtes,\
+  \ pics prix). Revenu attendu 40–50% total. \n- Prime source : Barèmes forfaitaires\
+  \ régulés (moins volatilité prix spot). \n\nTier 2 – Stabilité & Long terme (25–35%)\
+  \ : \n- \U0001F3AF Réserves (aFRR/mFRR) : Prime capacité fixe même sans activation,\
+  \ engagement pluriannuel. Revenu 25–30%. \n- Condition : Instrumentation téléconduite\
+  \ RTE (~€100k). \n- Capacité (dès nov. 2026) : Enchères AL-1 (flexibilités), revenu\
+  \ €250–350k (50 MW). À intégrer roadmap. \n\nTier 3 – Optimisation & Risques (5–10%)\
+  \ : \n- \U0001F4A1 Implicite (arbitrage prix) : Hors engagement, économies sur tarifs\
+  \ dynamiques. \n- \U0001F6A8 MA obligatoire (EnR >10 MW) : Dépôt obligatoire hausse\
+  \ + baisse, mais revenu baisse faible (sinon prix exorbitants)."
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: Hiérarchie Mécanismes (Valeur vs. Complexité)
+  anchor: '#hirarchie-mcanismes-valeur-vs-complexit'
+  excerpt_short: Pour portfolio 10–50 MW, multi-sites tertiaire/industrie (cas “Factory
+    38” SIA Partners)[artifact:] ...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

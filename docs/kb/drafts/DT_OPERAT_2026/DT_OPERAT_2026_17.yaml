@@ -1,0 +1,33 @@
+id: DT_OPERAT_2026_17
+type: rule
+domain: acc
+title: '7. Loi APER : Obligation de Solarisation des Parkings'
+summary: La Loi APER (Accélération de la Production d’Énergies Renouvelables, 10 mars
+  2023) impose la couverture par ombrières photovoltaïques d’au moins 50% de la surface
+  des grands parkings extérieurs. Taill...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: La Loi APER (Accélération de la Production d’Énergies Renouvelables, 10
+  mars 2023) impose la couverture par ombrières photovoltaïques d’au moins 50% de
+  la surface des grands parkings extérieurs. Taille du parking Deadline Amende annuelle
+  ≥ 10 000 m² 1er juillet 2026 Jusqu’à 40 000 €/an 1 500–10 000 m² 1er juillet 2028
+  Jusqu’à 20 000 €/an
+logic: null
+sources:
+- doc_id: DT_OPERAT_2026
+  label: Decret Tertiaire / OPERAT - Obligations 2026
+  section: '7. Loi APER : Obligation de Solarisation des Parkings'
+  anchor: '#7-loi-aper-obligation-de-solarisation-des-parkings'
+  excerpt_short: La Loi APER (Accélération de la Production d’Énergies Renouvelables,
+    10 mars 2023) impose la couvert...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

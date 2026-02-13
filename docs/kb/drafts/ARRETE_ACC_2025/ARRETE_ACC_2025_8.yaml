@@ -1,0 +1,41 @@
+id: ARRETE_ACC_2025_8
+type: rule
+domain: usages
+title: 3.1 Gestionnaire de Réseau — Responsabilités d’Enedis
+summary: "Enedis, en tant que gestionnaire du réseau public de distribution d’électricité,\
+  \ endosse plusieurs responsabilités critiques : \n\nInterface administrative et\
+  \ technique: \n- Validation des demandes de ra..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Enedis, en tant que gestionnaire du réseau public de distribution d’électricité,\
+  \ endosse plusieurs responsabilités critiques : \n\nInterface administrative et\
+  \ technique: \n- Validation des demandes de raccordement et d’injections \n- Signature\
+  \ du contrat d’injection (pour alimenter le réseau de l’excédent produit) \n- Obtention\
+  \ de l’ accord de rattachement à un périmètre d’équilibre dans le cadre du contrat\
+  \ d’obligation d’achat \n\nGestion des données et facturation: \n- Transmission\
+  \ mensuelle des relevés de production, consommation, autoconsommation et surplus\
+  \ 20 \n- Réception et intégration des clés de répartition définies par la Personne\
+  \ Morale Organisatrice \n- Interfaces d’échanges automatisées pour la déduction\
+  \ de la part autoconsommée sur les factures clients 21 \n\nInnovation technologique\
+  \ 2025: \n- Nouvelle clé de répartition dite “Full Dynamique” permettant une répartition\
+  \ producteur-par-producteur vers chaque consommateur de l’opération (au lieu d’une\
+  \ clé agrégée) 22 \n- Systèmes de reporting transparent vers les participants"
+logic: null
+sources:
+- doc_id: ARRETE_ACC_2025
+  label: Arrete 21 fevrier 2025 - ACC 5MW/10MW
+  section: 3.1 Gestionnaire de Réseau — Responsabilités d’Enedis
+  anchor: '#31-gestionnaire-de-rseau-responsabilits-denedis'
+  excerpt_short: Enedis, en tant que gestionnaire du réseau public de distribution
+    d’électricité, endosse plusieurs r...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

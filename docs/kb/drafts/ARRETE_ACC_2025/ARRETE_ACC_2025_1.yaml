@@ -1,0 +1,32 @@
+id: ARRETE_ACC_2025_1
+type: knowledge
+domain: usages
+title: Résumé officiel des seuils, périmètres et modalités
+summary: 'Publication: Journal Officiel du 5 mars 2025 1 Référence Legifrance: JORFTEXT000051292744
+  2 Texte modifié: Arrêté du 21 novembre 2019 fixant le critère de proximité géographique
+  de l’autoconsommation ...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Publication: Journal Officiel du 5 mars 2025 1 Référence Legifrance:\
+  \ JORFTEXT000051292744 2 Texte modifié: Arrêté du 21 novembre 2019 fixant le critère\
+  \ de proximité géographique de l’autoconsommation collective étendue \nAvis préalable\
+  \ CRE: Délibération n°2024-231 du 18 décembre 2024 3"
+logic: null
+sources:
+- doc_id: ARRETE_ACC_2025
+  label: Arrete 21 fevrier 2025 - ACC 5MW/10MW
+  section: Résumé officiel des seuils, périmètres et modalités
+  anchor: '#rsum-officiel-des-seuils-primtres-et-modalits'
+  excerpt_short: 'Publication: Journal Officiel du 5 mars 2025 1 Référence Legifrance:
+    JORFTEXT000051292744 2 Texte mo...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

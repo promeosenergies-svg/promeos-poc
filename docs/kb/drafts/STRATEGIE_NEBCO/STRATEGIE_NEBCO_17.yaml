@@ -1,0 +1,31 @@
+id: STRATEGIE_NEBCO_17
+type: rule
+domain: reglementaire
+title: IT Infrastructure
+summary: "- Pipeline données (daily sync) : advizeo SaaS ~€150–300/site/an \n- Moteur\
+  \ règles : Baseline vs. réalisé ; détection écarts \n- Journal audit : Logs RTE-compliance\
+  \ \n- Alerting : Seuils dépassés (email/..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Pipeline données (daily sync) : advizeo SaaS ~€150–300/site/an \n-\
+  \ Moteur règles : Baseline vs. réalisé ; détection écarts \n- Journal audit : Logs\
+  \ RTE-compliance \n- Alerting : Seuils dépassés (email/SMS)"
+logic: null
+sources:
+- doc_id: STRATEGIE_NEBCO
+  label: Analyse strategique NEBCO
+  section: IT Infrastructure
+  anchor: '#it-infrastructure'
+  excerpt_short: "- Pipeline données (daily sync) : advizeo SaaS ~€150–300/site/an\
+    \ \n- Moteur règles : Baseline vs. réa..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

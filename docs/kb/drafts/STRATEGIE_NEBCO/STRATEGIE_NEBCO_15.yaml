@@ -1,0 +1,32 @@
+id: STRATEGIE_NEBCO_15
+type: knowledge
+domain: usages
+title: Données Minimales
+summary: "- Granularité : 10–30 min sub-metering; GRD fournit 15 min (≤36kVA) / 5\
+  \ min (>36kVA) \n- Historique : 2–3 ans données consommation \n- Télérelève : Active,\
+  \ pas de lacunes \n- Métadonnées : Équipements, P..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Granularité : 10–30 min sub-metering; GRD fournit 15 min (≤36kVA) /\
+  \ 5 min (>36kVA) \n- Historique : 2–3 ans données consommation \n- Télérelève :\
+  \ Active, pas de lacunes \n- Métadonnées : Équipements, P. souscrite, horaires,\
+  \ arrêts prévus"
+logic: null
+sources:
+- doc_id: STRATEGIE_NEBCO
+  label: Analyse strategique NEBCO
+  section: Données Minimales
+  anchor: '#donnes-minimales'
+  excerpt_short: "- Granularité : 10–30 min sub-metering; GRD fournit 15 min (≤36kVA)\
+    \ / 5 min (>36kVA) \n- Historique :..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

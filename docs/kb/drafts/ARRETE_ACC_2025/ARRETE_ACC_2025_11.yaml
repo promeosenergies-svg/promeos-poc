@@ -1,0 +1,33 @@
+id: ARRETE_ACC_2025_11
+type: rule
+domain: usages
+title: 4.1 Exonération d’accise (1er mars 2025)
+summary: "Parallèlement à l’augmentation des seuils de puissance, le gouvernement\
+  \ a appliqué une mesure fiscale favorable : \n- Exonération totale d’accise (0€)\
+  \ pour les opérations d’ACC de puissance < 1 MW 26 \n..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Parallèlement à l’augmentation des seuils de puissance, le gouvernement\
+  \ a appliqué une mesure fiscale favorable : \n- Exonération totale d’accise (0€)\
+  \ pour les opérations d’ACC de puissance < 1 MW 26 \n- Effectif: 1er mars 2025 \n\
+  - Alignement: Parité fiscale avec l’autoconsommation individuelle \n- Impact économique:\
+  \ Amélioration de la rentabilité des petits projets collectifs"
+logic: null
+sources:
+- doc_id: ARRETE_ACC_2025
+  label: Arrete 21 fevrier 2025 - ACC 5MW/10MW
+  section: 4.1 Exonération d’accise (1er mars 2025)
+  anchor: '#41-exonration-daccise-1er-mars-2025'
+  excerpt_short: Parallèlement à l’augmentation des seuils de puissance, le gouvernement
+    a appliqué une mesure fiscal...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

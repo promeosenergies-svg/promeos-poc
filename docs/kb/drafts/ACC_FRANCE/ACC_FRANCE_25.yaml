@@ -1,0 +1,34 @@
+id: ACC_FRANCE_25
+type: knowledge
+domain: reglementaire
+title: 'Récapitulatif : Impact Cumulé si 100% Solutions Implémentées'
+summary: "Before (2025 state): \n- Cycle projet : 4–8 mois \n- Friction cumul. : ~100–150h/an\
+  \ par opération \n- Erreurs facturation : 5–10% projets/an \n- Taux abandonn. PMO\
+  \ : 10–15% \n\nAfter (PROMEOS full, 2027+): ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Before (2025 state): \n- Cycle projet : 4–8 mois \n- Friction cumul.\
+  \ : ~100–150h/an par opération \n- Erreurs facturation : 5–10% projets/an \n- Taux\
+  \ abandonn. PMO : 10–15% \n\nAfter (PROMEOS full, 2027+): \n- Cycle projet : 3–4\
+  \ mois (-50%) \n- Friction cumul. : 15–25h/an (-80%) \n- Erreurs : <1% \n- Taux\
+  \ abandon : <3% \n\nImpact marché : +40% opérations viables en small/medium, -30%\
+  \ coûts PMO → +2x croissance en scénario central"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: 'Récapitulatif : Impact Cumulé si 100% Solutions Implémentées'
+  anchor: '#rcapitulatif-impact-cumul-si-100-solutions-implmentes'
+  excerpt_short: "Before (2025 state): \n- Cycle projet : 4–8 mois \n- Friction cumul.\
+    \ : ~100–150h/an par opération \n- E..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

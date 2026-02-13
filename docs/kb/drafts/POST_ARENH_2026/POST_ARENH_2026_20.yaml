@@ -1,0 +1,38 @@
+id: POST_ARENH_2026_20
+type: knowledge
+domain: facturation
+title: Missions Étendues
+summary: "La Commission de Régulation de l’Énergie assume un rôle sans précédent dans\
+  \ la surveillance du post-ARENH : 42 \n- Évaluation des coûts complets : Publication\
+  \ du coût complet du parc nucléaire historiq..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "La Commission de Régulation de l’Énergie assume un rôle sans précédent\
+  \ dans la surveillance du post-ARENH : 42 \n- Évaluation des coûts complets : Publication\
+  \ du coût complet du parc nucléaire historique (révisable triennalement). \n- Calcul\
+  \ des revenus estimés : Publication mensuelle des estimations de revenus d’EDF à\
+  \ différentes échéances (M-12 à M-1). \n- Proposition du tarif unitaire : Transmission\
+  \ au gouvernement des estimations du VNU avant le 30 novembre de chaque année. \n\
+  - Surveillance de la liquidité des marchés : Assurance que les marchés de gros offrent\
+  \ des volumes et des échéances suffisantes pour que les fournisseurs se couvrent\
+  \ adéquatement (notamment à n+4 et n+5). \n- Gestion opérationnelle des guichets\
+  \ de compensation : Calendrier, contrôles de cohérence, régularisations."
+logic: null
+sources:
+- doc_id: POST_ARENH_2026
+  label: Post-ARENH 2026
+  section: Missions Étendues
+  anchor: '#missions-tendues'
+  excerpt_short: La Commission de Régulation de l’Énergie assume un rôle sans précédent
+    dans la surveillance du post-...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

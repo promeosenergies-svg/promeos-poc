@@ -1,0 +1,43 @@
+id: MARCHE_ENERGIE_2025_10
+type: rule
+domain: facturation
+title: B. Risques
+summary: "1. Barrière entrée élevée post-ARENH \n- Fournisseurs alternatifs perdent\
+  \ régulation ARENH = coûts approvisionnement augmentent 28€/MWh (de 42 à 70€ base)\
+  \ \n- Doivent se refinancer sur marché futures (1..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "1. Barrière entrée élevée post-ARENH \n- Fournisseurs alternatifs perdent\
+  \ régulation ARENH = coûts approvisionnement augmentent 28€/MWh (de 42 à 70€ base)\
+  \ \n- Doivent se refinancer sur marché futures (1-5 ans) ou négocier CAPN (industriels\
+  \ only) ou investir PPA \n- Impact : consolidation marché fournisseurs (petits joueurs\
+  \ disparaissent) \n\n2. Volatilité marché limite compétitivité \n- Pics allemands\
+  \ 360€/MWh + déficit hivernaux français = prix imprédictibles \n- Fournisseurs ne\
+  \ peuvent garantir prix court terme, donc offrent moins de rabais = client cherche\
+  \ ailleurs \n- Contrats longs (3-5 ans) deviennent obligatoires, pas optionnels\
+  \ \n\n3. PPA compétition \n- Producteurs renouvelables (Engie, EDF Renew, indépendants)\
+  \ signent PPA directement clients = court-circuit fournisseurs traditionnels \n\
+  - Marge compression pour distributeurs électricité si pas propres assets PPA \n\n\
+  4. Interventionnisme État \n- VNU seuils à définir = risque politique. Si gouvernement\
+  \ plus tard juge VNU insuffisant, peut imposer contrôle prix = marge fournisseurs\
+  \ réduite \n- Exemple : UK, Espagne ont aussi dû arbitrer politique énergétique\
+  \ = volatilité réglementaire"
+logic: null
+sources:
+- doc_id: MARCHE_ENERGIE_2025
+  label: Analyse marche energie France-Europe 2025
+  section: B. Risques
+  anchor: '#b-risques'
+  excerpt_short: "1. Barrière entrée élevée post-ARENH \n- Fournisseurs alternatifs\
+    \ perdent régulation ARENH = coûts ap..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

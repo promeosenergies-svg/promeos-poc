@@ -1,0 +1,38 @@
+id: ARRETE_ACC_2025_2
+type: knowledge
+domain: usages
+title: 1.1 Seuil standard — Métropole continentale
+summary: L’arrêté du 21 février 2025 relève de manière significative la puissance
+  maximale cumulée des installations de production au sein d’une opération d’autoconsommation
+  collective étendue, en application ...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "L’arrêté du 21 février 2025 relève de manière significative la puissance\
+  \ maximale cumulée des installations de production au sein d’une opération d’autoconsommation\
+  \ collective étendue, en application du territoire métropolitain continental: 4\
+  \ 5 Paramètre Régime antérieur Nouveau régime Puissance cumulée 3 MW 5 MW Zones\
+  \ non-interconnectées 0,5 MW 0,5 MW (inchangé) Effectif Depuis nov. 2019 Depuis\
+  \ 6 mars 2025 \n\nCette augmentation de 66% (de 3 à 5 MW) répond à une demande longtemps\
+  \ formulée par la filière, visant à améliorer la viabilité économique des opérations\
+  \ et à étendre les bénéfices du partage d’électricité locale. Cet ajustement s’inscrit\
+  \ dans une politique d’assouplissement réglementaire progressif en faveur de l’autoconsommation\
+  \ collective. 6"
+logic: null
+sources:
+- doc_id: ARRETE_ACC_2025
+  label: Arrete 21 fevrier 2025 - ACC 5MW/10MW
+  section: 1.1 Seuil standard — Métropole continentale
+  anchor: '#11-seuil-standard-mtropole-continentale'
+  excerpt_short: L’arrêté du 21 février 2025 relève de manière significative la puissance
+    maximale cumulée des instal...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,36 @@
+id: ACC_FRANCE_49
+type: knowledge
+domain: acc
+title: B. Liens & Ressources Clés
+summary: "Officiels : \n- Légifrance Code de l’énergie L315-1 à L315-8 95 \n- CRE\
+  \ Délibération 2024-231 (18 déc. 2024) 96 \n- Enedis Convention Model ACC 97 \n\
+  - ADEME Guide ACC 2024 98 \n\nMarché : \n- Enogrid : ACC p..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Officiels : \n- Légifrance Code de l’énergie L315-1 à L315-8 95 \n- CRE\
+  \ Délibération 2024-231 (18 déc. 2024) 96 \n- Enedis Convention Model ACC 97 \n\
+  - ADEME Guide ACC 2024 98 \n\nMarché : \n- Enogrid : ACC pour bailleurs sociaux\
+  \ 2024 99 \n- Livre Blanc ACC & Communautés Énergie (2024) 100 \n- Enogrid Europe\
+  \ ACC 2025 benchmark 101 \n\nData & Monitoring : \n- Enedis Observatoire ACC (fin\
+  \ 2024 : 698 ops, 73.6 MWc) 102 \n- Enedis DataHub/DataConnect API 103 \n\nCommunautés\
+  \ Énergétiques Citoyennes : \n- Énergie Partagée (réseau citoyen) 104 105 \n- FNCCR\
+  \ (collectivités) 106"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: B. Liens & Ressources Clés
+  anchor: '#b-liens-ressources-cls'
+  excerpt_short: "Officiels : \n- Légifrance Code de l’énergie L315-1 à L315-8 95\
+    \ \n- CRE Délibération 2024-231 (18 déc...."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

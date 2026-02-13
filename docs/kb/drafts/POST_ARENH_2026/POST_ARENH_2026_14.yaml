@@ -1,0 +1,38 @@
+id: POST_ARENH_2026_14
+type: rule
+domain: facturation
+title: Cible et Caractéristiques
+summary: Les CAPN constituent un dispositif complémentaire du VNU, destiné spécifiquement
+  aux industriels électro-intensifs et fournisseurs présentant une capacité physique
+  d’enlèvement d’électricité en France...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Les CAPN constituent un dispositif complémentaire du VNU, destiné spécifiquement\
+  \ aux industriels électro-intensifs et fournisseurs présentant une capacité physique\
+  \ d’enlèvement d’électricité en France. Entrés en force le 1er janvier 2026, ces\
+  \ contrats visent environ une centaine d’industriels consommant au moins 7 GWh par\
+  \ an. 31 \n\nCaractéristiques clés : 32 33 \n- Durée : 10 à 15 ans (bien plus longue\
+  \ que l’ARENH annuel). \n- Volume initial : 1 800 MW de capacité allouée, soit environ\
+  \ 10 TWh annuels. \n- Mécanisme prix : Prix variable indexé sur les coûts d’exploitation\
+  \ et de combustible, complété par une contribution initiale fixée par enchère. \n\
+  - Responsabilité : Partage des risques industriels entre EDF et partenaires (arrêts\
+  \ de réacteurs, variation de performance)."
+logic: null
+sources:
+- doc_id: POST_ARENH_2026
+  label: Post-ARENH 2026
+  section: Cible et Caractéristiques
+  anchor: '#cible-et-caractristiques'
+  excerpt_short: Les CAPN constituent un dispositif complémentaire du VNU, destiné
+    spécifiquement aux industriels éle...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

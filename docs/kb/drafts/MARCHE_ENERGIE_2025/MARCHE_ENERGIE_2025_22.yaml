@@ -1,0 +1,29 @@
+id: MARCHE_ENERGIE_2025_22
+type: knowledge
+domain: reglementaire
+title: 'Section 2 : Stratégie Contrats Post-ARENH'
+summary: "- Fournisseurs qualifiés (appel offres résultats) \n- Calendrier signature\
+  \ (court/moyen/long terme) \n- Mix prévisionnel (10% court, 20% moyen, 70% long)"
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Fournisseurs qualifiés (appel offres résultats) \n- Calendrier signature\
+  \ (court/moyen/long terme) \n- Mix prévisionnel (10% court, 20% moyen, 70% long)"
+logic: null
+sources:
+- doc_id: MARCHE_ENERGIE_2025
+  label: Analyse marche energie France-Europe 2025
+  section: 'Section 2 : Stratégie Contrats Post-ARENH'
+  anchor: '#section-2-stratgie-contrats-post-arenh'
+  excerpt_short: "- Fournisseurs qualifiés (appel offres résultats) \n- Calendrier\
+    \ signature (court/moyen/long terme) \n..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

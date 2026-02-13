@@ -1,0 +1,34 @@
+id: LOI_APER_5
+type: rule
+domain: acc
+title: 'RISQUE : Qualification faussement “fourniture” 10'
+summary: "Scénario problématique : \n- PMO = structure intermédiaire \n- PMO achète\
+  \ producteur → stocke compte escrow → revend consommateurs au pro-rata conso réelle\
+  \ \n- Résultat = PMO achète-revend = qualificatio..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Scénario problématique : \n- PMO = structure intermédiaire \n- PMO achète\
+  \ producteur → stocke compte escrow → revend consommateurs au pro-rata conso réelle\
+  \ \n- Résultat = PMO achète-revend = qualification fournisseur d’électricité = obligation\
+  \ autorisation CRE \n\nConséquences : \n- Déclaration CRE + frais \n- Obligations\
+  \ : sécurité approvisionnement, gestion aléas, reporting \n- Contrats standard impose\
+  \ (délai <2h fourniture si défaillance) \n- Assurance responsabilité accentuée"
+logic: null
+sources:
+- doc_id: LOI_APER
+  label: Loi APER - Acceleration Production Energies Renouvelables
+  section: 'RISQUE : Qualification faussement “fourniture” 10'
+  anchor: '#risque-qualification-faussement-fourniture-10'
+  excerpt_short: "Scénario problématique : \n- PMO = structure intermédiaire \n- PMO\
+    \ achète producteur → stocke compte e..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

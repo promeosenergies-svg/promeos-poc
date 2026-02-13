@@ -1,0 +1,42 @@
+id: ACC_FRANCE_52
+type: knowledge
+domain: usages
+title: D. Données Manquantes & Prochaines Études Recommandées
+summary: "Gaps actuels identifiés (données insuffisamment précises) : \n- Distribution\
+  \ statuts juridiques PMO : proportion asso / SAS / SEM / bailleur-PMO (données Enedis\
+  \ confidentielles) \n- Cost curve installat..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Gaps actuels identifiés (données insuffisamment précises) : \n- Distribution\
+  \ statuts juridiques PMO : proportion asso / SAS / SEM / bailleur-PMO (données Enedis\
+  \ confidentielles) \n- Cost curve installations PV 2025 par région : variances de\
+  \ cost CAPEX très importantes entre Île-de-France vs. zones rurales \n- Profiling\
+  \ consommateurs ACC : quels secteurs > ROI? Résidentiel vs. tertiaire vs. industriel\
+  \ (données FNCCR à consolider) \n- Taux autocons. réels observés : moyenne, écart-type,\
+  \ saisonnalité (données Enedis non-publiées officiellement) \n- Willingness-to-pay\
+  \ PMO pour SaaS : étude pricing (few PMO data points) \n- Litiges / taux d’abandon\
+  \ : % projets échoués, causes principales (données anecdotiques vs. systématiques)\
+  \ \n- Calendrier transposition RED III : quand France auto-rises périmètre? (gouvernement\
+  \ non-confirmé) \n\nRecommandations études complémentaires : \n- Enquête SER/FNCCR\
+  \ auprès 200+ PMO (taille, secteurs, coûts opérationnels, satisfaction) \n- Benchmark\
+  \ prix SaaS PMO (Enogrid vs. HubWatt vs. fournisseurs custom) \n- Cost-benefit analysis\
+  \ ACC vs. achat-vente classique pour 10 typologies (ROI par cas d’usage)"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: D. Données Manquantes & Prochaines Études Recommandées
+  anchor: '#d-donnes-manquantes-prochaines-tudes-recommandes'
+  excerpt_short: "Gaps actuels identifiés (données insuffisamment précises) : \n-\
+    \ Distribution statuts juridiques PMO :..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

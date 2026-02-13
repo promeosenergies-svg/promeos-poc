@@ -1,0 +1,110 @@
+id: FLEX_EFFACEMENT_41
+type: knowledge
+domain: usages
+title: 'Phases 6–10 Semaines (NEBEF + Réserves léger) SEMAINE 1-2 : CADRAGE & AUDIT'
+summary: '├─ Kick-off stakeholders (Agrég, client, GRD)
+
+  ├─ Audit sites : consommation patterns, GTB state, Linky status
+
+  ├─ RFP Agrégateur : prix, conditions, SLAs
+
+  ├─ Décision : NEBEF only vs. NEBEF + Réserves
+
+  └...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: '├─ Kick-off stakeholders (Agrég, client, GRD)
+
+  ├─ Audit sites : consommation patterns, GTB state, Linky status
+
+  ├─ RFP Agrégateur : prix, conditions, SLAs
+
+  ├─ Décision : NEBEF only vs. NEBEF + Réserves
+
+  └─ Livrables : Feuille route, budget, risques
+
+
+  SEMAINE 3-4 : INSTRUMENTATION & DATA
+
+  ├─ Accès API Enedis : demandes, tests
+
+  ├─ Intégration GTB-Agrégateur : protocoles, VPN, authentif.
+
+  ├─ Collecte historiques 12–24 mois
+
+  ├─ Vérif. qualité data (trous, anomalies)
+
+  └─ Livrables : Datasets validés, architecture diagram
+
+
+  SEMAINE 5-6 : CONTRATS & AGRÉ­MENT RTE
+
+  ├─ Signature Accord Participation NEBEF (RTE-Agrégateur)
+
+  ├─ Fourniture docs technique dossier agrément (Annexe 9)
+
+  ├─ Tests SI avec RTE (simulations déclarations)
+
+  ├─ Conventions GRD (si RPD)
+
+  └─ Livrables : Contrats signés, tests validés
+
+
+  SEMAINE 7-8 : BASELINE HOMOLOGATION
+
+  ├─ Sélection méthode baseline (défaut : rect. double ref.)
+
+  ├─ Calcul courbes références (01/01 année N)
+
+  ├─ Audit baseline par RTE (fiabilité test)
+
+  ├─ Ajustements si feedback
+
+  └─ Livrables : Baselines approuvées RTE
+
+
+  SEMAINE 9 : TESTS EN PRODUCTION
+
+  ├─ Déclarations test NEBEF (offres fictives J-1)
+
+  ├─ Simulations activations (GTB pilotage)
+
+  ├─ Contrôles mesure (chroniques réalisées)
+
+  ├─ Dress rehearsal paiements
+
+  └─ Livrables : Procédures op. finalisées
+
+
+  SEMAINE 10 : GO-LIVE & RUN
+
+  ├─ Lancement déc­larations NEBEF réelles (J-1 9h30)
+
+  ├─ Monitoring 24/7 (alertes, escalades)
+
+  ├─ Premiers paiements M+2
+
+  ├─ Support clients incidents
+
+  └─ Livrables : Dashboard analytics, revenue first month'
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: 'Phases 6–10 Semaines (NEBEF + Réserves léger) SEMAINE 1-2 : CADRAGE &
+    AUDIT'
+  anchor: '#phases-610-semaines-nebef-rserves-lger-semaine-1-2-cadrage-audit'
+  excerpt_short: '├─ Kick-off stakeholders (Agrég, client, GRD)
+
+    ├─ Audit sites : consommation patterns, GTB state, Lin...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,37 @@
+id: ACC_FRANCE_32
+type: knowledge
+domain: acc
+title: Users (Personas)
+summary: "- Alice, PMO bailieur 50 kWc, 100 logements \n- Goal : “Reduce paperwork\
+  \ from 30h/year to <5h, make participants happy” \n- Pain : manual Excel clés, participant\
+  \ complaints re: invoice clarity \n- Willin..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Alice, PMO bailieur 50 kWc, 100 logements \n- Goal : “Reduce paperwork\
+  \ from 30h/year to <5h, make participants happy” \n- Pain : manual Excel clés, participant\
+  \ complaints re: invoice clarity \n- Willingness to pay : €150–300/mth \n- Bob,\
+  \ ZAC collectivité 200 kWc, 12 companies \n- Goal : “Optimize TAc with dynamic keys,\
+  \ avoid negative prices” \n- Pain : no visibility into hourly arbitrage, lost revenue\
+  \ ~€5k/year \n- Willingness to pay : €400–800/mth \n- Carol, Fournisseur micro (50+\
+  \ clients ACC) \n- Goal : “Automate facturation ACC clients, reduce reconciliation\
+  \ disputes” \n- Pain : manual shadow billing vs Enedis feeds, 1 error/50 = low NPS\
+  \ \n- Willingness to pay : % of volume (e.g., €0.01–0.03/MWh)"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: Users (Personas)
+  anchor: '#users-personas'
+  excerpt_short: "- Alice, PMO bailieur 50 kWc, 100 logements \n- Goal : “Reduce paperwork\
+    \ from 30h/year to <5h, make p..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

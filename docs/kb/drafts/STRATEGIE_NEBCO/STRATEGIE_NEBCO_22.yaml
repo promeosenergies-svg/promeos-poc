@@ -1,0 +1,36 @@
+id: STRATEGIE_NEBCO_22
+type: knowledge
+domain: reglementaire
+title: 10 Critères Qualification (Go/No-Go) Critère Go No-Go Multi-sites ≥5 ✓ <5 P.
+  installée ≥500 kW ✓ <500 kW GTB existant ou retrofit <€20k ✓ Manquant >€50k Télérelève
+  GRD actif ✓ Non (need sub-meter) Energy manager/contact tech. ✓ Aucun Budget audit
+  + SaaS 1yr ✓ <€5k Équipements flexibles identifiés ✓ None / critical Accord exec
+  2 ans ✓ Reluctant Objectif efficacité (DEET/RSE) ✓ Pure cash play Pas de contrats
+  OE exclusifs ✓ Locked-in
+summary: 'Scoring : 8–10 ✓ = GO ; 5–7 = YELLOW ; <5 = NO-GO.'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: 'Scoring : 8–10 ✓ = GO ; 5–7 = YELLOW ; <5 = NO-GO.'
+logic: null
+sources:
+- doc_id: STRATEGIE_NEBCO
+  label: Analyse strategique NEBCO
+  section: 10 Critères Qualification (Go/No-Go) Critère Go No-Go Multi-sites ≥5 ✓
+    <5 P. installée ≥500 kW ✓ <500 kW GTB existant ou retrofit <€20k ✓ Manquant >€50k
+    Télérelève GRD actif ✓ Non (need sub-meter) Energy manager/contact tech. ✓ Aucun
+    Budget audit + SaaS 1yr ✓ <€5k Équipements flexibles identifiés ✓ None / critical
+    Accord exec 2 ans ✓ Reluctant Objectif efficacité (DEET/RSE) ✓ Pure cash play
+    Pas de contrats OE exclusifs ✓ Locked-in
+  anchor: '#10-critres-qualification-gono-go-critre-go-no-go-multi-sites-5-5-p-installe-500-kw-500-kw-gtb-existant-ou-retrofit-20k-manquant-50k-tlrelve-grd-actif-non-need-sub-meter-energy-managercontact-tech-aucun-budget-audit-saas-1yr-5k-quipements-flexibles-identifis-none-critical-accord-exec-2-ans-reluctant-objectif-efficacit-deetrse-pure-cash-play-pas-de-contrats-oe-exclusifs-locked-in'
+  excerpt_short: 'Scoring : 8–10 ✓ = GO ; 5–7 = YELLOW ; <5 = NO-GO....'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

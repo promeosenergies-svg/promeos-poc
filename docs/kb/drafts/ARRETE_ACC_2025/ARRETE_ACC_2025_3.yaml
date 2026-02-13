@@ -1,0 +1,46 @@
+id: ARRETE_ACC_2025_3
+type: rule
+domain: reglementaire
+title: 1.2 Dérogation pour les collectivités territoriales — 10 MW
+summary: En parallèle, l’arrêté institue une nouvelle dérogation spécifique permettant
+  certains projets de monter jusqu’à 10 MW de puissance cumulée. Cette dérogation
+  bénéficie exclusivement aux opérations rép...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "En parallèle, l’arrêté institue une nouvelle dérogation spécifique permettant\
+  \ certains projets de monter jusqu’à 10 MW de puissance cumulée. Cette dérogation\
+  \ bénéficie exclusivement aux opérations répondant cumulativement aux critères suivants\
+  \ : 7 \n\nCritères cumulatifs de la dérogation 10 MW: \n- Participant collectif\
+  \ obligatoire — L’un des producteurs ou des consommateurs participants doit être\
+  \ une commune ou un établissement public de coopération intercommunale (EPCI) à\
+  \ fiscalité propre 8 \n- Composition des participants — L’ensemble des producteurs\
+  \ et consommateurs participants doivent être soit : \n- Des organismes publics exerçant\
+  \ une mission de service public \n- Des organismes privés exerçant une mission de\
+  \ service public \n- Des sociétés d’économie mixtes locales mentionnées à l’article\
+  \ L.1522-1 du Code général des collectivités territoriales et leurs filiales 9 \n\
+  - Périmètre géographique — Les points de soutirage et d’injection doivent être situés\
+  \ exclusivement dans le ressort géographique de l’EPCI à fiscalité propre participant\
+  \ au projet, ou auquel adhèrent les communes participant au projet 10 \n\nImpact:\
+  \ Cette dérogation double le plafond de puissance, mais reste limitée aux acteurs\
+  \ publics et parapublics, excluant les investisseurs privés stricto sensu. Elle\
+  \ facilite cependant les projets portés par les collectivités territoriales en centralisant\
+  \ l’ensemble de l’opération sur leur ressort géographique. 11"
+logic: null
+sources:
+- doc_id: ARRETE_ACC_2025
+  label: Arrete 21 fevrier 2025 - ACC 5MW/10MW
+  section: 1.2 Dérogation pour les collectivités territoriales — 10 MW
+  anchor: '#12-drogation-pour-les-collectivits-territoriales-10-mw'
+  excerpt_short: En parallèle, l’arrêté institue une nouvelle dérogation spécifique
+    permettant certains projets de mo...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

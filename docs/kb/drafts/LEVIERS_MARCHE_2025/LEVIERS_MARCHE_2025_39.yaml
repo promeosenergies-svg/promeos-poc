@@ -1,0 +1,34 @@
+id: LEVIERS_MARCHE_2025_39
+type: knowledge
+domain: acc
+title: 2) “End-to-End Automation”
+summary: "- What : PROMEOS automates entire lifecycle : legal setup (wizard) → Enedis\
+  \ API integration (zero manual data entry) → monthly billing (SEPA direct) → compliance\
+  \ reporting (PDF one-click) \n- Why it ma..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- What : PROMEOS automates entire lifecycle : legal setup (wizard) →\
+  \ Enedis API integration (zero manual data entry) → monthly billing (SEPA direct)\
+  \ → compliance reporting (PDF one-click) \n- Why it matters : Reduce ACC project\
+  \ cycle from 12–24 mo to 3–6 mo; scale 10 → 100+ operations without linear cost\
+  \ increase \n- Competitor gap : Most solutions still manual (Excel, email, phone);\
+  \ PROMEOS = factory for ACC, competitors are artisans"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: 2) “End-to-End Automation”
+  anchor: '#2-end-to-end-automation'
+  excerpt_short: '- What : PROMEOS automates entire lifecycle : legal setup (wizard)
+    → Enedis API integration (zero ma...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,35 @@
+id: BACS_COMPLET_34
+type: knowledge
+domain: reglementaire
+title: Décision stratégique
+summary: '- ⬜ SI exemption TRI justifiée (TRI > 10) : Dossier TRI complet archivé
+  10 ans (preuve audit)
+
+  - ⬜ SI BACS obligatoire : Lancer cahier des charges + appels offres phase 3'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: '- ⬜ SI exemption TRI justifiée (TRI > 10) : Dossier TRI complet archivé
+  10 ans (preuve audit)
+
+  - ⬜ SI BACS obligatoire : Lancer cahier des charges + appels offres phase 3'
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Décision stratégique
+  anchor: '#dcision-stratgique'
+  excerpt_short: '- ⬜ SI exemption TRI justifiée (TRI > 10) : Dossier TRI complet
+    archivé 10 ans (preuve audit)
+
+    - ⬜ SI...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

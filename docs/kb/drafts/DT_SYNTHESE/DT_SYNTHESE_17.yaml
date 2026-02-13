@@ -1,0 +1,36 @@
+id: DT_SYNTHESE_17
+type: rule
+domain: reglementaire
+title: 'Phase 2 : Planification (Mar-Jun 2026)'
+summary: "- Stratégie par site \n- Sites low-hanging : optimisation exploitation +\
+  \ LED \n- Sites mid-range : rénovation équipements (GTB, chaufferie) \n- Sites exigeants\
+  \ : dossier modulation justifiée vs travaux m..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Stratégie par site \n- Sites low-hanging : optimisation exploitation\
+  \ + LED \n- Sites mid-range : rénovation équipements (GTB, chaufferie) \n- Sites\
+  \ exigeants : dossier modulation justifiée vs travaux majeurs \n- Calendrier d’investissement\
+  \ \n- Frontcharger projets pour bénéfices 2025-2026 (inertie thermique) \n- Aligner\
+  \ avec renouvellement baux (fenêtres de restriction réduites) \n- Phasage CEE/Aides\
+  \ max. d’impact \n- Gouvernance \n- Désigner pilote décret tertiaire (responsabilité\
+  \ OPERAT) \n- Contrats prestataires énergie avec objectifs résultats \n- Audit interne\
+  \ annuel avant déclaration 30 sept"
+logic: null
+sources:
+- doc_id: DT_SYNTHESE
+  label: Decret Tertiaire - Synthese PROMEOS
+  section: 'Phase 2 : Planification (Mar-Jun 2026)'
+  anchor: '#phase-2-planification-mar-jun-2026'
+  excerpt_short: "- Stratégie par site \n- Sites low-hanging : optimisation exploitation\
+    \ + LED \n- Sites mid-range : rén..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,34 @@
+id: VEILLE_S52_2025_5
+type: knowledge
+domain: reglementaire
+title: Réforme Marché & Cadres
+summary: "- Paquet Réseaux (10 déc., Commission) : 8 autoroutes énergétiques, 2 interconnexions\
+  \ Pyrénées, 1 200 Mds€ d'ici 2040. \n- CBAM Électricité : Modifications fuitées\
+  \ en déc. 2025. Clarifications sur les ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Paquet Réseaux (10 déc., Commission) : 8 autoroutes énergétiques, 2\
+  \ interconnexions Pyrénées, 1 200 Mds€ d'ici 2040. \n- CBAM Électricité : Modifications\
+  \ fuitées en déc. 2025. Clarifications sur les PPA EnR et exemptions transfrontalières.\
+  \ \n- ACER Équilibrage (Consultation fin janv. 2026) : Harmonisation PICASSO+MARI\
+  \ pour les services d'équilibrage UE. \n- Directive PEB 2024/1275 : Exigences solaire\
+  \ 2027-2032, plans de rénovation nationaux, lien explicite BACS+flex."
+logic: null
+sources:
+- doc_id: VEILLE_S52_2025
+  label: Semaine 52 2025 - Veille Marche Energie PROMEOS
+  section: Réforme Marché & Cadres
+  anchor: '#rforme-march-cadres'
+  excerpt_short: '- Paquet Réseaux (10 déc., Commission) : 8 autoroutes énergétiques,
+    2 interconnexions Pyrénées, 1 20...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

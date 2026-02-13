@@ -1,0 +1,40 @@
+id: LEVIERS_MARCHE_2025_5
+type: knowledge
+domain: reglementaire
+title: Cas Difficiles (Freins majeurs)
+summary: "1) Petit résidentiel (< 5 unités, < 100 kWc) \n- Obstacle : Coûts juridiques/administratifs\
+  \ (PMO, contrats) > bénéfice annuel (~€200–500/participant) \n- Mitigation : AMEP\
+  \ (Association pour Mutualisatio..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "1) Petit résidentiel (< 5 unités, < 100 kWc) \n- Obstacle : Coûts juridiques/administratifs\
+  \ (PMO, contrats) > bénéfice annuel (~€200–500/participant) \n- Mitigation : AMEP\
+  \ (Association pour Mutualisation Énergie Proximité) ; modèle don surplus ; automatisation\
+  \ complète \n- Statut 2025 : Croissance AMEP (15+ actives, 30 en projet), mais scalabilité\
+  \ limitée sans plateforme SaaS \n\n2) Projets dispersés géographiquement (> 2 km,\
+  \ pas dérogation 20 km) \n- Obstacle : Rayon 2 km = ~40 000 m² cercle ; zones rurales/périurbaines\
+  \ < dense \n- Mitigation : Arrêté 21/02/2025 : dérogation 20 km pour zones rurales,\
+  \ cas spécifiques \n- Statut 2025 : Dérogation applicable mais dossier lourd, CRE\
+  \ contrôle strict \n\n3) Intermittence sévère (PV seul, pas complémentarité charge)\
+  \ \n- Obstacle : Taux autoconso bas (~30%) si pic production ≠ pic demande \n- Mitigation\
+  \ : Stockage (batteries 50–100 kWh), pilotage charge (bornes VE, chauffage), flexibilité\
+  \ \n- Statut 2025 : Techniquement possible mais CAPEX +€80–150k ; ROI 12–15 ans"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: Cas Difficiles (Freins majeurs)
+  anchor: '#cas-difficiles-freins-majeurs'
+  excerpt_short: "1) Petit résidentiel (< 5 unités, < 100 kWc) \n- Obstacle : Coûts\
+    \ juridiques/administratifs (PMO, con..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

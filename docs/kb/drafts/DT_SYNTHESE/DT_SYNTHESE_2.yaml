@@ -1,0 +1,32 @@
+id: DT_SYNTHESE_2
+type: knowledge
+domain: reglementaire
+title: Périmètre d’application
+summary: "Tous les bâtiments tertiaires ≥ 1 000 m² incluant : \n- Bureaux, commerces,\
+  \ hôtels, restaurants \n- Établissements scolaires, de santé, administratifs \n\
+  - Infrastructures logistiques de froid \n\nExemption..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Tous les bâtiments tertiaires ≥ 1 000 m² incluant : \n- Bureaux, commerces,\
+  \ hôtels, restaurants \n- Établissements scolaires, de santé, administratifs \n\
+  - Infrastructures logistiques de froid \n\nExemptions : Constructions précaires,\
+  \ édifices cultuels, bâtiments défense/sécurité."
+logic: null
+sources:
+- doc_id: DT_SYNTHESE
+  label: Decret Tertiaire - Synthese PROMEOS
+  section: Périmètre d’application
+  anchor: '#primtre-dapplication'
+  excerpt_short: "Tous les bâtiments tertiaires ≥ 1 000 m² incluant : \n- Bureaux,\
+    \ commerces, hôtels, restaurants \n- Ét..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

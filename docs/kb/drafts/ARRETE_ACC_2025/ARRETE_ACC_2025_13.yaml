@@ -1,0 +1,31 @@
+id: ARRETE_ACC_2025_13
+type: knowledge
+domain: facturation
+title: 5.2 Cas d’usage exemplaires
+summary: "Le plus grand projet français répertorié a rassemblé plus de 140 consommateurs\
+  \ alimentés par 4 sites produisant 276 MWh/an, permettant : \n- Couverture des besoins:\
+  \ 36% \n- Économies moyennes: 17% sur l..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Le plus grand projet français répertorié a rassemblé plus de 140 consommateurs\
+  \ alimentés par 4 sites produisant 276 MWh/an, permettant : \n- Couverture des besoins:\
+  \ 36% \n- Économies moyennes: 17% sur les factures 28"
+logic: null
+sources:
+- doc_id: ARRETE_ACC_2025
+  label: Arrete 21 fevrier 2025 - ACC 5MW/10MW
+  section: 5.2 Cas d’usage exemplaires
+  anchor: '#52-cas-dusage-exemplaires'
+  excerpt_short: Le plus grand projet français répertorié a rassemblé plus de 140
+    consommateurs alimentés par 4 sites...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

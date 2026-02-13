@@ -1,0 +1,32 @@
+id: ACC_FRANCE_31
+type: knowledge
+domain: acc
+title: Problem Statement
+summary: "- Currently : ACC PMOs spend 100–150h/year per operation on administrative\
+  \ overhead (clés, facturation, RGPD, registre) \n- Enablers exist : Linky data,\
+  \ Enedis API, e-sig tools, but fragmented, not coo..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Currently : ACC PMOs spend 100–150h/year per operation on administrative\
+  \ overhead (clés, facturation, RGPD, registre) \n- Enablers exist : Linky data,\
+  \ Enedis API, e-sig tools, but fragmented, not coordinated \n- Market bottleneck\
+  \ : high time-to-market (4–8 mths) + low success rate (~85%) + churn from PMO fatigue"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: Problem Statement
+  anchor: '#problem-statement'
+  excerpt_short: '- Currently : ACC PMOs spend 100–150h/year per operation on administrative
+    overhead (clés, facturati...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

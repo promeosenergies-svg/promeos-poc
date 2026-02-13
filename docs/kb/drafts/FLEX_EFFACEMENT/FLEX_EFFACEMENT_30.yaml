@@ -1,0 +1,29 @@
+id: FLEX_EFFACEMENT_30
+type: knowledge
+domain: facturation
+title: 5.2 Éligibilité
+summary: Tous, contractuellement autorisés fournisseur (pas contrat base obligatoire).
+  Tarif dynamique (ex. Tempo, offres heures négatives) facilitent.
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: Tous, contractuellement autorisés fournisseur (pas contrat base obligatoire).
+  Tarif dynamique (ex. Tempo, offres heures négatives) facilitent.
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: 5.2 Éligibilité
+  anchor: '#52-ligibilit'
+  excerpt_short: Tous, contractuellement autorisés fournisseur (pas contrat base obligatoire).
+    Tarif dynamique (ex. T...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

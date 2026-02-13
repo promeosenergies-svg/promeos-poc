@@ -1,0 +1,34 @@
+id: FLEX_EFFACEMENT_8
+type: knowledge
+domain: acc
+title: 1.8 Checklist “Go/No-Go” NEBEF
+summary: "- ⬜ Sites ≥100 kW, télé-relevés ou Linky confirmés (Enedis) \n- ⬜ CAR signé,\
+  \ accord écrit clients \n- ⬜ GTB/EMS capable commande (télécommande, modbus, API)\
+  \ \n- ⬜ Historique conso 12 mois >50% année sauf..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- ⬜ Sites ≥100 kW, télé-relevés ou Linky confirmés (Enedis) \n- ⬜ CAR\
+  \ signé, accord écrit clients \n- ⬜ GTB/EMS capable commande (télécommande, modbus,\
+  \ API) \n- ⬜ Historique conso 12 mois >50% année sauf startup \n- ⬜ Pas de contrainte\
+  \ fourniture >90% temps \n- ⬜ Agrégateur agréé RTE ou statut en cours \n- ⬜ Disponibilité\
+  \ attendue ≥80% (contrats) \n- ⬜ Données Enedis accédées (API/FTP) \n- ⬜ Tests fonctionnels\
+  \ activation réussis \n- ⬜ Assurance RC professionelle actuelle"
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: 1.8 Checklist “Go/No-Go” NEBEF
+  anchor: '#18-checklist-gono-go-nebef'
+  excerpt_short: "- ⬜ Sites ≥100 kW, télé-relevés ou Linky confirmés (Enedis) \n-\
+    \ ⬜ CAR signé, accord écrit clients \n- ..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

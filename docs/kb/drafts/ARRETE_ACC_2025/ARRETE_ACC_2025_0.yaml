@@ -1,0 +1,31 @@
+id: ARRETE_ACC_2025_0
+type: rule
+domain: usages
+title: Arrêté 21 février 2025 — ACC (5MW/10MW, rayon, modalités)
+summary: "“Résumé officiel arrêté du 21 février 2025 sur l’autoconsommation collective\
+  \ (seuils, périmètre, changements), citer JO/Legifrance/Enedis.” \n\nNow I’ll create\
+  \ a comprehensive professional report for th..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "“Résumé officiel arrêté du 21 février 2025 sur l’autoconsommation collective\
+  \ (seuils, périmètre, changements), citer JO/Legifrance/Enedis.” \n\nNow I’ll create\
+  \ a comprehensive professional report for the user."
+logic: null
+sources:
+- doc_id: ARRETE_ACC_2025
+  label: Arrete 21 fevrier 2025 - ACC 5MW/10MW
+  section: Arrêté 21 février 2025 — ACC (5MW/10MW, rayon, modalités)
+  anchor: '#arrt-21-fvrier-2025-acc-5mw10mw-rayon-modalits'
+  excerpt_short: “Résumé officiel arrêté du 21 février 2025 sur l’autoconsommation
+    collective (seuils, périmètre, cha...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

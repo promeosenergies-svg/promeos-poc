@@ -1,0 +1,32 @@
+id: LEVIERS_MARCHE_2025_16
+type: knowledge
+domain: reglementaire
+title: 7. Simplification onboarding participant (KYC express + e-signature)
+summary: "- Action : Flow digital < 5 min : KYC, mandats paiement, statuts, signature\
+  \ e (Universign, Docusign) \n- Gain : Entrée/sortie participant < 48h vs 2–3 semaines\
+  \ \n- Impact : Dynamique opération fluide, r..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Action : Flow digital < 5 min : KYC, mandats paiement, statuts, signature\
+  \ e (Universign, Docusign) \n- Gain : Entrée/sortie participant < 48h vs 2–3 semaines\
+  \ \n- Impact : Dynamique opération fluide, retenues réduits, scalabilité participants\
+  \ ×3"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: 7. Simplification onboarding participant (KYC express + e-signature)
+  anchor: '#7-simplification-onboarding-participant-kyc-express-e-signature'
+  excerpt_short: '- Action : Flow digital < 5 min : KYC, mandats paiement, statuts,
+    signature e (Universign, Docusign)...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

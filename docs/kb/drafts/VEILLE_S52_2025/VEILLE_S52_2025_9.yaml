@@ -1,0 +1,34 @@
+id: VEILLE_S52_2025_9
+type: knowledge
+domain: acc
+title: À Surveiller Semaine Prochaine (6–12 janvier 2026)
+summary: "- Officialisations CRE post-fin ARENH (communiqués détaillant TRV/VNU) \n\
+  - Vérifications implémentation BACS (premières saisies de non-conformité fin janv.\
+  \ ?) \n- Lever partenaires technologiques : Appe..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Officialisations CRE post-fin ARENH (communiqués détaillant TRV/VNU)\
+  \ \n- Vérifications implémentation BACS (premières saisies de non-conformité fin\
+  \ janv. ?) \n- Lever partenaires technologiques : Appel Itron/Schneider pour accès\
+  \ DERMS (cloud interop) \n- Momentum LEAP/ENEL : Annonces d'expansion territoriale,\
+  \ modèle de pricing \n- Vagues de conformité Data Act : Premiers signalements de\
+  \ non-conformité ; retours du cabinet juridique"
+logic: null
+sources:
+- doc_id: VEILLE_S52_2025
+  label: Semaine 52 2025 - Veille Marche Energie PROMEOS
+  section: À Surveiller Semaine Prochaine (6–12 janvier 2026)
+  anchor: '#-surveiller-semaine-prochaine-612-janvier-2026'
+  excerpt_short: "- Officialisations CRE post-fin ARENH (communiqués détaillant TRV/VNU)\
+    \ \n- Vérifications implémentati..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

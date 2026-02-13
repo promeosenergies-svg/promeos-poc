@@ -1,0 +1,26 @@
+id: VEILLE_S52_2025_0
+type: knowledge
+domain: reglementaire
+title: Executive Summary
+summary: 'Période : 22–29 décembre 2025'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: 'Période : 22–29 décembre 2025'
+logic: null
+sources:
+- doc_id: VEILLE_S52_2025
+  label: Semaine 52 2025 - Veille Marche Energie PROMEOS
+  section: Executive Summary
+  anchor: '#executive-summary'
+  excerpt_short: 'Période : 22–29 décembre 2025...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,37 @@
+id: MARCHE_ENERGIE_2025_14
+type: rule
+domain: facturation
+title: 'C. Décret Tertiaire : Fenêtre Investissement Ouverte'
+summary: "Opportunité coïncidence timing : \n1. Baisse prix électricité 2025 (~415k€/50\
+  \ 000m² économies) \n2. Décret tertiaire 2030 (-40% obligation) \n3. Financements\
+  \ CEE/MaPrimeRénov disponibles \n4. Contrats éne..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Opportunité coïncidence timing : \n1. Baisse prix électricité 2025 (~415k€/50\
+  \ 000m² économies) \n2. Décret tertiaire 2030 (-40% obligation) \n3. Financements\
+  \ CEE/MaPrimeRénov disponibles \n4. Contrats énergie doivent se renouveler = négociation\
+  \ haut du levier \n\nScénario d’investissement optimal : Phase Action Coût estimé\
+  \ ROI Optimisation exploitation Gestion active, GTB pilotage 50k€/site 2-3 ans Équipements\
+  \ LED, échangeurs, GTB auto 150k€/site 5-7 ans Isolation Isolation murs/toiture\
+  \ 200k€/site 8-12 ans \n\nPrioriser : sites T1 (top 20% consommateurs). Investir\
+  \ phases 1-2 avant 2028, laisser phase 3 si besoin post-2028. \n\nFinancement mix\
+  \ : CEE 15-20% + MaPrimeRénov 10-15% + autofinancement 65-70% (économies 2025 aident)"
+logic: null
+sources:
+- doc_id: MARCHE_ENERGIE_2025
+  label: Analyse marche energie France-Europe 2025
+  section: 'C. Décret Tertiaire : Fenêtre Investissement Ouverte'
+  anchor: '#c-dcret-tertiaire-fentre-investissement-ouverte'
+  excerpt_short: "Opportunité coïncidence timing : \n1. Baisse prix électricité 2025\
+    \ (~415k€/50 000m² économies) \n2. Dé..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

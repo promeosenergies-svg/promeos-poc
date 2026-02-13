@@ -1,0 +1,51 @@
+id: MARCHE_ENERGIE_2025_7
+type: rule
+domain: usages
+title: 'B. Remplacement : Versement Nucléaire Universel (VNU) - 1er janvier 2026'
+summary: "Mécanisme nouveau : \n- EDF vend toute sa production nucléaire au prix de\
+  \ marché (~70€/MWh en 2025-26) \n- État prélève revenus excédentaires via VNU progressif\
+  \ : \n- Entre +5 et +25€/MWh au-dessus coût ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Mécanisme nouveau : \n- EDF vend toute sa production nucléaire au prix\
+  \ de marché (~70€/MWh en 2025-26) \n- État prélève revenus excédentaires via VNU\
+  \ progressif : \n- Entre +5 et +25€/MWh au-dessus coût complet : 50% des revenus\
+  \ prélevés \n- Au-delà +25€/MWh : jusqu’à 90% des revenus (si dépasse 115€/MWh)\
+  \ \n- Montant total redistribué à tous les consommateurs en réduction facture (indépendant\
+  \ fournisseur) \n- Incertitude critique : seuils exacts (coût complet de référence,\
+  \ taux réduction par profil) non finalisés décembre 2025 \n\nImpact fournisseurs\
+  \ B2B : \n- Fin accès nucléaire régulé = augmentation coûts d’approvisionnement\
+  \ immédiate \n- Alternative 1 : Contrats CAPN (Contrats Approvisionnement Pluriannuel\
+  \ Nucléaire) avec EDF (long terme, > volumes, participation risques) \n- Réservés\
+  \ industries électro-intensives \n- Enchères prévues mais calendrier flou (H1 2026?)\
+  \ \n- Pas accessible PME tertiaires \n- Alternative 2 : Marché de gros (spot 1-3\
+  \ mois, futures 1-5 ans) = maximum exposition volatilité \n- Alternative 3 : PPA\
+  \ renouvelables (10-25 ans fixes) = sécurité long terme \n\nScénario 2026 : Si marché\
+  \ reste 55-60€/MWh, VNU NE SE DÉCLENCHE PAS. Fournisseurs paient EDF ~70€/MWh de\
+  \ base, VNU = zéro réduction. Cela signifie : factures entreprises resteraient stables\
+  \ 2025-26 via VNU redistribution, mais structures de coûts fournisseurs changent\
+  \ radicalement. \n\nImplication PROMEOS : \n- Fournisseurs alternatifs devront augmenter\
+  \ prix ou réduire marges → compétition moins agressive post-2026 \n- Opportunité\
+  \ négocier contrats 3-5 ans AVANT fin ARENH (décembre 2025) pour sécuriser tarifs\
+  \ transitoires \n- Après décembre 2025 : contrats devront intégrer risque VNU +\
+  \ volatilité marché = prix plus élevé \n- CAPN accès nucléaire : non pertinent PROMEOS\
+  \ (pas électro-intensif), mais comprendre calendrier aide négociation avec fournisseurs"
+logic: null
+sources:
+- doc_id: MARCHE_ENERGIE_2025
+  label: Analyse marche energie France-Europe 2025
+  section: 'B. Remplacement : Versement Nucléaire Universel (VNU) - 1er janvier 2026'
+  anchor: '#b-remplacement-versement-nuclaire-universel-vnu---1er-janvier-2026'
+  excerpt_short: "Mécanisme nouveau : \n- EDF vend toute sa production nucléaire au\
+    \ prix de marché (~70€/MWh en 2025-26..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

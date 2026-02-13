@@ -67,6 +67,25 @@ Format: JSON canonique + PDF template.
 Toute RuleCard normative DOIT avoir >= 1 Citation.
 Si KB contradictoire : `status = NEEDS_REVIEW`.
 
+### D9 — ConceptAllocation (v1.1)
+Chaque ligne de facture est allouee a un concept (fourniture, acheminement, taxes, tva, abonnement, capacite, ajustement, penalite, autre).
+Allocation deterministe: `ComponentType → BillingConcept` (confidence=1.0) avec fallback regex sur label (confidence 0.70-0.90).
+Modele SQLAlchemy `ConceptAllocation` lie a `EnergyInvoiceLine`.
+
+### D10 — P5 enforcement (v1.1)
+`enforce_p5_status()` downgrade automatiquement les RuleCards ACTIVE sans citation valide a NEEDS_REVIEW.
+Citation valide = doc_id + au moins 1 pointer (page/section/article) + excerpt_hash.
+L'engine enrichit les anomalies avec les citations KB si disponibles (graceful fallback si KB absente).
+
+### D11 — Tariff bridge KB (v1.1)
+Les snapshots referentiel (TURPE/CTA) sont importes dans la KB via `tariff_bridge.py`.
+2 RuleCards L2-min creees: `RC_L2_TURPE_GESTION` (composante gestion TURPE) et `RC_L2_CTA_TAUX` (taux CTA).
+Le `why_not_higher` du moteur reflete la presence/absence de ces grilles.
+
+### D12 — Golden tests (v1.1)
+`test_demo_golden.py` (14 tests) verifie que le corpus demo produit exactement les memes anomalies qu'au moment du snapshot.
+Baseline: `data/demo/expected/expected_anomalies.json` (69 factures, 6 anomalies).
+
 ## Risques identifies
 
 | Risque | Mitigation |

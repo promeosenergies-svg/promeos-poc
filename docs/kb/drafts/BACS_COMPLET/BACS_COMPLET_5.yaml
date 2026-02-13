@@ -1,0 +1,51 @@
+id: BACS_COMPLET_5
+type: rule
+domain: acc
+title: RÉFÉRENCES JURIDIQUES OFFICIELLES Texte Nature Articles clés Publié Statut
+  Changement majeur Lien source Directive UE 2018/844 Directive européenne Art. 8
+  (BACS obligatoires) 19/06/2018 Transposée FR Base légale comunitaire EUR-Lex directive
+  Décret n°2020-887 Décret initial BACS R.175-1 à R.175-5 20/07/2020 (JORF 22/07)
+  En vigueur Seuil 290 kW, bâtiments tertiaires Légifrance Décret n°2023-259 Modification
+  calendrier R.175-1 à R.175-5-1 07/04/2023 (JORF 08/04) En vigueur Seuil 70 kW, inspections
+  obligatoires TRI modal Légifrance Arrêté 07/04/2023 Application BACS Annexes 1-3
+  (TRI, insp.) 07/04/2023 (JORF 08/04) En vigueur Méthode TRI détaillée, fréquence
+  inspection 5 ans Légifrance Décret n°2025-1343 Report calendrier Modif. R.175-2
+  dates 12/2025 (JORF 28/12) En vigueur Seuil 70 kW = 01/01/2030 (ex 2027) Légifrance
+  Code CCH Code référence R.175-1 à R.175-6 Continu Consolidé Définitions, obligations,
+  responsabilités Légifrance CCH
+summary: 'Lien centralisé accès textes : https://www.legifrance.gouv.fr (rechercher
+  “R.175-1” ou “décret BACS”)'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: 'Lien centralisé accès textes : https://www.legifrance.gouv.fr (rechercher
+  “R.175-1” ou “décret BACS”)'
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: RÉFÉRENCES JURIDIQUES OFFICIELLES Texte Nature Articles clés Publié Statut
+    Changement majeur Lien source Directive UE 2018/844 Directive européenne Art.
+    8 (BACS obligatoires) 19/06/2018 Transposée FR Base légale comunitaire EUR-Lex
+    directive Décret n°2020-887 Décret initial BACS R.175-1 à R.175-5 20/07/2020 (JORF
+    22/07) En vigueur Seuil 290 kW, bâtiments tertiaires Légifrance Décret n°2023-259
+    Modification calendrier R.175-1 à R.175-5-1 07/04/2023 (JORF 08/04) En vigueur
+    Seuil 70 kW, inspections obligatoires TRI modal Légifrance Arrêté 07/04/2023 Application
+    BACS Annexes 1-3 (TRI, insp.) 07/04/2023 (JORF 08/04) En vigueur Méthode TRI détaillée,
+    fréquence inspection 5 ans Légifrance Décret n°2025-1343 Report calendrier Modif.
+    R.175-2 dates 12/2025 (JORF 28/12) En vigueur Seuil 70 kW = 01/01/2030 (ex 2027)
+    Légifrance Code CCH Code référence R.175-1 à R.175-6 Continu Consolidé Définitions,
+    obligations, responsabilités Légifrance CCH
+  anchor: '#rfrences-juridiques-officielles-texte-nature-articles-cls-publi-statut-changement-majeur-lien-source-directive-ue-2018844-directive-europenne-art-8-bacs-obligatoires-19062018-transpose-fr-base-lgale-comunitaire-eur-lex-directive-dcret-n2020-887-dcret-initial-bacs-r175-1-r175-5-20072020-jorf-2207-en-vigueur-seuil-290-kw-btiments-tertiaires-lgifrance-dcret-n2023-259-modification-calendrier-r175-1-r175-5-1-07042023-jorf-0804-en-vigueur-seuil-70-kw-inspections-obligatoires-tri-modal-lgifrance-arrt-07042023-application-bacs-annexes-1-3-tri-insp-07042023-jorf-0804-en-vigueur-mthode-tri-dtaille-frquence-inspection-5-ans-lgifrance-dcret-n2025-1343-report-calendrier-modif-r175-2-dates-122025-jorf-2812-en-vigueur-seuil-70-kw-01012030-ex-2027-lgifrance-code-cch-code-rfrence-r175-1-r175-6-continu-consolid-dfinitions-obligations-responsabilits-lgifrance-cch'
+  excerpt_short: 'Lien centralisé accès textes : https://www.legifrance.gouv.fr (rechercher
+    “R.175-1” ou “décret BACS”...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

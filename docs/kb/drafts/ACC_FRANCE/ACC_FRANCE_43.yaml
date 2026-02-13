@@ -1,0 +1,32 @@
+id: ACC_FRANCE_43
+type: knowledge
+domain: acc
+title: 'Blanc 4 : Intégration directe GRD hors-Enedis'
+summary: "- Gap : ELD (Entreprises Locales Distribution) = ~150 GRD régionales. None\
+  \ have native ACC SaaS offre \n- PROMEOS opportunité : white-label “ACC Manager\
+  \ by [GRD name]” → ELD peut market à clients, PROM..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Gap : ELD (Entreprises Locales Distribution) = ~150 GRD régionales.\
+  \ None have native ACC SaaS offre \n- PROMEOS opportunité : white-label “ACC Manager\
+  \ by [GRD name]” → ELD peut market à clients, PROMEOS opère backend \n- Win : distribution\
+  \ partner strategy = 150 GRD × 20 small ACC/an = 3k projects/an incremental"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: 'Blanc 4 : Intégration directe GRD hors-Enedis'
+  anchor: '#blanc-4-intgration-directe-grd-hors-enedis'
+  excerpt_short: '- Gap : ELD (Entreprises Locales Distribution) = ~150 GRD régionales.
+    None have native ACC SaaS offr...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

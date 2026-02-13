@@ -1,0 +1,43 @@
+id: STOCKAGE_ACC_1
+type: rule
+domain: usages
+title: A.1 Pourquoi le Stockage Devient Clé en 2025-2026
+summary: "La trajectoire française subit trois chocs simultanés : \n\nFin ARENH (31/12/2025)\
+  \ : accès régulé au nucléaire disparaît → 100% prix de marché spot pour l’électricité\
+  \ en 2026. Volatilité prix attendue :..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "La trajectoire française subit trois chocs simultanés : \n\nFin ARENH\
+  \ (31/12/2025) : accès régulé au nucléaire disparaît → 100% prix de marché spot\
+  \ pour l’électricité en 2026. Volatilité prix attendue : -20 € à +150 €/MWh selon\
+  \ heures [Les Échos – Marché électricité 2025]. Corollaire : les heures bas prix\
+  \ (midi PV, nuit creux) intéressent fortement pour arbitrage ou recharge batterie.\
+  \ \n\nTURPE 7 août 2026 : CRE remplace les tarifs de soutirage/injection par un\
+  \ nouveau barème injection-withdrawal qui paie les batteries pour décharger en hiver\
+  \ (pics) ou charger en été (surplus PV). Incitation directe au stockage, surtout\
+  \ si localisé dans zone « injection » (souvent rurale/PV). 5 6 \n\nObligation mFRR\
+  \ > 10 MW (2026) : tous producteurs solaires/éoliens > 10 MW doivent participer\
+  \ au balancing national. Corollaire pour ACC : une batterie > 1 MW peut devenir\
+  \ actif de balancing et générer revenus flexibilité (~10–20 k€/an en France selon\
+  \ taille). 7 \n\nÉlectrification usages : montée IRVE (bornes recharge, 100 000+\
+  \ en 2025), PAC (chauffage), qui créent pics de puissance. Batterie + ACC = lissage\
+  \ local puissance souscrite → economies TURPE."
+logic: null
+sources:
+- doc_id: STOCKAGE_ACC
+  label: Stockage et Autoconsommation Collective
+  section: A.1 Pourquoi le Stockage Devient Clé en 2025-2026
+  anchor: '#a1-pourquoi-le-stockage-devient-cl-en-2025-2026'
+  excerpt_short: "La trajectoire française subit trois chocs simultanés : \n\nFin\
+    \ ARENH (31/12/2025) : accès régulé au n..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

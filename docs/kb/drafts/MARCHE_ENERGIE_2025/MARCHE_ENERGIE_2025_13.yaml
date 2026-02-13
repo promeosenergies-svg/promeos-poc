@@ -1,0 +1,53 @@
+id: MARCHE_ENERGIE_2025_13
+type: rule
+domain: usages
+title: 'B. Contrats Énergie : Recommandations Stratégiques'
+summary: "Etat actuel (décembre 2025) : \n- Contrats ARENH expirent 31 décembre 2025\
+  \ \n- Plupart clients sur offres court terme (spot, 1-12 mois) ou 1-2 ans \n- Fournisseurs\
+  \ réticents long terme (incertitude VNU) ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Etat actuel (décembre 2025) : \n- Contrats ARENH expirent 31 décembre\
+  \ 2025 \n- Plupart clients sur offres court terme (spot, 1-12 mois) ou 1-2 ans \n\
+  - Fournisseurs réticents long terme (incertitude VNU) \n\nActions urgentes janvier-février\
+  \ 2026 : \n\nÉtape 1 : Diagnostiquer portefeuille \n- Lister tous contrats énergie\
+  \ par site, échéance \n- Identifier sites critiques (gros consommateurs, contrats\
+  \ expirant Q1 2026) \n- Classer par profil : PME tertiaire (T2) vs gros consommateurs\
+  \ (T3/T4) \n\nÉtape 2 : Stratégie d’achat hybride (recommandé) \n- Petit lot 10%\
+  \ court terme (spot 1-3 mois) : flexibilité, coûts variables \n- Lot moyen 20% moyen\
+  \ terme (3-5 ans fixes) : sécurité partielle, prix ~65-75€/MWh (électricité) \n\
+  - Lot principal 70% long terme : PPA renouvelables (10-25 ans) OU contrats CAPN\
+  \ si éligible (industriels) \n\nRationalisation moyen terme : \n| Contrat | Horizon\
+  \ | Volume % | Tarif estimé 2026 | Avantage | \n|—|—|—|—|—| \n| Spot | 1-3 mois\
+  \ | 10% | 60-80€/MWh variable | Flexibilité | \n| Moyen | 3-5 ans | 20% | 70-75€/MWh\
+  \ fixe | Sécurité partielle | \n| PPA solaire | 10-15 ans | 40% | 68-75€/MWh fixe\
+  \ | Long terme stable | \n| PPA éolien | 15-25 ans | 30% | 65-72€/MWh fixe | Très\
+  \ long terme | \n| CAPN | (si industriel) | - | Subnégotié EDF | Accès nucléaire\
+  \ | \n\nAvantage mix : limite exposition volatilité, moyenne coûts sur spectre temporel,\
+  \ permet ajustement si gestion courante change. \n\nÉtape 3 : Engagement immédiat\
+  \ (janvier-février 2026 ) \n- Lancer appels offres fournisseurs pour contrats 3-5\
+  \ ans (moyen terme) \n- Parallel : explorer PPA avec producteurs renouvelables (durée\
+  \ plus longue, délai signature 3-4 mois) \n- Sécuriser court terme (spot) avec clauses\
+  \ exit (au cas où PPA ou moyen terme échouent négociation) \n\nÉtape 4 : Suivi VNU\
+  \ (H1 2026) \n- Une fois seuils VNU fixés, recalculer économies/pénalités par scénario\
+  \ prix \n- Ajuster mix si VNU crée arbitrage nouveau (ex : si VNU très favorable,\
+  \ peut allonger short term)"
+logic: null
+sources:
+- doc_id: MARCHE_ENERGIE_2025
+  label: Analyse marche energie France-Europe 2025
+  section: 'B. Contrats Énergie : Recommandations Stratégiques'
+  anchor: '#b-contrats-nergie-recommandations-stratgiques'
+  excerpt_short: "Etat actuel (décembre 2025) : \n- Contrats ARENH expirent 31 décembre\
+    \ 2025 \n- Plupart clients sur off..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

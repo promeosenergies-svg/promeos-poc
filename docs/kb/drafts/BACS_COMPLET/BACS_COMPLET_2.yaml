@@ -1,0 +1,32 @@
+id: BACS_COMPLET_2
+type: rule
+domain: usages
+title: Objectifs
+summary: "- Réduire consommations énergétiques 15-30% via optimisation équipements\
+  \ CVC \n- Détecter dérives performance (alarmes, alertes temps réel) \n- Soutenir\
+  \ atteinte objectifs décret tertiaire (-40% 2030, -..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Réduire consommations énergétiques 15-30% via optimisation équipements\
+  \ CVC \n- Détecter dérives performance (alarmes, alertes temps réel) \n- Soutenir\
+  \ atteinte objectifs décret tertiaire (-40% 2030, -50% 2040, -60% 2050) \n- Assurer\
+  \ confort/santé occupants sans surcoût énergétique"
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Objectifs
+  anchor: '#objectifs'
+  excerpt_short: "- Réduire consommations énergétiques 15-30% via optimisation équipements\
+    \ CVC \n- Détecter dérives per..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

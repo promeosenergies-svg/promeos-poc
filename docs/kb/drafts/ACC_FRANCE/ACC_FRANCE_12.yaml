@@ -1,0 +1,31 @@
+id: ACC_FRANCE_12
+type: rule
+domain: acc
+title: BACS (depuis 1er janvier 2025) 48
+summary: "- Obligation d’automatisation bâtiments ≥ 290 kW (2027 : ≥ 70 kW) \n- Pour\
+  \ ACC tertiaire : système de contrôle automatisé quasi-obligatoire → intégration\
+  \ SaaS EMS + ACC"
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Obligation d’automatisation bâtiments ≥ 290 kW (2027 : ≥ 70 kW) \n\
+  - Pour ACC tertiaire : système de contrôle automatisé quasi-obligatoire → intégration\
+  \ SaaS EMS + ACC"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: BACS (depuis 1er janvier 2025) 48
+  anchor: '#bacs-depuis-1er-janvier-2025-48'
+  excerpt_short: "- Obligation d’automatisation bâtiments ≥ 290 kW (2027 : ≥ 70 kW)\
+    \ \n- Pour ACC tertiaire : système de..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

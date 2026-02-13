@@ -1,0 +1,32 @@
+id: STRATEGIE_NEBCO_26
+type: knowledge
+domain: reglementaire
+title: 'Décision 3: Data Scope Minimal'
+summary: "Recommandation : ✅ GRD + Strategic Sub-metering (froid + CVC key equipment\
+  \ only) \n- Why : 80% precision at 20% cost ; 2–4 week deployment (vs. 8–12 weeks\
+  \ full IoT) \n- Action : Pilot = GRD (free) + 2–3..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Recommandation : ✅ GRD + Strategic Sub-metering (froid + CVC key equipment\
+  \ only) \n- Why : 80% precision at 20% cost ; 2–4 week deployment (vs. 8–12 weeks\
+  \ full IoT) \n- Action : Pilot = GRD (free) + 2–3 sous-compteurs critiques (~€500–1k\
+  \ total setup)"
+logic: null
+sources:
+- doc_id: STRATEGIE_NEBCO
+  label: Analyse strategique NEBCO
+  section: 'Décision 3: Data Scope Minimal'
+  anchor: '#dcision-3-data-scope-minimal'
+  excerpt_short: "Recommandation : ✅ GRD + Strategic Sub-metering (froid + CVC key\
+    \ equipment only) \n- Why : 80% precis..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

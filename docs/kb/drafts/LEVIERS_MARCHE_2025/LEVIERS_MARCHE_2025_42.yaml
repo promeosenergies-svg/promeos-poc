@@ -1,0 +1,37 @@
+id: LEVIERS_MARCHE_2025_42
+type: knowledge
+domain: reglementaire
+title: 'Q2 : 10 Irritants Opérationnels Majeurs (avec solutions)'
+summary: "- Montage PMO lourd → Template + algo sélection structure → –6 sem \n- Inscription\
+  \ participants tardive → Flow digital e-sig → –2 sem \n- Enedis revérifications\
+  \ données → Validation API préalable → –3 s..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Montage PMO lourd → Template + algo sélection structure → –6 sem \n\
+  - Inscription participants tardive → Flow digital e-sig → –2 sem \n- Enedis revérifications\
+  \ données → Validation API préalable → –3 sem \n- Changement fournisseur chaos →\
+  \ Notification batch API → –48h risque \n- Clé statique sous-optimal → IA dynamique\
+  \ monthly → +15–20% autoconso \n- Facturation Excel cauchemar → Shadow billing auto\
+  \ → –15 jours clôture \n- Impayés trop fréquents → SEPA escalade smart → trésorerie\
+  \ +95% \n- Entrée/sortie participant lent → Automation contrats → churn –30% \n\
+  - Audit annuel panique → Vault numérique crypto + trail → –3 jours audit \n- Enedis\
+  \ lent & bureaucratique → API proxy smart batch → –50% délai Enedis"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: 'Q2 : 10 Irritants Opérationnels Majeurs (avec solutions)'
+  anchor: '#q2-10-irritants-oprationnels-majeurs-avec-solutions'
+  excerpt_short: "- Montage PMO lourd → Template + algo sélection structure → –6 sem\
+    \ \n- Inscription participants tardi..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

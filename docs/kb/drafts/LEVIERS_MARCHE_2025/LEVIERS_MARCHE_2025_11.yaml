@@ -1,0 +1,32 @@
+id: LEVIERS_MARCHE_2025_11
+type: knowledge
+domain: reglementaire
+title: '2. Template juridique standardisé PMO (par type : association, SAS, SEM)'
+summary: "- Action : Banque de modèles pré-remplis Enedis + statuts + contrats (gérés\
+  \ par avocats, intégrés PROMEOS) \n- Gain : Montage juridique < 1 mois vs 2–4 mois\
+  \ aujourd’hui \n- Impact : Scalabilité 10x (1 a..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Action : Banque de modèles pré-remplis Enedis + statuts + contrats\
+  \ (gérés par avocats, intégrés PROMEOS) \n- Gain : Montage juridique < 1 mois vs\
+  \ 2–4 mois aujourd’hui \n- Impact : Scalabilité 10x (1 avocat peut valider 50 opérations/an\
+  \ vs 5 aujourd’hui)"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: '2. Template juridique standardisé PMO (par type : association, SAS, SEM)'
+  anchor: '#2-template-juridique-standardis-pmo-par-type-association-sas-sem'
+  excerpt_short: '- Action : Banque de modèles pré-remplis Enedis + statuts + contrats
+    (gérés par avocats, intégrés PR...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

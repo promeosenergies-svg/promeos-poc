@@ -1,0 +1,39 @@
+id: DT_OPERAT_2026_25
+type: rule
+domain: reglementaire
+title: Conclusion
+summary: 'Le Décret tertiaire entre en 2026 dans une phase décisive : tous les seuils
+  de conformité 2030 sont désormais connus (Valeurs Absolues VI publiée septembre
+  2025), les échéances critiques de dépôt (mod...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Le Décret tertiaire entre en 2026 dans une phase décisive : tous les\
+  \ seuils de conformité 2030 sont désormais connus (Valeurs Absolues VI publiée septembre\
+  \ 2025), les échéances critiques de dépôt (modulation : 30 sept. 2026) approchent,\
+  \ et le premier bilan réglementaire officiel aura lieu fin 2031. Les assujettis\
+  \ doivent sans délai : \n- Déclarer leurs données annuelles sur OPERAT (30 sept.\
+  \ 2025 pour 2024) \n- Évaluer leur trajectoire vs −40% / valeur absolue \n- Lancer\
+  \ des audits énergétiques et plans d’action \n- Demander modulation si impossibilité\
+  \ justifiée (avant 30 sept. 2026) \n- Investir dans GTB, rénovation, PV selon calendrier\
+  \ 2025–2030 \n\nL’inaction expose à des sanctions progressives (mises en demeure,\
+  \ « name and shame », amendes jusqu’à 7 500 €/EFA) et à un risque réputationnel/ESG\
+  \ majeur pour les entreprises."
+logic: null
+sources:
+- doc_id: DT_OPERAT_2026
+  label: Decret Tertiaire / OPERAT - Obligations 2026
+  section: Conclusion
+  anchor: '#conclusion'
+  excerpt_short: 'Le Décret tertiaire entre en 2026 dans une phase décisive : tous
+    les seuils de conformité 2030 sont ...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

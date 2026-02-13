@@ -1,0 +1,33 @@
+id: DT_SYNTHESE_18
+type: knowledge
+domain: reglementaire
+title: 'Phase 3 : Déclaration & Suivi (Sept 2026+)'
+summary: "- Déclaration 2025 robuste \n- Vérifier via test OPERAT avant submission\
+  \ finale \n- Documenter hypothèses (années ref, USE, coefficients climat) \n- Archiver\
+  \ attestation générée (proof of compliance) \n- ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Déclaration 2025 robuste \n- Vérifier via test OPERAT avant submission\
+  \ finale \n- Documenter hypothèses (années ref, USE, coefficients climat) \n- Archiver\
+  \ attestation générée (proof of compliance) \n- Suivi continu \n- Dashboard équipe\
+  \ interne post-déclaration \n- Ajustements contrats prestataires basé sur donnée\
+  \ réelle \n- Anticipation 2027 (nouvelle déclaration)"
+logic: null
+sources:
+- doc_id: DT_SYNTHESE
+  label: Decret Tertiaire - Synthese PROMEOS
+  section: 'Phase 3 : Déclaration & Suivi (Sept 2026+)'
+  anchor: '#phase-3-dclaration-suivi-sept-2026'
+  excerpt_short: "- Déclaration 2025 robuste \n- Vérifier via test OPERAT avant submission\
+    \ finale \n- Documenter hypothè..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,29 @@
+id: FLEX_EFFACEMENT_33
+type: knowledge
+domain: facturation
+title: 5.5 Stacking
+summary: '✅ Oui : Cumul tarif dyna + NEBEF (offres spot) + réserves (si paramètres
+  compatibles).'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: '✅ Oui : Cumul tarif dyna + NEBEF (offres spot) + réserves (si paramètres
+  compatibles).'
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: 5.5 Stacking
+  anchor: '#55-stacking'
+  excerpt_short: '✅ Oui : Cumul tarif dyna + NEBEF (offres spot) + réserves (si paramètres
+    compatibles)....'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

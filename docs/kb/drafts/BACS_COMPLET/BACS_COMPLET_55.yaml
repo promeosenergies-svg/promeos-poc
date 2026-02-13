@@ -1,0 +1,35 @@
+id: BACS_COMPLET_55
+type: rule
+domain: reglementaire
+title: 'Q6. « Multi-sites géographie : 10 bureaux à 50 kW chacun. Un BACS centralisé
+  OK ? »'
+summary: R6. Oui, hyperviseur centralisant sites individuels conforme décret . Chaque
+  site < 70 kW donc aucun n’obligatoire individuellement, MAIS si architecture décide
+  centraliser → BACS hyperviseur est du “...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: 'R6. Oui, hyperviseur centralisant sites individuels conforme décret .
+  Chaque site < 70 kW donc aucun n’obligatoire individuellement, MAIS si architecture
+  décide centraliser → BACS hyperviseur est du “moyen”. Avantage : optimisation globale,
+  données consolidées. Condition : chaque site garder autonomie locale (arrêt manuel,
+  paramètres spécifiques possibles).'
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: 'Q6. « Multi-sites géographie : 10 bureaux à 50 kW chacun. Un BACS centralisé
+    OK ? »'
+  anchor: '#q6-multi-sites-gographie-10-bureaux-50-kw-chacun-un-bacs-centralis-ok-'
+  excerpt_short: R6. Oui, hyperviseur centralisant sites individuels conforme décret
+    . Chaque site < 70 kW donc aucun...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

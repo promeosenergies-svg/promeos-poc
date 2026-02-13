@@ -1,0 +1,36 @@
+id: LEVIERS_MARCHE_2025_37
+type: knowledge
+domain: acc
+title: H.2 – Matrice Positionnement PROMEOS Compliance & Réglementation (X-axis)
+summary: "Faible ←────────────────────────────────→ Fort\n\n ╔════════════════════════════════════════════════════════╗\n\
+  \ ║ ║\n Fort ║ ║\n ║ ╔─────────────────────────────────────╗ ║\n ║ │ PROMEOS │ ║\n\
+  \ ║ │ (Data & Co..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Faible ←────────────────────────────────→ Fort\n\n ╔════════════════════════════════════════════════════════╗\n\
+  \ ║ ║\n Fort ║ ║\n ║ ╔─────────────────────────────────────╗ ║\n ║ │ PROMEOS │ ║\n\
+  \ ║ │ (Data & Compliance + ACC + Ops) │ ║\n ║ │ Holistique, Automatisé, Intelligent\
+  \ ║\n ║ ╚─────────────────────────────────────╝ ║\n ACC ║ ║\n Ops ║ ╔─────────────────────┐\
+  \ ║\n Gestion ║ │ Enogrid/EnoPower │ ║\n ║ │ Spécialisé ACC │ Advizeo/Deepki ║\n\
+  \ ║ │ mais pas compliance │ (EMS compliance) ║\n ║ └─────────────────────┘ ║\n ║\
+  \ ║\n Faible║ ║\n ╚════════════════════════════════════════════════════════╝\n Faible\
+  \ Fort \n\nPROMEOS = unique en cadran supérieur droit (compliance fort + ACC ops\
+  \ fort)"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: H.2 – Matrice Positionnement PROMEOS Compliance & Réglementation (X-axis)
+  anchor: '#h2-matrice-positionnement-promeos-compliance-rglementation-x-axis'
+  excerpt_short: "Faible ←────────────────────────────────→ Fort\n\n ╔══════════════════════════════════════════════════..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

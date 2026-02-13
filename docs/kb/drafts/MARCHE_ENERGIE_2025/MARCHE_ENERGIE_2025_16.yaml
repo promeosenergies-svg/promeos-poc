@@ -1,0 +1,37 @@
+id: MARCHE_ENERGIE_2025_16
+type: rule
+domain: acc
+title: E. Opportunités à Court Terme (6-12 mois)
+summary: "1. Renegotiation fournisseurs \n- Clients ARENH doivent renouveler = opportunité\
+  \ prix aggressifs (fournisseurs veulent fidéliser) \n- Appel offres multi-fournisseurs\
+  \ : 3-5 anscontrats à 65-75€/MWh élect..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "1. Renegotiation fournisseurs \n- Clients ARENH doivent renouveler =\
+  \ opportunité prix aggressifs (fournisseurs veulent fidéliser) \n- Appel offres\
+  \ multi-fournisseurs : 3-5 anscontrats à 65-75€/MWh électricité (baisse vs ARENH\
+  \ 70€ équivalent post-markup) \n\n2. PPA adoption \n- Marché PPA mature début 2025\
+  \ (1,2 GW contractualisées, prix 65-85€/MWh) \n- Accès facilité PME/ETI tertiaires\
+  \ via structures tiers-investissement ou crédit-bail \n- Délai signature : 3-4 mois\
+  \ pour sites <50 000 m² multi-site \n\n3. Valeur patrimoniale \n- Sites rénové (décret\
+  \ tertiaire -40%) = attractivité occupants + prime valeur + facilité refinancement\
+  \ \n- ROI immobilier 5-8% sup. pour bâtiments conformes vs non-rénové"
+logic: null
+sources:
+- doc_id: MARCHE_ENERGIE_2025
+  label: Analyse marche energie France-Europe 2025
+  section: E. Opportunités à Court Terme (6-12 mois)
+  anchor: '#e-opportunits-court-terme-6-12-mois'
+  excerpt_short: "1. Renegotiation fournisseurs \n- Clients ARENH doivent renouveler\
+    \ = opportunité prix aggressifs (fou..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

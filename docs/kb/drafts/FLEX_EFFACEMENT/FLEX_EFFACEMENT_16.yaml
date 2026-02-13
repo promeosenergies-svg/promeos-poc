@@ -1,0 +1,38 @@
+id: FLEX_EFFACEMENT_16
+type: knowledge
+domain: acc
+title: 3.1 Comment ça marche
+summary: Remplaçant ancien mécanisme (fin nov. 2026), le nouveau mécanisme de capacité
+  centralisé procure rémunération pour engagement disponibilité (non activation) période
+  de livraison (généralement année ci...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Remplaçant ancien mécanisme (fin nov. 2026), le nouveau mécanisme de\
+  \ capacité centralisé procure rémunération pour engagement disponibilité (non activation)\
+  \ période de livraison (généralement année civile).[artifact:] Architecture simplifié\
+  \ : \n- Ministre fixe besoin capacité sur proposition CRE (rapport RTE). \n- RTE\
+  \ organise enchères centralisées (AL-4 et AL-1 = année-4 et année-1 avant livraison).\
+  \ \n- Entités de Certification (EDC : producteurs, agrégateurs, OE effacement) soumettent\
+  \ offres. \n- Rémunération au prix marginal (sauf plafonds, dérogations). \n- Post-livraison\
+  \ : vérification disponibilité effective (M+3 initial, M+18 régularisation), pénalités\
+  \ écarts. \n\nEffacement accédé via Opérateur d’Effacement certifiant capacité.\
+  \ Engagement = puissance disponible jours “PP2” (jour-pointe prévisionnels hiver/été)."
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: 3.1 Comment ça marche
+  anchor: '#31-comment-a-marche'
+  excerpt_short: Remplaçant ancien mécanisme (fin nov. 2026), le nouveau mécanisme
+    de capacité centralisé procure rém...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

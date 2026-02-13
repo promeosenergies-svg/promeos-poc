@@ -1,0 +1,35 @@
+id: POST_ARENH_2026_8
+type: rule
+domain: facturation
+title: Calcul et Mention Obligatoire
+summary: "La minoration est appliquée de manière automatique et identique quel que\
+  \ soit le fournisseur d’électricité choisi par le consommateur final. Son montant\
+  \ pour chaque client est défini par : 22 \n\nMinora..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "La minoration est appliquée de manière automatique et identique quel\
+  \ que soit le fournisseur d’électricité choisi par le consommateur final. Son montant\
+  \ pour chaque client est défini par : 22 \n\nMinoration = Tarif Unitaire × Quantités\
+  \ fournies pendant la période d’application \n\nCette minoration doit figurer par\
+  \ une mention expresse distincte sur la facture, conformément à l’article L.337-3-4\
+  \ du Code de l’énergie. Les modalités précises de cette mention seront détaillées\
+  \ par arrêté ultérieur. 23"
+logic: null
+sources:
+- doc_id: POST_ARENH_2026
+  label: Post-ARENH 2026
+  section: Calcul et Mention Obligatoire
+  anchor: '#calcul-et-mention-obligatoire'
+  excerpt_short: La minoration est appliquée de manière automatique et identique quel
+    que soit le fournisseur d’élect...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

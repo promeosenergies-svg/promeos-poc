@@ -1,0 +1,713 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><title>ANALYSE MARCHÉ ÉNERGIE FRANCE-EUROPE 2025</title><style>
+/* cspell:disable-file */
+/* webkit printing magic: print all background colors */
+html {
+	-webkit-print-color-adjust: exact;
+}
+* {
+	box-sizing: border-box;
+	-webkit-print-color-adjust: exact;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+}
+@media only screen {
+	body {
+		margin: 2em auto;
+		max-width: 900px;
+		color: rgb(55, 53, 47);
+	}
+}
+
+body {
+	line-height: 1.5;
+	white-space: pre-wrap;
+}
+
+a,
+a.visited {
+	color: inherit;
+	text-decoration: underline;
+}
+
+.pdf-relative-link-path {
+	font-size: 80%;
+	color: #444;
+}
+
+h1,
+h2,
+h3 {
+	letter-spacing: -0.01em;
+	line-height: 1.2;
+	font-weight: 600;
+	margin-bottom: 0;
+}
+
+/* Override strong tags inside headings to maintain consistent weight */
+h1 strong,
+h2 strong,
+h3 strong {
+	font-weight: 600;
+}
+
+.page-title {
+	font-size: 2.5rem;
+	font-weight: 700;
+	margin-top: 0;
+	margin-bottom: 0.75em;
+}
+
+h1 {
+	font-size: 1.875rem;
+	margin-top: 1.875rem;
+}
+
+h2 {
+	font-size: 1.5rem;
+	margin-top: 1.5rem;
+}
+
+h3 {
+	font-size: 1.25rem;
+	margin-top: 1.25rem;
+}
+
+.source {
+	border: 1px solid #ddd;
+	border-radius: 3px;
+	padding: 1.5em;
+	word-break: break-all;
+}
+
+.callout {
+	border-radius: 10px;
+	padding: 1rem;
+}
+
+figure {
+	margin: 1.25em 0;
+	page-break-inside: avoid;
+}
+
+figcaption {
+	opacity: 0.5;
+	font-size: 85%;
+	margin-top: 0.5em;
+}
+
+mark {
+	background-color: transparent;
+}
+
+.indented {
+	padding-left: 1.5em;
+}
+
+hr {
+	background: transparent;
+	display: block;
+	width: 100%;
+	height: 1px;
+	visibility: visible;
+	border: none;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.09);
+}
+
+img {
+	max-width: 100%;
+}
+
+@media only print {
+	img {
+		max-height: 100vh;
+		object-fit: contain;
+	}
+}
+
+@page {
+	margin: 1in;
+}
+
+.collection-content {
+	font-size: 0.875rem;
+}
+
+.collection-content td {
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.column-list {
+	display: flex;
+	justify-content: space-between;
+}
+
+.column {
+	padding: 0 1em;
+}
+
+.column:first-child {
+	padding-left: 0;
+}
+
+.column:last-child {
+	padding-right: 0;
+}
+
+.table_of_contents-item {
+	display: block;
+	font-size: 0.875rem;
+	line-height: 1.3;
+	padding: 0.125rem;
+}
+
+.table_of_contents-indent-1 {
+	margin-left: 1.5rem;
+}
+
+.table_of_contents-indent-2 {
+	margin-left: 3rem;
+}
+
+.table_of_contents-indent-3 {
+	margin-left: 4.5rem;
+}
+
+.table_of_contents-link {
+	text-decoration: none;
+	opacity: 0.7;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.18);
+}
+
+table,
+th,
+td {
+	border: 1px solid rgba(55, 53, 47, 0.09);
+	border-collapse: collapse;
+}
+
+table {
+	border-left: none;
+	border-right: none;
+}
+
+th,
+td {
+	font-weight: normal;
+	padding: 0.25em 0.5em;
+	line-height: 1.5;
+	min-height: 1.5em;
+	text-align: left;
+}
+
+th {
+	color: rgba(55, 53, 47, 0.6);
+}
+
+ol,
+ul {
+	margin: 0;
+	margin-block-start: 0.6em;
+	margin-block-end: 0.6em;
+}
+
+li > ol:first-child,
+li > ul:first-child {
+	margin-block-start: 0.6em;
+}
+
+ul > li {
+	list-style: disc;
+}
+
+ul.to-do-list {
+	padding-inline-start: 0;
+}
+
+ul.to-do-list > li {
+	list-style: none;
+}
+
+.to-do-children-checked {
+	text-decoration: line-through;
+	opacity: 0.375;
+}
+
+ul.toggle > li {
+	list-style: none;
+}
+
+ul {
+	padding-inline-start: 1.7em;
+}
+
+ul > li {
+	padding-left: 0.1em;
+}
+
+ol {
+	padding-inline-start: 1.6em;
+}
+
+ol > li {
+	padding-left: 0.2em;
+}
+
+.mono ol {
+	padding-inline-start: 2em;
+}
+
+.mono ol > li {
+	text-indent: -0.4em;
+}
+
+.toggle {
+	padding-inline-start: 0em;
+	list-style-type: none;
+}
+
+/* Indent toggle children */
+.toggle > li > details {
+	padding-left: 1.7em;
+}
+
+.toggle > li > details > summary {
+	margin-left: -1.1em;
+}
+
+.selected-value {
+	display: inline-block;
+	padding: 0 0.5em;
+	background: rgba(206, 205, 202, 0.5);
+	border-radius: 3px;
+	margin-right: 0.5em;
+	margin-top: 0.3em;
+	margin-bottom: 0.3em;
+	white-space: nowrap;
+}
+
+.collection-title {
+	display: inline-block;
+	margin-right: 1em;
+}
+
+.page-description {
+	margin-bottom: 2em;
+}
+
+.simple-table {
+	margin-top: 1em;
+	font-size: 0.875rem;
+	empty-cells: show;
+}
+.simple-table td {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table th {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table-header-color {
+	background: rgb(247, 246, 243);
+	color: black;
+}
+.simple-table-header {
+	font-weight: 500;
+}
+
+time {
+	opacity: 0.5;
+}
+
+.icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	max-width: 1.2em;
+	max-height: 1.2em;
+	text-decoration: none;
+	vertical-align: text-bottom;
+	margin-right: 0.5em;
+}
+
+img.icon {
+	border-radius: 3px;
+}
+
+.callout img.notion-static-icon {
+	width: 1em;
+	height: 1em;
+}
+
+.callout p {
+	margin: 0;
+}
+
+.callout h1,
+.callout h2,
+.callout h3 {
+	margin: 0 0 0.6rem;
+}
+
+.user-icon {
+	width: 1.5em;
+	height: 1.5em;
+	border-radius: 100%;
+	margin-right: 0.5rem;
+}
+
+.user-icon-inner {
+	font-size: 0.8em;
+}
+
+.text-icon {
+	border: 1px solid #000;
+	text-align: center;
+}
+
+.page-cover-image {
+	display: block;
+	object-fit: cover;
+	width: 100%;
+	max-height: 30vh;
+}
+
+.page-header-icon {
+	font-size: 3rem;
+	margin-bottom: 1rem;
+}
+
+.page-header-icon-with-cover {
+	margin-top: -0.72em;
+	margin-left: 0.07em;
+}
+
+.page-header-icon img {
+	border-radius: 3px;
+}
+
+.link-to-page {
+	margin: 1em 0;
+	padding: 0;
+	border: none;
+	font-weight: 500;
+}
+
+p > .user {
+	opacity: 0.5;
+}
+
+td > .user,
+td > time {
+	white-space: nowrap;
+}
+
+input[type="checkbox"] {
+	transform: scale(1.5);
+	margin-right: 0.6em;
+	vertical-align: middle;
+}
+
+p {
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+}
+
+.image {
+	border: none;
+	margin: 1.5em 0;
+	padding: 0;
+	border-radius: 0;
+	text-align: center;
+}
+
+.code,
+code {
+	background: rgba(135, 131, 120, 0.15);
+	border-radius: 3px;
+	padding: 0.2em 0.4em;
+	border-radius: 3px;
+	font-size: 85%;
+	tab-size: 2;
+}
+
+code {
+	color: #eb5757;
+}
+
+.code {
+	padding: 1.5em 1em;
+}
+
+.code-wrap {
+	white-space: pre-wrap;
+	word-break: break-all;
+}
+
+.code > code {
+	background: none;
+	padding: 0;
+	font-size: 100%;
+	color: inherit;
+}
+
+blockquote {
+	font-size: 1em;
+	margin: 1em 0;
+	padding-left: 1em;
+	border-left: 3px solid rgb(55, 53, 47);
+}
+
+blockquote.quote-large {
+	font-size: 1.25em;
+}
+
+.bookmark {
+	text-decoration: none;
+	max-height: 8em;
+	padding: 0;
+	display: flex;
+	width: 100%;
+	align-items: stretch;
+}
+
+.bookmark-title {
+	font-size: 0.85em;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	height: 1.75em;
+	white-space: nowrap;
+}
+
+.bookmark-text {
+	display: flex;
+	flex-direction: column;
+}
+
+.bookmark-info {
+	flex: 4 1 180px;
+	padding: 12px 14px 14px;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+}
+
+.bookmark-image {
+	width: 33%;
+	flex: 1 1 180px;
+	display: block;
+	position: relative;
+	object-fit: cover;
+	border-radius: 1px;
+}
+
+.bookmark-description {
+	color: rgba(55, 53, 47, 0.6);
+	font-size: 0.75em;
+	overflow: hidden;
+	max-height: 4.5em;
+	word-break: break-word;
+}
+
+.bookmark-href {
+	font-size: 0.75em;
+	margin-top: 0.25em;
+}
+
+.sans { font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"; }
+.code { font-family: "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace; }
+.serif { font-family: Lyon-Text, Georgia, ui-serif, serif; }
+.mono { font-family: iawriter-mono, Nitti, Menlo, Courier, monospace; }
+.pdf .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK JP'; }
+.pdf:lang(zh-CN) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK SC'; }
+.pdf:lang(zh-TW) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK TC'; }
+.pdf:lang(ko-KR) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK KR'; }
+.pdf .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.pdf .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK JP'; }
+.pdf:lang(zh-CN) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK SC'; }
+.pdf:lang(zh-TW) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK TC'; }
+.pdf:lang(ko-KR) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK KR'; }
+.pdf .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.highlight-default {
+	color: rgba(44, 44, 43, 1);
+}
+.highlight-gray {
+	color: rgba(125, 122, 117, 1);
+	fill: rgba(125, 122, 117, 1);
+}
+.highlight-brown {
+	color: rgba(159, 118, 90, 1);
+	fill: rgba(159, 118, 90, 1);
+}
+.highlight-orange {
+	color: rgba(210, 123, 45, 1);
+	fill: rgba(210, 123, 45, 1);
+}
+.highlight-yellow {
+	color: rgba(203, 148, 52, 1);
+	fill: rgba(203, 148, 52, 1);
+}
+.highlight-teal {
+	color: rgba(80, 148, 110, 1);
+	fill: rgba(80, 148, 110, 1);
+}
+.highlight-blue {
+	color: rgba(56, 125, 201, 1);
+	fill: rgba(56, 125, 201, 1);
+}
+.highlight-purple {
+	color: rgba(154, 107, 180, 1);
+	fill: rgba(154, 107, 180, 1);
+}
+.highlight-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.highlight-red {
+	color: rgba(207, 81, 72, 1);
+	fill: rgba(207, 81, 72, 1);
+}
+.highlight-default_background {
+	color: rgba(44, 44, 43, 1);
+}
+.highlight-gray_background {
+	background: rgba(42, 28, 0, 0.07);
+}
+.highlight-brown_background {
+	background: rgba(139, 46, 0, 0.086);
+}
+.highlight-orange_background {
+	background: rgba(224, 101, 1, 0.129);
+}
+.highlight-yellow_background {
+	background: rgba(211, 168, 0, 0.137);
+}
+.highlight-teal_background {
+	background: rgba(0, 100, 45, 0.09);
+}
+.highlight-blue_background {
+	background: rgba(0, 124, 215, 0.094);
+}
+.highlight-purple_background {
+	background: rgba(102, 0, 178, 0.078);
+}
+.highlight-pink_background {
+	background: rgba(197, 0, 93, 0.086);
+}
+.highlight-red_background {
+	background: rgba(223, 22, 0, 0.094);
+}
+.block-color-default {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray {
+	color: rgba(125, 122, 117, 1);
+	fill: rgba(125, 122, 117, 1);
+}
+.block-color-brown {
+	color: rgba(159, 118, 90, 1);
+	fill: rgba(159, 118, 90, 1);
+}
+.block-color-orange {
+	color: rgba(210, 123, 45, 1);
+	fill: rgba(210, 123, 45, 1);
+}
+.block-color-yellow {
+	color: rgba(203, 148, 52, 1);
+	fill: rgba(203, 148, 52, 1);
+}
+.block-color-teal {
+	color: rgba(80, 148, 110, 1);
+	fill: rgba(80, 148, 110, 1);
+}
+.block-color-blue {
+	color: rgba(56, 125, 201, 1);
+	fill: rgba(56, 125, 201, 1);
+}
+.block-color-purple {
+	color: rgba(154, 107, 180, 1);
+	fill: rgba(154, 107, 180, 1);
+}
+.block-color-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.block-color-red {
+	color: rgba(207, 81, 72, 1);
+	fill: rgba(207, 81, 72, 1);
+}
+.block-color-default_background {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray_background {
+	background: rgba(240, 239, 237, 1);
+}
+.block-color-brown_background {
+	background: rgba(245, 237, 233, 1);
+}
+.block-color-orange_background {
+	background: rgba(251, 235, 222, 1);
+}
+.block-color-yellow_background {
+	background: rgba(249, 243, 220, 1);
+}
+.block-color-teal_background {
+	background: rgba(232, 241, 236, 1);
+}
+.block-color-blue_background {
+	background: rgba(229, 242, 252, 1);
+}
+.block-color-purple_background {
+	background: rgba(243, 235, 249, 1);
+}
+.block-color-pink_background {
+	background: rgba(250, 233, 241, 1);
+}
+.block-color-red_background {
+	background: rgba(252, 233, 231, 1);
+}
+.select-value-color-default { background-color: rgba(42, 28, 0, 0.07); }
+.select-value-color-gray { background-color: rgba(28, 19, 1, 0.11); }
+.select-value-color-brown { background-color: rgba(127, 51, 0, 0.156); }
+.select-value-color-orange { background-color: rgba(196, 88, 0, 0.203); }
+.select-value-color-yellow { background-color: rgba(209, 156, 0, 0.282); }
+.select-value-color-green { background-color: rgba(0, 96, 38, 0.156); }
+.select-value-color-blue { background-color: rgba(0, 118, 217, 0.203); }
+.select-value-color-purple { background-color: rgba(92, 0, 163, 0.141); }
+.select-value-color-pink { background-color: rgba(183, 0, 78, 0.152); }
+.select-value-color-red { background-color: rgba(206, 24, 0, 0.164); }
+
+.checkbox {
+	display: inline-flex;
+	vertical-align: text-bottom;
+	width: 16;
+	height: 16;
+	background-size: 16px;
+	margin-left: 2px;
+	margin-right: 5px;
+}
+
+.checkbox-on {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20width%3D%2216%22%20height%3D%2216%22%20fill%3D%22%2358A9D7%22%2F%3E%0A%3Cpath%20d%3D%22M6.71429%2012.2852L14%204.9995L12.7143%203.71436L6.71429%209.71378L3.28571%206.2831L2%207.57092L6.71429%2012.2852Z%22%20fill%3D%22white%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+
+.checkbox-off {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20x%3D%220.75%22%20y%3D%220.75%22%20width%3D%2214.5%22%20height%3D%2214.5%22%20fill%3D%22white%22%20stroke%3D%22%2336352F%22%20stroke-width%3D%221.5%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+	
+</style></head><body><article id="2d86971c-72e7-8030-9362-f976c1713708" class="page sans"><header><h1 class="page-title" dir="auto">ANALYSE MARCHÉ ÉNERGIE FRANCE-EUROPE 2025</h1><p class="page-description" dir="auto"></p></header><div class="page-body"><div style="display:contents" dir="auto"><h1 id="2d86971c-72e7-817b-af09-ca3607187fef" class="">ANALYSE MARCHÉ ÉNERGIE FRANCE-EUROPE 2025</h1></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-8109-8de9-fc9405951581" class="">Synthèse Exécutive &amp; Implications Stratégiques pour PROMEOS</h2></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-8196-a480-e28f5c5e975d"/></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-813a-887a-ee6cca479cff" class="">I. RÉSUMÉ EXÉCUTIF</h2></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8165-a6ba-c4da449a6aac" class="">Le marché de l’énergie français connaît en 2025 une inflexion majeure après trois années de volatilité extrême. Les prix de l’électricité baissent enfin (-22,4% annuel), offrant une fenêtre de consolidation. Simultanément, la fin de l’ARENH (31 décembre 2025) marque une rupture structurelle : le marché bascule d’une régulation dirigiste à un équilibre post-nucléaire complexe dominé par la volatilité énergétique européenne, notamment allemande. Pour PROMEOS—opérateur tertiaire multi-sites—cette dualité crée des opportunités tactiques (réduction coûts) mais impose des adaptations stratégiques urgentes (contrats long terme, hedging volatilité).</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8169-80d7-c8568dba5735" class=""><strong>Synthèse en trois points clés</strong> :<br/>1. <strong>Baisse prix 2025 = fenêtre de consolidation</strong> : les factures énergétiques baissent structurellement, offrant marge opérationnelle récupérée à investir en rénovation décret tertiaire.<br/>2. <strong>Fin ARENH = rupture concurrence fournisseurs</strong> : accès au nucléaire régulé à 42€/MWh disparaît ; fournisseurs alternatifs doivent repositionner offres. Pour PROMEOS, urgence d’anticiper contracting post-VNU.<br/>3. <strong>Volatilité EnRi allemande = risque systématique</strong> : l’Allemagne déséquilibre marché électrique européen via surproduction intermittente ; France exposée imports hiver = pics prix imprévisibles. Stratégie d’achat doit se blinder long terme.</p></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-8137-84e4-f92b3edab9bc"/></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-8112-ba23-d134c68e24d4" class="">II. ÉTATS DES LIEUX : PRIX &amp; DYNAMIQUES 2025</h2></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-8161-8dd0-c4df9810c088" class="">A. Prix de l’Électricité France</h3></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8133-8bde-eb90427b4b88" class=""><strong>Trajectoire positive 2025</strong> : Fin de la crise énergétique 2022-2023.</p></div><div style="display:contents" dir="ltr"><table id="2d86971c-72e7-8187-a7ef-ddca358e491d" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8124-8740-dfc30e57ced5"><th id="~cwB" class="simple-table-header-color simple-table-header">Métrique</th><th id="vBs=" class="simple-table-header-color simple-table-header">Valeur</th><th id="@TK&gt;" class="simple-table-header-color simple-table-header">Variation</th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8152-9001-f1a3f08cd556"><td id="~cwB" class=""><strong>Tarif réglementé Février 2025</strong></td><td id="vBs=" class="">20,16 cts€ TTC/kWh</td><td id="@TK&gt;" class="">-15% vs jan 2025</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8185-a442-dd078fb5a84d"><td id="~cwB" class=""><strong>Tarif réglementé Août 2025</strong></td><td id="vBs=" class="">19,52 cts€ TTC/kWh</td><td id="@TK&gt;" class="">-3% vs fév 2025</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8183-a539-ca9b4bed762c"><td id="~cwB" class=""><strong>Baisse annuelle kWh</strong></td><td id="vBs=" class="">-22,4%</td><td id="@TK&gt;" class="">vs février 2024 (0,2516€)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8102-9457-da06330a3828"><td id="~cwB" class=""><strong>Facture mensuelle ménage</strong></td><td id="vBs=" class="">84,68€ (355 kWh/mois)</td><td id="@TK&gt;" class="">-16,8% vs fév 2024</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81a4-8ecb-c02de4ba41ad"><td id="~cwB" class=""><strong>Marché gros (CAL26)</strong></td><td id="vBs=" class="">55-59 €/MWh</td><td id="@TK&gt;" class="">Baisse gaz + charbon</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8190-86eb-c61b7d05449a" class=""><strong>Structure tarifaire post-février 2025</strong> :<br/>- Composante kWh : baisse 20% HT (marchés gros bas)<br/>- Composante abonnement : hausse 9% (TVA 5,5%→20% en août, TURPE +5%)<br/>- Net pour gros consommateurs : économies réelles (volume &gt; effets fixes)</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8110-9c3c-f4d73f8d9dc6" class=""><strong>Implication PROMEOS</strong> : Baisse 15-20% factures électricité 2025 vs 2024 libère trésorerie. Opportunité investir rénovation décret tertiaire immédiatement (amortissement accéléré via baisse opéex).</p></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-814b-961b-c1e4ff425451" class="">B. Prix du Gaz Naturel</h3></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8117-b8a3-dac3006140ee" class=""><strong>Marché plus stable mais structure tarifaire change</strong> :</p></div><div style="display:contents" dir="ltr"><table id="2d86971c-72e7-81fa-b2fc-efeef5cbd3ca" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8139-9649-f9405566ae02"><th id="c~hb" class="simple-table-header-color simple-table-header">Profil</th><th id="^atn" class="simple-table-header-color simple-table-header">Prix kWh HT</th><th id="s&lt;a&lt;" class="simple-table-header-color simple-table-header">Abonnement annuel</th><th id="kAxM" class="simple-table-header-color simple-table-header">Accessibilité</th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81e6-8c9d-c1e65f4c4914"><td id="c~hb" class=""><strong>T1 (≤6k kWh/an)</strong></td><td id="^atn" class="">0,1117€ HT</td><td id="s&lt;a&lt;" class="">111,78€</td><td id="kAxM" class="">Petits tertiaires</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81a1-aa7f-d3de6412013d"><td id="c~hb" class=""><strong>T2 (6k-300k kWh/an)</strong></td><td id="^atn" class="">0,086€ HT</td><td id="s&lt;a&lt;" class="">275,67€</td><td id="kAxM" class="">PME tertiaire</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8103-b81d-d16429496528"><td id="c~hb" class=""><strong>T3/T4 (&gt;300k kWh)</strong></td><td id="^atn" class="">Sur-mesure</td><td id="s&lt;a&lt;" class="">Négociable</td><td id="kAxM" class="">Grands sites</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8164-952a-e48912aa032c" class=""><strong>Chocs structurels</strong> :<br/>- TVA abonnements : 5,5% → 20% (août 2025) = <strong>impact +14,5% sur partie fixe</strong> (exemple : abonnement 30€/mois → +4,35€)<br/>- Accise : 17,16 €/MWh (janvier 2025), stable<br/>- Terme stockage : +138% (avril 2025)—reflet tensions approvisionnement hiver</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-818c-95c4-f411486a6945" class=""><strong>Implication PROMEOS</strong> : Gaz devient moins prévisible. Sites gaz chauffage collectif : négocier contrats 3-5 ans avant hivers 2025-26 pour éviter pics saisonniers. Pompes à chaleur électriques deviennent comparables économiquement (si électricité reste 55€/MWh spot).</p></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-8125-bee5-cdc45fe651bd" class="">C. Paysage Européen : Risques Systémiques</h3></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-815f-a831-cd945dcd8a97" class="">Allemagne : Intermittence Déstabilisante</h3></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8186-84ae-da6ce01d523d" class=""><strong>Paradoxe allemand</strong> : 267 GW puissance installée vs 75-95 GW consommation pic.</p></div><div style="display:contents" dir="ltr"><table id="2d86971c-72e7-8107-b040-dfb7fac42b95" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8168-8aee-dc29e8cf44d7"><th id="q:^D" class="simple-table-header-color simple-table-header">Caractéristique</th><th id="Yufu" class="simple-table-header-color simple-table-header">Situation</th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81f9-b1ea-e4f82d5bd50a"><td id="q:^D" class=""><strong>Capacité EnRi (éolien+solaire)</strong></td><td id="Yufu" class="">168 GW (2x demande peak)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81a9-819d-c6add526f056"><td id="q:^D" class=""><strong>Prix spot hivernaux</strong></td><td id="Yufu" class="">Pic 370€/MWh (déc-jan), creux -100€/MWh (miséason)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8191-a14f-ec4667bed1e3"><td id="q:^D" class=""><strong>Puissance pilotable</strong></td><td id="Yufu" class="">Réduite 15 GW (fermeture charbon)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-818c-b3f5-d7210366bd10"><td id="q:^D" class=""><strong>Comportement RTE/nucléaire</strong></td><td id="Yufu" class="">Réductions de production en milieu journée (surproduction solaire)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81c0-bab2-cef93dcfb955"><td id="q:^D" class=""><strong>Dépendance imports</strong></td><td id="Yufu" class="">10-20 GW hiver (dont France principal fournisseur)</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8153-8c31-d4e8df720085" class=""><strong>Cascade de conséquences</strong> :<br/>- France obligée exporter nucléaire à heures solaires (value destruction) → réduit capacité piloter pics propres<br/>- Pics prix européens quand Allemagne sans vent/soleil + consommation haute = <strong>France pénalisée par prix de marché</strong><br/>- Volatilité accrue : contrats court terme (spot, 1-3 mois) exposent PROMEOS à pics imprévisibles</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81c3-b828-e62dc1aa8dfa" class=""><strong>Prévention RTE</strong> : 1er avril 2025, nucléaire français a failli ne pas pouvoir compenser baisse EnRi allemande—quasi-blackout évité. Signal que marge de sécurité se réduit.</p></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-8165-a6f8-da839c609929" class="">Royaume-Uni : Alerte Capacité</h3></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8199-978c-f20a1b84ff08" class=""><strong>Janvier 2025</strong> : gestionnaire réseau britannique émet alerte capacité rare. Marges de 215 MW seulement (déficit potentiel). Activation urgence turbines à gaz à prix exorbitant (5750 GBP/MWh = 15x tarif normal). Stocks gaz &lt;1 semaine consommation. Reflète même syndrome allemand : trop EnRi, pas assez backup pilotable.</p></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81ab-bd7b-ef0cfb31ba2f" class="">France : Position Favorable mais Fragile</h3></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81b2-96c2-e15de9480bb1" class=""><strong>Stabilité RTE</strong> : parc nucléaire 51 GW garantis + hydraulique 16 GW + gaz 11 GW = 83 GW de capacité régulée. Pic consommation hiver ~95 GW (cas froid extrême) couvrable par imports. <strong>Bilan prévisionnel RTE 2025-2035 : position avantageuse, abondance électricité.</strong></p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-810b-952b-e0ca1a203b03" class=""><strong>Mais fragile</strong> : dépendance imports allemands en cas déficit ENRi hivernaux. RTE redoute scénarios « wind drought » = demande haute, peu vent/soleil ailleurs = pics prix européens touchent France via interconnexions.</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8183-86ac-f309a6f601a6" class=""><strong>Implication PROMEOS</strong> : France bénéficie prix bas moyen terme (nucléaire stable), mais risque pics hivernaux imprévisibles (2-3 fois/hiver). Contrats couvrant hiver obligatoires, pas court terme.</p></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-815b-b2c8-ff72654062f7"/></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-81fb-aa06-c51472f63db4" class="">III. RUPTURE STRUCTURELLE : FIN ARENH &amp; POST-ARENH</h2></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-8162-97fb-c1954805de5c" class="">A. Mécanisme ARENH (1er juillet 2011 - 31 décembre 2025)</h3></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-812f-8659-cbfccf5fdfae" class=""><strong>Fonctionnement clé</strong> :<br/>- Fournisseurs alternatifs (Engie, Eni, Vattenfall, etc.) peuvent acheter électricité nucléaire EDF à prix régulé <strong>42€/MWh</strong><br/>- Volume plafonné 100 TWh/an (~25% production nucléaire)<br/>- Reste à prix marché (quand &gt;100 TWh, écrêtement au prorata)<br/>- Prix fixe depuis 2012, jamais révisé upward—créait avantage concurrentiel fournisseurs</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81ed-a4c3-e5f6a710d2a1" class=""><strong>Impact concurrence</strong> :<br/>- EDF : penalisée (vend nucléaire à 42€ vs marché 55-75€) → revenus insuffisants entretien parc<br/>- Fournisseurs alternatifs : profitent accès bon marché, peuvent agresser tarifs petits clients<br/>- Consommateurs : illusion protection (ARENH favorise churn, mais factures resteraient hautes marché)<br/>- UE : juge dispositif dépassé, crée distorsion concurrence intra-UE</p></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81d2-92f7-d2cbd094b9b6" class="">B. Remplacement : Versement Nucléaire Universel (VNU) - 1er janvier 2026</h3></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81f1-a8c8-daf530198cc8" class=""><strong>Mécanisme nouveau</strong> :<br/>- EDF vend toute sa production nucléaire au <strong>prix de marché</strong> (~70€/MWh en 2025-26)<br/>- État prélève revenus excédentaires via VNU progressif :<br/>- Entre +5 et +25€/MWh au-dessus coût complet : <strong>50% des revenus prélevés</strong><br/>- Au-delà +25€/MWh : jusqu’à <strong>90% des revenus</strong> (si dépasse 115€/MWh)<br/>- Montant total redistribué <strong>à tous les consommateurs</strong> en réduction facture (indépendant fournisseur)<br/>- <strong>Incertitude critique</strong> : seuils exacts (coût complet de référence, taux réduction par profil) non finalisés décembre 2025</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81d2-bba2-d78eb7adec56" class=""><strong>Impact fournisseurs B2B</strong> :<br/>- Fin accès nucléaire régulé = <strong>augmentation coûts d’approvisionnement immédiate</strong><br/>- Alternative 1 : Contrats CAPN (Contrats Approvisionnement Pluriannuel Nucléaire) avec EDF (long terme, &gt; volumes, participation risques)<br/>- Réservés industries électro-intensives<br/>- Enchères prévues mais calendrier flou (H1 2026?)<br/>- Pas accessible PME tertiaires<br/>- Alternative 2 : Marché de gros (spot 1-3 mois, futures 1-5 ans) = maximum exposition volatilité<br/>- Alternative 3 : PPA renouvelables (10-25 ans fixes) = sécurité long terme</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8128-9bfd-d270be41df84" class=""><strong>Scénario 2026</strong> : Si marché reste 55-60€/MWh, VNU NE SE DÉCLENCHE PAS. Fournisseurs paient EDF ~70€/MWh de base, VNU = zéro réduction. Cela signifie : <strong>factures entreprises resteraient stables 2025-26 via VNU redistribution, mais structures de coûts fournisseurs changent radicalement.</strong></p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-816f-9e41-d2204f686987" class=""><strong>Implication PROMEOS</strong> :<br/>- Fournisseurs alternatifs devront augmenter prix ou réduire marges → compétition moins agressive post-2026<br/>- Opportunité négocier contrats 3-5 ans AVANT fin ARENH (décembre 2025) pour sécuriser tarifs transitoires<br/>- Après décembre 2025 : contrats devront intégrer risque VNU + volatilité marché = prix plus élevé<br/>- CAPN accès nucléaire : non pertinent PROMEOS (pas électro-intensif), mais comprendre calendrier aide négociation avec fournisseurs</p></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-8163-8883-efb12bd41eea" class="">C. Autres Dispositifs Post-ARENH</h3></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81ef-87dc-f97a22e97011" class=""><strong>Extension TRV (Tarif Réglementé Vente) à PME</strong> :<br/>- PME &lt;10 salariés, CA &lt;2M€ : accès TRV étendu (indépendamment niveau consommation)<br/>- Impact limité PROMEOS (tertiaire souvent &gt;36 kVA actuels)</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-819e-93b5-db001d23cbad" class=""><strong>Contrats moyen terme (4-5 ans)</strong> :<br/>- Deviennent norme post-ARENH pour PME/ETI tertiaires<br/>- Niveaux de prix attendus : ~65-85€/MWh (vs 42€ ARENH ancien)<br/>- Pertinent PROMEOS : <strong>stratégie hybriding (10% court terme spot, 20% moyen terme fixes, 70% long terme PPA)</strong> limite expositions pics</p></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-812f-91e8-c011d97047bb"/></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-8187-9bd6-d2ebde6fe99c" class="">IV. IMPACTS POUR FOURNISSEURS B2B ÉNERGIE</h2></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-8104-8a49-f4b60dc091e1" class="">A. Opportunités</h3></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-810a-a3e0-df82bf1d422e" class=""><strong>1. Repositionnement offres post-ARENH</strong><br/>- Clients actuels ARENH doivent renouveler contrats fin 2025 = <strong>fenêtre fidélisation agressive</strong><br/>- Proposition valeur : courtage transition (explique VNU, CAPN, alternatives), accompagnement renegotiation</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8165-aa7b-e006947270ed" class=""><strong>2. Hybridation portefeuilles clients</strong><br/>- Fournisseur peut proposer portefeuille diversifié : court terme (spot hedge, volatilité) + moyen (3-5 ans fixes) + long terme (PPA)<br/>- Limite concentration risque pour client, sécurise revenus fournisseur</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81c6-9dda-dcabefd45d0f" class=""><strong>3. PPA comme arme commerciale</strong><br/>- Croissance rapide : 1,2 GW contractualisées début 2025 (600 MW en 2024)<br/>- Prix attractifs : 65-85€/MWh sur 10-15 ans (vs 55€/MWh spot aujourd’hui, risque pics 360€/MWh)<br/>- Durée longue : 15-25 ans standard = <strong>visibilité décennies</strong>, atout concurrentiel immense<br/>- Clientèle : grandes entreprises (Bouygues, industriels), collectivités, PME conscientes risques</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8131-970a-ecd5ead786ab" class=""><strong>4. Décret tertiaire comme levier vente</strong><br/>- Clients immobilier tertiaire doivent réduire -40% consommation 2030 = rénovent équipements<br/>- Rénovation = réduction consommation 20-30% = opportunité renégocier fourniture à baisse<br/>- Fournisseur peut proposer : audit énergétique + recommandations rénovation + contrat post-rénovation (baisse volume consommé)</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8171-952d-de1faae74f8e" class=""><strong>5. Décret BACS (Building Automation Control Systems)</strong><br/>- Obligation GTB/GTC installations &gt;290 kW = nouveaux clients automation energie<br/>- Fournisseur peut intégrer monitoring → propose optimisation opéex = valeur ajoutée</p></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81e9-8efa-fa011f62c11c" class="">B. Risques</h3></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-819d-b9eb-d1ceb6e2960e" class=""><strong>1. Barrière entrée élevée post-ARENH</strong><br/>- Fournisseurs alternatifs perdent régulation ARENH = coûts approvisionnement augmentent 28€/MWh (de 42 à 70€ base)<br/>- Doivent se refinancer sur marché futures (1-5 ans) ou négocier CAPN (industriels only) ou investir PPA<br/>- <strong>Impact</strong> : consolidation marché fournisseurs (petits joueurs disparaissent)</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-818f-aa0f-eb53d16d9542" class=""><strong>2. Volatilité marché limite compétitivité</strong><br/>- Pics allemands 360€/MWh + déficit hivernaux français = prix imprédictibles<br/>- Fournisseurs ne peuvent garantir prix court terme, donc offrent moins de rabais = client cherche ailleurs<br/>- Contrats longs (3-5 ans) deviennent obligatoires, pas optionnels</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8174-b0ea-fb519f89067f" class=""><strong>3. PPA compétition</strong><br/>- Producteurs renouvelables (Engie, EDF Renew, indépendants) signent PPA directement clients = court-circuit fournisseurs traditionnels<br/>- Marge compression pour distributeurs électricité si pas propres assets PPA</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81a3-bea2-d44248a3fb3c" class=""><strong>4. Interventionnisme État</strong><br/>- VNU seuils à définir = risque politique. Si gouvernement plus tard juge VNU insuffisant, peut imposer contrôle prix = marge fournisseurs réduite<br/>- Exemple : UK, Espagne ont aussi dû arbitrer politique énergétique = volatilité réglementaire</p></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-8142-b8ec-c7a9568d80f2" class="">C. Stratégies Recommandées Fournisseurs</h3></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81e6-890c-d7c07dda70b8" class=""><strong>Court terme (avant décembre 2025)</strong> :<br/>1. Offensive fidélisation clients ARENH : courtage transition + offres moyen terme sécurisées<br/>2. Portfolio PPA : si pas existants, conclure alliances producteurs renouvelables pour offrir mix<br/>3. GTB/GTC consulting : former equipes décret BACS, proposer service intégré monitoring</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-816e-9653-ec43fec651ba" class=""><strong>Moyen terme (2026-2027)</strong> :<br/>1. Modèle CAPN : si client électro-intensif, accompagner dossier CAPN (même si fournisseur n’est pas EDF, valeur ajoutée courtage)<br/>2. Contrats évolutifs : prix avec clauses RPI (inflation-linked) plutôt qu’absolus, atténue volatilité<br/>3. Efficacité énergétique : accompagnement rénovation décret tertiaire → baisse volume = réduction facture = fidélisation</p></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-81c8-8ae2-f7baf6e232b7"/></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-8114-b467-c354a89695f9" class="">V. IMPACTS SPÉCIFIQUES POUR PROMEOS</h2></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-8129-986b-fda2e424bcf8" class="">A. Audit Énergie par Périmètre</h3></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8193-9a75-e33087969df0" class=""><strong>Portfeuille type PROMEOS (hypothèse)</strong> :<br/>- 50-200 sites tertiaires (bureaux, commerces, logistique)<br/>- Surface moyenne par site : 3 000-10 000 m² (assujettis décret tertiaire)<br/>- Consommation électricité : 200-250 kWh/m²/an (avant rénovation)<br/>- Consommation gaz : 100-150 kWh/m²/an (chauffage, ECS)</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-816b-bfb3-cdab68fd4b9f" class=""><strong>Coûts énergétiques estimés</strong> :<br/>| Flux | kWh/m²/an | €/kWh (dec 2025) | €/m²/an | Impact 100 sites 50 000m² |<br/>|—|—|—|—|—|<br/>| <strong>Électricité</strong> | 200 | 0,195 (TTC) | 39€ | 1,95M€ |<br/>| <strong>Gaz</strong> | 100 | 0,1117 (T2 repère) | 11,17€ | 559k€ |<br/>| <strong>TOTAL</strong> | 300 | - | 50€ | 2,51M€ |</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81e9-92f9-c526f1f3f175" class=""><strong>Variation 2025 vs 2024</strong> :<br/>- Électricité : baisse -22,4% = économie 440k€ (50 000 m² / 100 sites)<br/>- Gaz : structure tarifaire change (TVA +14,5% abonnements) = HAUSSE +3-5% = surcoût 17-28k€<br/>- <strong>NET 2025</strong> : économie ~415k€</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81d6-8158-ce41bfaec10a" class=""><strong>Opportunité redéploiement</strong> : ~415k€ d’économies 2025 → redéployer immédiatement en rénovation décret tertiaire (optimise amortissement, satisfait objectifs -40% 2030).</p></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81ca-9893-f21f9864c339" class="">B. Contrats Énergie : Recommandations Stratégiques</h3></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8170-9260-f3bee6272ec6" class=""><strong>Etat actuel (décembre 2025)</strong> :<br/>- Contrats ARENH expirent 31 décembre 2025<br/>- Plupart clients sur offres court terme (spot, 1-12 mois) ou 1-2 ans<br/>- Fournisseurs réticents long terme (incertitude VNU)</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-815d-9ebb-eee43cafb159" class=""><strong>Actions urgentes janvier-février 2026</strong> :</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8155-a9e7-f441645dff32" class=""><strong>Étape 1 : Diagnostiquer portefeuille</strong><br/>- Lister tous contrats énergie par site, échéance<br/>- Identifier sites critiques (gros consommateurs, contrats expirant Q1 2026)<br/>- Classer par profil : PME tertiaire (T2) vs gros consommateurs (T3/T4)</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8130-8495-eaf184b91699" class=""><strong>Étape 2 : Stratégie d’achat hybride (recommandé)</strong><br/>- <strong>Petit lot 10% court terme</strong> (spot 1-3 mois) : flexibilité, coûts variables<br/>- <strong>Lot moyen 20% moyen terme</strong> (3-5 ans fixes) : sécurité partielle, prix ~65-75€/MWh (électricité)<br/>- <strong>Lot principal 70% long terme</strong> : PPA renouvelables (10-25 ans) OU contrats CAPN si éligible (industriels)</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8147-b7f6-d35a2265beff" class=""><strong>Rationalisation moyen terme</strong> :<br/>| Contrat | Horizon | Volume % | Tarif estimé 2026 | Avantage |<br/>|—|—|—|—|—|<br/>| <strong>Spot</strong> | 1-3 mois | 10% | 60-80€/MWh variable | Flexibilité |<br/>| <strong>Moyen</strong> | 3-5 ans | 20% | 70-75€/MWh fixe | Sécurité partielle |<br/>| <strong>PPA solaire</strong> | 10-15 ans | 40% | 68-75€/MWh fixe | Long terme stable |<br/>| <strong>PPA éolien</strong> | 15-25 ans | 30% | 65-72€/MWh fixe | Très long terme |<br/>| <strong>CAPN</strong> | (si industriel) | - | Subnégotié EDF | Accès nucléaire |</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-817b-9010-e5a5e50c36dd" class=""><strong>Avantage mix</strong> : limite exposition volatilité, moyenne coûts sur spectre temporel, permet ajustement si gestion courante change.</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8156-b9ef-ec658a5ef55e" class=""><strong>Étape 3 : Engagement immédiat (janvier-février 2026 )</strong><br/>- Lancer appels offres fournisseurs pour contrats 3-5 ans (moyen terme)<br/>- Parallel : explorer PPA avec producteurs renouvelables (durée plus longue, délai signature 3-4 mois)<br/>- Sécuriser court terme (spot) avec clauses exit (au cas où PPA ou moyen terme échouent négociation)</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8131-b53f-ca237c6a8dcc" class=""><strong>Étape 4 : Suivi VNU (H1 2026)</strong><br/>- Une fois seuils VNU fixés, recalculer économies/pénalités par scénario prix<br/>- Ajuster mix si VNU crée arbitrage nouveau (ex : si VNU très favorable, peut allonger short term)</p></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81b7-a19f-d99c3f276031" class="">C. Décret Tertiaire : Fenêtre Investissement Ouverte</h3></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81a6-b3b9-f77039725bc5" class=""><strong>Opportunité coïncidence timing</strong> :<br/>1. Baisse prix électricité 2025 (~415k€/50 000m² économies)<br/>2. Décret tertiaire 2030 (-40% obligation)<br/>3. Financements CEE/MaPrimeRénov disponibles<br/>4. Contrats énergie doivent se renouveler = négociation haut du levier</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8139-9e20-d70386a00255" class=""><strong>Scénario d’investissement optimal</strong> :</p></div><div style="display:contents" dir="ltr"><table id="2d86971c-72e7-81ef-b94a-ebcd3030c13c" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8190-af1e-f93a80c352a2"><th id="pZ\Q" class="simple-table-header-color simple-table-header">Phase</th><th id="JFKI" class="simple-table-header-color simple-table-header">Action</th><th id="ryTA" class="simple-table-header-color simple-table-header">Coût estimé</th><th id="?V]X" class="simple-table-header-color simple-table-header">ROI</th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8112-89c0-f6236f107003"><td id="pZ\Q" class=""><strong>Optimisation exploitation</strong></td><td id="JFKI" class="">Gestion active, GTB pilotage</td><td id="ryTA" class="">50k€/site</td><td id="?V]X" class="">2-3 ans</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81cf-bc0b-c256c40bae45"><td id="pZ\Q" class=""><strong>Équipements</strong></td><td id="JFKI" class="">LED, échangeurs, GTB auto</td><td id="ryTA" class="">150k€/site</td><td id="?V]X" class="">5-7 ans</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81e4-9c9e-f2db28558453"><td id="pZ\Q" class=""><strong>Isolation</strong></td><td id="JFKI" class="">Isolation murs/toiture</td><td id="ryTA" class="">200k€/site</td><td id="?V]X" class="">8-12 ans</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8183-b592-ebe8b76ca80f" class=""><strong>Prioriser</strong> : sites T1 (top 20% consommateurs). Investir phases 1-2 avant 2028, laisser phase 3 si besoin post-2028.</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81d1-981f-c2f2885d2246" class=""><strong>Financement mix</strong> : CEE 15-20% + MaPrimeRénov 10-15% + autofinancement 65-70% (économies 2025 aident)</p></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-8106-9435-d63f8d2cd43c" class="">D. Risques Spécifiques PROMEOS</h3></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8152-a610-da4275e2ff17" class=""><strong>1. Volatilité hivernale</strong><br/>- Hiver 2025-26 : si vague froid intense + peu vent → pics prix 200-300€/MWh possibles<br/>- Contrats court terme découverts = surcoûts brutaux<br/>- Mitigation : bloquer 70% consommation en contrats long terme AVANT hiver</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8172-b7f3-e4346bd2bce7" class=""><strong>2. Décret BACS obligation accélérée</strong><br/>- Si gouvernement accélère calendrier, sites &gt;290 kW doivent installer GTB/GTC plus tôt<br/>- CAPEX supplémentaire non budgété = contrainte cashflow<br/>- Surveillance : décrets d’application BACS (attendus H1 2026)</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8119-948c-ef9ed06276fe" class=""><strong>3. Budget MaPrimeRénov gelé (2025)</strong><br/>- Absence loi finances 2025 retarde paiements dossiers<br/>- Dossiers déposés 2024-2025 risquent délais impactant cashflow<br/>- Stratégie : prioriser financements CEE (plus rapides, 60j) vs MaPrimeRénov (plus lents)</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81e1-a1c1-cfe66622c3c8" class=""><strong>4. Interconnexions France-Allemagne</strong><br/>- Si Allemagne crise EnRi hiver severe → France doit exporter nucléaire = pics prix touchent PROMEOS<br/>- Impossible prévoir, mais contrats longs réduisent exposition</p></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81b0-a799-cf0e7701f55d" class="">E. Opportunités à Court Terme (6-12 mois)</h3></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8131-9619-dec1181324f0" class=""><strong>1. Renegotiation fournisseurs</strong><br/>- Clients ARENH doivent renouveler = opportunité prix aggressifs (fournisseurs veulent fidéliser)<br/>- Appel offres multi-fournisseurs : 3-5 anscontrats à 65-75€/MWh électricité (baisse vs ARENH 70€ équivalent post-markup)</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81ce-a743-d0c4083caaff" class=""><strong>2. PPA adoption</strong><br/>- Marché PPA mature début 2025 (1,2 GW contractualisées, prix 65-85€/MWh)<br/>- Accès facilité PME/ETI tertiaires via structures tiers-investissement ou crédit-bail<br/>- Délai signature : 3-4 mois pour sites &lt;50 000 m² multi-site</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81fb-b903-ed075da5d7c6" class=""><strong>3. Valeur patrimoniale</strong><br/>- Sites rénové (décret tertiaire -40%) = attractivité occupants + prime valeur + facilité refinancement<br/>- ROI immobilier 5-8% sup. pour bâtiments conformes vs non-rénové</p></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-8179-96b6-e238d66bab45"/></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-81c7-8834-e98d88f35354" class="">VI. AJUSTEMENTS STRATÉGIQUES RECOMMANDÉS</h2></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81f2-be2d-e7d9e26c8b90" class="">Phase 1 : Immediate (Janvier-Février 2026)</h3></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8157-8589-d444a9416d7d" class=""><strong>Gouvernance énergétique</strong><br/>- Désigner responsable unique « transition post-ARENH » (reporting mensuel)<br/>- Audit interne contrats existants + chronogramme expirations</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8182-902b-d9f18715d8fc" class=""><strong>Portefeuille contracting</strong><br/>- Lancer appel offres fournisseurs pour 3-5 ans (moyen terme) : cible prix 70€/MWh (électricité)<br/>- Identifier 5-10 sites PPA pilotes : combiner avec rénovation (baisse volume post-réno = meilleur PPA terms)</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-814b-a496-cd6dc15adfb4" class=""><strong>Préparation décret tertiaire</strong><br/>- Commencer audit énergétique sites critiques (top 20%)<br/>- Budgéter rénovation phases 1-2 (optimisation + équipements) pour 2026-2028</p></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81b6-b3c1-dc9c728d3e3c" class="">Phase 2 : Court Terme (Février-Juin 2026)</h3></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81ab-b8d5-e652aee74008" class=""><strong>Signature contrats</strong><br/>- Finaliser 3-5 ans moyen terme (Février-Mars)<br/>- Lancer PPA pour pilotes (délai 3-4 mois signature)<br/>- Sécuriser court terme spot (clause flexibilité)</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8127-bae5-f163607f362c" class=""><strong>Décret tertiaire</strong><br/>- Déclaration 2025 sur OPERAT (30 sept 2026) : préparer dossiers<br/>- Dossiers modulation si nécessaire (justifier impossibilité atteinte -40%)<br/>- Lancer rénovations phase 1 (optimisation exploitation, GTB)</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81fc-bb2f-d4e3accd68aa" class=""><strong>VNU monitoring</strong><br/>- Suivre décrets d’application VNU (attendus H1 2026)<br/>- Recalculer scénarios selon seuils VNU finalisés</p></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81d6-b494-d2bcd88578ce" class="">Phase 3 : Moyen Terme (Juillet 2026-2027)</h3></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8122-860b-d7fceb62b888" class=""><strong>Décret tertiaire éxecution</strong><br/>- Lancercrénovations phases 2-3 selon budget/priorités<br/>- Suivi consommations : dashboard équipe interne<br/>- Renouvellement contrats énergie anticipant -20 à -30% volumes post-réno</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-813e-aa79-da58611fb0d1" class=""><strong>Portfolio énergétique</strong><br/>- Évaluer renégociation moyen terme si PPA lancés (potentiel réduction prix second contrat)<br/>- Ajuster mix court/moyen/long selon réalité VNU et volatilité observée</p></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-816e-9ca7-d70276fd90a7"/></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-8129-affb-cf39f29593c0" class="">VII. MATRICE OPPORTUNITÉS &amp; RISQUES</h2></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-8103-909b-f42edd9a711c" class="">Opportunités</h3></div><div style="display:contents" dir="ltr"><table id="2d86971c-72e7-8154-8a59-cb1978273676" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81f4-b906-ced91dfd6cdd"><th id="n~d|" class="simple-table-header-color simple-table-header">Opportunité</th><th id="RkJs" class="simple-table-header-color simple-table-header">Horizon</th><th id="TMo\" class="simple-table-header-color simple-table-header">Impact PROMEOS</th><th id="X`Jm" class="simple-table-header-color simple-table-header">Probabilité</th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8180-b416-fff2d0873a37"><td id="n~d|" class=""><strong>Baisse prix électricité 2025-26</strong></td><td id="RkJs" class="">Court (6-12m)</td><td id="TMo\" class="">+415k€ économies/50k m²</td><td id="X`Jm" class="">Confirmé</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8117-b340-eedca0f2309d"><td id="n~d|" class=""><strong>Contrats moyen terme 65-75€/MWh</strong></td><td id="RkJs" class="">Court (3m)</td><td id="TMo\" class="">Sécurité prix vs spot</td><td id="X`Jm" class="">Élevée</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8196-a69d-cd2d65e0a1b4"><td id="n~d|" class=""><strong>PPA solaire 68-75€/MWh 15 ans</strong></td><td id="RkJs" class="">Court/Moyen (3-6m)</td><td id="TMo\" class="">Visibilité décennies, prime valeur</td><td id="X`Jm" class="">Élevée</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8146-a402-daa5b5174270"><td id="n~d|" class=""><strong>Financements décret cumulés</strong></td><td id="RkJs" class="">Court (6-12m)</td><td id="TMo\" class="">30-50% CAPEX réno</td><td id="X`Jm" class="">Moyenne (dépend budgets)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8187-9391-cfae5c1a64e1"><td id="n~d|" class=""><strong>Prime valeur immobilière</strong></td><td id="RkJs" class="">Moyen (2-3 ans)</td><td id="TMo\" class="">+5-10% valeur sites rénové</td><td id="X`Jm" class="">Élevée</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-8172-8459-e378fae951ab" class="">Risques</h3></div><div style="display:contents" dir="ltr"><table id="2d86971c-72e7-812c-b249-eb0606ffa7af" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8184-b205-f25e10f7d577"><th id="jmGD" class="simple-table-header-color simple-table-header">Risque</th><th id="hm~;" class="simple-table-header-color simple-table-header">Horizon</th><th id="?jzB" class="simple-table-header-color simple-table-header">Impact PROMEOS</th><th id="P\W`" class="simple-table-header-color simple-table-header">Probabilité</th><th id="ykOh" class="simple-table-header-color simple-table-header">Mitigation</th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8135-ae2c-ee0e79837e6b"><td id="jmGD" class=""><strong>Volatilité hivernale EnRi</strong></td><td id="hm~;" class="">Court (6-12m)</td><td id="?jzB" class="">Pics prix 200-300€/MWh</td><td id="P\W`" class="">Moyenne (dépend météo)</td><td id="ykOh" class="">Bloquer 70% long terme</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81e0-8e9b-fe0b69961b79"><td id="jmGD" class=""><strong>Fournisseurs réticents contrats longs</strong></td><td id="hm~;" class="">Court (3-6m)</td><td id="?jzB" class="">Tarifs plus élevés</td><td id="P\W`" class="">Moyenne</td><td id="ykOh" class="">Appel offres early (jan-fév)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81aa-8bfa-dddebbe3fce2"><td id="jmGD" class=""><strong>Budget MaPrimeRénov retardé</strong></td><td id="hm~;" class="">Court (6-12m)</td><td id="?jzB" class="">Trésorerie impact</td><td id="P\W`" class="">Élevée (absence budget 2025)</td><td id="ykOh" class="">Prioriser CEE (rapides)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8148-8cd7-c0bff86aacf1"><td id="jmGD" class=""><strong>Décret BACS accélération</strong></td><td id="hm~;" class="">Court/Moyen (6-18m)</td><td id="?jzB" class="">CAPEX suppl. non budgété</td><td id="P\W`" class="">Faible (si accélération)</td><td id="ykOh" class="">Surveillance décrets H1 2026</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81de-8ac9-f95a8e07c284"><td id="jmGD" class=""><strong>VNU seuils défavorables</strong></td><td id="hm~;" class="">Moyen (6-12m)</td><td id="?jzB" class="">Augmentation tarifs post-VNU</td><td id="P\W`" class="">Faible (politique)</td><td id="ykOh" class="">Suivi actif réglementation</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-8142-9da2-fe7e45a5ab77"/></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-81ef-95a0-c87d2a0c9633" class="">VIII. ACTIONS CONCRÈTES NOTION</h2></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81cc-9458-d50378b828fb" class=""><strong>Créer sections Notion</strong> :</p></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-818b-aa9f-c3a7ab2da4ba" class="">Section 1 : Benchmark Énergétique</h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81f6-b407-fecceaad6b5b" class="bulleted-list"><li style="list-style-type:disc">Tableau contrats énergie (site, échéance, prix, volume)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81e2-a6de-c6af53b04cd6" class="bulleted-list"><li style="list-style-type:disc">Calcul ROI rénovation par site (coûts vs économies énergétiques)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-814c-8350-dc9249d17ad1" class="bulleted-list"><li style="list-style-type:disc">Suivi consommations (tendances, comparaisons année/année)</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81fb-87ed-e2abf0554a83" class="">Section 2 : Stratégie Contrats Post-ARENH</h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-812b-abaa-c450046350bb" class="bulleted-list"><li style="list-style-type:disc">Fournisseurs qualifiés (appel offres résultats)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8170-bd75-cac82b188c19" class="bulleted-list"><li style="list-style-type:disc">Calendrier signature (court/moyen/long terme)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81a1-b302-d5a2684ae8b5" class="bulleted-list"><li style="list-style-type:disc">Mix prévisionnel (10% court, 20% moyen, 70% long)</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81a3-b01c-d1ce94658224" class="">Section 3 : Décret Tertiaire 2030</h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8149-86b4-d22855e12d41" class="bulleted-list"><li style="list-style-type:disc">Audit énergétique sites (kWh/m² actuel, cible 2030, gap)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81c6-b747-feb72b2521f3" class="bulleted-list"><li style="list-style-type:disc">Budget rénovations phases 1-2-3</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8198-ac16-d009fe4ffb75" class="bulleted-list"><li style="list-style-type:disc">Dossiers déclaration OPERAT + modulation (si applicable)</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81db-8477-f942133bdf96" class="">Section 4 : Monitorage Marché</h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81d1-9419-d7a5a0db1e84" class="bulleted-list"><li style="list-style-type:disc">Prix spot électricité/gaz (mise à jour hebdo)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81a4-addf-e883ed7cd362" class="bulleted-list"><li style="list-style-type:disc">Statut VNU seuils (suivre décrets H1 2026)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8133-b8fd-dfc1544bcfa7" class="bulleted-list"><li style="list-style-type:disc">Alerte fournisseurs (nouvelles offres, changements marché)</li></ul></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-8144-abe7-c585484770ad"/></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-8139-b524-fa4b2e487202" class="">CONCLUSION</h2></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8131-bfc3-c9645f1dc23a" class=""><strong>2025-2026 marque un tournant critique</strong> pour la stratégie énergétique PROMEOS. La baisse prix électricité offre fenêtre de consolidation (réductions factures = marge opéra libérée). Parallèlement, fin ARENH exige repositionnement urgent : fournisseurs alternatifs perdent accès nucléaire régulé, marché bascule à équilibre VNU + PPA + volatilité EnRi allemande.</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81b4-b8f2-d574af3f7ede" class=""><strong>Action clé immédiate</strong> : bloquer 70% consommation électricité en contrats long terme (PPA ou moyen terme 3-5 ans) AVANT fin ARENH (31 décembre 2025). Délai critique : appels offres fournisseurs janvier-février 2026. Après décembre 2025, prix structurellement plus élevés (+28€/MWh base nucléaire).</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8179-a09f-c07beb412c2f" class=""><strong>Fenêtre rénovation décret tertiaire</strong> : aligner rénovation phases 1-2 (2026-2028) avec baisse prix 2025 et financements CEE/MaPrimeRénov. ROI accéléré, prime valeur patrimoniale, conformité réglementaire 2030 sécurisée.</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8151-b42f-ffcb44645745" class=""><strong>Surveillance</strong> : VNU seuils (H1 2026), BACS calendrier, MaPrimeRénov budgets (loi rectificative attendue Q1 2026).</p></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-8174-8e20-d84b95a485f6"/></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81b5-9c4d-d58e432c4bc4" class=""><em>Document préparé janvier 2026 | Analyse marchés spot France/Europe, législation VNU/ARENH, décret tertiaire</em></p></div></div></article><span class="sans" style="font-size:14px;padding-top:2em"></span></body></html>

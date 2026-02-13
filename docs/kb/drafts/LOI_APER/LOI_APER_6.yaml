@@ -1,0 +1,33 @@
+id: LOI_APER_6
+type: rule
+domain: reglementaire
+title: SOLUTION CONFORME (article 88 APER + clarification)
+summary: "Contrat direct producteur-consommateurs : \n- PMO = gestionnaire interface\
+  \ (clés répartition, gouvernance) \n- Producteur signe contrats directs consommateurs\
+  \ (à quelle fréquence ? flux variable) \n- Sur..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Contrat direct producteur-consommateurs : \n- PMO = gestionnaire interface\
+  \ (clés répartition, gouvernance) \n- Producteur signe contrats directs consommateurs\
+  \ (à quelle fréquence ? flux variable) \n- Surplus = délégué fournisseur tiers (article\
+  \ 86 APER autorise, contrat de complément possible) \n- GRD calcule répartition\
+  \ par mesure temps réel"
+logic: null
+sources:
+- doc_id: LOI_APER
+  label: Loi APER - Acceleration Production Energies Renouvelables
+  section: SOLUTION CONFORME (article 88 APER + clarification)
+  anchor: '#solution-conforme-article-88-aper-clarification'
+  excerpt_short: "Contrat direct producteur-consommateurs : \n- PMO = gestionnaire\
+    \ interface (clés répartition, gouvern..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,32 @@
+id: LEVIERS_MARCHE_2025_27
+type: rule
+domain: acc
+title: V1 (T3–T4 2025, +10 sem dev)
+summary: "Ajouts clés : \n- API Enedis Data Connect (branchement officiel, pas CSV\
+  \ manuel) \n- API ACC Enedis (déclaration + suivi statut opération) \n- Clés de\
+  \ répartition dynamiques (v1.0 : règles simples météo)..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Ajouts clés : \n- API Enedis Data Connect (branchement officiel, pas\
+  \ CSV manuel) \n- API ACC Enedis (déclaration + suivi statut opération) \n- Clés\
+  \ de répartition dynamiques (v1.0 : règles simples météo) \n- SEPA intégration (mandats\
+  \ SDD, prélèvements) \n- Module Data & Conformité beta (Décret Tertiaire lite)"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: V1 (T3–T4 2025, +10 sem dev)
+  anchor: '#v1-t3t4-2025-10-sem-dev'
+  excerpt_short: "Ajouts clés : \n- API Enedis Data Connect (branchement officiel,\
+    \ pas CSV manuel) \n- API ACC Enedis (d..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

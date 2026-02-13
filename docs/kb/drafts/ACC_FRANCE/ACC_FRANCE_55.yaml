@@ -1,0 +1,31 @@
+id: ACC_FRANCE_55
+type: knowledge
+domain: reglementaire
+title: 'Court terme (Q2–Q3 2026) :'
+summary: "- Acquisition pilote : 50–100 PMO (via bailleurs/collectivités partenaires,\
+  \ FNCCR événements) \n- Build + iterate : v1.0 (Ops complet) → test 50 customers,\
+  \ gather feedback \n- Pricing clarity : valider ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Acquisition pilote : 50–100 PMO (via bailleurs/collectivités partenaires,\
+  \ FNCCR événements) \n- Build + iterate : v1.0 (Ops complet) → test 50 customers,\
+  \ gather feedback \n- Pricing clarity : valider ARPU €300/mth, setup fees"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: 'Court terme (Q2–Q3 2026) :'
+  anchor: '#court-terme-q2q3-2026-'
+  excerpt_short: "- Acquisition pilote : 50–100 PMO (via bailleurs/collectivités partenaires,\
+    \ FNCCR événements) \n- Bui..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

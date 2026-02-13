@@ -1,0 +1,39 @@
+id: BACS_COMPLET_41
+type: rule
+domain: reglementaire
+title: Mise en production
+summary: '- ⬜ Go-live date fixée (coordonné avec deadline conformité si 01/01/2025)
+
+  - ⬜ Support intensive 4 semaines (Intégrateur dispo, ajustements fin-tuning)
+
+  - ⬜ Monitoring perf post-install (données réelles...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: '- ⬜ Go-live date fixée (coordonné avec deadline conformité si 01/01/2025)
+
+  - ⬜ Support intensive 4 semaines (Intégrateur dispo, ajustements fin-tuning)
+
+  - ⬜ Monitoring perf post-install (données réelles vs paramétrages prévus)
+
+  - ⬜ Ajustements consignes si nécessaire (confort utilisateurs, surconso détectée
+  → rectification)'
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Mise en production
+  anchor: '#mise-en-production'
+  excerpt_short: '- ⬜ Go-live date fixée (coordonné avec deadline conformité si 01/01/2025)
+
+    - ⬜ Support intensive 4 se...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,77 @@
+id: LEVIERS_MARCHE_2025_33
+type: knowledge
+domain: acc
+title: '**Data Model (Schéma Simplifié)**'
+summary: '```sql
+
+  -- PMO
+
+  Table PMO (id, name, type[association|SAS|SARL|SEM], siren, iban, status[created|validated|live])
+
+
+  -- Opération ACC
+
+  Table Operation_ACC (id, pmo_id, name, start_date, puissance_kWc, radi...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: '```sql
+
+  -- PMO
+
+  Table PMO (id, name, type[association|SAS|SARL|SEM], siren, iban, status[created|validated|live])
+
+
+  -- Opération ACC
+
+  Table Operation_ACC (id, pmo_id, name, start_date, puissance_kWc, radius_km, status[montage|live|inactive])
+
+
+  -- Participants (producteurs + consommateurs)
+
+  Table Participant (id, operation_id, type[producer|consumer], pdl, siret, iban,
+  role[member|trésorier|ref])
+
+
+  -- Courbes Enedis (import 15 min)
+
+  Table MeasurementCurve (participant_id, timestamp, kWh_produced, kWh_consumed)
+
+
+  -- Clés de répartition
+
+  Table Allocation_Rule (operation_id, participant_producer_id, participant_consumer_id,
+  ratio[0–100], effective_date)
+
+
+  -- Factures internes
+
+  Table Invoice_Internal (id, pmo_id, consumer_id, month, kwh_local, tarif, total_eur,
+  status[draft|sent|paid], due_date)
+
+
+  -- Paiements SEPA
+
+  Table Payment_SEPA (id, invoice_id, mandate_id, status[pending|collected|failed],
+  collected_date)'
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: '**Data Model (Schéma Simplifié)**'
+  anchor: '#data-model-schma-simplifi'
+  excerpt_short: '```sql
+
+    -- PMO
+
+    Table PMO (id, name, type[association|SAS|SARL|SEM], siren, iban, status[created|valid...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

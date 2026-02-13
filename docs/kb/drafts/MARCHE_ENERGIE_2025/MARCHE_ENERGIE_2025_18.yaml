@@ -1,0 +1,35 @@
+id: MARCHE_ENERGIE_2025_18
+type: rule
+domain: reglementaire
+title: 'Phase 2 : Court Terme (Février-Juin 2026)'
+summary: "Signature contrats \n- Finaliser 3-5 ans moyen terme (Février-Mars) \n-\
+  \ Lancer PPA pour pilotes (délai 3-4 mois signature) \n- Sécuriser court terme spot\
+  \ (clause flexibilité) \n\nDécret tertiaire \n- Déclar..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Signature contrats \n- Finaliser 3-5 ans moyen terme (Février-Mars) \n\
+  - Lancer PPA pour pilotes (délai 3-4 mois signature) \n- Sécuriser court terme spot\
+  \ (clause flexibilité) \n\nDécret tertiaire \n- Déclaration 2025 sur OPERAT (30\
+  \ sept 2026) : préparer dossiers \n- Dossiers modulation si nécessaire (justifier\
+  \ impossibilité atteinte -40%) \n- Lancer rénovations phase 1 (optimisation exploitation,\
+  \ GTB) \n\nVNU monitoring \n- Suivre décrets d’application VNU (attendus H1 2026)\
+  \ \n- Recalculer scénarios selon seuils VNU finalisés"
+logic: null
+sources:
+- doc_id: MARCHE_ENERGIE_2025
+  label: Analyse marche energie France-Europe 2025
+  section: 'Phase 2 : Court Terme (Février-Juin 2026)'
+  anchor: '#phase-2-court-terme-fvrier-juin-2026'
+  excerpt_short: "Signature contrats \n- Finaliser 3-5 ans moyen terme (Février-Mars)\
+    \ \n- Lancer PPA pour pilotes (délai..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

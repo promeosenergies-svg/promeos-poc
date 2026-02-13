@@ -1,0 +1,31 @@
+id: DT_SYNTHESE_7
+type: knowledge
+domain: reglementaire
+title: D. Coefficients climatiques raffinés
+summary: "- Changement : Nouveaux coefficients d’ajustement régionaux \n- Raison :\
+  \ Reconnaissance variations météorologiques inter-régionales \n- Effet : Calculs\
+  \ plus justes, moins de pénalité pour régions froide..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Changement : Nouveaux coefficients d’ajustement régionaux \n- Raison\
+  \ : Reconnaissance variations météorologiques inter-régionales \n- Effet : Calculs\
+  \ plus justes, moins de pénalité pour régions froides"
+logic: null
+sources:
+- doc_id: DT_SYNTHESE
+  label: Decret Tertiaire - Synthese PROMEOS
+  section: D. Coefficients climatiques raffinés
+  anchor: '#d-coefficients-climatiques-raffins'
+  excerpt_short: "- Changement : Nouveaux coefficients d’ajustement régionaux \n-\
+    \ Raison : Reconnaissance variations mé..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,51 @@
+id: BACS_COMPLET_29
+type: knowledge
+domain: reglementaire
+title: 'Phase 4 : INSPECTION & CONFORMITÉ (Semaines 10-12) Étape Livrables Responsable
+  Outils Risques 1ère inspection obligatoire Audit complet par inspecteur certifié
+  (2-5h selon complexité) Bureau inspection externe Grille inspection arrêté 07/04/2023
+  Rapport critique = mise en conformité suppl. Rapport inspection Document signé +
+  recommandations pour exploitant ; 1 copie archivage 10 ans BE inspection Template
+  rapport standardisé Documentation incomplète → non-recevable audit Plan d’action
+  recommandations Priorisation améliorations rapides, calendrier moyen/long terme
+  Propriétaire + Exploitant Tableau reco priorités Recommandations ignorées = perf
+  dégradée Attestation conformité Certificat “Conforme décret BACS” généré (archivage,
+  justificatif audit) Intégrateur ou BE PDF signé horodaté Absence attestation = contestable
+  légalement Documentation finale Dossier complet (schémas, paramètres, rapports,
+  formation) archivé 10 ans Propriétaire Classeur physique + copie numérique Perte
+  doc → risque audit futur'
+summary: 'GO : Inspection réussie, rapport conforme, site déclaré conforme 01/01/2025'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: 'GO : Inspection réussie, rapport conforme, site déclaré conforme 01/01/2025'
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: 'Phase 4 : INSPECTION & CONFORMITÉ (Semaines 10-12) Étape Livrables Responsable
+    Outils Risques 1ère inspection obligatoire Audit complet par inspecteur certifié
+    (2-5h selon complexité) Bureau inspection externe Grille inspection arrêté 07/04/2023
+    Rapport critique = mise en conformité suppl. Rapport inspection Document signé
+    + recommandations pour exploitant ; 1 copie archivage 10 ans BE inspection Template
+    rapport standardisé Documentation incomplète → non-recevable audit Plan d’action
+    recommandations Priorisation améliorations rapides, calendrier moyen/long terme
+    Propriétaire + Exploitant Tableau reco priorités Recommandations ignorées = perf
+    dégradée Attestation conformité Certificat “Conforme décret BACS” généré (archivage,
+    justificatif audit) Intégrateur ou BE PDF signé horodaté Absence attestation =
+    contestable légalement Documentation finale Dossier complet (schémas, paramètres,
+    rapports, formation) archivé 10 ans Propriétaire Classeur physique + copie numérique
+    Perte doc → risque audit futur'
+  anchor: '#phase-4-inspection-conformit-semaines-10-12-tape-livrables-responsable-outils-risques-1re-inspection-obligatoire-audit-complet-par-inspecteur-certifi-2-5h-selon-complexit-bureau-inspection-externe-grille-inspection-arrt-07042023-rapport-critique-mise-en-conformit-suppl-rapport-inspection-document-sign-recommandations-pour-exploitant-1-copie-archivage-10-ans-be-inspection-template-rapport-standardis-documentation-incomplte-non-recevable-audit-plan-daction-recommandations-priorisation-amliorations-rapides-calendrier-moyenlong-terme-propritaire-exploitant-tableau-reco-priorits-recommandations-ignores-perf-dgrade-attestation-conformit-certificat-conforme-dcret-bacs-gnr-archivage-justificatif-audit-intgrateur-ou-be-pdf-sign-horodat-absence-attestation-contestable-lgalement-documentation-finale-dossier-complet-schmas-paramtres-rapports-formation-archiv-10-ans-propritaire-classeur-physique-copie-numrique-perte-doc-risque-audit-futur'
+  excerpt_short: 'GO : Inspection réussie, rapport conforme, site déclaré conforme
+    01/01/2025...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

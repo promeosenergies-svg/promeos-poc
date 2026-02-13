@@ -1,0 +1,29 @@
+id: DT_SYNTHESE_6
+type: knowledge
+domain: reglementaire
+title: C. Report affichage obligatoire
+summary: "- Ancien délai : À définir immédiatement \n- Nouveau délai : 1er juillet\
+  \ 2026 \n- Implication : Temps supplémentaire pour préparer communications occupants/stakeholders"
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Ancien délai : À définir immédiatement \n- Nouveau délai : 1er juillet\
+  \ 2026 \n- Implication : Temps supplémentaire pour préparer communications occupants/stakeholders"
+logic: null
+sources:
+- doc_id: DT_SYNTHESE
+  label: Decret Tertiaire - Synthese PROMEOS
+  section: C. Report affichage obligatoire
+  anchor: '#c-report-affichage-obligatoire'
+  excerpt_short: "- Ancien délai : À définir immédiatement \n- Nouveau délai : 1er\
+    \ juillet 2026 \n- Implication : Temps ..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

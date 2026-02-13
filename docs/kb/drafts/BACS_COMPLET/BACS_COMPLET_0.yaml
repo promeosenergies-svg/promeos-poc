@@ -1,0 +1,29 @@
+id: BACS_COMPLET_0
+type: rule
+domain: reglementaire
+title: Bâtiments Tertiaires – Automation & Control Systems
+summary: "Dernière mise à jour : 29 décembre 2025, 12h00 CET (Europe/Paris) \n\nStatut\
+  \ : Conforme aux décrets n°2020-887, n°2023-259, n°2025-1343 et arrêté 07/04/2023"
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Dernière mise à jour : 29 décembre 2025, 12h00 CET (Europe/Paris) \n\n\
+  Statut : Conforme aux décrets n°2020-887, n°2023-259, n°2025-1343 et arrêté 07/04/2023"
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Bâtiments Tertiaires – Automation & Control Systems
+  anchor: '#btiments-tertiaires-automation-control-systems'
+  excerpt_short: "Dernière mise à jour : 29 décembre 2025, 12h00 CET (Europe/Paris)\
+    \ \n\nStatut : Conforme aux décrets n°..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

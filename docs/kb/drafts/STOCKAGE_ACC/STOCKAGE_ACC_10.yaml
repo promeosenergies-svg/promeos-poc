@@ -1,0 +1,53 @@
+id: STOCKAGE_ACC_10
+type: knowledge
+domain: usages
+title: 'E.1 Propriété Batterie : Trois Approches'
+summary: 'Modèle 1 : Batterie Propriété PMO/Collective PMO achète batterie 12 k€,
+  amortit sur 10 ans → coût 1.2 k€/an (payroll)
+
+  Charge/décharge piloté par EMS commun
+
+  Fonds amortissement via cotisations ACC (quo...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Modèle 1 : Batterie Propriété PMO/Collective PMO achète batterie 12 k€,\
+  \ amortit sur 10 ans → coût 1.2 k€/an (payroll)\nCharge/décharge piloté par EMS\
+  \ commun\nFonds amortissement via cotisations ACC (quote-part par participant,\n\
+  ou % économies réalisées)\nCoût additionnel participant ~50–100 €/an \n\n✅ Transparence,\
+  \ mutualisation complète, gouvernance claire \n❌ Besoin budget initial collectif,\
+  \ risque défaut si PMO insolvable \n→ Recommandé : ACC publiques (collectivité,\
+  \ bailleur), mutuelles stables \n\nModèle 2 : Batterie Tierce Détention (Battery-as-a-Service,\
+  \ BaaS) Prestataire finance batterie 12 k€, facture ACC 200–250 €/mois (15–20 ans)\n\
+  BaaS opérateur offre garantie rendement, maintenance, remplacement\nRevenus = loyer\
+  \ + partage gains flexibilité (if mFRR)\nPMO reste gestionnaire ACC/clés, BaaS pilote\
+  \ batterie \n\n✅ Pas CAPEX pour ACC, risque financier transféré, performance garantie\
+  \ \n❌ Coût 200–250 €/mois x 180 mois = 36–45 k€ total >> achat direct (12 k€), marge\
+  \ BaaS ~200% \n→ Recommandé : ACC petit/PME, aversion risque, pas trésorerie \n\
+  → Marché en croissance France 2025 (Effy, Engie Storage, agrégateurs) \n\nModèle\
+  \ 3 : Batteries Distribuées (Propriété Participants Multiples) Site A propriétaire\
+  \ batterie 5 kWh (2 k€ budget), Site B batterie 8 kWh (3 k€)\nEMS centralisé agrège/optimise\
+  \ (Agregio-type ou interne)\nChaque batterie reste propriété site (déductibilité\
+  \ fiscale indépendante)\nFacturation ACC = % autoconsommation partagée + services\
+  \ flexibilité distribués \n\n✅ Décentralisation risque, résilience site-by-site,\
+  \ investissements modulables \n❌ Synchronisation complexe, perte réseau transmission\
+  \ (cyber), coût EMS élevé (5–10 k€) \n→ Recommandé : ACC grande, multi-sites tertiaire/industrie\
+  \ (10+), professionnels"
+logic: null
+sources:
+- doc_id: STOCKAGE_ACC
+  label: Stockage et Autoconsommation Collective
+  section: 'E.1 Propriété Batterie : Trois Approches'
+  anchor: '#e1-proprit-batterie-trois-approches'
+  excerpt_short: 'Modèle 1 : Batterie Propriété PMO/Collective PMO achète batterie
+    12 k€, amortit sur 10 ans → coût 1....'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

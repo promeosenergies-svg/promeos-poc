@@ -1,0 +1,41 @@
+id: MARCHE_ENERGIE_2025_12
+type: rule
+domain: usages
+title: A. Audit Énergie par Périmètre
+summary: "Portfeuille type PROMEOS (hypothèse) : \n- 50-200 sites tertiaires (bureaux,\
+  \ commerces, logistique) \n- Surface moyenne par site : 3 000-10 000 m² (assujettis\
+  \ décret tertiaire) \n- Consommation électrici..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Portfeuille type PROMEOS (hypothèse) : \n- 50-200 sites tertiaires (bureaux,\
+  \ commerces, logistique) \n- Surface moyenne par site : 3 000-10 000 m² (assujettis\
+  \ décret tertiaire) \n- Consommation électricité : 200-250 kWh/m²/an (avant rénovation)\
+  \ \n- Consommation gaz : 100-150 kWh/m²/an (chauffage, ECS) \n\nCoûts énergétiques\
+  \ estimés : \n| Flux | kWh/m²/an | €/kWh (dec 2025) | €/m²/an | Impact 100 sites\
+  \ 50 000m² | \n|—|—|—|—|—| \n| Électricité | 200 | 0,195 (TTC) | 39€ | 1,95M€ |\
+  \ \n| Gaz | 100 | 0,1117 (T2 repère) | 11,17€ | 559k€ | \n| TOTAL | 300 | - | 50€\
+  \ | 2,51M€ | \n\nVariation 2025 vs 2024 : \n- Électricité : baisse -22,4% = économie\
+  \ 440k€ (50 000 m² / 100 sites) \n- Gaz : structure tarifaire change (TVA +14,5%\
+  \ abonnements) = HAUSSE +3-5% = surcoût 17-28k€ \n- NET 2025 : économie ~415k€ \n\
+  \nOpportunité redéploiement : ~415k€ d’économies 2025 → redéployer immédiatement\
+  \ en rénovation décret tertiaire (optimise amortissement, satisfait objectifs -40%\
+  \ 2030)."
+logic: null
+sources:
+- doc_id: MARCHE_ENERGIE_2025
+  label: Analyse marche energie France-Europe 2025
+  section: A. Audit Énergie par Périmètre
+  anchor: '#a-audit-nergie-par-primtre'
+  excerpt_short: "Portfeuille type PROMEOS (hypothèse) : \n- 50-200 sites tertiaires\
+    \ (bureaux, commerces, logistique) \n..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

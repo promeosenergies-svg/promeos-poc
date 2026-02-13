@@ -1,0 +1,36 @@
+id: LEVIERS_MARCHE_2025_49
+type: rule
+domain: usages
+title: K.1 – Textes Réglementaires Clés (Referencing)
+summary: "- Code de l’énergie (Articles L315-1 à L315-3, R315-1 à R341-7) : définitions\
+  \ ACC, cadre PMO, clés répartition, modalités Enedis \n- Décret n°2016-711 (Autoconsommation\
+  \ individuelle & collective) : rég..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Code de l’énergie (Articles L315-1 à L315-3, R315-1 à R341-7) : définitions\
+  \ ACC, cadre PMO, clés répartition, modalités Enedis \n- Décret n°2016-711 (Autoconsommation\
+  \ individuelle & collective) : régime juridique \n- Arrêté 21 février 2025 (Journal\
+  \ Officiel 5 mars 2025) : seuils 5–10 MW, périmètre 20 km dérogation \n- Décret\
+  \ n°2024-1023 (13 novembre 2024) : modalités traitement Enedis pre-deployment \n\
+  - Loi APER 2023 (Accélération Production ENR) : obligation solarisation parkings,\
+  \ frameworks \n- Directive UE 2019/944 (Electricity Market Directive) : background\
+  \ energy sharing concept"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: K.1 – Textes Réglementaires Clés (Referencing)
+  anchor: '#k1-textes-rglementaires-cls-referencing'
+  excerpt_short: '- Code de l’énergie (Articles L315-1 à L315-3, R315-1 à R341-7)
+    : définitions ACC, cadre PMO, clés r...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

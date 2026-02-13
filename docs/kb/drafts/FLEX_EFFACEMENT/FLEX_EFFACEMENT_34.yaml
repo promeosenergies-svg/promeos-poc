@@ -1,0 +1,44 @@
+id: FLEX_EFFACEMENT_34
+type: rule
+domain: usages
+title: 'Arbre de Décision “Quel Mécanisme ?” ENTRÉE : Site/Portfolio énergie B2B'
+summary: "1️⃣ TAILLE ?\n ├─ <1 MW → IMPLICITE (arbitrage prix) + NEBEF mini\n ├─ 1–10\
+  \ MW → NEBEF (principal) + MA volontaire\n └─ >10 MW → NEBEF + Réserves (obligation\
+  \ EnR si prod) + Capacité (nouvelles)\n\n2️⃣ PROF..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "1️⃣ TAILLE ?\n ├─ <1 MW → IMPLICITE (arbitrage prix) + NEBEF mini\n ├─\
+  \ 1–10 MW → NEBEF (principal) + MA volontaire\n └─ >10 MW → NEBEF + Réserves (obligation\
+  \ EnR si prod) + Capacité (nouvelles)\n\n2️⃣ PROFIL CHARGE ?\n ├─ Flexible (variabilité\
+  \ >30 % : IRVE, froid, industrie) → NEBEF/MA prioritaires\n ├─ Semi-flexible (10–30\
+  \ % : bureau, retail) → NEBEF + Implicite\n └─ Rigide (<10 % : hôpital, data) →\
+  \ Réserves/Capacité seules (taille >5 MW)\n\n3️⃣ HORIZON REVENU ?\n ├─ Court terme\
+  \ (0–1 an) → NEBEF/MA/Implicite\n ├─ Moyen (1–4 ans) → Réserves + NEBEF\n └─ Long\
+  \ (4+ ans) → Capacité (pluriannuel) + socle réserves\n\n4️⃣ RISQUE TOLÉRÉ ?\n ├─\
+  \ Faible → Réserves (prime fixe) + Capacité (engagement)\n ├─ Moyen → NEBEF + Réserves\
+  \ (mix)\n └─ Élevé → MA + Implicite (volatilité prix acceptée)\n\n5️⃣ RESSOURCES\
+  \ ?\n ├─ <€50k budget → Implicite + NEBEF light (agrégateur géré)\n ├─ €50–300k\
+  \ → NEBEF + réserves (agrégateur)\n └─ >€300k → Tous (instrumentation complète,\
+  \ IT dédiée)\n\n➡️ RECOMMANDATION B2B MULTI-SITES STANDARD :\n \U0001F3C6 NEBEF\
+  \ (cœur) + Réserves aFRR/mFRR (stabilité) + Capacité AL-1 (long terme) + Implicite\
+  \ (optimisation)\n \U0001F4B0 Revenu potentiel : €300–800k/an (10–30 MW, scénarios\
+  \ activations)."
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: 'Arbre de Décision “Quel Mécanisme ?” ENTRÉE : Site/Portfolio énergie B2B'
+  anchor: '#arbre-de-dcision-quel-mcanisme-entre-siteportfolio-nergie-b2b'
+  excerpt_short: "1️⃣ TAILLE ?\n ├─ <1 MW → IMPLICITE (arbitrage prix) + NEBEF mini\n\
+    \ ├─ 1–10 MW → NEBEF (principal) + M..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

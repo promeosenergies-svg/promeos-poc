@@ -1,0 +1,32 @@
+id: MARCHE_ENERGIE_2025_4
+type: knowledge
+domain: usages
+title: 'Royaume-Uni : Alerte Capacité'
+summary: 'Janvier 2025 : gestionnaire réseau britannique émet alerte capacité rare.
+  Marges de 215 MW seulement (déficit potentiel). Activation urgence turbines à gaz
+  à prix exorbitant (5750 GBP/MWh = 15x tarif ...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: 'Janvier 2025 : gestionnaire réseau britannique émet alerte capacité rare.
+  Marges de 215 MW seulement (déficit potentiel). Activation urgence turbines à gaz
+  à prix exorbitant (5750 GBP/MWh = 15x tarif normal). Stocks gaz <1 semaine consommation.
+  Reflète même syndrome allemand : trop EnRi, pas assez backup pilotable.'
+logic: null
+sources:
+- doc_id: MARCHE_ENERGIE_2025
+  label: Analyse marche energie France-Europe 2025
+  section: 'Royaume-Uni : Alerte Capacité'
+  anchor: '#royaume-uni-alerte-capacit'
+  excerpt_short: 'Janvier 2025 : gestionnaire réseau britannique émet alerte capacité
+    rare. Marges de 215 MW seulement...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

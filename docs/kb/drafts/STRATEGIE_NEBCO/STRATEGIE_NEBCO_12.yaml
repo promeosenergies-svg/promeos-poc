@@ -1,0 +1,31 @@
+id: STRATEGIE_NEBCO_12
+type: knowledge
+domain: reglementaire
+title: C) Financier
+summary: "- Risque : Volatilité spread (€20–200/MWh) ; impossible promettre gains\
+  \ stables \n- Mitigation : Communicate ranges (3 scénarios) ; success-fee sur net\
+  \ spread seulement"
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Risque : Volatilité spread (€20–200/MWh) ; impossible promettre gains\
+  \ stables \n- Mitigation : Communicate ranges (3 scénarios) ; success-fee sur net\
+  \ spread seulement"
+logic: null
+sources:
+- doc_id: STRATEGIE_NEBCO
+  label: Analyse strategique NEBCO
+  section: C) Financier
+  anchor: '#c-financier'
+  excerpt_short: "- Risque : Volatilité spread (€20–200/MWh) ; impossible promettre\
+    \ gains stables \n- Mitigation : Comm..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

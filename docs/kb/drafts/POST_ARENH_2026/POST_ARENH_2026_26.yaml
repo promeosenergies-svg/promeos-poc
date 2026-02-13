@@ -1,0 +1,115 @@
+id: POST_ARENH_2026_26
+type: rule
+domain: usages
+title: Références et Citations
+summary: "Web:21, Web:27 — CRE, communiqué 30 avril 2025 et source CRE post-ARENH\
+  \ 44 \nWeb:60, Web:65 — EDF et Légifrance, Loi de Finances 2025 article 17 et articles\
+  \ L.337-3 à L.337-3-6 Code énergie 45 \nWeb:37 ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Web:21, Web:27 — CRE, communiqué 30 avril 2025 et source CRE post-ARENH\
+  \ 44 \nWeb:60, Web:65 — EDF et Légifrance, Loi de Finances 2025 article 17 et articles\
+  \ L.337-3 à L.337-3-6 Code énergie 45 \nWeb:37 — Seban Associés, analyse décrets\
+  \ n°2025-909 et 2025-910 46 \nWeb:41 — CRE, Délibération n°2025-268 du 16 décembre\
+  \ 2025 47 \nWeb:24, Web:29, Web:30 — CLER et sources agrégées sur VNU et fin ARENH\
+  \ 48 \nWeb:36, Web:39 — Opera Énergie et Place des Énergies, seuils VNU 49 \nWeb:60\
+  \ — EDF Entreprises, seuils de taxation VNU 50 \nWeb:8, Web:39 — Optima Énergie\
+  \ et Place des Énergies, mécanisme VNU et seuils 51 \nWeb:52 — Enerdigit, estimation\
+  \ revenus 2026 CRE 66 €/MWh 52 \nWeb:30 — Connaissances des Énergies, impacts fin\
+  \ ARENH consommateurs 53 \nWeb:55, Web:61, Web:63, Web:64 — Selectra, Opera Énergie,\
+  \ CRE, estimation 2027 à 60,94 €/MWh 54 \nWeb:37, Web:27 — CRE et sources sur comptabilité\
+  \ appropriée décret 2025-909 55 \nWeb:63, Web:61 — CRE délibération et Opera Énergie\
+  \ sur méthodologie revenus nucléaires 56 \nWeb:38, Web:43, Web:47 — Capitole Énergie,\
+  \ Opera Énergie, sources CAPN 57 \nWeb:45 — Paca Énergies, caractéristiques CAPN\
+  \ 58 \nWeb:56 — Alliance des Énergies, impacts fin ARENH PME/collectivités 59 \n\
+  Web:53 — Terre Solaire, implications fournisseurs alternatifs post-ARENH 60 \nWeb:50,\
+  \ Web:58 — Leyton et Place des Énergies, impacts sectoriels 61 \nWeb:27 — CRE communiqué\
+  \ 30 avril 2025 sur rôle CRE post-ARENH 62 63 64 65 66 67 68 69 70 71 72 73 74 75\
+  \ 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101\
+  \ 102 103 104 105 106 107 108 109 \n\n⁂ \n- Guide Utilisation Archelios Pro.pptx\
+  \ ↩︎ \n- Profil_Conso.csv ↩︎ \n- Guide Archelios Pro et Etudes de cas.docx ↩︎ \n\
+  - Présentation advizeo V2025.pdf ↩︎ \n- Devis-ENDESA ENERGIA-ENOGRID-2025-03-1423.pdf\
+  \ ↩︎ \n- Guide Utilisation Archelios Pro.pptx ↩︎ \n- Plaquette EnoPower.pdf ↩︎ \n\
+  - Présentation advizeo V2025.pdf ↩︎ \n- Présentation Enogrid.pdf ↩︎ \n- Plaquette\
+  \ EnoPower.pdf ↩︎ \n- Plaquette EnoLab.pdf ↩︎ \n- Note ACC ENOGRID.docx ↩︎ \n- Présentation\
+  \ advizeo V2025 (002).pdf ↩︎ \n- advizeo - Schéma économique Partenaires.pdf ↩︎\
+  \ \n- Présentation advizeo V2025.pdf ↩︎ \n- Présentation advizeo V2025.pdf ↩︎ \n\
+  - Présentation advizeo V2025.pdf ↩︎ \n- Présentation advizeo V2025.pdf ↩︎ \n- Présentation\
+  \ advizeo V2025.pdf ↩︎ \n- Présentation advizeo V2025.pdf ↩︎ \n- Présentation advizeo\
+  \ V2025.pdf ↩︎ \n- Présentation advizeo V2025.pdf ↩︎ \n- Présentation advizeo V2025.pdf\
+  \ ↩︎ \n- Présentation advizeo V2025.pdf ↩︎ \n- Présentation advizeo V2025.pdf ↩︎\
+  \ \n- Présentation advizeo V2025.pdf ↩︎ \n- Energy management avec advizeo.pdf ↩︎\
+  \ \n- Présentation advizeo cockpit.pdf ↩︎ \n- Energy management avec advizeo.pdf\
+  \ ↩︎ \n- Présentation advizeo V2025.pdf ↩︎ \n- Advizeo.docx ↩︎ \n- Présentation\
+  \ Tilt.pdf ↩︎ \n- Advizeo.docx ↩︎ \n- Advizeo.docx ↩︎ \n- Advizeo.docx ↩︎ \n- Tilt\
+  \ X Endesa I Intégration technique v2.docx.pdf ↩︎ \n- Tilt X Endesa I Kick-off\
+  \ 0307 (1).docx ↩︎ \n- Plaquette EnoLab.pdf ↩︎ \n- Tilt X Endesa I Intégration\
+  \ technique.docx ↩︎ \n- Tilt X Endesa I Intégration technique v2.docx.pdf ↩︎ \n\
+  - Tilt X Endesa I Intégration technique v2.docx.pdf ↩︎ \n- Flux projet TILT - version\
+  \ finale.docx ↩︎ \n- Plaquette EnoLab.pdf ↩︎ \n- Guide Utilisation Archelios Pro.pptx\
+  \ ↩︎ \n- Profil_Conso.csv ↩︎ \n- Guide Archelios Pro et Etudes de cas.docx ↩︎ \n\
+  - Présentation advizeo V2025.pdf ↩︎ \n- Devis-ENDESA ENERGIA-ENOGRID-2025-03-1423.pdf\
+  \ ↩︎ \n- Plaquette EnoPower.pdf ↩︎ \n- Présentation Enogrid.pdf ↩︎ \n- Plaquette\
+  \ EnoLab.pdf ↩︎ \n- Note ACC ENOGRID.docx ↩︎ \n- Présentation advizeo V2025 (002).pdf\
+  \ ↩︎ \n- advizeo - Schéma économique Partenaires.pdf ↩︎ \n- Energy management avec\
+  \ advizeo.pdf ↩︎ \n- Présentation advizeo cockpit.pdf ↩︎ \n- Advizeo.docx ↩︎ \n\
+  - Présentation Tilt.pdf ↩︎ \n- Tilt X Endesa I Intégration technique v2.docx.pdf\
+  \ ↩︎ \n- Tilt X Endesa I Kick-off 0307 (1).docx ↩︎ \n- Tilt X Endesa I Intégration\
+  \ technique.docx ↩︎ \n- Flux projet TILT - version finale.docx ↩︎ \n- Tilt Energy\
+  \ X Endesa I Proposition commerciale.pdf ↩︎ \n- https://www.cre.fr/actualites/toute-lactualite/la-commission-de-regulation-de-lenergie-publie-son-evaluation-des-couts-complets-de-production-de-lelectricite-au-moyen-des-centrales-electronucleaires-historiques-pour-la-periode-2026-2028.html\
+  \ ↩︎ \n- https://www.optima-energie.fr/blog/actualites/fin-arenh/ ↩︎ \n- https://labellenergie.fr/fin-de-larenh-nouveau-mecanisme-du-vnu-quel-avenir-pour-lelectricite-en-france/\
+  \ ↩︎ \n- https://cler.org/fin-arenh/ ↩︎ \n- https://www.endesa.fr/blog/comprendre-lenergie/remplacement-de-l-arenh\
+  \ ↩︎ \n- https://www.sirenergies.com/article/professionnels-comment-anticiper-la-fin-de-larenh\
+  \ ↩︎ \n- https://www.cre.fr/fileadmin/Documents/Communiques_de_presse/2025/250430_CP_CRE_POST-ARENH.pdf\
+  \ ↩︎ \n- https://opera-energie.com/arenh-2026/ ↩︎ \n- https://entreprises-collectivites.engie.fr/actualites/versement-nucleaire-universel-vnu-electricite/\
+  \ ↩︎ \n- https://www.connaissancedesenergies.org/tribune-actualite-energies/fin-de-larenh-des-consommateurs-exposes-la-volatilite-des-prix-de-marche\
+  \ ↩︎ \n- https://www.jp-plus.fr/ressources/fin-arenh/ ↩︎ \n- https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT000023983208/LEGISCTA000031748859/\
+  \ ↩︎ \n- https://achetonsgroupe.org/les-infos-groupees/fin-de-larenh-quels-impacts-sur-les-tarifs-de-lelectricite/\
+  \ ↩︎ \n- https://www.idex.fr/le-blog/fin-arenh-vnu-guide-entreprises-2026 ↩︎ \n\
+  - https://www.geg.fr/blog/decryptage/versement-nucleaire-universel-vs-arenh-tout-savoir-sur-ce-qui-change-en-2026/\
+  \ ↩︎ \n- https://opera-energie.com/versement-nucleaire-universel-vnu/ ↩︎ \n- https://www.seban-associes.avocat.fr/publication-de-lun-des-decrets-dapplication-des-dispositions-relatives-au-versement-nucleaire-universel/\
+  \ ↩︎ \n- https://capitole-energie.com/2025/04/16/contrat-dallocation-de-production-nucleaire-capn/\
+  \ ↩︎ \n- https://www.placedesenergies.com/professionnels/actualites/nucleaire-quelle-influence-sur-les-factures-2025-2030\
+  \ ↩︎ \n- https://www.cre.fr/electricite/marche-de-detail-de-lelectricite/vnu-estimation-des-revenus-nucleaires-dedf.html\
+  \ ↩︎ \n- https://www.cre.fr/fileadmin/Documents/Deliberations/2025/251216_2025-268_Decret_VNU.pdf\
+  \ ↩︎ \n- https://www.cre.fr/actualites/toute-lactualite/la-cre-publie-son-avis-sur-le-projet-de-decret-relatif-aux-parametres-de-la-comptabilite-appropriee-des-revenus-nucleaires-dedf-dans-le-cadre-du-nouveau-dispositif-de-versement-nucleaire-universel.html\
+  \ ↩︎ \n- https://capitole-energie.com/2025/07/03/post-arenh-mecanisme-vnu-capn/\
+  \ ↩︎ \n- https://www.sfen.org/rgn/vnu-quatre-questions-pour-comprendre-le-mecanisme-qui-remplace-larenh/\
+  \ ↩︎ \n- https://pacaenergies.com/apres-larenh-decryptage-des-mecanismes-vnu-et-capn/\
+  \ ↩︎ \n- https://www.dune-energie.fr/ressource/versement-nucleaire-universel-vnu-tout-comprendre-sur-le-nouveau-systeme-qui-remplacera-larenh\
+  \ ↩︎ \n- https://opera-energie.com/capn/ ↩︎ \n- https://www.dune-energie.fr/ressource/ecretemement-arenh-definition-impact\
+  \ ↩︎ \n- https://www.enoptea.fr/articles/comment-les-contrats-pour-difference-cfd-garantissent-des-prix-stables-pour-les-producteurs-denergie/\
+  \ ↩︎ \n- https://leyton.com/fr/insights/articles/fin-arenh-2026-impacts-achat-energie-professionnels/\
+  \ ↩︎ \n- https://www.optima-energie.fr/blog/energies/le-contrat-pour-difference-le-futur-de-la-regulation-de-lelectricite/\
+  \ ↩︎ \n- https://enerdigit.fr/apres-l-arenh-place-au-versement-nucleaire-universel-des-2026/\
+  \ ↩︎ \n- https://terresolaire.com/Blog/autoconsommation-photovoltaique/fin-de-larenh-consequences-sur-les-factures-delectricite/\
+  \ ↩︎ \n- https://opera-energie.com/contrat-pour-difference-cfd/ ↩︎ \n- https://selectra.info/energie/actualites/marche/cre-projection-revenus-nucleaires-2027-vnu\
+  \ ↩︎ \n- https://alliancedesenergies.fr/guide/fin-arenh-impact-entreprises/ ↩︎ \n\
+  - https://www.atoo-energie.com/blog/infos-energie/reforme-marche-europeen-electricite-contrats-pour-difference/\
+  \ ↩︎ \n- https://www.placedesenergies.com/professionnels/actualites/fin-de-l-arenh-en-decembre-2025-quelles-consequences-pour-les-prix-de-l-electricite\
+  \ ↩︎ \n- https://www.placedesenergies.com/professionnels/actualites/remplacement-de-l-arenh-pas-de-contrat-pour-difference-cfd-pour-le-nucleaire\
+  \ ↩︎ \n- https://www.edf.fr/entreprises/decryptages/normes-et-reglementations/de-l-arenh-au-versement-nucleaire-universel-les-cles-pour-tout-comprendre\
+  \ ↩︎ \n- https://opera-energie.com/media/nucleaire-cre-livre-premiere-estimation-revenus-edf-pour-2027/\
+  \ ↩︎ \n- https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000051168007 ↩︎ \n- https://www.cre.fr/actualites/toute-lactualite/la-cre-communique-sa-premiere-estimation-des-revenus-annuels-du-parc-nucleaire-dedf-pour-2027.html\
+  \ ↩︎ \n- https://www.cre.fr/fileadmin/Documents/Communiques_de_presse/2026/260113_CP_estimation_revenus_nucleaire_2027.pdf\
+  \ ↩︎ \n- https://www.legifrance.gouv.fr/codes/id/LEGISCTA000051213805 ↩︎ \n- https://www.cre.fr/documents/deliberations/calcul-des-revenus-annuels-du-parc-nucleaire-constates-et-projetes-a-partir-de-la-comptabilite-appropriee.html\
+  \ ↩︎"
+logic: null
+sources:
+- doc_id: POST_ARENH_2026
+  label: Post-ARENH 2026
+  section: Références et Citations
+  anchor: '#rfrences-et-citations'
+  excerpt_short: "Web:21, Web:27 — CRE, communiqué 30 avril 2025 et source CRE post-ARENH\
+    \ 44 \nWeb:60, Web:65 — EDF et ..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

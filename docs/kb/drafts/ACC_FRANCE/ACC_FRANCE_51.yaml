@@ -1,0 +1,49 @@
+id: ACC_FRANCE_51
+type: rule
+domain: acc
+title: Modèle Contrat PMO–Consommateur ACC (simplifié) CONTRAT D'AUTOCONSOMMATION
+  COLLECTIVE
+summary: "Entre [PMO], [Date], Durée [3–5 ans]\n\n1. PARTIES\n - PMO Organisatrice\
+  \ : [Nom], [SIRET], [Adresse]\n - Consommateur : [Nom], PRM [xxxxxx], [Adresse]\n\
+  \ - Producteur : [Nom], PRM [yyyyy]\n\n2. OBJET\n Partage..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Entre [PMO], [Date], Durée [3–5 ans]\n\n1. PARTIES\n - PMO Organisatrice\
+  \ : [Nom], [SIRET], [Adresse]\n - Consommateur : [Nom], PRM [xxxxxx], [Adresse]\n\
+  \ - Producteur : [Nom], PRM [yyyyy]\n\n2. OBJET\n Partage électricité produite localement\
+  \ par producteur vers consommateur.\n\n3. ÉLECTRICITÉ FOURNIE (TAc = \"Traction\
+  \ Autoconsommée\")\n - Quantité : calculée mensuellement par Enedis selon clé répartition\n\
+  \ - Prix : [€/kWh] = prix négocié entre producteur et consommateurs\n - Facturation\
+  \ : par PMO ou fournisseur complément, mensuel ou [autre]\n - Paiement : SEPA /\
+  \ virement / chèque, dans [^10] jours après facture\n\n4. ÉLECTRICITÉ COMPLÉMENT\
+  \ (TAp = \"Traction Alloconsommée\")\n - Fournisseur : client conserve liberté choix\n\
+  \ - Fournisseur reçoit de Enedis : part non-fournie par ACC\n - Facturation : par\
+  \ fournisseur, selon contrat distinct\n\n5. DROITS ET OBLIGATIONS\n - Consommateur\
+  \ : accepte participation ACC, consentement RGPD courbes\n - PMO : assure transparency\
+  \ TAc/TAp, gère registre, notifie changements\n - Producteur : garantit production\
+  \ disponibilité raisonnable, assurance RC\n\n6. RÉSILIATION\n - Participants peuvent\
+  \ quitter ACC à tout moment, [préavis 30 jours]\n - PMO peut exclure participant\
+  \ si défaut paiement [60 jours]\n - En cas sortie, clés recalculées, notifié Enedis\
+  \ [J-1]\n\n7. LITIGES\n - Domiciliation : [lieu], droit français\n - Escalade :\
+  \ PMO → médiation, puis tribunal [ville]\n\nSIGNATURES : PMO, Consommateur, Producteur,\
+  \ [date]"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: Modèle Contrat PMO–Consommateur ACC (simplifié) CONTRAT D'AUTOCONSOMMATION
+    COLLECTIVE
+  anchor: '#modle-contrat-pmoconsommateur-acc-simplifi-contrat-dautoconsommation-collective'
+  excerpt_short: "Entre [PMO], [Date], Durée [3–5 ans]\n\n1. PARTIES\n - PMO Organisatrice\
+    \ : [Nom], [SIRET], [Adresse]\n -..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

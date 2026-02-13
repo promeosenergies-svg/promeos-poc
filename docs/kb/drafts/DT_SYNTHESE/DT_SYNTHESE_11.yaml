@@ -1,0 +1,38 @@
+id: DT_SYNTHESE_11
+type: rule
+domain: reglementaire
+title: Levier d’action identifiés
+summary: "Hiérarchie d’impact économique (court → long terme) : \n- Optimisation exploitation\
+  \ (6-12 mois, ROI 2-3 ans) \n- Gestion active équipements (chauffage/clim/éclairage)\
+  \ \n- Contrats maintenance avec object..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Hiérarchie d’impact économique (court → long terme) : \n- Optimisation\
+  \ exploitation (6-12 mois, ROI 2-3 ans) \n- Gestion active équipements (chauffage/clim/éclairage)\
+  \ \n- Contrats maintenance avec objectifs réduction \n- Sous-comptage énergie pour\
+  \ identification gaspillages \n- Gain estimé : 10-15% économies \n- Rénovation équipements\
+  \ (12-24 mois, ROI 5-8 ans) \n- Éclairage LED + capteurs présence/luminosité \n\
+  - Chaufferie/climatisation haute performance \n- Eau chaude sanitaire pompe à chaleur\
+  \ \n- Systèmes GTB/GTC (gestion centralisée) \n- Gain estimé : 20-30% économies\
+  \ + conformité durable \n- Rénovation enveloppe bâtie (24+ mois, ROI 8-15 ans) \n\
+  - Isolation toiture/murs \n- Menuiseries performantes \n- Protection solaire \n\
+  - Gain estimé : 30-40%+ (mais investissement majeur)"
+logic: null
+sources:
+- doc_id: DT_SYNTHESE
+  label: Decret Tertiaire - Synthese PROMEOS
+  section: Levier d’action identifiés
+  anchor: '#levier-daction-identifis'
+  excerpt_short: "Hiérarchie d’impact économique (court → long terme) : \n- Optimisation\
+    \ exploitation (6-12 mois, ROI 2..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

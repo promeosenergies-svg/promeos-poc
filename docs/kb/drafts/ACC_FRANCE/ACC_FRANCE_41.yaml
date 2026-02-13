@@ -1,0 +1,33 @@
+id: ACC_FRANCE_41
+type: knowledge
+domain: acc
+title: 'Blanc 2 : Full settlement (PMO + fournisseur + Enedis 3-way)'
+summary: "- Gap : Erreurs facturation ACC = 5–10% projets (données terrain Animergy).\
+  \ Concurrence propose “2-way max” (PMO+Enedis ou fournisseur+Enedis) \n- PROMEOS\
+  \ opportunité : shadow billing avec API Enedis (..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Gap : Erreurs facturation ACC = 5–10% projets (données terrain Animergy).\
+  \ Concurrence propose “2-way max” (PMO+Enedis ou fournisseur+Enedis) \n- PROMEOS\
+  \ opportunité : shadow billing avec API Enedis (3-way reconciliation auto) + participant\
+  \ visibility \n- Win : 1 truth source (PROMEOS) vs. 3 spreadsheets = -80% disputes,\
+  \ -15% chargeback"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: 'Blanc 2 : Full settlement (PMO + fournisseur + Enedis 3-way)'
+  anchor: '#blanc-2-full-settlement-pmo-fournisseur-enedis-3-way'
+  excerpt_short: '- Gap : Erreurs facturation ACC = 5–10% projets (données terrain
+    Animergy). Concurrence propose “2-w...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

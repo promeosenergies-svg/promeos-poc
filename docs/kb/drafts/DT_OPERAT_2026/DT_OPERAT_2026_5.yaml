@@ -1,0 +1,45 @@
+id: DT_OPERAT_2026_5
+type: rule
+domain: usages
+title: Valeurs absolues (Cabs) 2030 — Dernières catégories définies (septembre 2025)
+summary: L’arrêté « Valeurs Absolues VI » (publié 6 septembre 2025) complète le cadre
+  réglementaire en fixant les seuils pour les dernières catégories manquantes , permettant
+  aux 100% des assujettis de se proj...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "L’arrêté « Valeurs Absolues VI » (publié 6 septembre 2025) complète le\
+  \ cadre réglementaire en fixant les seuils pour les dernières catégories manquantes\
+  \ , permettant aux 100% des assujettis de se projeter vers 2030. 8 Catégorie d’activité\
+  \ Cabs 2030 (kWh/m²/an) Zone climatique Notes Bureaux standards ~70 H1a–H3 CVC :\
+  \ 40–66 kWh/m² + USE : ~20–30 kWh/m² selon occupation Enseignement ~100 H1–H3 Écoles,\
+  \ lycées, enseignement professionnel Logistique / Entreposage ~50 H1–H3 Entrepôts,\
+  \ magasins de stockage Commerces (6 catégories) 240–270 H1–H3 Supermarchés, petits\
+  \ commerces, galeries marchandes Cinémas ~200 H1–H3 Nouvelle catégorie (sept. 2025)\
+  \ Services funéraires ~150 H1–H3 Nouvelle catégorie (sept. 2025) Banques ~130 H1–H3\
+  \ Nouvelle catégorie (sept. 2025) Santé / Médico-social ~300 H1–H3 Hôpitaux, cliniques,\
+  \ établissements de soins \n\nStructure de Cabs : Chaque seuil se compose de deux\
+  \ composantes : \n- CVC (Chauffage, Ventilation, Climatisation) : varie selon zone\
+  \ climatique et altitude (H1a–H3, <400 m, 400–800 m, >800 m) \n- USE (Usages Spécifiques\
+  \ Énergétiques) : éclairage, eau chaude sanitaire, usages métier (intensité dépendante\
+  \ des heures d’exploitation, taux d’occupation, etc.) 9 \n\nSource : Arrêté du 6\
+  \ septembre 2025 (Valeurs Absolues VI) ; ADEME/Legifrance 10 11 12"
+logic: null
+sources:
+- doc_id: DT_OPERAT_2026
+  label: Decret Tertiaire / OPERAT - Obligations 2026
+  section: Valeurs absolues (Cabs) 2030 — Dernières catégories définies (septembre
+    2025)
+  anchor: '#valeurs-absolues-cabs-2030-dernires-catgories-dfinies-septembre-2025'
+  excerpt_short: L’arrêté « Valeurs Absolues VI » (publié 6 septembre 2025) complète
+    le cadre réglementaire en fixant...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,38 @@
+id: MARCHE_ENERGIE_2025_6
+type: knowledge
+domain: acc
+title: A. Mécanisme ARENH (1er juillet 2011 - 31 décembre 2025)
+summary: "Fonctionnement clé : \n- Fournisseurs alternatifs (Engie, Eni, Vattenfall,\
+  \ etc.) peuvent acheter électricité nucléaire EDF à prix régulé 42€/MWh \n- Volume\
+  \ plafonné 100 TWh/an (~25% production nucléaire..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Fonctionnement clé : \n- Fournisseurs alternatifs (Engie, Eni, Vattenfall,\
+  \ etc.) peuvent acheter électricité nucléaire EDF à prix régulé 42€/MWh \n- Volume\
+  \ plafonné 100 TWh/an (~25% production nucléaire) \n- Reste à prix marché (quand\
+  \ >100 TWh, écrêtement au prorata) \n- Prix fixe depuis 2012, jamais révisé upward—créait\
+  \ avantage concurrentiel fournisseurs \n\nImpact concurrence : \n- EDF : penalisée\
+  \ (vend nucléaire à 42€ vs marché 55-75€) → revenus insuffisants entretien parc\
+  \ \n- Fournisseurs alternatifs : profitent accès bon marché, peuvent agresser tarifs\
+  \ petits clients \n- Consommateurs : illusion protection (ARENH favorise churn,\
+  \ mais factures resteraient hautes marché) \n- UE : juge dispositif dépassé, crée\
+  \ distorsion concurrence intra-UE"
+logic: null
+sources:
+- doc_id: MARCHE_ENERGIE_2025
+  label: Analyse marche energie France-Europe 2025
+  section: A. Mécanisme ARENH (1er juillet 2011 - 31 décembre 2025)
+  anchor: '#a-mcanisme-arenh-1er-juillet-2011---31-dcembre-2025'
+  excerpt_short: "Fonctionnement clé : \n- Fournisseurs alternatifs (Engie, Eni, Vattenfall,\
+    \ etc.) peuvent acheter élec..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

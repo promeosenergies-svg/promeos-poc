@@ -1,0 +1,33 @@
+id: STRATEGIE_NEBCO_28
+type: rule
+domain: reglementaire
+title: 'Décision 5: Go/No-Go Threshold (J30)'
+summary: "Recommandation : Advance IF ≥4/5 conditions validated : \n- ✅ OE Partner\
+  \ LOI signed \n- ✅ ≥2 retail LOI prospects (audit interest) \n- ✅ Advizeo cockpit\
+  \ M&V-capable (tech sign-off) \n- ✅ Contrats template..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Recommandation : Advance IF ≥4/5 conditions validated : \n- ✅ OE Partner\
+  \ LOI signed \n- ✅ ≥2 retail LOI prospects (audit interest) \n- ✅ Advizeo cockpit\
+  \ M&V-capable (tech sign-off) \n- ✅ Contrats templates finalized \n- ✅ €1M+ Y1 revenue\
+  \ potential identified \n\nIf 3/5 or fewer → EXTEND J60 ; refine model. \nIf <2/5\
+  \ or blockers → SUNSET ; explore alternative flex products."
+logic: null
+sources:
+- doc_id: STRATEGIE_NEBCO
+  label: Analyse strategique NEBCO
+  section: 'Décision 5: Go/No-Go Threshold (J30)'
+  anchor: '#dcision-5-gono-go-threshold-j30'
+  excerpt_short: "Recommandation : Advance IF ≥4/5 conditions validated : \n- ✅ OE\
+    \ Partner LOI signed \n- ✅ ≥2 retail LO..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

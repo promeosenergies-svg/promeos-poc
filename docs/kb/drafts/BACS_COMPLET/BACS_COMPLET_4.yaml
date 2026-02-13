@@ -1,0 +1,32 @@
+id: BACS_COMPLET_4
+type: rule
+domain: reglementaire
+title: Portée géographique
+summary: "- Champ : Bâtiments tertiaires non-résidentiels (bureaux, commerces, hôtels,\
+  \ établissements scolaires/santé, loisirs, administrations, logistique) \n- Surface\
+  \ minimale : Aucune (s’applique dès qu’un se..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Champ : Bâtiments tertiaires non-résidentiels (bureaux, commerces,\
+  \ hôtels, établissements scolaires/santé, loisirs, administrations, logistique)\
+  \ \n- Surface minimale : Aucune (s’applique dès qu’un seul équipement CVC dépasse\
+  \ seuil puissance) \n- Applicabilité : France métropolitaine + DROM (même règles)"
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Portée géographique
+  anchor: '#porte-gographique'
+  excerpt_short: '- Champ : Bâtiments tertiaires non-résidentiels (bureaux, commerces,
+    hôtels, établissements scolaire...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

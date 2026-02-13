@@ -1,0 +1,33 @@
+id: FLEX_EFFACEMENT_15
+type: rule
+domain: acc
+title: 2.8 Checklist “Go/No-Go” Réserves
+summary: "- ⬜ Capacité ≥1 MW (techno-éco viable) \n- ⬜ Raccordement RPT ou RPD, accord\
+  \ GRD \n- ⬜ Téléconduite RTE possible (protocole IEC/SCADA) \n- ⬜ Garantie financière\
+  \ ~€50k disponible \n- ⬜ Responsable Programm..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- ⬜ Capacité ≥1 MW (techno-éco viable) \n- ⬜ Raccordement RPT ou RPD,\
+  \ accord GRD \n- ⬜ Téléconduite RTE possible (protocole IEC/SCADA) \n- ⬜ Garantie\
+  \ financière ~€50k disponible \n- ⬜ Responsable Programmation/RE désigné \n- ⬜ Si\
+  \ EnR >10 MW : obligation MA depuis 01/01/2026 \n- ⬜ Comptage télérelevé ou sous-mesure\
+  \ validée \n- ⬜ Tests activation démarreur <13 min (mFRR)"
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: 2.8 Checklist “Go/No-Go” Réserves
+  anchor: '#28-checklist-gono-go-rserves'
+  excerpt_short: "- ⬜ Capacité ≥1 MW (techno-éco viable) \n- ⬜ Raccordement RPT ou\
+    \ RPD, accord GRD \n- ⬜ Téléconduite RT..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

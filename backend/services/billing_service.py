@@ -1,7 +1,10 @@
 """
-PROMEOS — Bill Intelligence Service (Sprint 7)
-Shadow billing simplifie + anomaly engine (8-12 regles) + summary.
-Operates on the persisted SQLAlchemy models (EnergyInvoice, EnergyInvoiceLine, BillingInsight).
+PROMEOS — Bill Intelligence Service (Sprint 7.1)
+Shadow billing simplifie + anomaly engine (10 regles) + summary.
+V1.1: get_reference_price (contract > site_tariff > fallback),
+      proof/explainability (inputs+threshold in metrics),
+      cross-link R9 -> diagnostic-conso,
+      insight workflow defaults.
 """
 import json
 from datetime import date, datetime, timedelta
@@ -12,17 +15,79 @@ from sqlalchemy import func
 from models import (
     Site, EnergyContract, EnergyInvoice, EnergyInvoiceLine, BillingInsight,
     BillingEnergyType, InvoiceLineType, BillingInvoiceStatus,
+    SiteTariffProfile, InsightStatus,
 )
+
+
+# ========================================
+# Price reference resolution (V1.1)
+# ========================================
+
+DEFAULT_PRICE_ELEC = 0.18
+DEFAULT_PRICE_GAZ = 0.09
+
+
+def get_reference_price(
+    db: Session,
+    site_id: int,
+    energy_type: str = "elec",
+    period_start: Optional[date] = None,
+    period_end: Optional[date] = None,
+) -> Tuple[float, str]:
+    """
+    Resolve the reference price for a site, with clear priority:
+      1. Active EnergyContract covering the invoice period
+      2. SiteTariffProfile for the site
+      3. Config fallback (0.18 elec, 0.09 gaz)
+    Returns: (price_eur_per_kwh, source_label)
+    """
+    # Priority 1: Active contract
+    q = db.query(EnergyContract).filter(
+        EnergyContract.site_id == site_id,
+        EnergyContract.price_ref_eur_per_kwh.isnot(None),
+    )
+    if energy_type:
+        try:
+            q = q.filter(EnergyContract.energy_type == BillingEnergyType(energy_type))
+        except ValueError:
+            pass
+    contracts = q.all()
+    for c in contracts:
+        if c.price_ref_eur_per_kwh is None:
+            continue
+        # Check period overlap if dates available
+        if period_start and period_end and c.start_date and c.end_date:
+            if c.start_date <= period_end and c.end_date >= period_start:
+                return (c.price_ref_eur_per_kwh, f"contract:{c.id}")
+        elif c.start_date is None and c.end_date is None:
+            # Contract without dates = always valid
+            return (c.price_ref_eur_per_kwh, f"contract:{c.id}")
+
+    # Priority 2: SiteTariffProfile
+    tariff = db.query(SiteTariffProfile).filter(
+        SiteTariffProfile.site_id == site_id
+    ).first()
+    if tariff and tariff.price_ref_eur_per_kwh:
+        return (tariff.price_ref_eur_per_kwh, "site_tariff_profile")
+
+    # Priority 3: Default fallback
+    if energy_type == "gaz":
+        return (DEFAULT_PRICE_GAZ, "default_gaz")
+    return (DEFAULT_PRICE_ELEC, "default_elec")
 
 
 # ========================================
 # Shadow billing simplifie
 # ========================================
 
-def shadow_billing_simple(invoice: EnergyInvoice, contract: Optional[EnergyContract] = None) -> Dict[str, Any]:
+def shadow_billing_simple(
+    invoice: EnergyInvoice,
+    contract: Optional[EnergyContract] = None,
+    db: Optional[Session] = None,
+) -> Dict[str, Any]:
     """
     Shadow billing simplifie: energy_kwh * price_ref.
-    Returns dict with shadow_total, delta, delta_pct.
+    V1.1: uses get_reference_price when db is provided.
     """
     if not invoice.energy_kwh or invoice.energy_kwh <= 0:
         return {
@@ -33,13 +98,23 @@ def shadow_billing_simple(invoice: EnergyInvoice, contract: Optional[EnergyContr
             "reason": "energy_kwh manquant ou <= 0",
         }
 
-    # Determine price_ref
+    # Resolve price reference
     price_ref = None
-    if contract and contract.price_ref_eur_per_kwh:
+    ref_source = "fallback"
+
+    if db:
+        energy_type_str = _energy_type(invoice, contract)
+        price_ref, ref_source = get_reference_price(
+            db, invoice.site_id, energy_type_str,
+            invoice.period_start, invoice.period_end,
+        )
+    elif contract and contract.price_ref_eur_per_kwh:
         price_ref = contract.price_ref_eur_per_kwh
+        ref_source = f"contract:{contract.id}"
+
     if price_ref is None:
-        # Fallback: use 0.18 EUR/kWh (default FR)
-        price_ref = 0.18
+        price_ref = DEFAULT_PRICE_ELEC
+        ref_source = "default_elec"
 
     shadow_total = round(invoice.energy_kwh * price_ref, 2)
     actual_total = invoice.total_eur or 0
@@ -52,13 +127,33 @@ def shadow_billing_simple(invoice: EnergyInvoice, contract: Optional[EnergyContr
         "delta_eur": delta,
         "delta_pct": delta_pct,
         "price_ref_eur_kwh": price_ref,
+        "ref_price_source": ref_source,
         "energy_kwh": invoice.energy_kwh,
         "method": "simple",
     }
 
 
 # ========================================
-# Anomaly engine (8-12 rules)
+# Proof helper (V1.1)
+# ========================================
+
+def _build_inputs(invoice: EnergyInvoice, ref_price: Optional[float] = None) -> Dict:
+    """Build standardized inputs dict for proof/explainability."""
+    implied = None
+    if invoice.energy_kwh and invoice.energy_kwh > 0 and invoice.total_eur:
+        implied = round(invoice.total_eur / invoice.energy_kwh, 4)
+    return {
+        "period_start": str(invoice.period_start) if invoice.period_start else None,
+        "period_end": str(invoice.period_end) if invoice.period_end else None,
+        "energy_kwh": invoice.energy_kwh,
+        "total_eur": invoice.total_eur,
+        "implied_price": implied,
+        "ref_price": ref_price,
+    }
+
+
+# ========================================
+# Anomaly engine (10 rules)
 # ========================================
 
 def _rule_shadow_gap(invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine]) -> Optional[Dict]:
@@ -69,7 +164,12 @@ def _rule_shadow_gap(invoice: EnergyInvoice, contract: Optional[EnergyContract],
             "type": "shadow_gap",
             "severity": "high" if abs(shadow["delta_pct"]) > 20 else "medium",
             "message": f"Ecart shadow billing de {shadow['delta_pct']:+.1f}% ({shadow['delta_eur']:+.2f} EUR)",
-            "metrics": shadow,
+            "metrics": {
+                **shadow,
+                "inputs": _build_inputs(invoice, shadow.get("price_ref_eur_kwh")),
+                "threshold_pct": 10,
+                "delta_calculated_pct": shadow["delta_pct"],
+            },
             "estimated_loss_eur": abs(shadow["delta_eur"]) if shadow["delta_eur"] and shadow["delta_eur"] > 0 else 0,
         }
     return None
@@ -80,14 +180,18 @@ def _rule_unit_price_high(invoice: EnergyInvoice, contract: Optional[EnergyContr
     if not invoice.energy_kwh or invoice.energy_kwh <= 0 or not invoice.total_eur:
         return None
     unit_price = invoice.total_eur / invoice.energy_kwh
-    # Thresholds
     threshold = 0.30 if _energy_type(invoice, contract) == "elec" else 0.15
     if unit_price > threshold:
         return {
             "type": "unit_price_high",
             "severity": "high",
             "message": f"Prix unitaire eleve: {unit_price:.4f} EUR/kWh (seuil: {threshold})",
-            "metrics": {"unit_price": round(unit_price, 4), "threshold": threshold},
+            "metrics": {
+                "unit_price": round(unit_price, 4),
+                "threshold": threshold,
+                "inputs": _build_inputs(invoice, threshold),
+                "delta_calculated": round(unit_price - threshold, 4),
+            },
             "estimated_loss_eur": round((unit_price - threshold) * invoice.energy_kwh, 2),
         }
     return None
@@ -109,7 +213,10 @@ def _rule_duplicate_invoice(invoice: EnergyInvoice, contract: Optional[EnergyCon
             "type": "duplicate_invoice",
             "severity": "critical",
             "message": f"Facture en doublon ({dupes} autre(s) avec meme periode et montant)",
-            "metrics": {"duplicates_count": dupes},
+            "metrics": {
+                "duplicates_count": dupes,
+                "inputs": _build_inputs(invoice),
+            },
             "estimated_loss_eur": invoice.total_eur or 0,
         }
     return None
@@ -122,7 +229,11 @@ def _rule_missing_period(invoice: EnergyInvoice, contract: Optional[EnergyContra
             "type": "missing_period",
             "severity": "medium",
             "message": "Periode de facturation manquante (debut ou fin)",
-            "metrics": {"has_start": invoice.period_start is not None, "has_end": invoice.period_end is not None},
+            "metrics": {
+                "has_start": invoice.period_start is not None,
+                "has_end": invoice.period_end is not None,
+                "inputs": _build_inputs(invoice),
+            },
             "estimated_loss_eur": 0,
         }
     return None
@@ -138,7 +249,12 @@ def _rule_period_too_long(invoice: EnergyInvoice, contract: Optional[EnergyContr
             "type": "period_too_long",
             "severity": "medium",
             "message": f"Periode de facturation anormalement longue: {days} jours",
-            "metrics": {"days": days},
+            "metrics": {
+                "days": days,
+                "threshold_days": 62,
+                "delta_calculated_days": days - 62,
+                "inputs": _build_inputs(invoice),
+            },
             "estimated_loss_eur": 0,
         }
     return None
@@ -151,7 +267,10 @@ def _rule_negative_kwh(invoice: EnergyInvoice, contract: Optional[EnergyContract
             "type": "negative_kwh",
             "severity": "high",
             "message": f"Consommation negative: {invoice.energy_kwh} kWh",
-            "metrics": {"energy_kwh": invoice.energy_kwh},
+            "metrics": {
+                "energy_kwh": invoice.energy_kwh,
+                "inputs": _build_inputs(invoice),
+            },
             "estimated_loss_eur": 0,
         }
     return None
@@ -165,7 +284,11 @@ def _rule_zero_amount(invoice: EnergyInvoice, contract: Optional[EnergyContract]
             "type": "zero_amount",
             "severity": "high",
             "message": f"Montant = 0 EUR pour {invoice.energy_kwh} kWh consommes",
-            "metrics": {"total_eur": invoice.total_eur, "energy_kwh": invoice.energy_kwh},
+            "metrics": {
+                "total_eur": invoice.total_eur,
+                "energy_kwh": invoice.energy_kwh,
+                "inputs": _build_inputs(invoice),
+            },
             "estimated_loss_eur": 0,
         }
     return None
@@ -185,7 +308,15 @@ def _rule_lines_sum_mismatch(invoice: EnergyInvoice, contract: Optional[EnergyCo
             "type": "lines_sum_mismatch",
             "severity": "high" if pct > 10 else "medium",
             "message": f"Ecart lignes vs total: {diff:.2f} EUR ({pct:.1f}%)",
-            "metrics": {"lines_sum": round(lines_sum, 2), "total_eur": invoice.total_eur, "diff": round(diff, 2), "pct": round(pct, 1)},
+            "metrics": {
+                "lines_sum": round(lines_sum, 2),
+                "total_eur": invoice.total_eur,
+                "diff": round(diff, 2),
+                "pct": round(pct, 1),
+                "threshold_pct": 2,
+                "delta_calculated_pct": round(pct, 1),
+                "inputs": _build_inputs(invoice),
+            },
             "estimated_loss_eur": round(diff, 2) if diff > 1 else 0,
         }
     return None
@@ -195,19 +326,41 @@ def _rule_consumption_spike(invoice: EnergyInvoice, contract: Optional[EnergyCon
     """R9: Pic de consommation (> 2x la moyenne des 6 derniers mois)."""
     if db is None or not invoice.energy_kwh or not invoice.site_id:
         return None
-    # Get avg kwh for same site, last 6 months, excluding this invoice
     avg_result = db.query(func.avg(EnergyInvoice.energy_kwh)).filter(
         EnergyInvoice.site_id == invoice.site_id,
         EnergyInvoice.id != invoice.id,
         EnergyInvoice.energy_kwh > 0,
     ).scalar()
     if avg_result and avg_result > 0 and invoice.energy_kwh > 2 * avg_result:
+        ratio = round(invoice.energy_kwh / avg_result, 1)
         return {
             "type": "consumption_spike",
             "severity": "high",
-            "message": f"Pic de consommation: {invoice.energy_kwh:.0f} kWh vs moyenne {avg_result:.0f} kWh (x{invoice.energy_kwh/avg_result:.1f})",
-            "metrics": {"energy_kwh": invoice.energy_kwh, "avg_kwh": round(avg_result, 0), "ratio": round(invoice.energy_kwh / avg_result, 1)},
+            "message": f"Pic de consommation: {invoice.energy_kwh:.0f} kWh vs moyenne {avg_result:.0f} kWh (x{ratio})",
+            "metrics": {
+                "energy_kwh": invoice.energy_kwh,
+                "avg_kwh": round(avg_result, 0),
+                "ratio": ratio,
+                "threshold_ratio": 2.0,
+                "delta_calculated_ratio": ratio,
+                "inputs": _build_inputs(invoice),
+                "cross_link": {
+                    "module": "diagnostic-conso",
+                    "site_id": invoice.site_id,
+                    "date_range": {
+                        "from": str(invoice.period_start) if invoice.period_start else None,
+                        "to": str(invoice.period_end) if invoice.period_end else None,
+                    },
+                },
+            },
             "estimated_loss_eur": 0,
+            "recommended_actions": [
+                {
+                    "action": "Verifier le diagnostic consommation",
+                    "link": f"/diagnostic-conso?site_id={invoice.site_id}&from={invoice.period_start}&to={invoice.period_end}",
+                    "reason": "Pic de consommation detecte sur la facture",
+                }
+            ],
         }
     return None
 
@@ -227,7 +380,14 @@ def _rule_price_drift(invoice: EnergyInvoice, contract: Optional[EnergyContract]
             "type": "price_drift",
             "severity": "high" if abs(drift_pct) > 30 else "medium",
             "message": f"Derive de prix: {actual_unit:.4f} vs contrat {ref:.4f} EUR/kWh ({drift_pct:+.1f}%)",
-            "metrics": {"actual_unit_price": round(actual_unit, 4), "contract_ref": ref, "drift_pct": round(drift_pct, 1)},
+            "metrics": {
+                "actual_unit_price": round(actual_unit, 4),
+                "contract_ref": ref,
+                "drift_pct": round(drift_pct, 1),
+                "threshold_pct": 15,
+                "delta_calculated_pct": round(drift_pct, 1),
+                "inputs": _build_inputs(invoice, ref),
+            },
             "estimated_loss_eur": loss,
         }
     return None
@@ -266,7 +426,6 @@ def run_anomaly_engine(
     anomalies = []
     for rule_id, rule_name, rule_fn in BILLING_RULES:
         try:
-            # Some rules need db
             import inspect
             params = inspect.signature(rule_fn).parameters
             if "db" in params:
@@ -278,7 +437,7 @@ def run_anomaly_engine(
                 result["rule_name"] = rule_name
                 anomalies.append(result)
         except Exception:
-            pass  # Skip failing rules, don't block pipeline
+            pass
     return anomalies
 
 
@@ -288,7 +447,6 @@ def persist_insights(
     anomalies: List[Dict[str, Any]],
 ) -> List[BillingInsight]:
     """Persist anomaly results as BillingInsight rows."""
-    # Remove old insights for this invoice
     db.query(BillingInsight).filter(BillingInsight.invoice_id == invoice.id).delete()
 
     insights = []
@@ -302,11 +460,11 @@ def persist_insights(
             metrics_json=json.dumps(a.get("metrics", {})),
             estimated_loss_eur=a.get("estimated_loss_eur"),
             recommended_actions_json=json.dumps(a.get("recommended_actions", [])),
+            insight_status=InsightStatus.OPEN,
         )
         db.add(insight)
         insights.append(insight)
 
-    # Update invoice status
     if anomalies:
         invoice.status = BillingInvoiceStatus.ANOMALY
     else:
@@ -327,13 +485,8 @@ def audit_invoice_full(db: Session, invoice_id: int) -> Dict[str, Any]:
     if invoice.contract_id:
         contract = db.query(EnergyContract).filter(EnergyContract.id == invoice.contract_id).first()
 
-    # Shadow billing
-    shadow = shadow_billing_simple(invoice, contract)
-
-    # Anomaly engine
+    shadow = shadow_billing_simple(invoice, contract, db=db)
     anomalies = run_anomaly_engine(invoice, lines, contract, db)
-
-    # Persist
     insights = persist_insights(db, invoice, anomalies)
 
     return {
@@ -362,7 +515,6 @@ def get_billing_summary(db: Session, org_id: Optional[int] = None) -> Dict[str, 
     total_eur = sum(i.total_eur or 0 for i in invoices)
     total_kwh = sum(i.energy_kwh or 0 for i in invoices)
 
-    # Insights
     insights = db.query(BillingInsight).all()
     total_loss = sum(i.estimated_loss_eur or 0 for i in insights)
     by_type = {}

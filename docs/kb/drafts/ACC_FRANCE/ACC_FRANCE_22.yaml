@@ -1,0 +1,36 @@
+id: ACC_FRANCE_22
+type: knowledge
+domain: usages
+title: '4. Segmentation Rentabilité : Cas Gagnants vs. Difficiles 73 74'
+summary: "Gagnants : \n- ✅ Bailleur social > 50 kWc, taux autocons. > 50% \n- ✅ ZAC\
+  \ activités tertiaire synchrone, 150+ kWc \n- ✅ Collectivité patrimonial (écoles/médiathèques)\
+  \ > 50 kWc \n- ✅ Copropriété > 80 kWc, ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Gagnants : \n- ✅ Bailleur social > 50 kWc, taux autocons. > 50% \n- ✅\
+  \ ZAC activités tertiaire synchrone, 150+ kWc \n- ✅ Collectivité patrimonial (écoles/médiathèques)\
+  \ > 50 kWc \n- ✅ Copropriété > 80 kWc, participation > 70%, coûts gestion < €100/an\
+  \ \n- ✅ Entreprise multi-site, profil conso stable \n\nDifficiles : \n- ❌ Petit\
+  \ collectif (<30 kWc), peu de consommateurs (taux autocons. < 40%) \n- ❌ Production\
+  \ intermittente non-synchrone (ex: PV nuit, conso jour décalée) \n- ❌ Zone rurale\
+  \ : coûts Enedis raccordement ↑, peu de participants \n- ❌ Habitat collectif privé\
+  \ petit : friction vote, participation <50%"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: '4. Segmentation Rentabilité : Cas Gagnants vs. Difficiles 73 74'
+  anchor: '#4-segmentation-rentabilit-cas-gagnants-vs-difficiles-73-74'
+  excerpt_short: "Gagnants : \n- ✅ Bailleur social > 50 kWc, taux autocons. > 50%\
+    \ \n- ✅ ZAC activités tertiaire synchron..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

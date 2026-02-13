@@ -1,0 +1,34 @@
+id: VEILLE_S52_2025_1
+type: rule
+domain: acc
+title: 3 Faits Majeurs
+summary: "- Fin ARENH (31 déc. 2025 → VNU dès le 1er janv. 2026) — Stabilité tarifaire\
+  \ 2026-27 annoncée. Prix de gros ~50 €/MWh, sous les seuils VNU (78/110 €/MWh).\
+  \ \n- Paquet Réseaux Électriques de la Commissio..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Fin ARENH (31 déc. 2025 → VNU dès le 1er janv. 2026) — Stabilité tarifaire\
+  \ 2026-27 annoncée. Prix de gros ~50 €/MWh, sous les seuils VNU (78/110 €/MWh).\
+  \ \n- Paquet Réseaux Électriques de la Commission UE (10 déc. 2025) — 8 autoroutes\
+  \ énergétiques + 1 200 Mds€ d'ici 2040. Confirmation de 2 interconnexions Pyrénées.\
+  \ \n- Partenariat LEAP + ENEL (16 déc. 2025) — Plateforme VPP C&I : 400 k équipements,\
+  \ 100+ partenaires. Menace directe pour PROMEOS sur l'ACC opérationnel ."
+logic: null
+sources:
+- doc_id: VEILLE_S52_2025
+  label: Semaine 52 2025 - Veille Marche Energie PROMEOS
+  section: 3 Faits Majeurs
+  anchor: '#3-faits-majeurs'
+  excerpt_short: '- Fin ARENH (31 déc. 2025 → VNU dès le 1er janv. 2026) — Stabilité
+    tarifaire 2026-27 annoncée. Prix ...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

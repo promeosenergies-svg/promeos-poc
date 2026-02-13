@@ -1,0 +1,31 @@
+id: STRATEGIE_NEBCO_13
+type: knowledge
+domain: reglementaire
+title: D) Contractuel
+summary: "- Risque : Ambiguïté responsabilité pénalités (OE vs. Client vs. PROMEOS)\
+  \ \n- Mitigation : Clauses cristal-claires : OE = responsable légal M&V ; PROMEOS\
+  \ = audit advisor"
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Risque : Ambiguïté responsabilité pénalités (OE vs. Client vs. PROMEOS)\
+  \ \n- Mitigation : Clauses cristal-claires : OE = responsable légal M&V ; PROMEOS\
+  \ = audit advisor"
+logic: null
+sources:
+- doc_id: STRATEGIE_NEBCO
+  label: Analyse strategique NEBCO
+  section: D) Contractuel
+  anchor: '#d-contractuel'
+  excerpt_short: "- Risque : Ambiguïté responsabilité pénalités (OE vs. Client vs. PROMEOS)\
+    \ \n- Mitigation : Clauses cr..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

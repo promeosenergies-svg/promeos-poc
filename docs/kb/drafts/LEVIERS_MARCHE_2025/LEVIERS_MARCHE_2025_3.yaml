@@ -1,0 +1,47 @@
+id: LEVIERS_MARCHE_2025_3
+type: rule
+domain: acc
+title: 'Obligations Contractuelles Enedis Élément Obligation Modalités Convention
+  Enedis Signature avant démarrage opération Modèle Enedis pré-rempli, 3–6 semaines
+  de traitement Clés de répartition Statique, dynamique ou “par défaut” Modifiables
+  avec préavis 15 jours ouvrés ; par défaut = au prorata consommations Compteurs communicants
+  Obligatoires pour tous participants Linky générant données 30–60 min Déclaration
+  API Transmission PMO + produits + consommateurs via guichet Enedis Depuis 2025 :
+  automatisation accélérée, délai 3 mois max Données temps réel Courbes de charge
+  15 min (API Data Connect) Enedis transmet via portail SGE ou API tiers Sortie participant
+  Possibilité entrée/sortie avec préavis 30j Formalités simplifiées si pas contrat
+  de long terme'
+summary: 'Actualisation 2025: Décret du 21 février 2025 a supprimé obligation convention
+  PMO-consommateurs pour ACC < 100 kW (simplification clé pour petits projets).'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: 'Actualisation 2025: Décret du 21 février 2025 a supprimé obligation convention
+  PMO-consommateurs pour ACC < 100 kW (simplification clé pour petits projets).'
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: 'Obligations Contractuelles Enedis Élément Obligation Modalités Convention
+    Enedis Signature avant démarrage opération Modèle Enedis pré-rempli, 3–6 semaines
+    de traitement Clés de répartition Statique, dynamique ou “par défaut” Modifiables
+    avec préavis 15 jours ouvrés ; par défaut = au prorata consommations Compteurs
+    communicants Obligatoires pour tous participants Linky générant données 30–60
+    min Déclaration API Transmission PMO + produits + consommateurs via guichet Enedis
+    Depuis 2025 : automatisation accélérée, délai 3 mois max Données temps réel Courbes
+    de charge 15 min (API Data Connect) Enedis transmet via portail SGE ou API tiers
+    Sortie participant Possibilité entrée/sortie avec préavis 30j Formalités simplifiées
+    si pas contrat de long terme'
+  anchor: '#obligations-contractuelles-enedis-lment-obligation-modalits-convention-enedis-signature-avant-dmarrage-opration-modle-enedis-pr-rempli-36-semaines-de-traitement-cls-de-rpartition-statique-dynamique-ou-par-dfaut-modifiables-avec-pravis-15-jours-ouvrs-par-dfaut-au-prorata-consommations-compteurs-communicants-obligatoires-pour-tous-participants-linky-gnrant-donnes-3060-min-dclaration-api-transmission-pmo-produits-consommateurs-via-guichet-enedis-depuis-2025-automatisation-acclre-dlai-3-mois-max-donnes-temps-rel-courbes-de-charge-15-min-api-data-connect-enedis-transmet-via-portail-sge-ou-api-tiers-sortie-participant-possibilit-entresortie-avec-pravis-30j-formalits-simplifies-si-pas-contrat-de-long-terme'
+  excerpt_short: 'Actualisation 2025: Décret du 21 février 2025 a supprimé obligation
+    convention PMO-consommateurs pou...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

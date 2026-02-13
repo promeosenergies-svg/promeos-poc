@@ -1,0 +1,33 @@
+id: BACS_COMPLET_13
+type: knowledge
+domain: acc
+title: 3️⃣ INTEROPÉRABILITÉ
+summary: "- Capacité : Communiquer avec autres systèmes (normes ouvertes, API standards)\
+  \ \n- Modularité : Architecture souple et évolutive (ajouter/retirer systèmes futurs\
+  \ sans refonte) \n- Intégration : Tous sys..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Capacité : Communiquer avec autres systèmes (normes ouvertes, API standards)\
+  \ \n- Modularité : Architecture souple et évolutive (ajouter/retirer systèmes futurs\
+  \ sans refonte) \n- Intégration : Tous systèmes techniques (chaud, froid, ventilation,\
+  \ ECS, éclairage) = raccordables au BACS central \n- Exemple : Remplacer chaudière\
+  \ → nouvelle chaudière se branche directement au BACS existant, pas refonte"
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: 3️⃣ INTEROPÉRABILITÉ
+  anchor: '#3-interoprabilit'
+  excerpt_short: "- Capacité : Communiquer avec autres systèmes (normes ouvertes,\
+    \ API standards) \n- Modularité : Archi..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

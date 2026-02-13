@@ -1,0 +1,41 @@
+id: BACS_COMPLET_37
+type: knowledge
+domain: reglementaire
+title: Financement
+summary: '- ⬜ CEE fiche opération BACS préparée (n° opération, prestataire, économies
+  kWh estimées)
+
+  - ⬜ Dossier MaPrimeRénov tertiaire préparé (si éligible)
+
+  - ⬜ Demandes aides validées, engagements reçus (monta...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: '- ⬜ CEE fiche opération BACS préparée (n° opération, prestataire, économies
+  kWh estimées)
+
+  - ⬜ Dossier MaPrimeRénov tertiaire préparé (si éligible)
+
+  - ⬜ Demandes aides validées, engagements reçus (montants prévus)
+
+  - ⬜ Budget net après aides confirmé (impact trésorerie)'
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Financement
+  anchor: '#financement'
+  excerpt_short: '- ⬜ CEE fiche opération BACS préparée (n° opération, prestataire,
+    économies kWh estimées)
+
+    - ⬜ Dossie...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

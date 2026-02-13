@@ -1,0 +1,31 @@
+id: STOCKAGE_ACC_25
+type: rule
+domain: acc
+title: Checklists Implémentation (Téléchargeable)
+summary: "Checklist Pré-Montage ACC (5 points critiques) \nChecklist Dimensionnement\
+  \ Batterie (8 étapes) \nChecklist Installation & Mise en Service (12 points qualité)\
+  \ \nChecklist Exploitation Année 1 (10 actions ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Checklist Pré-Montage ACC (5 points critiques) \nChecklist Dimensionnement\
+  \ Batterie (8 étapes) \nChecklist Installation & Mise en Service (12 points qualité)\
+  \ \nChecklist Exploitation Année 1 (10 actions monitoring)"
+logic: null
+sources:
+- doc_id: STOCKAGE_ACC
+  label: Stockage et Autoconsommation Collective
+  section: Checklists Implémentation (Téléchargeable)
+  anchor: '#checklists-implmentation-tlchargeable'
+  excerpt_short: "Checklist Pré-Montage ACC (5 points critiques) \nChecklist Dimensionnement\
+    \ Batterie (8 étapes) \nCheck..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

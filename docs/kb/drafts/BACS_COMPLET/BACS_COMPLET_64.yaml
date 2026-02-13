@@ -1,0 +1,34 @@
+id: BACS_COMPLET_64
+type: rule
+domain: usages
+title: 5. Proof of Compliance Auto-Export
+summary: "- Dossier “Attestation BACS” généré PDF : \n- Audit conformité site (puissance,\
+  \ date deadline, status) \n- Dernier rapport inspection (date + URL doc) \n- Exemption\
+  \ TRI (si applicable) + calcul justifica..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Dossier “Attestation BACS” généré PDF : \n- Audit conformité site (puissance,\
+  \ date deadline, status) \n- Dernier rapport inspection (date + URL doc) \n- Exemption\
+  \ TRI (si applicable) + calcul justificatif \n- Contrat BACS signé + facture install\
+  \ \n- Documentation 10 ans archivée (checklist) \n- Une page résumé → “Conforme\
+  \ Y/N” signée PM (proof audit) \n- Cas d’usage : Audit externe/autorités → Dossier\
+  \ complet fourni 5 minutes"
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: 5. Proof of Compliance Auto-Export
+  anchor: '#5-proof-of-compliance-auto-export'
+  excerpt_short: "- Dossier “Attestation BACS” généré PDF : \n- Audit conformité site\
+    \ (puissance, date deadline, status..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

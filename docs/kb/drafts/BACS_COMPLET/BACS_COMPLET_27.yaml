@@ -1,0 +1,49 @@
+id: BACS_COMPLET_27
+type: knowledge
+domain: reglementaire
+title: 'Phase 1 : DIAGNOSTIC URGENT (Semaines 1-2) Étape Livrables Responsable Outils
+  Risques Audit conformité rapide Fiche site (puissance, équip., date instal., état
+  BACS) Gestionnaire + BET Fiche standardisée, visite site 2h Données puissance inexactes
+  Calcul Putile Tableaux puissance chauffage + climatisation, seuil dépassé confirmé
+  BET + Intégrateur Fiches équipements, plaques signalétiques Confusion systèmes distincts
+  vs réseau Audit TRI préalable Consommations 2 ans, tarifs énergie, devis BACS indicatif
+  BE audit + Intégrateur Facturation énergie, appels offres rapides Aides estimées
+  à défaut Risk score Si >290 kW + pas BACS 01/01/2025 = CRITICITÉ ROUGE PM projets
+  Checklist conformité Dépassement deadline imminent Décision stratégique BACS vs
+  exemption TRI vs mixte phasing Direction immobilier Matrice décision TRI/CAPEX Choix
+  tard = délai exécution'
+summary: 'GO/NO-GO : TRI > 10 ans justifié ? OUI = exemption possible → Doc TRI ;
+  NON = BACS obligatoire'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: 'GO/NO-GO : TRI > 10 ans justifié ? OUI = exemption possible → Doc TRI
+  ; NON = BACS obligatoire'
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: 'Phase 1 : DIAGNOSTIC URGENT (Semaines 1-2) Étape Livrables Responsable
+    Outils Risques Audit conformité rapide Fiche site (puissance, équip., date instal.,
+    état BACS) Gestionnaire + BET Fiche standardisée, visite site 2h Données puissance
+    inexactes Calcul Putile Tableaux puissance chauffage + climatisation, seuil dépassé
+    confirmé BET + Intégrateur Fiches équipements, plaques signalétiques Confusion
+    systèmes distincts vs réseau Audit TRI préalable Consommations 2 ans, tarifs énergie,
+    devis BACS indicatif BE audit + Intégrateur Facturation énergie, appels offres
+    rapides Aides estimées à défaut Risk score Si >290 kW + pas BACS 01/01/2025 =
+    CRITICITÉ ROUGE PM projets Checklist conformité Dépassement deadline imminent
+    Décision stratégique BACS vs exemption TRI vs mixte phasing Direction immobilier
+    Matrice décision TRI/CAPEX Choix tard = délai exécution'
+  anchor: '#phase-1-diagnostic-urgent-semaines-1-2-tape-livrables-responsable-outils-risques-audit-conformit-rapide-fiche-site-puissance-quip-date-instal-tat-bacs-gestionnaire-bet-fiche-standardise-visite-site-2h-donnes-puissance-inexactes-calcul-putile-tableaux-puissance-chauffage-climatisation-seuil-dpass-confirm-bet-intgrateur-fiches-quipements-plaques-signaltiques-confusion-systmes-distincts-vs-rseau-audit-tri-pralable-consommations-2-ans-tarifs-nergie-devis-bacs-indicatif-be-audit-intgrateur-facturation-nergie-appels-offres-rapides-aides-estimes-dfaut-risk-score-si-290-kw-pas-bacs-01012025-criticit-rouge-pm-projets-checklist-conformit-dpassement-deadline-imminent-dcision-stratgique-bacs-vs-exemption-tri-vs-mixte-phasing-direction-immobilier-matrice-dcision-tricapex-choix-tard-dlai-excution'
+  excerpt_short: 'GO/NO-GO : TRI > 10 ans justifié ? OUI = exemption possible → Doc
+    TRI ; NON = BACS obligatoire...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

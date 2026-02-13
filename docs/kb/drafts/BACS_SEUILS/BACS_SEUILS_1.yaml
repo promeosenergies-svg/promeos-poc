@@ -1,0 +1,37 @@
+id: BACS_SEUILS_1
+type: rule
+domain: reglementaire
+title: 1. CONTEXTE RÉGLEMENTAIRE OFFICIEL
+summary: Le Décret n° 2020-887 du 20 juillet 2020 (Legifrance) transposant la Directive
+  UE 2018/844 crée l’obligation d’installer des Systèmes d’Automatisation et de Contrôle
+  des Bâtiments (BACS) dans les bâti...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Le Décret n° 2020-887 du 20 juillet 2020 (Legifrance) transposant la\
+  \ Directive UE 2018/844 crée l’obligation d’installer des Systèmes d’Automatisation\
+  \ et de Contrôle des Bâtiments (BACS) dans les bâtiments tertiaires. Ce texte a\
+  \ été modifié par le Décret n° 2023-259 du 7 avril 2023 , qui introduit un seuil\
+  \ de puissance abaissé et des inspections périodiques obligatoires. \n\nRéférences\
+  \ légales : \n- Décret n° 2020-887 du 20 juillet 2020 — Legifrance 1 \n- Décret\
+  \ n° 2023-259 du 7 avril 2023 — Legifrance \n- Code de la Construction et de l’Habitation,\
+  \ articles R.175-1 à R.175-6 \n- Arrêté du 7 avril 2023 (Legifrance) — Modalités\
+  \ de calcul du TRI et inspections"
+logic: null
+sources:
+- doc_id: BACS_SEUILS
+  label: Decret BACS - Seuils, dates, exemptions
+  section: 1. CONTEXTE RÉGLEMENTAIRE OFFICIEL
+  anchor: '#1-contexte-rglementaire-officiel'
+  excerpt_short: Le Décret n° 2020-887 du 20 juillet 2020 (Legifrance) transposant
+    la Directive UE 2018/844 crée l’ob...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

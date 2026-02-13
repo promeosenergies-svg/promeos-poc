@@ -1,0 +1,28 @@
+id: BACS_COMPLET_10
+type: rule
+domain: reglementaire
+title: 'OBLIGATIONS FONCTIONNELLES MINIMALES : TERRAIN'
+summary: 'Tout système BACS doit garantir 5 capacités clés (article R.175-3 CCH) :'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: 'Tout système BACS doit garantir 5 capacités clés (article R.175-3 CCH)
+  :'
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: 'OBLIGATIONS FONCTIONNELLES MINIMALES : TERRAIN'
+  anchor: '#obligations-fonctionnelles-minimales-terrain'
+  excerpt_short: Tout système BACS doit garantir 5 capacités clés (article R.175-3
+    CCH) :...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

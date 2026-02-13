@@ -1,0 +1,43 @@
+id: LEVIERS_MARCHE_2025_2
+type: rule
+domain: usages
+title: A.1 – Définition et Rôles
+summary: 'ACC (Autoconsommation Collective) : Opération où au moins deux entités juridiques
+  distinctes partagent l’électricité produite localement par un ou plusieurs producteurs,
+  sans transiter par le réseau p...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "ACC (Autoconsommation Collective) : Opération où au moins deux entités\
+  \ juridiques distinctes partagent l’électricité produite localement par un ou plusieurs\
+  \ producteurs, sans transiter par le réseau public. Les consommateurs reçoivent\
+  \ l’électricité localement valorisée, réduisant leur facture de fournisseur pour\
+  \ cette part. 3 \n\nACC Étendue : Variante pour projets patrimoniaux (collectivités,\
+  \ bailleurs sociaux, organismes publics) avec seuils augmentés. \n\nRôles clés :\
+  \ \n- PMO (Personne Morale Organisatrice) : Structure juridique (association, SAS,\
+  \ SARL, etc.) qui regroupe participants et gère l’opération. Rôles : signature convention\
+  \ Enedis, gestion clés de répartition, facturation, conformité \n- Producteur(s)\
+  \ : Propriétaire(s) installation PV (ou autres EnR), raccordée au réseau public\
+  \ \n- Consommateur(s) : Entités (particuliers, entreprises, collectivités) participant\
+  \ au partage \n- GRD (Enedis) : Mesure production/conso 24h/24, calcule allocation\
+  \ officielle, met à disposition données \n- Fournisseur(s) de complément : Fournit\
+  \ électricité au-delà du partage local, collecte TURPE spécifique \n- Agrégateur/RE\
+  \ (Responsable d’Équilibre) : Gère équilibre pour producteur si > certains seuils"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: A.1 – Définition et Rôles
+  anchor: '#a1-dfinition-et-rles'
+  excerpt_short: 'ACC (Autoconsommation Collective) : Opération où au moins deux entités
+    juridiques distinctes partage...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,32 @@
+id: FLEX_EFFACEMENT_29
+type: knowledge
+domain: usages
+title: 5.1 Comment ça marche
+summary: 'Pilotage continu sur prix SPOT EPEX (marché journalier + intraday) sans
+  mécanisme réglementé spécifique. Signaux prix négatifs (surplus prod. renouvelable)
+  incitent : hausse consommation (IRVE recharg...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: 'Pilotage continu sur prix SPOT EPEX (marché journalier + intraday) sans
+  mécanisme réglementé spécifique. Signaux prix négatifs (surplus prod. renouvelable)
+  incitent : hausse consommation (IRVE recharge, froid accumulation) ; baisse (délestage
+  volontaire) ; transfert temporel (stock thermique).'
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: 5.1 Comment ça marche
+  anchor: '#51-comment-a-marche'
+  excerpt_short: Pilotage continu sur prix SPOT EPEX (marché journalier + intraday)
+    sans mécanisme réglementé spécifi...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

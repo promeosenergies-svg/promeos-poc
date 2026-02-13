@@ -1,0 +1,60 @@
+id: FLEX_EFFACEMENT_39
+type: rule
+domain: usages
+title: FAQ – 10 Questions Terrain
+summary: "Q1: Puis-je cumuler NEBEF + Réserves + Capacité ? \n✅ Oui, via agrégateur.\
+  \ Engagement capacité jour-pointe, NEBEF en complément heures non-engagées, réserves\
+  \ continu. Nécessite cohérence calendrier (pa..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Q1: Puis-je cumuler NEBEF + Réserves + Capacité ? \n✅ Oui, via agrégateur.\
+  \ Engagement capacité jour-pointe, NEBEF en complément heures non-engagées, réserves\
+  \ continu. Nécessite cohérence calendrier (pas double offres même heure). \n\nQ2:\
+  \ Quelle baseline est la plus “gagnante” pour NEBEF ? \n\U0001F3AF Rectangle double\
+  \ référence corrigée (défaut) rapide à homologuer. Si >3000 sites profilés, rectangle\
+  \ algébrique accepte 6h (vs. 2h) = fenêtres activations plus larges. Prévision/historique\
+  \ plus complexes mais robustes saisonnalité. \n\nQ3: Enedis vs. RTE : qui contrôle\
+  \ mes données courbe charge ? \n\U0001F4CA Enedis (GRD) collecte, stocke 3 ans.\
+  \ Accès : client + tiers confiance via API Enedis (consentement obligatoire). Agrégateur\
+  \ = tiers confiance (audit CRE). RTE = accès indirect via GRD pour NEBEF validation.\
+  \ \n\nQ4: J’ai obligation MA (EnR >10 MW). Puis-je réduire sans pénalité ? \n⚠️\
+  \ Obligation offres “hausse + baisse” quotidiennes. Baisse acceptée si dépôt valide.\
+  \ Sanction si pas de dépôt (€10k–100k/j). Baisse à prix très haut (€500/MWh) acceptée\
+  \ légalement mais “non-compétitive”. \n\nQ5: Combien coûte préparation participation\
+  \ NEBEF ? \n\U0001F4B0 Agrégateur : ~€5–15k études + agré­ment RTE. Client : ~€0\
+  \ (via agrégateur couvert). Infrastructure (GTB/API) : €10–50k one-shot si manquant.\
+  \ Revenu seuil : ~€50k/an (Break-even ~1 an). \n\nQ6: Pénalité baseline “contestée”\
+  \ = je perds tout revenue ? \n❌ Rarement total. RTE valide baseline ex-ante (avant\
+  \ activations). Contestations post = ajustements (ex. −20% si méthode partiellement\
+  \ invalide). Perte totale si fraude avérée (rare). \n\nQ7: Le nouveau mécanisme\
+  \ capacité (2026) : oui ou non NEBEF ? \n✅ Oui. Capacité = engagement certaines\
+  \ heures (jour-pointe). NEBEF = Offres reste année sur EPEX. Complémentaires, pas\
+  \ concurrents. \n\nQ8: Stockage thermique : où l’intégrer ? \n\U0001F9CA Tous mécanismes.\
+  \ NEBEF : idéal (charge nuit, restitue jour-pointe). Réserves : possible (modulation\
+  \ charge). Capacité : certifiable (contribution sécurité). Implicite : pilotage\
+  \ prix chauffage (hiver). \n\nQ9: Agrégateur : comment il fait ses bénéfices sur\
+  \ moi ? \n\U0001F4B5 Prend ~10–20% revenue NEBEF (négocié). Prime fixe participation\
+  \ réserves. Pas revenu si client n’active (sauf infras partagées). Alignement intérêts\
+  \ = bon indicateur sérieux. \n\nQ10: Timeline réaliste pour site 5 MW passer de\
+  \ “zéro” à “revenue-generating” ? \n\U0001F4C5 6–8 mois : Audit (2 sem.) → Agré­ment\
+  \ RTE (6 sem.) → Infrastructure tests (4 sem.) → Go-live NEBEF (J1). Réserves :\
+  \ +2 mois si certification aFRR. Capacité : attendre AL-1 prochaine (jan/avr)."
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: FAQ – 10 Questions Terrain
+  anchor: '#faq-10-questions-terrain'
+  excerpt_short: "Q1: Puis-je cumuler NEBEF + Réserves + Capacité ? \n✅ Oui, via agrégateur.\
+    \ Engagement capacité jour-p..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,38 @@
+id: MARCHE_ENERGIE_2025_2
+type: knowledge
+domain: usages
+title: B. Prix du Gaz Naturel
+summary: 'Marché plus stable mais structure tarifaire change : Profil Prix kWh HT
+  Abonnement annuel Accessibilité T1 (≤6k kWh/an) 0,1117€ HT 111,78€ Petits tertiaires
+  T2 (6k-300k kWh/an) 0,086€ HT 275,67€ PME t...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Marché plus stable mais structure tarifaire change : Profil Prix kWh\
+  \ HT Abonnement annuel Accessibilité T1 (≤6k kWh/an) 0,1117€ HT 111,78€ Petits tertiaires\
+  \ T2 (6k-300k kWh/an) 0,086€ HT 275,67€ PME tertiaire T3/T4 (>300k kWh) Sur-mesure\
+  \ Négociable Grands sites \n\nChocs structurels : \n- TVA abonnements : 5,5% → 20%\
+  \ (août 2025) = impact +14,5% sur partie fixe (exemple : abonnement 30€/mois → +4,35€)\
+  \ \n- Accise : 17,16 €/MWh (janvier 2025), stable \n- Terme stockage : +138% (avril\
+  \ 2025)—reflet tensions approvisionnement hiver \n\nImplication PROMEOS : Gaz devient\
+  \ moins prévisible. Sites gaz chauffage collectif : négocier contrats 3-5 ans avant\
+  \ hivers 2025-26 pour éviter pics saisonniers. Pompes à chaleur électriques deviennent\
+  \ comparables économiquement (si électricité reste 55€/MWh spot)."
+logic: null
+sources:
+- doc_id: MARCHE_ENERGIE_2025
+  label: Analyse marche energie France-Europe 2025
+  section: B. Prix du Gaz Naturel
+  anchor: '#b-prix-du-gaz-naturel'
+  excerpt_short: 'Marché plus stable mais structure tarifaire change : Profil Prix
+    kWh HT Abonnement annuel Accessibil...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

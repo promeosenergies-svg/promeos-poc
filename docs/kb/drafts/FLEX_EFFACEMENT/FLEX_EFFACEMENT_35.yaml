@@ -1,0 +1,31 @@
+id: FLEX_EFFACEMENT_35
+type: knowledge
+domain: reglementaire
+title: Architecture Type [Sites Clients] ← Données
+summary: "↓ (Linky/Modbus)\n[GTB/EMS] ← Données (10–30 min)\n ↓ (Agrégation)\n[Agrégateur\
+  \ Platform] (RTE APIs, EPEX connexion, bases données)\n ├→ [RTE - NEBEF/MA/Capacité]\n\
+  \ ├→ [EPEX SPOT/INTRADAY]\n └→ [Enedis/GRD ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "↓ (Linky/Modbus)\n[GTB/EMS] ← Données (10–30 min)\n ↓ (Agrégation)\n\
+  [Agrégateur Platform] (RTE APIs, EPEX connexion, bases données)\n ├→ [RTE - NEBEF/MA/Capacité]\n\
+  \ ├→ [EPEX SPOT/INTRADAY]\n └→ [Enedis/GRD - Courbes charge, données clients]"
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: Architecture Type [Sites Clients] ← Données
+  anchor: '#architecture-type-sites-clients-donnes'
+  excerpt_short: "↓ (Linky/Modbus)\n[GTB/EMS] ← Données (10–30 min)\n ↓ (Agrégation)\n\
+    [Agrégateur Platform] (RTE APIs, EP..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

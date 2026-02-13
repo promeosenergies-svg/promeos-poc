@@ -1,0 +1,31 @@
+id: BACS_COMPLET_3
+type: knowledge
+domain: reglementaire
+title: Équivalences terminologiques
+summary: "- BACS = Building Automation Control System (anglais) \n- GTB = Gestion\
+  \ Technique du Bâtiment (français) \n- BMS = Building Management System (anglais\
+  \ alternatif)"
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- BACS = Building Automation Control System (anglais) \n- GTB = Gestion\
+  \ Technique du Bâtiment (français) \n- BMS = Building Management System (anglais\
+  \ alternatif)"
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Équivalences terminologiques
+  anchor: '#quivalences-terminologiques'
+  excerpt_short: "- BACS = Building Automation Control System (anglais) \n- GTB =\
+    \ Gestion Technique du Bâtiment (frança..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

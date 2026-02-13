@@ -1,0 +1,42 @@
+id: DT_SYNTHESE_19
+type: rule
+domain: facturation
+title: CONCLUSION
+summary: "Le décret tertiaire 2025 n’est plus une menace, c’est une opportunité pour\
+  \ PROMEOS : \n- Cadre finalisé : Fin de l’incertitude réglementaire. PROMEOS peut\
+  \ investir avec visibilité 5 ans. \n- ROI démontr..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Le décret tertiaire 2025 n’est plus une menace, c’est une opportunité\
+  \ pour PROMEOS : \n- Cadre finalisé : Fin de l’incertitude réglementaire. PROMEOS\
+  \ peut investir avec visibilité 5 ans. \n- ROI démontrables : Travaux énergétiques\
+  \ génèrent 5-8% réductions factures annuelles. CEE/MaPrimeRénov financent 30-50%\
+  \ CAPEX. \n- Valeur patrimoniale : Bâtiments conformes 2030 = attractivité occupants,\
+  \ prime location, facilité refinancement. \n- Avantage concurrentiel : Promoteur\
+  \ immobilier affichant performance énergétique certifiée 2030 = différenciation\
+  \ marché résidentiel/tertiaire. \n\nDélai critique : 30 septembre 2026 pour déclaration\
+  \ 2025. La fenêtre 2026 doit servir à cristalliser stratégie d’investissement pour\
+  \ boucler 40% réductions avant fin 2030. \n\nPour support technique OPERAT et modulations\
+  \ : Contacter ADEME (ademe.fr)Pour financements : Référer MaPrimeRénov et CEE dès\
+  \ audit lancé (6-9 mois avant travaux) \n\nDocument préparé janvier 2026 | Décret\
+  \ tertiaire décret n°2019-771, arrêtés VAL I-VI Décret tertiaire _ OPERAT — obligations\
+  \ 2026 et 20"
+logic: null
+sources:
+- doc_id: DT_SYNTHESE
+  label: Decret Tertiaire - Synthese PROMEOS
+  section: CONCLUSION
+  anchor: '#conclusion'
+  excerpt_short: "Le décret tertiaire 2025 n’est plus une menace, c’est une opportunité\
+    \ pour PROMEOS : \n- Cadre finali..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

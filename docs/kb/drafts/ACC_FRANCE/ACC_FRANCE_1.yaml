@@ -1,0 +1,45 @@
+id: ACC_FRANCE_1
+type: rule
+domain: usages
+title: 1. Définitions & Architecture Légale
+summary: 'L’ autoconsommation collective (article L315-2, Code de l’énergie) est définie
+  comme : « opération permettant à un ou plusieurs producteurs et un ou plusieurs
+  consommateurs finals de partager localeme...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "L’ autoconsommation collective (article L315-2, Code de l’énergie) est\
+  \ définie comme : « opération permettant à un ou plusieurs producteurs et un ou\
+  \ plusieurs consommateurs finals de partager localement l’électricité produite,\
+  \ au sein d’une personne morale organisatrice (PMO) ». 1 2 3 \n\nDeux périmètres\
+  \ coexistent : 4 5 6 Élément ACC Simple (même bâtiment) ACC Étendue (multi-sites)\
+  \ Critère géographique Points injection/soutirage au « même bâtiment » Distance\
+  \ max. 2 km (baseline); 20 km possible sur dérogation Puissance cumulée 3 MW (baseline\
+  \ historique) 5 MW (depuis 6 mars 2025) ; 10 MW dérogation collectivités Réglementation\
+  \ L315-2 Code énergie Arrêté 21 nov. 2019 + modifié 21 fév. 2025 Participants Illimité\
+  \ (producteurs + consommateurs) Idem Cas d’usage Copropriétés, bailleur monolithe\
+  \ Parcs activités, quartiers, multi-communes Obligation PMO Oui, obligatoire Oui,\
+  \ toujours obligatoire (sauf exc. bailleur social) \n\nArrêté pivot du 21 février\
+  \ 2025 (publié JO 5 mars 2025) : 7 8 9 10 \n- ✅ Augmentation 3 MW → 5 MW pour ACC\
+  \ étendue métropole continentale \n- ✅ Dérogation 10 MW pour communes/EPCI à fiscalité\
+  \ propre (si tous acteurs = mission service public ou SEM locales) \n- ⚠️ CRE avait\
+  \ préconisé 8 MW , mais gouvernement a retenu 10 MW → crédibilité politique signale\
+  \ engagement fort ACC"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: 1. Définitions & Architecture Légale
+  anchor: '#1-dfinitions-architecture-lgale'
+  excerpt_short: 'L’ autoconsommation collective (article L315-2, Code de l’énergie)
+    est définie comme : « opération p...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

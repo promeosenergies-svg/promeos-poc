@@ -6,7 +6,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ShieldCheck, BadgeEuro, AlertTriangle, ArrowRight, Scan, Clock,
-  Zap, Upload, CheckCircle2, Database,
+  Zap, Upload, CheckCircle2, Database, FileText,
 } from 'lucide-react';
 import { Card, CardBody, Badge, Button, SkeletonCard, TrustBadge } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
@@ -149,18 +149,23 @@ export default function CommandCenter() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Command Center</h2>
-          <p className="text-sm text-gray-500 mt-0.5">{org.nom} &middot; {scopedSites.length} sites &middot; Derniere analyse: aujourd'hui</p>
+          <h2 className="text-xl font-bold text-gray-900">Tableau de bord</h2>
+          <p className="text-sm text-gray-500 mt-0.5">Synthèse 2 minutes : conformité, pertes, actions — {org.nom} · {scopedSites.length} sites</p>
         </div>
-        {!hasSites ? (
-          <Button onClick={() => navigate('/import')}>
-            <Upload size={16} /> Importer mes sites
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" size="sm" onClick={() => navigate('/cockpit-2min')}>
+            <FileText size={14} /> Briefing 2 min
           </Button>
-        ) : (
-          <Button onClick={() => navigate('/conformite')}>
-            <Scan size={16} /> Lancer un scan
-          </Button>
-        )}
+          {!hasSites ? (
+            <Button onClick={() => navigate('/import')}>
+              <Upload size={16} /> Importer mes sites
+            </Button>
+          ) : (
+            <Button onClick={() => navigate('/conformite')}>
+              <Scan size={16} /> Lancer un scan
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* 3 KPI cards */}

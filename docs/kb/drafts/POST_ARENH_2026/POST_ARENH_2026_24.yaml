@@ -1,0 +1,33 @@
+id: POST_ARENH_2026_24
+type: knowledge
+domain: reglementaire
+title: Respect du Droit Européen
+summary: Le dispositif post-ARENH doit respecter les règles de concurrence européennes
+  et les plafonds sur les aides d’État. La Commission européenne a notamment validé
+  la fin de l’ARENH au 31 décembre 2025 co...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: Le dispositif post-ARENH doit respecter les règles de concurrence européennes
+  et les plafonds sur les aides d’État. La Commission européenne a notamment validé
+  la fin de l’ARENH au 31 décembre 2025 comme compatible avec ses directives, mais
+  le VNU, de par sa nature de redistribution ex-post basée sur les revenus d’EDF,
+  reste sujet à une surveillance étroite.
+logic: null
+sources:
+- doc_id: POST_ARENH_2026
+  label: Post-ARENH 2026
+  section: Respect du Droit Européen
+  anchor: '#respect-du-droit-europen'
+  excerpt_short: Le dispositif post-ARENH doit respecter les règles de concurrence
+    européennes et les plafonds sur le...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

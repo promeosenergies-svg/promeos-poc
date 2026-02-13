@@ -1,0 +1,32 @@
+id: STRATEGIE_NEBCO_25
+type: knowledge
+domain: reglementaire
+title: 'Décision 2: Focus Segment V1'
+summary: "Recommandation : ✅ RETAIL PRIMARY (Carrefour/Burger King touchpoints); Tertiaire\
+  \ SECONDARY \n- Why : Mature market (DEET/BACS pressure), centralized GTB, existing\
+  \ advizeo clients \n- Action : Pilot audi..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Recommandation : ✅ RETAIL PRIMARY (Carrefour/Burger King touchpoints);\
+  \ Tertiaire SECONDARY \n- Why : Mature market (DEET/BACS pressure), centralized\
+  \ GTB, existing advizeo clients \n- Action : Pilot audit = Carrefour 5 magasins\
+  \ ; roadmap 20–50 sites Q2–Q3 2026"
+logic: null
+sources:
+- doc_id: STRATEGIE_NEBCO
+  label: Analyse strategique NEBCO
+  section: 'Décision 2: Focus Segment V1'
+  anchor: '#dcision-2-focus-segment-v1'
+  excerpt_short: "Recommandation : ✅ RETAIL PRIMARY (Carrefour/Burger King touchpoints);\
+    \ Tertiaire SECONDARY \n- Why : ..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,36 @@
+id: ARRETE_ACC_2025_10
+type: knowledge
+domain: reglementaire
+title: 3.3 Procédure de demande de dérogation
+summary: "Pour tout projet nécessitant une dérogation (distance > 2 km ou puissance\
+  \ > 5 MW) : \n\nCanal administratif: \n- Plateforme numérique : https://demarche.numerique.gouv.fr\
+  \ (formulaire dédié aux dérogation..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Pour tout projet nécessitant une dérogation (distance > 2 km ou puissance\
+  \ > 5 MW) : \n\nCanal administratif: \n- Plateforme numérique : https://demarche.numerique.gouv.fr\
+  \ (formulaire dédié aux dérogations) 24 \n- Demande motivée adressée au ministère\
+  \ chargé de l’Énergie \n- Examen sur critères objectifs énoncés dans l’arrêté \n\
+  \nDélais et traitement: \n- Aucun délai légal spécifié dans l’arrêté \n- Pratique\
+  \ administrative : plusieurs semaines à quelques mois selon complexité \n- Pour\
+  \ dérogation EPCI : critères objectifs, pas d’appréciation discrétionnaire du ministère\
+  \ 25"
+logic: null
+sources:
+- doc_id: ARRETE_ACC_2025
+  label: Arrete 21 fevrier 2025 - ACC 5MW/10MW
+  section: 3.3 Procédure de demande de dérogation
+  anchor: '#33-procdure-de-demande-de-drogation'
+  excerpt_short: "Pour tout projet nécessitant une dérogation (distance > 2 km ou\
+    \ puissance > 5 MW) : \n\nCanal administ..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

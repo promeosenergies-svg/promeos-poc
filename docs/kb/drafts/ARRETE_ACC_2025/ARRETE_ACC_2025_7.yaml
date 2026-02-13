@@ -1,0 +1,34 @@
+id: ARRETE_ACC_2025_7
+type: knowledge
+domain: reglementaire
+title: 2.4 Dérogation EPCI — Périmètre dérogatoire illimité
+summary: La dérogation créée par l’arrêté du 21 février 2025 pour les communes et
+  EPCI permet un périmètre sans limite géographique explicite, tant qu’il reste exclusivement
+  au sein du ressort de l’EPCI partic...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "La dérogation créée par l’arrêté du 21 février 2025 pour les communes\
+  \ et EPCI permet un périmètre sans limite géographique explicite, tant qu’il reste\
+  \ exclusivement au sein du ressort de l’EPCI participant. Cela signifie : 19 \n\
+  - Un EPCI de plusieurs centaines de km² peut englober l’ensemble de son territoire\
+  \ \n- Aucune limite km n’est spécifiée dans le texte \n- Le critère délimitant est\
+  \ la frontière administrative de la collectivité, non une distance"
+logic: null
+sources:
+- doc_id: ARRETE_ACC_2025
+  label: Arrete 21 fevrier 2025 - ACC 5MW/10MW
+  section: 2.4 Dérogation EPCI — Périmètre dérogatoire illimité
+  anchor: '#24-drogation-epci-primtre-drogatoire-illimit'
+  excerpt_short: La dérogation créée par l’arrêté du 21 février 2025 pour les communes
+    et EPCI permet un périmètre sa...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

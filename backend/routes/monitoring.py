@@ -5,6 +5,7 @@ PROMEOS - Routes API Monitoring (Electric Consumption Mastery)
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from database import get_db
+from middleware.auth import get_optional_auth, AuthContext
 from models import (
     Site, Meter, MeterReading, MonitoringSnapshot, MonitoringAlert,
     AlertStatus, AlertSeverity
@@ -40,9 +41,12 @@ class AlertResolveRequest(BaseModel):
 def get_monitoring_kpis(
     site_id: int = Query(...),
     meter_id: Optional[int] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Get latest monitoring KPIs for a site/meter."""
+    if auth and auth.site_ids is not None and site_id not in auth.site_ids:
+        raise HTTPException(status_code=403, detail="Site not in auth scope")
     query = db.query(MonitoringSnapshot).filter_by(site_id=site_id)
     if meter_id:
         query = query.filter_by(meter_id=meter_id)
@@ -95,10 +99,13 @@ def list_snapshots(
     site_id: Optional[int] = None,
     meter_id: Optional[int] = None,
     limit: int = Query(20, ge=1, le=100),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """List monitoring snapshots with optional filters."""
     query = db.query(MonitoringSnapshot)
+    if auth and auth.site_ids is not None:
+        query = query.filter(MonitoringSnapshot.site_id.in_(auth.site_ids))
     if site_id:
         query = query.filter_by(site_id=site_id)
     if meter_id:
@@ -129,11 +136,14 @@ def list_alerts(
     status: Optional[str] = None,
     severity: Optional[str] = None,
     limit: int = Query(50, ge=1, le=200),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """List monitoring alerts with optional filters."""
     query = db.query(MonitoringAlert)
 
+    if auth and auth.site_ids is not None:
+        query = query.filter(MonitoringAlert.site_id.in_(auth.site_ids))
     if site_id:
         query = query.filter_by(site_id=site_id)
     if status:

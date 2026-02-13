@@ -1,0 +1,32 @@
+id: DT_OPERAT_2026_12
+type: rule
+domain: usages
+title: '31 décembre 2030 : Bilan décennal'
+summary: "Les assujettis doivent avoir atteint au minimum l’une des deux conditions\
+  \ : \n- Réduction de −40% en valeur relative vs année de référence, OU \n- Seuil\
+  \ de consommation fixé en valeur absolue (Cabs) sel..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Les assujettis doivent avoir atteint au minimum l’une des deux conditions\
+  \ : \n- Réduction de −40% en valeur relative vs année de référence, OU \n- Seuil\
+  \ de consommation fixé en valeur absolue (Cabs) selon leur catégorie d’activité\
+  \ 30 31"
+logic: null
+sources:
+- doc_id: DT_OPERAT_2026
+  label: Decret Tertiaire / OPERAT - Obligations 2026
+  section: '31 décembre 2030 : Bilan décennal'
+  anchor: '#31-dcembre-2030-bilan-dcennal'
+  excerpt_short: "Les assujettis doivent avoir atteint au minimum l’une des deux conditions\
+    \ : \n- Réduction de −40% en ..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

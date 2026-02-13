@@ -1,0 +1,50 @@
+id: LOI_APER_10
+type: rule
+domain: usages
+title: 'PHASE 2 : PRIORISATION & ÉTUDE DE FAISABILITÉ (Semaines 4-8)'
+summary: 2.1 Priorisation sites Critère Score Exemple Urgence réglementaire 1-3 Parking
+  >10k m² 2026 = 3 (urgent) ; Toiture 2028 = 1 (moins urgent) Potentiel gisement PV
+  1-3 Site sud France + toiture large dég...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "2.1 Priorisation sites Critère Score Exemple Urgence réglementaire 1-3\
+  \ Parking >10k m² 2026 = 3 (urgent) ; Toiture 2028 = 1 (moins urgent) Potentiel\
+  \ gisement PV 1-3 Site sud France + toiture large dégagée = 3 ; Site nord + ombres\
+  \ = 1 OPEX réduction possible 1-3 Facture électricité >100 k€/an = 3 ; <30 k€ =\
+  \ 1 Facilité raccordement 1-3 GRD proche, capacité réseau = 3 ; Délai raccordement\
+  \ >2 ans = 1 Propriété/contrôle 1-3 Propriété pleine + exploitation directe = 3\
+  \ ; Location immeuble locataire = 1 \n\n→ Sélectionner TOP 3-5 sites pour études\
+  \ approfondie \n\n2.2 Étude gisement PV (par site) \n- Technique : Irradiation (kWh/m²/an)\
+  \ ; ombres (arbres, bâtiments) ; structure existante support ; accès toiture/parking\
+  \ \n- Capacité réseau : Schéma raccordement GRD (puissance dispo, délai, coûts infrastructure)\
+  \ \n- Urbanisme : Permis/déclaration requise ? Contraintes patrimoine ? Zone protégée\
+  \ ? \n- Économique : Capex (€/kWc) + OPEX maintenance ; revenus (autoconso + surplus\
+  \ vente ou obligation achat) \n\n→ TRI, payback, IRR estimés \n\n2.3 Modèles économiques\
+  \ envisagés Modèle Capex OPEX Revenu Avantage Autoconsommation pure (propriétaire)\
+  \ Entreprise finance Entreprise gère Réduction facture Flexibilité max Tiers-financement\
+  \ (locationof ombrières) Prestataire finance Prestataire gère Loyer fixe 15+ ans\
+  \ Capex 0 ; risque tiers-défaillance ACC multi-sites Producteur finance PMO gère\
+  \ + GRD Surplus vente + compta Complexité ACC PPA + vente surplus Producteur finance\
+  \ Producteur gère Contrat PPA 15-20 ans + obligation achat Sécurité revenu AO CRE\
+  \ Producteur finance Producteur gère Complément rémunération 10-15 ans Subvention\
+  \ État (mais concurrentiel) \n\n→ Sélectionner modèle par site (selon propriété,\
+  \ OPEX capacité, objectif ESG)"
+logic: null
+sources:
+- doc_id: LOI_APER
+  label: Loi APER - Acceleration Production Energies Renouvelables
+  section: 'PHASE 2 : PRIORISATION & ÉTUDE DE FAISABILITÉ (Semaines 4-8)'
+  anchor: '#phase-2-priorisation-tude-de-faisabilit-semaines-4-8'
+  excerpt_short: 2.1 Priorisation sites Critère Score Exemple Urgence réglementaire
+    1-3 Parking >10k m² 2026 = 3 (urg...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

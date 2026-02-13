@@ -1,0 +1,36 @@
+id: ACC_FRANCE_18
+type: rule
+domain: acc
+title: D. Copropriétés Résidentielles (5–10%, en croissance) 67 68
+summary: "Cas type : Immeuble 50–100 lgt privés, assemblée générale vote ACC \n\n\
+  Modèle : \n- PMO = syndic ou association AC dédiée \n- PV toiture (~30 kWc typique)\
+  \ \n- Participants = consentants seulement (pas obli..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Cas type : Immeuble 50–100 lgt privés, assemblée générale vote ACC \n\
+  \nModèle : \n- PMO = syndic ou association AC dédiée \n- PV toiture (~30 kWc typique)\
+  \ \n- Participants = consentants seulement (pas obligation) \n\nDéfis majeurs :\
+  \ \n- Vote majorité simple (art. 25 loi 1965) exige concertation \n- Taux participation\
+  \ : moy. 40–60% (vs 95% bailleurs) \n- Litiges : facturation, charge commune vs\
+  \ privative \n- Fatigue démocratique : renouvellement AC chaque an coûteux administrativement\
+  \ \n\nROI moins attractif : payback 10–15 ans → frilosité acheteurs énergies renouvelables\
+  \ classe moyenne"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: D. Copropriétés Résidentielles (5–10%, en croissance) 67 68
+  anchor: '#d-coproprits-rsidentielles-510-en-croissance-67-68'
+  excerpt_short: "Cas type : Immeuble 50–100 lgt privés, assemblée générale vote ACC\
+    \ \n\nModèle : \n- PMO = syndic ou ass..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,6 +1,6 @@
 /**
  * PROMEOS - Bill Intelligence Page (/bill-intel)
- * Sprint 7: invoices overview, anomaly insights, seed demo, audit-all.
+ * Sprint 7.1: invoices overview, anomaly insights with workflow, seed demo, audit-all.
  */
 import { useState, useEffect } from 'react';
 import {
@@ -10,11 +10,12 @@ import {
   auditAllInvoices,
   seedBillingDemo,
   importInvoicesCsv,
+  resolveBillingInsight,
 } from '../services/api';
 import { Card, CardBody, Badge, Button, TrustBadge } from '../ui';
 import {
   FileText, AlertTriangle, CheckCircle, Upload, Play, Download,
-  DollarSign, Zap, TrendingUp, RefreshCw,
+  DollarSign, Zap, TrendingUp, RefreshCw, CheckCircle2,
 } from 'lucide-react';
 import { track } from '../services/tracker';
 
@@ -43,6 +44,28 @@ const STATUS_COLORS = {
   archived: 'bg-gray-100 text-gray-500',
 };
 
+const INSIGHT_STATUS_COLORS = {
+  open: 'bg-yellow-100 text-yellow-800',
+  ack: 'bg-blue-100 text-blue-800',
+  resolved: 'bg-green-100 text-green-800',
+  false_positive: 'bg-gray-100 text-gray-500',
+};
+
+const INSIGHT_STATUS_LABELS = {
+  open: 'Ouvert',
+  ack: 'Pris en charge',
+  resolved: 'Resolu',
+  false_positive: 'Faux positif',
+};
+
+const INSIGHT_FILTER_OPTIONS = [
+  { value: 'all', label: 'Tous' },
+  { value: 'open', label: 'Ouverts' },
+  { value: 'ack', label: 'Pris en charge' },
+  { value: 'resolved', label: 'Resolus' },
+  { value: 'false_positive', label: 'Faux positifs' },
+];
+
 export default function BillIntelPage() {
   const [summary, setSummary] = useState(null);
   const [insights, setInsights] = useState([]);
@@ -50,13 +73,15 @@ export default function BillIntelPage() {
   const [loading, setLoading] = useState(false);
   const [auditing, setAuditing] = useState(false);
   const [seeding, setSeeding] = useState(false);
+  const [insightFilter, setInsightFilter] = useState('all');
 
   async function fetchData() {
     setLoading(true);
     try {
+      const params = insightFilter !== 'all' ? { status: insightFilter } : {};
       const [s, i, inv] = await Promise.all([
         getBillingSummary(),
-        getBillingInsights(),
+        getBillingInsights(params),
         getBillingInvoices(),
       ]);
       setSummary(s);
@@ -68,7 +93,7 @@ export default function BillIntelPage() {
     setLoading(false);
   }
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(); }, [insightFilter]);
 
   async function handleSeedDemo() {
     setSeeding(true);
@@ -101,6 +126,14 @@ export default function BillIntelPage() {
     e.target.value = '';
   }
 
+  async function handleResolveInsight(insightId) {
+    try {
+      await resolveBillingInsight(insightId);
+      track('billing_insight_resolved', { insight_id: insightId });
+      await fetchData();
+    } catch { /* ignore */ }
+  }
+
   const hasData = summary && summary.total_invoices > 0;
 
   return (
@@ -108,8 +141,8 @@ export default function BillIntelPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Bill Intelligence</h2>
-          <p className="text-sm text-gray-500 mt-0.5">Shadow billing simplifie + detection d'anomalies</p>
+          <h2 className="text-xl font-bold text-gray-900">Facturation</h2>
+          <p className="text-sm text-gray-500 mt-0.5">Shadow billing, TURPE/ATRD/ATRT, écarts & anomalies</p>
         </div>
         <div className="flex items-center gap-2">
           <label className="inline-flex items-center gap-2 cursor-pointer">
@@ -167,39 +200,80 @@ export default function BillIntelPage() {
         </Card>
       )}
 
-      {/* Insights */}
-      {insights.length > 0 && (
+      {/* Insights with workflow filter */}
+      {insights.length > 0 || insightFilter !== 'all' ? (
         <div>
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">
-            Anomalies detectees ({insights.length})
-          </h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-gray-700">
+              Anomalies detectees ({insights.length})
+            </h3>
+            <div className="flex items-center gap-1">
+              {INSIGHT_FILTER_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => setInsightFilter(opt.value)}
+                  className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                    insightFilter === opt.value
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="space-y-2">
-            {insights.map((insight) => (
-              <Card key={insight.id} className="border-l-4 border-l-red-300">
-                <CardBody className="flex items-center gap-4">
-                  <AlertTriangle size={18} className={insight.severity === 'critical' ? 'text-red-600' : insight.severity === 'high' ? 'text-orange-600' : 'text-amber-500'} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-900">
-                        {TYPE_LABELS[insight.type] || insight.type}
-                      </span>
-                      <Badge status={SEVERITY_BADGE[insight.severity] || 'neutral'}>
-                        {insight.severity}
-                      </Badge>
+            {insights.map((insight) => {
+              const istatus = insight.insight_status || 'open';
+              return (
+                <Card key={insight.id} className="border-l-4 border-l-red-300">
+                  <CardBody className="flex items-center gap-4">
+                    <AlertTriangle size={18} className={insight.severity === 'critical' ? 'text-red-600' : insight.severity === 'high' ? 'text-orange-600' : 'text-amber-500'} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-900">
+                          {TYPE_LABELS[insight.type] || insight.type}
+                        </span>
+                        <Badge status={SEVERITY_BADGE[insight.severity] || 'neutral'}>
+                          {insight.severity}
+                        </Badge>
+                        <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${INSIGHT_STATUS_COLORS[istatus] || INSIGHT_STATUS_COLORS.open}`}>
+                          {INSIGHT_STATUS_LABELS[istatus] || istatus}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-0.5 truncate">{insight.message}</p>
+                      {insight.owner && (
+                        <p className="text-xs text-gray-400 mt-0.5">Responsable: {insight.owner}</p>
+                      )}
                     </div>
-                    <p className="text-xs text-gray-500 mt-0.5 truncate">{insight.message}</p>
-                  </div>
-                  {insight.estimated_loss_eur > 0 && (
-                    <span className="text-sm font-bold text-red-600 whitespace-nowrap">
-                      {insight.estimated_loss_eur.toLocaleString()} EUR
-                    </span>
-                  )}
-                </CardBody>
-              </Card>
-            ))}
+                    {insight.estimated_loss_eur > 0 && (
+                      <span className="text-sm font-bold text-red-600 whitespace-nowrap">
+                        {insight.estimated_loss_eur.toLocaleString()} EUR
+                      </span>
+                    )}
+                    {istatus !== 'resolved' && istatus !== 'false_positive' && (
+                      <button
+                        onClick={() => handleResolveInsight(insight.id)}
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium
+                          text-green-700 bg-green-50 hover:bg-green-100 transition-colors whitespace-nowrap"
+                        title="Marquer comme resolu"
+                      >
+                        <CheckCircle2 size={14} /> Resolu
+                      </button>
+                    )}
+                  </CardBody>
+                </Card>
+              );
+            })}
+            {insights.length === 0 && insightFilter !== 'all' && (
+              <p className="text-sm text-gray-400 text-center py-4">
+                Aucune anomalie avec le statut "{INSIGHT_FILTER_OPTIONS.find(o => o.value === insightFilter)?.label}".
+              </p>
+            )}
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* Invoices table */}
       {invoices.length > 0 && (

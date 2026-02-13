@@ -36,13 +36,14 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 > | Connecteurs externes (RTE, PVGIS live ; Enedis, Meteo stubs) | Partiel |
 > | Watchers veille reglementaire (Legifrance, CRE, RTE RSS) | Stable |
 > | Couche IA (5 agents, mode stub sans cle API) | Stable |
-> | Authentification / RBAC | Non implemente |
+> | Authentification / IAM (JWT + 11 roles + scopes) | Stable -- 61 tests |
 
 > **Disclaimer**
 >
 > Ce depot est un **proof-of-concept** (POC). Il n'est pas prevu pour la production :
-> pas d'authentification, pas de rate-limiting, SQLite en mono-fichier, CORS ouvert.
-> Les donnees de demo sont synthetiques (120 sites fictifs).
+> pas de rate-limiting, SQLite en mono-fichier, CORS ouvert.
+> Authentification IAM implementee (JWT + scopes hierarchiques + 11 roles metier).
+> Les donnees de demo sont synthetiques (120 sites fictifs, 10 personas IAM).
 
 ---
 
@@ -51,7 +52,7 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 
 - **Backend FastAPI** avec 66 endpoints, 20+ modeles SQLAlchemy, 4 moteurs de regles reglementaires, 5 connecteurs de donnees, 4 watchers de veille, 5 agents IA (stub).
 - **Frontend React 18 + Tailwind + Vite** avec 8 pages : Dashboard, Cockpit Executif, Detail Site, Plan d'action, RegOps, Conso & Usages, Connecteurs, Veille Reglementaire.
-- **138 tests passent**, seed de 120 sites en une commande, demo operationnelle en 2 minutes.
+- **770 tests passent** (709 baseline + 61 IAM), seed de 120 sites + 10 personas IAM en une commande, demo operationnelle en 2 minutes.
 
 ---
 
@@ -216,7 +217,9 @@ Le fichier `backend/.env.example` contient toutes les variables :
 | `FRONTEND_URL` | `http://localhost:5173` | URL du frontend (CORS) |
 | `SEED_NB_SITES` | `120` | Nombre de sites generes par le seed |
 | `DEBUG` | `True` | Mode debug |
-| `SECRET_KEY` | `your-secret-key...` | Cle JWT (non utilise dans le POC) |
+| `SECRET_KEY` | `your-secret-key...` | Cle JWT legacy |
+| `PROMEOS_DEMO_MODE` | `true` | Mode demo (auth optionnelle). `false` = JWT requis |
+| `PROMEOS_JWT_SECRET` | `dev-secret-change-me` | Secret HMAC pour signer les JWT |
 
 Pour activer l'IA (optionnel) : ajouter `AI_API_KEY=sk-ant-...` dans `.env`.
 Sans cle, les agents IA fonctionnent en **mode stub** (reponse generique).
@@ -406,6 +409,61 @@ Documentation Swagger complete : `http://localhost:8000/docs`
 
 ---
 
+<a id="iam"></a>
+## IAM — Authentification & Autorisation
+
+### Mode demo (defaut)
+
+`PROMEOS_DEMO_MODE=true` — l'API fonctionne sans authentification (backward compatible).
+Si un token JWT est fourni, le filtrage par scope s'applique.
+
+### Mode authentifie
+
+```bash
+export PROMEOS_DEMO_MODE=false
+export PROMEOS_JWT_SECRET="votre-secret-256-bits"
+```
+
+### Personas demo (10 users)
+
+| Email               | Role             | Scope                        | Password |
+|---------------------|------------------|------------------------------|----------|
+| sophie@atlas.demo   | DG/Owner         | ORG (tout)                   | demo2024 |
+| marc@atlas.demo     | DSI/Admin        | ORG (tout)                   | demo2024 |
+| claire@atlas.demo   | DAF              | ORG (tout)                   | demo2024 |
+| thomas@atlas.demo   | Acheteur         | ORG (tout)                   | demo2024 |
+| nadia@atlas.demo    | Resp. Conformite | ORG (tout)                   | demo2024 |
+| lucas@atlas.demo    | Energy Manager   | ORG (tout)                   | demo2024 |
+| julie@atlas.demo    | Resp. Immobilier | ENTITE Atlas IDF             | demo2024 |
+| pierre@atlas.demo   | Resp. Site       | SITE Tour Atlas              | demo2024 |
+| karim@atlas.demo    | Prestataire      | SITE Tour Atlas + DC (J+90)  | demo2024 |
+| emma@atlas.demo     | Auditeur         | ORG (lecture seule)          | demo2024 |
+
+### Endpoints IAM
+
+| Methode | Path                              | Description                 |
+|---------|-----------------------------------|-----------------------------|
+| POST    | /api/auth/login                   | Login → JWT                 |
+| POST    | /api/auth/refresh                 | Refresh token               |
+| GET     | /api/auth/me                      | Profil + role + scopes      |
+| POST    | /api/auth/logout                  | Logout (audit)              |
+| PUT     | /api/auth/password                | Changer mot de passe        |
+| POST    | /api/auth/switch-org              | Changer d'organisation      |
+| POST    | /api/auth/impersonate             | Impersonation (admin/demo)  |
+| GET     | /api/auth/audit                   | Journal d'audit (admin)     |
+| GET     | /api/admin/users                  | Liste utilisateurs          |
+| POST    | /api/admin/users                  | Creer utilisateur           |
+| PATCH   | /api/admin/users/{id}             | Modifier utilisateur        |
+| PUT     | /api/admin/users/{id}/role        | Changer role                |
+| PUT     | /api/admin/users/{id}/scopes      | Definir scopes              |
+| DELETE  | /api/admin/users/{id}             | Desactiver (soft delete)    |
+| GET     | /api/admin/roles                  | Matrice permissions         |
+| GET     | /api/admin/users/{id}/effective-access | Acces effectif resolu  |
+
+Pour plus de details : [Security Notes](docs/security_notes.md) | [Demo Script](docs/demo_script_2min.md)
+
+---
+
 <a id="whats-in--whats-out"></a>
 ## What's in / What's out
 
@@ -420,14 +478,17 @@ Documentation Swagger complete : `http://localhost:8000/docs`
 - 5 agents IA en mode stub (fonctionnels sans cle API)
 - Job queue async avec logique de cascade
 - Mode demo avec masquage de donnees
-- 138 tests automatises (pytest)
+- IAM complet : JWT, 11 roles metier, scopes hierarchiques (ORG/ENTITE/SITE), deny-by-default
+- 10 personas demo avec scopes varies (DG, resp_site, prestataire expire, auditeur)
+- Admin UI : gestion users/roles/scopes, acces effectif, journal d'audit
+- Filtrage server-side centralise (iam_scope.py) sur 14+ endpoints
+- 770 tests automatises (pytest) dont 61 tests IAM anti-fuite
 - 12 items KB valides (archetypes, regles, recommendations)
 - Smoke test "red button" (14 checks avant mise en pilote)
 
 ### Non implemente (hors scope POC)
 
-- Authentification / RBAC (spec disponible dans `docs/security/RBAC_MATRIX.md`)
-- Multi-tenancy
+- Multi-tenancy full (IAM multi-org presente mais pas de tenancy isolation DB)
 - Connecteurs Enedis (OAuth DataConnect), Meteo-France (cle API requise)
 - Base de donnees PostgreSQL (SQLite uniquement)
 - CI/CD (fichiers GitHub Actions presents mais vides)
@@ -523,7 +584,15 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 cd backend
 python -m pytest tests/ -v --tb=short
 ```
-Resultat attendu : `138 passed`.
+Resultat attendu : `770 passed`.
+
+### Tests IAM uniquement
+
+```bash
+cd backend
+py -3.14 -m pytest tests/test_iam.py -v
+```
+Resultat attendu : `61 passed`.
 
 ---
 
@@ -549,9 +618,10 @@ MIT
 
 Ce projet est un **proof-of-concept** destine a la demonstration technique.
 Il ne doit pas etre deploye en production sans :
-- Ajout d'une couche d'authentification
+- Desactivation du mode demo (`PROMEOS_DEMO_MODE=false`) et definition d'un JWT secret fort
 - Migration vers une base de donnees robuste (PostgreSQL)
-- Audit de securite
+- Audit de securite complet
 - Suppression du mode CORS ouvert
+- HTTPS obligatoire (le JWT transite en clair)
 
 Les donnees incluses sont 100% synthetiques.

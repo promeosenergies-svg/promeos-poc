@@ -1,0 +1,33 @@
+id: ACC_FRANCE_40
+type: knowledge
+domain: reglementaire
+title: 'Blanc 1 : “PMO-in-a-box” pour petits collectifs'
+summary: "- Gap : Bailleurs/collectivités petites (30–100 logements, <50 kWc) intimidé\
+  \ par “besoin SaaS complexe” \n- PROMEOS opportunity : lightweight starter (templates,\
+  \ consentements, simple clés statiques), ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Gap : Bailleurs/collectivités petites (30–100 logements, <50 kWc) intimidé\
+  \ par “besoin SaaS complexe” \n- PROMEOS opportunity : lightweight starter (templates,\
+  \ consentements, simple clés statiques), mobile-friendly, pricing €100–150/mth \n\
+  - Win vs Enogrid : EnoLab = outil études (€500/projet), EnoPower = gestion avancée\
+  \ (€500/mth). Aucune solution intermédiaire"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: 'Blanc 1 : “PMO-in-a-box” pour petits collectifs'
+  anchor: '#blanc-1-pmo-in-a-box-pour-petits-collectifs'
+  excerpt_short: '- Gap : Bailleurs/collectivités petites (30–100 logements, <50 kWc)
+    intimidé par “besoin SaaS comple...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

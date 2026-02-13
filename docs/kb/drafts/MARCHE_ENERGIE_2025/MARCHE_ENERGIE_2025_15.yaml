@@ -1,0 +1,40 @@
+id: MARCHE_ENERGIE_2025_15
+type: rule
+domain: usages
+title: D. Risques Spécifiques PROMEOS
+summary: "1. Volatilité hivernale \n- Hiver 2025-26 : si vague froid intense + peu\
+  \ vent → pics prix 200-300€/MWh possibles \n- Contrats court terme découverts =\
+  \ surcoûts brutaux \n- Mitigation : bloquer 70% consom..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "1. Volatilité hivernale \n- Hiver 2025-26 : si vague froid intense +\
+  \ peu vent → pics prix 200-300€/MWh possibles \n- Contrats court terme découverts\
+  \ = surcoûts brutaux \n- Mitigation : bloquer 70% consommation en contrats long\
+  \ terme AVANT hiver \n\n2. Décret BACS obligation accélérée \n- Si gouvernement\
+  \ accélère calendrier, sites >290 kW doivent installer GTB/GTC plus tôt \n- CAPEX\
+  \ supplémentaire non budgété = contrainte cashflow \n- Surveillance : décrets d’application\
+  \ BACS (attendus H1 2026) \n\n3. Budget MaPrimeRénov gelé (2025) \n- Absence loi\
+  \ finances 2025 retarde paiements dossiers \n- Dossiers déposés 2024-2025 risquent\
+  \ délais impactant cashflow \n- Stratégie : prioriser financements CEE (plus rapides,\
+  \ 60j) vs MaPrimeRénov (plus lents) \n\n4. Interconnexions France-Allemagne \n-\
+  \ Si Allemagne crise EnRi hiver severe → France doit exporter nucléaire = pics prix\
+  \ touchent PROMEOS \n- Impossible prévoir, mais contrats longs réduisent exposition"
+logic: null
+sources:
+- doc_id: MARCHE_ENERGIE_2025
+  label: Analyse marche energie France-Europe 2025
+  section: D. Risques Spécifiques PROMEOS
+  anchor: '#d-risques-spcifiques-promeos'
+  excerpt_short: "1. Volatilité hivernale \n- Hiver 2025-26 : si vague froid intense\
+    \ + peu vent → pics prix 200-300€/MW..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

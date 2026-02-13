@@ -1,0 +1,32 @@
+id: LEVIERS_MARCHE_2025_13
+type: knowledge
+domain: facturation
+title: 4. Shadow Billing automatisé + SEPA
+summary: "- Action : Facturation internalisée PMO (PROMEOS génère factures internes\
+  \ + mandats SEPA prélèvement direct) \n- Gain : Zéro factures manuelles, recouvrement\
+  \ trésorerie 95%+ vs 70% manuellement \n- Impa..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Action : Facturation internalisée PMO (PROMEOS génère factures internes\
+  \ + mandats SEPA prélèvement direct) \n- Gain : Zéro factures manuelles, recouvrement\
+  \ trésorerie 95%+ vs 70% manuellement \n- Impact : OPEX PMO –€5–8k/an, satisfaction\
+  \ participant +40%"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: 4. Shadow Billing automatisé + SEPA
+  anchor: '#4-shadow-billing-automatis-sepa'
+  excerpt_short: '- Action : Facturation internalisée PMO (PROMEOS génère factures
+    internes + mandats SEPA prélèvement...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

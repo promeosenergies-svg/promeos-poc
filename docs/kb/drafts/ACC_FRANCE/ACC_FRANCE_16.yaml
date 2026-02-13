@@ -1,0 +1,37 @@
+id: ACC_FRANCE_16
+type: knowledge
+domain: usages
+title: B. Collectivités Territoriales & Parcs Activités (30–35%) 63 64
+summary: "Cas type 1 : ZAC/parc activités \n- Producteur = entité municipale ou SEM\
+  \ \n- Consommateurs = 5–15 entreprises petit/moyen (manufactures, commerces, services)\
+  \ \n- Modèle = vente AC à prix « local » (€0.1..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Cas type 1 : ZAC/parc activités \n- Producteur = entité municipale ou\
+  \ SEM \n- Consommateurs = 5–15 entreprises petit/moyen (manufactures, commerces,\
+  \ services) \n- Modèle = vente AC à prix « local » (€0.12–0.18/kWh vs marché €0.20+)\
+  \ \n- Complexité : clés dynamiques, entrées/sorties entreprises, multi-secteurs\
+  \ consommation \n\nCas type 2 : Patrimoine public mutualisé \n- Mairie + écoles\
+  \ + médiathèque + piscine = PMO \n- Autocons. simple (même commune), clés statiques\
+  \ par bâtiment \n- Avantage : aucun participant privé, gouvernance simple \n- Baisse\
+  \ consommation électricité : 12–20%/an \n\nCas clients : Communes Occitanie/Bretagne\
+  \ (données SER 2024), collectivités Normandie (FNCCR accompagnement)"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: B. Collectivités Territoriales & Parcs Activités (30–35%) 63 64
+  anchor: '#b-collectivits-territoriales-parcs-activits-3035-63-64'
+  excerpt_short: "Cas type 1 : ZAC/parc activités \n- Producteur = entité municipale\
+    \ ou SEM \n- Consommateurs = 5–15 ent..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

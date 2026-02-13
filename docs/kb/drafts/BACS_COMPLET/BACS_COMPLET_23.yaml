@@ -1,0 +1,32 @@
+id: BACS_COMPLET_23
+type: knowledge
+domain: usages
+title: Paramétrage vs usage réel
+summary: "- Consignes température correspondent-elles occupancy réelle ? (bureaux\
+  \ 8-18h = paramétré ?) \n- ECS, éclairage, ventilation = réglés pour usage du bâtiment\
+  \ ? (overconsommation détectée ?) \n- Calendrie..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Consignes température correspondent-elles occupancy réelle ? (bureaux\
+  \ 8-18h = paramétré ?) \n- ECS, éclairage, ventilation = réglés pour usage du bâtiment\
+  \ ? (overconsommation détectée ?) \n- Calendrier saisonnier vs occupation vacances\
+  \ ? (consignes hiver/été justes ?)"
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Paramétrage vs usage réel
+  anchor: '#paramtrage-vs-usage-rel'
+  excerpt_short: "- Consignes température correspondent-elles occupancy réelle ? (bureaux\
+    \ 8-18h = paramétré ?) \n- ECS,..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

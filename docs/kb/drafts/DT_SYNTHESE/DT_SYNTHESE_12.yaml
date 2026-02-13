@@ -1,0 +1,37 @@
+id: DT_SYNTHESE_12
+type: knowledge
+domain: reglementaire
+title: 'Dispositifs de financement activables Dispositif Montant typique Conditions
+  Délai Certificats Économie Énergie (CEE) P6 10-30% CAPEX Travaux éligibles listés
+  Rapide (60j) MaPrimeRénov Tertiaire 10-25% CAPEX Audit préalable requis 2-3 mois
+  Éco-PTZ Jusqu’à 300 k€ Si bouquet travaux 1-2 mois ADEME Accompagnement Audit :
+  30-50% financé Petits/moyens projets Sur dossier'
+summary: 'Opportunité majeure : Cumul CEE + MaPrimeRénov sur même projet peut financer
+  30-50% du CAPEX travaux.'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: 'Opportunité majeure : Cumul CEE + MaPrimeRénov sur même projet peut financer
+  30-50% du CAPEX travaux.'
+logic: null
+sources:
+- doc_id: DT_SYNTHESE
+  label: Decret Tertiaire - Synthese PROMEOS
+  section: 'Dispositifs de financement activables Dispositif Montant typique Conditions
+    Délai Certificats Économie Énergie (CEE) P6 10-30% CAPEX Travaux éligibles listés
+    Rapide (60j) MaPrimeRénov Tertiaire 10-25% CAPEX Audit préalable requis 2-3 mois
+    Éco-PTZ Jusqu’à 300 k€ Si bouquet travaux 1-2 mois ADEME Accompagnement Audit
+    : 30-50% financé Petits/moyens projets Sur dossier'
+  anchor: '#dispositifs-de-financement-activables-dispositif-montant-typique-conditions-dlai-certificats-conomie-nergie-cee-p6-10-30-capex-travaux-ligibles-lists-rapide-60j-maprimernov-tertiaire-10-25-capex-audit-pralable-requis-2-3-mois-co-ptz-jusqu-300-k-si-bouquet-travaux-1-2-mois-ademe-accompagnement-audit-30-50-financ-petitsmoyens-projets-sur-dossier'
+  excerpt_short: 'Opportunité majeure : Cumul CEE + MaPrimeRénov sur même projet peut
+    financer 30-50% du CAPEX travaux...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

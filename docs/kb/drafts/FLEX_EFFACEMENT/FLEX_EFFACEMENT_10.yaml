@@ -1,0 +1,35 @@
+id: FLEX_EFFACEMENT_10
+type: knowledge
+domain: usages
+title: 2.2 Éligibilité
+summary: "Tous actifs (production, consommation, stockage) raccordés RPT/RPD . Pas\
+  \ de minimum MW formellement, mais >1 MW réaliste (coûts instrumentation). \n\n\
+  Prérequis : \n- Accord Participation AA (signature + ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Tous actifs (production, consommation, stockage) raccordés RPT/RPD .\
+  \ Pas de minimum MW formellement, mais >1 MW réaliste (coûts instrumentation). \n\
+  \nPrérequis : \n- Accord Participation AA (signature + documentation financière).\
+  \ \n- Responsable Programmation ou RE déclaration (lien RE/données comptage). \n\
+  - Certificat Aptitude Réserve Primaire/Secondaire (pour réserves fréquence). \n\
+  - Dispositifs télécommande RTE (téléconduite 24/7) + protocoles IEC 60870-5-104.\
+  \ \n- Guichet pré-qualification capacités RTE (données techniques, essais)."
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: 2.2 Éligibilité
+  anchor: '#22-ligibilit'
+  excerpt_short: Tous actifs (production, consommation, stockage) raccordés RPT/RPD
+    . Pas de minimum MW formellement,...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

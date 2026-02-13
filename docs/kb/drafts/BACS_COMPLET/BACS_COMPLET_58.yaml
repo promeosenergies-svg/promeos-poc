@@ -1,0 +1,33 @@
+id: BACS_COMPLET_58
+type: knowledge
+domain: reglementaire
+title: Q9. « Bâtiment occupé 3 mois/an (vacances). Consommation base bonne ? »
+summary: 'R9. Non, récalculer base sur occupancy réelle . Règle : “Si bâtiment vide
+  > 6 mois année = utiliser seulement années occupées pour moyenne conso”. Exemple
+  : 2023 vide 8 mois → 2023 ignorée. 2024 occup...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: 'R9. Non, récalculer base sur occupancy réelle . Règle : “Si bâtiment
+  vide > 6 mois année = utiliser seulement années occupées pour moyenne conso”. Exemple
+  : 2023 vide 8 mois → 2023 ignorée. 2024 occupé 12 mois, 2025 occupé 12 mois → Moyenne
+  = (2024+2025)/2. Conso de base “anormale” (basse vacance) → faux gain énergétique
+  → TRI surestime → exemption possible échoue. Audit doit documenter occupancy exacte.'
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Q9. « Bâtiment occupé 3 mois/an (vacances). Consommation base bonne ? »
+  anchor: '#q9-btiment-occup-3-moisan-vacances-consommation-base-bonne-'
+  excerpt_short: 'R9. Non, récalculer base sur occupancy réelle . Règle : “Si bâtiment
+    vide > 6 mois année = utiliser ...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

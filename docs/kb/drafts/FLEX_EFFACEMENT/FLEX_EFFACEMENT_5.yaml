@@ -1,0 +1,45 @@
+id: FLEX_EFFACEMENT_5
+type: rule
+domain: usages
+title: 1.5 Rémunération & Coûts
+summary: 'Versement Fournisseur (Article 10 NEBEF) : 4 Modèle Calcul Montant (2025)
+  Qui paie Régulé (défaut) Barème € × Énergie effacée (MWh) Voir §1.5 tableau RTE
+  (indexé annuel) Corrigé Coûts approvisionnemen...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Versement Fournisseur (Article 10 NEBEF) : 4 Modèle Calcul Montant (2025)\
+  \ Qui paie Régulé (défaut) Barème € × Énergie effacée (MWh) Voir §1.5 tableau RTE\
+  \ (indexé annuel) Corrigé Coûts approvisionnement cliente ~Coûts réels Consommateur\
+  \ via RE Contractuel Gré-à-gré (OE/Fournisseur/Consommateur) Libre Selon contrat\
+  \ \n\nBarèmes Forfaitaires 2025 [artifact:] : \n\nSites Profilés (à partir 01/02/2025)\
+  \ : \n- Profil RES 1/RES 11/PRO 1 (résidentiel/petit pro) : €83.52/MWh \n- Autres\
+  \ profils (commerce, petite industrie) : €89.19/MWh \n\nSites Télérelevés (à partir\
+  \ 01/01/2025) : \n- Hiver (janv., févr., mars, oct., nov., déc.) : \n- Heures Basses\
+  \ : €64–68/MWh \n- Heures Hautes : €120–135/MWh \n- Été (avr.–sept.) : \n- Heures\
+  \ Basses : €55–60/MWh \n- Heures Hautes : €95–110/MWh \n\nNote : Valeurs dépendent\
+  \ du profil exact et changements tarifs 2025 en cours. Consulter RTE pour chiffres\
+  \ actualisés. \n\nCoûts Opérateurs d’Effacement : \n- Agrément : ~€2–5k (dossier\
+  \ + tests). \n- Certification annuelle : €1–3k. \n- Qualification Profilés (audit)\
+  \ : €500–1500/an. \n- Garantie bancaire : 1–2% du chiffre d’affaires annuel. \n\
+  - Pas de frais déclaration/activation NEBEF directs. \n\nRevenus Bruts (Scénario\
+  \ Type) : \n- 10 sites, 5 MW capacité, 200h activation/an, barème €90/MWh = €90k/an\
+  \ brut (avant coûts Agrég.)."
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: 1.5 Rémunération & Coûts
+  anchor: '#15-rmunration-cots'
+  excerpt_short: 'Versement Fournisseur (Article 10 NEBEF) : 4 Modèle Calcul Montant
+    (2025) Qui paie Régulé (défaut) B...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

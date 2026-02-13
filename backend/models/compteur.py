@@ -26,6 +26,10 @@ class Compteur(Base, TimestampMixin):
     energy_vector = Column(Enum(EnergyVector), nullable=True, comment="Vecteur energetique")
     actif = Column(Boolean, default=True, comment="Compteur actif ou non")
 
+    # Data lineage
+    data_source = Column(String(20), nullable=True, comment="csv, manual, demo, api")
+    data_source_ref = Column(String(200), nullable=True, comment="Batch ID or filename")
+
     # Relations
     site = relationship("Site", back_populates="compteurs")
     consommations = relationship(

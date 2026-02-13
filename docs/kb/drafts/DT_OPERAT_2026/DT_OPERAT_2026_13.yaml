@@ -1,0 +1,31 @@
+id: DT_OPERAT_2026_13
+type: knowledge
+domain: reglementaire
+title: Contrôle et sanctions post-2030
+summary: Le premier contrôle officiel des objectifs 2030 se fera sur la base du bilan
+  au 31 décembre 2031 . Avant cette date (jusqu’à fin 2030), les assujettis sont en
+  phase de suivi trajectoire et ajustement ...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: Le premier contrôle officiel des objectifs 2030 se fera sur la base du
+  bilan au 31 décembre 2031 . Avant cette date (jusqu’à fin 2030), les assujettis
+  sont en phase de suivi trajectoire et ajustement de plans d’action. 32
+logic: null
+sources:
+- doc_id: DT_OPERAT_2026
+  label: Decret Tertiaire / OPERAT - Obligations 2026
+  section: Contrôle et sanctions post-2030
+  anchor: '#contrle-et-sanctions-post-2030'
+  excerpt_short: Le premier contrôle officiel des objectifs 2030 se fera sur la base
+    du bilan au 31 décembre 2031 . A...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

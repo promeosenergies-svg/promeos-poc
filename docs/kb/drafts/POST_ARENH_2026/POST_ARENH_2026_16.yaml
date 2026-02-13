@@ -1,0 +1,32 @@
+id: POST_ARENH_2026_16
+type: knowledge
+domain: facturation
+title: Limites et Enjeux
+summary: Le volume alloué via CAPN (10 TWh) couvre seulement 50 à 70% des besoins
+  des industriels électro-intensifs, contraignant ces derniers à se couvrir pour le
+  reste via le marché de gros, beaucoup plus vo...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: Le volume alloué via CAPN (10 TWh) couvre seulement 50 à 70% des besoins
+  des industriels électro-intensifs, contraignant ces derniers à se couvrir pour le
+  reste via le marché de gros, beaucoup plus volatile. Cette couverture partielle
+  limite la sécurisation tarifaire et expose les industriels à la volatilité. 35
+logic: null
+sources:
+- doc_id: POST_ARENH_2026
+  label: Post-ARENH 2026
+  section: Limites et Enjeux
+  anchor: '#limites-et-enjeux'
+  excerpt_short: Le volume alloué via CAPN (10 TWh) couvre seulement 50 à 70% des
+    besoins des industriels électro-int...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

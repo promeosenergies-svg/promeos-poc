@@ -1,0 +1,38 @@
+id: BACS_COMPLET_59
+type: rule
+domain: facturation
+title: 'Q10. « Exploitant refuse BACS : “compliqué et inutile”. Comment convaincre
+  ? »'
+summary: 'R10. C’est obligatoire, pas optionnel (>290 kW seulement). Points de vente
+  exploitant : (1) Économies réelles : 15-30% énergie mesurable = économie facture
+  visible (ROI 5-8 ans) ; (2) Alertes immédiat...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: 'R10. C’est obligatoire, pas optionnel (>290 kW seulement). Points de
+  vente exploitant : (1) Économies réelles : 15-30% énergie mesurable = économie facture
+  visible (ROI 5-8 ans) ; (2) Alertes immédiates : détecte dérives avant surcoûts
+  exponentiels (ex : climatisation bloquée jour = 2k€ surcoûts weekend vs 20€ alerte
+  détection rapide) ; (3) Confort occupants : pilotage température fines, ventilation
+  optimisée = productivité ; (4) Conformité légale : obligation décret = risque pénalité
+  300€/jour retard. Proposer démo sur petit système pour preuve gain avant déploiement
+  global.'
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: 'Q10. « Exploitant refuse BACS : “compliqué et inutile”. Comment convaincre
+    ? »'
+  anchor: '#q10-exploitant-refuse-bacs-compliqu-et-inutile-comment-convaincre-'
+  excerpt_short: 'R10. C’est obligatoire, pas optionnel (>290 kW seulement). Points
+    de vente exploitant : (1) Économie...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

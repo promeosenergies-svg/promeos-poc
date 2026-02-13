@@ -1,0 +1,39 @@
+id: ACC_FRANCE_28
+type: knowledge
+domain: acc
+title: ACC Ops (Core, 180j focus)
+summary: "Positioning : “Production to settlement, fully managed” \n\nFeatures : \n\
+  - Data & Monitoring : P30 curves from Enedis DataHub (API), dashboard prod/conso/TAc/TAp\
+  \ real-time \n- Clés Calculator : statique/d..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Positioning : “Production to settlement, fully managed” \n\nFeatures\
+  \ : \n- Data & Monitoring : P30 curves from Enedis DataHub (API), dashboard prod/conso/TAc/TAp\
+  \ real-time \n- Clés Calculator : statique/dynamique simple/full auto (P30-based,\
+  \ editable scenario), monthly Enedis notification API-driven \n- Facturation ACC\
+  \ : shadow billing (PMO or reseller-agnostic), templates PDF/digital, paiement SEPA\
+  \ auto \n- Settlement : Enedis reconciliation log, export comptable (CSV/XML), audit\
+  \ trail horodaté \n- Participant Portal : login participant = sees facture ACC +\
+  \ estimated 3 months, contact PMO \n- Support : onboarding + monthly check-in \n\
+  \nCost : €200–500/mois per operation (based on participants, complexity) \nSLA :\
+  \ 99.5% uptime, support <24h \nAudience : active PMOs (50–200 sites), bailleurs\
+  \ sociaux, collectivités"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: ACC Ops (Core, 180j focus)
+  anchor: '#acc-ops-core-180j-focus'
+  excerpt_short: "Positioning : “Production to settlement, fully managed” \n\nFeatures\
+    \ : \n- Data & Monitoring : P30 curv..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

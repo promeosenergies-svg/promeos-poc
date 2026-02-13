@@ -1,0 +1,34 @@
+id: BACS_COMPLET_12
+type: rule
+domain: usages
+title: 2️⃣ ANALYSE & DÉTECTION DÉRIVES
+summary: "- Benchmark : Situer efficacité énergétique vs valeurs de référence (consommation\
+  \ théorique, année antérieure, secteur) \n- Alertes : Détecter automatiquement pertes\
+  \ d’efficacité (ex : conso > +10% vs ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Benchmark : Situer efficacité énergétique vs valeurs de référence (consommation\
+  \ théorique, année antérieure, secteur) \n- Alertes : Détecter automatiquement pertes\
+  \ d’efficacité (ex : conso > +10% vs normal, équipement défaillant) \n- Rapports\
+  \ : Fournir exploitant possibilités d’amélioration (pas juste données brutes) \n\
+  - Exemple : Caisson ventilation trop ouvert → surconso chaud/froid détectée, alerte\
+  \ = X€/mois perte"
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: 2️⃣ ANALYSE & DÉTECTION DÉRIVES
+  anchor: '#2-analyse-dtection-drives'
+  excerpt_short: '- Benchmark : Situer efficacité énergétique vs valeurs de référence
+    (consommation théorique, année a...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

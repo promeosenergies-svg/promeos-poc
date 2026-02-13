@@ -1,0 +1,37 @@
+id: ACC_FRANCE_34
+type: knowledge
+domain: facturation
+title: Core Features (MVP)
+summary: "Must-Have : \n- ✅ Statuts PMO templates (auto-fill, e-sign) \n- ✅ Participant\
+  \ registry (add/remove, versioning) \n- ✅ P30 import (manual CSV 90d, then auto\
+  \ Enedis API) \n- ✅ Clés calc (statique + dyn. sim..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Must-Have : \n- ✅ Statuts PMO templates (auto-fill, e-sign) \n- ✅ Participant\
+  \ registry (add/remove, versioning) \n- ✅ P30 import (manual CSV 90d, then auto\
+  \ Enedis API) \n- ✅ Clés calc (statique + dyn. simple, Enedis notify) \n- ✅ Facture\
+  \ template (PDF/email bulk) \n- ✅ Audit log (all events timestamped, exported) \n\
+  \nNice-to-Have (v1) : \n- \U0001F7E1 Enedis DataHub API integration (auto-pull)\
+  \ \n- \U0001F7E1 Shadow billing reconciliation (vs Enedis feed) \n- \U0001F7E1 Participant\
+  \ portal (login, see invoice) \n- \U0001F7E1 SEPA batch export \n\nFuture (v2+)\
+  \ : \n- \U0001F7E2 RTE price feed + flex arbitrage \n- \U0001F7E2 ML forecasting\
+  \ \n- \U0001F7E2 Blockchain audit"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: Core Features (MVP)
+  anchor: '#core-features-mvp'
+  excerpt_short: "Must-Have : \n- ✅ Statuts PMO templates (auto-fill, e-sign) \n-\
+    \ ✅ Participant registry (add/remove, ve..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

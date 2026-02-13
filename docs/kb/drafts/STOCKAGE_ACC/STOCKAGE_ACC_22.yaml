@@ -1,0 +1,45 @@
+id: STOCKAGE_ACC_22
+type: knowledge
+domain: usages
+title: I.3 Recommandations Avancées pour PROMEOS (Cockpit EMS Nouvelle Génération)
+summary: "Fonctionnalités Bonus Recommandées : \n- Prévision PV 48h Fine (météo +\
+  \ cloud detection) \n- Intégration Solcast API (acuracité 5%) \n- Prévisionalgo\
+  \ batterie (charge optimisée si prévision nuageux) \n- C..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Fonctionnalités Bonus Recommandées : \n- Prévision PV 48h Fine (météo\
+  \ + cloud detection) \n- Intégration Solcast API (acuracité 5%) \n- Prévisionalgo\
+  \ batterie (charge optimisée si prévision nuageux) \n- Coût ajout : 1 k€ intégration,\
+  \ 500 €/an Solcast API \n- Clé de Répartition Dynamique IA (optimisation équité\
+  \ + performance) \n- Algorithme jour-J qui ajuste clé selon profils réels (vs static\
+  \ mensuel) \n- Maximise TAc tout en maintenant équité (Gini index) \n- Coût : 10–20\
+  \ k€ développement, 2 k€/an compute \n- Dash Participant Gamification \n- Ranking\
+  \ “contributes flexibility” (badges) \n- Competition intergroupes (quartier, entreprises)\
+  \ \n- Coût : 5 k€ UI/UX \n- API Publique (ouverture données anonymisées) \n- Permet\
+  \ agrégateurs/VPP externes à optimiser portfolio \n- Revenu potentiel (données licensed\
+  \ à Agregio, RTE, etc.) \n- Coût : 5 k€ architecture + security \n- Intégration\
+  \ GTB/IoT (couplage CVC + batterie) \n- API BACnet/MQTT pour lire temper, humidité,\
+  \ débit chauffage \n- EMS pilot CVC + batterie conjointement (ex. charge ballon\
+  \ nuit, décharge jour) \n- Coût : 10–15 k€ (intégration site-specific) \n- Blockchain\
+  \ Settlement (audit trail immuable) — optionnel, hype actuelle \n- Enregistrement\
+  \ immutable chaque transaction énergie \n- Utile pour litiges future (trace 100%\
+  \ fiable) \n- Coût : 5–10 k€ dev (smart contract Ethereum/Polygon)"
+logic: null
+sources:
+- doc_id: STOCKAGE_ACC
+  label: Stockage et Autoconsommation Collective
+  section: I.3 Recommandations Avancées pour PROMEOS (Cockpit EMS Nouvelle Génération)
+  anchor: '#i3-recommandations-avances-pour-promeos-cockpit-ems-nouvelle-gnration'
+  excerpt_short: "Fonctionnalités Bonus Recommandées : \n- Prévision PV 48h Fine (météo\
+    \ + cloud detection) \n- Intégrati..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

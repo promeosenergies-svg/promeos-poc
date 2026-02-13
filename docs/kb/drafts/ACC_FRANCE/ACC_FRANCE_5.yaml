@@ -1,0 +1,33 @@
+id: ACC_FRANCE_5
+type: rule
+domain: acc
+title: Producteur (PV local) 23 24 25
+summary: "- Vend électricité ACc à PMO/consommateurs via contrat libre (prix négocié)\
+  \ \n- Perd rigidité tarif achat garanti (obligation achat) → risque prix négatif\
+  \ croissant \n- Surplus injecté = part non-ACc → ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Vend électricité ACc à PMO/consommateurs via contrat libre (prix négocié)\
+  \ \n- Perd rigidité tarif achat garanti (obligation achat) → risque prix négatif\
+  \ croissant \n- Surplus injecté = part non-ACc → marché spot ou contrat fournisseur\
+  \ \n- Opportunité : flexibilité implicite (réduction volontaire injection lors prix\
+  \ négatifs)"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: Producteur (PV local) 23 24 25
+  anchor: '#producteur-pv-local-23-24-25'
+  excerpt_short: "- Vend électricité ACc à PMO/consommateurs via contrat libre (prix\
+    \ négocié) \n- Perd rigidité tarif a..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

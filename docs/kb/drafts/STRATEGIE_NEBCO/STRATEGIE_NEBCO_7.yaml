@@ -1,0 +1,31 @@
+id: STRATEGIE_NEBCO_7
+type: knowledge
+domain: reglementaire
+title: 'Scénario 2: CENTRAL (Typique, Multi-site)'
+summary: "- Amplitude : 2.5 MW | Durée : 2h/evt | Fréquence : 40 evt/an | Spread :\
+  \ 75 €/MWh | Taux réussite : 85% \n- Énergie modulée : 170 MWh/an \n- Revenu brut\
+  \ : €12,750 \n- Après coûts : €7,222 client net"
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Amplitude : 2.5 MW | Durée : 2h/evt | Fréquence : 40 evt/an | Spread\
+  \ : 75 €/MWh | Taux réussite : 85% \n- Énergie modulée : 170 MWh/an \n- Revenu brut\
+  \ : €12,750 \n- Après coûts : €7,222 client net"
+logic: null
+sources:
+- doc_id: STRATEGIE_NEBCO
+  label: Analyse strategique NEBCO
+  section: 'Scénario 2: CENTRAL (Typique, Multi-site)'
+  anchor: '#scnario-2-central-typique-multi-site'
+  excerpt_short: '- Amplitude : 2.5 MW | Durée : 2h/evt | Fréquence : 40 evt/an |
+    Spread : 75 €/MWh | Taux réussite : ...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

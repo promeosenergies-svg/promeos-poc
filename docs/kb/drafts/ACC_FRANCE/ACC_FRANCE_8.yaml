@@ -1,0 +1,44 @@
+id: ACC_FRANCE_8
+type: rule
+domain: acc
+title: '5. Conformité & Risques : Exigences Type-Fournisseur 38 39 40'
+summary: 'Point critique : responsabilités ne sont pas du type « licence fourniture
+  » au sens strict (PMO ≠ fournisseur légal). Mais obligations ressemblent à gestion
+  d’équilibriste : 41 Obligation Acteur resp....'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Point critique : responsabilités ne sont pas du type « licence fourniture\
+  \ » au sens strict (PMO ≠ fournisseur légal). Mais obligations ressemblent à gestion\
+  \ d’équilibriste : 41 Obligation Acteur resp. Pénalité non-respect Automatisation\
+  \ possible? Transmission clés répartition à Enedis (4j max.) PMO Retard facturation,\
+  \ litiges participants ✅ Oui (API Enedis) Gestion entrées/sorties (préavis, rééquilibre)\
+  \ PMO Erreurs TAc/TAp, facturation incorrecte ✅ Oui (registre digital) Collecte\
+  \ consentement RGPD courbes PMO Amende CNIL (€500–€50k) ✅ Oui (e-signature) Facturation\
+  \ consommateurs ACC correcte PMO ou fournisseur Litiges, rupture contrat ✅ Oui (shadow\
+  \ billing) Réconciliation mensuelle Enedis/fournisseur Fournisseur + Enedis Divergence\
+  \ facturation ✅ Partiellement (API) Raportage CRE annuel (opérations, puissance,…)\
+  \ PMO Avertissement CRE (rare) ✅ Oui (automation) Prévention fraude, audit trail\
+  \ PMO + Enedis Possibilité révocation ACC ✅ Oui (blockchain possible, logs) \n\n\
+  “Painful point” le plus fréquemment cité : pas d’exigence d’autorisation-fournisseur\
+  \ explicite , mais si PMO facture ACC à consommateurs, elle doit être “prestataire\
+  \ de services responsable” (droit commercial) → assurance RC professionnelle requise\
+  \ + conformité droit consommateur (délai rétractation, facturation claire, etc.)."
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: '5. Conformité & Risques : Exigences Type-Fournisseur 38 39 40'
+  anchor: '#5-conformit-risques-exigences-type-fournisseur-38-39-40'
+  excerpt_short: 'Point critique : responsabilités ne sont pas du type « licence fourniture
+    » au sens strict (PMO ≠ fo...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

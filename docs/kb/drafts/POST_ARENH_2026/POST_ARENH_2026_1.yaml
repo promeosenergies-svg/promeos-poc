@@ -1,0 +1,35 @@
+id: POST_ARENH_2026_1
+type: rule
+domain: acc
+title: Principes Directeurs
+summary: Le VNU repose sur un partage asymétrique des revenus d’EDF issus du parc
+  nucléaire historique. Contrairement à l’ARENH, qui accordait un tarif administré
+  à une fraction délimitée des consommateurs, le...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: 'Le VNU repose sur un partage asymétrique des revenus d’EDF issus du parc
+  nucléaire historique. Contrairement à l’ARENH, qui accordait un tarif administré
+  à une fraction délimitée des consommateurs, le VNU fonctionne selon une logique
+  ex-post : EDF vend intégralement sa production nucléaire au prix du marché de gros,
+  puis l’État prélève une part des revenus excédentaires selon des seuils progressifs
+  et les redistribue à l’ensemble des consommateurs finals, indépendamment de leur
+  fournisseur. 5 6'
+logic: null
+sources:
+- doc_id: POST_ARENH_2026
+  label: Post-ARENH 2026
+  section: Principes Directeurs
+  anchor: '#principes-directeurs'
+  excerpt_short: Le VNU repose sur un partage asymétrique des revenus d’EDF issus
+    du parc nucléaire historique. Contr...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

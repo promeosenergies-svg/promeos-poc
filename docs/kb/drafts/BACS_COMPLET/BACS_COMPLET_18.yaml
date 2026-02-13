@@ -1,0 +1,31 @@
+id: BACS_COMPLET_18
+type: knowledge
+domain: usages
+title: Exceptions à la base 2 ans
+summary: "- Rénovation énergétique 2 ans avant : Utiliser 1 année la plus récente\
+  \ (consommation normalisée post-travaux) \n- Bâtiment vide 1 année : Utiliser uniquement\
+  \ années occupées (moyenne réduite)"
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Rénovation énergétique 2 ans avant : Utiliser 1 année la plus récente\
+  \ (consommation normalisée post-travaux) \n- Bâtiment vide 1 année : Utiliser uniquement\
+  \ années occupées (moyenne réduite)"
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Exceptions à la base 2 ans
+  anchor: '#exceptions-la-base-2-ans'
+  excerpt_short: '- Rénovation énergétique 2 ans avant : Utiliser 1 année la plus
+    récente (consommation normalisée pos...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

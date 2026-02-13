@@ -1,0 +1,39 @@
+id: FLEX_EFFACEMENT_17
+type: rule
+domain: facturation
+title: 3.2 Éligibilité
+summary: "Capacités Nouvelles (pluriannuelles, R. 316-39)[artifact:] : \n- Installations\
+  \ avec autorisation exploitation post-référence (à définir). \n- Augmentations puissance\
+  \ ; prolongations durée vie ; investis..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Capacités Nouvelles (pluriannuelles, R. 316-39)[artifact:] : \n- Installations\
+  \ avec autorisation exploitation post-référence (à définir). \n- Augmentations puissance\
+  \ ; prolongations durée vie ; investissements réduction émissions (plafond CO2).\
+  \ \n- Effacements nouveaux SANS soutien public antérieur (ex. non-AOE, non-AOFD).\
+  \ \n- Exclusion : Charbon/tourbe/schiste (>550 g CO2/kWh existants 01/01/2025),\
+  \ contrats soutien public incompatibles. \n\nCapacités Existantes (AL-1 surtout)\
+  \ : Tous, soumis Prix Plafond Intermédiaire (PPI) = plafond prix pour existants,\
+  \ sauf dérogation CRE si missing-money > PPI (R. 316-28).[artifact:] \n\nProcédure\
+  \ Certification : Titulaire Périmètre Certification (TPC) dépose demande RTE, guichet\
+  \ pre-enchère. GRT approuve (pour RPT : RTE ; RPD : Enedis + RTE). Convention entre\
+  \ GRT/exploitant (R. 316-6)."
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: 3.2 Éligibilité
+  anchor: '#32-ligibilit'
+  excerpt_short: "Capacités Nouvelles (pluriannuelles, R. 316-39)[artifact:] : \n\
+    - Installations avec autorisation expl..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

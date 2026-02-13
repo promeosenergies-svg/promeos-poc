@@ -1,0 +1,32 @@
+id: LEVIERS_MARCHE_2025_12
+type: knowledge
+domain: usages
+title: 3. Clés de répartition dynamiques (IA prédictive)
+summary: "- Action : Moteur IA qui ajuste clés basé sur prévisions météo + historique\
+  \ (non-linéaire, ex: 60% toit/40% partic dynamique) \n- Gain : +5–15% autoconsommation\
+  \ vs clés statiques, meilleure rentabilité..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Action : Moteur IA qui ajuste clés basé sur prévisions météo + historique\
+  \ (non-linéaire, ex: 60% toit/40% partic dynamique) \n- Gain : +5–15% autoconsommation\
+  \ vs clés statiques, meilleure rentabilité pour tous \n- Impact : Attractivité produit\
+  \ +30%, réduction prix négatifs producteur"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: 3. Clés de répartition dynamiques (IA prédictive)
+  anchor: '#3-cls-de-rpartition-dynamiques-ia-prdictive'
+  excerpt_short: '- Action : Moteur IA qui ajuste clés basé sur prévisions météo +
+    historique (non-linéaire, ex: 60% t...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

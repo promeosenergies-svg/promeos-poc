@@ -1,0 +1,33 @@
+id: BACS_COMPLET_53
+type: rule
+domain: reglementaire
+title: Q4. « Site existant 150 kW sans renouvellement depuis 2010. Deadline ? »
+summary: 'R4. Seuil 150 kW > 70 kW → Deadline 01/01/2030 (report november 2025). Sauf
+  renouvellement : Si vous remplacez équip post-09/04/2023 → obligation immédiate
+  renouvellement (seuil 70 kW). Stratégie : At...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: 'R4. Seuil 150 kW > 70 kW → Deadline 01/01/2030 (report november 2025).
+  Sauf renouvellement : Si vous remplacez équip post-09/04/2023 → obligation immédiate
+  renouvellement (seuil 70 kW). Stratégie : Attendre 2030 OU devancer renouvellement
+  équip + BACS (opportunité financement).'
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Q4. « Site existant 150 kW sans renouvellement depuis 2010. Deadline ?
+    »
+  anchor: '#q4-site-existant-150-kw-sans-renouvellement-depuis-2010-deadline-'
+  excerpt_short: 'R4. Seuil 150 kW > 70 kW → Deadline 01/01/2030 (report november
+    2025). Sauf renouvellement : Si vous...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

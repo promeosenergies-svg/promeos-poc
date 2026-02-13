@@ -1,0 +1,32 @@
+id: BACS_COMPLET_24
+type: rule
+domain: usages
+title: Recommandations (Annexe 3 arrêté 07/04/2023)
+summary: "- Bon usage système en place (notice exploitant) \n- Améliorations possibles\
+  \ installation (recalibrage, remplacement, économies rapides) \n- Intérêt remplacement\
+  \ BACS (obsolescence, architectures modern..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Bon usage système en place (notice exploitant) \n- Améliorations possibles\
+  \ installation (recalibrage, remplacement, économies rapides) \n- Intérêt remplacement\
+  \ BACS (obsolescence, architectures modernes) \n- Solutions alternatives (autre\
+  \ BACS, sous-traitance gestion)"
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Recommandations (Annexe 3 arrêté 07/04/2023)
+  anchor: '#recommandations-annexe-3-arrt-07042023'
+  excerpt_short: "- Bon usage système en place (notice exploitant) \n- Améliorations\
+    \ possibles installation (recalibrag..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

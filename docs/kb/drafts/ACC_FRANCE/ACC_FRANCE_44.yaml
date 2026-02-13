@@ -1,0 +1,33 @@
+id: ACC_FRANCE_44
+type: knowledge
+domain: reglementaire
+title: 'Blanc 5 : “Micro-fournisseur” cockpit = PROMEOS + fourniture'
+summary: "- Gap : PROMEOS = PMO tool. But PMO often wants = someone to “resell AC\
+  \ electricity” + handle facturation complément \n- PROMEOS opportunity : embedded\
+  \ “fournisseur de complément” module (PROMEOS owns ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Gap : PROMEOS = PMO tool. But PMO often wants = someone to “resell\
+  \ AC electricity” + handle facturation complément \n- PROMEOS opportunity : embedded\
+  \ “fournisseur de complément” module (PROMEOS owns supply layer, white-label to\
+  \ PMO or partner) → 1 invoice to end customer \n- Win : higher margin (cream 0.5–2€/MWh\
+  \ spread = €500–2k/operation/year), better NPS (1 invoice instead of 2)"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: 'Blanc 5 : “Micro-fournisseur” cockpit = PROMEOS + fourniture'
+  anchor: '#blanc-5-micro-fournisseur-cockpit-promeos-fourniture'
+  excerpt_short: '- Gap : PROMEOS = PMO tool. But PMO often wants = someone to “resell
+    AC electricity” + handle factur...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

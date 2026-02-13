@@ -1,0 +1,52 @@
+id: LEVIERS_MARCHE_2025_45
+type: knowledge
+domain: reglementaire
+title: 'Q5 : Évolutions 2026–2030 Changeant la Donne & Préparation Évolution Impact
+  ACC Probabilité Réaction PROMEOS Suppression licence fournisseur PMO < 5 MW +300%
+  AMEP, scalabilité particuliers 30–40% Advoc policy, legal brief, product ready Obligation
+  ACC tertiaire renforcée Doublement opérations collectivités 40% Intégration Décret
+  Tertiaire native Directive UE energy sharing Cross-border ACC pilots, mutualisation
+  10% Monitor EU lawmaking Baisse batterie ($/kWh → 80–100) 25% opérations + stockage
+  50–60% Intégration batterie dans Ops v2 IA dynamique standard industrie +5–15% autoconso,
+  attractivité x2 70–80% Clés IA en MVP T1 2026 Saturation réseau local (DER) Effacement
+  production obligatoire 30–40% Flex orchestration capability v2 Crise tarif énergie
+  >€150/MWh Frénésie ACC (3x valeur) 30–50% Pricing model flexible, marketing'
+summary: "Préparation PROMEOS (2025–2026) : \n- Intégrer clés IA dès MVP (vs concurrent\
+  \ attente v2–v3) \n- Préparer module batterie + IRVE (pour cas 50% opérations 2028+)\
+  \ \n- Plaider simplification réglementaire (..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Préparation PROMEOS (2025–2026) : \n- Intégrer clés IA dès MVP (vs concurrent\
+  \ attente v2–v3) \n- Préparer module batterie + IRVE (pour cas 50% opérations 2028+)\
+  \ \n- Plaider simplification réglementaire (FNCCR, Enerplan, SER) \n- Investir en\
+  \ R&D flex orchestration (orchestrateur local demand-response) \n- Monitorer directive\
+  \ UE, legal watch"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: 'Q5 : Évolutions 2026–2030 Changeant la Donne & Préparation Évolution Impact
+    ACC Probabilité Réaction PROMEOS Suppression licence fournisseur PMO < 5 MW +300%
+    AMEP, scalabilité particuliers 30–40% Advoc policy, legal brief, product ready
+    Obligation ACC tertiaire renforcée Doublement opérations collectivités 40% Intégration
+    Décret Tertiaire native Directive UE energy sharing Cross-border ACC pilots, mutualisation
+    10% Monitor EU lawmaking Baisse batterie ($/kWh → 80–100) 25% opérations + stockage
+    50–60% Intégration batterie dans Ops v2 IA dynamique standard industrie +5–15%
+    autoconso, attractivité x2 70–80% Clés IA en MVP T1 2026 Saturation réseau local
+    (DER) Effacement production obligatoire 30–40% Flex orchestration capability v2
+    Crise tarif énergie >€150/MWh Frénésie ACC (3x valeur) 30–50% Pricing model flexible,
+    marketing'
+  anchor: '#q5-volutions-20262030-changeant-la-donne-prparation-volution-impact-acc-probabilit-raction-promeos-suppression-licence-fournisseur-pmo-5-mw-300-amep-scalabilit-particuliers-3040-advoc-policy-legal-brief-product-ready-obligation-acc-tertiaire-renforce-doublement-oprations-collectivits-40-intgration-dcret-tertiaire-native-directive-ue-energy-sharing-cross-border-acc-pilots-mutualisation-10-monitor-eu-lawmaking-baisse-batterie-kwh-80100-25-oprations-stockage-5060-intgration-batterie-dans-ops-v2-ia-dynamique-standard-industrie-515-autoconso-attractivit-x2-7080-cls-ia-en-mvp-t1-2026-saturation-rseau-local-der-effacement-production-obligatoire-3040-flex-orchestration-capability-v2-crise-tarif-nergie-150mwh-frnsie-acc-3x-valeur-3050-pricing-model-flexible-marketing'
+  excerpt_short: "Préparation PROMEOS (2025–2026) : \n- Intégrer clés IA dès MVP (vs\
+    \ concurrent attente v2–v3) \n- Prépa..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

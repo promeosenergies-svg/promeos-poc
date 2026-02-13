@@ -1,0 +1,44 @@
+id: ACC_FRANCE_45
+type: knowledge
+domain: acc
+title: 1. Phasing & Dependencies ┌─────────────────────────────────────────────────────────────┐
+summary: '│ PROMEOS ACC Integration Roadmap 2026 (High-Level) │
+
+  ├─────────────────────────────────────────────────────────────┤
+
+  │ Q1 2026 (Jan-Mar) : MVP 1.0 — Starter Pack │
+
+  │ Q2-Q3 2026 (Apr-Sep) : v1.0 — Ful...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: '│ PROMEOS ACC Integration Roadmap 2026 (High-Level) │
+
+  ├─────────────────────────────────────────────────────────────┤
+
+  │ Q1 2026 (Jan-Mar) : MVP 1.0 — Starter Pack │
+
+  │ Q2-Q3 2026 (Apr-Sep) : v1.0 — Full Ops │
+
+  │ Q4 2026-Q1 2027 (Oct-Mar) : v2.0 — Optim + Integrations │
+
+  └─────────────────────────────────────────────────────────────┘'
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: 1. Phasing & Dependencies ┌─────────────────────────────────────────────────────────────┐
+  anchor: '#1-phasing-dependencies-'
+  excerpt_short: '│ PROMEOS ACC Integration Roadmap 2026 (High-Level) │
+
+    ├─────────────────────────────────────────────...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

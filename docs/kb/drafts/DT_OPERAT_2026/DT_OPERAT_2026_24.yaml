@@ -1,0 +1,35 @@
+id: DT_OPERAT_2026_24
+type: rule
+domain: reglementaire
+title: 11. Ressources Officielles
+summary: "- Plateforme OPERAT : https://www.operateur-tertiaire.ademe.fr \n- ADEME\
+  \ — Décret tertiaire : https://www.ademe.fr (rubrique Efficacité énergétique/Tertiaire)\
+  \ \n- Legifrance — Décret n° 2019-771 : https..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Plateforme OPERAT : https://www.operateur-tertiaire.ademe.fr \n- ADEME\
+  \ — Décret tertiaire : https://www.ademe.fr (rubrique Efficacité énergétique/Tertiaire)\
+  \ \n- Legifrance — Décret n° 2019-771 : https://www.legifrance.gouv.fr \n- Legifrance\
+  \ — Arrêtés modification (Valeurs Absolues VI, etc.) : https://www.legifrance.gouv.fr\
+  \ \n- Guide ADEME “Éco-Énergie Tertiaire” : Documentation téléchargeable sur OPERAT\
+  \ \n- Site dédié Décret BACS : https://www.decret-bacs.fr \n- Site dédié Loi APER\
+  \ parkings : Informations ADEME / Collectivités"
+logic: null
+sources:
+- doc_id: DT_OPERAT_2026
+  label: Decret Tertiaire / OPERAT - Obligations 2026
+  section: 11. Ressources Officielles
+  anchor: '#11-ressources-officielles'
+  excerpt_short: "- Plateforme OPERAT : https://www.operateur-tertiaire.ademe.fr \n\
+    - ADEME — Décret tertiaire : https:/..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

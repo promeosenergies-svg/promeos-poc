@@ -1,0 +1,61 @@
+id: STOCKAGE_ACC_0
+type: rule
+domain: usages
+title: Executive Summary
+summary: "10 idées clés : \n- Le stockage n’est JAMAIS obligatoire pour une ACC, mais\
+  \ il devient pertinent dès lors que les profils PV/conso sont désynchronisés (surplus\
+  \ midi, besoin soir/nuit) et que le coût d’..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "10 idées clés : \n- Le stockage n’est JAMAIS obligatoire pour une ACC,\
+  \ mais il devient pertinent dès lors que les profils PV/conso sont désynchronisés\
+  \ (surplus midi, besoin soir/nuit) et que le coût d’investissement batterie peut\
+  \ être amorti sur 8-12 ans. 1 \n- Trois scénarios justifient un stockage ACC : (i)\
+  \ désynchronisation production-consommation > 30%, (ii) contrainte injection réseau\
+  \ (limitation GRD), (iii) objectif de résilience/indépendance local (backupautonomy).\
+  \ \n- En France 2025 , le cadre réglementaire change radicalement : fin ARENH (décembre\
+  \ 2025), TURPE 7 (août 2026) avec tarifs injection-soutirage localisés, obligation\
+  \ mFRR > 10 MW (2026) — tous ces éléments modifient la rentabilité batterie. 2 3\
+  \ \n- Technologie cible : Batterie Li-ion (LFP 85%, NMC 15%) avec durée de stockage\
+  \ 2–4h pour ACC (coût 100–150 €/kWh CAPEX en 2025, décroissance -10%/an attendue).\
+  \ Alternatives (sodium-ion, flow) restent minoritaires et plus chères. 4 \n- Dimensionnement\
+  \ cible : 10–30% de la puissance PV installée en kW batterie, 0.5–2 kWh par kWc\
+  \ PV selon profil conso. Typiquement, une ACC 100 kWc avec 40% de surplus midi →\
+  \ 20–30 kW / 10–20 kWh suffisent. \n- Deux modèles propriété dominants : (i) batterie\
+  \ propriété collective (investissement PMO ou financement tiers), (ii) batteries\
+  \ réparties chez certains participants (pooling/agrégation virtuelle). Battery-as-a-Service\
+  \ encore marginal en France. \n- Enjeux ACC avec stockage : comptage (impact clés\
+  \ de répartition si batterie = consommateur virtuel), règles de gouvernance (qui\
+  \ finance, qui récupère), conformité GRD/Enedis (raccordement, anti-îlotage, mesure).\
+  \ La complexité administrative peut annuler le gain technique. \n- Indépendance\
+  \ énergétique = mythe pour batterie courte durée . Une batterie 4–8 kWh peut couvrir\
+  \ 2–4 heures d’autonomie seulement (nuit = 8–10h). Besoin de saisonnalité exige\
+  \ 50–100× plus (hydrogène, STEP, oversizing). Batterie seule = autonomie locale,\
+  \ pas indépendance. \n- Business model ACC + stockage : revenus empilables = autoconsommation\
+  \ (ΔE × tarif local) + peak shaving (réduction TURPE) + RES potentiel (si > 100\
+  \ kWh, participation mFRR). Rentabilité : seuil 30–40 k€/an en économies brutes\
+  \ pour justifier 100 k€ CAPEX batterie. \n- Risques réglementaires majeurs : (i)\
+  \ évolution tarifs grid (TURPE ajustement annuel), (ii) règles ACC (changement clé\
+  \ répartition par décret), (iii) batteries = ICPE si > puissance (exigences sécurité/assurance),\
+  \ (iv) cyber/données énergétiques (NIS2). \n\n→ GO/NO-GO décision : Stockage OK\
+  \ si (i) surplus PV > 25%, (ii) budget CAPEX ≥ 80 k€, (iii) gouvernance ACC clarifiée,\
+  \ (iv) objectif TAc/TAp/résilience défini. Sinon, NO-GO."
+logic: null
+sources:
+- doc_id: STOCKAGE_ACC
+  label: Stockage et Autoconsommation Collective
+  section: Executive Summary
+  anchor: '#executive-summary'
+  excerpt_short: "10 idées clés : \n- Le stockage n’est JAMAIS obligatoire pour une\
+    \ ACC, mais il devient pertinent dès ..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,34 @@
+id: ARRETE_ACC_2025_4
+type: rule
+domain: usages
+title: 2.1 Règle générale — Rayon de 2 km
+summary: "Le cadre de base demeure inchangé par l’arrêté du 21 février 2025. L’article\
+  \ L315-2 du Code de l’énergie exige que : \n- Les producteurs et consommateurs soient\
+  \ raccordés au réseau basse tension d’un u..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Le cadre de base demeure inchangé par l’arrêté du 21 février 2025. L’article\
+  \ L315-2 du Code de l’énergie exige que : \n- Les producteurs et consommateurs soient\
+  \ raccordés au réseau basse tension d’un unique gestionnaire de distribution (Enedis\
+  \ sur le territoire métropolitain continental) \n- La distance entre les deux participants\
+  \ les plus éloignés n’excède pas 2 km , mesurée à partir du point d’injection (production)\
+  \ et du point de livraison (consommation) 12"
+logic: null
+sources:
+- doc_id: ARRETE_ACC_2025
+  label: Arrete 21 fevrier 2025 - ACC 5MW/10MW
+  section: 2.1 Règle générale — Rayon de 2 km
+  anchor: '#21-rgle-gnrale-rayon-de-2-km'
+  excerpt_short: Le cadre de base demeure inchangé par l’arrêté du 21 février 2025.
+    L’article L315-2 du Code de l’éne...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,42 @@
+id: STOCKAGE_ACC_2
+type: knowledge
+domain: usages
+title: 'A.2 Clarifications Concepts : TAc, TAp, Autonomie, Indépendance'
+summary: 'Terminologie souvent confuse : Concept Définition Portée Batterie Taux d’Autoconsommation
+  (TAc) kWh produits localement consommés sur site / kWh produits × 100 Batterie améliore
+  TAc de 10–30% (ex : 50...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Terminologie souvent confuse : Concept Définition Portée Batterie Taux\
+  \ d’Autoconsommation (TAc) kWh produits localement consommés sur site / kWh produits\
+  \ × 100 Batterie améliore TAc de 10–30% (ex : 50% → 70%), sauf si ACC sans batterie\
+  \ > 40% déjà Taux d’Autoproduction (TAp) kWh produits localement / kWh consommés\
+  \ × 100 TAp indépendant batterie (défini par PV puissance), mais batterie rend le\
+  \ TAp utilisable (décale production midi → conso soir) Autonomie de durée Temps\
+  \ couverture conso sans approvisionnement externe (heures) Batterie 4 kWh → 4h autonomie\
+  \ (cas typique ACC sur 1 kW conso). Suffit nuit locale (20h non-prod PV), pas assez\
+  \ saisonnalité Indépendance énergétique Couvrir 100% conso annuelle sans réseau\
+  \ Impossible batterie seule : exige oversize saisonnier (jours forts hiver) = 50–100×\
+  \ batterie court-terme. Hybridation hydrogène/STEP ou réseau incontournable \n\n\
+  Point critique : beaucoup de porteurs ACC confondent TAc/autonomie et imaginent\
+  \ que batterie 10 kWh offre 10 h autonomie. En réalité, si ACC 50 kW pics, 10 kWh\
+  \ = 12 min seulement ! Clarifier le besoin (pic vs décalage temporel) dès le départ."
+logic: null
+sources:
+- doc_id: STOCKAGE_ACC
+  label: Stockage et Autoconsommation Collective
+  section: 'A.2 Clarifications Concepts : TAc, TAp, Autonomie, Indépendance'
+  anchor: '#a2-clarifications-concepts-tac-tap-autonomie-indpendance'
+  excerpt_short: 'Terminologie souvent confuse : Concept Définition Portée Batterie
+    Taux d’Autoconsommation (TAc) kWh ...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

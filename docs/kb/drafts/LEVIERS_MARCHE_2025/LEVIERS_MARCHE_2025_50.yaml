@@ -1,0 +1,33 @@
+id: LEVIERS_MARCHE_2025_50
+type: knowledge
+domain: acc
+title: K.2 – Guides Enedis (2025)
+summary: "- Note externe Enedis-OPE-CF_06E (Modalités traitement demandes ACC – phase\
+  \ amont) \n- Note externe Enedis-OPE-CF_07E (Modalités mise en œuvre opération ACC\
+  \ – phase opérationnelle) \n- Modèle Convention..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Note externe Enedis-OPE-CF_06E (Modalités traitement demandes ACC –\
+  \ phase amont) \n- Note externe Enedis-OPE-CF_07E (Modalités mise en œuvre opération\
+  \ ACC – phase opérationnelle) \n- Modèle Convention Enedis PMO-GRD (standard template)\
+  \ \n- Data Connect – Modèle Contrat (accès données) \n- Guide Pédagogique ACC (Enedis\
+  \ + EDF)"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: K.2 – Guides Enedis (2025)
+  anchor: '#k2-guides-enedis-2025'
+  excerpt_short: "- Note externe Enedis-OPE-CF_06E (Modalités traitement demandes\
+    \ ACC – phase amont) \n- Note externe E..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

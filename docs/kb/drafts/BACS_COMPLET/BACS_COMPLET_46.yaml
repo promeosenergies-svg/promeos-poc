@@ -1,0 +1,41 @@
+id: BACS_COMPLET_46
+type: rule
+domain: reglementaire
+title: Exploitation quotidienne
+summary: '- ⬜ Exploitant consulte dashboards 1x/semaine minimum (dérives détectées
+  rapidement)
+
+  - ⬜ Alertes reçues traitées (ex : compteur kWh suspect → vérif capteur)
+
+  - ⬜ Paramètres ajustés saisonnalité (printe...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: '- ⬜ Exploitant consulte dashboards 1x/semaine minimum (dérives détectées
+  rapidement)
+
+  - ⬜ Alertes reçues traitées (ex : compteur kWh suspect → vérif capteur)
+
+  - ⬜ Paramètres ajustés saisonnalité (printemps/été/automne/hiver)
+
+  - ⬜ Maintenance préventive planifiée (filtrages, nettoyages, étalonnages périodiques)'
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Exploitation quotidienne
+  anchor: '#exploitation-quotidienne'
+  excerpt_short: '- ⬜ Exploitant consulte dashboards 1x/semaine minimum (dérives détectées
+    rapidement)
+
+    - ⬜ Alertes reç...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

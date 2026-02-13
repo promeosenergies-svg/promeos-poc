@@ -1,0 +1,40 @@
+id: BACS_COMPLET_44
+type: knowledge
+domain: reglementaire
+title: Plan d'action recommandations
+summary: '- ⬜ Recommandations rapides (<3 mois) identifiées & exécutées (ex : recalibrage
+  T)
+
+  - ⬜ Recommandations moyen terme (3-12 mois) planifiées (ex : remplacement capteur)
+
+  - ⬜ Recommandations long terme (>1...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: '- ⬜ Recommandations rapides (<3 mois) identifiées & exécutées (ex : recalibrage
+  T)
+
+  - ⬜ Recommandations moyen terme (3-12 mois) planifiées (ex : remplacement capteur)
+
+  - ⬜ Recommandations long terme (>12 mois) documentées pour futur (ex : remplacement
+  BACS)'
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Plan d'action recommandations
+  anchor: '#plan-daction-recommandations'
+  excerpt_short: '- ⬜ Recommandations rapides (<3 mois) identifiées & exécutées (ex
+    : recalibrage T)
+
+    - ⬜ Recommandatio...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

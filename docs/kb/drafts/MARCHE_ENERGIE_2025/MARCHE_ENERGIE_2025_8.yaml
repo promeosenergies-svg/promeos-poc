@@ -1,0 +1,35 @@
+id: MARCHE_ENERGIE_2025_8
+type: knowledge
+domain: usages
+title: C. Autres Dispositifs Post-ARENH
+summary: "Extension TRV (Tarif Réglementé Vente) à PME : \n- PME <10 salariés, CA\
+  \ <2M€ : accès TRV étendu (indépendamment niveau consommation) \n- Impact limité\
+  \ PROMEOS (tertiaire souvent >36 kVA actuels) \n\nContr..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Extension TRV (Tarif Réglementé Vente) à PME : \n- PME <10 salariés,\
+  \ CA <2M€ : accès TRV étendu (indépendamment niveau consommation) \n- Impact limité\
+  \ PROMEOS (tertiaire souvent >36 kVA actuels) \n\nContrats moyen terme (4-5 ans)\
+  \ : \n- Deviennent norme post-ARENH pour PME/ETI tertiaires \n- Niveaux de prix\
+  \ attendus : ~65-85€/MWh (vs 42€ ARENH ancien) \n- Pertinent PROMEOS : stratégie\
+  \ hybriding (10% court terme spot, 20% moyen terme fixes, 70% long terme PPA) limite\
+  \ expositions pics"
+logic: null
+sources:
+- doc_id: MARCHE_ENERGIE_2025
+  label: Analyse marche energie France-Europe 2025
+  section: C. Autres Dispositifs Post-ARENH
+  anchor: '#c-autres-dispositifs-post-arenh'
+  excerpt_short: "Extension TRV (Tarif Réglementé Vente) à PME : \n- PME <10 salariés,\
+    \ CA <2M€ : accès TRV étendu (indé..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

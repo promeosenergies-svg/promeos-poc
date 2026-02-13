@@ -1,0 +1,29 @@
+id: BACS_SEUILS_10
+type: knowledge
+domain: reglementaire
+title: Bâtiments existants
+summary: Sont reliés au BACS tous les systèmes techniques pour lesquels la connexion
+  est réalisable avec un TRI < 10 ans (déduction faite des aides).
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: Sont reliés au BACS tous les systèmes techniques pour lesquels la connexion
+  est réalisable avec un TRI < 10 ans (déduction faite des aides).
+logic: null
+sources:
+- doc_id: BACS_SEUILS
+  label: Decret BACS - Seuils, dates, exemptions
+  section: Bâtiments existants
+  anchor: '#btiments-existants'
+  excerpt_short: Sont reliés au BACS tous les systèmes techniques pour lesquels la
+    connexion est réalisable avec un T...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

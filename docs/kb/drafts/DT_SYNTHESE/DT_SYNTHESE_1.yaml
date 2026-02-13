@@ -1,0 +1,31 @@
+id: DT_SYNTHESE_1
+type: knowledge
+domain: usages
+title: Objectifs inchangés
+summary: "- 2030 : Réduction 40% des consommations énergétiques \n- 2040 : Réduction\
+  \ 50% \n- 2050 : Réduction 60% \n- Base de référence : Année 2010-2019 au choix\
+  \ de l’assujetti"
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- 2030 : Réduction 40% des consommations énergétiques \n- 2040 : Réduction\
+  \ 50% \n- 2050 : Réduction 60% \n- Base de référence : Année 2010-2019 au choix\
+  \ de l’assujetti"
+logic: null
+sources:
+- doc_id: DT_SYNTHESE
+  label: Decret Tertiaire - Synthese PROMEOS
+  section: Objectifs inchangés
+  anchor: '#objectifs-inchangs'
+  excerpt_short: "- 2030 : Réduction 40% des consommations énergétiques \n- 2040 :\
+    \ Réduction 50% \n- 2050 : Réduction 60..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

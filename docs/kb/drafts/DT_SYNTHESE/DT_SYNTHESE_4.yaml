@@ -1,0 +1,33 @@
+id: DT_SYNTHESE_4
+type: knowledge
+domain: reglementaire
+title: 'Innovation : Identifiant Unique Bâtimentaire (IUB)'
+summary: "- Résout : Problèmes déclaration multi-occupation (plusieurs entreprises\
+  \ dans même immeuble) \n- Mécanisme : Intégration Référentiel National Bâtiments\
+  \ (RNB) \n- Avantage : Consolidation automatique don..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Résout : Problèmes déclaration multi-occupation (plusieurs entreprises\
+  \ dans même immeuble) \n- Mécanisme : Intégration Référentiel National Bâtiments\
+  \ (RNB) \n- Avantage : Consolidation automatique données par bâtiment \n- Impact\
+  \ PROMEOS : Si portefeuille multi-locataires, réduction drastique risques erreurs\
+  \ déclaratives"
+logic: null
+sources:
+- doc_id: DT_SYNTHESE
+  label: Decret Tertiaire - Synthese PROMEOS
+  section: 'Innovation : Identifiant Unique Bâtimentaire (IUB)'
+  anchor: '#innovation-identifiant-unique-btimentaire-iub'
+  excerpt_short: "- Résout : Problèmes déclaration multi-occupation (plusieurs entreprises\
+    \ dans même immeuble) \n- Méca..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

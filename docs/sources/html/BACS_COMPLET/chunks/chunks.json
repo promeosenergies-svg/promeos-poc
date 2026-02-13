@@ -1,0 +1,623 @@
+[
+  {
+    "chunk_id": "BACS_COMPLET_chunk_0",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Bâtiments Tertiaires – Automation & Control Systems",
+    "anchor": "#btiments-tertiaires-automation-control-systems",
+    "text": "Dernière mise à jour : 29 décembre 2025, 12h00 CET (Europe/Paris) \n\nStatut : Conforme aux décrets n°2020-887, n°2023-259, n°2025-1343 et arrêté 07/04/2023",
+    "word_count": 22,
+    "chunk_index": 0
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_1",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Définition officielle (CCH art. R.175-1)",
+    "anchor": "#dfinition-officielle-cch-art-r175-1",
+    "text": "Système d’automatisation et de contrôle : Tout système comprenant tous les produits, logiciels et services d’ingénierie à même de soutenir fonctionnement efficace énergétique/économique systèmes techniques bâtiment via commandes automatiques et gestion manuelle.[R175-1]",
+    "word_count": 32,
+    "chunk_index": 1
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_2",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Objectifs",
+    "anchor": "#objectifs",
+    "text": "- Réduire consommations énergétiques 15-30% via optimisation équipements CVC \n- Détecter dérives performance (alarmes, alertes temps réel) \n- Soutenir atteinte objectifs décret tertiaire (-40% 2030, -50% 2040, -60% 2050) \n- Assurer confort/santé occupants sans surcoût énergétique",
+    "word_count": 36,
+    "chunk_index": 2
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_3",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Équivalences terminologiques",
+    "anchor": "#quivalences-terminologiques",
+    "text": "- BACS = Building Automation Control System (anglais) \n- GTB = Gestion Technique du Bâtiment (français) \n- BMS = Building Management System (anglais alternatif)",
+    "word_count": 24,
+    "chunk_index": 3
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_4",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Portée géographique",
+    "anchor": "#porte-gographique",
+    "text": "- Champ : Bâtiments tertiaires non-résidentiels (bureaux, commerces, hôtels, établissements scolaires/santé, loisirs, administrations, logistique) \n- Surface minimale : Aucune (s’applique dès qu’un seul équipement CVC dépasse seuil puissance) \n- Applicabilité : France métropolitaine + DROM (même règles)",
+    "word_count": 37,
+    "chunk_index": 4
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_5",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "RÉFÉRENCES JURIDIQUES OFFICIELLES Texte Nature Articles clés Publié Statut Changement majeur Lien source Directive UE 2018/844 Directive européenne Art. 8 (BACS obligatoires) 19/06/2018 Transposée FR Base légale comunitaire EUR-Lex directive Décret n°2020-887 Décret initial BACS R.175-1 à R.175-5 20/07/2020 (JORF 22/07) En vigueur Seuil 290 kW, bâtiments tertiaires Légifrance Décret n°2023-259 Modification calendrier R.175-1 à R.175-5-1 07/04/2023 (JORF 08/04) En vigueur Seuil 70 kW, inspections obligatoires TRI modal Légifrance Arrêté 07/04/2023 Application BACS Annexes 1-3 (TRI, insp.) 07/04/2023 (JORF 08/04) En vigueur Méthode TRI détaillée, fréquence inspection 5 ans Légifrance Décret n°2025-1343 Report calendrier Modif. R.175-2 dates 12/2025 (JORF 28/12) En vigueur Seuil 70 kW = 01/01/2030 (ex 2027) Légifrance Code CCH Code référence R.175-1 à R.175-6 Continu Consolidé Définitions, obligations, responsabilités Légifrance CCH",
+    "anchor": "#rfrences-juridiques-officielles-texte-nature-articles-cls-publi-statut-changement-majeur-lien-source-directive-ue-2018844-directive-europenne-art-8-bacs-obligatoires-19062018-transpose-fr-base-lgale-comunitaire-eur-lex-directive-dcret-n2020-887-dcret-initial-bacs-r175-1-r175-5-20072020-jorf-2207-en-vigueur-seuil-290-kw-btiments-tertiaires-lgifrance-dcret-n2023-259-modification-calendrier-r175-1-r175-5-1-07042023-jorf-0804-en-vigueur-seuil-70-kw-inspections-obligatoires-tri-modal-lgifrance-arrt-07042023-application-bacs-annexes-1-3-tri-insp-07042023-jorf-0804-en-vigueur-mthode-tri-dtaille-frquence-inspection-5-ans-lgifrance-dcret-n2025-1343-report-calendrier-modif-r175-2-dates-122025-jorf-2812-en-vigueur-seuil-70-kw-01012030-ex-2027-lgifrance-code-cch-code-rfrence-r175-1-r175-6-continu-consolid-dfinitions-obligations-responsabilits-lgifrance-cch",
+    "text": "Lien centralisé accès textes : https://www.legifrance.gouv.fr (rechercher “R.175-1” ou “décret BACS”)",
+    "word_count": 11,
+    "chunk_index": 5
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_6",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "DECISION TREE : “SUIS-JE CONCERNÉ ?” ┌─ BÂTIMENT TERTIAIRE NON-RÉSIDENTIEL ?",
+    "anchor": "#decision-tree-suis-je-concern-btiment-tertiaire-non-rsidentiel-",
+    "text": "│ ├─ NON → Pas concerné (BACS non obligatoire)\n│ └─ OUI\n│ ├─ SYSTÈME CHAUFFAGE OU CLIMATISATION (combiné ou non ventilation) ?\n│ │ ├─ NON → Pas concerné\n│ │ └─ OUI\n│ │ ├─ CALCUL PUISSANCE UTILE (Putile) :\n│ │ │ Additionner puissances (kW) selon règles :\n│ │ │ • Chaud : max(systèmes distincts) OU somme(systèmes réseau/cascade)\n│ │ │ • Froid : somme(thermodynamiques même bâtiment)\n│ │ │ • Si plusieurs systèmes : comparer chaud vs froid, retenir le plus élevé\n│ │ │\n│ │ ├─ Putile > 290 kW ?\n│ │ │ ├─ OUI → OBLIGATION 01/01/2025 (URGENCE IMMÉDIATE)\n│ │ │ │ ├─ Bâtiment neuf (PC post-21/07/2021) : BACS obligatoire\n│ │ │ │ └─ Bâtiment existant : BACS si TRI < 10 ans OU avant 01/01/2025\n│ │ │ │\n│ │ │ └─ NON (≤290 kW), Putile > 70 kW ?\n│ │ │ ├─ OUI → OBLIGATION 01/01/2030 (Report novembre 2025)\n│ │ │ │ ├─ Bâtiment neuf (PC post-08/04/2024) : BACS obligatoire\n│ │ │ │ ├─ Bâtiment existant (renouvellement post-09/04/2023) : BACS\n│ │ │ │ └─ Bâtiment existant (sans renouvellement) : Avant 01/01/2030 OU audit TRI exemption\n│ │ │ │\n│ │ │ └─ NON (≤70 kW) → Pas concerné décret BACS\n│ │ │\n│ │ ├─ BÂTIMENT NEUF OU EXISTANT ?\n│ │ │ ├─ NEUF (PC déposé après 21/07/2021 seuil 290 kW, après 08/04/2024 seuil 70 kW)\n│ │ │ │ └─ BACS obligatoire SANS exemption TRI\n│ │ │ └─ EXISTANT\n│ │ │ ├─ Renouvellement équipement post-09/04/2023 ?\n│ │ │ │ ├─ OUI → BACS obligatoire, seuil 70 kW si renouvellement ≥09/04/2023\n│ │ │ │ └─ NON (ancien système)\n│ │ │ │ ├─ Putile > 290 kW → Avant 01/01/2025 (sauf TRI > 10 ans)\n│ │ │ │ └─ Putile 70-290 kW → Avant 01/01/2030 (sauf TRI > 10 ans)\n│ │ │\n│ │ └─ TRI > 10 ANS JUSTIFIÉ ?\n│ │ ├─ OUI (audit + documentation) → EXEMPTION VALIDE (conservation 10 ans)\n│ │ └─ NON → OBLIGATION BACS s'applique",
+    "word_count": 359,
+    "chunk_index": 6
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_7",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Systèmes de chauffage",
+    "anchor": "#systmes-de-chauffage",
+    "text": "- Chaudières combustion (cascade/réseau) : Somme puissances nominales = 2×200 kW = 400 kW \n- PAC réversible : Puissance utile chaud (label) \n- Chauffage électrique : Puissance électrique max appelée (somme tous radiateurs électriques) \n- Systèmes distincts (PAC + chaudière) : Max (150 kW + 50 kW) = 150 kW (pas somme) \n- Règle générale : Si composantes en réseau/cascade = somme ; si indépendants = max",
+    "word_count": 67,
+    "chunk_index": 7
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_8",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Systèmes de climatisation",
+    "anchor": "#systmes-de-climatisation",
+    "text": "- PAC réversible + appoint froid : Somme (ex : 180 kW + 120 kW = 300 kW) \n- Systèmes thermodynamiques même bâtiment : Somme toutes unités \n- Climatiseurs individuels : Somme tous les climatiseurs",
+    "word_count": 35,
+    "chunk_index": 8
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_9",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Logique déclenchement",
+    "anchor": "#logique-dclenchement",
+    "text": "- Obligation si : Putile chauffage OU Putile climatisation > seuil (le plus élevé déclenche) \n- Exemple : Chaud 200 kW + Froid 320 kW → Froid déclenche obligation (320 > 290 kW)",
+    "word_count": 33,
+    "chunk_index": 9
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_10",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "OBLIGATIONS FONCTIONNELLES MINIMALES : TERRAIN",
+    "anchor": "#obligations-fonctionnelles-minimales-terrain",
+    "text": "Tout système BACS doit garantir 5 capacités clés (article R.175-3 CCH) :",
+    "word_count": 12,
+    "chunk_index": 10
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_11",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "1️⃣ SUIVI & ENREGISTREMENT CONTINU",
+    "anchor": "#1-suivi-enregistrement-continu",
+    "text": "- Mesure : Données production/consommation énergétique par zone fonctionnelle \n- Archivage : Historiques enregistrées 5 ans minimum (accès propriétaire garanti) \n- Granularité : Au minimum par système technique (chauffage, clim, ventilation, ECS, éclairage, etc.) \n- Exemple : Bâtiment multi-étages → sous-comptage par étage OU automatisme par zone usage homogène",
+    "word_count": 49,
+    "chunk_index": 11
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_12",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "2️⃣ ANALYSE & DÉTECTION DÉRIVES",
+    "anchor": "#2-analyse-dtection-drives",
+    "text": "- Benchmark : Situer efficacité énergétique vs valeurs de référence (consommation théorique, année antérieure, secteur) \n- Alertes : Détecter automatiquement pertes d’efficacité (ex : conso > +10% vs normal, équipement défaillant) \n- Rapports : Fournir exploitant possibilités d’amélioration (pas juste données brutes) \n- Exemple : Caisson ventilation trop ouvert → surconso chaud/froid détectée, alerte = X€/mois perte",
+    "word_count": 57,
+    "chunk_index": 12
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_13",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "3️⃣ INTEROPÉRABILITÉ",
+    "anchor": "#3-interoprabilit",
+    "text": "- Capacité : Communiquer avec autres systèmes (normes ouvertes, API standards) \n- Modularité : Architecture souple et évolutive (ajouter/retirer systèmes futurs sans refonte) \n- Intégration : Tous systèmes techniques (chaud, froid, ventilation, ECS, éclairage) = raccordables au BACS central \n- Exemple : Remplacer chaudière → nouvelle chaudière se branche directement au BACS existant, pas refonte",
+    "word_count": 55,
+    "chunk_index": 13
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_14",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "4️⃣ ARRÊT MANUEL & AUTONOMIE",
+    "anchor": "#4-arrt-manuel-autonomie",
+    "text": "- Contrôle manuel : Possibility d’arrêter/piloter manuellement tout ou partie BACS \n- Autonomie : Gestion autonome systèmes (configurations multi-sites avec hyperviseur pilotant supervisions distantes = OK) \n- Sécurité : Pas de dépendance réseau permanent (critères de basculement local) \n- Exemple : PM émetrise hyperviseur 10 sites → chaque site fonctionne en autonomie locale + synchrone hyperviseur",
+    "word_count": 56,
+    "chunk_index": 14
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_15",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "5️⃣ RECOMMANDATIONS & AMÉLIORATIONS",
+    "anchor": "#5-recommandations-amliorations",
+    "text": "- Rapport inspection : Fournir tous 5 ans document avec recommandations réglages, remplacement équip., solutions alternatives \n- Formation : Documenter bon usage système pour exploitant/gestionnaire \n- Opportunités : Évaluer intérêt remplacement système (obsolescence, sur-consomé, etc.) \n- Exemple : Inspection détecte thermostat décalé -2°C → recommande recalibrage (gain -5% chaud)",
+    "word_count": 49,
+    "chunk_index": 15
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_16",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Définition TRI (Temps Retour Investissement) TRI (ans) = S / (G × C)",
+    "anchor": "#dfinition-tri-temps-retour-investissement-tri-ans-s-g-c",
+    "text": "Avec :\n S = Surcoût BACS (€) = Coût installation - Aides financières\n • Coût installation = matériel + MO + paramétrage + analyse fonctionnelle + logiciels/ingénierie\n G = Gain énergétique (kWh/an) = (Conso moy 2 ans) × Taux réduction (%)\n • Taux par défaut = 15% (ou audit spécialisé si différent)\n C = Coût énergétique moyen (€/kWh) = moyenne tarif facturé 12 mois avant demande",
+    "word_count": 66,
+    "chunk_index": 16
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_17",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Méthodologie calcul (arrêté 07/04/2023)",
+    "anchor": "#mthodologie-calcul-arrt-07042023",
+    "text": "- Consommation de base : Moyenne consommations 2 dernières années (kWh électricité, gaz, etc.) \n- Gain estimé : 15% par défaut OU valeur audit spécialisé (ex : 8% suite audit thermique) \n- Coût énergie : Prix moyen du kWh facturé 12 mois antérieurs (distinct par fluide) \n- Gain énergétique : Conso base × % réduction = kWh économisés \n- Gain monétaire : kWh gains × prix €/kWh = € économies annuelles \n- Surcoût BACS : Devis complet moins aides (CEE, MaPrimeRénov, etc.) \n- Calcul TRI : S / (G€) = années retour \n- Exemption si : TRI > 10 ans strictement",
+    "word_count": 101,
+    "chunk_index": 17
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_18",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Exceptions à la base 2 ans",
+    "anchor": "#exceptions-la-base-2-ans",
+    "text": "- Rénovation énergétique 2 ans avant : Utiliser 1 année la plus récente (consommation normalisée post-travaux) \n- Bâtiment vide 1 année : Utiliser uniquement années occupées (moyenne réduite)",
+    "word_count": 28,
+    "chunk_index": 18
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_19",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Risque audit non-conformité",
+    "anchor": "#risque-audit-non-conformit",
+    "text": "- Audit découvre exemption non-justifiée : Site classé non-conforme \n- Pénalité administrative : Jusqu’à 300€/jour retard (cumul si multi-sites) \n- Obligation mise en conformité : Délai supplémentaire possible (à négocier) \n- Responsabilité propriétaire : Preuve incombe assujetti",
+    "word_count": 37,
+    "chunk_index": 19
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_20",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Examen fonctionnel (1ère inspection uniquement)",
+    "anchor": "#examen-fonctionnel-1re-inspection-uniquement",
+    "text": "- Vérification architecture BACS (diagramme systèmes, capteurs, actionneurs, supervision) \n- Documentation équipements (plans, listes matériels) \n- Paramétrage initial vs besoins bâtiment",
+    "word_count": 21,
+    "chunk_index": 20
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_21",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Vérification bon fonctionnement (ALL inspections)",
+    "anchor": "#vrification-bon-fonctionnement-all-inspections",
+    "text": "- Test appareil de mesure (capteurs température, humidité, compteurs kWh) → étalonnage ✓/✗ \n- Vérification algorithmes de régulation (chaud/froid/ventilation réagissent normally) \n- Détection dérives actives (alertes lorsque consommation dépasse +X%) \n- Archivage données fonctionne (historiques consultables, 5 ans présent)",
+    "word_count": 39,
+    "chunk_index": 21
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_22",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Évaluation exigences moyens (sauf réinspection sans changement)",
+    "anchor": "#valuation-exigences-moyens-sauf-rinspection-sans-changement",
+    "text": "- Interopérabilité : Connexions toujours au standard (API, protocole) \n- Arrêt manuel : Possibilité toujours présente et testée \n- Recommandations accessibles : Rapports générés automatiquement pour exploitant",
+    "word_count": 27,
+    "chunk_index": 22
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_23",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Paramétrage vs usage réel",
+    "anchor": "#paramtrage-vs-usage-rel",
+    "text": "- Consignes température correspondent-elles occupancy réelle ? (bureaux 8-18h = paramétré ?) \n- ECS, éclairage, ventilation = réglés pour usage du bâtiment ? (overconsommation détectée ?) \n- Calendrier saisonnier vs occupation vacances ? (consignes hiver/été justes ?)",
+    "word_count": 37,
+    "chunk_index": 23
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_24",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Recommandations (Annexe 3 arrêté 07/04/2023)",
+    "anchor": "#recommandations-annexe-3-arrt-07042023",
+    "text": "- Bon usage système en place (notice exploitant) \n- Améliorations possibles installation (recalibrage, remplacement, économies rapides) \n- Intérêt remplacement BACS (obsolescence, architectures modernes) \n- Solutions alternatives (autre BACS, sous-traitance gestion)",
+    "word_count": 30,
+    "chunk_index": 24
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_25",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Coûts typiques inspection BACS (données marché 2025) Type bâtiment Taille BACS Durée insp. Coût HT approx. PME tertiaire simple 1 site, 1-2 systèmes 4-6h 1 500 – 2 000€ Immeuble moyen 1 site, 3-4 systèmes, multi-zones 6-8h 2 000 – 3 000€ Grand tertiaire 1 site complexe OU multi-sites pilotage 8-12h 3 000 – 5 000€ Portfolio multi-sites (x10 sites) Audit global + inspections coordonnées 40-60h 12 000 – 20 000€ (économies d’échelle)",
+    "anchor": "#cots-typiques-inspection-bacs-donnes-march-2025-type-btiment-taille-bacs-dure-insp-cot-ht-approx-pme-tertiaire-simple-1-site-1-2-systmes-4-6h-1-500-2-000-immeuble-moyen-1-site-3-4-systmes-multi-zones-6-8h-2-000-3-000-grand-tertiaire-1-site-complexe-ou-multi-sites-pilotage-8-12h-3-000-5-000-portfolio-multi-sites-x10-sites-audit-global-inspections-coordonnes-40-60h-12-000-20-000-conomies-dchelle",
+    "text": "Remarque : Aides possibles (CEE audit, partenaires GTB) peuvent couvrir 30-50% inspection.",
+    "word_count": 12,
+    "chunk_index": 25
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_26",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "PMO MISE EN CONFORMITÉ (8-12 SEMAINES)",
+    "anchor": "#pmo-mise-en-conformit-8-12-semaines",
+    "text": "Applicable bâtiments >290 kW NON CONFORMES 2025 ou >70 kW EXISTANTS 2025-2030",
+    "word_count": 12,
+    "chunk_index": 26
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_27",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Phase 1 : DIAGNOSTIC URGENT (Semaines 1-2) Étape Livrables Responsable Outils Risques Audit conformité rapide Fiche site (puissance, équip., date instal., état BACS) Gestionnaire + BET Fiche standardisée, visite site 2h Données puissance inexactes Calcul Putile Tableaux puissance chauffage + climatisation, seuil dépassé confirmé BET + Intégrateur Fiches équipements, plaques signalétiques Confusion systèmes distincts vs réseau Audit TRI préalable Consommations 2 ans, tarifs énergie, devis BACS indicatif BE audit + Intégrateur Facturation énergie, appels offres rapides Aides estimées à défaut Risk score Si >290 kW + pas BACS 01/01/2025 = CRITICITÉ ROUGE PM projets Checklist conformité Dépassement deadline imminent Décision stratégique BACS vs exemption TRI vs mixte phasing Direction immobilier Matrice décision TRI/CAPEX Choix tard = délai exécution",
+    "anchor": "#phase-1-diagnostic-urgent-semaines-1-2-tape-livrables-responsable-outils-risques-audit-conformit-rapide-fiche-site-puissance-quip-date-instal-tat-bacs-gestionnaire-bet-fiche-standardise-visite-site-2h-donnes-puissance-inexactes-calcul-putile-tableaux-puissance-chauffage-climatisation-seuil-dpass-confirm-bet-intgrateur-fiches-quipements-plaques-signaltiques-confusion-systmes-distincts-vs-rseau-audit-tri-pralable-consommations-2-ans-tarifs-nergie-devis-bacs-indicatif-be-audit-intgrateur-facturation-nergie-appels-offres-rapides-aides-estimes-dfaut-risk-score-si-290-kw-pas-bacs-01012025-criticit-rouge-pm-projets-checklist-conformit-dpassement-deadline-imminent-dcision-stratgique-bacs-vs-exemption-tri-vs-mixte-phasing-direction-immobilier-matrice-dcision-tricapex-choix-tard-dlai-excution",
+    "text": "GO/NO-GO : TRI > 10 ans justifié ? OUI = exemption possible → Doc TRI ; NON = BACS obligatoire",
+    "word_count": 20,
+    "chunk_index": 27
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_28",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Phase 2 : SPÉCIFICATIONS & APPELS OFFRES (Semaines 3-5) Étape Livrables Responsable Outils Risques Cahier des charges BACS Spécifications techniques (architecte BACS), zones fonctionnelles, systèmes à intégrer, niveaux d’automatisation BE + Propriétaire Template CdC (+ guide RT-RE BACS) Spécifications incomplètes → débordement scope Appel d’offres Envoi 3-5 intégrateurs BACS (classement, délais, prix) Responsable appels RFQ standardisé, calendrier respect Réponses tardives, délais install impossibles Aides financières identification Dossier CEE (fiche opération BACS), MaPrimeRénov tertiaire, Éco-PTZ si applicable Responsable financement Portails CEE/MaPrimeRénov, simulation Aides refusées = surcoût initial impact Sélection prestataire Contrat intégrateur signé (clauses conformité, délai, inspection incluse) Responsable contrat Contrat type GTB, clauses BACS Non-livraison conforme, débordement délai Planification détaillée Gantt 8-10 semaines (install, param., test, commissioning, 1ère insp.) Intégrateur + PM MS Project/Trello, jalons clairs Dérives calendrier = dépassement deadline",
+    "anchor": "#phase-2-spcifications-appels-offres-semaines-3-5-tape-livrables-responsable-outils-risques-cahier-des-charges-bacs-spcifications-techniques-architecte-bacs-zones-fonctionnelles-systmes-intgrer-niveaux-dautomatisation-be-propritaire-template-cdc-guide-rt-re-bacs-spcifications-incompltes-dbordement-scope-appel-doffres-envoi-3-5-intgrateurs-bacs-classement-dlais-prix-responsable-appels-rfq-standardis-calendrier-respect-rponses-tardives-dlais-install-impossibles-aides-financires-identification-dossier-cee-fiche-opration-bacs-maprimernov-tertiaire-co-ptz-si-applicable-responsable-financement-portails-ceemaprimernov-simulation-aides-refuses-surcot-initial-impact-slection-prestataire-contrat-intgrateur-sign-clauses-conformit-dlai-inspection-incluse-responsable-contrat-contrat-type-gtb-clauses-bacs-non-livraison-conforme-dbordement-dlai-planification-dtaille-gantt-8-10-semaines-install-param-test-commissioning-1re-insp-intgrateur-pm-ms-projecttrello-jalons-clairs-drives-calendrier-dpassement-deadline",
+    "text": "GO : Contrat signé, aides activées, démarrage imminent",
+    "word_count": 8,
+    "chunk_index": 28
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_29",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Phase 4 : INSPECTION & CONFORMITÉ (Semaines 10-12) Étape Livrables Responsable Outils Risques 1ère inspection obligatoire Audit complet par inspecteur certifié (2-5h selon complexité) Bureau inspection externe Grille inspection arrêté 07/04/2023 Rapport critique = mise en conformité suppl. Rapport inspection Document signé + recommandations pour exploitant ; 1 copie archivage 10 ans BE inspection Template rapport standardisé Documentation incomplète → non-recevable audit Plan d’action recommandations Priorisation améliorations rapides, calendrier moyen/long terme Propriétaire + Exploitant Tableau reco priorités Recommandations ignorées = perf dégradée Attestation conformité Certificat “Conforme décret BACS” généré (archivage, justificatif audit) Intégrateur ou BE PDF signé horodaté Absence attestation = contestable légalement Documentation finale Dossier complet (schémas, paramètres, rapports, formation) archivé 10 ans Propriétaire Classeur physique + copie numérique Perte doc → risque audit futur",
+    "anchor": "#phase-4-inspection-conformit-semaines-10-12-tape-livrables-responsable-outils-risques-1re-inspection-obligatoire-audit-complet-par-inspecteur-certifi-2-5h-selon-complexit-bureau-inspection-externe-grille-inspection-arrt-07042023-rapport-critique-mise-en-conformit-suppl-rapport-inspection-document-sign-recommandations-pour-exploitant-1-copie-archivage-10-ans-be-inspection-template-rapport-standardis-documentation-incomplte-non-recevable-audit-plan-daction-recommandations-priorisation-amliorations-rapides-calendrier-moyenlong-terme-propritaire-exploitant-tableau-reco-priorits-recommandations-ignores-perf-dgrade-attestation-conformit-certificat-conforme-dcret-bacs-gnr-archivage-justificatif-audit-intgrateur-ou-be-pdf-sign-horodat-absence-attestation-contestable-lgalement-documentation-finale-dossier-complet-schmas-paramtres-rapports-formation-archiv-10-ans-propritaire-classeur-physique-copie-numrique-perte-doc-risque-audit-futur",
+    "text": "GO : Inspection réussie, rapport conforme, site déclaré conforme 01/01/2025",
+    "word_count": 10,
+    "chunk_index": 29
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_30",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Identification site",
+    "anchor": "#identification-site",
+    "text": "- ⬜ Nom bâtiment & adresse précis\n- ⬜ Propriétaire équipements identifié (bailleurs, locataires, mixed)\n- ⬜ Nature activité tertiaire confirmée (bureaux / commerces / santé / éducation / etc)\n- ⬜ Date permis de construire récupérée (ou date construction existant)",
+    "word_count": 41,
+    "chunk_index": 30
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_31",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Diagnostic puissance utile",
+    "anchor": "#diagnostic-puissance-utile",
+    "text": "- ⬜ Inventaire ALL équipements chauffage (chaudières, PAC, radiateurs élec, réseau chaleur)\n- ⬜ Plaques signalétiques relevées (puissance nominale utile en kW de chaque)\n- ⬜ Inventaire ALL équipements climatisation (PAC, clim split/centralisée, refroidisseurs)\n- ⬜ Plaques signalétiques climatisation (puissance utile froid kW)\n- ⬜ Ventilation présente ? (OU absent, et règle cumul appliquée ?)\n- ⬜ Calcul Putile chauffage (somme reseau OU max systèmes distincts)\n- ⬜ Calcul Putile climatisation (somme thermodynamiques)\n- ⬜ Seuil déclenche obligation confirmé : > 290 kW OUI/NON, > 70 kW OUI/NON",
+    "word_count": 88,
+    "chunk_index": 31
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_32",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Assujettissement & calendrier",
+    "anchor": "#assujettissement-calendrier",
+    "text": "- ⬜ Seuil > 290 kW → Deadline 01/01/2025 (URGENCE 2025)\n- ⬜ Seuil > 70 kW + bâtiment neuf post-08/04/2024 → OBLIGATION BACS (néo pas exemption TRI)\n- ⬜ Seuil > 70 kW + existant renouvellement post-09/04/2023 → OBLIGATION BACS au renouvellement\n- ⬜ Seuil > 70 kW + existant sans renouvellement → Deadline 01/01/2030 (report)\n- ⬜ Responsable obligé identifié (propriétaire équip ou locataire ?)",
+    "word_count": 67,
+    "chunk_index": 32
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_33",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Audit TRI (si exemption envisagée)",
+    "anchor": "#audit-tri-si-exemption-envisage",
+    "text": "- ⬜ Consommations énergétiques année N-2 collectées (kWh élec, gaz, autres)\n- ⬜ Consommations année N-1 collectées (idem)\n- ⬜ Moyenne 2 ans calculée (par fluide)\n- ⬜ Tarifs €/kWh collectés (factures 12 mois antérieurs)\n- ⬜ Gain énergétique estimé : 15% par défaut OU audit spécialisé en cours (%)\n- ⬜ Coût BACS : devis complet intégrateur BACS reçu (matériel + MO + param + logiciels)\n- ⬜ Aides identifiées : CEE prévisionnel, MaPrimeRénov, Éco-PTZ, autres (montants)\n- ⬜ Surcoût BACS = Coût – Aides calculé (€ net)\n- ⬜ TRI calculé = S / (G€) = X années\n- ⬜ Résultat TRI : > 10 ans → EXEMPTION POSSIBLE ; ≤ 10 ans → BACS OBLIGATOIRE",
+    "word_count": 118,
+    "chunk_index": 33
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_34",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Décision stratégique",
+    "anchor": "#dcision-stratgique",
+    "text": "- ⬜ SI exemption TRI justifiée (TRI > 10) : Dossier TRI complet archivé 10 ans (preuve audit)\n- ⬜ SI BACS obligatoire : Lancer cahier des charges + appels offres phase 3",
+    "word_count": 33,
+    "chunk_index": 34
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_35",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Cahier des charges",
+    "anchor": "#cahier-des-charges",
+    "text": "- ⬜ Zones fonctionnelles identifiées (bureaux, halls, RDC, etc) – usage homogène par zone\n- ⬜ Systèmes à embarquer listés : chauffage, climatisation, ventilation, ECS, éclairage, production élec (oui/non)\n- ⬜ Niveaux automatisation définis (régulation seule vs optimisation vs prédictif)\n- ⬜ Architecture BACS spécifiée (centralisée / distribuée / hybride)\n- ⬜ Interopérabilité exigée (normes ouvertes demandées : BACnet, Modbus, Z-Wave, etc)\n- ⬜ Archivage 5 ans données spécifié (capacité stockage, accès propriétaire)\n- ⬜ Formation exploitant incluse dans scope (nombre jours, sujets)",
+    "word_count": 83,
+    "chunk_index": 35
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_36",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Appels d'offres",
+    "anchor": "#appels-doffres",
+    "text": "- ⬜ RFQ envoyé 3-5 intégrateurs BACS qualifiés (références secteur)\n- ⬜ Deadline réponse fixée (ex : 2 semaines)\n- ⬜ Critères évaluation définis (prix, délai, réf., garantie, support)\n- ⬜ Offres reçues analysées (meilleur value, pas juste prix bas)\n- ⬜ Sélection prestataire : contrat signé (clauses BACS, conformité, deadline, inspection incluse)",
+    "word_count": 53,
+    "chunk_index": 36
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_37",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Financement",
+    "anchor": "#financement",
+    "text": "- ⬜ CEE fiche opération BACS préparée (n° opération, prestataire, économies kWh estimées)\n- ⬜ Dossier MaPrimeRénov tertiaire préparé (si éligible)\n- ⬜ Demandes aides validées, engagements reçus (montants prévus)\n- ⬜ Budget net après aides confirmé (impact trésorerie)",
+    "word_count": 39,
+    "chunk_index": 37
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_38",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Installation & paramérage",
+    "anchor": "#installation-paramrage",
+    "text": "- ⬜ Matériel BACS livré site (capteurs, automates, supervision) – checklist de réception\n- ⬜ Installation électricien complétée (cabling, armoire, alimentations)\n- ⬜ Paramètres systèmes chargés (consignes chaud/froid, calendriers, saisonnalité)\n- ⬜ Connexions captor/actionneur testées (acquisition données fonctionnelle)\n- ⬜ Tests arrêt manuel + pilotage validés (sécurité & contrôle)\n- ⬜ Archivage données activé (derniers 5 ans accessible, écriture en continu)",
+    "word_count": 61,
+    "chunk_index": 38
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_39",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Commissioning & tests",
+    "anchor": "#commissioning-tests",
+    "text": "- ⬜ Plan de test exécuté complet (activation chaque système, chaîne complète)\n- ⬜ Capteurs étalonnés (température, humidité, compteurs kWh alignés réalité)\n- ⬜ Algorithmes régulation testés (chaud > T cible ?, froid < T cible ?, arrêts manuels OK ?)\n- ⬜ Alarmes alertes testées (dérive détectée automatiquement ? notification exploitant ?)\n- ⬜ Rapports données générés & consultables (derniers 7 jours accessible propriétaire)\n- ⬜ Tous tests VALIDÉS avant go-live (rapport test signé)",
+    "word_count": 75,
+    "chunk_index": 39
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_40",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Formation exploitant",
+    "anchor": "#formation-exploitant",
+    "text": "- ⬜ Formation 4h réalisée (pilotage, consultation données, alertes, maintenance basique)\n- ⬜ Manuels exploitant en français remis & expliqués (accès hyperviseur, rapports, paramètres)\n- ⬜ Support vendor contact confirmé (n° tél, email, SLA réponse 24h)\n- ⬜ Attente exploitant documentée (usage quotidien, fréquence suivi, escalade problèmes)",
+    "word_count": 47,
+    "chunk_index": 40
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_41",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Mise en production",
+    "anchor": "#mise-en-production",
+    "text": "- ⬜ Go-live date fixée (coordonné avec deadline conformité si 01/01/2025)\n- ⬜ Support intensive 4 semaines (Intégrateur dispo, ajustements fin-tuning)\n- ⬜ Monitoring perf post-install (données réelles vs paramétrages prévus)\n- ⬜ Ajustements consignes si nécessaire (confort utilisateurs, surconso détectée → rectification)",
+    "word_count": 43,
+    "chunk_index": 41
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_42",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Première inspection (obligatoire avant 01/01/2025 si BACS déjà installé)",
+    "anchor": "#premire-inspection-obligatoire-avant-01012025-si-bacs-dj-install",
+    "text": "- ⬜ Inspecteur certifié sélectionné (interne/externe, accrédité NF, AFNOR, ou équivalent)\n- ⬜ Inspection planifiée & site accessible (2-6h selon complexité)\n- ⬜ Examen fonctionnel BACS complet (architecture, plans, équipements)\n- ⬜ Vérification bon fonctionnement (capteurs, actionneurs, data archivage, alertes)\n- ⬜ Paramètres vs usage bâtiment validés (T consignes OK ?, saisonnalité ?, occupancy ?)\n- ⬜ Étalonnage capteurs vérifié (température, humidité, compteurs kWh = acceptable)",
+    "word_count": 66,
+    "chunk_index": 42
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_43",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Rapport inspection",
+    "anchor": "#rapport-inspection",
+    "text": "- ⬜ Rapport signé inspecteur reçu dans 1 mois post-visite\n- ⬜ Rapport contient : exécutif, détails techniques, recommandations, plan d'action\n- ⬜ Copie archivée propriétaire (10 ans minimum, préservation digitale)\n- ⬜ Recommandations triées priorité (rapides < rapide moyen < long terme)",
+    "word_count": 43,
+    "chunk_index": 43
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_44",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Plan d'action recommandations",
+    "anchor": "#plan-daction-recommandations",
+    "text": "- ⬜ Recommandations rapides (<3 mois) identifiées & exécutées (ex : recalibrage T)\n- ⬜ Recommandations moyen terme (3-12 mois) planifiées (ex : remplacement capteur)\n- ⬜ Recommandations long terme (>12 mois) documentées pour futur (ex : remplacement BACS)",
+    "word_count": 39,
+    "chunk_index": 44
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_45",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Inspections récurrentes",
+    "anchor": "#inspections-rcurrentes",
+    "text": "- ⬜ Prochaine inspection planifiée (5 ans max après rapport précédent, ou 2 ans si renouvellement système)\n- ⬜ Rappel calendrier dans agenda PM",
+    "word_count": 24,
+    "chunk_index": 45
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_46",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Exploitation quotidienne",
+    "anchor": "#exploitation-quotidienne",
+    "text": "- ⬜ Exploitant consulte dashboards 1x/semaine minimum (dérives détectées rapidement)\n- ⬜ Alertes reçues traitées (ex : compteur kWh suspect → vérif capteur)\n- ⬜ Paramètres ajustés saisonnalité (printemps/été/automne/hiver)\n- ⬜ Maintenance préventive planifiée (filtrages, nettoyages, étalonnages périodiques)",
+    "word_count": 38,
+    "chunk_index": 46
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_47",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Documentation & archivage",
+    "anchor": "#documentation-archivage",
+    "text": "- ⬜ Tous rapports, contrats, recommandations archivés 10 ans (conformité légale)\n- ⬜ Historiques données BACS conservées 5 ans (exigence légale, accès propriétaire)\n- ⬜ Changements système documentés (remplacement équipement, modifications paramétrages)",
+    "word_count": 32,
+    "chunk_index": 47
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_48",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Amélioration continue",
+    "anchor": "#amlioration-continue",
+    "text": "- ⬜ Bilan annuel énergie vs objectifs (économies réelles vs prévisions)\n- ⬜ Recommandations mises en œuvre évaluées (gain mesurable ?)\n- ⬜ Nouvelles optimisations identifiées (ex : occupancy sensors pour éclairage)\n- ⬜ Investissements futurs justifiés sur base données BACS (TRI moyen terme)",
+    "word_count": 44,
+    "chunk_index": 48
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_49",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Conformité légale",
+    "anchor": "#conformit-lgale",
+    "text": "- ⬜ Attestation conformité BACS conservée (preuve autorités si audit)\n- ⬜ Rapports inspection archivés (preuve décret BACS respecté)\n- ⬜ Dossier exemption TRI (si applicable) archivé 10 ans (preuve dérogation valide)\n- ⬜ Registre BACS maintenance / changements tenu à jour\n\n---\n\n✅ **CONFORMITÉ DÉCRET BACS CONFIRMÉE** (Date : [_______] Signataire : [_______])",
+    "word_count": 54,
+    "chunk_index": 49
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_50",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Q1. « Mon immeuble de bureaux a 250 kW chaud + 300 kW froid. Suis-je concerné ? »",
+    "anchor": "#q1-mon-immeuble-de-bureaux-a-250-kw-chaud-300-kw-froid-suis-je-concern-",
+    "text": "R1. Oui, OBLIGATION immédiate. Max(250 chaud, 300 froid) = 300 kW > 290 kW → Deadline 01/01/2025 . Si pas BACS aujourd’hui = non-conforme risque pénalité . Lancer audit TRI rapide (exemption si TRI > 10 ans) ou devis BACS urgent (délai install 4-8 semaines).",
+    "word_count": 45,
+    "chunk_index": 50
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_51",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Q2. « On va renouveler notre chaudière 100 kW. Avons-nous obligation BACS ? »",
+    "anchor": "#q2-on-va-renouveler-notre-chaudire-100-kw-avons-nous-obligation-bacs-",
+    "text": "R2. Oui, obligation déclenchée au renouvellement (depuis 09/04/2023). Seuil s’applique = 70 kW (vs 290 ancien). Si chaudière neuve > 70 kW → BACS obligatoire lors du renouvellement (pas délai 2027/2030). À programmer dans contrat remplacement équipement.",
+    "word_count": 37,
+    "chunk_index": 51
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_52",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Q3. « Multi-occupation : locataire A proprio chaudière, locataire B proprio clim. Qui doit BACS ? »",
+    "anchor": "#q3-multi-occupation-locataire-a-proprio-chaudire-locataire-b-proprio-clim-qui-doit-bacs-",
+    "text": "R3. Propriétaire équipement responsable . Locataire A = BACS chauffage (si P > seuil) ; Locataire B = BACS clim (si P > seuil). Si puissance combinée (A+B) dépasse seuil = Hyperviseur/supervision commune possible, mais responsabilité reste auprès de chaque proprio équip. Contrat de bail doit clarifier (“propriétaire fourni BACS” vs “locataire installe”).",
+    "word_count": 53,
+    "chunk_index": 52
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_53",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Q4. « Site existant 150 kW sans renouvellement depuis 2010. Deadline ? »",
+    "anchor": "#q4-site-existant-150-kw-sans-renouvellement-depuis-2010-deadline-",
+    "text": "R4. Seuil 150 kW > 70 kW → Deadline 01/01/2030 (report november 2025). Sauf renouvellement : Si vous remplacez équip post-09/04/2023 → obligation immédiate renouvellement (seuil 70 kW). Stratégie : Attendre 2030 OU devancer renouvellement équip + BACS (opportunité financement).",
+    "word_count": 40,
+    "chunk_index": 53
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_54",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Q5. « Audit TRI : gain énergétique estimé 8% (pas 15% défaut). Ça change l’exemption ? »",
+    "anchor": "#q5-audit-tri-gain-nergtique-estim-8-pas-15-dfaut-a-change-lexemption-",
+    "text": "R5. Oui, impacte TRI drastiquement . Si 8% réel < 15% défaut → TRI montant plus haut → risque dépassement seuil 10 ans. Exemple : S=50k€, C=0,20€/kWh, Conso=300 MWh → Gain 15% = 45 MWh = 9k€ → TRI = 5,5 ans (OK). Gain 8% = 24 MWh = 4,8k€ → TRI = 10,4 ans (EXEMPTION échouée). Audit spécialisé justification obligatoire si écart 15%.",
+    "word_count": 64,
+    "chunk_index": 54
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_55",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Q6. « Multi-sites géographie : 10 bureaux à 50 kW chacun. Un BACS centralisé OK ? »",
+    "anchor": "#q6-multi-sites-gographie-10-bureaux-50-kw-chacun-un-bacs-centralis-ok-",
+    "text": "R6. Oui, hyperviseur centralisant sites individuels conforme décret . Chaque site < 70 kW donc aucun n’obligatoire individuellement, MAIS si architecture décide centraliser → BACS hyperviseur est du “moyen”. Avantage : optimisation globale, données consolidées. Condition : chaque site garder autonomie locale (arrêt manuel, paramètres spécifiques possibles).",
+    "word_count": 47,
+    "chunk_index": 55
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_56",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Q7. « Inspection prévue janvier 2025. Intégrateur pas livré à temps. Que faire ? »",
+    "anchor": "#q7-inspection-prvue-janvier-2025-intgrateur-pas-livr-temps-que-faire-",
+    "text": "R7. Non-conformité risquée . Deadline inspection = 01/01/2025 (si BACS existant). Si pas encore installé janvier → Site “pas conforme” légalement, même si travaux en cours. Solution : (1) Report date inspection formalité (accord inspecteur) ; (2) Mise en place système provisoire conforme minimal (capteurs de base) avant jan 2025 ; (3) Inspection complète février → Rapport en retard mais site ” en voie de conformité “. Risque : pénalité administrative si delay > 3 mois post-deadline.",
+    "word_count": 77,
+    "chunk_index": 56
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_57",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Q8. « Classé patrimoine : impossible installer capteurs = TRI infini. Exemption ? »",
+    "anchor": "#q8-class-patrimoine-impossible-installer-capteurs-tri-infini-exemption-",
+    "text": "R8. Peut être exemption MAIS documentation stricte . Cas : si capteurs installation techniquement impossible (contrainte patrimoniale avérée + documents preuve) OU TRI > 10 ans calculé. Preuves attendues : (1) Avis architecte des bâtiments de France (ABF) refusant capteurs ; (2) Audit TRI complet. Risque : audit découvre capteurs possibles ailleurs → refus exemption + obligation BACS alternatif.",
+    "word_count": 59,
+    "chunk_index": 57
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_58",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Q9. « Bâtiment occupé 3 mois/an (vacances). Consommation base bonne ? »",
+    "anchor": "#q9-btiment-occup-3-moisan-vacances-consommation-base-bonne-",
+    "text": "R9. Non, récalculer base sur occupancy réelle . Règle : “Si bâtiment vide > 6 mois année = utiliser seulement années occupées pour moyenne conso”. Exemple : 2023 vide 8 mois → 2023 ignorée. 2024 occupé 12 mois, 2025 occupé 12 mois → Moyenne = (2024+2025)/2. Conso de base “anormale” (basse vacance) → faux gain énergétique → TRI surestime → exemption possible échoue. Audit doit documenter occupancy exacte.",
+    "word_count": 68,
+    "chunk_index": 58
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_59",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "Q10. « Exploitant refuse BACS : “compliqué et inutile”. Comment convaincre ? »",
+    "anchor": "#q10-exploitant-refuse-bacs-compliqu-et-inutile-comment-convaincre-",
+    "text": "R10. C’est obligatoire, pas optionnel (>290 kW seulement). Points de vente exploitant : (1) Économies réelles : 15-30% énergie mesurable = économie facture visible (ROI 5-8 ans) ; (2) Alertes immédiates : détecte dérives avant surcoûts exponentiels (ex : climatisation bloquée jour = 2k€ surcoûts weekend vs 20€ alerte détection rapide) ; (3) Confort occupants : pilotage température fines, ventilation optimisée = productivité ; (4) Conformité légale : obligation décret = risque pénalité 300€/jour retard. Proposer démo sur petit système pour preuve gain avant déploiement global.",
+    "word_count": 86,
+    "chunk_index": 59
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_60",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "1. Score de Conformité BACS Continu",
+    "anchor": "#1-score-de-conformit-bacs-continu",
+    "text": "- Dashboard “Conformité Décret” : % complétude obligations (audit rapide, TRI justifié, BACS installé, inspection à jour, documentation archivée) \n- KPI rouge/orange/vert par site : conforme / en cours / non-conforme \n- Alerte calendrier : “Inspection due dans 6 mois”, “Deadline renouvellement approche”, “TRI exemption expire” \n- Cas d’usage : PM tertiaire gère 50 sites → vision 360° conformité en 1 clic",
+    "word_count": 62,
+    "chunk_index": 60
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_61",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "2. Calcul TRI Automatisé",
+    "anchor": "#2-calcul-tri-automatis",
+    "text": "- Interface saisie : Consommations 2 ans + tarifs énergie + devis BACS → Calcul TRI instantané \n- Sensibilité analyse : “Si gain 15% → TRI = X ans ; si gain 12% → TRI = Y ans” (montre seuil critique) \n- Recommandation : “BACS obligatoire” vs “Exemption possible (TRI > 10 ans)” + lien dossier TRI à archiver \n- Cas d’usage : Directeur immobilier évalue 30 sites rapidement, identifie 5 exemptions légitimes",
+    "word_count": 73,
+    "chunk_index": 61
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_62",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "3. Alertes Prédictives Dérives",
+    "anchor": "#3-alertes-prdictives-drives",
+    "text": "- Connexion données BACS propriétaire (via API standardisée) : récupération consommations temps réel \n- Détection anomalies : conso +10% vs normal → alerte exploitant (cause probable : surchauffage, équip bloqué, sous-compteur faux) \n- Prédiction : “À ce rythme, surconsommation de 50k€ cette année” → anticipation action \n- Cas d’usage : Exploitant identifie fuite thermique semaine 2 vs découvrir facture année trop tard",
+    "word_count": 62,
+    "chunk_index": 62
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_63",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "4. Registre d’Inspections BACS",
+    "anchor": "#4-registre-dinspections-bacs",
+    "text": "- Base de données inspections (date, inspecteur, site, rapports digitalisés) \n- Génération alertes “Inspection due dans 2 mois” (5 ans max depuis dernière) \n- Suivi recommandations inspection (priorité, statut réalisé/en cours/report, date clôture) \n- Archive 10 ans (conforme exigence légale conservation rapports) \n- Cas d’usage : Portfolio manager vérifie 100 sites ont tous inspecté < 5 ans",
+    "word_count": 57,
+    "chunk_index": 63
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_64",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "5. Proof of Compliance Auto-Export",
+    "anchor": "#5-proof-of-compliance-auto-export",
+    "text": "- Dossier “Attestation BACS” généré PDF : \n- Audit conformité site (puissance, date deadline, status) \n- Dernier rapport inspection (date + URL doc) \n- Exemption TRI (si applicable) + calcul justificatif \n- Contrat BACS signé + facture install \n- Documentation 10 ans archivée (checklist) \n- Une page résumé → “Conforme Y/N” signée PM (proof audit) \n- Cas d’usage : Audit externe/autorités → Dossier complet fourni 5 minutes",
+    "word_count": 67,
+    "chunk_index": 64
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_65",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "6. Équipement Registry & Lifecycle",
+    "anchor": "#6-quipement-registry-lifecycle",
+    "text": "- Inventaire centralisé systèmes techniques (chauffage, clim, ventilation, ECS, éclairage, électricité) \n- Fiche par équipement : puissance, date install, âge, contrat maintenance, prochaine révision \n- Alertes renouvellement : “Chaudière 25 ans → changement conseil dans 3 ans → BACS déclenché si fait” \n- Planification financière : “Budget renouvellement équip 2026-2028 + budget BACS associé” \n- Cas d’usage : Directeur CapEx anticipe coûts renouvellement + BACS bundlé",
+    "word_count": 66,
+    "chunk_index": 65
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_66",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "7. KPI Énergie & Performance BACS",
+    "anchor": "#7-kpi-nergie-performance-bacs",
+    "text": "- Dashboard mensuel : conso (kWh), coûts (€), gain vs baseline, nombre heures inconfort, taux exploitation BACS \n- Tendance annuelle : économies réalisées post-BACS vs avant (kWh saved × tarif moyen) \n- Benchmarking intra-groupe : “Notre site = top 20% effi énergétique vs autres sites classe similaire” \n- ROI tracking : “BACS a coûté 40k€ en 2023 ; économies réalisées 2024 = 8k€ ; ROI année 4 attendu” \n- Cas d’usage : Diriger générale rapporte à CSR “économie énergétique BACS = 250 tCO2 / 5 ans”",
+    "word_count": 86,
+    "chunk_index": 66
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_67",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "8. Matrice Décisionnel Rapport/Exemption",
+    "anchor": "#8-matrice-dcisionnel-rapportexemption",
+    "text": "- Interface guidée : saisir Putile + type bâtiment (neuf/existant) + renouvellement ? → Recommandation \n- Matrice visuelle : “290-70 kW existant sans renouvellement = deadline 2030 (pas urgent)” \n- Liens documentations : si BACS obligatoire → lien CdC; si exemption possible → lien formulaire TRI \n- Simulation budget : saisir coûts → automatique TRI calculé → statut décision \n- Cas d’usage : PME immobilier petite équipe → outil guide conformité sans BET externe",
+    "word_count": 74,
+    "chunk_index": 67
+  },
+  {
+    "chunk_id": "BACS_COMPLET_chunk_68",
+    "doc_id": "BACS_COMPLET",
+    "section_path": "CONCLUSION EXÉCUTIVE",
+    "anchor": "#conclusion-excutive",
+    "text": "Le décret BACS est réglementairement stable (décrets 2020-887, 2023-259, 2025-1343 + arrêté 07/04/2023). Report seuil 70 kW à 2030 apporte légèrement plus de flexibilité , mais deadline >290 kW reste 01/01/2025 critique (non-conformité actuellement = hors-la-loi ). \n\nPour PROMEOS , trois leviers d’action : \n1. Conformité immédiate (2025) : Audit sites >290 kW, TRI justifications, BACS urgent si obligation \n2. Opportunité économique (2025-2030) : BACS ROI 5-8 ans, cumul CEE/MaPrimeRénov, économies 15-30% \n3. Plateforme produit : Conformité scoring, TRI calc, inspections registre = valeur SaaS immense marché tertiaire français (50k+ sites concernés, 16% seulement équipés 2025) \n\nDocument production-ready Notion & audit \n\nTous liens Légifrance officiels & sources validées \n\nÀ jour décret n°2025-1343 (décembre 2025) Décret BACS — seuils, dates, exemptions TRI_“Synth",
+    "word_count": 121,
+    "chunk_index": 68
+  }
+]

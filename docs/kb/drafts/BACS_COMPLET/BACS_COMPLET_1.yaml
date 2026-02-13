@@ -1,0 +1,32 @@
+id: BACS_COMPLET_1
+type: knowledge
+domain: reglementaire
+title: Définition officielle (CCH art. R.175-1)
+summary: 'Système d’automatisation et de contrôle : Tout système comprenant tous les
+  produits, logiciels et services d’ingénierie à même de soutenir fonctionnement efficace
+  énergétique/économique systèmes techn...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: 'Système d’automatisation et de contrôle : Tout système comprenant tous
+  les produits, logiciels et services d’ingénierie à même de soutenir fonctionnement
+  efficace énergétique/économique systèmes techniques bâtiment via commandes automatiques
+  et gestion manuelle.[R175-1]'
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Définition officielle (CCH art. R.175-1)
+  anchor: '#dfinition-officielle-cch-art-r175-1'
+  excerpt_short: 'Système d’automatisation et de contrôle : Tout système comprenant
+    tous les produits, logiciels et se...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

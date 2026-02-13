@@ -1,0 +1,34 @@
+id: BACS_COMPLET_62
+type: rule
+domain: usages
+title: 3. Alertes Prédictives Dérives
+summary: "- Connexion données BACS propriétaire (via API standardisée) : récupération\
+  \ consommations temps réel \n- Détection anomalies : conso +10% vs normal → alerte\
+  \ exploitant (cause probable : surchauffage, é..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Connexion données BACS propriétaire (via API standardisée) : récupération\
+  \ consommations temps réel \n- Détection anomalies : conso +10% vs normal → alerte\
+  \ exploitant (cause probable : surchauffage, équip bloqué, sous-compteur faux) \n\
+  - Prédiction : “À ce rythme, surconsommation de 50k€ cette année” → anticipation\
+  \ action \n- Cas d’usage : Exploitant identifie fuite thermique semaine 2 vs découvrir\
+  \ facture année trop tard"
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: 3. Alertes Prédictives Dérives
+  anchor: '#3-alertes-prdictives-drives'
+  excerpt_short: '- Connexion données BACS propriétaire (via API standardisée) : récupération
+    consommations temps réel...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

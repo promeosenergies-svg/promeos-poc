@@ -1,0 +1,48 @@
+id: STOCKAGE_ACC_17
+type: knowledge
+domain: usages
+title: 'H.1 Guide Décision (Arbre GO/NO-GO) START : "Faut-il une batterie pour notre
+  ACC ?"'
+summary: "│\n ├─ Q1 : TAc SANS batterie > 60 % ?\n │ ├─ OUI → \"Surplus marginal,\
+  \ batterie gain < 10%\"\n │ │ → ** STOP : NO-GO stockage **\n │ └─ NON → Q2\n │\n\
+  \ ├─ Q2 : Budget CAPEX disponible ≥ 30 k€ ?\n │ ├─ NON → \"C..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "│\n ├─ Q1 : TAc SANS batterie > 60 % ?\n │ ├─ OUI → \"Surplus marginal,\
+  \ batterie gain < 10%\"\n │ │ → ** STOP : NO-GO stockage **\n │ └─ NON → Q2\n │\n\
+  \ ├─ Q2 : Budget CAPEX disponible ≥ 30 k€ ?\n │ ├─ NON → \"Coûts trop élevés vs\
+  \ gain\"\n │ │ → ** STOP : NO-GO (sauf BaaS exploration) **\n │ └─ OUI → Q3\n │\n\
+  \ ├─ Q3 : Surplus journalier > 30 % consommation ?\n │ ├─ NON → \"Surplus petit,\
+  \ batterie undersized marginale\"\n │ │ → ** STOP : NO-GO (coûts fixes trop élevés)\
+  \ **\n │ └─ OUI → Q4\n │\n ├─ Q4 : Pics puissance > 20 kW OU contrainte GRD injection\
+  \ ?\n │ ├─ NON → \"Lissage pics faible priorité\"\n │ │ → ** PRUDENCE : batterie\
+  \ secondaire, 8–12 kWh min ** → Q5\n │ └─ OUI → \"Peak shaving critique\"\n │ →\
+  \ ** GO batterie priorité ** → Q5\n │\n ├─ Q5 : Gouvernance ACC clarifiée (propriété\
+  \ batterie, clé répartition définie) ?\n │ ├─ NON → \"Risque conflit stakeholders\
+  \ > gains\"\n │ │ → ** STOP : NO-GO sans accord préalable **\n │ │ (Recommandation\
+  \ : 1–2 réunions gouvernance avant)\n │ └─ OUI → Q6\n │\n ├─ Q6 : Objectif précis\
+  \ batterie (TAc %, autonomie h, résilience) défini ?\n │ ├─ NON → \"Scope flou,\
+  \ risk overspend\"\n │ │ → ** PRUDENCE : étude 5 k€ avant conception **\n │ └─ OUI\
+  \ → ** ✅ GO CONCEPTION BATTERIE **\n │\n └─ CONCLUSION : Dimensionnement détaillé,\
+  \ ROI/sensibilités, marché\n → Décision finale (approuve budget, timeline, modèle\
+  \ propriété)"
+logic: null
+sources:
+- doc_id: STOCKAGE_ACC
+  label: Stockage et Autoconsommation Collective
+  section: 'H.1 Guide Décision (Arbre GO/NO-GO) START : "Faut-il une batterie pour
+    notre ACC ?"'
+  anchor: '#h1-guide-dcision-arbre-gono-go-start-faut-il-une-batterie-pour-notre-acc-'
+  excerpt_short: "│\n ├─ Q1 : TAc SANS batterie > 60 % ?\n │ ├─ OUI → \"Surplus marginal,\
+    \ batterie gain < 10%\"\n │ │ → ** ..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

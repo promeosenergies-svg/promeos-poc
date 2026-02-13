@@ -1,0 +1,36 @@
+id: LOI_APER_13
+type: rule
+domain: usages
+title: 'PHASE 5 : EXPLOITATION & CONFORMITÉ (Post-mise service)'
+summary: "5.1 Monitoring \n- Dashboard production temps réel (EMS) vs consommation\
+  \ \n- Reporting mensuel/annuel (production, surplus, auto-conso %) \n- Optimisation\
+  \ (shift load IRVE, ECS, charge flexibilité) \n\n5.2..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "5.1 Monitoring \n- Dashboard production temps réel (EMS) vs consommation\
+  \ \n- Reporting mensuel/annuel (production, surplus, auto-conso %) \n- Optimisation\
+  \ (shift load IRVE, ECS, charge flexibilité) \n\n5.2 Maintenance \n- Nettoyage PV\
+  \ (1-2x/an) \n- Inspection 4 ans (obligation légale) \n- Garantie inverseur (10\
+  \ ans) + panneaux (25 ans) \n\n5.3 Compliance \n- Déclaration impôts (revenus surplus\
+  \ si vente) \n- CVAE si multisite >250 salariés (localisation fiscale) \n- Audit\
+  \ preuve conformité solarisation (si contrôle préfet = dossier complet) \n- Reporting\
+  \ ESG/RSE (empreinte carbone réduite)"
+logic: null
+sources:
+- doc_id: LOI_APER
+  label: Loi APER - Acceleration Production Energies Renouvelables
+  section: 'PHASE 5 : EXPLOITATION & CONFORMITÉ (Post-mise service)'
+  anchor: '#phase-5-exploitation-conformit-post-mise-service'
+  excerpt_short: "5.1 Monitoring \n- Dashboard production temps réel (EMS) vs consommation\
+    \ \n- Reporting mensuel/annuel ..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

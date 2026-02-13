@@ -1,0 +1,33 @@
+id: LEVIERS_MARCHE_2025_28
+type: knowledge
+domain: acc
+title: V2 (2026, +20 sem dev)
+summary: "Intelligence & Scalabilité : \n- Clés dynamiques IA avancées (prédiction\
+  \ demande + flexibilité) \n- Intégration GTB (capteurs température, équipements)\
+  \ \n- Orchestrateur flexibilité (pilotage IRVE, batte..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Intelligence & Scalabilité : \n- Clés dynamiques IA avancées (prédiction\
+  \ demande + flexibilité) \n- Intégration GTB (capteurs température, équipements)\
+  \ \n- Orchestrateur flexibilité (pilotage IRVE, batteries, chaufage) \n- Agrégation\
+  \ multi-ACC (pour PMO portfolio) \n- Marketplace flex (vente surplus à agrégateurs\
+  \ VPP)"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: V2 (2026, +20 sem dev)
+  anchor: '#v2-2026-20-sem-dev'
+  excerpt_short: "Intelligence & Scalabilité : \n- Clés dynamiques IA avancées (prédiction\
+    \ demande + flexibilité) \n- In..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

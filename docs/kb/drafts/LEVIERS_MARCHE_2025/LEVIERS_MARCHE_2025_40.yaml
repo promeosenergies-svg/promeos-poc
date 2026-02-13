@@ -1,0 +1,33 @@
+id: LEVIERS_MARCHE_2025_40
+type: knowledge
+domain: reglementaire
+title: 3) “Local Value Maximization via AI”
+summary: "- What : Dynamic allocation keys + flex orchestration (IRVE, heat, storage)\
+  \ powered by ML → maximize autoconsumption % + minimize negative pricing exposure\
+  \ \n- Why it matters : Producer confidence +, c..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- What : Dynamic allocation keys + flex orchestration (IRVE, heat, storage)\
+  \ powered by ML → maximize autoconsumption % + minimize negative pricing exposure\
+  \ \n- Why it matters : Producer confidence +, consumer savings +, project ROI ×1.5–2.0\
+  \ vs static keys \n- Competitor gap : No competitor offers this; future-proof differentiator\
+  \ (becomes essential as % renewables → 50%+)"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: 3) “Local Value Maximization via AI”
+  anchor: '#3-local-value-maximization-via-ai'
+  excerpt_short: '- What : Dynamic allocation keys + flex orchestration (IRVE, heat,
+    storage) powered by ML → maximize...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

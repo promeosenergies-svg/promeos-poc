@@ -1,0 +1,32 @@
+id: FLEX_EFFACEMENT_24
+type: rule
+domain: usages
+title: 4.2 Éligibilité
+summary: "- Production, consommation, stockage, tous raccordés RPT/RPD. \n- Obligation\
+  \ EnR >10 MW (aFRR + mFRR théoriquement, mais réduction demande acceptée = ajustement\
+  \ baisse). \n- Autre acteurs volontaires. \n..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Production, consommation, stockage, tous raccordés RPT/RPD. \n- Obligation\
+  \ EnR >10 MW (aFRR + mFRR théoriquement, mais réduction demande acceptée = ajustement\
+  \ baisse). \n- Autre acteurs volontaires. \n- Déficit chronique baisse (RTE 2024\
+  \ forced wind-down) → incitation consommation/stockage baisse."
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: 4.2 Éligibilité
+  anchor: '#42-ligibilit'
+  excerpt_short: "- Production, consommation, stockage, tous raccordés RPT/RPD. \n\
+    - Obligation EnR >10 MW (aFRR + mFRR ..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

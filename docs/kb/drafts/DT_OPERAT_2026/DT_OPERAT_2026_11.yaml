@@ -1,0 +1,36 @@
+id: DT_OPERAT_2026_11
+type: knowledge
+domain: usages
+title: Contenu du dossier
+summary: "- Étude énergétique du bâtiment (référence, contraintes, actions envisagées)\
+  \ \n- Étude spécifique des équipements (usages énergétiques) \n- Programme d’actions\
+  \ avec gains énergétiques et calendrier de m..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Étude énergétique du bâtiment (référence, contraintes, actions envisagées)\
+  \ \n- Étude spécifique des équipements (usages énergétiques) \n- Programme d’actions\
+  \ avec gains énergétiques et calendrier de mise en œuvre \n- Note technique justifiant\
+  \ l’impossibilité d’atteindre −40% ou les valeurs absolues \n- Calcul des TRB des\
+  \ actions envisagées \n- Avis circonstancié d’un expert (en cas de contraintes architecturales)\
+  \ 25 \n\nImportant : Absence de dossier avant le 30 septembre 2026 → objectif −40%\
+  \ 2030 demeure pleinement applicable sans droit à modulation. 26 27 \n\nSource :\
+  \ Arrêté du 10 avril 2020, art. 7 ; ADEME ; Legifrance 28 29"
+logic: null
+sources:
+- doc_id: DT_OPERAT_2026
+  label: Decret Tertiaire / OPERAT - Obligations 2026
+  section: Contenu du dossier
+  anchor: '#contenu-du-dossier'
+  excerpt_short: "- Étude énergétique du bâtiment (référence, contraintes, actions\
+    \ envisagées) \n- Étude spécifique des..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

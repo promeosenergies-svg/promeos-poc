@@ -1,0 +1,39 @@
+id: BACS_COMPLET_68
+type: rule
+domain: reglementaire
+title: CONCLUSION EXÉCUTIVE
+summary: Le décret BACS est réglementairement stable (décrets 2020-887, 2023-259,
+  2025-1343 + arrêté 07/04/2023). Report seuil 70 kW à 2030 apporte légèrement plus
+  de flexibilité , mais deadline >290 kW reste ...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Le décret BACS est réglementairement stable (décrets 2020-887, 2023-259,\
+  \ 2025-1343 + arrêté 07/04/2023). Report seuil 70 kW à 2030 apporte légèrement plus\
+  \ de flexibilité , mais deadline >290 kW reste 01/01/2025 critique (non-conformité\
+  \ actuellement = hors-la-loi ). \n\nPour PROMEOS , trois leviers d’action : \n1.\
+  \ Conformité immédiate (2025) : Audit sites >290 kW, TRI justifications, BACS urgent\
+  \ si obligation \n2. Opportunité économique (2025-2030) : BACS ROI 5-8 ans, cumul\
+  \ CEE/MaPrimeRénov, économies 15-30% \n3. Plateforme produit : Conformité scoring,\
+  \ TRI calc, inspections registre = valeur SaaS immense marché tertiaire français\
+  \ (50k+ sites concernés, 16% seulement équipés 2025) \n\nDocument production-ready\
+  \ Notion & audit \n\nTous liens Légifrance officiels & sources validées \n\nÀ jour\
+  \ décret n°2025-1343 (décembre 2025) Décret BACS — seuils, dates, exemptions TRI_“Synth"
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: CONCLUSION EXÉCUTIVE
+  anchor: '#conclusion-excutive'
+  excerpt_short: Le décret BACS est réglementairement stable (décrets 2020-887, 2023-259,
+    2025-1343 + arrêté 07/04/20...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

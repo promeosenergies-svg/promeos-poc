@@ -1,0 +1,34 @@
+id: DT_OPERAT_2026_2
+type: rule
+domain: usages
+title: Qui est concerné ?
+summary: "Le Décret tertiaire s’applique à : \n- Tous les bâtiments ou parties de\
+  \ bâtiments à usage tertiaire dont la surface de plancher cumul ≥ 1 000 m² 1 \n\
+  - Propriétaires, locataires et occupants ayant la res..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Le Décret tertiaire s’applique à : \n- Tous les bâtiments ou parties\
+  \ de bâtiments à usage tertiaire dont la surface de plancher cumul ≥ 1 000 m² 1\
+  \ \n- Propriétaires, locataires et occupants ayant la responsabilité de la gestion\
+  \ énergétique 2 \n- Secteurs types : bureaux, enseignement, commerce, santé, logistique,\
+  \ hôtellerie, établissements publics, logements avec parties communes tertiaires\
+  \ 3"
+logic: null
+sources:
+- doc_id: DT_OPERAT_2026
+  label: Decret Tertiaire / OPERAT - Obligations 2026
+  section: Qui est concerné ?
+  anchor: '#qui-est-concern-'
+  excerpt_short: "Le Décret tertiaire s’applique à : \n- Tous les bâtiments ou parties\
+    \ de bâtiments à usage tertiaire d..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

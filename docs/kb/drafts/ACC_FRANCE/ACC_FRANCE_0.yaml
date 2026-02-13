@@ -1,0 +1,51 @@
+id: ACC_FRANCE_0
+type: rule
+domain: usages
+title: Executive Summary
+summary: L’ autoconsommation collective (ACC) est en phase de transformation structurelle
+  en France fin 2025. Passée de 77 opérations en 2021 à ~900+ en juin 2025 (110+ MWc),
+  elle bénéficie d’un cadre réglemen...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "L’ autoconsommation collective (ACC) est en phase de transformation structurelle\
+  \ en France fin 2025. Passée de 77 opérations en 2021 à ~900+ en juin 2025 (110+\
+  \ MWc), elle bénéficie d’un cadre réglementaire enfin matérisant : l’arrêté du 21\
+  \ février 2025 a porté le seuil de puissance de 3 à 5 MW (10 MW pour les collectivités),\
+  \ le TURPE 7 a simplifié la tarification depuis août 2025, et l’accise est passée\
+  \ à 0€/MWh. Ces trois pivots réglementaires déverrouillent une croissance exponentielle\
+  \ 2026–2030 : scénario central projette 6 000 opérations et 900 MWc (vs prudent\
+  \ : 2 700 opérations, 380 MWc; accéléré : 10 500 opérations, 1 400 MWc). \n\nPour\
+  \ PROMEOS, l’ intégration d’une brique ACC transforme le positionnement en « micro-fournisseur\
+  \ local (2.0) + cockpit settlement + flexibilité » – un différentiel majeur face\
+  \ aux agrégateurs classiques et fournisseurs haut-débit. Le time-to-market clé :\
+  \ réduire le cycle projet de 12–24 mois actuels à 3–6 mois via standardisation juridique,\
+  \ APIs DataHub/DataConnect, shadow billing, et KYC automatisé. Trois packages :\
+  \ ACC Starter (diagnostic+kit PMO), ACC Ops (data+clés+facturation), ACC Optim (flex+prix+arbitrage)\
+  \ , portés par une roadmap MVP 90j (MVP 1.0), puis v1 à 180j, v2 à 12m . \n\nLes\
+  \ 10 leviers critiques pour croissance 2025–2030 sont : (1) seuil 5MW, (2) TURPE\
+  \ 7 option ACC, (3) DataHub/API, (4) standardisation PMO, (5) shadow billing, (6)\
+  \ tarification dynamique, (7) flex implicite/IRVE, (8) agrégation multi-sites, (9)\
+  \ primes investissement, (10) exemption d’accise 1MW. Les 10 irritants majeurs et\
+  \ solutions SaaS sont cartographiés fin de rapport. \n\nSources principales : Legifrance,\
+  \ CRE délibérations 2024–2025, Enedis conventions, ADEME, RTE, Enogrid (370+ projets),\
+  \ Livre Blanc ACC 2024, DataHub-Enedis API, études SER/FNCCR. Dernière mise à jour\
+  \ : décembre 2025; horizons : données 2024-Q4 à 2025-Q2 consolidées ."
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: Executive Summary
+  anchor: '#executive-summary'
+  excerpt_short: L’ autoconsommation collective (ACC) est en phase de transformation
+    structurelle en France fin 2025....
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

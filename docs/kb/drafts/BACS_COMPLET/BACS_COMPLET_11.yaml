@@ -1,0 +1,33 @@
+id: BACS_COMPLET_11
+type: knowledge
+domain: usages
+title: 1️⃣ SUIVI & ENREGISTREMENT CONTINU
+summary: "- Mesure : Données production/consommation énergétique par zone fonctionnelle\
+  \ \n- Archivage : Historiques enregistrées 5 ans minimum (accès propriétaire garanti)\
+  \ \n- Granularité : Au minimum par système..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Mesure : Données production/consommation énergétique par zone fonctionnelle\
+  \ \n- Archivage : Historiques enregistrées 5 ans minimum (accès propriétaire garanti)\
+  \ \n- Granularité : Au minimum par système technique (chauffage, clim, ventilation,\
+  \ ECS, éclairage, etc.) \n- Exemple : Bâtiment multi-étages → sous-comptage par\
+  \ étage OU automatisme par zone usage homogène"
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: 1️⃣ SUIVI & ENREGISTREMENT CONTINU
+  anchor: '#1-suivi-enregistrement-continu'
+  excerpt_short: "- Mesure : Données production/consommation énergétique par zone\
+    \ fonctionnelle \n- Archivage : Histori..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,34 @@
+id: ACC_FRANCE_33
+type: knowledge
+domain: acc
+title: Jobs-to-be-Done
+summary: "- Job 1 : Onboard new participants without legal/admin friction (enable\
+  \ PMO growth) \n- Job 2 : Calculate fair keys from real data, avoid manual errors\
+  \ (build trust) \n- Job 3 : Create accurate particip..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Job 1 : Onboard new participants without legal/admin friction (enable\
+  \ PMO growth) \n- Job 2 : Calculate fair keys from real data, avoid manual errors\
+  \ (build trust) \n- Job 3 : Create accurate participant invoices, enable self-service\
+  \ clarity (reduce churn) \n- Job 4 : Report compliance to CRE/Enedis with zero re-work\
+  \ (regulatory peace) \n- Job 5 (premium) : Monitor spot prices, maximize ACC margin\
+  \ vs arbitrage (grow revenue)"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: Jobs-to-be-Done
+  anchor: '#jobs-to-be-done'
+  excerpt_short: "- Job 1 : Onboard new participants without legal/admin friction\
+    \ (enable PMO growth) \n- Job 2 : Calcu..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,35 @@
+id: BACS_COMPLET_54
+type: rule
+domain: reglementaire
+title: 'Q5. « Audit TRI : gain énergétique estimé 8% (pas 15% défaut). Ça change l’exemption
+  ? »'
+summary: 'R5. Oui, impacte TRI drastiquement . Si 8% réel < 15% défaut → TRI montant
+  plus haut → risque dépassement seuil 10 ans. Exemple : S=50k€, C=0,20€/kWh, Conso=300
+  MWh → Gain 15% = 45 MWh = 9k€ → TRI = 5...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: 'R5. Oui, impacte TRI drastiquement . Si 8% réel < 15% défaut → TRI montant
+  plus haut → risque dépassement seuil 10 ans. Exemple : S=50k€, C=0,20€/kWh, Conso=300
+  MWh → Gain 15% = 45 MWh = 9k€ → TRI = 5,5 ans (OK). Gain 8% = 24 MWh = 4,8k€ → TRI
+  = 10,4 ans (EXEMPTION échouée). Audit spécialisé justification obligatoire si écart
+  15%.'
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: 'Q5. « Audit TRI : gain énergétique estimé 8% (pas 15% défaut). Ça change
+    l’exemption ? »'
+  anchor: '#q5-audit-tri-gain-nergtique-estim-8-pas-15-dfaut-a-change-lexemption-'
+  excerpt_short: R5. Oui, impacte TRI drastiquement . Si 8% réel < 15% défaut → TRI
+    montant plus haut → risque dépass...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

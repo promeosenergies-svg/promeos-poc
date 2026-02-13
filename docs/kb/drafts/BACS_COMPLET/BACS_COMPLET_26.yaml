@@ -1,0 +1,27 @@
+id: BACS_COMPLET_26
+type: knowledge
+domain: reglementaire
+title: PMO MISE EN CONFORMITÉ (8-12 SEMAINES)
+summary: Applicable bâtiments >290 kW NON CONFORMES 2025 ou >70 kW EXISTANTS 2025-2030
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: Applicable bâtiments >290 kW NON CONFORMES 2025 ou >70 kW EXISTANTS 2025-2030
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: PMO MISE EN CONFORMITÉ (8-12 SEMAINES)
+  anchor: '#pmo-mise-en-conformit-8-12-semaines'
+  excerpt_short: Applicable bâtiments >290 kW NON CONFORMES 2025 ou >70 kW EXISTANTS
+    2025-2030...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,44 @@
+id: LEVIERS_MARCHE_2025_6
+type: knowledge
+domain: acc
+title: 'Scénario : Collectivité 400 kWc, 15 participants, 20 ans'
+summary: "CAPEX (Investissement PV) \n- Installation PV 400 kWc : €300–350/kWc = €120–140k\
+  \ TTC \n- Moins aide État/région (30–50%) = €60–98k net \n- PMO (structure juridique\
+  \ + constitution docs) : €2–5k \n- Total C..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "CAPEX (Investissement PV) \n- Installation PV 400 kWc : €300–350/kWc\
+  \ = €120–140k TTC \n- Moins aide État/région (30–50%) = €60–98k net \n- PMO (structure\
+  \ juridique + constitution docs) : €2–5k \n- Total CAPEX initial : €62–103k \n\n\
+  OPEX annuel (Gestion PMO) \n- Frais administratifs (Enedis, comptable, assurance)\
+  \ : €3–8k/an \n- Suivi clés, facturation manuelle (si pas automata) : €2–4k/an \n\
+  - Maintenance PV : ~€5k/an (0.4% puissance) \n- Total OPEX sans automation : €10–17k/an\
+  \ \n\nAvec PROMEOS ACC Ops (Automation) \n- Abonnement SaaS : €200–500/mois (~€3–6k/an)\
+  \ \n- Support/onboarding : €1–2k/an \n- Total OPEX automation : €4–8k/an (net gain\
+  \ vs manual : €2–9k/an) \n\nRevenus (Économies Participants) \n- Partage local typique\
+  \ : 60–75% production autoconsommée = 240–300 kWh/j \n- Tarif PPE 2025 moyen (complément)\
+  \ : ~€70–90/MWh (post-AOS) \n- Tarif ACC interne : 15–20% moins cher = ~€60–75/MWh\
+  \ \n- Gain par kWh : €10–20/MWh = €2.4–6k/an (pour 240 kWh/j) \n- Total économie\
+  \ porteurs : €40–90k sur 20 ans (avant amortissement PV) \n\nTRI / NPV (avec subventions\
+  \ 40–50%) \n- TRI brut : 8–12% (très bon pour infrastructure locale) \n- Payback\
+  \ : 7–10 ans (acceptable collectivités) \n- NPV 8% taux d’actualisation : €30–60k\
+  \ positif"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: 'Scénario : Collectivité 400 kWc, 15 participants, 20 ans'
+  anchor: '#scnario-collectivit-400-kwc-15-participants-20-ans'
+  excerpt_short: "CAPEX (Investissement PV) \n- Installation PV 400 kWc : €300–350/kWc\
+    \ = €120–140k TTC \n- Moins aide Ét..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

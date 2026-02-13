@@ -17,6 +17,7 @@ from models import (
     Organisation, EntiteJuridique, Portefeuille,
     TypeSite, TypeObligation, StatutConformite,
     TypeEvidence, StatutEvidence, OperatStatus, ParkingType,
+    ComplianceRunBatch, InsightStatus,
 )
 from database import get_db
 from main import app
@@ -422,3 +423,180 @@ class TestAutoTrigger:
         assert r.status_code == 200
         data = r.json()
         assert data["findings_count"] > 0
+
+
+# ========================================
+# Sprint 9: Workflow fields on ComplianceFinding
+# ========================================
+
+class TestComplianceWorkflow:
+    def test_finding_has_workflow_fields(self, db_session):
+        """New ComplianceFinding has insight_status=OPEN, owner=None, notes=None."""
+        org, site, bat = _create_org_site(db_session)
+        cf = ComplianceFinding(
+            site_id=site.id, regulation="bacs", rule_id="BACS_POWER",
+            status="NOK", severity="high",
+        )
+        db_session.add(cf)
+        db_session.commit()
+        db_session.refresh(cf)
+
+        assert cf.insight_status == InsightStatus.OPEN
+        assert cf.owner is None
+        assert cf.notes is None
+
+    def test_patch_finding_status(self, client):
+        """PATCH /findings/{id} with status=ack → insight_status updated."""
+        _seed(client)
+        client.post("/api/compliance/recompute-rules")
+        findings = client.get("/api/compliance/findings").json()
+        assert len(findings) > 0
+
+        fid = findings[0]["id"]
+        r = client.patch(f"/api/compliance/findings/{fid}", json={"status": "ack"})
+        assert r.status_code == 200
+        assert r.json()["insight_status"] == "ack"
+
+    def test_patch_finding_owner(self, client):
+        """PATCH /findings/{id} with owner → owner updated."""
+        _seed(client)
+        client.post("/api/compliance/recompute-rules")
+        findings = client.get("/api/compliance/findings").json()
+        fid = findings[0]["id"]
+
+        r = client.patch(f"/api/compliance/findings/{fid}", json={"owner": "j.dupont@acme.fr"})
+        assert r.status_code == 200
+        assert r.json()["owner"] == "j.dupont@acme.fr"
+
+    def test_patch_finding_notes(self, client):
+        """PATCH /findings/{id} with notes → notes updated."""
+        _seed(client)
+        client.post("/api/compliance/recompute-rules")
+        findings = client.get("/api/compliance/findings").json()
+        fid = findings[0]["id"]
+
+        r = client.patch(f"/api/compliance/findings/{fid}", json={"notes": "En cours de traitement"})
+        assert r.status_code == 200
+        assert r.json()["notes"] == "En cours de traitement"
+
+    def test_patch_finding_not_found(self, client):
+        """PATCH /findings/999 → 404."""
+        r = client.patch("/api/compliance/findings/999", json={"status": "ack"})
+        assert r.status_code == 404
+
+    def test_patch_finding_invalid_status(self, client):
+        """PATCH /findings/{id} with invalid status → 400."""
+        _seed(client)
+        client.post("/api/compliance/recompute-rules")
+        findings = client.get("/api/compliance/findings").json()
+        fid = findings[0]["id"]
+
+        r = client.patch(f"/api/compliance/findings/{fid}", json={"status": "invalid_status"})
+        assert r.status_code == 400
+
+
+# ========================================
+# Sprint 9: ComplianceRunBatch
+# ========================================
+
+class TestComplianceBatches:
+    def test_recompute_creates_batch(self, client):
+        """POST /recompute-rules → batch_id in response."""
+        _seed(client)
+        r = client.post("/api/compliance/recompute-rules")
+        assert r.status_code == 200
+        data = r.json()
+        assert "batch_id" in data
+        assert data["batch_id"] is not None
+
+    def test_batches_list(self, client):
+        """GET /batches → list with batch after recompute."""
+        _seed(client)
+        client.post("/api/compliance/recompute-rules")
+        r = client.get("/api/compliance/batches")
+        assert r.status_code == 200
+        data = r.json()
+        assert len(data) >= 1
+
+    def test_batch_has_counts(self, client):
+        """Batch has sites_count > 0 and findings_count > 0."""
+        _seed(client)
+        client.post("/api/compliance/recompute-rules")
+        batches = client.get("/api/compliance/batches").json()
+        b = batches[0]
+        assert b["sites_count"] > 0
+        assert b["findings_count"] > 0
+
+    def test_batches_empty(self, client):
+        """GET /batches without data → empty list."""
+        r = client.get("/api/compliance/batches")
+        assert r.status_code == 200
+        assert r.json() == []
+
+
+# ========================================
+# Sprint 9: GET /findings endpoint
+# ========================================
+
+class TestComplianceFindingsEndpoint:
+    def test_get_findings(self, client):
+        """GET /findings → list of findings with workflow fields."""
+        _seed(client)
+        client.post("/api/compliance/recompute-rules")
+        r = client.get("/api/compliance/findings")
+        assert r.status_code == 200
+        data = r.json()
+        assert len(data) > 0
+        f = data[0]
+        assert "insight_status" in f
+        assert "owner" in f
+        assert "notes" in f
+        assert "site_nom" in f
+
+    def test_get_findings_filter_insight_status(self, client):
+        """GET /findings?insight_status=open → only open findings."""
+        _seed(client)
+        client.post("/api/compliance/recompute-rules")
+        r = client.get("/api/compliance/findings", params={"insight_status": "open"})
+        assert r.status_code == 200
+        data = r.json()
+        for f in data:
+            assert f["insight_status"] == "open"
+
+    def test_get_findings_filter_regulation(self, client):
+        """GET /findings?regulation=bacs → only bacs findings."""
+        _seed(client)
+        client.post("/api/compliance/recompute-rules")
+        r = client.get("/api/compliance/findings", params={"regulation": "bacs"})
+        assert r.status_code == 200
+        data = r.json()
+        for f in data:
+            assert f["regulation"] == "bacs"
+
+
+# ========================================
+# Sprint 9: Dashboard 2min workflow enrichment
+# ========================================
+
+class TestDashboard2MinWorkflow:
+    def test_findings_summary_has_workflow(self, client):
+        """GET /dashboard/2min → findings_summary.workflow present."""
+        _seed(client)
+        client.post("/api/compliance/recompute-rules")
+        r = client.get("/api/dashboard/2min")
+        assert r.status_code == 200
+        data = r.json()
+        assert "workflow" in data["findings_summary"]
+        wf = data["findings_summary"]["workflow"]
+        assert "open" in wf
+        assert "ack" in wf
+        assert "resolved" in wf
+
+    def test_workflow_counts_consistent(self, client):
+        """Workflow open + ack + resolved <= total findings."""
+        _seed(client)
+        client.post("/api/compliance/recompute-rules")
+        data = client.get("/api/dashboard/2min").json()
+        fs = data["findings_summary"]
+        wf = fs["workflow"]
+        assert wf["open"] + wf["ack"] + wf["resolved"] <= fs["total"]

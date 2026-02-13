@@ -1,0 +1,40 @@
+id: ACC_FRANCE_2
+type: rule
+domain: acc
+title: Personne Morale Organisatrice (PMO) 11 12 13
+summary: "Définition & mission obligatoires : \n- Entité juridique regroupant producteurs\
+  \ + consommateurs \n- Responsable unique vis-à-vis d’Enedis/GRD pour : \n- Signature\
+  \ convention ACC avec GRD \n- Définition cl..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Définition & mission obligatoires : \n- Entité juridique regroupant producteurs\
+  \ + consommateurs \n- Responsable unique vis-à-vis d’Enedis/GRD pour : \n- Signature\
+  \ convention ACC avec GRD \n- Définition clés de répartition (statique/dynamique\
+  \ simple/dynamique full) \n- Gestion entrées/sorties participants \n- Transmission\
+  \ données CRE (annuellement) \n- Maintien registre transparent participants \n\n\
+  Formes juridiques possibles : 14 \n- Association loi 1901 (simplest, 60% réalité)\
+  \ \n- SARL / SAS (si financement tiers ou service payant) \n- SEM (communes/collectivités)\
+  \ \n- Exception bailleurs sociaux : peuvent être PMO seuls (sans création structure\
+  \ supplémentaire) 15 \n\nCoûts estimés PMO (2024–2025) : 16 17 \n- Création structure\
+  \ : €0–2 000 (assoc.) vs €1 000–5 000 (SAS/SARL) \n- Gestion opérationnelle : €500–2\
+  \ 000/an (petit projet) à €3 000–10 000/an (multi-sites) \n- Enjeu clé : absence\
+  \ standardisation = chaque PMO réinvente la roue"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: Personne Morale Organisatrice (PMO) 11 12 13
+  anchor: '#personne-morale-organisatrice-pmo-11-12-13'
+  excerpt_short: "Définition & mission obligatoires : \n- Entité juridique regroupant\
+    \ producteurs + consommateurs \n- Re..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

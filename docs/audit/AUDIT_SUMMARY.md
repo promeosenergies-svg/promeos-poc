@@ -1,227 +1,155 @@
 # AUDIT SUMMARY - PROMEOS POC
-**Date**: 2026-02-09
-**Auditeur**: Claude Code (Principal Architect)
-**Scope**: Pre-integration audit complet (RegOps + préparation briques 2/3 + RBAC + KB)
+
+**Date**: 2026-02-13
+**Auditeur**: Claude Code (Opus 4.6)
+**Commit**: HEAD (post Smart Intake DIAMANT)
 
 ---
 
-## ÉTAT GLOBAL: 🟡 AMBER
+## 1. Vue d'ensemble
 
-**Résumé**: Infrastructure solide, 73% tests OK, frontend build OK, mais 10 blockers critiques avant prod/intégration.
-
----
-
-## ✅ CE QUI MARCHE (PREUVES)
-
-1. **Compliance Engine (Legacy)**: 56/56 tests PASS
-   Preuve: `tests/test_compliance_engine.py` - Toutes classes vertes
-
-2. **API Compliance Sites**: 8/8 tests PASS
-   Preuve: `tests/test_site_compliance_api.py` - Endpoint `/api/sites/{id}/compliance` fonctionnel
-
-3. **Connectors Registry**: 7/7 tests PASS
-   Preuve: `tests/test_connectors.py` - Auto-discovery + RTE/PVGIS OK
-
-4. **Watchers Infra**: 5/6 tests PASS
-   Preuve: `tests/test_watchers.py` - RSS parsing + hash dedup fonctionnel
-
-5. **Frontend Build**: ✅ SUCCESS (6.86s)
-   Preuve: `npm run build` → dist/ généré, 281KB bundle
-
-6. **API Routes**: 37 endpoints détectés
-   Preuve: `grep @router routes/*.py` → RegOps (4), Connectors (3), Watchers (4), AI (5), etc.
-
-7. **DB Schema**: 18 tables identifiées
-   Preuve: `backend/models/*.py` → organisation, site, reg_assessment, datapoints, job_outbox, etc.
-
-8. **Seed Data**: 120 sites + 615 evidences + 120 assessments
-   Preuve: `backend/scripts/seed_data.py` ligne 475-486
+| Metrique | Valeur |
+|----------|--------|
+| Endpoints API | **196** (30 routers + 2 app-level + modules kb/bill) |
+| Tables DB (SQLAlchemy) | **62** |
+| Tests backend | **824 passed, 0 failed** |
+| Fichiers test | **38** |
+| Frontend build | **OK** (608.52 kB JS, 52.61 kB CSS) |
+| Pages frontend | **30** |
+| Services backend | **33** |
+| Enums domaine | **36** |
+| Roles IAM | **11** |
+| Warnings deprecation | 54942 (datetime.utcnow) |
 
 ---
 
-## 🔴 TOP 10 BLOCKERS (CRITIQUE)
+## 2. Matrice de maturite des briques
 
-### Famille 1: YAML Config Mismatch (16 tests)
+| # | Brique | Mat. | Backend | Frontend | Tests | Notes |
+|---|--------|------|---------|----------|-------|-------|
+| 1 | **IAM / Auth** | 2 | auth.py, admin_users.py, iam_service.py | LoginPage, Admin* (4 pages) | 61 | JWT HS256, 11 roles, 3 scope levels, audit log |
+| 2 | **Patrimoine DIAMANT** | 2 | patrimoine.py, patrimoine_service.py, quality_rules.py | Patrimoine.jsx, PatrimoineWizard.jsx | 29 | Staging pipeline, quality gate, activation, lineage, sync |
+| 3 | **Smart Intake DIAMANT** | 2 | intake.py, intake_engine.py, intake_service.py | IntakeWizard.jsx | 25 | Question bank, prefill, before/after, demo autofill |
+| 4 | **Conformite / Compliance** | 2 | compliance.py, compliance_engine.py, compliance_rules.py | ConformitePage, CompliancePage | 20 | YAML rules, 3 packs (DT/BACS/APER), findings, batches |
+| 5 | **RegOps** | 2 | regops.py, regops/engine.py | RegOps.jsx | 16 | Evaluation reglementaire, assessments, cache |
+| 6 | **Bill Intelligence** | 2 | billing.py, app/bill_intelligence/ | BillIntelPage.jsx | 73 | Contrats, factures, shadow audit, PDF parser, CSV import |
+| 7 | **Achat Energie** | 2 | purchase.py, purchase_service.py | PurchasePage.jsx | 18 | Scenarios fixe/indexe/spot, renouvellements |
+| 8 | **Knowledge Base** | 2 | kb_usages.py, app/kb/, kb_service.py | KBExplorerPage.jsx | 26 | Archetypes, anomaly rules, recommendations, search |
+| 9 | **Diagnostic Conso** | 2 | consumption_diagnostic.py (routes+service) | ConsumptionDiagPage.jsx | 28 | Detecteurs (baseline, pointe, weekend, nuit), insights |
+| 10 | **Energy / Monitoring** | 2 | energy.py, monitoring.py, electric_monitoring/ | MonitoringPage.jsx | 24 | Meters, KPI engine, alerts, snapshots |
+| 11 | **Cockpit / Dashboard** | 1 | cockpit.py, dashboard_2min.py | Cockpit.jsx, Dashboard.jsx | 0 | Fonctionnel mais 0 tests |
+| 12 | **Actions Hub** | 1 | actions.py, action_hub_service.py | ActionsPage.jsx | 7 | Sync, workflow, export CSV |
+| 13 | **Notifications** | 1 | notifications.py, notification_service.py | NotificationsPage.jsx | 8 | Events, preferences. Pas de push real-time |
+| 14 | **Onboarding** | 1 | onboarding.py, onboarding_service.py | UpgradeWizard.jsx | 5 | Overlap avec Patrimoine |
+| 15 | **Segmentation** | 1 | segmentation.py, segmentation_service.py | SegmentationPage.jsx | 6 | Questionnaire, profil NAF |
+| 16 | **Sites** | 1 | sites.py, site_config.py | Site360.jsx | 1 | 3 TabStub dans Site360 |
+| 17 | **Import CSV** | 1 | import_sites.py | ImportPage.jsx | 4 | Template + import |
+| 18 | **Connectors** | 1 | connectors_route.py | ConnectorsPage.jsx | 7 | RTE Eco2Mix, PVGIS |
+| 19 | **Watchers** | 1 | watchers_route.py | WatchersPage.jsx | 6 | RSS veille reglementaire |
+| 20 | **AI Agents** | 0 | ai_route.py, ai_layer/client.py | - | 7 | Stub: TODO real API call |
+| 21 | **Reports** | 0 | reports.py, audit_report_service.py | - | 3 | Audit JSON/PDF stub |
+| 22 | **Demo Mode** | 1 | demo.py, demo_state.py | - | 0 | Enable/disable/seed |
+| 23 | **Alertes** | 1 | alertes.py | - | 0 | CRUD basique |
+| 24 | **Guidance** | 0 | guidance.py | ActionPlan.jsx | 0 | Action plan stub |
+| 25 | **Compteurs** | 1 | compteurs.py | - | 0 | CRUD basique |
 
-**Blocker #1**: RegOps tests cherchent clés YAML inexistantes
-- **Fichier**: `tests/test_regops_rules.py:86,100,113,126,143...`
-- **Erreur**: `KeyError: 'tertiaire_operat'` (cherche underscore, YAML a sans)
-- **Cause**: _load_configs() retourne dict avec clés top-level, tests assument nested
-- **Fix**: Aligner tests sur structure YAML réelle (`configs['tertiaire_operat']` → `configs['tertiaire_operat']` vérifié dans YAML)
-- **Effort**: 15 min
-- **Impact**: 🔴 CRITIQUE - Bloque validation RegOps
-
-**Blocker #2**: TypeEvidence enum incomplet
-- **Fichier**: `models/enums.py` manque `AUDIT_ENERGETIQUE`
-- **Erreur**: `AttributeError: type object 'TypeEvidence' has no attribute 'AUDIT_ENERGETIQUE'`
-- **Cause**: Tests CEE P6 utilisent `AUDIT_ENERGETIQUE`, enum a `AUDIT`
-- **Fix**: Ajouter `AUDIT_ENERGETIQUE = "audit_energetique"` dans TypeEvidence
-- **Effort**: 5 min
-- **Impact**: 🟡 MOYEN - Bloque tests CEE P6
-
-### Famille 2: AI Agents Fixtures (5 tests)
-
-**Blocker #3**: Site model fixture incompatible
-- **Fichier**: `tests/test_ai_agents.py:32-44`
-- **Erreur**: `TypeError: 'organisation_id' is an invalid keyword argument for Site`
-- **Cause**: Site n'a pas organisation_id direct (via portefeuille)
-- **Fix**: Créer chaîne complète org→entite→portefeuille→site dans fixture
-- **Effort**: 10 min
-- **Impact**: 🟡 MOYEN - Bloque validation AI stub mode
-
-### Famille 3: JobOutbox SQL (4 tests)
-
-**Blocker #4**: Job enqueue retourne objet pas ID
-- **Fichier**: `jobs/worker.py:enqueue_job()`
-- **Erreur**: `sqlalchemy.exc.ArgumentError: SQL expression element or literal value expected`
-- **Cause**: `enqueue_job()` retourne JobOutbox object, tests attendent int ID
-- **Fix**: Retourner `job.id` au lieu de `job`
-- **Effort**: 5 min
-- **Impact**: 🟡 MOYEN - Bloque async job queue
-
-**Blocker #5**: Watcher names mismatch
-- **Fichier**: `tests/test_watchers.py:47`
-- **Erreur**: `assert 'legifrance_watcher' in ['legifrance', 'cre', 'rte']`
-- **Cause**: Registry retourne `watcher.name` (sans suffixe _watcher)
-- **Fix**: Aligner tests ou registry (recommandé: tests → 'legifrance')
-- **Effort**: 2 min
-- **Impact**: 🟢 LOW - Cosmétique
-
-### Famille 4: Production Hygiene
-
-**Blocker #6**: Pas d'authentification/autorisation
-- **Fichier**: AUCUN (manquant)
-- **Cause**: Routes sensibles (recompute, watchers run, jobs) sans auth
-- **Risque**: 🔴 CRITIQUE - N'importe qui peut déclencher recompute massif
-- **Fix**: Implémenter RBAC simple (X-Role header + token env)
-- **Effort**: 2-3h
-- **Impact**: 🔴 CRITIQUE PROD
-
-**Blocker #7**: Pas de logging structuré
-- **Fichier**: Logging basique `print()` dans plusieurs modules
-- **Cause**: Pas de logger central avec niveaux/handlers
-- **Risque**: 🟡 MOYEN - Debugging prod impossible
-- **Fix**: Configurer Python logging avec rotation + JSON format
-- **Effort**: 1h
-- **Impact**: 🟡 MOYEN PROD
-
-**Blocker #8**: Pas de monitoring/observabilité
-- **Fichier**: Aucun /metrics endpoint
-- **Cause**: Pas d'instrumentation (Prometheus, StatsD, ou autre)
-- **Risque**: 🟡 MOYEN - Pas de visibilité runtime
-- **Fix**: Ajouter prometheus-fastapi-instrumentator
-- **Effort**: 30 min
-- **Impact**: 🟡 MOYEN PROD
-
-**Blocker #9**: DB SQLite non adapté prod
-- **Fichier**: `database/connection.py:17` → `sqlite:///`
-- **Cause**: SQLite = fichier local, pas scalable/concurrent
-- **Risque**: 🔴 CRITIQUE PROD - Perte données, locks
-- **Fix**: Migration PostgreSQL + alembic
-- **Effort**: 4h
-- **Impact**: 🔴 CRITIQUE PROD
-
-**Blocker #10**: Secrets en clair (.env non gitignored)
-- **Fichier**: `.env.example` présent, mais `.env` pas dans .gitignore vérifié
-- **Cause**: Risque commit accidentel secrets
-- **Risque**: 🔴 CRITIQUE SÉCURITÉ
-- **Fix**: Vérifier .gitignore + vault (Doppler/AWS Secrets)
-- **Effort**: 15 min
-- **Impact**: 🔴 CRITIQUE SÉCURITÉ
+**Legende**: 0 = stub/placeholder, 1 = fonctionnel partiel, 2 = complet (service + routes + tests + UI)
 
 ---
 
-## 📊 MÉTRIQUES TESTS
+## 3. Top 10 Blockers
 
-| Fichier | Total | Pass | Fail | % |
-|---------|-------|------|------|---|
-| **test_compliance_engine.py** | 56 | 56 | 0 | 100% |
-| **test_site_compliance_api.py** | 8 | 8 | 0 | 100% |
-| **test_connectors.py** | 7 | 7 | 0 | 100% |
-| **test_watchers.py** | 6 | 5 | 1 | 83% |
-| **test_job_outbox.py** | 6 | 2 | 4 | 33% |
-| **test_ai_agents.py** | 7 | 2 | 5 | 29% |
-| **test_regops_rules.py** | 16 | 0 | 16 | 0% |
-| **TOTAL** | **98** | **72** | **26** | **73%** |
-
----
-
-## 🎯 RECOMMANDATION: ORDRE DE BATAILLE
-
-### 🔥 CRÉNEAU 60-90 MIN (ce soir)
-**Objectif**: Débloquer tests RegOps + quick wins sécurité
-
-1. Fix YAML config keys mismatch (15 min) → +16 tests
-2. Add TypeEvidence.AUDIT_ENERGETIQUE (5 min) → +4 tests
-3. Fix AI agents fixture (10 min) → +5 tests
-4. Fix JobOutbox return type (5 min) → +4 tests
-5. Fix watcher names (2 min) → +1 test
-6. Vérifier .gitignore secrets (5 min)
-7. Add basic X-Role header check (20 min)
-
-**Output**: 95%+ tests passing, basic security
-
-### ⚡ CRÉNEAU 3-4H (demain matin)
-**Objectif**: Production-ready hygiene
-
-1. Structured logging (1h)
-2. /metrics endpoint Prometheus (30 min)
-3. RBAC complet avec matrice (1.5h)
-4. Documentation RBAC_MATRIX.md (30 min)
-5. CI/CD pipeline basique (30 min)
-
-**Output**: Production monitoring + auth solide
-
-### 🏗️ CRÉNEAU 1 JOURNÉE (cette semaine)
-**Objectif**: PostgreSQL + Briques 2/3 prep
-
-1. PostgreSQL migration + Alembic (4h)
-2. Brique 2 (Bill Intelligence) prep: interfaces + contrats (2h)
-3. Brique 3 (Achat post-ARENH) prep: interfaces + contrats (2h)
-4. Tests E2E Playwright (2h)
-
-**Output**: Prod DB + roadmap briques 2/3
+| # | Fichier | Ligne | Cause | Fix estime |
+|---|---------|-------|-------|------------|
+| 1 | `services/iam_service.py` | L24 | **JWT secret hardcode** `"dev-secret-change-me-in-prod"` en fallback | 10 min |
+| 2 | `ai_layer/client.py` | L23 | **AI client stub** — `# TODO: Real API call` — pas d'appel reel | 30 min |
+| 3 | `pages/Site360.jsx` | L416-419 | **3 TabStub** (Conso, Factures, Actions) non branchees sur API | 2h |
+| 4 | `scripts/seed_data.py` | L867 | **Password identique** `"demo2024"` pour les 10 users seed | 15 min |
+| 5 | `jobs/worker.py` | L106 | **TODO: entity/org level recompute** non implemente | 1h |
+| 6 | `services/kb_service.py` | L100, L215 | **TODO: temporal_signature, implementation_steps** toujours null | 30 min |
+| 7 | `routes/cockpit.py` | - | **0 tests** pour le cockpit (brique visible #1) | 1h |
+| 8 | `database/connection.py` | L17 | **SQLite** en prod, pas de migration Alembic | 2h |
+| 9 | `services/notification_service.py` | - | **Pas de push real-time** (polling HTTP seulement) | 4h |
+| 10 | Backend (33 fichiers) | - | **454 print()** au lieu de `logging` | 2h |
 
 ---
 
-## 🚨 RISQUES MAJEURS
+## 4. Plan d'action
 
-1. **Auth Bypass**: Routes sensibles sans protection → DoS possible
-2. **Data Loss**: SQLite corruption si concurrent writes → PostgreSQL urgent
-3. **Secrets Leak**: .env commit → Vault mandatory
-4. **No Rollback**: Pas de migrations Alembic → Schema drift inévitable
-5. **Blind Monitoring**: Pas de logs structurés → Debugging prod = cauchemar
+### Phase 1: 60-90 minutes (securite + couverture)
+
+| # | Action | Temps | Impact |
+|---|--------|-------|--------|
+| 1 | Forcer `PROMEOS_JWT_SECRET` env var (crash si absent en prod) | 10 min | Securite |
+| 2 | Ajouter 5 tests cockpit aggregation | 20 min | Couverture |
+| 3 | Ajouter 3 tests alertes CRUD | 15 min | Couverture |
+| 4 | Ajouter 3 tests demo mode | 15 min | Couverture |
+| 5 | Fix `datetime.utcnow()` -> `datetime.now(UTC)` (supprime 54942 warnings) | 15 min | Hygiene |
+| 6 | Interceptor axios 401 -> redirect /login | 10 min | UX |
+
+**Resultat**: ~840 tests verts, 0 deprecation warnings, JWT securise.
+
+### Phase 2: 48 heures (completude + ops)
+
+| # | Action | Temps | Impact |
+|---|--------|-------|--------|
+| 1 | Brancher 3 TabStub Site360 sur les API existantes | 4h | UX |
+| 2 | Implementer AI client Anthropic (httpx) | 2h | Fonctionnel |
+| 3 | Setup Alembic migrations | 3h | Ops |
+| 4 | Middleware RBAC `require_permission` sur tous les endpoints | 4h | Securite |
+| 5 | WebSocket/SSE notifications temps reel | 4h | UX |
+| 6 | Code-splitting frontend (dynamic import, < 500kB) | 2h | Performance |
+| 7 | Remplacer `print()` par `logging` (454 occurrences / 33 fichiers) | 2h | Ops |
+| 8 | KB seed: ingestion batch docs reglementaires | 4h | KB completude |
+| 9 | Health check DB + endpoint `/ready` pour k8s | 1h | Ops |
+| 10 | CI/CD GitHub Actions (lint + tests + build) | 3h | DevOps |
+| 11 | Worker entity/org level recompute | 2h | Completude |
+| 12 | Tests E2E Playwright (5 scenarios cles) | 4h | Qualite |
 
 ---
 
-## ✅ TOP 5 ACTIONS IMMÉDIATES
-
-| # | Action | Effort | Owner | Deadline | Impact |
-|---|--------|--------|-------|----------|--------|
-| 1 | Fix 5 blockers tests (YAML, enum, fixtures, job, watcher) | 37 min | Dev | Ce soir | 🔴 CRITICAL |
-| 2 | Add X-Role header auth sur routes sensibles | 20 min | Dev | Ce soir | 🔴 CRITICAL |
-| 3 | Verify .gitignore + secrets vault | 15 min | DevOps | Ce soir | 🔴 CRITICAL |
-| 4 | Structured logging + /metrics | 1.5h | Dev | Demain AM | 🟡 HIGH |
-| 5 | RBAC matrix doc + implementation | 2h | Architect | Demain AM | 🟡 HIGH |
-
----
-
-## 🎯 NEXT PROMPT RECOMMANDÉ
+## 5. Architecture
 
 ```
-PROMEOS — INTEGRATION REGOPS ULTIMATE++
-Objectif: Fix 5 blockers + implement RBAC + structured logging
-Scope:
-- Fix tests/test_regops_rules.py YAML mismatch
-- Fix models/enums.py TypeEvidence
-- Fix AI agents fixtures (org chain)
-- Fix jobs/worker.py return type
-- Add middleware auth (X-Role header)
-- Add Python logging config
-- Create docs/security/RBAC_MATRIX.md
-Deadline: 90 min
+promeos-poc/
+backend/
+  main.py                    # FastAPI, 32+ routers incluant auth
+  database/connection.py     # SQLite + SQLAlchemy
+  models/ (34 fichiers)      # 62 tables, 36 enums
+  services/ (33 fichiers)    # Logique metier
+  routes/ (30 fichiers)      # 196 endpoints API
+  rules/                     # YAML compliance rules (DT/BACS/APER)
+  tests/ (38 fichiers)       # 824 tests
+  scripts/                   # seed_data, kb_*, referential
+  app/                       # Sub-apps (kb, bill_intelligence)
+  ai_layer/                  # AI client (stub)
+  connectors/                # RTE Eco2Mix, PVGIS
+  watchers/                  # RSS veille reglementaire
+  jobs/                      # Worker async (JobOutbox)
+  regops/                    # RegOps engine
+frontend/src/
+  pages/ (30)                # 30 pages React
+  components/ (~15)          # Wizards, modals, tables
+  services/api.js            # Axios (~80 fonctions API)
+  contexts/AuthContext.jsx   # JWT auth state + auto-refresh
+  layout/AppShell.jsx        # Sidebar 24 entries + topbar
+  ui/                        # Design system Tailwind
+docs/audit/                  # Ce dossier
 ```
 
----
+## 6. Stack technique
 
-**Conclusion**: POC en bon état mais 10 blockers avant prod. 90 min fix débloque tests. 4h débloque prod hygiene.
+| Couche | Technologie | Version |
+|--------|-------------|---------|
+| Backend | Python | 3.14 |
+| API | FastAPI | latest |
+| ORM | SQLAlchemy | 2.x |
+| DB | SQLite | embarque |
+| Auth | python-jose + bcrypt | JWT HS256 |
+| Frontend | React | 18 |
+| Build | Vite | 5.4.21 |
+| CSS | TailwindCSS | 4.x |
+| Router | React Router | 6 |
+| HTTP | Axios | latest |
+| Icons | Lucide React | - |
+| Charts | Recharts | - |

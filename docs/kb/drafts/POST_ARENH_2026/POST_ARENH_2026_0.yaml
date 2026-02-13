@@ -1,0 +1,42 @@
+id: POST_ARENH_2026_0
+type: rule
+domain: acc
+title: Contexte Réglementaire et Dates Clés
+summary: L’Accès Régulé à l’Électricité Nucléaire Historique (ARENH), instauré par
+  la loi NOME de 2010, prend fin définitivement le 31 décembre 2025 . Ce régime, qui
+  garantissait depuis quinze ans aux fourniss...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "L’Accès Régulé à l’Électricité Nucléaire Historique (ARENH), instauré\
+  \ par la loi NOME de 2010, prend fin définitivement le 31 décembre 2025 . Ce régime,\
+  \ qui garantissait depuis quinze ans aux fournisseurs et aux consommateurs français\
+  \ un accès à la production nucléaire d’EDF à un prix fixe de 42 €/MWh (plafonné\
+  \ à 100 TWh annuels), est remplacé à compter du 1er janvier 2026 par un nouvel écosystème\
+  \ réglementaire basé sur deux mécanismes : le Versement Nucléaire Universel (VNU)\
+  \ et, pour les industriels électro-intensifs, les Contrats d’Allocation de Production\
+  \ Nucléaire (CAPN). 1 \n\nLe cadre législatif du post-ARENH s’appuie sur la Loi\
+  \ de Finances pour 2025 (n°2025-127 du 14 février 2025), article 17 , lequel introduit\
+  \ les articles L.337-3 à L.337-3-6 du Code de l’énergie. Ce texte a été complété\
+  \ par trois décrets d’application publiés en septembre 2025 : le décret n°2025-909\
+  \ (comptabilité appropriée) et le décret n°2025-910 (principes méthodologiques),\
+  \ puis par un décret de mise en œuvre final visé par la délibération CRE n°2025-268\
+  \ du 16 décembre 2025. 2 3 4"
+logic: null
+sources:
+- doc_id: POST_ARENH_2026
+  label: Post-ARENH 2026
+  section: Contexte Réglementaire et Dates Clés
+  anchor: '#contexte-rglementaire-et-dates-cls'
+  excerpt_short: L’Accès Régulé à l’Électricité Nucléaire Historique (ARENH), instauré
+    par la loi NOME de 2010, prend...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

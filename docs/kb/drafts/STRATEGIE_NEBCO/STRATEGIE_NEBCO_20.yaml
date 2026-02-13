@@ -1,0 +1,30 @@
+id: STRATEGIE_NEBCO_20
+type: knowledge
+domain: reglementaire
+title: 2. CVC Tertiaire & Bureaux (PME 1k–20k m²)
+summary: "- Flexibilité : Pre-cool 1–2h avant pic ; relâcher 0.5–1°C confort \n- Gisement\
+  \ : 200–800 kW ; ~60 jours/an \n- Revenu/site : €3–10k/an (50 PME = €150–500k potentiel)"
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Flexibilité : Pre-cool 1–2h avant pic ; relâcher 0.5–1°C confort \n\
+  - Gisement : 200–800 kW ; ~60 jours/an \n- Revenu/site : €3–10k/an (50 PME = €150–500k\
+  \ potentiel)"
+logic: null
+sources:
+- doc_id: STRATEGIE_NEBCO
+  label: Analyse strategique NEBCO
+  section: 2. CVC Tertiaire & Bureaux (PME 1k–20k m²)
+  anchor: '#2-cvc-tertiaire-bureaux-pme-1k20k-m'
+  excerpt_short: "- Flexibilité : Pre-cool 1–2h avant pic ; relâcher 0.5–1°C confort\
+    \ \n- Gisement : 200–800 kW ; ~60 jo..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,713 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><title>Semaine 52/2025 — Veille Marché Énergie PROMEOS</title><style>
+/* cspell:disable-file */
+/* webkit printing magic: print all background colors */
+html {
+	-webkit-print-color-adjust: exact;
+}
+* {
+	box-sizing: border-box;
+	-webkit-print-color-adjust: exact;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+}
+@media only screen {
+	body {
+		margin: 2em auto;
+		max-width: 900px;
+		color: rgb(55, 53, 47);
+	}
+}
+
+body {
+	line-height: 1.5;
+	white-space: pre-wrap;
+}
+
+a,
+a.visited {
+	color: inherit;
+	text-decoration: underline;
+}
+
+.pdf-relative-link-path {
+	font-size: 80%;
+	color: #444;
+}
+
+h1,
+h2,
+h3 {
+	letter-spacing: -0.01em;
+	line-height: 1.2;
+	font-weight: 600;
+	margin-bottom: 0;
+}
+
+/* Override strong tags inside headings to maintain consistent weight */
+h1 strong,
+h2 strong,
+h3 strong {
+	font-weight: 600;
+}
+
+.page-title {
+	font-size: 2.5rem;
+	font-weight: 700;
+	margin-top: 0;
+	margin-bottom: 0.75em;
+}
+
+h1 {
+	font-size: 1.875rem;
+	margin-top: 1.875rem;
+}
+
+h2 {
+	font-size: 1.5rem;
+	margin-top: 1.5rem;
+}
+
+h3 {
+	font-size: 1.25rem;
+	margin-top: 1.25rem;
+}
+
+.source {
+	border: 1px solid #ddd;
+	border-radius: 3px;
+	padding: 1.5em;
+	word-break: break-all;
+}
+
+.callout {
+	border-radius: 10px;
+	padding: 1rem;
+}
+
+figure {
+	margin: 1.25em 0;
+	page-break-inside: avoid;
+}
+
+figcaption {
+	opacity: 0.5;
+	font-size: 85%;
+	margin-top: 0.5em;
+}
+
+mark {
+	background-color: transparent;
+}
+
+.indented {
+	padding-left: 1.5em;
+}
+
+hr {
+	background: transparent;
+	display: block;
+	width: 100%;
+	height: 1px;
+	visibility: visible;
+	border: none;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.09);
+}
+
+img {
+	max-width: 100%;
+}
+
+@media only print {
+	img {
+		max-height: 100vh;
+		object-fit: contain;
+	}
+}
+
+@page {
+	margin: 1in;
+}
+
+.collection-content {
+	font-size: 0.875rem;
+}
+
+.collection-content td {
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.column-list {
+	display: flex;
+	justify-content: space-between;
+}
+
+.column {
+	padding: 0 1em;
+}
+
+.column:first-child {
+	padding-left: 0;
+}
+
+.column:last-child {
+	padding-right: 0;
+}
+
+.table_of_contents-item {
+	display: block;
+	font-size: 0.875rem;
+	line-height: 1.3;
+	padding: 0.125rem;
+}
+
+.table_of_contents-indent-1 {
+	margin-left: 1.5rem;
+}
+
+.table_of_contents-indent-2 {
+	margin-left: 3rem;
+}
+
+.table_of_contents-indent-3 {
+	margin-left: 4.5rem;
+}
+
+.table_of_contents-link {
+	text-decoration: none;
+	opacity: 0.7;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.18);
+}
+
+table,
+th,
+td {
+	border: 1px solid rgba(55, 53, 47, 0.09);
+	border-collapse: collapse;
+}
+
+table {
+	border-left: none;
+	border-right: none;
+}
+
+th,
+td {
+	font-weight: normal;
+	padding: 0.25em 0.5em;
+	line-height: 1.5;
+	min-height: 1.5em;
+	text-align: left;
+}
+
+th {
+	color: rgba(55, 53, 47, 0.6);
+}
+
+ol,
+ul {
+	margin: 0;
+	margin-block-start: 0.6em;
+	margin-block-end: 0.6em;
+}
+
+li > ol:first-child,
+li > ul:first-child {
+	margin-block-start: 0.6em;
+}
+
+ul > li {
+	list-style: disc;
+}
+
+ul.to-do-list {
+	padding-inline-start: 0;
+}
+
+ul.to-do-list > li {
+	list-style: none;
+}
+
+.to-do-children-checked {
+	text-decoration: line-through;
+	opacity: 0.375;
+}
+
+ul.toggle > li {
+	list-style: none;
+}
+
+ul {
+	padding-inline-start: 1.7em;
+}
+
+ul > li {
+	padding-left: 0.1em;
+}
+
+ol {
+	padding-inline-start: 1.6em;
+}
+
+ol > li {
+	padding-left: 0.2em;
+}
+
+.mono ol {
+	padding-inline-start: 2em;
+}
+
+.mono ol > li {
+	text-indent: -0.4em;
+}
+
+.toggle {
+	padding-inline-start: 0em;
+	list-style-type: none;
+}
+
+/* Indent toggle children */
+.toggle > li > details {
+	padding-left: 1.7em;
+}
+
+.toggle > li > details > summary {
+	margin-left: -1.1em;
+}
+
+.selected-value {
+	display: inline-block;
+	padding: 0 0.5em;
+	background: rgba(206, 205, 202, 0.5);
+	border-radius: 3px;
+	margin-right: 0.5em;
+	margin-top: 0.3em;
+	margin-bottom: 0.3em;
+	white-space: nowrap;
+}
+
+.collection-title {
+	display: inline-block;
+	margin-right: 1em;
+}
+
+.page-description {
+	margin-bottom: 2em;
+}
+
+.simple-table {
+	margin-top: 1em;
+	font-size: 0.875rem;
+	empty-cells: show;
+}
+.simple-table td {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table th {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table-header-color {
+	background: rgb(247, 246, 243);
+	color: black;
+}
+.simple-table-header {
+	font-weight: 500;
+}
+
+time {
+	opacity: 0.5;
+}
+
+.icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	max-width: 1.2em;
+	max-height: 1.2em;
+	text-decoration: none;
+	vertical-align: text-bottom;
+	margin-right: 0.5em;
+}
+
+img.icon {
+	border-radius: 3px;
+}
+
+.callout img.notion-static-icon {
+	width: 1em;
+	height: 1em;
+}
+
+.callout p {
+	margin: 0;
+}
+
+.callout h1,
+.callout h2,
+.callout h3 {
+	margin: 0 0 0.6rem;
+}
+
+.user-icon {
+	width: 1.5em;
+	height: 1.5em;
+	border-radius: 100%;
+	margin-right: 0.5rem;
+}
+
+.user-icon-inner {
+	font-size: 0.8em;
+}
+
+.text-icon {
+	border: 1px solid #000;
+	text-align: center;
+}
+
+.page-cover-image {
+	display: block;
+	object-fit: cover;
+	width: 100%;
+	max-height: 30vh;
+}
+
+.page-header-icon {
+	font-size: 3rem;
+	margin-bottom: 1rem;
+}
+
+.page-header-icon-with-cover {
+	margin-top: -0.72em;
+	margin-left: 0.07em;
+}
+
+.page-header-icon img {
+	border-radius: 3px;
+}
+
+.link-to-page {
+	margin: 1em 0;
+	padding: 0;
+	border: none;
+	font-weight: 500;
+}
+
+p > .user {
+	opacity: 0.5;
+}
+
+td > .user,
+td > time {
+	white-space: nowrap;
+}
+
+input[type="checkbox"] {
+	transform: scale(1.5);
+	margin-right: 0.6em;
+	vertical-align: middle;
+}
+
+p {
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+}
+
+.image {
+	border: none;
+	margin: 1.5em 0;
+	padding: 0;
+	border-radius: 0;
+	text-align: center;
+}
+
+.code,
+code {
+	background: rgba(135, 131, 120, 0.15);
+	border-radius: 3px;
+	padding: 0.2em 0.4em;
+	border-radius: 3px;
+	font-size: 85%;
+	tab-size: 2;
+}
+
+code {
+	color: #eb5757;
+}
+
+.code {
+	padding: 1.5em 1em;
+}
+
+.code-wrap {
+	white-space: pre-wrap;
+	word-break: break-all;
+}
+
+.code > code {
+	background: none;
+	padding: 0;
+	font-size: 100%;
+	color: inherit;
+}
+
+blockquote {
+	font-size: 1em;
+	margin: 1em 0;
+	padding-left: 1em;
+	border-left: 3px solid rgb(55, 53, 47);
+}
+
+blockquote.quote-large {
+	font-size: 1.25em;
+}
+
+.bookmark {
+	text-decoration: none;
+	max-height: 8em;
+	padding: 0;
+	display: flex;
+	width: 100%;
+	align-items: stretch;
+}
+
+.bookmark-title {
+	font-size: 0.85em;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	height: 1.75em;
+	white-space: nowrap;
+}
+
+.bookmark-text {
+	display: flex;
+	flex-direction: column;
+}
+
+.bookmark-info {
+	flex: 4 1 180px;
+	padding: 12px 14px 14px;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+}
+
+.bookmark-image {
+	width: 33%;
+	flex: 1 1 180px;
+	display: block;
+	position: relative;
+	object-fit: cover;
+	border-radius: 1px;
+}
+
+.bookmark-description {
+	color: rgba(55, 53, 47, 0.6);
+	font-size: 0.75em;
+	overflow: hidden;
+	max-height: 4.5em;
+	word-break: break-word;
+}
+
+.bookmark-href {
+	font-size: 0.75em;
+	margin-top: 0.25em;
+}
+
+.sans { font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"; }
+.code { font-family: "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace; }
+.serif { font-family: Lyon-Text, Georgia, ui-serif, serif; }
+.mono { font-family: iawriter-mono, Nitti, Menlo, Courier, monospace; }
+.pdf .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK JP'; }
+.pdf:lang(zh-CN) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK SC'; }
+.pdf:lang(zh-TW) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK TC'; }
+.pdf:lang(ko-KR) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK KR'; }
+.pdf .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.pdf .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK JP'; }
+.pdf:lang(zh-CN) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK SC'; }
+.pdf:lang(zh-TW) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK TC'; }
+.pdf:lang(ko-KR) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK KR'; }
+.pdf .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.highlight-default {
+	color: rgba(44, 44, 43, 1);
+}
+.highlight-gray {
+	color: rgba(125, 122, 117, 1);
+	fill: rgba(125, 122, 117, 1);
+}
+.highlight-brown {
+	color: rgba(159, 118, 90, 1);
+	fill: rgba(159, 118, 90, 1);
+}
+.highlight-orange {
+	color: rgba(210, 123, 45, 1);
+	fill: rgba(210, 123, 45, 1);
+}
+.highlight-yellow {
+	color: rgba(203, 148, 52, 1);
+	fill: rgba(203, 148, 52, 1);
+}
+.highlight-teal {
+	color: rgba(80, 148, 110, 1);
+	fill: rgba(80, 148, 110, 1);
+}
+.highlight-blue {
+	color: rgba(56, 125, 201, 1);
+	fill: rgba(56, 125, 201, 1);
+}
+.highlight-purple {
+	color: rgba(154, 107, 180, 1);
+	fill: rgba(154, 107, 180, 1);
+}
+.highlight-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.highlight-red {
+	color: rgba(207, 81, 72, 1);
+	fill: rgba(207, 81, 72, 1);
+}
+.highlight-default_background {
+	color: rgba(44, 44, 43, 1);
+}
+.highlight-gray_background {
+	background: rgba(42, 28, 0, 0.07);
+}
+.highlight-brown_background {
+	background: rgba(139, 46, 0, 0.086);
+}
+.highlight-orange_background {
+	background: rgba(224, 101, 1, 0.129);
+}
+.highlight-yellow_background {
+	background: rgba(211, 168, 0, 0.137);
+}
+.highlight-teal_background {
+	background: rgba(0, 100, 45, 0.09);
+}
+.highlight-blue_background {
+	background: rgba(0, 124, 215, 0.094);
+}
+.highlight-purple_background {
+	background: rgba(102, 0, 178, 0.078);
+}
+.highlight-pink_background {
+	background: rgba(197, 0, 93, 0.086);
+}
+.highlight-red_background {
+	background: rgba(223, 22, 0, 0.094);
+}
+.block-color-default {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray {
+	color: rgba(125, 122, 117, 1);
+	fill: rgba(125, 122, 117, 1);
+}
+.block-color-brown {
+	color: rgba(159, 118, 90, 1);
+	fill: rgba(159, 118, 90, 1);
+}
+.block-color-orange {
+	color: rgba(210, 123, 45, 1);
+	fill: rgba(210, 123, 45, 1);
+}
+.block-color-yellow {
+	color: rgba(203, 148, 52, 1);
+	fill: rgba(203, 148, 52, 1);
+}
+.block-color-teal {
+	color: rgba(80, 148, 110, 1);
+	fill: rgba(80, 148, 110, 1);
+}
+.block-color-blue {
+	color: rgba(56, 125, 201, 1);
+	fill: rgba(56, 125, 201, 1);
+}
+.block-color-purple {
+	color: rgba(154, 107, 180, 1);
+	fill: rgba(154, 107, 180, 1);
+}
+.block-color-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.block-color-red {
+	color: rgba(207, 81, 72, 1);
+	fill: rgba(207, 81, 72, 1);
+}
+.block-color-default_background {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray_background {
+	background: rgba(240, 239, 237, 1);
+}
+.block-color-brown_background {
+	background: rgba(245, 237, 233, 1);
+}
+.block-color-orange_background {
+	background: rgba(251, 235, 222, 1);
+}
+.block-color-yellow_background {
+	background: rgba(249, 243, 220, 1);
+}
+.block-color-teal_background {
+	background: rgba(232, 241, 236, 1);
+}
+.block-color-blue_background {
+	background: rgba(229, 242, 252, 1);
+}
+.block-color-purple_background {
+	background: rgba(243, 235, 249, 1);
+}
+.block-color-pink_background {
+	background: rgba(250, 233, 241, 1);
+}
+.block-color-red_background {
+	background: rgba(252, 233, 231, 1);
+}
+.select-value-color-default { background-color: rgba(42, 28, 0, 0.07); }
+.select-value-color-gray { background-color: rgba(28, 19, 1, 0.11); }
+.select-value-color-brown { background-color: rgba(127, 51, 0, 0.156); }
+.select-value-color-orange { background-color: rgba(196, 88, 0, 0.203); }
+.select-value-color-yellow { background-color: rgba(209, 156, 0, 0.282); }
+.select-value-color-green { background-color: rgba(0, 96, 38, 0.156); }
+.select-value-color-blue { background-color: rgba(0, 118, 217, 0.203); }
+.select-value-color-purple { background-color: rgba(92, 0, 163, 0.141); }
+.select-value-color-pink { background-color: rgba(183, 0, 78, 0.152); }
+.select-value-color-red { background-color: rgba(206, 24, 0, 0.164); }
+
+.checkbox {
+	display: inline-flex;
+	vertical-align: text-bottom;
+	width: 16;
+	height: 16;
+	background-size: 16px;
+	margin-left: 2px;
+	margin-right: 5px;
+}
+
+.checkbox-on {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20width%3D%2216%22%20height%3D%2216%22%20fill%3D%22%2358A9D7%22%2F%3E%0A%3Cpath%20d%3D%22M6.71429%2012.2852L14%204.9995L12.7143%203.71436L6.71429%209.71378L3.28571%206.2831L2%207.57092L6.71429%2012.2852Z%22%20fill%3D%22white%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+
+.checkbox-off {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20x%3D%220.75%22%20y%3D%220.75%22%20width%3D%2214.5%22%20height%3D%2214.5%22%20fill%3D%22white%22%20stroke%3D%22%2336352F%22%20stroke-width%3D%221.5%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+	
+</style></head><body><article id="2d86971c-72e7-8051-b107-c984b46903f5" class="page sans"><header><h1 class="page-title" dir="auto">Semaine 52/2025 — Veille Marché Énergie PROMEOS</h1><p class="page-description" dir="auto"></p></header><div class="page-body"><div style="display:contents" dir="auto"><h1 id="2d86971c-72e7-80d9-8a01-efee81368d54" class="">Semaine 52/2025 — Veille Marché Énergie PROMEOS</h1></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-80fc-81df-ce6d228cd318" class="">Executive Summary</h2></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-80a9-8e2b-d3353ead514f" class=""><strong>Période</strong> : 22–29 décembre 2025</p></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-8093-a9f9-ccf77f19da3f" class="">3 Faits Majeurs</h3></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-8033-8a1a-f6972a8f39cf" class="numbered-list" start="1"><li><strong>Fin ARENH</strong> (31 déc. 2025 → VNU dès le 1er janv. 2026) — Stabilité tarifaire 2026-27 annoncée. Prix de gros ~50 €/MWh, sous les seuils VNU (78/110 €/MWh).</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-804c-93fa-c8cab75e99f1" class="numbered-list" start="2"><li><strong>Paquet Réseaux Électriques de la Commission UE</strong> (10 déc. 2025) — 8 autoroutes énergétiques + 1 200 Mds€ d&#x27;ici 2040. Confirmation de 2 interconnexions Pyrénées.</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-8061-9b96-cbe953b3b78b" class="numbered-list" start="3"><li><strong>Partenariat LEAP + ENEL</strong> (16 déc. 2025) — Plateforme VPP C&amp;I : 400 k équipements, 100+ partenaires. <strong>Menace directe pour PROMEOS sur l&#x27;ACC opérationnel</strong>.</li></ol></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-808e-989d-cd4f1f2cf157" class="">3 Tendances / Signaux Faibles</h3></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-8014-b38e-dc60920d7a28" class="numbered-list" start="1"><li><strong>Data Act appliqué depuis le 12 sept. 2025</strong> — Accès et réutilisation des données industrielles obligatoires. Interopérabilité cloud-agnostic en janv. 2027.</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-8008-bd24-e8f82c37f50a" class="numbered-list" start="2"><li><strong>TURPE 7 influence les batteries</strong> — Tarifs optionnels pour l&#x27;injection dans les zones EnR (+1,7 % TRI). Incitation à l&#x27;agrégation locale et au stockage décentralisé.</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-8044-9a13-ee6b4832a006" class="numbered-list" start="3"><li><strong>Standard Flex Ready</strong> (mai 2025) — Interopérabilité BACS + EMS. Momentum pour l&#x27;orchestration intégrée des bâtiments.</li></ol></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-80a2-855c-fc6c0a963717" class="">3 Implications B2B</h3></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-807d-b926-d8c5b6fbedd5" class="numbered-list" start="1"><li><strong>Conformité NEBEF + Data Act urgente</strong> — Les nouveaux entrants ACC doivent maîtriser la réconciliation Enedis et les droits d&#x27;accès tiers.</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-805c-9de5-d91a89661a70" class="numbered-list" start="2"><li><strong>L&#x27;automatisation VPP commoditise la flexibilité</strong> — Les micro-fournisseurs doivent se différencier par la <em>traçabilité énergétique</em> et le <em>bill intelligence temps réel</em>.</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-808d-af7b-f7ad86cd9a0f" class="numbered-list" start="3"><li><strong>Le décret BACS 2027 rend l&#x27;EMS indispensable</strong> — Le seuil baisse à 70 kW. Le tertiaire SME demande des solutions intégrées.</li></ol></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-8005-a0d0-ecb71d90acb4"/></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-80e8-9c6d-cecffbfdd743" class="">France — Régulation &amp; Marché</h2></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-80e6-a732-f60ea79bf31c" class="">CRE Watch — Délibérations &amp; Consultations Clés</h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-80a1-9b2f-e59862808b41" class="bulleted-list"><li style="list-style-type:disc"><strong>Délibération 2025-274</strong> (17 déc.) : Zone de mutualisation RTE « Plan de Campagne ». Densification des raccordements EnR territoriaux.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-807e-a93b-e39bf05d67f1" class="bulleted-list"><li style="list-style-type:disc"><strong>FPE 2026-2029</strong> : EEWF (+35 % stockage), EDF SEI (−22 %), Gérédis (−14 %). La tarification flex+stockage remonte.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-803e-a625-f56193d9304f" class="bulleted-list"><li style="list-style-type:disc"><strong>Fin ARENH</strong> (31 déc. 2025) : Le VNU remplace l&#x27;ARENH. Seuils 78/110 €/MWh. TRV stable 2026-27.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8096-819b-c8b443398171" class="bulleted-list"><li style="list-style-type:disc"><strong>Mécanisme Capacité</strong> : Le prix chute à 0 €/MW (2025) vs 6 192 €/MW (oct. 2024). Baisse de 42 % attendue en 2026.</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-8034-832b-f42a4f11dccc" class="">Marché — Prix, Volatilité, TURPE</h3></div><div style="display:contents" dir="ltr"><table id="2d86971c-72e7-801e-aca5-e0ba7f8c00e9" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8034-86e5-ff5b75d100a5"><th id="?Wo?" class="simple-table-header-color simple-table-header">Métrique</th><th id="NhrV" class="simple-table-header-color simple-table-header">Valeur</th><th id="~zH_" class="simple-table-header-color simple-table-header">Date</th><th id="njzw" class="simple-table-header-color simple-table-header">Insight</th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-80f6-9177-d1c8344b0feb"><td id="?Wo?" class="">EPEX Spot</td><td id="NhrV" class="">70-73 €/MWh</td><td id="~zH_" class="">23-29 déc.</td><td id="njzw" class="">Stabilité relative ; −30,7 % YoY</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8025-b90b-e8150c46bd4d"><td id="?Wo?" class="">TURPE 7 HTB</td><td id="NhrV" class="">+9,6 % (fév. 2025)</td><td id="~zH_" class="">1er août 2025</td><td id="njzw" class="">Zones injection +1,7 % TRI batteries</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-803e-b416-f4929b84ac5f"><td id="?Wo?" class="">Linky déploiement</td><td id="NhrV" class="">2,1 M refusants</td><td id="~zH_" class="">2025</td><td id="njzw" class="">Les frais sans Linky incitent à l&#x27;adoption</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8011-9855-df870daa38e5"><td id="?Wo?" class="">Stockage batteries</td><td id="NhrV" class="">2,5-6 k€ (lithium 10 kWh)</td><td id="~zH_" class="">2025</td><td id="njzw" class="">Fort potentiel dans les zones EnR</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-8018-a4a9-ec83514c0464"/></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-801b-bbee-cda60ebdd927" class="">Europe — Politique, Marché &amp; Régulation</h2></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-808a-b183-c0fafa9e5e3e" class="">Réforme Marché &amp; Cadres</h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-80c5-9936-ca589ce9e568" class="bulleted-list"><li style="list-style-type:disc"><strong>Paquet Réseaux</strong> (10 déc., Commission) : 8 autoroutes énergétiques, 2 interconnexions Pyrénées, 1 200 Mds€ d&#x27;ici 2040.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8096-bef7-e9a904410981" class="bulleted-list"><li style="list-style-type:disc"><strong>CBAM Électricité</strong> : Modifications fuitées en déc. 2025. Clarifications sur les PPA EnR et exemptions transfrontalières.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8085-93dc-dde924b45cc4" class="bulleted-list"><li style="list-style-type:disc"><strong>ACER Équilibrage</strong> (Consultation fin janv. 2026) : Harmonisation PICASSO+MARI pour les services d&#x27;équilibrage UE.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8001-bbbc-d61b81ec8ef5" class="bulleted-list"><li style="list-style-type:disc"><strong>Directive PEB 2024/1275</strong> : Exigences solaire 2027-2032, plans de rénovation nationaux, lien explicite BACS+flex.</li></ul></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-8060-8114-d1e2c4835740"/></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-8082-95af-f04afbb7ff72" class="">Concurrence — EMS/ACC/Flex/Stockage</h2></div><div style="display:contents" dir="ltr"><table id="2d86971c-72e7-80aa-aa1e-dd639b6d5e30" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-80f8-a1ce-dc3035ddd4e4"><th id="bYor" class="simple-table-header-color simple-table-header">Acteur</th><th id="~dcd" class="simple-table-header-color simple-table-header">Mouvement</th><th id="BdNv" class="simple-table-header-color simple-table-header">Segment</th><th id="w?Xd" class="simple-table-header-color simple-table-header">Risque/Opportunité PROMEOS</th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8052-b44a-e79d9f84f915"><td id="bYor" class=""><strong>LEAP + ENEL</strong></td><td id="~dcd" class="">Automatisation VPP 16 déc. ; 400 k DER, 100+ partenaires</td><td id="BdNv" class="">C&amp;I demand response</td><td id="w?Xd" class="">⚠️ MENACE : ACC commoditisé</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-80b4-87e8-f93b4171bc0a"><td id="bYor" class=""><strong>WAAT</strong></td><td id="~dcd" class="">Levée 100 M€ sept. ; bornes de recharge intelligentes + EMS</td><td id="BdNv" class="">Mobilité+tertiaire</td><td id="w?Xd" class="">⚠️ MENACE : Bundling recharge+pilotage</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-80fe-b52b-cdf0adead4a2"><td id="bYor" class=""><strong>ChargePoint Flex Plus</strong></td><td id="~dcd" class="">Lancement été 2025 ; gestion de flottes, remboursement auto</td><td id="BdNv" class="">Flottes entreprises</td><td id="w?Xd" class="">✓ COMPLÉMENT</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-80c2-a637-c4a33532d671"><td id="bYor" class=""><strong>Itron + Schneider</strong></td><td id="~dcd" class="">Grid Edge Intelligence + EcoStruxure</td><td id="BdNv" class="">Distribution+tertiaire DER</td><td id="w?Xd" class="">⚠️ MENACE SYSTÈME : Monopole infraco</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-80ff-b085-fd8eb9f05da3"><td id="bYor" class=""><strong>GLocalFlex (EDF)</strong></td><td id="~dcd" class="">Pilote Clamart ; HEMS + demand response</td><td id="BdNv" class="">Flexibilité résidentiel</td><td id="w?Xd" class="">✓ PARTENAIRE</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8056-837f-c2be83c76e4b"><td id="bYor" class=""><strong>Pennylane</strong></td><td id="~dcd" class="">Levée 75 M€ ; facturation électronique B2B</td><td id="BdNv" class="">Fintech facturation</td><td id="w?Xd" class="">✓ AMPLIFICATION bill intelligence</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-8031-984d-f93f1807b47a"/></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-805e-b968-c2121dc36c51" class="">Impacts &amp; Décisions PROMEOS</h2></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-805f-9558-d359b7bb24b9" class="">Opportunités Produit (Priorités MVP)</h3></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-80ff-a044-cb76aa40bd01" class="numbered-list" start="1"><li><strong>Bill Intelligence Temps Réel + Clearing Micro</strong> (Score : 8/10)</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-80bd-82f1-fee3a1810f47" class="numbered-list" start="2"><li><strong>Traçabilité Carbone Locale</strong> (Score : 8/10)</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-80a6-86b7-e568fe95ade1" class="numbered-list" start="3"><li><strong>BACS Compliance as a Service</strong> (Score : 7/10)</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-8073-9981-ed2b808bb687" class="numbered-list" start="4"><li><strong>ACC Agrégation Micro (Clustering Local)</strong> (Score : 7/10)</li></ol></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-80fc-b8ea-c9849d2418d2" class="">Décisions Top 3</h3></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-8067-9b5f-fbbc3f930870" class="numbered-list" start="1"><li><strong>Lancer un partenariat CRE/RTE</strong> sur l&#x27;harmonisation ACC Micro (T1 2026)</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-8084-a8da-d95c7c4c4372" class="numbered-list" start="2"><li><strong>Intégrer Bill Intelligence</strong> + Clearing Micro dans le MVP (T1 2026)</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-80b8-b84a-ea6da6607790" class="numbered-list" start="3"><li><strong>Pilote BACS Compliance Audit gratuit</strong> (5 clients, Île-de-France, T1-T2 2026)</li></ol></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-80f3-bf2b-c8974081fde1" class="">Backlog Impacté</h3></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-800c-9b3b-e007dc20a89a" class=""><strong>MUST</strong> : Conformité Data Act + Module Clé de Répartition ACC + API Portail NEBEF Enedis</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8069-8308-cf5caa8345e7" class=""><strong>SHOULD</strong> : Tableau de bord Bill Intelligence + Vérificateur BACS Readiness + Traçabilité Carbone</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-80ec-aa65-e2294f6847a4" class=""><strong>COULD</strong> : Interface Micro Agrégation + Intégration Pennylane + ML Prévision Flex</p></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-80ec-96e4-d1a7e5b28a54"/></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-80fd-8573-f4235d6b0bc9" class="">À Surveiller Semaine Prochaine (6–12 janvier 2026)</h2></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-807a-9949-d53a722df181" class="numbered-list" start="1"><li><strong>Officialisations CRE</strong> post-fin ARENH (communiqués détaillant TRV/VNU)</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-800c-b225-d429bca1f155" class="numbered-list" start="2"><li><strong>Vérifications implémentation BACS</strong> (premières saisies de non-conformité fin janv. ?)</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-8008-b5a5-c4bcae349d0f" class="numbered-list" start="3"><li><strong>Lever partenaires technologiques</strong> : Appel Itron/Schneider pour accès DERMS (cloud interop)</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-8050-a58b-d91ca9f864f1" class="numbered-list" start="4"><li><strong>Momentum LEAP/ENEL</strong> : Annonces d&#x27;expansion territoriale, modèle de pricing</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-80b2-9dda-f8ae24c014f0" class="numbered-list" start="5"><li><strong>Vagues de conformité Data Act</strong> : Premiers signalements de non-conformité ; retours du cabinet juridique</li></ol></div></div></article><span class="sans" style="font-size:14px;padding-top:2em"></span></body></html>

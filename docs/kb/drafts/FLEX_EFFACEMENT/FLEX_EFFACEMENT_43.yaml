@@ -1,0 +1,41 @@
+id: FLEX_EFFACEMENT_43
+type: rule
+domain: reglementaire
+title: 'Roadmap 2025–2026 2025 Q1 : Lancer NEBEF (maintenantstable NEBEF 3.5, pas
+  15 min live)'
+summary: "+ Validation agrégateurs CRE (lister partenaires)\n + Préparation Réserves\
+  \ (audit instrumen. si >5 MW)\n\n2025 Q2–Q3 : Onboarding clients NEBEF pilotes (10–30\
+  \ MW)\n + Collecte données historiques 2023–202..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "+ Validation agrégateurs CRE (lister partenaires)\n + Préparation Réserves\
+  \ (audit instrumen. si >5 MW)\n\n2025 Q2–Q3 : Onboarding clients NEBEF pilotes (10–30\
+  \ MW)\n + Collecte données historiques 2023–2025\n + Tests baseline 3–4 méthodes\n\
+  \n2025 Q4 : Déploiement Réserves aFRR (prime fixe stable)\n + Obligation MA pour\
+  \ EnR (démarrage dépôts 01/01/2026)\n + Publication CRE courbes Capacité (AL-4 pour\
+  \ livraison 2027)\n\n2026 Q1 : Transition ancien mécanisme capacité → nouveau (nov.\
+  \ déc 2025)\n + Participation AL-1 flexibilités (fin-déc 2025, enchère)\n + Scaling\
+  \ NEBEF (target 100+ MW agrégés)\n\n2026 Q2–Q3 : Retours d'expérience NEBEF baseline\
+  \ (ajustements si besoin)\n + Réserves RR-RC montée en charge (nouveaux volumes\
+  \ RTE)\n\n2026 Q4 : Bilan année 1 : revenus réalisés, pénalités, opportunités\n\
+  \ + Planification 2027 : nouvelles zones flex locales Enedis (REFLEX)"
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: 'Roadmap 2025–2026 2025 Q1 : Lancer NEBEF (maintenantstable NEBEF 3.5,
+    pas 15 min live)'
+  anchor: '#roadmap-20252026-2025-q1-lancer-nebef-maintenantstable-nebef-35-pas-15-min-live'
+  excerpt_short: "+ Validation agrégateurs CRE (lister partenaires)\n + Préparation\
+    \ Réserves (audit instrumen. si >5 MW..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

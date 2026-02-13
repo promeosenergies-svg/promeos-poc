@@ -1,0 +1,35 @@
+id: BACS_SEUILS_13
+type: rule
+domain: reglementaire
+title: 9. SANCTIONS & MISE EN CONFORMITÉ
+summary: "Absence de régime d’amende forfaitaire explicite , contrairement au décret\
+  \ Tertiaire, mais : \n- Manquement au code de la construction → Articles R.131-38\
+  \ à R.131-41 \n- Mise en demeure préfectorale pos..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Absence de régime d’amende forfaitaire explicite , contrairement au décret\
+  \ Tertiaire, mais : \n- Manquement au code de la construction → Articles R.131-38\
+  \ à R.131-41 \n- Mise en demeure préfectorale possible en cas de non-conformité\
+  \ constatée \n- Astreintes administratives et amendes administratives sur la base\
+  \ du Code de l’énergie \n- Responsabilité civile du propriétaire en cas d’incident\
+  \ lié à l’absence de GTB conforme \n\nNon-respect des inspections : Peut exposer\
+  \ à des mises en demeure de conformité et à des contrôles externes renforcés."
+logic: null
+sources:
+- doc_id: BACS_SEUILS
+  label: Decret BACS - Seuils, dates, exemptions
+  section: 9. SANCTIONS & MISE EN CONFORMITÉ
+  anchor: '#9-sanctions-mise-en-conformit'
+  excerpt_short: "Absence de régime d’amende forfaitaire explicite , contrairement\
+    \ au décret Tertiaire, mais : \n- Manq..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

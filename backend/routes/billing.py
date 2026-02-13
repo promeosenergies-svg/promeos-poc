@@ -1,10 +1,12 @@
 """
-PROMEOS — Bill Intelligence Routes (Sprint 7)
-CSV import + audit + summary + site billing.
+PROMEOS — Bill Intelligence Routes (Sprint 7.1)
+CSV import (idempotent) + audit + summary + site billing + insight workflow.
 Prefix: /api/billing
 """
 import csv
+import hashlib
 import io
+import json
 from datetime import date, datetime
 from typing import Optional, List
 
@@ -16,6 +18,7 @@ from database import get_db
 from models import (
     Site, EnergyContract, EnergyInvoice, EnergyInvoiceLine, BillingInsight,
     BillingEnergyType, InvoiceLineType, BillingInvoiceStatus,
+    InsightStatus, BillingImportBatch,
 )
 from services.billing_service import (
     audit_invoice_full,
@@ -24,6 +27,7 @@ from services.billing_service import (
     shadow_billing_simple,
     BILLING_RULES,
 )
+from middleware.auth import get_optional_auth, AuthContext
 
 router = APIRouter(prefix="/api/billing", tags=["Bill Intelligence V2"])
 
@@ -52,6 +56,12 @@ class InvoiceCreate(BaseModel):
     total_eur: Optional[float] = None
     energy_kwh: Optional[float] = None
     lines: Optional[List[dict]] = None
+
+
+class InsightPatch(BaseModel):
+    status: Optional[str] = None
+    owner: Optional[str] = None
+    notes: Optional[str] = None
 
 
 # ========================================
@@ -108,13 +118,18 @@ def list_contracts(site_id: Optional[int] = Query(None), db: Session = Depends(g
 
 
 # ========================================
-# CSV Import
+# CSV Import (idempotent — Sprint 7.1)
 # ========================================
 
 @router.post("/import-csv")
-def import_invoices_csv(file: UploadFile = File(...), db: Session = Depends(get_db)):
+def import_invoices_csv(
+    file: UploadFile = File(...),
+    org_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+):
     """
-    Import invoices from CSV.
+    Import invoices from CSV (idempotent).
+    A re-upload of the same file (same org + same SHA-256) is rejected.
     Expected columns: site_id,invoice_number,period_start,period_end,issue_date,total_eur,energy_kwh,source
     Optional line columns: line_type,line_label,line_qty,line_unit,line_unit_price,line_amount_eur
     """
@@ -122,13 +137,35 @@ def import_invoices_csv(file: UploadFile = File(...), db: Session = Depends(get_
         raise HTTPException(status_code=400, detail="Le fichier doit etre un CSV")
 
     content = file.file.read().decode("utf-8-sig")
+
+    # --- Idempotency check (content hash) ---
+    content_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
+    existing_batch = db.query(BillingImportBatch).filter(
+        BillingImportBatch.content_hash == content_hash,
+        BillingImportBatch.org_id == org_id,
+    ).first()
+    if existing_batch:
+        return {
+            "status": "already_imported",
+            "batch_id": existing_batch.id,
+            "imported_at": existing_batch.imported_at.isoformat() if existing_batch.imported_at else None,
+            "rows_total": existing_batch.rows_total,
+            "rows_inserted": existing_batch.rows_inserted,
+            "rows_skipped": existing_batch.rows_skipped,
+            "message": "Ce fichier a deja ete importe (meme contenu).",
+        }
+
+    # --- Parse & import rows ---
     reader = csv.DictReader(io.StringIO(content), delimiter=",")
 
     imported = 0
+    skipped = 0
     errors = []
     invoices_created = []
+    rows_total = 0
 
     for row_num, row in enumerate(reader, start=2):
+        rows_total += 1
         try:
             site_id = int(row.get("site_id", "0").strip())
             invoice_number = row.get("invoice_number", "").strip()
@@ -148,6 +185,7 @@ def import_invoices_csv(file: UploadFile = File(...), db: Session = Depends(get_
                 EnergyInvoice.invoice_number == invoice_number,
             ).first()
             if existing:
+                skipped += 1
                 errors.append({"row": row_num, "error": f"Facture {invoice_number} deja importee"})
                 continue
 
@@ -195,13 +233,59 @@ def import_invoices_csv(file: UploadFile = File(...), db: Session = Depends(get_
         except Exception as e:
             errors.append({"row": row_num, "error": str(e)[:200]})
 
+    # --- Record batch ---
+    batch = BillingImportBatch(
+        org_id=org_id,
+        filename=file.filename,
+        content_hash=content_hash,
+        rows_total=rows_total,
+        rows_inserted=imported,
+        rows_skipped=skipped,
+        errors_json=json.dumps(errors, ensure_ascii=False) if errors else None,
+    )
+    db.add(batch)
     db.commit()
+    db.refresh(batch)
 
     return {
         "status": "ok",
+        "batch_id": batch.id,
         "imported": imported,
+        "skipped": skipped,
         "errors": errors,
         "error_count": len(errors),
+    }
+
+
+# ========================================
+# Import batches listing (Sprint 7.1)
+# ========================================
+
+@router.get("/import/batches")
+def list_import_batches(
+    org_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+):
+    """List CSV import batches with stats."""
+    q = db.query(BillingImportBatch)
+    if org_id is not None:
+        q = q.filter(BillingImportBatch.org_id == org_id)
+    batches = q.order_by(BillingImportBatch.imported_at.desc()).all()
+    return {
+        "batches": [
+            {
+                "id": b.id,
+                "org_id": b.org_id,
+                "filename": b.filename,
+                "content_hash": b.content_hash,
+                "imported_at": b.imported_at.isoformat() if b.imported_at else None,
+                "rows_total": b.rows_total,
+                "rows_inserted": b.rows_inserted,
+                "rows_skipped": b.rows_skipped,
+            }
+            for b in batches
+        ],
+        "count": len(batches),
     }
 
 
@@ -301,14 +385,24 @@ def billing_summary(db: Session = Depends(get_db)):
 def list_insights(
     site_id: Optional[int] = Query(None),
     severity: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """List billing insights with optional filters."""
+    """List billing insights with optional filters (site, severity, status)."""
     q = db.query(BillingInsight)
+    # Scope filtering
+    if auth and auth.site_ids is not None:
+        q = q.filter(BillingInsight.site_id.in_(auth.site_ids))
     if site_id:
         q = q.filter(BillingInsight.site_id == site_id)
     if severity:
         q = q.filter(BillingInsight.severity == severity)
+    if status:
+        try:
+            q = q.filter(BillingInsight.insight_status == InsightStatus(status))
+        except ValueError:
+            pass
     insights = q.order_by(BillingInsight.estimated_loss_eur.desc().nullslast()).all()
     return {
         "insights": [
@@ -316,10 +410,64 @@ def list_insights(
                 "id": i.id, "site_id": i.site_id, "invoice_id": i.invoice_id,
                 "type": i.type, "severity": i.severity, "message": i.message,
                 "estimated_loss_eur": i.estimated_loss_eur,
+                "insight_status": i.insight_status.value if i.insight_status else "open",
+                "owner": i.owner,
+                "notes": i.notes,
             }
             for i in insights
         ],
         "count": len(insights),
+    }
+
+
+# ========================================
+# Insight workflow (Sprint 7.1)
+# ========================================
+
+@router.patch("/insights/{insight_id}")
+def patch_insight(insight_id: int, data: InsightPatch, db: Session = Depends(get_db)):
+    """Update insight status / owner / notes (ops workflow)."""
+    insight = db.query(BillingInsight).filter(BillingInsight.id == insight_id).first()
+    if not insight:
+        raise HTTPException(status_code=404, detail="Insight non trouve")
+
+    if data.status is not None:
+        try:
+            insight.insight_status = InsightStatus(data.status)
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Statut invalide: {data.status}")
+    if data.owner is not None:
+        insight.owner = data.owner
+    if data.notes is not None:
+        insight.notes = data.notes
+
+    db.commit()
+    db.refresh(insight)
+    return {
+        "status": "updated",
+        "insight_id": insight.id,
+        "insight_status": insight.insight_status.value if insight.insight_status else "open",
+        "owner": insight.owner,
+        "notes": insight.notes,
+    }
+
+
+@router.post("/insights/{insight_id}/resolve")
+def resolve_insight(insight_id: int, notes: Optional[str] = Query(None), db: Session = Depends(get_db)):
+    """Shortcut: mark insight as RESOLVED with optional notes."""
+    insight = db.query(BillingInsight).filter(BillingInsight.id == insight_id).first()
+    if not insight:
+        raise HTTPException(status_code=404, detail="Insight non trouve")
+
+    insight.insight_status = InsightStatus.RESOLVED
+    if notes:
+        insight.notes = notes
+    db.commit()
+    db.refresh(insight)
+    return {
+        "status": "resolved",
+        "insight_id": insight.id,
+        "insight_status": "resolved",
     }
 
 

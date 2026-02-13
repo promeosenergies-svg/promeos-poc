@@ -130,7 +130,8 @@ function MonitoringPage() {
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
           <Activity size={28} className="text-blue-600" />
-          <h1 className="text-2xl font-bold text-gray-800">Monitoring Electrique</h1>
+          <h1 className="text-2xl font-bold text-gray-800">Performance</h1>
+          <p className="text-sm text-gray-500 mt-0.5">KPIs, puissance, qualité de données & alertes</p>
         </div>
         <div className="flex items-center gap-3">
           <select

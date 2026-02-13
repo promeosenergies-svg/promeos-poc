@@ -1,0 +1,43 @@
+id: STRATEGIE_NEBCO_1
+type: rule
+domain: usages
+title: RÉSUMÉ EXÉCUTIF
+summary: NEBCO (Notification d’Échange de Bloc de Consommation) est le mécanisme réglementaire
+  français permettant aux consommateurs d’électricité de valoriser sur les marchés
+  énergétiques leurs réductions de ...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "NEBCO (Notification d’Échange de Bloc de Consommation) est le mécanisme\
+  \ réglementaire français permettant aux consommateurs d’électricité de valoriser\
+  \ sur les marchés énergétiques leurs réductions de consommation ( effacement ) ET\
+  \ les décalages avant/après ( reports/anticipations ). Depuis le 1er septembre 2025,\
+  \ il remplace le système NEBEF. 1 2 \n\nPour PROMEOS , NEBCO offre un axe de croissance\
+  \ crédible mais exigeant . Le marché s’élargit : flexibilité française de 2,9 GW\
+  \ (2024, +8% YoY) vers 6,5 GW en 2028. Les segments cibles (retail multisites, PME/ETI\
+  \ tertiaire, petits industriels) sont accessibles via la plateforme advizeo existante.\
+  \ Or, l’exécution requiert partenariat OE structuré, qualification RTE coûteuse,\
+  \ et données fiables (GTB/télérelève). 3 \n\nVerdict provisoire : NEBCO n’est pas\
+  \ un MVP seul , mais un module V1 viable s’il est bundlé avec audit d’efficacité\
+  \ énergétique et pilotage cockpit. Potentiel : €500k–1M revenue Y1 (50–100 sites),\
+  \ €1.5–3M Y2. \n\nRecommandation immédiate : Lancer pilot 30 jours (audit pré-flex\
+  \ 2–3 clients, partenariat OE, validation data) pour décision GO/NO-GO conditionnel.\
+  \ Deadline décisions: 22 février 2026 ."
+logic: null
+sources:
+- doc_id: STRATEGIE_NEBCO
+  label: Analyse strategique NEBCO
+  section: RÉSUMÉ EXÉCUTIF
+  anchor: '#rsum-excutif'
+  excerpt_short: NEBCO (Notification d’Échange de Bloc de Consommation) est le mécanisme
+    réglementaire français perme...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

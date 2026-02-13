@@ -1,0 +1,41 @@
+id: ACC_FRANCE_23
+type: rule
+domain: acc
+title: 1. Trois Scénarios Probabilistes (Data-Driven Projection)
+summary: "Baseline 2025 : 900 opérations, 110 MWc (consolidées H1 2025) \n\nAssumptions\
+  \ par scénario : Driver Prudent Central Accéléré Croissance opérations/an (%) +25%\
+  \ +40% +55% Croissance puissance/an (%) +30% ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Baseline 2025 : 900 opérations, 110 MWc (consolidées H1 2025) \n\nAssumptions\
+  \ par scénario : Driver Prudent Central Accéléré Croissance opérations/an (%) +25%\
+  \ +40% +55% Croissance puissance/an (%) +30% +45% +60% Taux adoption collectivités\
+  \ 10% 25% 45% Taux adoption bailleurs 15% 30% 50% Avg taille projet (MWc) 0.12 0.13–0.15\
+  \ 0.18 Enablers clés Lite: TURPE 7 + seuil 5MW Moderate: API Enedis + shadow billing\
+  \ Aggressive: Full SaaS + flex market \n\nProjections : Année Prudent Ops Central\
+  \ Ops Accél. Ops Central Power (MWc) 2025 (réel mi-année) 900 900 900 110 2026-Q2\
+  \ (projec.) 1,200 1,500 2,000 160 2027-Q4 1,600 2,500 3,800 320 2028-Q4 2,100 4,000\
+  \ 6,500 550 2029-Q4 2,700 6,000 10,500 900 2030-Q4 2,700 6,000 10,500 900 MWc \n\
+  \nInterprétation : \n- Prudent = réalisation règlementaire partielle + friction\
+  \ SaaS + fatigue collectivités \n- Central (meilleure base) = plan gouvernement\
+  \ 2025–2026 mis en œuvre (API, TURPE, standardisation) \n- Accéléré = écosystème\
+  \ full digitalisé + tarification flex + communautés énergie transposées"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: 1. Trois Scénarios Probabilistes (Data-Driven Projection)
+  anchor: '#1-trois-scnarios-probabilistes-data-driven-projection'
+  excerpt_short: "Baseline 2025 : 900 opérations, 110 MWc (consolidées H1 2025) \n\
+    \nAssumptions par scénario : Driver Pr..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,41 @@
+id: POST_ARENH_2026_3
+type: rule
+domain: facturation
+title: Revenus Estimés et Premières Simulations
+summary: La question centrale pour 2026 est celle de l’activation effective du mécanisme.
+  En octobre 2025, la CRE a estimé les revenus annuels d’EDF issus de son parc nucléaire
+  historique à 66,08 €/MWh (23,7 m...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "La question centrale pour 2026 est celle de l’activation effective du\
+  \ mécanisme. En octobre 2025, la CRE a estimé les revenus annuels d’EDF issus de\
+  \ son parc nucléaire historique à 66,08 €/MWh (23,7 milliards d’euros pour 360 TWh\
+  \ produits). Ce montant, situé entre le coût complet (60,3 €/MWh) et le premier\
+  \ seuil de taxation (78 €/MWh), signifie qu’ aucun prélèvement ne serait déclenché\
+  \ en 2026 en l’absence d’une hausse significative des prix de marché. Par conséquent,\
+  \ aucune minoration de factures ne s’appliquera pour l’année 2026 si cette prévision\
+  \ se confirme. 12 13 \n\nPour 2027, la CRE a livré en janvier 2026 une estimation\
+  \ prudente de 60,94 €/MWh (21,94 milliards d’euros pour 360 TWh), également inférieure\
+  \ au seuil de 78 €/MWh. L’activation du VNU dépendra donc, dans un horizon de deux\
+  \ années, d’une envolée des prix de marché de gros de l’électricité, événement moins\
+  \ probable dans un contexte de baisse structurelle des coûts des énergies renouvelables.\
+  \ 14"
+logic: null
+sources:
+- doc_id: POST_ARENH_2026
+  label: Post-ARENH 2026
+  section: Revenus Estimés et Premières Simulations
+  anchor: '#revenus-estims-et-premires-simulations'
+  excerpt_short: La question centrale pour 2026 est celle de l’activation effective
+    du mécanisme. En octobre 2025, la...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

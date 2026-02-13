@@ -1,0 +1,58 @@
+id: STOCKAGE_ACC_14
+type: rule
+domain: acc
+title: F.3 Risques Conformité & Mitigation
+summary: "Risque 1 : Comptage ≠ Réalité Physique (Perte Réseau, Erreur Mesure) \n\
+  - Symptôme : somme énergie distribuée ≠ somme production mesuré (écart > 5%) \n\
+  - Cause : pertes câble non mesurées, erreur onduleur..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Risque 1 : Comptage ≠ Réalité Physique (Perte Réseau, Erreur Mesure)\
+  \ \n- Symptôme : somme énergie distribuée ≠ somme production mesuré (écart > 5%)\
+  \ \n- Cause : pertes câble non mesurées, erreur onduleur, arrondis comptage Linky\
+  \ \n- Mitigation : (i) audit annuel comptage vs balances physiques, (ii) budget\
+  \ perte 3% intégré clé répartition \n- Coût : 1 k€ audit/an \n\nRisque 2 : Batterie\
+  \ Bloque/Défaut → Perte Produit Autoconso \n- Symptôme : batterie panne, ACC perte\
+  \ 10 kWh/j surplus stockable \n- Cause : défaut électronique, surcharge thermique,\
+  \ usure prématurée \n- Mitigation : (i) contrat maintenance (si BaaS) ou prestataire\
+  \ 500 €/an, (ii) redondance onduleur opt., (iii) assurance BEEM \n- Coût : 500 €/an\
+  \ maintenance + 2% CAPEX assurance \n\nRisque 3 : Évolution TURPE/Tarifs → Rentabilité\
+  \ Dégradée \n- Symptôme : TURPE 7 août 2026 initial, puis ajustement 2027 annule\
+  \ incitation injection-soutirage \n- Cause : politique énergétique gouvernementale,\
+  \ inflation \n- Mitigation : (i) contrats indexation tarifs batterie (ex. max +2%\
+  \ / an), (ii) clauses renégociation annuelle PMO \n- Coût : légal 2 k€ pour clauses\
+  \ robustes \n\nRisque 4 : Changement Réglementation ACC (Clé Fixe → Dynamique, Impact\
+  \ Batterie) \n- Symptôme : décret 2027 impose clé dynamique pour ACC, batterie doit\
+  \ s’adapter algorithme nouveau \n- Cause : UE directive harmonisation, politique\
+  \ français \n- Mitigation : (i) EMS architecture flexible (clé = paramètre, pas\
+  \ hard-coded), (ii) contrat PMO « adaptabilité », (iii) veille réglementaire \n\
+  - Coût : R&D EMS 5 k€ pour scalabilité \n\nRisque 5 : Cyber-Attaque / Données Énergétiques\
+  \ Sensibles (NIS2) \n- Symptôme : hacker accède API Enedis, modifie clé répartition\
+  \ en faveur un participant \n- Cause : token Vol, credential spear-phishing, bug\
+  \ API Enedis \n- Mitigation : (i) authentification multi-facteur (2FA), (ii) chiffrement\
+  \ TLS 1.3, (iii) audit sécu annuel (pentest), (iv) assurance cyber \n- Coût : 5–10\
+  \ k€/an (souscription assurance + audit) \n\nRisque 6 : Batterie Classée ICPE (Si\
+  \ > Puissance Seuil) \n- Symptôme : batterie > 200 kW ou > 3 MWh → soumise réglementation\
+  \ ICPE (autorisation préfectorale, étude d’impact) \n- Cause : seuil automatique\
+  \ réglementation \n- Mitigation : (i) dimensionner batterie < seuil si possible,\
+  \ (ii) si dépassement, dossier ICPE 20 k€–50 k€, délai 6 mois \n- Coût : 0 si <\
+  \ seuil, 20–50 k€ + délai si dépassement"
+logic: null
+sources:
+- doc_id: STOCKAGE_ACC
+  label: Stockage et Autoconsommation Collective
+  section: F.3 Risques Conformité & Mitigation
+  anchor: '#f3-risques-conformit-mitigation'
+  excerpt_short: "Risque 1 : Comptage ≠ Réalité Physique (Perte Réseau, Erreur Mesure)\
+    \ \n- Symptôme : somme énergie dis..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

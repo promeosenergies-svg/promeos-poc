@@ -1,0 +1,31 @@
+id: LOI_APER_12
+type: knowledge
+domain: reglementaire
+title: 'PHASE 4 : MISE EN ŒUVRE TRAVAUX (Semaines 20-60)'
+summary: "- Appel d’offres installateur / EPC (délai : 4-8 semaines) \n- Travaux :\
+  \ 2-6 mois selon envergure \n- Inspection GRD & mise en service (1-2 mois post-travaux)\
+  \ \n- Contrôle conformité obligatoire (4 ans :..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Appel d’offres installateur / EPC (délai : 4-8 semaines) \n- Travaux\
+  \ : 2-6 mois selon envergure \n- Inspection GRD & mise en service (1-2 mois post-travaux)\
+  \ \n- Contrôle conformité obligatoire (4 ans : inspection technique)"
+logic: null
+sources:
+- doc_id: LOI_APER
+  label: Loi APER - Acceleration Production Energies Renouvelables
+  section: 'PHASE 4 : MISE EN ŒUVRE TRAVAUX (Semaines 20-60)'
+  anchor: '#phase-4-mise-en-uvre-travaux-semaines-20-60'
+  excerpt_short: "- Appel d’offres installateur / EPC (délai : 4-8 semaines) \n- Travaux\
+    \ : 2-6 mois selon envergure \n- ..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

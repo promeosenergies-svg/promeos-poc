@@ -1,0 +1,33 @@
+id: FLEX_EFFACEMENT_22
+type: rule
+domain: acc
+title: 3.8 Checklist “Go/No-Go” Capacité
+summary: "- ⬜ Certification TPC active ou en cours \n- ⬜ Capacité constructive ≥1\
+  \ MW (AL-1, surtout) \n- ⬜ Contrat GRT/RTE validé (pré-enchère) \n- ⬜ Données disponibilité\
+  \ (GRT télérelevé) accessibles \n- ⬜ Pas de ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- ⬜ Certification TPC active ou en cours \n- ⬜ Capacité constructive\
+  \ ≥1 MW (AL-1, surtout) \n- ⬜ Contrat GRT/RTE validé (pré-enchère) \n- ⬜ Données\
+  \ disponibilité (GRT télérelevé) accessibles \n- ⬜ Pas de conflit pluriannuel antérieur\
+  \ \n- ⬜ Soumission offre avant deadline AL-4/AL-1 \n- ⬜ Accord financer éventuels\
+  \ acomptes taxe"
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: 3.8 Checklist “Go/No-Go” Capacité
+  anchor: '#38-checklist-gono-go-capacit'
+  excerpt_short: "- ⬜ Certification TPC active ou en cours \n- ⬜ Capacité constructive\
+    \ ≥1 MW (AL-1, surtout) \n- ⬜ Contr..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,33 @@
+id: BACS_COMPLET_14
+type: knowledge
+domain: reglementaire
+title: 4️⃣ ARRÊT MANUEL & AUTONOMIE
+summary: "- Contrôle manuel : Possibility d’arrêter/piloter manuellement tout ou partie\
+  \ BACS \n- Autonomie : Gestion autonome systèmes (configurations multi-sites avec\
+  \ hyperviseur pilotant supervisions distantes..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Contrôle manuel : Possibility d’arrêter/piloter manuellement tout ou\
+  \ partie BACS \n- Autonomie : Gestion autonome systèmes (configurations multi-sites\
+  \ avec hyperviseur pilotant supervisions distantes = OK) \n- Sécurité : Pas de dépendance\
+  \ réseau permanent (critères de basculement local) \n- Exemple : PM émetrise hyperviseur\
+  \ 10 sites → chaque site fonctionne en autonomie locale + synchrone hyperviseur"
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: 4️⃣ ARRÊT MANUEL & AUTONOMIE
+  anchor: '#4-arrt-manuel-autonomie'
+  excerpt_short: "- Contrôle manuel : Possibility d’arrêter/piloter manuellement tout\
+    \ ou partie BACS \n- Autonomie : Ge..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

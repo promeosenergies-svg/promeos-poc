@@ -1,0 +1,44 @@
+id: LEVIERS_MARCHE_2025_1
+type: rule
+domain: usages
+title: Executive Summary
+summary: 'L’autoconsommation collective (ACC) en France connaît une croissance historique
+  : 1 111 opérations actives et 161 MW en juin 2025, soit +144% en un an . Le cadre
+  réglementaire s’assouplit (arrêté 21 f...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "L’autoconsommation collective (ACC) en France connaît une croissance\
+  \ historique : 1 111 opérations actives et 161 MW en juin 2025, soit +144% en un\
+  \ an . Le cadre réglementaire s’assouplit (arrêté 21 février 2025 : seuils portés\
+  \ à 5–10 MW, périmètre géographique étendu, délais administratifs réduits), créant\
+  \ une fenêtre d’opportunité stratégique pour PROMEOS de se positionner comme “micro-fournisseur\
+  \ local augmenté”. 1 \n\nSituation clé : \n- Marché: 1 700 producteurs, 10 600+\
+  \ consommateurs, puissance moyenne 145 kVA/opération 2 \n- Secteurs dominants :\
+  \ collectivités, bailleurs sociaux, parcs d’activités, particuliers (AMEP) \n- Freins\
+  \ opérationnels majeurs : montage PMO lourd (12–24 mois), manque d’automatisation\
+  \ (Excel + ressaisies), facturation manuelle, communication Enedis complexe \n-\
+  \ Leviers: APIs Enedis DataConnect/ACC, standardisation juridique, clés de répartition\
+  \ dynamiques, pilotage temps réel \n\nPROMEOS doit combiner trois briques (Data\
+  \ & Conformité, ACC Starter, ACC Ops) pour devenir l’unique plateforme intégrant\
+  \ réglementation multi-énergie + gestion ACC clé-en-main + cockpit d’exploitation\
+  \ automatisé . Gain attendu : réduction temps montage ACC de 12–24 mois à 3–6 mois\
+  \ , scaling de 10 → 100+ opérations sans effort supplémentaire."
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: Executive Summary
+  anchor: '#executive-summary'
+  excerpt_short: 'L’autoconsommation collective (ACC) en France connaît une croissance
+    historique : 1 111 opérations a...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,33 @@
+id: BACS_COMPLET_45
+type: knowledge
+domain: reglementaire
+title: Inspections récurrentes
+summary: '- ⬜ Prochaine inspection planifiée (5 ans max après rapport précédent, ou
+  2 ans si renouvellement système)
+
+  - ⬜ Rappel calendrier dans agenda PM'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: '- ⬜ Prochaine inspection planifiée (5 ans max après rapport précédent,
+  ou 2 ans si renouvellement système)
+
+  - ⬜ Rappel calendrier dans agenda PM'
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Inspections récurrentes
+  anchor: '#inspections-rcurrentes'
+  excerpt_short: '- ⬜ Prochaine inspection planifiée (5 ans max après rapport précédent,
+    ou 2 ans si renouvellement sy...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,31 @@
+id: DT_SYNTHESE_5
+type: knowledge
+domain: usages
+title: Nouvelle attestation numérique
+summary: "- Génération automatique sur OPERAT \n- Accessible immédiatement post-déclaration\
+  \ \n- Format PDF standardisé \n- Contenu : Consommations annuelles par fluide +\
+  \ indicateurs d’usage (USE) + performance rel..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Génération automatique sur OPERAT \n- Accessible immédiatement post-déclaration\
+  \ \n- Format PDF standardisé \n- Contenu : Consommations annuelles par fluide +\
+  \ indicateurs d’usage (USE) + performance relative"
+logic: null
+sources:
+- doc_id: DT_SYNTHESE
+  label: Decret Tertiaire - Synthese PROMEOS
+  section: Nouvelle attestation numérique
+  anchor: '#nouvelle-attestation-numrique'
+  excerpt_short: "- Génération automatique sur OPERAT \n- Accessible immédiatement\
+    \ post-déclaration \n- Format PDF stand..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

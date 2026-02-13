@@ -1,0 +1,52 @@
+id: STOCKAGE_ACC_13
+type: knowledge
+domain: acc
+title: F.1 Schéma Cible (Batteries + Comptage + Gouvernance) ┌─────────────────────────────────────────────────────────────┐
+summary: '│ PMO / Cockpit (PROMEOS) │
+
+  ├─────────────────────────────────────────────────────────────┤
+
+  │ • Données 15-min Enedis API (prod/conso participants) │
+
+  │ • Prévisions PV météo, prix spot 24h │
+
+  │ • Optim...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "│ PMO / Cockpit (PROMEOS) │\n├─────────────────────────────────────────────────────────────┤\n\
+  │ • Données 15-min Enedis API (prod/conso participants) │\n│ • Prévisions PV météo,\
+  \ prix spot 24h │\n│ • Optimisation clé répartition (static/dynamic) │\n│ • Pilotage\
+  \ batterie (charge/décharge setpoints) │\n│ • Calcul facturation & shadow billing\
+  \ │\n│ • KPI cockpit (TAc, TAp, surplus, cycles batterie) │\n│ • Alertes non-conformité\
+  \ (dérive ACC, batterie) │\n└─────────────────────────────────────────────────────────────┘\n\
+  \ ↕\n ┌─────────────────────┬─────────────────────┐\n ↓ ↓ ↓\n ┌─────────┐ ┌──────────────┐\
+  \ ┌──────────────┐\n │EMS SITE │ │ BATTERIE │ │ EMS TERRAIN │\n │(optionl)│ │(Convertisseur)\
+  \ │(GTB si exist)│\n │GTB/CVC │ │ Onduleur │ │ (Pilot flex) │\n └─────────┘ └──────────────┘\
+  \ └──────────────┘\n ↓ ↓ ↓\n ┌─────────────────────────┴─────────────────────┐\n\
+  \ │ Comptage GRD (Linky) │\n │ • Compteur production (PDL1) │\n │ • Compteur conso\
+  \ site A (PDL2) │\n │ • Compteur conso site B (PDL3) │\n │ • Index 15-min → Enedis\
+  \ serveur │\n └──────────────────────┬──────────────────────┘\n ↓\n ┌──────────────────────┐\n\
+  \ │ Enedis Infrastructure\n │ • Clé répartition validation\n │ • Fichier allocation\
+  \ mensuel\n │ • Reconciliation\n └──────────────────────┘"
+logic: null
+sources:
+- doc_id: STOCKAGE_ACC
+  label: Stockage et Autoconsommation Collective
+  section: F.1 Schéma Cible (Batteries + Comptage + Gouvernance) ┌─────────────────────────────────────────────────────────────┐
+  anchor: '#f1-schma-cible-batteries-comptage-gouvernance-'
+  excerpt_short: '│ PMO / Cockpit (PROMEOS) │
+
+    ├─────────────────────────────────────────────────────────────┤
+
+    │ • Donn...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,37 @@
+id: MARCHE_ENERGIE_2025_11
+type: rule
+domain: acc
+title: C. Stratégies Recommandées Fournisseurs
+summary: "Court terme (avant décembre 2025) : \n1. Offensive fidélisation clients\
+  \ ARENH : courtage transition + offres moyen terme sécurisées \n2. Portfolio PPA\
+  \ : si pas existants, conclure alliances producteurs ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Court terme (avant décembre 2025) : \n1. Offensive fidélisation clients\
+  \ ARENH : courtage transition + offres moyen terme sécurisées \n2. Portfolio PPA\
+  \ : si pas existants, conclure alliances producteurs renouvelables pour offrir mix\
+  \ \n3. GTB/GTC consulting : former equipes décret BACS, proposer service intégré\
+  \ monitoring \n\nMoyen terme (2026-2027) : \n1. Modèle CAPN : si client électro-intensif,\
+  \ accompagner dossier CAPN (même si fournisseur n’est pas EDF, valeur ajoutée courtage)\
+  \ \n2. Contrats évolutifs : prix avec clauses RPI (inflation-linked) plutôt qu’absolus,\
+  \ atténue volatilité \n3. Efficacité énergétique : accompagnement rénovation décret\
+  \ tertiaire → baisse volume = réduction facture = fidélisation"
+logic: null
+sources:
+- doc_id: MARCHE_ENERGIE_2025
+  label: Analyse marche energie France-Europe 2025
+  section: C. Stratégies Recommandées Fournisseurs
+  anchor: '#c-stratgies-recommandes-fournisseurs'
+  excerpt_short: "Court terme (avant décembre 2025) : \n1. Offensive fidélisation\
+    \ clients ARENH : courtage transition +..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

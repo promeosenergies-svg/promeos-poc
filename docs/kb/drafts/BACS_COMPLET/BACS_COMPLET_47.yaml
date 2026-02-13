@@ -1,0 +1,39 @@
+id: BACS_COMPLET_47
+type: knowledge
+domain: acc
+title: Documentation & archivage
+summary: '- ⬜ Tous rapports, contrats, recommandations archivés 10 ans (conformité
+  légale)
+
+  - ⬜ Historiques données BACS conservées 5 ans (exigence légale, accès propriétaire)
+
+  - ⬜ Changements système documentés ...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: '- ⬜ Tous rapports, contrats, recommandations archivés 10 ans (conformité
+  légale)
+
+  - ⬜ Historiques données BACS conservées 5 ans (exigence légale, accès propriétaire)
+
+  - ⬜ Changements système documentés (remplacement équipement, modifications paramétrages)'
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Documentation & archivage
+  anchor: '#documentation-archivage'
+  excerpt_short: '- ⬜ Tous rapports, contrats, recommandations archivés 10 ans (conformité
+    légale)
+
+    - ⬜ Historiques don...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

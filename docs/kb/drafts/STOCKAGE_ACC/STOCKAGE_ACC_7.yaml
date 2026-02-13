@@ -1,0 +1,108 @@
+id: STOCKAGE_ACC_7
+type: rule
+domain: usages
+title: C.1 Les 10 Cas Positifs (GO Stockage)
+summary: "Cas 1 : Désynchronisation PV↔︎Conso > 30%, pics puissance élevés \n- Symptômes\
+  \ : surplus midi > 50 kWh/jour, conso soir > conso jour, pics > 30 kW (IRVE, PAC)\
+  \ \n- Objectif : TAc +20%, réduction pics pui..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Cas 1 : Désynchronisation PV↔︎Conso > 30%, pics puissance élevés \n-\
+  \ Symptômes : surplus midi > 50 kWh/jour, conso soir > conso jour, pics > 30 kW\
+  \ (IRVE, PAC) \n- Objectif : TAc +20%, réduction pics puissance (TURPE baisse) \n\
+  - Batterie recommandée : 20–30 kWh (couvrir 3–4 h conso soir), 30–40 kW (lissage\
+  \ pics) \n- Rentabilité : breakeven 7–9 ans (TAc + peak shaving + TURPE 7), seuil\
+  \ 40 k€/an gains \n- Exemple : Ombrière parking 60 kWc + terminal logistique (conso\
+  \ 50 kWh/j, pics midi 45 kW) → batterie 25 kWh / 40 kW GO . \n\nCas 2 : Contrainte\
+  \ Injection Réseau (limitation GRD, saturation) \n- Symptômes : GRD plafonne injection\
+  \ à 20 kW (au-delà, coûts raccordement très élevés ou refus), PV 100 kWc → surplus\
+  \ 50 kW injecté \n- Objectif : consommer sur site max, réduire injection (éviter\
+  \ frais extension réseau) \n- Batterie recommandée : 15–20 kWh de « tampon » injection\
+  \ (réduire pics exports > seuil) \n- Rentabilité : très favorable si économie raccordement\
+  \ > 50 k€ (souvent le cas rural), payback 4–5 ans \n- Exemple : Ferme + CUMA 120\
+  \ kWc en zone blanche, GRD limite injection 30 kW → batterie 18 kWh GO (avoid 100\
+  \ k€ renforcement câble). \n\nCas 3 : Opportunités Prix Dynamiques (arbitrage minute/heure)\
+  \ \n- Symptômes : prix spot < 0 €/MWh certaines heures (dumping PV), prix pic 20h\
+  \ > 200 €/MWh (contr…) \n- Objectif : charger heures négatives, décharger heures\
+  \ chères → arbitrage marginal 50–100 €/jour \n- Batterie recommandée : 8–12 kWh\
+  \ (arbitrage court-terme, cycles rapides) \n- Rentabilité : 5–8 k€/an revenu arbitrage\
+  \ (marginal, additionnel à TAc), payback 15–20 ans seul. Pertinent seulement si\
+  \ + TAc . \n- Exemple : ACC trader-friendly (participant ingénieur PV) qui optimise\
+  \ prix → Revenu arbitrage +5 k€/an MARGINAL , mais GO si déjà TAc. \n\nCas 4 : Réduction\
+  \ Curtailment / Limitation PV (politique GRD) \n- Symptômes : RTE/Enedis impose\
+  \ limitation PV certaines heures (20:00–22:00 t par ex.), perte production > 10\
+  \ MWh/an estimée \n- Objectif : stocker production « perdue » en période limitation,\
+  \ vendre/consommer après \n- Batterie recommandée : 12–18 kWh (couvrir 2–3h limitation),\
+  \ 20 kW \n- Rentabilité : revenu 3–8 k€/an selon règles limitation locale. GO si\
+  \ limitation > 5% annuel . \n- Exemple : Région Occitanie, zone saturée PV, ACC\
+  \ subit délestage 1–2 h/j été → batterie 15 kWh GO pour capturer perte. \n\nCas\
+  \ 5 : Continuité d’Activité / Résilience (backup électricité) \n- Symptômes : site\
+  \ critique (données, santé, production temps-réel) qui ne tolère pas coupure > quelques\
+  \ secondes \n- Objectif : batterie = onduleur long-terme (4–8 h autonomie), secours\
+  \ en cas défaut réseau \n- Batterie recommandée : 20–40 kWh (couvrir nuit complète\
+  \ si nécessaire), puissance 5–10 kW (lisse transition) \n- Rentabilité : coût d’assurance/PRA\
+  \ dégression (batterie réduit exposition perte > 100 k€/h). ROI indirect via réduction\
+  \ sinistre. \n- Exemple : Cabinet médical, datacenter, usine production 24/7 → batterie\
+  \ 30 kWh GO priorité (résilience critère, pas prix). \n\nCas 6 : Couplage IRVE (lissage\
+  \ + limitation puissance raccordement) \n- Symptômes : 20+ bornes recharge à site,\
+  \ pics simultanés 80–120 kW dépassent souscription (36 kW ex.), frais dépassement\
+  \ élevés \n- Objectif : batterie + EMS pilote bornes intelligemment, lisse pics,\
+  \ stocke PV midi → recharge nuit heures creuses/ACC \n- Batterie recommandée : 25–40\
+  \ kWh (buffer charge progressive), 30–50 kW (pics borne) \n- Rentabilité : économie\
+  \ TURPE dépassement 20–40 k€/an , gain autoconso 10–15 k€/an → breakeven 4–6 ans\
+  \ \n- Exemple : Parking 30 places + bureaux 50 kWc PV → batterie 35 kWh/40 kW GO\
+  \ (couplage VE + solaire + ACC). \n\nCas 7 : Couplage CVC / Stockage Thermique +\
+  \ Batterie (pilotage GTB flexible) \n- Symptômes : bâtiment tertiaire 3000 m², GTB\
+  \ déjà installée, PAC réversible (chaud/froid), ballons eau chaude 500 L inerte\
+  \ \n- Objectif : batterie électrique 5–10 kWh + 20–50 kWh thermique (glace, ballon)\
+  \ → cumul décale charges flexibles CVC \n- Batterie recommandée : 8 kWh Li-ion (gestion\
+  \ PAC), couples stockage thermique via EMS (charge ballon midi, décharge nuit) \n\
+  - Rentabilité : cumul ΔE + TURPE + confort thermique → ROI 6–8 ans. Excellente rentabilité\
+  \ si GTB déjà payée . \n- Exemple : Hôpital, campus université 100 kWc PV → batterie\
+  \ 8 kWh électrique + TES 30 kWh thermique GO (synergie). \n\nCas 8 : Communauté\
+  \ Multi-Sites Avec Profils Complémentaires (lissage smart) \n- Symptômes : ACC 5\
+  \ sites (école jour, hôtel nuit, PME jour/nuit, bâtiment adm jour, ferme sporadic),\
+  \ courbes inverses (école jour = hôtel nuit) \n- Objectif : batterie mini (5–10\
+  \ kWh) suffit car complémentarité naturelle → lisse ACC à 70–80% auto-conso sans\
+  \ batterie, batterie finalise 15% gap \n- Batterie recommandée : 8–12 kWh seulement\
+  \ (effet pooling économies) \n- Rentabilité : très favorable, batterie petit CAPEX\
+  \ (10 k€) pour 20 k€/an gains → payback 5 ans ou moins . \n- Exemple : Bourg rural\
+  \ 5 entités, PV partagée 50 kWc, profils écart 12h → batterie 10 kWh GO (effet naturel\
+  \ mutualisation). \n\nCas 9 : Optimisation Clé de Répartition (équité vs performance,\
+  \ dynamique) \n- Symptômes : ACC avec clé fixe statique (ex. 50/50 deux sites) mais\
+  \ production/conso dérives au fil mois → surplus surtaxé, déficit surpénalisé \n\
+  - Objectif : batterie + clé de répartition dynamique (algorithmique, optimisée IA\
+  \ chaque jour) → capture différences → finance batterie. \n- Batterie recommandée\
+  \ : 5–8 kWh (tampon algorithme, pas besoin grosse batterie) \n- Rentabilité : gain\
+  \ équité 10–20% vs clé fixe (moins conflits), batterie auto-finançable par écono\
+  \ redistribution . ROI variable mais possible. \n- Exemple : ACC collectivité complexe\
+  \ (école matin/soir, bâtiment admin 9–17h, PAB 24/7) → batterie 6 kWh + EMS clé\
+  \ smart GO (gouvernance améliorée). \n\nCas 10 : Valorisation Flexibilité (participation\
+  \ mFRR, services réseau si > 1 MW batterie) \n- Symptômes : ACC grande (500+ kWc\
+  \ PV, multi-sites tertiaire/industrie) + batterie 100+ kWh → peut devenir actif\
+  \ services RTE, mFRR participation \n- Objectif : batterie offre services flexibilité\
+  \ (mFRR secondaire, capacité, freq response) → revenu 10–30 k€/an (certains cas)\
+  \ \n- Batterie recommandée : 50–150 kWh (agrégatrice) pour justifier overhead administratif\
+  \ mFRR \n- Rentabilité : revenu flexibilité additionnel 15–25 k€/an (si certifié\
+  \ VPP, BEEM agent), ROI 4–6 ans combiné TAc + services. \n- Exemple : Zone industrielle\
+  \ 300 kWc PV + 100 sites participants → batterie 80 kWh centralisée GO (revenu mFRR\
+  \ + TAc)."
+logic: null
+sources:
+- doc_id: STOCKAGE_ACC
+  label: Stockage et Autoconsommation Collective
+  section: C.1 Les 10 Cas Positifs (GO Stockage)
+  anchor: '#c1-les-10-cas-positifs-go-stockage'
+  excerpt_short: "Cas 1 : Désynchronisation PV↔︎Conso > 30%, pics puissance élevés\
+    \ \n- Symptômes : surplus midi > 50 kW..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,74 @@
+id: LEVIERS_MARCHE_2025_47
+type: knowledge
+domain: usages
+title: MVP Core (Sprint 1–9, Jan–Mar 2025)
+summary: "Sprint 1–2 : Auth & PMO Workspace US-001 [M] En tant que PMO, je m'inscris\
+  \ et crée mon profil\n Acceptance Criteria:\n - Inscription email + password (ou\
+  \ SSO)\n - Remplissage infos PMO (SIREN, type struc..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Sprint 1–2 : Auth & PMO Workspace US-001 [M] En tant que PMO, je m'inscris\
+  \ et crée mon profil\n Acceptance Criteria:\n - Inscription email + password (ou\
+  \ SSO)\n - Remplissage infos PMO (SIREN, type structure, adresse)\n - Upload statuts\
+  \ + documents constitutifs\n - Validation email\n - Redirection vers PMO dashboard\n\
+  \nUS-002 [M] En tant que PMO, je gère liste participants\n AC:\n - Ajouter participant\
+  \ (one-by-one ou CSV import)\n - Éditer coordonnées participant\n - Supprimer participant\
+  \ (soft delete)\n - Exporter liste PDF (pour validation Enedis)\n - Suivre statut\
+  \ signature/KYC (% completeness) \n\nSprint 3–4 : Participant Portal US-003 [M]\
+  \ En tant que participant, je m'inscris à opération ACC\n AC:\n - Lien unique reçu\
+  \ par email (génération code)\n - Form inscription simple (PDL, IBAN, coordonnées)\n\
+  \ - Consent documents (checkbox statuts, convention Enedis, contrat membre)\n -\
+  \ E-signature Universign (via API)\n - Confirmation + accès portal participant\n\
+  \nUS-004 [M] En tant que participant, je consulte mes données\n AC:\n - Dashboard\
+  \ synthétique : % énergie locale consommée ce mois-ci\n - Estimé économie (€) vs\
+  \ facture normale\n - Facture PDF téléchargeable (détail allocation)\n - Graph historique\
+  \ 3 derniers mois\n - FAQ contextel embedded \n\nSprint 4–6 : Settlement & Billing\
+  \ US-005 [M] En tant que PMO, j'importe courbes Enedis\n AC:\n - Upload CSV Enedis\
+  \ (format Export Data, 30 min ou 60 min pas)\n - Parse & validation colonne (timestamp,\
+  \ PDL, kWh)\n - Storage BD TimescaleDB\n - Alert si PDL missing ou format invalide\n\
+  \ - (T1 2026 : API Data Connect automated)\n\nUS-006 [M] En tant que système, je\
+  \ calcule répartition mensuelle\n AC:\n - Récupère courbes import + clé répartition\
+  \ (statique default)\n - Calcul pour chaque consommateur : somme kWh alloués période\n\
+  \ - Valide : total kWh alloués ≤ production + imports (conservation énergie)\n -\
+  \ Stocke résultat allocation table\n - Génère report CSV \"allocation_[mois].csv\"\
+  \n\nUS-007 [M] En tant que PMO, je génère factures\n AC:\n - Lance \"Générer factures\
+  \ [mois]\"\n - Système récupère allocations + tarif convenu\n - Calcul montant HT\
+  \ par participant : kWh × tarif\n - Ajout TVA 20% (si PMO non-exonérée)\n - Génération\
+  \ PDF facture (template standard)\n - Envoi email participant + storage (vault)\n\
+  \ - Mark status \"sent\" (suivi)\n\nUS-008 [M] En tant que PMO, je suivi paiements\n\
+  \ AC:\n - Dashboard \"Paiements\" listant toutes factures + statut (draft/sent/paid/overdue)\n\
+  \ - Marquer facture comme payée (checkbox manual)\n - Envoyer relance email participant\
+  \ (templated)\n - Export list overdue (list participants relance)\n - KPI : % paid\
+  \ factures, days overdue \n\nSprint 7–9 : Wizard ACC + Go-Live US-009 [M] En tant\
+  \ que PMO, je crée opération ACC via wizard\n AC:\n - Step 1 : Infos opération (nom,\
+  \ type PMO, secteur)\n - Step 2 : Ajouter producteurs (PDL, puissance kWc, iban)\n\
+  \ - Step 3 : Ajouter consommateurs (PDL, type [particulier|entreprise|public], usage\
+  \ MW-h estimé)\n - Step 4 : Configurer clé répartition (default pro-rata ou manual\
+  \ % par participant)\n - Step 5 : Sélectionner fournisseur complément (list hardcoded\
+  \ T0, connecteur T1)\n - Step 6 : Review & générer docs (convention Enedis pré-complétée,\
+  \ statuts, contrat)\n - Step 7 : Submit dossier (validation avant)\n - Output :\
+  \ status \"submitted to Enedis\", tracking ID, expected validation 3–6 sem\n\nUS-010\
+  \ [M] En tant que PMO, j'envoie invitations participants\n AC:\n - Dans portal,\
+  \ bouton \"Invite participants\"\n - Système génère email unique par participant\
+  \ (avec link + code)\n - Participant reçoit email → click link → signup flow US-003\n\
+  \ - PMO voit statut signature (% of list)\n - Email reminder auto après 1 sem si\
+  \ unsigned"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: MVP Core (Sprint 1–9, Jan–Mar 2025)
+  anchor: '#mvp-core-sprint-19-janmar-2025'
+  excerpt_short: "Sprint 1–2 : Auth & PMO Workspace US-001 [M] En tant que PMO, je\
+    \ m'inscris et crée mon profil\n Accep..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

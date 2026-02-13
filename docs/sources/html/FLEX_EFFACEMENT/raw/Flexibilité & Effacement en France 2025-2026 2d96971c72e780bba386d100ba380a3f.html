@@ -1,0 +1,809 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><title>Flexibilité &amp; Effacement en France 2025-2026</title><style>
+/* cspell:disable-file */
+/* webkit printing magic: print all background colors */
+html {
+	-webkit-print-color-adjust: exact;
+}
+* {
+	box-sizing: border-box;
+	-webkit-print-color-adjust: exact;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+}
+@media only screen {
+	body {
+		margin: 2em auto;
+		max-width: 900px;
+		color: rgb(55, 53, 47);
+	}
+}
+
+body {
+	line-height: 1.5;
+	white-space: pre-wrap;
+}
+
+a,
+a.visited {
+	color: inherit;
+	text-decoration: underline;
+}
+
+.pdf-relative-link-path {
+	font-size: 80%;
+	color: #444;
+}
+
+h1,
+h2,
+h3 {
+	letter-spacing: -0.01em;
+	line-height: 1.2;
+	font-weight: 600;
+	margin-bottom: 0;
+}
+
+/* Override strong tags inside headings to maintain consistent weight */
+h1 strong,
+h2 strong,
+h3 strong {
+	font-weight: 600;
+}
+
+.page-title {
+	font-size: 2.5rem;
+	font-weight: 700;
+	margin-top: 0;
+	margin-bottom: 0.75em;
+}
+
+h1 {
+	font-size: 1.875rem;
+	margin-top: 1.875rem;
+}
+
+h2 {
+	font-size: 1.5rem;
+	margin-top: 1.5rem;
+}
+
+h3 {
+	font-size: 1.25rem;
+	margin-top: 1.25rem;
+}
+
+.source {
+	border: 1px solid #ddd;
+	border-radius: 3px;
+	padding: 1.5em;
+	word-break: break-all;
+}
+
+.callout {
+	border-radius: 10px;
+	padding: 1rem;
+}
+
+figure {
+	margin: 1.25em 0;
+	page-break-inside: avoid;
+}
+
+figcaption {
+	opacity: 0.5;
+	font-size: 85%;
+	margin-top: 0.5em;
+}
+
+mark {
+	background-color: transparent;
+}
+
+.indented {
+	padding-left: 1.5em;
+}
+
+hr {
+	background: transparent;
+	display: block;
+	width: 100%;
+	height: 1px;
+	visibility: visible;
+	border: none;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.09);
+}
+
+img {
+	max-width: 100%;
+}
+
+@media only print {
+	img {
+		max-height: 100vh;
+		object-fit: contain;
+	}
+}
+
+@page {
+	margin: 1in;
+}
+
+.collection-content {
+	font-size: 0.875rem;
+}
+
+.collection-content td {
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.column-list {
+	display: flex;
+	justify-content: space-between;
+}
+
+.column {
+	padding: 0 1em;
+}
+
+.column:first-child {
+	padding-left: 0;
+}
+
+.column:last-child {
+	padding-right: 0;
+}
+
+.table_of_contents-item {
+	display: block;
+	font-size: 0.875rem;
+	line-height: 1.3;
+	padding: 0.125rem;
+}
+
+.table_of_contents-indent-1 {
+	margin-left: 1.5rem;
+}
+
+.table_of_contents-indent-2 {
+	margin-left: 3rem;
+}
+
+.table_of_contents-indent-3 {
+	margin-left: 4.5rem;
+}
+
+.table_of_contents-link {
+	text-decoration: none;
+	opacity: 0.7;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.18);
+}
+
+table,
+th,
+td {
+	border: 1px solid rgba(55, 53, 47, 0.09);
+	border-collapse: collapse;
+}
+
+table {
+	border-left: none;
+	border-right: none;
+}
+
+th,
+td {
+	font-weight: normal;
+	padding: 0.25em 0.5em;
+	line-height: 1.5;
+	min-height: 1.5em;
+	text-align: left;
+}
+
+th {
+	color: rgba(55, 53, 47, 0.6);
+}
+
+ol,
+ul {
+	margin: 0;
+	margin-block-start: 0.6em;
+	margin-block-end: 0.6em;
+}
+
+li > ol:first-child,
+li > ul:first-child {
+	margin-block-start: 0.6em;
+}
+
+ul > li {
+	list-style: disc;
+}
+
+ul.to-do-list {
+	padding-inline-start: 0;
+}
+
+ul.to-do-list > li {
+	list-style: none;
+}
+
+.to-do-children-checked {
+	text-decoration: line-through;
+	opacity: 0.375;
+}
+
+ul.toggle > li {
+	list-style: none;
+}
+
+ul {
+	padding-inline-start: 1.7em;
+}
+
+ul > li {
+	padding-left: 0.1em;
+}
+
+ol {
+	padding-inline-start: 1.6em;
+}
+
+ol > li {
+	padding-left: 0.2em;
+}
+
+.mono ol {
+	padding-inline-start: 2em;
+}
+
+.mono ol > li {
+	text-indent: -0.4em;
+}
+
+.toggle {
+	padding-inline-start: 0em;
+	list-style-type: none;
+}
+
+/* Indent toggle children */
+.toggle > li > details {
+	padding-left: 1.7em;
+}
+
+.toggle > li > details > summary {
+	margin-left: -1.1em;
+}
+
+.selected-value {
+	display: inline-block;
+	padding: 0 0.5em;
+	background: rgba(206, 205, 202, 0.5);
+	border-radius: 3px;
+	margin-right: 0.5em;
+	margin-top: 0.3em;
+	margin-bottom: 0.3em;
+	white-space: nowrap;
+}
+
+.collection-title {
+	display: inline-block;
+	margin-right: 1em;
+}
+
+.page-description {
+	margin-bottom: 2em;
+}
+
+.simple-table {
+	margin-top: 1em;
+	font-size: 0.875rem;
+	empty-cells: show;
+}
+.simple-table td {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table th {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table-header-color {
+	background: rgb(247, 246, 243);
+	color: black;
+}
+.simple-table-header {
+	font-weight: 500;
+}
+
+time {
+	opacity: 0.5;
+}
+
+.icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	max-width: 1.2em;
+	max-height: 1.2em;
+	text-decoration: none;
+	vertical-align: text-bottom;
+	margin-right: 0.5em;
+}
+
+img.icon {
+	border-radius: 3px;
+}
+
+.callout img.notion-static-icon {
+	width: 1em;
+	height: 1em;
+}
+
+.callout p {
+	margin: 0;
+}
+
+.callout h1,
+.callout h2,
+.callout h3 {
+	margin: 0 0 0.6rem;
+}
+
+.user-icon {
+	width: 1.5em;
+	height: 1.5em;
+	border-radius: 100%;
+	margin-right: 0.5rem;
+}
+
+.user-icon-inner {
+	font-size: 0.8em;
+}
+
+.text-icon {
+	border: 1px solid #000;
+	text-align: center;
+}
+
+.page-cover-image {
+	display: block;
+	object-fit: cover;
+	width: 100%;
+	max-height: 30vh;
+}
+
+.page-header-icon {
+	font-size: 3rem;
+	margin-bottom: 1rem;
+}
+
+.page-header-icon-with-cover {
+	margin-top: -0.72em;
+	margin-left: 0.07em;
+}
+
+.page-header-icon img {
+	border-radius: 3px;
+}
+
+.link-to-page {
+	margin: 1em 0;
+	padding: 0;
+	border: none;
+	font-weight: 500;
+}
+
+p > .user {
+	opacity: 0.5;
+}
+
+td > .user,
+td > time {
+	white-space: nowrap;
+}
+
+input[type="checkbox"] {
+	transform: scale(1.5);
+	margin-right: 0.6em;
+	vertical-align: middle;
+}
+
+p {
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+}
+
+.image {
+	border: none;
+	margin: 1.5em 0;
+	padding: 0;
+	border-radius: 0;
+	text-align: center;
+}
+
+.code,
+code {
+	background: rgba(135, 131, 120, 0.15);
+	border-radius: 3px;
+	padding: 0.2em 0.4em;
+	border-radius: 3px;
+	font-size: 85%;
+	tab-size: 2;
+}
+
+code {
+	color: #eb5757;
+}
+
+.code {
+	padding: 1.5em 1em;
+}
+
+.code-wrap {
+	white-space: pre-wrap;
+	word-break: break-all;
+}
+
+.code > code {
+	background: none;
+	padding: 0;
+	font-size: 100%;
+	color: inherit;
+}
+
+blockquote {
+	font-size: 1em;
+	margin: 1em 0;
+	padding-left: 1em;
+	border-left: 3px solid rgb(55, 53, 47);
+}
+
+blockquote.quote-large {
+	font-size: 1.25em;
+}
+
+.bookmark {
+	text-decoration: none;
+	max-height: 8em;
+	padding: 0;
+	display: flex;
+	width: 100%;
+	align-items: stretch;
+}
+
+.bookmark-title {
+	font-size: 0.85em;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	height: 1.75em;
+	white-space: nowrap;
+}
+
+.bookmark-text {
+	display: flex;
+	flex-direction: column;
+}
+
+.bookmark-info {
+	flex: 4 1 180px;
+	padding: 12px 14px 14px;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+}
+
+.bookmark-image {
+	width: 33%;
+	flex: 1 1 180px;
+	display: block;
+	position: relative;
+	object-fit: cover;
+	border-radius: 1px;
+}
+
+.bookmark-description {
+	color: rgba(55, 53, 47, 0.6);
+	font-size: 0.75em;
+	overflow: hidden;
+	max-height: 4.5em;
+	word-break: break-word;
+}
+
+.bookmark-href {
+	font-size: 0.75em;
+	margin-top: 0.25em;
+}
+
+.sans { font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"; }
+.code { font-family: "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace; }
+.serif { font-family: Lyon-Text, Georgia, ui-serif, serif; }
+.mono { font-family: iawriter-mono, Nitti, Menlo, Courier, monospace; }
+.pdf .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK JP'; }
+.pdf:lang(zh-CN) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK SC'; }
+.pdf:lang(zh-TW) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK TC'; }
+.pdf:lang(ko-KR) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK KR'; }
+.pdf .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.pdf .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK JP'; }
+.pdf:lang(zh-CN) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK SC'; }
+.pdf:lang(zh-TW) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK TC'; }
+.pdf:lang(ko-KR) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK KR'; }
+.pdf .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.highlight-default {
+	color: rgba(44, 44, 43, 1);
+}
+.highlight-gray {
+	color: rgba(125, 122, 117, 1);
+	fill: rgba(125, 122, 117, 1);
+}
+.highlight-brown {
+	color: rgba(159, 118, 90, 1);
+	fill: rgba(159, 118, 90, 1);
+}
+.highlight-orange {
+	color: rgba(210, 123, 45, 1);
+	fill: rgba(210, 123, 45, 1);
+}
+.highlight-yellow {
+	color: rgba(203, 148, 52, 1);
+	fill: rgba(203, 148, 52, 1);
+}
+.highlight-teal {
+	color: rgba(80, 148, 110, 1);
+	fill: rgba(80, 148, 110, 1);
+}
+.highlight-blue {
+	color: rgba(56, 125, 201, 1);
+	fill: rgba(56, 125, 201, 1);
+}
+.highlight-purple {
+	color: rgba(154, 107, 180, 1);
+	fill: rgba(154, 107, 180, 1);
+}
+.highlight-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.highlight-red {
+	color: rgba(207, 81, 72, 1);
+	fill: rgba(207, 81, 72, 1);
+}
+.highlight-default_background {
+	color: rgba(44, 44, 43, 1);
+}
+.highlight-gray_background {
+	background: rgba(42, 28, 0, 0.07);
+}
+.highlight-brown_background {
+	background: rgba(139, 46, 0, 0.086);
+}
+.highlight-orange_background {
+	background: rgba(224, 101, 1, 0.129);
+}
+.highlight-yellow_background {
+	background: rgba(211, 168, 0, 0.137);
+}
+.highlight-teal_background {
+	background: rgba(0, 100, 45, 0.09);
+}
+.highlight-blue_background {
+	background: rgba(0, 124, 215, 0.094);
+}
+.highlight-purple_background {
+	background: rgba(102, 0, 178, 0.078);
+}
+.highlight-pink_background {
+	background: rgba(197, 0, 93, 0.086);
+}
+.highlight-red_background {
+	background: rgba(223, 22, 0, 0.094);
+}
+.block-color-default {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray {
+	color: rgba(125, 122, 117, 1);
+	fill: rgba(125, 122, 117, 1);
+}
+.block-color-brown {
+	color: rgba(159, 118, 90, 1);
+	fill: rgba(159, 118, 90, 1);
+}
+.block-color-orange {
+	color: rgba(210, 123, 45, 1);
+	fill: rgba(210, 123, 45, 1);
+}
+.block-color-yellow {
+	color: rgba(203, 148, 52, 1);
+	fill: rgba(203, 148, 52, 1);
+}
+.block-color-teal {
+	color: rgba(80, 148, 110, 1);
+	fill: rgba(80, 148, 110, 1);
+}
+.block-color-blue {
+	color: rgba(56, 125, 201, 1);
+	fill: rgba(56, 125, 201, 1);
+}
+.block-color-purple {
+	color: rgba(154, 107, 180, 1);
+	fill: rgba(154, 107, 180, 1);
+}
+.block-color-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.block-color-red {
+	color: rgba(207, 81, 72, 1);
+	fill: rgba(207, 81, 72, 1);
+}
+.block-color-default_background {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray_background {
+	background: rgba(240, 239, 237, 1);
+}
+.block-color-brown_background {
+	background: rgba(245, 237, 233, 1);
+}
+.block-color-orange_background {
+	background: rgba(251, 235, 222, 1);
+}
+.block-color-yellow_background {
+	background: rgba(249, 243, 220, 1);
+}
+.block-color-teal_background {
+	background: rgba(232, 241, 236, 1);
+}
+.block-color-blue_background {
+	background: rgba(229, 242, 252, 1);
+}
+.block-color-purple_background {
+	background: rgba(243, 235, 249, 1);
+}
+.block-color-pink_background {
+	background: rgba(250, 233, 241, 1);
+}
+.block-color-red_background {
+	background: rgba(252, 233, 231, 1);
+}
+.select-value-color-default { background-color: rgba(42, 28, 0, 0.07); }
+.select-value-color-gray { background-color: rgba(28, 19, 1, 0.11); }
+.select-value-color-brown { background-color: rgba(127, 51, 0, 0.156); }
+.select-value-color-orange { background-color: rgba(196, 88, 0, 0.203); }
+.select-value-color-yellow { background-color: rgba(209, 156, 0, 0.282); }
+.select-value-color-green { background-color: rgba(0, 96, 38, 0.156); }
+.select-value-color-blue { background-color: rgba(0, 118, 217, 0.203); }
+.select-value-color-purple { background-color: rgba(92, 0, 163, 0.141); }
+.select-value-color-pink { background-color: rgba(183, 0, 78, 0.152); }
+.select-value-color-red { background-color: rgba(206, 24, 0, 0.164); }
+
+.checkbox {
+	display: inline-flex;
+	vertical-align: text-bottom;
+	width: 16;
+	height: 16;
+	background-size: 16px;
+	margin-left: 2px;
+	margin-right: 5px;
+}
+
+.checkbox-on {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20width%3D%2216%22%20height%3D%2216%22%20fill%3D%22%2358A9D7%22%2F%3E%0A%3Cpath%20d%3D%22M6.71429%2012.2852L14%204.9995L12.7143%203.71436L6.71429%209.71378L3.28571%206.2831L2%207.57092L6.71429%2012.2852Z%22%20fill%3D%22white%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+
+.checkbox-off {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20x%3D%220.75%22%20y%3D%220.75%22%20width%3D%2214.5%22%20height%3D%2214.5%22%20fill%3D%22white%22%20stroke%3D%22%2336352F%22%20stroke-width%3D%221.5%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+	
+</style></head><body><article id="2d96971c-72e7-80bb-a386-d100ba380a3f" class="page sans"><header><div class="page-header-icon undefined"><span class="icon">5️⃣</span></div><h1 class="page-title" dir="auto">Flexibilité &amp; Effacement en France 2025-2026</h1><p class="page-description" dir="auto"></p></header><div class="page-body"><div style="display:contents" dir="auto"><h2 id="2d96971c-72e7-8149-9fec-cb82ce34c540" class="">TL;DR – Flexibilité &amp; Effacement en France 2025-2026</h2></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-81c4-bd2f-f922a2cc3688" class="">La flexibilité électrique (capacité à moduler consommation/production) est devenue stratégique. En France, trois mécanismes réglementés principaux permettent la valorisation B2B : <strong>NEBEF</strong> (effacement explicite, marché de l’énergie via EPEX SPOT), <strong>Réserves/Ajustement</strong> (services système RTE, appels d’offres et temps réel), et <strong>Mécanisme de Capacité</strong> (nouveau en nov. 2026, enchères centralisées). Une flexibilité implicite existe via pilotage prix spot/négatifs. Accès via agrégateurs (regroupement multi-sites) ou direct (&gt;15 MW). Mesure rigoureuse (baseline, courbe charge Enedis), pénalités écarts, rémunération post-livraison.</p></div><div style="display:contents" dir="auto"><hr id="2d96971c-72e7-8153-919c-d2c3528661a2"/></div><div style="display:contents" dir="auto"><h2 id="2d96971c-72e7-81e0-98ea-e4cbb1653c8c" class="">Carte d’identité “Flexibilité &amp; Effacement France”</h2></div><div style="display:contents" dir="ltr"><table id="2d96971c-72e7-81d4-996d-ffbb2b5a6f8d" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-816d-ae99-f370e7b26b01"><th id="Cr[g" class="simple-table-header-color simple-table-header"><strong>Dimension</strong></th><th id="t?\N" class="simple-table-header-color simple-table-header"><strong>Description</strong></th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8190-b3df-fa483fbcce57"><td id="Cr[g" class=""><strong>Définition opérationnelle</strong></td><td id="t?\N" class="">Capacité à moduler puissance consommée/produite en réponse à signaux prix (implicite) ou sollicitations RTE/agrégateur (explicite). Durée : quelques minutes (FCR) à heures (NEBEF).</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8187-a815-c3bcae2edb37"><td id="Cr[g" class=""><strong>Actifs éligibles</strong></td><td id="t?\N" class="">GTB/HVAC/froid/climatisation ; IRVE/recharge batteries ; fours/chaudières ; process industriels pilotables ; production renouvelable ; stockage électrique/thermique ; groupes électrogènes.</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-81be-96cb-cdf223ac0467"><td id="Cr[g" class=""><strong>Taille minimale</strong></td><td id="t?\N" class="">Effectif : &gt;100 kW NEBEF, &gt;1 MW réserves, &gt;10 MW MA obligatoire (EnR). Multi-sites agrégés : &gt;5-10 MW selon produit.</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8105-b99b-ea5321904c30"><td id="Cr[g" class=""><strong>Accès</strong></td><td id="t?\N" class="">Direct (BE/agrément RTE) ou via <strong>agrégateur</strong> (regroupement sites). Agrégateur = intermédiaire technique/commercial.</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8108-95a6-ec46dd393d9f"><td id="Cr[g" class=""><strong>Mesure</strong></td><td id="t?\N" class="">Baseline (courbe référence) vs. consommation réelle. Données Enedis (10-30 min télérelevés, pas de temps variable) ou sous-mesure (pilote). Pas 15 min harmonisé (01/01/2025).</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8116-ac73-c94069b6c20b"><td id="Cr[g" class=""><strong>Rémunération</strong></td><td id="t?\N" class=""><strong>NEBEF</strong> : Barèmes forfaitaires (€/MWh, H/B, saisonnier) ou prix SPOT. <strong>Réserves</strong> : Prime capacité fixe + variable énergie. <strong>Capacité</strong> : Enchères (prix marginal capped). <strong>MA</strong> : Prix offre/marginal.</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8144-aa3d-fc73ca9956b2"><td id="Cr[g" class=""><strong>Acteurs clés</strong></td><td id="t?\N" class="">RTE (gestionnaire réseau, certification, adjudication) ; CRE (régulation, tarifs) ; Enedis (données distribution, GRD) ; agrégateurs ; fournisseurs d’électricité ; responsables d’équilibre (BRP).</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-81ce-bd2d-c863d1038219"><td id="Cr[g" class=""><strong>Horizon 2025-2026</strong></td><td id="t?\N" class="">NEBEF 3.5 stable (pas 15 min déployé) ; Capacité bascule nov. 2026 (nouveau mécanisme centralisé) ; MA obligatoire EnR depuis 01/01/2026 ; flexibilités locales expérimentations (Enedis/RTE).</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><hr id="2d96971c-72e7-8160-a8c0-e239692ec1a1"/></div><div style="display:contents" dir="auto"><h2 id="2d96971c-72e7-81f0-8202-dc68df12be38" class="">Panorama des Mécanismes (Vue Synthétique)</h2></div><div style="display:contents" dir="ltr"><table id="2d96971c-72e7-8145-9d95-fd2bc8874b72" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8164-9ec3-eabcdc5eec74"><th id="O{kg" class="simple-table-header-color simple-table-header"><strong>Mécanisme</strong></th><th id="CzXG" class="simple-table-header-color simple-table-header"><strong>Type</strong></th><th id="J[Pl" class="simple-table-header-color simple-table-header"><strong>Actifs</strong></th><th id="?ME[" class="simple-table-header-color simple-table-header"><strong>Engagement</strong></th><th id="^pjQ" class="simple-table-header-color simple-table-header"><strong>Durée</strong></th><th id="L__[" class="simple-table-header-color simple-table-header"><strong>Revenu Typique</strong></th><th id="SI[n" class="simple-table-header-color simple-table-header"><strong>Risques</strong></th><th id="JVqJ" class="simple-table-header-color simple-table-header"><strong>Stacking</strong></th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-81cc-9b07-cba8f5a1f6f3"><td id="O{kg" class=""><strong>NEBEF</strong></td><td id="CzXG" class="">Explicite</td><td id="J[Pl" class="">GTB, HVAC, froid, IRVE, industrie</td><td id="?ME[" class="">Offre J-1/Intra jour (EPEX)</td><td id="^pjQ" class="">Minutes à heures</td><td id="L__[" class="">€50–350/MWh (prix SPOT)</td><td id="SI[n" class="">Baseline, saisonnalité, baisse PV</td><td id="JVqJ" class="">✅ Oui (MA/Cap)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-81b5-86b7-f5a2cc505231"><td id="O{kg" class=""><strong>Réserve Primaire (FCR)</strong></td><td id="CzXG" class="">Explicite</td><td id="J[Pl" class="">Tout (obligatoire production)</td><td id="?ME[" class="">Disponibilité continue</td><td id="^pjQ" class="">Secondes</td><td id="L__[" class="">Prime fixe (~€3-5/MW/h)</td><td id="SI[n" class="">Activation continu (coûts)</td><td id="JVqJ" class="">✅ Oui</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-81c0-a33f-f15a7b8f1ac2"><td id="O{kg" class=""><strong>Réserve Secondaire (aFRR)</strong></td><td id="CzXG" class="">Explicite</td><td id="J[Pl" class="">Production, stocks, demande</td><td id="?ME[" class="">Appel offres national</td><td id="^pjQ" class="">Infraheure</td><td id="L__[" class="">Prime fixe + énergie</td><td id="SI[n" class="">Remplissage fréquent</td><td id="JVqJ" class="">✅ Oui</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-814a-9291-e52df7457e13"><td id="O{kg" class=""><strong>Réserves Rapide/Complémentaire (mFRR/RR-RC)</strong></td><td id="CzXG" class="">Explicite</td><td id="J[Pl" class="">Demande/stocks/production</td><td id="?ME[" class="">AOP périodiques/journaliers</td><td id="^pjQ" class="">Minutes (13-30 min)</td><td id="L__[" class="">Prime fixe + activation, rémunération au prix marginal</td><td id="SI[n" class="">Défaut disponibilité = pénalités</td><td id="JVqJ" class="">✅ Oui</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8148-9610-ff355712c75c"><td id="O{kg" class=""><strong>Mécanisme d’Ajustement (MA)</strong></td><td id="CzXG" class="">Explicite</td><td id="J[Pl" class="">Tous (obligatoire EnR &gt;10 MW)</td><td id="?ME[" class="">Offres J-1/Intraday</td><td id="^pjQ" class="">Temps réel</td><td id="L__[" class="">Prix offre ou marginal (~€0–300/MWh)</td><td id="SI[n" class="">Déséquilibre, sanction baisse</td><td id="JVqJ" class="">✅ Oui</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-812b-9a99-fe46f7d96be5"><td id="O{kg" class=""><strong>Mécanisme de Capacité (Nouveau 2026)</strong></td><td id="CzXG" class="">Explicite</td><td id="J[Pl" class="">Production, stocks, effacement</td><td id="?ME[" class="">Enchères AL-4/AL-1</td><td id="^pjQ" class="">Contrats 1-15 ans</td><td id="L__[" class="">Prix marginal (~€30–80/MW/an)</td><td id="SI[n" class="">Disponibilité écarts, pénalités</td><td id="JVqJ" class="">⚠️ Limité (double-comp)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-81d4-8fac-e4506369d970"><td id="O{kg" class=""><strong>Flexibilités Locales</strong></td><td id="CzXG" class="">Explicite/Implicite</td><td id="J[Pl" class="">GTB, IRVE, industrie (zones)</td><td id="?ME[" class="">AOP congestion RTE/Enedis</td><td id="^pjQ" class="">Saisonnier/spots</td><td id="L__[" class="">Gré-à-gré (€50–250/MWh)</td><td id="SI[n" class="">Géolocalisation stricte, basse fréquence</td><td id="JVqJ" class="">❓ Rare cumul</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-81eb-9260-fc7dcd4308d2"><td id="O{kg" class=""><strong>Flexibilité Implicite (Arbitrage Prix)</strong></td><td id="CzXG" class="">Implicite</td><td id="J[Pl" class="">Tous (procédure contractuelle)</td><td id="?ME[" class="">Pilotage continu/signaux</td><td id="^pjQ" class="">Horaire</td><td id="L__[" class="">Économies spot (−€50–−€300/MWh)</td><td id="SI[n" class="">Pas d’engagement garanti</td><td id="JVqJ" class="">✅ Oui</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><hr id="2d96971c-72e7-8111-a382-cc9af2a237bb"/></div><div style="display:contents" dir="auto"><h2 id="2d96971c-72e7-81e3-8108-f309d8df57ab" class="">Fiches Détaillées par Mécanisme</h2></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-813c-bc0b-fd3b700e03da" class="">1. NEBEF (Notification d’Échanges de Blocs d’Effacement)</h3></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-81d4-9287-fef4ecc161bf" class="">1.1 Comment ça marche</h3></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-81ea-b5c3-fdeec7a829b3" class="">NEBEF est un <strong>mécanisme réglementé d’effacement explicite</strong> permettant la valorisation de la réduction de consommation (ou augmentation chez producteurs) sur le <strong>marché SPOT (EPEX)</strong> et le <strong>mécanisme d’ajustement</strong>. RTE gère centralement les règles ; Opérateurs d’Effacement (OE) agrès par RTE contractualisent avec consommateurs ; déclaration des effacements en J-1 9h30–22h ou Intraday ; RTE retient les offres les plus compétitives ; paiement aux fournisseurs via barèmes forfaitaires (modèle régulé) ou gré-à-gré.<a href="about:blank#fn1">1</a></p></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-8134-a0f7-ec2b49780ee8" class=""><strong>Flux type multi-sites B2B</strong> :</p></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-8152-9f32-d655c93fe87e" class="numbered-list" start="1"><li>Agrégateur signe accord participation NEBEF + agrément technique RTE.</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-81ce-b599-ffc6be51b02e" class="numbered-list" start="2"><li>Agrégateur contractualise avec sites (GTB, HVAC, froid, industriels).</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-8198-9102-cdb06c02e26a" class="numbered-list" start="3"><li>Chaque jour, agrégateur déclare “bloc d’effacement” (capacité + site) à RTE.</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-8117-a6db-f8b3766507f7" class="numbered-list" start="4"><li>RTE valide, retient offres ; activation J (15 min min., rythme 15/45 possible).</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-81d1-b4e7-d9f870351499" class="numbered-list" start="5"><li>Mesure via baseline (courbe référence = consommation sans effacement) vs. courbe réelle.</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-81c0-a3d5-c5b894a355b3" class="numbered-list" start="6"><li>RTE calcule énergie effacée ; versement Fournisseur = barème forfaitaire × énergie.</li></ol></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-8159-900e-f64cee1b5ec1" class="">1.2 Éligibilité</h3></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-8134-818a-ebd185edbbf8" class=""><strong>Actifs</strong> : Sites de soutirage (RPT/RPD) capables d’effacer ≥100 kW par bloc. Tout secteur (tertiaire multi-sites, industrie, stockage, IRVE), <strong>sauf</strong> sites avec production auto-consommation obligatoire ou primes d’énergie renouvelable (sauf détection déclaration EIF spécifique).<a href="about:blank#fn2">2</a></p></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-819b-8117-fb028b17e451" class=""><strong>Agrégateur</strong> : Personne morale, accord participation NEBEF signé avec RTE, <strong>agrément technique</strong> (capacité, fiabilité). Durée homologation = 1–3 ans selon fiabilité (norme à 80%). Prérequis : responsable d’équilibre (directement ou via tiers).</p></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-81b4-8a28-e82b86da1e84" class=""><strong>Sites</strong> : Accord écrit du titulaire CAR (Contrat Accès Réseau) ; télérelevés ou profilés (Linky + API) ; comptage à la demande possible (sous-mesure, expérimental). Confidentialité respectée (RGPD).</p></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-8156-99bb-e7cf006f8da0" class="">1.3 Process d’Accès (6–10 semaines typique)</h3></div><div style="display:contents" dir="ltr"><table id="2d96971c-72e7-81b8-a32f-ef707b2a29d0" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-818e-aae7-f45332e9e501"><th id="&gt;e&lt;P" class="simple-table-header-color simple-table-header"><strong>Étape</strong></th><th id="gSnO" class="simple-table-header-color simple-table-header"><strong>Durée</strong></th><th id="e^fy" class="simple-table-header-color simple-table-header"><strong>Acteurs</strong></th><th id="jTAR" class="simple-table-header-color simple-table-header"><strong>Délais clés</strong></th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-819e-838b-fb1a941071eb"><td id="&gt;e&lt;P" class="">1. Audit sites</td><td id="gSnO" class="">2–3 sem.</td><td id="e^fy" class="">Agrégateur + client</td><td id="jTAR" class="">Données CAR, électrification, maturité GTB</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-81c2-80b2-f761bc86788d"><td id="&gt;e&lt;P" class="">2. Dossier agrément RTE</td><td id="gSnO" class="">1 sem.</td><td id="e^fy" class="">Agrégateur</td><td id="jTAR" class="">Formulaire Annexe 9 (Règles NEBEF 3.5)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-811f-8777-fbce50be1982"><td id="&gt;e&lt;P" class="">3. Tests agrément (SI, protocoles)</td><td id="gSnO" class="">2–3 sem.</td><td id="e^fy" class="">RTE + Agrégateur</td><td id="jTAR" class="">Tests activation, mesure, communication</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-81a0-8e5d-c2c7f36198b2"><td id="&gt;e&lt;P" class="">4. Décision agrément</td><td id="gSnO" class="">1 sem.</td><td id="e^fy" class="">RTE</td><td id="jTAR" class="">Avis favorable = agrégateur “Qualifié”</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8193-a28e-ddea90e4182b"><td id="&gt;e&lt;P" class="">5. Conventions GRD (si RPD)</td><td id="gSnO" class="">2 sem.</td><td id="e^fy" class="">Agrégateur + Enedis</td><td id="jTAR" class="">Accès courbe charge, échanges données</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8108-8c14-e6d43eb31750"><td id="&gt;e&lt;P" class="">6. Déclaration sites → RTE</td><td id="gSnO" class="">1 sem.</td><td id="e^fy" class="">Agrégateur</td><td id="jTAR" class="">Périmètre d’effacement enregistré</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8172-96c1-fdae20905862"><td id="&gt;e&lt;P" class="">7. Tests en production</td><td id="gSnO" class="">1–2 sem.</td><td id="e^fy" class="">RTE + Agrégateur</td><td id="jTAR" class="">Simulations déclaration/activation</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8123-84d2-e5cae571ea27"><td id="&gt;e&lt;P" class=""><strong>Total</strong></td><td id="gSnO" class=""><strong>6–10 sem.</strong></td><td id="e^fy" class="">Parallèle pos.</td><td id="jTAR" class="">Fin = opérationnel en NEBEF</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-8154-953f-e5b4e8324eff" class=""><strong>Critères “Go/No-Go”</strong> :</p></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-810e-b9e1-cd6e482b07c3" class="bulleted-list"><li style="list-style-type:disc">✅ Télé-relevé ou Linky (10-30 min) confirmé Enedis</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8167-abcc-c1252eccb1ba" class="bulleted-list"><li style="list-style-type:disc">✅ Accord écrit clients (contrat flexibilité)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8101-a886-fc91a3a1d670" class="bulleted-list"><li style="list-style-type:disc">✅ GTB/EMS capable ordre pilotage (modbus/API)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8143-9cf1-e9050b11a28c" class="bulleted-list"><li style="list-style-type:disc">✅ Garantie disponibilité ≥80% heures souscrites</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-817f-919c-f5c0ce9e59c9" class="bulleted-list"><li style="list-style-type:disc">❌ Rétrofits &lt;1 MW ou puissance souscrite ≤100 kW</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-816b-bdc7-e9ba4296c21c" class="bulleted-list"><li style="list-style-type:disc">❌ Contrats de fourniture avec clauses contraignantes (base obligatoire, &gt;90% temps)</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-81a2-be6c-f658b99779f2" class="">1.4 Mesure &amp; Vérification (Baseline + Chroniques)</h3></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-8151-8051-d28b4139fb21" class=""><strong>Baseline (Courbe Référence)</strong> : Établie par RTE selon méthode choisie par OE (Article 7.2 NEBEF 3.5) :<a href="about:blank#fn3">3</a></p></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-81cd-8823-eef01349b1a3" class="numbered-list" start="1"><li><strong>Rectangle à double référence corrigée</strong> (défaut) : Moyenne conso J-7 à J-2 (10j glissants), +/− corrections (météo, production PV). Durée 2h profilés, 5h télérelevés.</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-8121-8d46-ee10f2978bec" class="numbered-list" start="2"><li><strong>Rectangle algébrique site-à-site</strong> : Pour &gt;3000 sites profilés, 6h durée.</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-8172-aab3-fb87dcb9b43c" class="numbered-list" start="3"><li><strong>Prévision consommation</strong> : Modèle ML (telerelevés homologués), validation mensuelle, 7j max.</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-81a0-898b-c7e8bcdf39cd" class="numbered-list" start="4"><li><strong>Historique consommation</strong> : Moyenne 10j ou médiane 4 sem. (télérelevés), 7j max, variantes.</li></ol></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-8199-a50f-f5c357c27c60" class="">Ajustements : EDA cojointe (90% overlap), neutralisation réglage fréquence (post-NF4), EIF (offre fourniture indissociable = non pénalisée).</p></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-813b-a170-f8b7d17d1d11" class=""><strong>Mesure (Courbe Consommation)</strong> :</p></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8160-8357-e24e7481fd7b" class="bulleted-list"><li style="list-style-type:disc"><strong>Télérelevés</strong> : GRD fournit données Linky 10 min (RPT) ou 30 min (RPD &lt;36 kVA), pas 15 min harmonisé (01/01/2025 obligatoire).</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8144-90b1-c853bd781f7b" class="bulleted-list"><li style="list-style-type:disc"><strong>Profilés</strong> : GRD si possible ; sinon Agrégateur Qualifié mesure en interne (norme NF EN 62053, traçabilité).</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-819b-bc48-d46950310c77" class="bulleted-list"><li style="list-style-type:disc"><strong>Sous-mesure</strong> (expérimental) : Sites qualifiés transmettent 30 min ; limites strictes (100 sites/OE, 5000 profilés, 100 MW total).</li></ul></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-81dc-907e-d89d8a984478" class=""><strong>Vérification</strong> :</p></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8106-a876-e69f5a6d4f26" class="bulleted-list"><li style="list-style-type:disc">RTE : Élabore chroniques réalisées (Énergie effacée kWh). Contestation 30j post-transmission (par OE ou Fournisseur).</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81fa-8f54-c2ce908d73a0" class="bulleted-list"><li style="list-style-type:disc">Homologations (Prévision/Historique) : Qualité mensuelle (écart &lt;10% sauf dérive). Retrait si &gt;3/11 mois défaillants.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8185-bfab-ee5384eeb44d" class="bulleted-list"><li style="list-style-type:disc">Transmission : GRD → RTE (S+1) ; Télérelevé → M+1 (Profilés validés).</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-81ba-b8bf-d6dca09179c8" class="">1.5 Rémunération &amp; Coûts</h3></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-81fb-902c-f96329f42c03" class=""><strong>Versement Fournisseur</strong> (Article 10 NEBEF) :<a href="about:blank#fn4">4</a></p></div><div style="display:contents" dir="ltr"><table id="2d96971c-72e7-8130-82dd-e37322588ac2" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-81d3-b4ae-eb3458d3f977"><th id="`Xuu" class="simple-table-header-color simple-table-header"><strong>Modèle</strong></th><th id="UHQ&lt;" class="simple-table-header-color simple-table-header"><strong>Calcul</strong></th><th id="G=Ci" class="simple-table-header-color simple-table-header"><strong>Montant (2025)</strong></th><th id="aztn" class="simple-table-header-color simple-table-header"><strong>Qui paie</strong></th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8170-bae9-e3780542736c"><td id="`Xuu" class=""><strong>Régulé</strong> (défaut)</td><td id="UHQ&lt;" class="">Barème € × Énergie effacée (MWh)</td><td id="G=Ci" class="">Voir §1.5 tableau</td><td id="aztn" class="">RTE (indexé annuel)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8110-b4b4-dcebcc2524e7"><td id="`Xuu" class=""><strong>Corrigé</strong></td><td id="UHQ&lt;" class="">Coûts approvisionnement cliente</td><td id="G=Ci" class="">~Coûts réels</td><td id="aztn" class="">Consommateur via RE</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-818d-8521-f66a6f86dcee"><td id="`Xuu" class=""><strong>Contractuel</strong></td><td id="UHQ&lt;" class="">Gré-à-gré (OE/Fournisseur/Consommateur)</td><td id="G=Ci" class="">Libre</td><td id="aztn" class="">Selon contrat</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-8105-b5f7-d9728142c129" class=""><strong>Barèmes Forfaitaires 2025</strong> [artifact:] :</p></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-81c3-92a0-c942121e55b3" class=""><strong>Sites Profilés</strong> (à partir 01/02/2025) :</p></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-811e-83cb-d29933d37cfe" class="bulleted-list"><li style="list-style-type:disc">Profil RES 1/RES 11/PRO 1 (résidentiel/petit pro) : <strong>€83.52/MWh</strong></li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8113-aacb-f4481a61759d" class="bulleted-list"><li style="list-style-type:disc">Autres profils (commerce, petite industrie) : <strong>€89.19/MWh</strong></li></ul></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-8155-9876-f2174be82ce7" class=""><strong>Sites Télérelevés</strong> (à partir 01/01/2025) :</p></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-810d-b8f8-fd2728b80992" class="bulleted-list"><li style="list-style-type:disc"><strong>Hiver</strong> (janv., févr., mars, oct., nov., déc.) :<div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81d7-8a4d-f1a2c55557a0" class="bulleted-list"><li style="list-style-type:circle">Heures Basses : €64–68/MWh</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8144-b293-c3a331866f24" class="bulleted-list"><li style="list-style-type:circle">Heures Hautes : €120–135/MWh</li></ul></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-815f-bcea-d847c7138886" class="bulleted-list"><li style="list-style-type:disc"><strong>Été</strong> (avr.–sept.) :<div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81a7-b26a-da50998b5dcd" class="bulleted-list"><li style="list-style-type:circle">Heures Basses : €55–60/MWh</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8128-979f-f40dd26f3042" class="bulleted-list"><li style="list-style-type:circle">Heures Hautes : €95–110/MWh</li></ul></div></li></ul></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-8174-8931-db10e23d0fda" class=""><em>Note : Valeurs dépendent du profil exact et changements tarifs 2025 en cours. Consulter RTE pour chiffres actualisés.</em></p></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-81f2-9988-c30b99ecaf30" class=""><strong>Coûts Opérateurs d’Effacement</strong> :</p></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8120-a767-d0eecd14a35d" class="bulleted-list"><li style="list-style-type:disc">Agrément : ~€2–5k (dossier + tests).</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81fb-9558-f78dcf016e99" class="bulleted-list"><li style="list-style-type:disc">Certification annuelle : €1–3k.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8136-8090-c05f8b7134a7" class="bulleted-list"><li style="list-style-type:disc">Qualification Profilés (audit) : €500–1500/an.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-813c-91e9-f98c3d92b2a7" class="bulleted-list"><li style="list-style-type:disc">Garantie bancaire : 1–2% du chiffre d’affaires annuel.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-811d-af4d-d98b64189ed4" class="bulleted-list"><li style="list-style-type:disc">Pas de frais déclaration/activation NEBEF directs.</li></ul></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-818a-b07a-cf6d262fefe4" class=""><strong>Revenus Bruts (Scénario Type)</strong> :</p></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-812c-8941-f3c55c44c575" class="bulleted-list"><li style="list-style-type:disc">10 sites, 5 MW capacité, 200h activation/an, barème €90/MWh = <strong>€90k/an brut</strong> (avant coûts Agrég.).</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-81ae-9684-e1f6e060394b" class="">1.6 Contraintes &amp; Pénalités</h3></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-8165-8067-caabcbbfeea0" class=""><strong>Pénalités Qualification (Profilés)</strong> [Article 8.6 NEBEF] :<a href="about:blank#fn5">5</a></p></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81ff-84b4-e7f0444b9360" class="bulleted-list"><li style="list-style-type:disc">Avertissement simple (qualité &lt;80%, correction demandée).</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81ff-84fe-e83cb2a4d616" class="bulleted-list"><li style="list-style-type:disc">Avertissement + contrôles renforcés (défaillance récidive).</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8136-8ade-da0e3b45db87" class="bulleted-list"><li style="list-style-type:disc"><strong>Avertissement préalable retrait</strong> (3ème manquement) → <strong>retrait qualification 3 mois</strong> (éligibilité à la baisse).</li></ul></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-81c4-9b06-f31df195ba9a" class=""><strong>Non-paiement</strong> : Accord suspension (défaut &gt;20j), résiliation (défaut persistant), appel garantie bancaire.</p></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-8168-ab0a-e69c45b3f37d" class=""><strong>Contrôle du Réalisé</strong> (Article 7.3-7.4) :</p></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8150-bf5b-f4cce66b47c0" class="bulleted-list"><li style="list-style-type:disc">Écart report &gt;30% &gt;2/6 mois → reports ignorés 3 mois suivants.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81e1-a3e6-fb8c717411bd" class="bulleted-list"><li style="list-style-type:disc">Faux déclaration (bloc maquillé) → pénalité administrative CRE (nullité contrat secteur).</li></ul></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-8120-ab0a-d0bc1916393a" class=""><strong>Risques Opérationnels</strong> :</p></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81d7-92fd-fa02eff7809d" class="bulleted-list"><li style="list-style-type:disc">Baseline contestée : refus paiement si méthode défaillante.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-811c-a55e-ddbd3f85db18" class="bulleted-list"><li style="list-style-type:disc">Indisponibilité GTB : activation échouée = non-rémunération.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8104-976c-fd5290c1517f" class="bulleted-list"><li style="list-style-type:disc">Conformité électrique : disjonction si sécurité compromise.</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-8137-94f9-fb927eb15db5" class="">1.7 Stacking &amp; Cumul Mécanismes</h3></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-8194-80a3-c7d154b6e53d" class=""><strong>Possible avec</strong> :</p></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8116-a91c-f6d6bf78556e" class="bulleted-list"><li style="list-style-type:disc">✅ <strong>Réserves (FCR, aFRR)</strong> : Oui (simultané si contrats cohérents, ex. flexi downside pour aFRR + NEBEF downside).</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81c7-b7c9-e9cea4392ad5" class="bulleted-list"><li style="list-style-type:disc">✅ <strong>Mécanisme d’Ajustement (MA)</strong> : Oui (déclaration parallèle, priorité réserves &gt; ajustement).</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81be-aec5-c2c0545b79f5" class="bulleted-list"><li style="list-style-type:disc">✅ <strong>Capacité</strong> : Oui (certification indépendante, engagement certaine heures, NEBEF hors engagement).</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81c9-b6d4-ce4d352e7a15" class="bulleted-list"><li style="list-style-type:disc">✅ <strong>Flexibilité locale (congestion)</strong> : Oui (zones disjointes généralement).</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8147-900b-f4723c98e2bb" class="bulleted-list"><li style="list-style-type:disc">⚠️ <strong>Arbitrage Prix implicite</strong> : Oui (pilotage hors offre formelle), mais caution contractuelle fournisseur.</li></ul></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-8194-914a-d2589fefe579" class=""><strong>Limites</strong> :</p></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81a3-ab58-e8fb1cc98cab" class="bulleted-list"><li style="list-style-type:disc">Double-comptage énergétique interdit (ex. même kWh ne peut être effacé 2× dans MA + NEBEF J-1).</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-816f-a4dd-d16dacd8059d" class="bulleted-list"><li style="list-style-type:disc">Priorité réglementaire : Réglage Primaire &gt; Secondaire &gt; mFRR &gt; Ajustement/NEBEF (activation séquentielle).</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8147-a2eb-edd3ceb52fde" class="bulleted-list"><li style="list-style-type:disc">Cohérence contractuelle : Engagements doivent être compatibles (ex. 3 MW réserves + 2 MW NEBEF max = possible).</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-8111-a5d0-d2566cb4a86a" class="">1.8 Checklist “Go/No-Go” NEBEF</h3></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81be-9945-d9804193745d" class="bulleted-list"><li style="list-style-type:disc">⬜ Sites ≥100 kW, télé-relevés ou Linky confirmés (Enedis)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8189-b651-d20588dfcd7a" class="bulleted-list"><li style="list-style-type:disc">⬜ CAR signé, accord écrit clients</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-817c-8404-d9a1e0de9eea" class="bulleted-list"><li style="list-style-type:disc">⬜ GTB/EMS capable commande (télécommande, modbus, API)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-811c-a4a4-d966a55cbf73" class="bulleted-list"><li style="list-style-type:disc">⬜ Historique conso 12 mois &gt;50% année sauf startup</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8138-8474-f8034fe88f40" class="bulleted-list"><li style="list-style-type:disc">⬜ Pas de contrainte fourniture &gt;90% temps</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8185-b8ba-febd0bb94c22" class="bulleted-list"><li style="list-style-type:disc">⬜ Agrégateur agréé RTE ou statut en cours</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-819e-926d-e24bf1d37cd0" class="bulleted-list"><li style="list-style-type:disc">⬜ Disponibilité attendue ≥80% (contrats)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8112-90a3-fae3d435f57c" class="bulleted-list"><li style="list-style-type:disc">⬜ Données Enedis accédées (API/FTP)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81fd-ba22-c42a9d6c2e20" class="bulleted-list"><li style="list-style-type:disc">⬜ Tests fonctionnels activation réussis</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81b1-8ceb-d3ce2286bbb2" class="bulleted-list"><li style="list-style-type:disc">⬜ Assurance RC professionelle actuelle</li></ul></div><div style="display:contents" dir="auto"><hr id="2d96971c-72e7-818e-8a27-f26f4f6fb58a"/></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-8191-a1c3-ecf434ff0142" class="">2. Réserves (FCR, aFRR, mFRR/RR-RC)</h3></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-81b1-9998-c9e91e810511" class="">2.1 Comment ça marche</h3></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-811b-9adb-c9d058fde591" class=""><strong>Réserves</strong> = puissance disponible RTE pour régler fréquence (production/consommation) en temps réel. Quatre types succes­sifs (urgence croissante) :<a href="about:blank#fn6">6</a></p></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-816a-8a97-e625668e73ff" class="numbered-list" start="1"><li><strong>FCR (Réserve Primaire)</strong> : Régulation automatique, continu, harmonisée Europe (ENTSO-E). Activation = déviation fréquence ±0.2 Hz. Durée 30 sec.</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-81a9-aaa9-e96aeb05ceab" class="numbered-list" start="2"><li><strong>aFRR (Réserve Secondaire)</strong> : Régulation auto-RTE, français, 15–90 sec après primaire. Appels d’offres nationaux.</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-8145-b662-c1325eb57817" class="numbered-list" start="3"><li><strong>mFRR (Réserve Rapide tertiaire)</strong> : Manuelle, &lt;13 min, adjudication appel d’offres périodique/journalière RTE.</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-8127-beaf-fa1463bc0034" class="numbered-list" start="4"><li><strong>RR-RC (Réserve Rapide/Complémentaire)</strong> : Manuel, &lt;30 min, AOP trimestriel/journalier (2025 : nouveaux volumes, nouvelle procédure) [artifact:].</li></ol></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-8101-9a66-e325482bd442" class=""><strong>Acteur d’Ajustement (AA)</strong> = fournisseur réserves via <strong>Mécanisme d’Ajustement (MA)</strong>. Offres “hausse/baisse” (modulation puissance). Obligation participation EnR &gt;10 MW depuis 01/01/2026.<a href="about:blank#fn7">7</a></p></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-81fe-a335-db83a78964af" class="">2.2 Éligibilité</h3></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-81c2-be00-d20ebd8c9136" class=""><strong>Tous actifs</strong> (production, consommation, stockage) <strong>raccordés RPT/RPD</strong>. Pas de minimum MW formellement, mais &gt;1 MW réaliste (coûts instrumentation).</p></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-8199-8ddf-fe6ace5a7fbc" class=""><strong>Prérequis</strong> :</p></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81ed-80f8-da60debf92a2" class="bulleted-list"><li style="list-style-type:disc">Accord Participation AA (signature + documentation financière).</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8111-ab98-c3c747c48084" class="bulleted-list"><li style="list-style-type:disc">Responsable Programmation ou RE déclaration (lien RE/données comptage).</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-819b-83e9-ddf9dd47b5e6" class="bulleted-list"><li style="list-style-type:disc">Certificat Aptitude Réserve Primaire/Secondaire (pour réserves fréquence).</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-818f-8bf9-c063006e71a8" class="bulleted-list"><li style="list-style-type:disc">Dispositifs télécommande RTE (téléconduite 24/7) + protocoles IEC 60870-5-104.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81d0-bd6d-dddca05b1174" class="bulleted-list"><li style="list-style-type:disc">Guichet pré-qualification capacités RTE (données techniques, essais).</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-81f3-a8d2-ee03b3b0e8f4" class="">2.3 Process d’Accès</h3></div><div style="display:contents" dir="ltr"><table id="2d96971c-72e7-8156-9d03-f6f2b5c9062c" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-816b-a8c4-c3bb2c53026b"><th id="x{HO" class="simple-table-header-color simple-table-header"><strong>Étape</strong></th><th id="d[`j" class="simple-table-header-color simple-table-header"><strong>Durée</strong></th><th id="Cf_V" class="simple-table-header-color simple-table-header"><strong>Détail</strong></th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8152-b505-c50dbfad76eb"><td id="x{HO" class="">1. Dossier AA (pièces financières)</td><td id="d[`j" class="">1 sem.</td><td id="Cf_V" class="">Formulaire Annexe 2.A1 Règles MA-RE, attestation solvabilité</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-81e7-a3f5-c3e205e1c289"><td id="x{HO" class="">2. Vérification RTE (complétude)</td><td id="d[`j" class="">1–2 sem.</td><td id="Cf_V" class="">Retours demandes infos / mise en conformité</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-815f-9679-f4595358b607"><td id="x{HO" class="">3. Signature Accord AA</td><td id="d[`j" class="">1–2 sem.</td><td id="Cf_V" class="">Contrat cadre RTE (standardisé)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8155-894d-f07a2415a190"><td id="x{HO" class="">4. Certification Aptitude (si réserves fréq)</td><td id="d[`j" class="">2–4 sem.</td><td id="Cf_V" class="">Audit + tests protocoles, norme performance</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-815a-ab50-f14946b227d7"><td id="x{HO" class="">5. AOP périodique (RR-RC, aFRR)</td><td id="d[`j" class="">1–2 mois</td><td id="Cf_V" class="">Inscription guichet, soumission offres J-60, résultats J-30</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-81af-91f5-d04d4bc6e69f"><td id="x{HO" class="">6. Activation production</td><td id="d[`j" class="">J+1</td><td id="Cf_V" class="">Offres sélectionnées → engagement capacité/énergie</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-81f6-8996-fa409a4f6626"><td id="x{HO" class=""><strong>Total</strong></td><td id="d[`j" class=""><strong>2–4 mois</strong></td><td id="Cf_V" class="">Parallèle max ; FCR continu post-agrément</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-813a-96ce-d653a634b184" class="">2.4 Mesure &amp; Vérification</h3></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-8109-a0c2-e6c0d8e5f2b9" class=""><strong>Réserve Primaire (FCR)</strong> : Continu, mesure fréquence pan-européenne (capteurs RTE). Pas de baseline, contribution implicite. Activation = ΔF détecté.</p></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-8121-baf6-c9fe7b6fff16" class=""><strong>Réserve Secondaire (aFRR)</strong> : Basée programmes d’appel J. Écart vs. programme = contribution secondaire. Mesure par RTE (télétélémetrie).</p></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-818e-9338-e1804911a4ad" class=""><strong>mFRR/RR-RC</strong> : Puissance mobilisée en temps réel. Offres déclarées vs. réalisées. RTE contrôle démarrage &lt;13 min, durée ≥15 min. Dépassement sanction.</p></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-8174-8227-d78682b60c2f" class=""><strong>Sous-ensembles</strong> : Sites de soutirage en aFRR peuvent avoir modèle sans prise en compte énergie (insensibilisation RE) ; données Linky utilisées contrôle.</p></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-81bd-bd4b-daa629d5c8d9" class="">2.5 Rémunération &amp; Coûts</h3></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-8162-a98e-da234144cec8" class=""><strong>Réserve Primaire (FCR)</strong> :<a href="about:blank#fn8">8</a></p></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81aa-8a35-e12bc3ac1be6" class="bulleted-list"><li style="list-style-type:disc">Prime capacité fixe (appel d’offres transfrontalier annuel) : ~€3–5/MW/h.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-813a-813e-ebad7631ac2a" class="bulleted-list"><li style="list-style-type:disc">Pas rémunération énergie (fonction régulation auto).</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81a3-abf8-fc760840968e" class="bulleted-list"><li style="list-style-type:disc">Activation continu = usure/coûts d’exploitation (risque net).</li></ul></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-81b4-9664-f7226b411ba0" class=""><strong>Réserve Secondaire (aFRR)</strong> :</p></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81f7-827e-c815669205a2" class="bulleted-list"><li style="list-style-type:disc">Prime capacité fixe : ~€4–7/MW/h.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-813f-9af6-c8d9c7f954da" class="bulleted-list"><li style="list-style-type:disc">Énergie : Prix SPOT moy. France (30 j glissants), rémunérée si activation.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81c6-83b0-d7d1e7c75165" class="bulleted-list"><li style="list-style-type:disc">Inégalité hausse/baisse : baisse souvent non-rémunérée (excédent prod), hausse premium.</li></ul></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-81c8-955e-d89d850163fb" class=""><strong>mFRR/RR-RC</strong> [artifact:] :</p></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8188-9a90-e4f97fddb02c" class="bulleted-list"><li style="list-style-type:disc">Prix d’enchère : Appels d’offres périodiques (trimestriels 2026, ex. jan/avr/juil/oct pour RR ; jan/avr pour RC).</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81c2-a525-d22d0fda8cc9" class="bulleted-list"><li style="list-style-type:disc">Résultats 10h30 J-1, AOP journaliers “best-of” jusqu’au dernier jour livraison.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81be-85c2-d0a64da14094" class="bulleted-list"><li style="list-style-type:disc">Rémunération : Prix marginal sélectionné. Volumes 2026 : 500 MW RR ↑, 250 MW RC ↑.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-813b-aae6-d0ea75befede" class="bulleted-list"><li style="list-style-type:disc">Défaut disponibilité : Pénalités (indemnités écart) appliquées post-livraison.</li></ul></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-81f8-9659-d0c9fab8e830" class=""><strong>Garanties Financières</strong> : Gage-espèces (dépôt trésorier), surtout si mFRR/RR-RC (risque écarts). Montant ~€20–50k typique.</p></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-81a1-b201-e37a8941354c" class=""><strong>Revenus Bruts (Scénario 10 MW)</strong> :</p></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8181-a5c1-ce89203bd3f6" class="bulleted-list"><li style="list-style-type:disc">aFRR prime : 365 × 24 × 10 MW × €5/MWh = <strong>€438k/an</strong>.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81ee-b2a1-d8fb795bdd7a" class="bulleted-list"><li style="list-style-type:disc">Énergie : Variable (activation 30–50%), ~<strong>€50–100k/an</strong>.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81b5-8d97-c8fd149374ef" class="bulleted-list"><li style="list-style-type:disc"><strong>Total</strong> : ~<strong>€500k/an</strong> avant coûts télécommande/IT.</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-81b0-a2ba-eab3d7cf3f51" class="">2.6 Contraintes &amp; Pénalités</h3></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-812d-8388-f4af3fcac8cd" class=""><strong>Performance</strong> [Article 4.L Règles Services Système] :</p></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8171-b077-c29135efec3f" class="bulleted-list"><li style="list-style-type:disc">Défaillance réglage = écart &gt;5% puissance engagée &gt;60 j → Mise en Conformité.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-812b-a679-d68b56a61bd7" class="bulleted-list"><li style="list-style-type:disc">Indisponibilité &gt;60 j → Notification CRE, risque retrait certification.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8188-a0c4-ceb889941e0f" class="bulleted-list"><li style="list-style-type:disc">Pénalité indemnité : Bilan Réserve négatif appliqué collectif (tous RR manquants).</li></ul></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-819d-a045-da714d564c41" class=""><strong>Obligation EnR &gt;10 MW</strong> (depuis 01/01/2026) :<a href="about:blank#fn9">9</a></p></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81f5-8918-e5818b5b38f5" class="bulleted-list"><li style="list-style-type:disc">Dépôt offres obligatoires hausse/baisse MA (chaque jour).</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8132-8339-f9537e622276" class="bulleted-list"><li style="list-style-type:disc">Non-respect = amendes CRE (~€10k–100k/jour selon violations).</li></ul></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-818c-a252-d7e87e4a885b" class=""><strong>Coûts</strong> : Télécommande RTE (capteurs, liaison données dédiée) ~€50–100k install. + €10–20k/an maintenance.</p></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-81b4-bf6a-d0204c48d1ad" class="">2.7 Stacking &amp; Cumul</h3></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-8127-bfe7-d45bb0628a11" class="">✅ <strong>Possible simultanément</strong> :</p></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81d5-92d7-d36ffecf05c7" class="bulleted-list"><li style="list-style-type:disc">FCR + aFRR : Oui (réglages indépendants, offres parallèles).</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-813d-97ab-d036ac661796" class="bulleted-list"><li style="list-style-type:disc">aFRR + mFRR : Oui (activations séquentielles : primaire &gt; secondaire &gt; tertiaires).</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8139-a6bd-ead8e5bcfee4" class="bulleted-list"><li style="list-style-type:disc">mFRR + MA (ajustement) : Oui (préséance réserves contractées &gt; offres MA).</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8137-81b0-f1421456b6a9" class="bulleted-list"><li style="list-style-type:disc">Réserves + NEBEF : Oui si non-conflits horaires (coordination déclaration).</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-81f3-91e5-fc15525afb1a" class="">2.8 Checklist “Go/No-Go” Réserves</h3></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8188-922f-ea3630116e26" class="bulleted-list"><li style="list-style-type:disc">⬜ Capacité ≥1 MW (techno-éco viable)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8113-a2fb-f1d112c403f2" class="bulleted-list"><li style="list-style-type:disc">⬜ Raccordement RPT ou RPD, accord GRD</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81af-9d54-e070264c9f11" class="bulleted-list"><li style="list-style-type:disc">⬜ Téléconduite RTE possible (protocole IEC/SCADA)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81c7-bed6-c80d3dd9c7ca" class="bulleted-list"><li style="list-style-type:disc">⬜ Garantie financière ~€50k disponible</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-819f-9898-ee6f815ede53" class="bulleted-list"><li style="list-style-type:disc">⬜ Responsable Programmation/RE désigné</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81ac-9381-c57e9eec1f8d" class="bulleted-list"><li style="list-style-type:disc">⬜ Si EnR &gt;10 MW : obligation MA depuis 01/01/2026</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81d6-a6ed-c465159ee26b" class="bulleted-list"><li style="list-style-type:disc">⬜ Comptage télérelevé ou sous-mesure validée</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81f0-811d-e04e26cc44fe" class="bulleted-list"><li style="list-style-type:disc">⬜ Tests activation démarreur &lt;13 min (mFRR)</li></ul></div><div style="display:contents" dir="auto"><hr id="2d96971c-72e7-8109-8c71-d0659528c51c"/></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-81c4-9ef2-feacfebf9a2a" class="">3. Mécanisme de Capacité (Nouveau 2026–2027)</h3></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-81cf-ba70-f7d310fbcdf2" class="">3.1 Comment ça marche</h3></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-815c-a697-dc5af8c213a9" class="">Remplaçant ancien mécanisme (fin nov. 2026), le <strong>nouveau mécanisme de capacité centralisé</strong> procure rémunération pour <strong>engagement disponibilité</strong> (non activation) période de livraison (généralement année civile).[artifact:] Architecture simplifié :</p></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8111-b0e7-ccefce119f01" class="bulleted-list"><li style="list-style-type:disc">Ministre fixe besoin capacité sur proposition CRE (rapport RTE).</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81f3-a746-ccbb0169afee" class="bulleted-list"><li style="list-style-type:disc">RTE organise enchères centralisées (AL-4 et AL-1 = année-4 et année-1 avant livraison).</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8188-9dbc-f46e3f1a33d5" class="bulleted-list"><li style="list-style-type:disc">Entités de Certification (EDC : producteurs, agrégateurs, OE effacement) soumettent offres.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81c2-9189-e6ed48675664" class="bulleted-list"><li style="list-style-type:disc">Rémunération au prix marginal (sauf plafonds, dérogations).</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-817e-9e4a-df66eb7c1f9f" class="bulleted-list"><li style="list-style-type:disc">Post-livraison : vérification disponibilité effective (M+3 initial, M+18 régularisation), pénalités écarts.</li></ul></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-813e-b0ca-f6de5d1c6539" class=""><strong>Effacement</strong> accédé via Opérateur d’Effacement certifiant capacité. Engagement = puissance disponible jours “PP2” (jour-pointe prévisionnels hiver/été).</p></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-81a5-980b-f0e6f5fd4dc7" class="">3.2 Éligibilité</h3></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-81f0-b8ac-e51a6bd37fb9" class=""><strong>Capacités Nouvelles</strong> (pluriannuelles, R. 316-39)[artifact:] :</p></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-817a-9657-f57543cf98e2" class="bulleted-list"><li style="list-style-type:disc">Installations avec autorisation exploitation <strong>post-référence</strong> (à définir).</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8124-83b5-dbaf9bd142de" class="bulleted-list"><li style="list-style-type:disc">Augmentations puissance ; prolongations durée vie ; investissements réduction émissions (plafond CO2).</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81ec-8687-e656ae63435d" class="bulleted-list"><li style="list-style-type:disc">Effacements nouveaux SANS soutien public antérieur (ex. non-AOE, non-AOFD).</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8198-ae44-f62c63f381e3" class="bulleted-list"><li style="list-style-type:disc"><strong>Exclusion</strong> : Charbon/tourbe/schiste (&gt;550 g CO2/kWh existants 01/01/2025), contrats soutien public incompatibles.</li></ul></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-81dd-88ae-ee3045170c44" class=""><strong>Capacités Existantes</strong> (AL-1 surtout) : Tous, soumis <strong>Prix Plafond Intermédiaire (PPI)</strong> = plafond prix pour existants, sauf dérogation CRE si missing-money &gt; PPI (R. 316-28).[artifact:]</p></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-817c-8bb8-dc554dba0163" class=""><strong>Procédure Certification</strong> : Titulaire Périmètre Certification (TPC) dépose demande RTE, guichet pre-enchère. GRT approuve (pour RPT : RTE ; RPD : Enedis + RTE). Convention entre GRT/exploitant (R. 316-6).</p></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-81fd-b19b-f102cdee74b4" class="">3.3 Process d’Accès</h3></div><div style="display:contents" dir="ltr"><table id="2d96971c-72e7-8153-8a4f-fe7dfa8d709d" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8198-8bfa-d4209f8d0fae"><th id="FfiF" class="simple-table-header-color simple-table-header"><strong>Étape</strong></th><th id="heCB" class="simple-table-header-color simple-table-header"><strong>Calendrier (AL-4)</strong></th><th id="pG~f" class="simple-table-header-color simple-table-header"><strong>Détail</strong></th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8194-9aab-dcc1942becc4"><td id="FfiF" class="">1. Rapport paramétrage RTE</td><td id="heCB" class="">M-12 min. 6 mois pré-guichet</td><td id="pG~f" class="">Courbes demande, coûts, paramètres enchère</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8124-8928-dfc9a4578109"><td id="FfiF" class="">2. Proposition CRE (2 mois)</td><td id="heCB" class="">M-6 min. 2 mois avant AO</td><td id="pG~f" class="">Courbes retenus au ministre</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8139-875c-e665af05c982"><td id="FfiF" class="">3. Approbation Ministre</td><td id="heCB" class="">M-4</td><td id="pG~f" class="">Publication courbes, dates enchère</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-815a-969f-fcb4705d0d9e"><td id="FfiF" class="">4. Ouverture guichet certification</td><td id="heCB" class="">M-3</td><td id="pG~f" class="">TPC initiate demandes RTE</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-814e-a758-cc1eed95f449"><td id="FfiF" class="">5. Pré-qualification GRT (M-2 min.)</td><td id="heCB" class="">Décisions sur dossiers</td><td id="pG~f" class="">GRT valide installations, contrats</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8161-acfe-d3e1798708ce"><td id="FfiF" class="">6. Enchère enchère (M-2 à M-1)</td><td id="heCB" class="">Ouverture → résultats M-1</td><td id="pG~f" class="">Soumission offres, algorithme price-quantity</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8151-8ce7-d1f318c6388a"><td id="FfiF" class="">7. Contrats de certification</td><td id="heCB" class="">J après résultats</td><td id="pG~f" class="">RTE/TPC signent Contrats de Certification</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-816a-a203-c2c7fadea3a9"><td id="FfiF" class="">8. Livraison (norme)</td><td id="heCB" class="">AN civile</td><td id="pG~f" class="">Engagement disponibilité 1 janv.–31 déc.</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-81d0-83cc-c4d60a262883"><td id="FfiF" class="">9. Contrôle dispo effective</td><td id="heCB" class="">+3 mois</td><td id="pG~f" class="">RTE mesure (données GRT) et rémunère</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-81ed-92de-f8fda7744409"><td id="FfiF" class="">10. Régularisation (M+18)</td><td id="heCB" class="">Sept post-livraison</td><td id="pG~f" class="">Vérif. définitive, pénalités écarts appliquées</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-81e1-aa32-c184e272cbb9" class="">3.4 Mesure &amp; Vérification</h3></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-8109-a3ee-f257744bd9bf" class=""><strong>Disponibilité Effective</strong> : Contrôle par RTE post-livraison basée données GRT (courbe charge télérelevée). Périmètre = jours “PP2” signalés par CRE (ex. 45 jours + critère température extrême).</p></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-81de-a850-d559791b21bf" class=""><strong>Coefficients Filières</strong> : Paramètres techniques reflètent contribution fiabilité chaque technologie (ex. éolien offshore coefficient &gt;production réelle pour sécurité) [artifact:]. Utilisés dimensionnement enchères, pas changements post-enchère sauf révision annuelle.</p></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-810c-89d1-d0962ca18fb6" class=""><strong>Transparence</strong> : CRE approuve méthodologies (R. 316-3) ; RTE publie barèmes, paramètres via site services/data. Publications par scénario prospectif (3 courbes min. recommandées par CRE).</p></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-81c9-b162-cabfd582c4bc" class="">3.5 Rémunération &amp; Coûts</h3></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-8152-b77c-c814fe763d05" class=""><strong>Montant</strong> : Rémunération = engagement capacité × prix enchère + ajustements pluriannuel.</p></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-817d-849e-e78f2a9f2a13" class=""><strong>Enchères AL-4</strong> (principal) : Volumes nouveaux capacités ; PPI n’applique (ou limité pour existants). Durée contrats = 1–15 ans selon filière (pluriannuel reducible si investissements).</p></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-81cb-802d-c0079f354115" class=""><strong>Enchères AL-1</strong> (ajustement) : Volume réservé flexibilités décarbonées (stockage/effacement). Deux prix clairs : enchère principale + enchère “flexibilités” (réserves prix différencié pour inciter).</p></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-8100-a55c-d41860aba2d9" class=""><strong>Prix</strong> : Enchères EPEX-like (descending clock ou pay-as-clear). Prix marginal appliqué tous retenue. Transfrontalières : capacités UE-soutenues intégrées normativement.</p></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-812f-85ee-e8e0a8a49f77" class=""><strong>Paiement</strong> : Post-livraison <strong>M+3</strong> initial, régularisation définitive <strong>M+18</strong>. Acomptes taxe possibles (financement contributeurs).</p></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-8125-838a-e1b45ff8d66d" class=""><strong>Pénalités Écarts</strong> [Article R. 316-33][artifact:] :</p></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8102-91b8-d2a7581fedac" class="bulleted-list"><li style="list-style-type:disc">Modulation écart individuel OU collectif ; durée contrat.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8188-815a-fc3c7cb7e3eb" class="bulleted-list"><li style="list-style-type:disc">Écart “très faible” (ex. &lt;2%) : pas pénalité ou mineure.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-814e-97af-f259b6b85959" class="bulleted-list"><li style="list-style-type:disc">Écart “signif.” (ex. &gt;10%) : pénalité croissante, ex. à jour-pointe critique pénalité 10× prix marginal.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-814f-ac5e-dfa132f80bfd" class="bulleted-list"><li style="list-style-type:disc">Incitations : Dépôt offres “défaillance” hautes (dissuasion), mais si obligation système trop stricte CRE amortit.</li></ul></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-8151-bc54-f9b7b390095f" class=""><strong>Revenues Bruts (Scénario 50 MW existant AL-1)</strong> :</p></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8101-ac7d-f5c0ce954159" class="bulleted-list"><li style="list-style-type:disc">Prix marginal enchère : ~€35/MW/jour.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-819d-902f-cd64c5fd0bf6" class="bulleted-list"><li style="list-style-type:disc">50 MW × €35 × 365 j = <strong>€639k/an</strong>.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8110-bb3b-f5acd65a7413" class="bulleted-list"><li style="list-style-type:disc">Moins pénalités écarts si indisponibilité (-5–20%), coûts opération (~10%) = <strong>€450–550k net/an</strong>.</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-81a4-b3bc-db0d7f2f7875" class="">3.6 Contraintes &amp; Pénalités</h3></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-814d-ac45-d33540b619e0" class=""><strong>Sanction primaire</strong> : Retrait certification (ex. 6 mois carence) si indisponibilité structurelle.</p></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-81eb-9d43-c830d0a75d74" class=""><strong>Marché Secondaire</strong> : Titulaires peuvent céder engagements jusqu’à <strong>7 jours post-livraison</strong> (R. 316-31).[artifact:] Permet ajustement si réalité disponibilité diverge.</p></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-81d9-8b8b-db699aafd32a" class=""><strong>Contributions Transfrontalières</strong> : Procédure explicite approfondie (UE voisins) rémunère capacités transfrontalières, pas simple régulation interconnexion (impacts prix français potentiels).</p></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-8185-b2c8-f733cc701d45" class="">3.7 Stacking &amp; Cumul</h3></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-815a-88ff-ed338881c53f" class="">⚠️ <strong>Limité (double-comptage) :</strong></p></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8161-a938-cadbc85819e4" class="bulleted-list"><li style="list-style-type:disc">❌ Double-certification interdite : Une capacité ≠ 1× certificat multimécanisme.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8136-a22e-d4fad29a0ad0" class="bulleted-list"><li style="list-style-type:disc">⚠️ Effacement + Capacité : Possible si géométries différentes (ex. cert. 5 MW capacité = 1-2 MW réserve, reste arbitrage).</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81f1-91a3-e59b8305e4fb" class="bulleted-list"><li style="list-style-type:disc">✅ Capacité + MA : Oui (engagement capacité jour-pointe, MA hors engagement).</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-81c5-82e0-c65936d3ab44" class="">3.8 Checklist “Go/No-Go” Capacité</h3></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8142-994f-e81f143591dc" class="bulleted-list"><li style="list-style-type:disc">⬜ Certification TPC active ou en cours</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81fc-83a9-db45c13ffe91" class="bulleted-list"><li style="list-style-type:disc">⬜ Capacité constructive ≥1 MW (AL-1, surtout)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8140-9965-c24fb73b5dd7" class="bulleted-list"><li style="list-style-type:disc">⬜ Contrat GRT/RTE validé (pré-enchère)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8187-b8ce-fdd80f8e9e03" class="bulleted-list"><li style="list-style-type:disc">⬜ Données disponibilité (GRT télérelevé) accessibles</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-815c-a7ed-f2bfa2e0a493" class="bulleted-list"><li style="list-style-type:disc">⬜ Pas de conflit pluriannuel antérieur</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81a4-a9c8-c4579f673420" class="bulleted-list"><li style="list-style-type:disc">⬜ Soumission offre avant deadline AL-4/AL-1</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8129-aee2-ced30237e4b8" class="bulleted-list"><li style="list-style-type:disc">⬜ Accord financer éventuels acomptes taxe</li></ul></div><div style="display:contents" dir="auto"><hr id="2d96971c-72e7-8126-b9a4-d4e687fee909"/></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-813d-ab59-ee4c41e4360e" class="">4. Mécanisme d’Ajustement (MA)</h3></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-815d-9da6-e5a8ecac00a5" class="">4.1 Comment ça marche</h3></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-8198-b8f1-f6a9f24036c4" class=""><strong>MA</strong> = marché temps réel où RTE achète offres d’équilibrage (hausse/baisse puissance) pour corriger déséquilibre P=C. Offres standards (harmonisées UE via MARI/PICASSO) ou spécifiques (France). Obligation participation <strong>EnR &gt;10 MW depuis 01/01/2026</strong>.<a href="about:blank#fn10">10</a></p></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-815a-97d8-e9a3a69767f8" class="">Rémunération au <strong>prix offre retenue</strong> (si activation) ou <strong>prix marginal</strong> (selon contrats prévus).</p></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-8124-a0d1-ed079dc2b022" class="">4.2 Éligibilité</h3></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81e9-8c45-ed263f8bae38" class="bulleted-list"><li style="list-style-type:disc">Production, consommation, stockage, tous raccordés RPT/RPD.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8157-9a94-f6d4eca17145" class="bulleted-list"><li style="list-style-type:disc">Obligation EnR &gt;10 MW (aFRR + mFRR théoriquement, mais réduction demande acceptée = ajustement baisse).</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81c1-8e41-c84f43d912e2" class="bulleted-list"><li style="list-style-type:disc">Autre acteurs volontaires.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81a1-85d2-f48e3650dfc1" class="bulleted-list"><li style="list-style-type:disc">Déficit chronique baisse (RTE 2024 forced wind-down) → incitation consommation/stockage baisse.</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-8183-a572-cd3509ec2518" class="">4.3 Process &amp; Accès</h3></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-814c-b80b-f4954531c974" class="">Identique Réserves : Accord AA (1–2 sem.) → certification optionnelle → participation offres quotidiennes (J-1 avant livraison J).</p></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-8155-a03a-fc63b0a0cf46" class="">4.4 Mesure &amp; Vérification</h3></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-813b-bf62-d39aa45c6c35" class="">Puissance effacée confirmée par RTE (télétélémetrie live). Écarts pénalisés (ex. offre &gt;puissance réelle → indemnité).</p></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-81f7-99e3-f7dd2b18b79f" class="">4.5 Rémunération</h3></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-816d-a279-f597a052371d" class="">Variable large : €0–300/MWh selon tension système, prix marginal. Demande + = prix bas/négatif (consommateurs doivent absorber excédent). Demande − = prix haut (production manque).</p></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-8128-8f93-eb94348b033b" class="">4.6 Stacking</h3></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-81ff-abb5-d386c7dac18f" class="">✅ <strong>Possible</strong> : MA + Réserves + Capacité + NEBEF (cohérence priorités, ex. réserves activées &gt; offres MA).</p></div><div style="display:contents" dir="auto"><hr id="2d96971c-72e7-811a-a9ef-c27cc89c5c1b"/></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-81aa-affe-e767ee01cf15" class="">5. Flexibilité Implicite (Arbitrage Prix)</h3></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-81ab-b9fb-f69810dbff69" class="">5.1 Comment ça marche</h3></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-81b1-8d61-ee6b342871b9" class="">Pilotage continu sur <strong>prix SPOT EPEX</strong> (marché journalier + intraday) sans mécanisme réglementé spécifique. Signaux prix négatifs (surplus prod. renouvelable) incitent : hausse consommation (IRVE recharge, froid accumulation) ; baisse (délestage volontaire) ; transfert temporel (stock thermique).</p></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-81fa-92d3-cc1e2a87a0c2" class="">5.2 Éligibilité</h3></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-81c6-ad72-ede2a2064ae0" class="">Tous, contractuellement autorisés fournisseur (pas contrat base obligatoire). Tarif dynamique (ex. Tempo, offres heures négatives) facilitent.</p></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-81e0-a5b2-f9cb258c50d7" class="">5.3 Rémunération</h3></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-81e3-b951-f2e2134b08c7" class="">Économies autonomes (kWh consommé/stocké à prix &lt;coût moyen) : −€50 à −€300/MWh en pics négatifs (récurrents automne/printemps &gt;30% temps 2024).</p></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-8165-b6c1-c03065db5588" class="">5.4 Risques</h3></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8184-b92b-dc4d838311ed" class="bulleted-list"><li style="list-style-type:disc">Pas garantie prix, pas revenu assuré.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81bf-91ed-ed7e6ba8c6f5" class="bulleted-list"><li style="list-style-type:disc">Fournisseur peut modifier tarif.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81bb-abb3-d60a0efc59d3" class="bulleted-list"><li style="list-style-type:disc">Dépend volatilité climatique (ex. sécheresse hydro = prix bas ↓).</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-8147-abb9-f163e4d5f293" class="">5.5 Stacking</h3></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-810f-9cbb-e859013d4fba" class="">✅ <strong>Oui</strong> : Cumul tarif dyna + NEBEF (offres spot) + réserves (si paramètres compatibles).</p></div><div style="display:contents" dir="auto"><hr id="2d96971c-72e7-8116-bc52-d39b5d59910d"/></div><div style="display:contents" dir="auto"><h2 id="2d96971c-72e7-8141-afea-ccb9243f538c" class="">Comparaison Synthétique &amp; Décision Tree</h2></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-8107-adc9-f6aae520aceb" class="">Tableau de Synthèse (Multi-critères)</h3></div><div style="display:contents" dir="ltr"><table id="2d96971c-72e7-8138-bcef-f40a1cb0af84" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8156-b527-f5378194ef3b"><th id="y@hj" class="simple-table-header-color simple-table-header"><strong>Critère</strong></th><th id="Qwun" class="simple-table-header-color simple-table-header"><strong>NEBEF</strong></th><th id="FCa&gt;" class="simple-table-header-color simple-table-header"><strong>Réserves</strong></th><th id="kwOP" class="simple-table-header-color simple-table-header"><strong>Capacité (Nouveau)</strong></th><th id="U\UC" class="simple-table-header-color simple-table-header"><strong>MA</strong></th><th id="LBnR" class="simple-table-header-color simple-table-header"><strong>Implicite</strong></th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-815e-b5a6-e5512de17a25"><td id="y@hj" class=""><strong>Horizon</strong></td><td id="Qwun" class="">Court (J)</td><td id="FCa&gt;" class="">Moyen (trimestres)</td><td id="kwOP" class="">Long (années)</td><td id="U\UC" class="">Court (J)</td><td id="LBnR" class="">Temps réel</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-81bf-b6b7-d803aa6f625f"><td id="y@hj" class=""><strong>Effort go-live</strong></td><td id="Qwun" class="">Moyen (8–10 sem.)</td><td id="FCa&gt;" class="">Fort (2–4 mois)</td><td id="kwOP" class="">Fort (3–6 mois)</td><td id="U\UC" class="">Faible (2–4 mois)</td><td id="LBnR" class="">Faible (1 mois)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-81eb-90e0-ffd9b17e3cb5"><td id="y@hj" class=""><strong>Revenus €/MW/an</strong></td><td id="Qwun" class="">€90–200k (10 MW, activation)</td><td id="FCa&gt;" class="">€400–600k (9 MW cap +)</td><td id="kwOP" class="">€450–550k (50 MW exist)</td><td id="U\UC" class="">€20–100k (volatile)</td><td id="LBnR" class="">€−100k (économies)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-81f2-b24a-d3f4ad36d002"><td id="y@hj" class=""><strong>Fiabilité revenu</strong></td><td id="Qwun" class="">Moyen (dépend spot)</td><td id="FCa&gt;" class="">Fort (prime fixe)</td><td id="kwOP" class="">Fort (engagement)</td><td id="U\UC" class="">Faible (prix volatil)</td><td id="LBnR" class="">Faible (prix dépendant)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-814c-a550-e050c63da0a5"><td id="y@hj" class=""><strong>Risques majeurs</strong></td><td id="Qwun" class="">Baseline, activations faibles</td><td id="FCa&gt;" class="">Défaillance, usure</td><td id="kwOP" class="">Indisponibilité, pénalités écarts</td><td id="U\UC" class="">Obligation EnR, sanction baisse</td><td id="LBnR" class="">Volatilité prix, fournisseur</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-81fd-a84f-e0d523ef1e94"><td id="y@hj" class=""><strong>B2B Multi-sites</strong></td><td id="Qwun" class="">⭐⭐⭐⭐⭐ (agrégation)</td><td id="FCa&gt;" class="">⭐⭐⭐⭐</td><td id="kwOP" class="">⭐⭐⭐⭐</td><td id="U\UC" class="">⭐⭐⭐⭐⭐</td><td id="LBnR" class="">⭐⭐⭐</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8152-96a5-d75d59c6d314"><td id="y@hj" class=""><strong>Complexité règles</strong></td><td id="Qwun" class="">🟠 Moyenne</td><td id="FCa&gt;" class="">🔴 Élevée</td><td id="kwOP" class="">🟠 Moyenne</td><td id="U\UC" class="">🟠 Moyenne</td><td id="LBnR" class="">🟢 Basse</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8178-a814-f2da86b119b5"><td id="y@hj" class=""><strong>Instrumentation</strong></td><td id="Qwun" class="">🟢 Légère (GTB)</td><td id="FCa&gt;" class="">🔴 Lourde (télécommande)</td><td id="kwOP" class="">🟠 Moyenne (données)</td><td id="U\UC" class="">🟢 Léger</td><td id="LBnR" class="">🟢 Léger</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><hr id="2d96971c-72e7-81fa-bc9e-f43dd9f563a3"/></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-81a3-ac37-f023b3cfd1be" class="">Arbre de Décision “Quel Mécanisme ?”</h3></div><div style="display:contents" dir="auto"><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerPolicy="no-referrer"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" referrerPolicy="no-referrer"/><pre id="2d96971c-72e7-813c-8856-d8d9d74017c0" class="code code-wrap"><code class="language-Plain Text" style="white-space:pre-wrap;word-break:break-all">ENTRÉE : Site/Portfolio énergie B2B
+
+1️⃣ TAILLE ?
+   ├─ &lt;1 MW → IMPLICITE (arbitrage prix) + NEBEF mini
+   ├─ 1–10 MW → NEBEF (principal) + MA volontaire
+   └─ &gt;10 MW → NEBEF + Réserves (obligation EnR si prod) + Capacité (nouvelles)
+
+2️⃣ PROFIL CHARGE ?
+   ├─ Flexible (variabilité &gt;30 % : IRVE, froid, industrie) → NEBEF/MA prioritaires
+   ├─ Semi-flexible (10–30 % : bureau, retail) → NEBEF + Implicite
+   └─ Rigide (&lt;10 % : hôpital, data) → Réserves/Capacité seules (taille &gt;5 MW)
+
+3️⃣ HORIZON REVENU ?
+   ├─ Court terme (0–1 an) → NEBEF/MA/Implicite
+   ├─ Moyen (1–4 ans) → Réserves + NEBEF
+   └─ Long (4+ ans) → Capacité (pluriannuel) + socle réserves
+
+4️⃣ RISQUE TOLÉRÉ ?
+   ├─ Faible → Réserves (prime fixe) + Capacité (engagement)
+   ├─ Moyen → NEBEF + Réserves (mix)
+   └─ Élevé → MA + Implicite (volatilité prix acceptée)
+
+5️⃣ RESSOURCES ?
+   ├─ &lt;€50k budget → Implicite + NEBEF light (agrégateur géré)
+   ├─ €50–300k → NEBEF + réserves (agrégateur)
+   └─ &gt;€300k → Tous (instrumentation complète, IT dédiée)
+
+➡️ RECOMMANDATION B2B MULTI-SITES STANDARD :
+   🏆 NEBEF (cœur) + Réserves aFRR/mFRR (stabilité) + Capacité AL-1 (long terme) + Implicite (optimisation)
+   💰 Revenu potentiel : €300–800k/an (10–30 MW, scénarios activations).</code></pre></div><div style="display:contents" dir="auto"><hr id="2d96971c-72e7-81ee-b64d-c7330b5e7b6a"/></div><div style="display:contents" dir="auto"><h2 id="2d96971c-72e7-81fa-901b-fa3f680c40d3" class="">Données &amp; Infrastructure (GTB/EMS → Agrégateur → Marché)</h2></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-8156-b07e-c4c597a5ffa7" class="">Architecture Type</h3></div><div style="display:contents" dir="auto"><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerPolicy="no-referrer"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" referrerPolicy="no-referrer"/><pre id="2d96971c-72e7-818e-8597-d58c2595004c" class="code code-wrap"><code class="language-Plain Text" style="white-space:pre-wrap;word-break:break-all">[Sites Clients] ← Données
+    ↓ (Linky/Modbus)
+[GTB/EMS] ← Données (10–30 min)
+    ↓ (Agrégation)
+[Agrégateur Platform] (RTE APIs, EPEX connexion, bases données)
+    ├→ [RTE - NEBEF/MA/Capacité]
+    ├→ [EPEX SPOT/INTRADAY]
+    └→ [Enedis/GRD - Courbes charge, données clients]</code></pre></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-81fc-b099-ce9a395445d2" class="">Prérequis Données Clients</h3></div><div style="display:contents" dir="ltr"><table id="2d96971c-72e7-8128-9e1a-c73f3c734de5" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-81fc-aede-ca546fae6a08"><th id="H=ez" class="simple-table-header-color simple-table-header"><strong>Source</strong></th><th id="ulnA" class="simple-table-header-color simple-table-header"><strong>Pas de Temps</strong></th><th id="isQz" class="simple-table-header-color simple-table-header"><strong>Accès</strong></th><th id="Z]wZ" class="simple-table-header-color simple-table-header"><strong>Coûts</strong></th><th id="_vEX" class="simple-table-header-color simple-table-header"><strong>Délais</strong></th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-81af-80d3-c57bfae1469e"><td id="H=ez" class=""><strong>Linky (Enedis)</strong></td><td id="ulnA" class="">10 min (TR), 30 min (Profilés &lt;36 kVA)</td><td id="isQz" class="">API Enedis + tiers confiance</td><td id="Z]wZ" class="">~€0/mois (libre), Capfile API ~€10–50/mois</td><td id="_vEX" class="">J+2 à J+10</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8131-8c83-f00f07a0d252"><td id="H=ez" class=""><strong>Compteur Client RPT</strong></td><td id="ulnA" class="">15 min harmonisé (post-01/01/2025)</td><td id="isQz" class="">Demande Accès RTE (via agrégateur)</td><td id="Z]wZ" class="">Gratuit</td><td id="_vEX" class="">M+1</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-815b-b48c-d3497f53945a"><td id="H=ez" class=""><strong>Historique 12 mois</strong></td><td id="ulnA" class="">Même pas de temps</td><td id="isQz" class="">Enedis export ZIP ou API</td><td id="Z]wZ" class="">Gratuit / API</td><td id="_vEX" class="">Immédiat (streaming)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8153-a11b-f3044edd158e"><td id="H=ez" class=""><strong>Météo (température)</strong></td><td id="ulnA" class="">Horaire</td><td id="isQz" class="">Météo-France API ou public</td><td id="Z]wZ" class="">Gratuit (historique), premium prévision</td><td id="_vEX" class="">Immédiat</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-8174-b5a1-e11ccdc28653" class="">Exigences Techniques EMS/GTB</h3></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-819b-9188-c3dbd592f336" class="bulleted-list"><li style="list-style-type:disc"><strong>Protocoles</strong> : Modbus RTU/TCP, OPC UA, API REST (JSON).</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81cc-9643-f81c10678b7f" class="bulleted-list"><li style="list-style-type:disc"><strong>Traçabilité</strong> : Timestamps UTC synchro NTP, audit logs 90 j min.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-816f-b0ea-f7e3155ae8c9" class="bulleted-list"><li style="list-style-type:disc"><strong>Disponibilité</strong> : Uptime 99.5% (28.8 h/an downtime accepté).</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81f5-957b-fa818e9b2be3" class="bulleted-list"><li style="list-style-type:disc"><strong>Sécurité</strong> : VPN/TLS, authentification 2FA, chiffrage AES-256 données.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81c9-b291-e9a5901acf68" class="bulleted-list"><li style="list-style-type:disc"><strong>Interopérabilité</strong> : Décalage &lt;1 min vs. RTE (télétélémetrie), déterminisme offres.</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-811d-9448-cef63e3de494" class="">Coûts Infrastructure (Estimé)</h3></div><div style="display:contents" dir="ltr"><table id="2d96971c-72e7-8144-aaaa-d2f90d77556e" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-81c2-8d12-f78e749ae5cc"><th id="|RGi" class="simple-table-header-color simple-table-header"><strong>Composant</strong></th><th id="untS" class="simple-table-header-color simple-table-header"><strong>Montant (10 MW)</strong></th><th id="e|ui" class="simple-table-header-color simple-table-header"><strong>Durée</strong></th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-81ef-a4d9-cb24acffd268"><td id="|RGi" class="">Sonde IoT/capteur (10 sites)</td><td id="untS" class="">€2–5k</td><td id="e|ui" class="">Unique</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8149-bab1-c574ceb3172c"><td id="|RGi" class="">Passerelle Gateway (équipements clients)</td><td id="untS" class="">€3–8k</td><td id="e|ui" class="">5–7 ans</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-81dd-8d40-ece545c0915f"><td id="|RGi" class="">Abonnement API Enedis/Capfile</td><td id="untS" class="">€500–1500/an</td><td id="e|ui" class="">Annuel</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8100-97d8-d9563b2cfaae"><td id="|RGi" class="">Plateforme Agrégateur (SaaS/licence)</td><td id="untS" class="">€2k–10k/an</td><td id="e|ui" class="">Annuel</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8113-9a6b-e4334cf08024"><td id="|RGi" class="">Télécommande RTE (réserves seulement)</td><td id="untS" class="">€50–100k</td><td id="e|ui" class="">10 ans</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-81b5-84c6-c1c16d371704"><td id="|RGi" class="">Support/opération 24/7</td><td id="untS" class="">€20–50k/an</td><td id="e|ui" class="">Annuel</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-810a-8232-e0571ea91695"><td id="|RGi" class=""><strong>Total 1ère année</strong></td><td id="untS" class=""><strong>€60–130k</strong></td><td id="e|ui" class=""></td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8124-98da-e31d588e20da"><td id="|RGi" class=""><strong>Annuel après</strong></td><td id="untS" class=""><strong>€25–65k</strong></td><td id="e|ui" class=""></td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><hr id="2d96971c-72e7-814a-bbec-c4c82f635ef7"/></div><div style="display:contents" dir="auto"><h2 id="2d96971c-72e7-8153-ae9e-d680f1a90325" class="">Modèle Économique &amp; Sensibilités</h2></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-81e1-b004-c96f34de2f1e" class="">Scénario “Factory 38” (10 MW, Multi-Site Tertiaire/Industrie)</h3></div><div style="display:contents" dir="ltr"><table id="2d96971c-72e7-8132-9698-cb67786c4a5d" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-817a-bd0e-e5991c964efa"><th id="ou[c" class="simple-table-header-color simple-table-header"><strong>Scenario</strong></th><th id="}rNO" class="simple-table-header-color simple-table-header"><strong>Activation Heures/an</strong></th><th id="XSFV" class="simple-table-header-color simple-table-header"><strong>NEBEF €/an</strong></th><th id="{myt" class="simple-table-header-color simple-table-header"><strong>Réserves €/an</strong></th><th id="Ds&lt;P" class="simple-table-header-color simple-table-header"><strong>Capacité €/an</strong></th><th id=":Opf" class="simple-table-header-color simple-table-header"><strong>Total Brut</strong></th><th id="Y}UA" class="simple-table-header-color simple-table-header"><strong>Après Coûts</strong></th><th id="Jz_m" class="simple-table-header-color simple-table-header"><strong>Marge</strong></th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8145-ab7d-ffc5e1c101a4"><td id="ou[c" class=""><strong>Conservateur</strong></td><td id="}rNO" class="">100 h (NEBEF), 50% prime (Réserves)</td><td id="XSFV" class="">€90k</td><td id="{myt" class="">€200k</td><td id="Ds&lt;P" class="">€100k</td><td id=":Opf" class="">€390k</td><td id="Y}UA" class="">€330k</td><td id="Jz_m" class="">15%</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-814e-8ac5-cfce9344d66c"><td id="ou[c" class=""><strong>Nominal</strong></td><td id="}rNO" class="">200 h, 70%</td><td id="XSFV" class="">€150k</td><td id="{myt" class="">€350k</td><td id="Ds&lt;P" class="">€250k</td><td id=":Opf" class="">€750k</td><td id="Y}UA" class="">€630k</td><td id="Jz_m" class="">16%</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-81de-b375-faaf1a525abd"><td id="ou[c" class=""><strong>Optimiste</strong></td><td id="}rNO" class="">300 h, 85%</td><td id="XSFV" class="">€220k</td><td id="{myt" class="">€500k</td><td id="Ds&lt;P" class="">€350k</td><td id=":Opf" class="">€1.07M</td><td id="Y}UA" class="">€880k</td><td id="Jz_m" class="">18%</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-81fb-abc8-ff1f921f0eb6" class=""><strong>Hypothèses</strong> :</p></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-817f-a231-ec41886a3f74" class="bulleted-list"><li style="list-style-type:disc">10 MW potentiel effacement, réparti 3–5 sites.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81b0-93de-ff32df8fe0db" class="bulleted-list"><li style="list-style-type:disc">Barème NEBEF €90/MWh moyen.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-814c-b9e6-da8e8a286299" class="bulleted-list"><li style="list-style-type:disc">Prime réserves €5/MW/h (aFRR) × 70% utilisation.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8184-84d0-d7532a472939" class="bulleted-list"><li style="list-style-type:disc">Capacité AL-1 : €35/MW/an.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8164-a5e4-f96e671f4f56" class="bulleted-list"><li style="list-style-type:disc">Coûts opération : 16% revenues (agrégateur, instrumentation, R&amp;D baseline).</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-81b4-8b0f-f2ad6f58ef20" class="">Sensibilités Clés</h3></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-81dd-9206-eef70887246f" class=""><strong>Impactants</strong> (↑ €100–200k/an) :</p></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8109-bbf8-ef4ccf575862" class="bulleted-list"><li style="list-style-type:disc">⬆️ Prix SPOT moyen (+€50/MWh NEBEF) → +€100k.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-810e-a481-d4af60aff079" class="bulleted-list"><li style="list-style-type:disc">⬆️ Fréquence activations (tempête/sécheresse) → +€150k.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-812a-be10-fae575e4534b" class="bulleted-list"><li style="list-style-type:disc">⬆️ Efficacité baseline (méthode optimisée) → gain €30k (moins contestations).</li></ul></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-8106-a7ad-c29bb6cf0c88" class=""><strong>Atténuants</strong> (↓ €50–150k/an) :</p></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8172-bdf3-d6e75524264b" class="bulleted-list"><li style="list-style-type:disc">⬇️ Baisse prix spot (EnR massif) → −€80k NEBEF.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81ac-9962-c2e6e717ceb4" class="bulleted-list"><li style="list-style-type:disc">⬇️ Indisponibilité (panne GTB) → pénalités €20–50k/incident.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8119-b62e-d6e72cc525db" class="bulleted-list"><li style="list-style-type:disc">⬇️ Augmentation coûts téléconduite RTE → +€30k.</li></ul></div><div style="display:contents" dir="auto"><hr id="2d96971c-72e7-816c-8eb9-f00d460afbef"/></div><div style="display:contents" dir="auto"><h2 id="2d96971c-72e7-81c1-bcb0-d496a4e4288e" class="">FAQ – 10 Questions Terrain</h2></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-81d3-be4e-e7134cef509d" class=""><strong>Q1: Puis-je cumuler NEBEF + Réserves + Capacité ?</strong><br/>✅ Oui, via agrégateur. Engagement capacité jour-pointe, NEBEF en complément heures non-engagées, réserves continu. Nécessite cohérence calendrier (pas double offres même heure).</p></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-8116-af45-f87204a81cda" class=""><strong>Q2: Quelle baseline est la plus “gagnante” pour NEBEF ?</strong><br/>🎯 Rectangle double référence corrigée (défaut) rapide à homologuer. Si &gt;3000 sites profilés, rectangle algébrique accepte 6h (vs. 2h) = fenêtres activations plus larges. Prévision/historique plus complexes mais robustes saisonnalité.</p></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-815a-a8d5-d90483d735cb" class=""><strong>Q3: Enedis vs. RTE : qui contrôle mes données courbe charge ?</strong><br/>📊 Enedis (GRD) collecte, stocke 3 ans. Accès : client + tiers confiance via API Enedis (consentement obligatoire). Agrégateur = tiers confiance (audit CRE). RTE = accès indirect via GRD pour NEBEF validation.</p></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-8169-b26e-caf06d2b087d" class=""><strong>Q4: J’ai obligation MA (EnR &gt;10 MW). Puis-je réduire sans pénalité ?</strong><br/>⚠️ Obligation offres “hausse + baisse” quotidiennes. Baisse acceptée si dépôt valide. Sanction si <strong>pas de dépôt</strong> (€10k–100k/j). Baisse à prix très haut (€500/MWh) acceptée légalement mais “non-compétitive”.</p></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-8185-88c2-c10d9ecc219c" class=""><strong>Q5: Combien coûte préparation participation NEBEF ?</strong><br/>💰 Agrégateur : ~€5–15k études + agré­ment RTE. Client : ~€0 (via agrégateur couvert). Infrastructure (GTB/API) : €10–50k one-shot si manquant. Revenu seuil : ~€50k/an (Break-even ~1 an).</p></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-8162-a2d6-f54181860820" class=""><strong>Q6: Pénalité baseline “contestée” = je perds tout revenue ?</strong><br/>❌ Rarement total. RTE valide baseline ex-ante (avant activations). Contestations post = ajustements (ex. −20% si méthode partiellement invalide). Perte totale si fraude avérée (rare).</p></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-8175-a5f7-ee1ecb3d3d18" class=""><strong>Q7: Le nouveau mécanisme capacité (2026) : oui ou non NEBEF ?</strong><br/>✅ Oui. Capacité = engagement certaines heures (jour-pointe). NEBEF = Offres reste année sur EPEX. Complémentaires, pas concurrents.</p></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-814c-8d22-ecbed8bcc165" class=""><strong>Q8: Stockage thermique : où l’intégrer ?</strong><br/>🧊 Tous mécanismes. NEBEF : idéal (charge nuit, restitue jour-pointe). Réserves : possible (modulation charge). Capacité : certifiable (contribution sécurité). Implicite : pilotage prix chauffage (hiver).</p></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-818b-9bc5-ce3f712badaf" class=""><strong>Q9: Agrégateur : comment il fait ses bénéfices sur moi ?</strong><br/>💵 Prend ~10–20% revenue NEBEF (négocié). Prime fixe participation réserves. Pas revenu si client n’active (sauf infras partagées). Alignement intérêts = bon indicateur sérieux.</p></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-81df-8cdd-cc00b754688f" class=""><strong>Q10: Timeline réaliste pour site 5 MW passer de “zéro” à “revenue-generating” ?</strong><br/>📅 6–8 mois : Audit (2 sem.) → Agré­ment RTE (6 sem.) → Infrastructure tests (4 sem.) → Go-live NEBEF (J1). Réserves : +2 mois si certification aFRR. Capacité : attendre AL-1 prochaine (jan/avr).</p></div><div style="display:contents" dir="auto"><hr id="2d96971c-72e7-8170-ad99-e1d757679e0f"/></div><div style="display:contents" dir="auto"><h2 id="2d96971c-72e7-81c0-aa34-d33c6c9ab624" class="">Opportunités Produit PROMEOS (Plateforme Agrégateur)</h2></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-8144-af8f-e090bc3563a5" class="">10 Features Priorisées</h3></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-81bf-90db-d567a76bc239" class="numbered-list" start="1"><li><strong>Forecast Demand-Response</strong> : ML prévision activations (J+1 à J+7) prix SPOT + RTE signals. KPI : Accuracy &gt;80%.</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-81d3-acbe-c1ca54edae24" class="numbered-list" start="2"><li><strong>Baseline Optimizer</strong> : Comparaison 4 méthodes (Rectangle double ref., algébrique, prévision, histo) ; détection anomalies ; suggestion switch (gain −5% écarts).</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-81e8-8598-eb267218311e" class="numbered-list" start="3"><li><strong>M&amp;V Proof Engine</strong> : Génération automatique chroniques réalisés, contrôles fiabilité, export format CRE-auditables. KPI : 99% taux acceptation RTE.</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-81ad-851b-f46b65dd9ec9" class="numbered-list" start="4"><li><strong>Flex Scoring</strong> : Dashboard par site : “Flex-readiness” (score 0–100 basé historique, équipements, contrats). Aide priorisation clients.</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-8145-b73c-d61defff9ca1" class="numbered-list" start="5"><li><strong>Alerts &amp; Triggers</strong> : Notifications prix spot &lt;€0/MWh, jours PP2 signalés, pénalités écarts détectés, deadlines dépôts offres AOP.</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-8107-9942-f8966982d5a4" class="numbered-list" start="6"><li><strong>Multi-Product Orchestration</strong> : Allocation capacity sites across NEBEF/MA/Réserves/Capacité. Solver optimise cumul sans conflits.</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-8198-9ab1-f118992a7d43" class="numbered-list" start="7"><li><strong>Settlements &amp; Reporting</strong> : Reconciliation automatique payements RTE/EPEX, facturation clients, rapport annuel traçabilité.</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-81f9-bb52-e60bf4968178" class="numbered-list" start="8"><li><strong>Interop Gateway</strong> : APIs standardisées (Enedis, RTE, EPEX), protocoles (Modbus, OPC-UA, REST), conversion formats données.</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-81cb-9cc0-de848332d2ca" class="numbered-list" start="9"><li><strong>Compliance Audit Trail</strong> : Logs immuables (blockchain optional) tous ordres, mesures, déclarations. Export format légal (CRE, avocat).</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-8143-a1a4-e695c21ab837" class="numbered-list" start="10"><li><strong>Simulation Engine</strong> : Backtesting 3–5 ans : “Si j’avais soumis offre prix X, revenue aurait été Y”. Aide pricing stratégie.</li></ol></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-815c-8bdd-ef2152e81a60" class="">8 KPI Flexibilité (Dashboard)</h3></div><div style="display:contents" dir="ltr"><table id="2d96971c-72e7-8122-8aaa-d1530662499c" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-819d-bc2b-fed1ee5ab53b"><th id="[[zQ" class="simple-table-header-color simple-table-header"><strong>KPI</strong></th><th id="BOXw" class="simple-table-header-color simple-table-header"><strong>Définition</strong></th><th id="=bcb" class="simple-table-header-color simple-table-header"><strong>Cible B2B</strong></th><th id="|MZW" class="simple-table-header-color simple-table-header"><strong>Calcul</strong></th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8186-b227-ee51905cfea4"><td id="[[zQ" class=""><strong>Dispo Flex</strong></td><td id="BOXw" class="">% jours site disponible pour effacement contractualisés</td><td id="=bcb" class="">&gt;85%</td><td id="|MZW" class="">(Jours actifs / Jours totaux) × 100</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-811b-b165-ed7b39bee7bc"><td id="[[zQ" class=""><strong>Énergie Effacée</strong></td><td id="BOXw" class="">MWh réduction consommation annualisée</td><td id="=bcb" class="">&gt;1000 MWh (10 MW)</td><td id="|MZW" class="">Σ Énergie Réalisée NEBEF + MA</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-817d-821a-f50215a05723"><td id="[[zQ" class=""><strong>Valeur €/MWh</strong></td><td id="BOXw" class="">Revenu total / Énergie effacée</td><td id="=bcb" class="">&gt;€80/MWh</td><td id="|MZW" class="">(€Revenu NEBEF/MA/Cap) / MWh</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-812d-9733-d165b75afdec"><td id="[[zQ" class=""><strong>Pénalités Taux</strong></td><td id="BOXw" class="">% revenus perdus écarts M&amp;V</td><td id="=bcb" class="">&lt;5%</td><td id="|MZW" class="">(€ Pénalités / € Bruts) × 100</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8181-8651-d4168f9be729"><td id="[[zQ" class=""><strong>Confort Équipe</strong></td><td id="BOXw" class="">Indice satisfaction exploitation (survey 0–10)</td><td id="=bcb" class="">&gt;8</td><td id="|MZW" class="">NPS-like sur charge administrative</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-81a0-ba7c-db5205aca1e3"><td id="[[zQ" class=""><strong>ROI Projet</strong></td><td id="BOXw" class="">(€ Net post-coûts / € Invest initial) / N ans</td><td id="=bcb" class="">&gt;20%</td><td id="|MZW" class="">(€630k − €100k) / 8 ans ÷ €100k</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-81d8-b269-ea276c4c5986"><td id="[[zQ" class=""><strong>Lead Time Activation</strong></td><td id="BOXw" class="">Temps décision → Order GTB (minutes)</td><td id="=bcb" class="">&lt;15 min</td><td id="|MZW" class="">Timestamp RTE call → GTB receipt</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8171-beb8-effac9fdf5d1"><td id="[[zQ" class=""><strong>Grid Stability Contrib.</strong></td><td id="BOXw" class="">Score contribution qualité réseau (ex. respect ramps)</td><td id="=bcb" class="">&gt;90%</td><td id="|MZW" class="">% Tests RTE conformes / Total</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><hr id="2d96971c-72e7-81d8-9ffe-dba40b276bdf"/></div><div style="display:contents" dir="auto"><h2 id="2d96971c-72e7-8164-8cbf-fb167975ff43" class="">Calendrier Projet PMO (Cadrage à Go-Live)</h2></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-81c4-b0d1-dc09ed899943" class="">Phases 6–10 Semaines (NEBEF + Réserves léger)</h3></div><div style="display:contents" dir="auto"><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerPolicy="no-referrer"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" referrerPolicy="no-referrer"/><pre id="2d96971c-72e7-8199-85da-de3b3fb95712" class="code code-wrap"><code class="language-Plain Text" style="white-space:pre-wrap;word-break:break-all">SEMAINE 1-2 : CADRAGE &amp; AUDIT
+├─ Kick-off stakeholders (Agrég, client, GRD)
+├─ Audit sites : consommation patterns, GTB state, Linky status
+├─ RFP Agrégateur : prix, conditions, SLAs
+├─ Décision : NEBEF only vs. NEBEF + Réserves
+└─ Livrables : Feuille route, budget, risques
+
+SEMAINE 3-4 : INSTRUMENTATION &amp; DATA
+├─ Accès API Enedis : demandes, tests
+├─ Intégration GTB-Agrégateur : protocoles, VPN, authentif.
+├─ Collecte historiques 12–24 mois
+├─ Vérif. qualité data (trous, anomalies)
+└─ Livrables : Datasets validés, architecture diagram
+
+SEMAINE 5-6 : CONTRATS &amp; AGRÉ­MENT RTE
+├─ Signature Accord Participation NEBEF (RTE-Agrégateur)
+├─ Fourniture docs technique dossier agrément (Annexe 9)
+├─ Tests SI avec RTE (simulations déclarations)
+├─ Conventions GRD (si RPD)
+└─ Livrables : Contrats signés, tests validés
+
+SEMAINE 7-8 : BASELINE HOMOLOGATION
+├─ Sélection méthode baseline (défaut : rect. double ref.)
+├─ Calcul courbes références (01/01 année N)
+├─ Audit baseline par RTE (fiabilité test)
+├─ Ajustements si feedback
+└─ Livrables : Baselines approuvées RTE
+
+SEMAINE 9 : TESTS EN PRODUCTION
+├─ Déclarations test NEBEF (offres fictives J-1)
+├─ Simulations activations (GTB pilotage)
+├─ Contrôles mesure (chroniques réalisées)
+├─ Dress rehearsal paiements
+└─ Livrables : Procédures op. finalisées
+
+SEMAINE 10 : GO-LIVE &amp; RUN
+├─ Lancement déc­larations NEBEF réelles (J-1 9h30)
+├─ Monitoring 24/7 (alertes, escalades)
+├─ Premiers paiements M+2
+├─ Support clients incidents
+└─ Livrables : Dashboard analytics, revenue first month</code></pre></div><div style="display:contents" dir="auto"><hr id="2d96971c-72e7-8147-8c0a-e450f955e3f0"/></div><div style="display:contents" dir="auto"><h2 id="2d96971c-72e7-81c5-b7e7-e81ee7ef311c" class="">Synthèse Stratégique &amp; Recommandations B2B</h2></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-817e-9d32-ee58b0687b6a" class="">Hiérarchie Mécanismes (Valeur vs. Complexité)</h3></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-8197-9b48-cbcb6a6998d0" class="">Pour <strong>portfolio 10–50 MW, multi-sites tertiaire/industrie</strong> (cas “Factory 38” SIA Partners)[artifact:] :</p></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-81fd-9706-c5359f1a9ffa" class=""><strong>Tier 1 – Cœur du revenu (60–70%)</strong> :</p></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-81aa-bc62-e5437d411f9f" class="bulleted-list"><li style="list-style-type:disc">🎯 <strong>NEBEF</strong> : Simplicité contractuelle, accès agrégateurs, activations fréquentes (tempêtes, pics prix). <strong>Revenu attendu 40–50% total.</strong></li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8132-bef6-da1e7b118643" class="bulleted-list"><li style="list-style-type:disc">Prime source : Barèmes forfaitaires régulés (moins volatilité prix spot).</li></ul></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-8184-b375-e90f7417743e" class=""><strong>Tier 2 – Stabilité &amp; Long terme (25–35%)</strong> :</p></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8141-a8fc-c86043281323" class="bulleted-list"><li style="list-style-type:disc">🎯 <strong>Réserves (aFRR/mFRR)</strong> : Prime capacité fixe même sans activation, engagement pluriannuel. <strong>Revenu 25–30%.</strong></li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-810f-b06d-f0524a33072a" class="bulleted-list"><li style="list-style-type:disc">Condition : Instrumentation téléconduite RTE (~€100k).</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8111-b238-c12b7cfb0ce6" class="bulleted-list"><li style="list-style-type:disc"><strong>Capacité (dès nov. 2026)</strong> : Enchères AL-1 (flexibilités), revenu €250–350k (50 MW). À intégrer roadmap.</li></ul></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-817d-b585-e15bdfe5dfa7" class=""><strong>Tier 3 – Optimisation &amp; Risques (5–10%)</strong> :</p></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8172-aef2-d4954625552b" class="bulleted-list"><li style="list-style-type:disc">💡 <strong>Implicite (arbitrage prix)</strong> : Hors engagement, économies sur tarifs dynamiques.</li></ul></div><div style="display:contents" dir="auto"><ul id="2d96971c-72e7-8103-8544-e2a40bdaf6a4" class="bulleted-list"><li style="list-style-type:disc">🚨 <strong>MA obligatoire</strong> (EnR &gt;10 MW) : Dépôt obligatoire hausse + baisse, mais revenu baisse faible (sinon prix exorbitants).</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-8152-af57-da2ee9b9dc9a" class="">Blocages &amp; Leviers de Déverrouillage</h3></div><div style="display:contents" dir="ltr"><table id="2d96971c-72e7-8169-aefd-d29d6400eeff" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-810a-8f02-dc3b0931e605"><th id="VqP&gt;" class="simple-table-header-color simple-table-header"><strong>Blocage</strong></th><th id="Qg=Z" class="simple-table-header-color simple-table-header"><strong>Impact</strong></th><th id="^Gmn" class="simple-table-header-color simple-table-header"><strong>Levier</strong></th><th id="[bAl" class="simple-table-header-color simple-table-header"><strong>Timeline</strong></th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8142-b944-dfb125c1e9f0"><td id="VqP&gt;" class=""><strong>Baseline complexe</strong> (&gt;30% écarts contestés)</td><td id="Qg=Z" class="">−€50k revenue/an</td><td id="^Gmn" class="">Homologation prévision/histo (RTE)</td><td id="[bAl" class="">3–4 mois</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-81a3-b5c5-dd30844e0365"><td id="VqP&gt;" class=""><strong>Linky/API Enedis lente</strong> (&gt;10 j accès)</td><td id="Qg=Z" class="">Retard go-live 2 sem.</td><td id="^Gmn" class="">Lever pré-audit auprès Enedis</td><td id="[bAl" class="">Immédiat</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8176-9d6f-d519b05525a9"><td id="VqP&gt;" class=""><strong>Agrégateur non-agréé</strong> (process RTE)</td><td id="Qg=Z" class="">Blocage 8 sem.</td><td id="^Gmn" class="">Sélectionner agrégateur certifié CRE</td><td id="[bAl" class="">Immédiat</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-81dc-8801-f54cb5762283"><td id="VqP&gt;" class=""><strong>Téléconduite RTE manquante</strong> (réserves)</td><td id="Qg=Z" class="">Loss €350k/an</td><td id="^Gmn" class="">Instrumentation (€100k capex)</td><td id="[bAl" class="">3–6 mois</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-81f0-ab44-e2c5c1977d28"><td id="VqP&gt;" class=""><strong>EnR &gt;10 MW obligation MA</strong></td><td id="Qg=Z" class="">Dépôt quotidien, coûts compliance</td><td id="^Gmn" class="">Automation robots offres (bot RTE)</td><td id="[bAl" class="">2–3 mois post-déc</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d96971c-72e7-8150-a9d5-ffcf3422b934"><td id="VqP&gt;" class=""><strong>Volatilité prix SPOT</strong> (NEBEF)</td><td id="Qg=Z" class="">Écarts ±€30–50/MWh</td><td id="^Gmn" class="">Couverture prix (fonds assurance)</td><td id="[bAl" class="">Permanent</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><h3 id="2d96971c-72e7-81c4-9bda-e3b71c87f471" class="">Roadmap 2025–2026</h3></div><div style="display:contents" dir="auto"><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerPolicy="no-referrer"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" referrerPolicy="no-referrer"/><pre id="2d96971c-72e7-8137-b378-f0ceebd8f75c" class="code code-wrap"><code class="language-Plain Text" style="white-space:pre-wrap;word-break:break-all">2025 Q1 : Lancer NEBEF (maintenantstable NEBEF 3.5, pas 15 min live)
+         + Validation agrégateurs CRE (lister partenaires)
+         + Préparation Réserves (audit instrumen. si &gt;5 MW)
+
+2025 Q2–Q3 : Onboarding clients NEBEF pilotes (10–30 MW)
+            + Collecte données historiques 2023–2025
+            + Tests baseline 3–4 méthodes
+
+2025 Q4 : Déploiement Réserves aFRR (prime fixe stable)
+         + Obligation MA pour EnR (démarrage dépôts 01/01/2026)
+         + Publication CRE courbes Capacité (AL-4 pour livraison 2027)
+
+2026 Q1 : Transition ancien mécanisme capacité → nouveau (nov. déc 2025)
+         + Participation AL-1 flexibilités (fin-déc 2025, enchère)
+         + Scaling NEBEF (target 100+ MW agrégés)
+
+2026 Q2–Q3 : Retours d&#x27;expérience NEBEF baseline (ajustements si besoin)
+            + Réserves RR-RC montée en charge (nouveaux volumes RTE)
+
+2026 Q4 : Bilan année 1 : revenus réalisés, pénalités, opportunités
+         + Planification 2027 : nouvelles zones flex locales Enedis (REFLEX)</code></pre></div><div style="display:contents" dir="auto"><hr id="2d96971c-72e7-8110-8b0e-efe625fdf2d4"/></div><div style="display:contents" dir="auto"><h2 id="2d96971c-72e7-81a8-ba25-dfb602e985ee" class="">Conclusion</h2></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-81fc-ace0-d9fc7c9220a2" class="">La flexibilité électrique française offre <strong>revenus durables et régulés (€300–800k/an, 10–50 MW)</strong> via trois piliers : <strong>NEBEF</strong> (court terme, accès facile via agrégateurs), <strong>Réserves</strong> (stabilité prime fixe), <strong>Capacité</strong> (long terme, nouveau mécanisme 2026). <strong>Multi-sites B2B via agrégateurs</strong> = modèle scalable sans équipes IT dédiées client.</p></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-81dc-af50-ea679122d913" class=""><strong>Succès conditionné</strong> à : baselines solides, data Enedis fluide, contrats clairs clients (flexibilité non-pénalisante), instrumentation (GTB/API). <strong>ROI réaliste 18–24 mois</strong> ; revenu net 15–18% margins post-coûts.</p></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-81e7-91af-fba57fedd3fc" class=""><strong>Priorité 2025 : Déployer NEBEF NOW</strong> (règles stables, revenue immédiat) ; préparer Réserves/Capacité 2026–2027 en parallèle.</p></div><div style="display:contents" dir="auto"><hr id="2d96971c-72e7-8189-9714-f7f9616bb51c"/></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-8176-9f9d-e11a118b09e2" class=""><strong>Dernière mise à jour : 29 décembre 2025, 12:49 CET</strong><a href="about:blank#fn11">11</a><a href="about:blank#fn12">12</a><a href="about:blank#fn13">13</a><a href="about:blank#fn14">14</a><a href="about:blank#fn15">15</a><a href="about:blank#fn16">16</a><a href="about:blank#fn17">17</a><a href="about:blank#fn18">18</a><a href="about:blank#fn19">19</a><a href="about:blank#fn20">20</a><a href="about:blank#fn21">21</a><a href="about:blank#fn22">22</a><a href="about:blank#fn23">23</a><a href="about:blank#fn24">24</a><a href="about:blank#fn25">25</a><a href="about:blank#fn26">26</a><a href="about:blank#fn27">27</a><a href="about:blank#fn28">28</a><a href="about:blank#fn29">29</a><a href="about:blank#fn30">30</a><a href="about:blank#fn31">31</a><a href="about:blank#fn32">32</a><a href="about:blank#fn33">33</a><a href="about:blank#fn34">34</a><a href="about:blank#fn35">35</a><a href="about:blank#fn36">36</a><a href="about:blank#fn37">37</a><a href="about:blank#fn38">38</a><a href="about:blank#fn39">39</a><a href="about:blank#fn40">40</a><a href="about:blank#fn41">41</a><a href="about:blank#fn42">42</a><a href="about:blank#fn43">43</a><a href="about:blank#fn44">44</a><a href="about:blank#fn45">45</a><a href="about:blank#fn46">46</a><a href="about:blank#fn47">47</a><a href="about:blank#fn48">48</a><a href="about:blank#fn49">49</a><a href="about:blank#fn50">50</a><a href="about:blank#fn51">51</a><a href="about:blank#fn52">52</a><a href="about:blank#fn53">53</a></p></div><div style="display:contents" dir="auto"><p id="2d96971c-72e7-81e5-92e1-dc8a0d5344c3" class="">⁂</p></div><div style="display:contents" dir="auto"><hr id="2d96971c-72e7-81a7-b183-f2c8a8ad0eb2"/></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-81c1-81b2-d0318b2e2e3a" class="numbered-list" start="1"><li>https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000047949331<a href="about:blank#fnref1">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-817a-a2a1-d0ef16a68140" class="numbered-list" start="2"><li>https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000047949331<a href="about:blank#fnref2">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-81a4-92b2-dbf7256fa203" class="numbered-list" start="3"><li>https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000047949331<a href="about:blank#fnref3">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-81eb-9500-e6acf5542251" class="numbered-list" start="4"><li>https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000047949331<a href="about:blank#fnref4">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-8111-9da1-cc2be2463a2b" class="numbered-list" start="5"><li>https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000047949331<a href="about:blank#fnref5">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-8178-b5f8-d0753e1abdf4" class="numbered-list" start="6"><li>https://www.services-rte.com/fr/decouvrez-nos-offres-de-services/repondre-a-lappel-doffres-reserv.html<a href="about:blank#fnref6">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-81f2-8f10-de90f6f9ef67" class="numbered-list" start="7"><li>https://greensolver.net/fr/mecanisme-dajustement-transformer-une-obligation-reglementaire-en-opportunite/<a href="about:blank#fnref7">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-8122-86d0-d322ffceb735" class="numbered-list" start="8"><li>https://www.cre.fr/fileadmin/Documents/Deliberations/import/200722_2020-185_Approbation_Regles_Annexe_RapportAccompagnementSaisine.pdf<a href="about:blank#fnref8">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-81cc-978d-e157df654328" class="numbered-list" start="9"><li>https://greensolver.net/fr/mecanisme-dajustement-transformer-une-obligation-reglementaire-en-opportunite/<a href="about:blank#fnref9">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-8165-8f8b-e837f7428f7d" class="numbered-list" start="10"><li>https://greensolver.net/fr/mecanisme-dajustement-transformer-une-obligation-reglementaire-en-opportunite/<a href="about:blank#fnref10">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-8127-ba1d-df1be29b736d" class="numbered-list" start="11"><li>https://www.creg.be/sites/default/files/assets/Consult/2018/1808/PRD1808PropositionElia.pdf<a href="about:blank#fnref11">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-813c-9562-e62488a06dd7" class="numbered-list" start="12"><li>https://www.services-rte.com/files/live/sites/services-rte/files/documentsLibrary/2023-09-01_REGLES_NEBEF_6130_fr<a href="about:blank#fnref12">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-81e6-9a5c-ecabe80adee6" class="numbered-list" start="13"><li>https://hayaenergy.com/fr/blog-2025-nouveau-mecanisme-de-capacite-en-france/<a href="about:blank#fnref13">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-81a2-8eb2-c138f23891cd" class="numbered-list" start="14"><li>https://www.services-rte.com/files/live/sites/services-rte/files/pdf/flexibilites/2021_02_08%20-%20QR-AO%20Flexibilites.pdf<a href="about:blank#fnref14">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-8147-8602-f96393fa87f5" class="numbered-list" start="15"><li>https://environnement.bfc.cci.fr/duplicated-guide-pratique-trackdechets-3556/<a href="about:blank#fnref15">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-814e-80df-f54ac56930e7" class="numbered-list" start="16"><li>https://www.cre.fr/fileadmin/Documents/Deliberations/2025/251016_2025-236_Avis_decret_nouveau_mecanisme_capacite.pdf<a href="about:blank#fnref16">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-81e4-b828-d7d6181ef401" class="numbered-list" start="17"><li>https://www.sdec-energie.fr/sites/sdec.createurdimage.fr/files/pdf/enedis_presentation_felxibilite_-_atelier_flexibilite_electrique_08122023.pdf<a href="about:blank#fnref17">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-81cb-a6e0-e060c51f024b" class="numbered-list" start="18"><li>https://www.enedis.fr/jaccede-mes-donnees-de-mesure<a href="about:blank#fnref18">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-81db-8437-f3b4406132aa" class="numbered-list" start="19"><li>https://www.collectifenergie.com/optimisation-conso/marche-capacite-securite-approvisionnement-electricite/<a href="about:blank#fnref19">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-810c-8ed8-f938ad8e3fc8" class="numbered-list" start="20"><li>https://ufe-electricite.fr/flexibilites-systeme-electrique-reseaux/<a href="about:blank#fnref20">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-8181-ad9c-f6bfa9423e11" class="numbered-list" start="21"><li>https://www.enoptea.fr/articles/quest-ce-quune-courbe-de-charge-et-comment-la-lire/<a href="about:blank#fnref21">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-814a-839d-fdce39ce6d82" class="numbered-list" start="22"><li>https://www.seban-associes.avocat.fr/avis-de-la-commission-de-regulation-de-lenergie-sur-le-projet-de-decret-relatif-au-futur-mecanisme-de-capacite/<a href="about:blank#fnref22">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-8182-a761-c80000fd8ad1" class="numbered-list" start="23"><li>https://www.services-rte.com/files/live/sites/services-rte/files/documentsLibrary/RM-2-MECANISME_D_AJUSTEMENT-V01-20240401_3550_fr<a href="about:blank#fnref23">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-81d4-8efa-c44325993cdf" class="numbered-list" start="24"><li>https://www.epexspot.com/sites/default/files/download_center_files/Q&amp;A%20Prix%20n%C3%A9gatifs.pdf<a href="about:blank#fnref24">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-81b1-92be-c8f11f7727ad" class="numbered-list" start="25"><li>https://www.services-rte.com/fr/decouvrez-nos-offres-de-services/participer-au-mecanisme-d-ajustement.html<a href="about:blank#fnref25">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-8123-9181-c70e102589e6" class="numbered-list" start="26"><li>https://www.placedesenergies.com/professionnels/actualites/flexibilite-energetique-un-atout-industriel<a href="about:blank#fnref26">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-8148-a11a-e0ec68dba55b" class="numbered-list" start="27"><li>https://www.data.gouv.fr/reuses/evolution-des-heures-a-prix-de-lelectricite-negatif-et-impact-sur-les-heures-creuses<a href="about:blank#fnref27">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-816c-b262-eb67f6b1f802" class="numbered-list" start="28"><li>https://www.twobirds.com/fr/insights/2025/france/nouvelles-règles-sur-les-prix-négatifs-de-l’électricité<a href="about:blank#fnref28">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-81a2-82ee-c57cb04f4fa2" class="numbered-list" start="29"><li>https://www.optima-energie.fr/blog/actualites/epex-spot/<a href="about:blank#fnref29">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-81ff-9f3c-ec234e924700" class="numbered-list" start="30"><li>https://www.cre.fr/electricite/reseaux-delectricite/services-systeme-et-mecanisme-dajustement.html<a href="about:blank#fnref30">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-81b3-889e-eb8cd4a685fd" class="numbered-list" start="31"><li>https://www.services-rte.com/files/live/sites/services-rte/files/documentsLibrary/2025-01-01_CONDITIONS_GENERALES_CONTRAT_AOE_1540_en<a href="about:blank#fnref31">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-8120-a229-e8abbbfc5e06" class="numbered-list" start="32"><li>https://www.capfile.com/capfile-api-accedez-aux-donnees-enedis-simplement-et-en-toute-securite/<a href="about:blank#fnref32">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-81ea-a0ea-fa8d1f1616c1" class="numbered-list" start="33"><li>https://www.sia-partners.com/system/files/document_download/file/2024-09/2024_DECRYPTAGE_Offres%20des%20agr%C3%A9gateurs%20aux%20consommateurs%20-%20Volet%20II_0.pdf<a href="about:blank#fnref33">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-81a1-ae82-c47f716df2d0" class="numbered-list" start="34"><li>https://www.services-rte.com/fr/decouvrez-nos-offres-de-services/baremes-versement-nebef.html<a href="about:blank#fnref34">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-8182-8399-d9e4278012d0" class="numbered-list" start="35"><li>https://techblog.deepki.com/courbes-de-charge-en-temps-reel/<a href="about:blank#fnref35">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-81ed-bcd5-d47e8f235ed4" class="numbered-list" start="36"><li>https://www.cre.fr/fileadmin/Documents/Deliberations/import/Rapport_accompagnement_regles_NEBEF_3_3.pdf<a href="about:blank#fnref36">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-81f0-8fa5-f20ca947de72" class="numbered-list" start="37"><li>https://www.cre.fr/fileadmin/Documents/Deliberations/2024/241212_2024-227_Regles_Services_Systeme_Annexe3.pdf<a href="about:blank#fnref37">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-8106-9814-cd1cfcfd9193" class="numbered-list" start="38"><li>https://data.enedis.fr/pages/courbes-de-charge/<a href="about:blank#fnref38">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-8147-9d03-e0105add2d6c" class="numbered-list" start="39"><li>https://www.enedis.fr/mecanisme-nebef<a href="about:blank#fnref39">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-8142-bc62-c8abecd01e84" class="numbered-list" start="40"><li>https://www.ecologie.gouv.fr/sites/default/files/documents/20200422 Programmation pluriannuelle de l’énergie.pdf<a href="about:blank#fnref40">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-8195-aaa4-fab188dab497" class="numbered-list" start="41"><li>https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000051587195<a href="about:blank#fnref41">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-81f7-9e8a-ed174c73c224" class="numbered-list" start="42"><li>https://www.legifrance.gouv.fr/jorf/article_jo/JORFARTI000029926339<a href="about:blank#fnref42">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-81b0-9cf2-dd3ad5bf5684" class="numbered-list" start="43"><li>https://www.cre.fr/fileadmin/Documents/Deliberations/2025/250122_2025-27_Regles_RR-RC.pdf<a href="about:blank#fnref43">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-81b7-8da0-ee1f41558fe2" class="numbered-list" start="44"><li>https://www.enedis.fr/sites/default/files/documents/pdf/fiches-pedagogiques-du-mecanisme-de-capacite.pdf<a href="about:blank#fnref44">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-81db-8c0d-e1e8d0fff817" class="numbered-list" start="45"><li>https://www.cre.fr/fileadmin/Documents/Deliberations/2025/250204_2025-39_TURPE_7_HTB.pdf<a href="about:blank#fnref45">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-8108-a5b4-e57bed4a5087" class="numbered-list" start="46"><li>https://www.omnegy.com/capacite-deffacement/<a href="about:blank#fnref46">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-812a-bdd3-cb98a5554f3e" class="numbered-list" start="47"><li>https://www.services-rte.com/fr/visualisez-les-donnees-publiees-par-rte/effacements-de-consommation-nebef.html<a href="about:blank#fnref47">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-812d-8b7d-d00708cfedbf" class="numbered-list" start="48"><li>https://www.cre.fr/fileadmin/Documents/Deliberations/2025/250313_2025-78_Post-CSE_TURPE_7_HTA-BT.pdf<a href="about:blank#fnref48">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-8146-b139-d581a5985260" class="numbered-list" start="49"><li>https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000051070893<a href="about:blank#fnref49">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-8112-9af1-c8cc3f25792f" class="numbered-list" start="50"><li>https://enerdigit.fr/nebef/<a href="about:blank#fnref50">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-8135-9809-d0635afb7c49" class="numbered-list" start="51"><li>https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000050823761<a href="about:blank#fnref51">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-814f-be8b-e754b1fd9130" class="numbered-list" start="52"><li>https://www.services-rte.com/fr/decouvrez-nos-offres-de-services/valorisez-des-effacements-nebef.html<a href="about:blank#fnref52">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d96971c-72e7-81c7-961b-d11a2456ae45" class="numbered-list" start="53"><li>https://www.cre.fr/documents/deliberations.html<a href="about:blank#fnref53">↩︎</a></li></ol></div><div style="display:contents" dir="ltr"><figure id="2f06971c-72e7-80ff-a1fc-d319c3386a85" class="link-to-page"><a href="ANALYSE%20STRATEGIQUE%20NEBCO%202f06971c72e780ffa1fcd319c3386a85.html">ANALYSE STRATEGIQUE NEBCO</a></figure></div></div></article><span class="sans" style="font-size:14px;padding-top:2em"></span></body></html>

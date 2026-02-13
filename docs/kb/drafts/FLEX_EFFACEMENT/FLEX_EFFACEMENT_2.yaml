@@ -1,0 +1,37 @@
+id: FLEX_EFFACEMENT_2
+type: knowledge
+domain: usages
+title: 1.2 Éligibilité
+summary: 'Actifs : Sites de soutirage (RPT/RPD) capables d’effacer ≥100 kW par bloc.
+  Tout secteur (tertiaire multi-sites, industrie, stockage, IRVE), sauf sites avec
+  production auto-consommation obligatoire ou ...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Actifs : Sites de soutirage (RPT/RPD) capables d’effacer ≥100 kW par\
+  \ bloc. Tout secteur (tertiaire multi-sites, industrie, stockage, IRVE), sauf sites\
+  \ avec production auto-consommation obligatoire ou primes d’énergie renouvelable\
+  \ (sauf détection déclaration EIF spécifique). 2 \n\nAgrégateur : Personne morale,\
+  \ accord participation NEBEF signé avec RTE, agrément technique (capacité, fiabilité).\
+  \ Durée homologation = 1–3 ans selon fiabilité (norme à 80%). Prérequis : responsable\
+  \ d’équilibre (directement ou via tiers). \n\nSites : Accord écrit du titulaire\
+  \ CAR (Contrat Accès Réseau) ; télérelevés ou profilés (Linky + API) ; comptage\
+  \ à la demande possible (sous-mesure, expérimental). Confidentialité respectée (RGPD)."
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: 1.2 Éligibilité
+  anchor: '#12-ligibilit'
+  excerpt_short: 'Actifs : Sites de soutirage (RPT/RPD) capables d’effacer ≥100 kW
+    par bloc. Tout secteur (tertiaire m...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

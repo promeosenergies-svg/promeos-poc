@@ -1,0 +1,33 @@
+id: LOI_APER_2
+type: knowledge
+domain: usages
+title: Critères identification ZAENR (Article L141-5-3 code énergie) 2
+summary: "Les communes doivent respecter principes (L141-5-3 I) : \n- Cohérence schémas\
+  \ aménagement territoire (SCoT, PLU) \n- Préservation biodiversité, paysages, patrimoine\
+  \ (zones Natura 2000, sites protégés = ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Les communes doivent respecter principes (L141-5-3 I) : \n- Cohérence\
+  \ schémas aménagement territoire (SCoT, PLU) \n- Préservation biodiversité, paysages,\
+  \ patrimoine (zones Natura 2000, sites protégés = avis gestionnaire) \n- Valorisation\
+  \ zones activité économique (L318-8-2 code urbanisme) \n- Diversification mix énergétique\
+  \ régional (priorités CRE) \n- Enjeux conflits usage (agricole, forestier, résidentiel)"
+logic: null
+sources:
+- doc_id: LOI_APER
+  label: Loi APER - Acceleration Production Energies Renouvelables
+  section: Critères identification ZAENR (Article L141-5-3 code énergie) 2
+  anchor: '#critres-identification-zaenr-article-l141-5-3-code-nergie-2'
+  excerpt_short: "Les communes doivent respecter principes (L141-5-3 I) : \n- Cohérence\
+    \ schémas aménagement territoire ..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,31 @@
+id: LEVIERS_MARCHE_2025_22
+type: knowledge
+domain: acc
+title: G.1 – Positionnement “Micro-fournisseur Local Augmenté”
+summary: "Vision : PROMEOS = unique plateforme qui combine fournisseur local digital\
+  \ (ACC ops) + conformité multi-énergie (tertiaire) + orchestrateur flexibilité .\
+  \ \n\nTrois Packages Progressifs :"
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Vision : PROMEOS = unique plateforme qui combine fournisseur local digital\
+  \ (ACC ops) + conformité multi-énergie (tertiaire) + orchestrateur flexibilité .\
+  \ \n\nTrois Packages Progressifs :"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: G.1 – Positionnement “Micro-fournisseur Local Augmenté”
+  anchor: '#g1-positionnement-micro-fournisseur-local-augment'
+  excerpt_short: 'Vision : PROMEOS = unique plateforme qui combine fournisseur local
+    digital (ACC ops) + conformité mu...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

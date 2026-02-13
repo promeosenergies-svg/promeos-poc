@@ -1,0 +1,41 @@
+id: FLEX_EFFACEMENT_1
+type: knowledge
+domain: usages
+title: 1.1 Comment ça marche
+summary: NEBEF est un mécanisme réglementé d’effacement explicite permettant la valorisation
+  de la réduction de consommation (ou augmentation chez producteurs) sur le marché
+  SPOT (EPEX) et le mécanisme d’ajust...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "NEBEF est un mécanisme réglementé d’effacement explicite permettant la\
+  \ valorisation de la réduction de consommation (ou augmentation chez producteurs)\
+  \ sur le marché SPOT (EPEX) et le mécanisme d’ajustement . RTE gère centralement\
+  \ les règles ; Opérateurs d’Effacement (OE) agrès par RTE contractualisent avec\
+  \ consommateurs ; déclaration des effacements en J-1 9h30–22h ou Intraday ; RTE\
+  \ retient les offres les plus compétitives ; paiement aux fournisseurs via barèmes\
+  \ forfaitaires (modèle régulé) ou gré-à-gré. 1 \n\nFlux type multi-sites B2B : \n\
+  - Agrégateur signe accord participation NEBEF + agrément technique RTE. \n- Agrégateur\
+  \ contractualise avec sites (GTB, HVAC, froid, industriels). \n- Chaque jour, agrégateur\
+  \ déclare “bloc d’effacement” (capacité + site) à RTE. \n- RTE valide, retient offres\
+  \ ; activation J (15 min min., rythme 15/45 possible). \n- Mesure via baseline (courbe\
+  \ référence = consommation sans effacement) vs. courbe réelle. \n- RTE calcule énergie\
+  \ effacée ; versement Fournisseur = barème forfaitaire × énergie."
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: 1.1 Comment ça marche
+  anchor: '#11-comment-a-marche'
+  excerpt_short: NEBEF est un mécanisme réglementé d’effacement explicite permettant
+    la valorisation de la réduction ...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

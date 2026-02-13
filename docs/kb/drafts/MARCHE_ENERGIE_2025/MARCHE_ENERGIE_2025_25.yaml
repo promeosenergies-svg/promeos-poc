@@ -1,0 +1,42 @@
+id: MARCHE_ENERGIE_2025_25
+type: rule
+domain: usages
+title: CONCLUSION
+summary: 2025-2026 marque un tournant critique pour la stratégie énergétique PROMEOS.
+  La baisse prix électricité offre fenêtre de consolidation (réductions factures =
+  marge opéra libérée). Parallèlement, fin A...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "2025-2026 marque un tournant critique pour la stratégie énergétique PROMEOS.\
+  \ La baisse prix électricité offre fenêtre de consolidation (réductions factures\
+  \ = marge opéra libérée). Parallèlement, fin ARENH exige repositionnement urgent\
+  \ : fournisseurs alternatifs perdent accès nucléaire régulé, marché bascule à équilibre\
+  \ VNU + PPA + volatilité EnRi allemande. \n\nAction clé immédiate : bloquer 70%\
+  \ consommation électricité en contrats long terme (PPA ou moyen terme 3-5 ans) AVANT\
+  \ fin ARENH (31 décembre 2025). Délai critique : appels offres fournisseurs janvier-février\
+  \ 2026. Après décembre 2025, prix structurellement plus élevés (+28€/MWh base nucléaire).\
+  \ \n\nFenêtre rénovation décret tertiaire : aligner rénovation phases 1-2 (2026-2028)\
+  \ avec baisse prix 2025 et financements CEE/MaPrimeRénov. ROI accéléré, prime valeur\
+  \ patrimoniale, conformité réglementaire 2030 sécurisée. \n\nSurveillance : VNU\
+  \ seuils (H1 2026), BACS calendrier, MaPrimeRénov budgets (loi rectificative attendue\
+  \ Q1 2026). \n\nDocument préparé janvier 2026 | Analyse marchés spot France/Europe,\
+  \ législation VNU/ARENH, décret tertiaire"
+logic: null
+sources:
+- doc_id: MARCHE_ENERGIE_2025
+  label: Analyse marche energie France-Europe 2025
+  section: CONCLUSION
+  anchor: '#conclusion'
+  excerpt_short: 2025-2026 marque un tournant critique pour la stratégie énergétique
+    PROMEOS. La baisse prix électric...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,34 @@
+id: POST_ARENH_2026_5
+type: rule
+domain: acc
+title: Seuil d’Activation et Report
+summary: Un mécanisme de seuil minimal protège le système contre les coûts administratifs
+  des micropaiements. Si le tarif unitaire proposé par la CRE est inférieur ou égal
+  à 1 €/MWh , aucune minoration n’est a...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: Un mécanisme de seuil minimal protège le système contre les coûts administratifs
+  des micropaiements. Si le tarif unitaire proposé par la CRE est inférieur ou égal
+  à 1 €/MWh , aucune minoration n’est appliquée et le montant correspondant est reporté
+  à l’année civile suivante. Cette clause de prudence évite une fragmentation administrative
+  excessive et favorise l’accumulation de montants redistributifs lors de périodes
+  de prix effectivement élevés. 18
+logic: null
+sources:
+- doc_id: POST_ARENH_2026
+  label: Post-ARENH 2026
+  section: Seuil d’Activation et Report
+  anchor: '#seuil-dactivation-et-report'
+  excerpt_short: Un mécanisme de seuil minimal protège le système contre les coûts
+    administratifs des micropaiements....
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

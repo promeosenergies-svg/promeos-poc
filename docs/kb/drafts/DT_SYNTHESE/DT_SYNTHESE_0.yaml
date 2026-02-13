@@ -1,0 +1,34 @@
+id: DT_SYNTHESE_0
+type: rule
+domain: reglementaire
+title: RÉSUMÉ EXÉCUTIF
+summary: Le décret tertiaire franchit un cap décisif en 2025 avec la finalisation
+  des cadres réglementaires. L’arrêté Valeurs Absolues VI (septembre 2025) et les
+  améliorations de la plateforme OPERAT offrent d...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: Le décret tertiaire franchit un cap décisif en 2025 avec la finalisation
+  des cadres réglementaires. L’arrêté Valeurs Absolues VI (septembre 2025) et les
+  améliorations de la plateforme OPERAT offrent désormais une certitude complète sur
+  les objectifs à atteindre. Pour PROMEOS—opérateur immobilier multi-sites—cette clarification
+  crée une fenêtre critique pour planifier la transition énergétique avant l’échéance
+  majeure de 2030.
+logic: null
+sources:
+- doc_id: DT_SYNTHESE
+  label: Decret Tertiaire - Synthese PROMEOS
+  section: RÉSUMÉ EXÉCUTIF
+  anchor: '#rsum-excutif'
+  excerpt_short: Le décret tertiaire franchit un cap décisif en 2025 avec la finalisation
+    des cadres réglementaires. ...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

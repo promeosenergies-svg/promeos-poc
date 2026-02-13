@@ -23,7 +23,7 @@ const PRIORITE_OPTIONS = [
 
 const STATUT_OPTIONS = [
   { value: 'backlog', label: 'Backlog' },
-  { value: 'planned', label: 'Planifie' },
+  { value: 'planned', label: 'Planifiee' },
   { value: 'in_progress', label: 'En cours' },
 ];
 
@@ -96,6 +96,12 @@ export default function CreateActionModal({ open, onClose, onSave, defaultSite =
           <Input label="Echeance" type="date" value={form.due_date} onChange={(e) => handleChange('due_date', e.target.value)} />
         </div>
         <Input label="Responsable" placeholder="Jean Dupont" value={form.owner} onChange={(e) => handleChange('owner', e.target.value)} />
+        {form.obligation_code && (
+          <div className="p-3 bg-blue-50 rounded-lg">
+            <p className="text-xs font-semibold text-blue-600 uppercase mb-0.5">Obligation liee</p>
+            <p className="text-sm text-blue-800 font-medium">{form.obligation_code}</p>
+          </div>
+        )}
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-gray-700">Description</label>
           <textarea

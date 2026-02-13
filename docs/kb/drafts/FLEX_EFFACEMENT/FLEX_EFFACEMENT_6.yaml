@@ -1,0 +1,39 @@
+id: FLEX_EFFACEMENT_6
+type: rule
+domain: usages
+title: 1.6 Contraintes & Pénalités
+summary: "Pénalités Qualification (Profilés) [Article 8.6 NEBEF] : 5 \n- Avertissement\
+  \ simple (qualité <80%, correction demandée). \n- Avertissement + contrôles renforcés\
+  \ (défaillance récidive). \n- Avertissement ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Pénalités Qualification (Profilés) [Article 8.6 NEBEF] : 5 \n- Avertissement\
+  \ simple (qualité <80%, correction demandée). \n- Avertissement + contrôles renforcés\
+  \ (défaillance récidive). \n- Avertissement préalable retrait (3ème manquement)\
+  \ → retrait qualification 3 mois (éligibilité à la baisse). \n\nNon-paiement : Accord\
+  \ suspension (défaut >20j), résiliation (défaut persistant), appel garantie bancaire.\
+  \ \n\nContrôle du Réalisé (Article 7.3-7.4) : \n- Écart report >30% >2/6 mois →\
+  \ reports ignorés 3 mois suivants. \n- Faux déclaration (bloc maquillé) → pénalité\
+  \ administrative CRE (nullité contrat secteur). \n\nRisques Opérationnels : \n-\
+  \ Baseline contestée : refus paiement si méthode défaillante. \n- Indisponibilité\
+  \ GTB : activation échouée = non-rémunération. \n- Conformité électrique : disjonction\
+  \ si sécurité compromise."
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: 1.6 Contraintes & Pénalités
+  anchor: '#16-contraintes-pnalits'
+  excerpt_short: "Pénalités Qualification (Profilés) [Article 8.6 NEBEF] : 5 \n- Avertissement\
+    \ simple (qualité <80%, co..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

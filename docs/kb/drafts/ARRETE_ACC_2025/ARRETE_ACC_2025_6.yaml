@@ -1,0 +1,37 @@
+id: ARRETE_ACC_2025_6
+type: knowledge
+domain: acc
+title: 2.3 Dérogation pour Services d’Incendie et de Secours (SIS) — Innovation du
+  2 mai 2025
+summary: Bien que non explicitement mentionnée dans l’arrêté du 21 février, cette
+  dérogation a été mise en œuvre effectivement le 2 mai 2025 via un arrêté complémentaire.
+  Elle constitue une simplification maje...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Bien que non explicitement mentionnée dans l’arrêté du 21 février, cette\
+  \ dérogation a été mise en œuvre effectivement le 2 mai 2025 via un arrêté complémentaire.\
+  \ Elle constitue une simplification majeure : 16 \n- Périmètre étendu automatiquement\
+  \ à 20 km sans demande ministérielle préalable \n- Bénéficiaires: SDIS, STIS, services\
+  \ locaux d’incendie et de secours, services militaires (Paris, Marseille) 17 \n\
+  - Avantage procédural: Accélération du lancement des projets, applicabilité rétroactive\
+  \ aux opérations existantes souhaitant s’agrandir 18"
+logic: null
+sources:
+- doc_id: ARRETE_ACC_2025
+  label: Arrete 21 fevrier 2025 - ACC 5MW/10MW
+  section: 2.3 Dérogation pour Services d’Incendie et de Secours (SIS) — Innovation
+    du 2 mai 2025
+  anchor: '#23-drogation-pour-services-dincendie-et-de-secours-sis-innovation-du-2-mai-2025'
+  excerpt_short: Bien que non explicitement mentionnée dans l’arrêté du 21 février,
+    cette dérogation a été mise en œu...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

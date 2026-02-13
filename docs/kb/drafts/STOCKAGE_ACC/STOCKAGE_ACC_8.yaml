@@ -1,0 +1,68 @@
+id: STOCKAGE_ACC_8
+type: knowledge
+domain: usages
+title: C.2 Les 6 Cas Négatifs (NO-GO Stockage)
+summary: "Cas 1 : Profil Conso/PV Déjà Très Aligné (TAc naturel > 60% sans batterie)\
+  \ \n- Symptômes : ACC maison 9–17h tertiaire bureaux (pic conso = pic PV midi),\
+  \ TAc mesuré 65–75% déjà sans batterie \n- Problème..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Cas 1 : Profil Conso/PV Déjà Très Aligné (TAc naturel > 60% sans batterie)\
+  \ \n- Symptômes : ACC maison 9–17h tertiaire bureaux (pic conso = pic PV midi),\
+  \ TAc mesuré 65–75% déjà sans batterie \n- Problème : batterie apporte gain marginal\
+  \ < 10% TAc (60% → 68%), ROI > 15 ans → NO-GO \n- Décision : Invest plutôt énergie\
+  \ directe (baisse conso, PV supplémentaire) que stockage. \n- Exemple : Bâtiment\
+  \ admin+école (9–17h, midi conso/prod sync) → TAc déjà 70% → NO batterie . \n\n\
+  Cas 2 : CAPEX Batterie Trop Élevé vs Gain Marginal \n- Symptômes : ACC petit 20\
+  \ kWc, surplus 5 kWh/j seulement → batterie minimale 4 kWh recommandée (500 € coût\
+  \ minimal), ROI > 20 ans \n- Problème : overhead CAPEX (onduleur, câblage, permit,\
+  \ commissionning) = 3–5 k€ minimum. Gain brut 2 k€/an → payback 2.5+ ans juste pour\
+  \ batterie → NO-GO économique . \n- Décision : Ignorer stockage, maximiser conso\
+  \ directe (gestion temps charge/décharge manuelle). \n- Exemple : Petit bâtiment\
+  \ tertiaire 20 kWc, conso 15 kWh/j (TAc déjà 50%) → NO batterie , gain marginal\
+  \ faible. \n\nCas 3 : Besoin d’Autonomie Saisonnière (jours/semaines à couvrir)\
+  \ sans stockage long-terme \n- Symptômes : demande client “autonomie 10 jours hiver\
+  \ sans production PV” (jour décemb~ 8 h/jour, conso 200 kWh) \n- Problème : batterie\
+  \ 200 kWh = 26 k€ + onduleur 50 k€ = 76 k€+ , ROI 20+ ans impossible. Hydrogène/STEP/hybride\
+  \ seul viable. \n- Décision : NO batterie seule → Proposer hybride (batterie court\
+  \ 1–2 j + hydrogène saisonnier) ou accepter réseau. \n- Exemple : ACC rural demande\
+  \ 90% indépendance → NO Li-ion , faut STEP ou oversize x100 (économiquement fou).\
+  \ \n\nCas 4 : Contraintes Espace/Sécurité/Assurance Trop Fortes \n- Symptômes :\
+  \ ACC en immeuble collectif urbain dense (pas place rez-de-chaussée < 50 m²), batterie\
+  \ classée ICPE si > 200 kW, assurance +30 k€/an \n- Problème : coût non-technique\
+  \ (place, permis ICPE, assurance) > bénéfice énergétique. \n- Décision : NO batterie\
+  \ → Mieux utiliser toiture pour PV supplémentaire. \n- Exemple : Immeuble Paris\
+  \ 75, ACC 5 appart, batterie inenvisageable → NO (espace + assurance prohibitif).\
+  \ \n\nCas 5 : Complexité Gouvernance ACC > Bénéfice (conflits partage valeur) \n\
+  - Symptômes : ACC 10 participants hétérogènes (3 producteurs, 7 consommateurs) →\
+  \ débat “qui finance batterie? qui profite?” sans accord \n- Problème : transaction\
+  \ cost juridique, gouvernance 20+ réunions pour 5 k€/an gain → temps/argent gaspillé\
+  \ . \n- Décision : NO batterie → Rester ACC simple statique (clé proportionnelle\
+  \ annuelle), éviter complexité. \n- Exemple : ACC multi-propriétaires sans gestionnaire\
+  \ unique → NO batterie , trop d’enjeux équité. \n\nCas 6 : Comptage/Contrats Rendant\
+  \ Montage Lourd Sans Bénéfice Immédiat \n- Symptômes : ACC comprend un pôle de recharge\
+  \ électrique (GRD impose compteur dédié non-mutualisable), batterie = “consommateur\
+  \ fantôme” complexe à facturer \n- Problème : coût rectification contrats Enedis,\
+  \ modification clé répartition, audit +5 k€ vs gain 2 k€/an → NO-GO admin . \n-\
+  \ Décision : NO batterie tout en attendant évolution réglementaire (Enedis API plus\
+  \ ouverte). \n- Exemple : ACC hétérogène (industrie + bornes recharge + tertiaire)\
+  \ → rectification contrats trop coûteuse → NO batterie (pour maintenant)."
+logic: null
+sources:
+- doc_id: STOCKAGE_ACC
+  label: Stockage et Autoconsommation Collective
+  section: C.2 Les 6 Cas Négatifs (NO-GO Stockage)
+  anchor: '#c2-les-6-cas-ngatifs-no-go-stockage'
+  excerpt_short: "Cas 1 : Profil Conso/PV Déjà Très Aligné (TAc naturel > 60% sans\
+    \ batterie) \n- Symptômes : ACC maison..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

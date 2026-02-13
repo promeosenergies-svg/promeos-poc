@@ -1,0 +1,47 @@
+id: ACC_FRANCE_50
+type: knowledge
+domain: acc
+title: Checklist Montage PMO [utilisable directement]
+summary: "- Étape 1 : Viabilité (1–2 sem.) \n- Lister participants (producteurs, consommateurs)\
+  \ \n- Valider localisation (<2 km ou dérogation demandée?) \n- Additionner puissance\
+  \ producteurs (≤3–5–10 MW?) \n- Estim..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Étape 1 : Viabilité (1–2 sem.) \n- Lister participants (producteurs,\
+  \ consommateurs) \n- Valider localisation (<2 km ou dérogation demandée?) \n- Additionner\
+  \ puissance producteurs (≤3–5–10 MW?) \n- Estimer taux autocons. (courbes Linky\
+  \ si possible) \n- Faire devis CAPEX PV + raccordement Enedis \n- Étape 2 : Structure\
+  \ PMO (2–4 sem.) \n- Choisir forme juridique (asso / SAS / SEM) \n- Préparer statuts\
+  \ (utiliser template PROMEOS) \n- Ouvrir compte bancaire PMO \n- Enregistrer à la\
+  \ préfecture/sous-préfecture (si obligatoire) \n- Souscrire assurance RC professionnel\
+  \ \n- Étape 3 : Consentements & Mandats (3–4 sem.) \n- Collecter consentement RGPD\
+  \ (tous participants) \n- Signer mandats Enedis (producteur = CAE/CARD-i, consommateur\
+  \ = accès courbes) \n- Créer registre participants (initial) \n- E-signature tous\
+  \ docs (DocuSign ou équivalent) \n- Étape 4 : Convention Enedis (2–4 sem.) \n- Pré-remplir\
+  \ template convention (PROMEOS auto-fill?) \n- Définir clés répartition (type +\
+  \ valeurs) \n- Signer avec Enedis (envoyer par portail Enedis DataHub) \n- Attendre\
+  \ confirmation Enedis (5 jours ouvrés max.) \n- Planifier date démarrage ACC (généralement\
+  \ J+15 jours) \n- Étape 5 : Mise en Service (2–6 mois, paralléle) \n- Installer\
+  \ PV + onduleur (entreprise RGE) \n- Raccordement Enedis (2 mois simple, 12–18 mois\
+  \ complexe) \n- Tests conformité (Consuel) \n- Lancer facturation ACC (premiers\
+  \ mois : vérifier TAc/TAp) \n- Activer participant portal \n\nTotal : 3–6 mois (avec\
+  \ PROMEOS = -50% si outils auto-fill + e-sig)"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: Checklist Montage PMO [utilisable directement]
+  anchor: '#checklist-montage-pmo-utilisable-directement'
+  excerpt_short: "- Étape 1 : Viabilité (1–2 sem.) \n- Lister participants (producteurs,\
+    \ consommateurs) \n- Valider loca..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

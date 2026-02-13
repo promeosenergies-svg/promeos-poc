@@ -1,0 +1,45 @@
+id: BACS_COMPLET_38
+type: checklist
+domain: acc
+title: Installation & paramérage
+summary: '- ⬜ Matériel BACS livré site (capteurs, automates, supervision) – checklist
+  de réception
+
+  - ⬜ Installation électricien complétée (cabling, armoire, alimentations)
+
+  - ⬜ Paramètres systèmes chargés (consi...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: '- ⬜ Matériel BACS livré site (capteurs, automates, supervision) – checklist
+  de réception
+
+  - ⬜ Installation électricien complétée (cabling, armoire, alimentations)
+
+  - ⬜ Paramètres systèmes chargés (consignes chaud/froid, calendriers, saisonnalité)
+
+  - ⬜ Connexions captor/actionneur testées (acquisition données fonctionnelle)
+
+  - ⬜ Tests arrêt manuel + pilotage validés (sécurité & contrôle)
+
+  - ⬜ Archivage données activé (derniers 5 ans accessible, écriture en continu)'
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Installation & paramérage
+  anchor: '#installation-paramrage'
+  excerpt_short: '- ⬜ Matériel BACS livré site (capteurs, automates, supervision)
+    – checklist de réception
+
+    - ⬜ Install...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

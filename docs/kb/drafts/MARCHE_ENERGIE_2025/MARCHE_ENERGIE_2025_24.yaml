@@ -1,0 +1,30 @@
+id: MARCHE_ENERGIE_2025_24
+type: rule
+domain: facturation
+title: 'Section 4 : Monitorage Marché'
+summary: "- Prix spot électricité/gaz (mise à jour hebdo) \n- Statut VNU seuils (suivre\
+  \ décrets H1 2026) \n- Alerte fournisseurs (nouvelles offres, changements marché)"
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Prix spot électricité/gaz (mise à jour hebdo) \n- Statut VNU seuils\
+  \ (suivre décrets H1 2026) \n- Alerte fournisseurs (nouvelles offres, changements\
+  \ marché)"
+logic: null
+sources:
+- doc_id: MARCHE_ENERGIE_2025
+  label: Analyse marche energie France-Europe 2025
+  section: 'Section 4 : Monitorage Marché'
+  anchor: '#section-4-monitorage-march'
+  excerpt_short: "- Prix spot électricité/gaz (mise à jour hebdo) \n- Statut VNU seuils\
+    \ (suivre décrets H1 2026) \n- Ale..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

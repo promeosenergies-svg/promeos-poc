@@ -1,0 +1,43 @@
+id: BACS_COMPLET_36
+type: rule
+domain: facturation
+title: Appels d'offres
+summary: '- ⬜ RFQ envoyé 3-5 intégrateurs BACS qualifiés (références secteur)
+
+  - ⬜ Deadline réponse fixée (ex : 2 semaines)
+
+  - ⬜ Critères évaluation définis (prix, délai, réf., garantie, support)
+
+  - ⬜ Offres reçue...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: '- ⬜ RFQ envoyé 3-5 intégrateurs BACS qualifiés (références secteur)
+
+  - ⬜ Deadline réponse fixée (ex : 2 semaines)
+
+  - ⬜ Critères évaluation définis (prix, délai, réf., garantie, support)
+
+  - ⬜ Offres reçues analysées (meilleur value, pas juste prix bas)
+
+  - ⬜ Sélection prestataire : contrat signé (clauses BACS, conformité, deadline, inspection
+  incluse)'
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Appels d'offres
+  anchor: '#appels-doffres'
+  excerpt_short: '- ⬜ RFQ envoyé 3-5 intégrateurs BACS qualifiés (références secteur)
+
+    - ⬜ Deadline réponse fixée (ex :...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

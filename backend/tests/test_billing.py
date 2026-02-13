@@ -19,6 +19,7 @@ from models import (
     Base, Site, Organisation, EntiteJuridique, Portefeuille,
     EnergyContract, EnergyInvoice, EnergyInvoiceLine, BillingInsight,
     BillingEnergyType, InvoiceLineType, BillingInvoiceStatus,
+    InsightStatus, BillingImportBatch, SiteTariffProfile,
     TypeSite,
 )
 from database import get_db
@@ -153,6 +154,31 @@ class TestModels:
         assert InvoiceLineType.ENERGY.value == "energy"
         assert InvoiceLineType.TAX.value == "tax"
         assert BillingInvoiceStatus.ANOMALY.value == "anomaly"
+
+    def test_insight_default_status(self, db_session):
+        """V1.1: BillingInsight defaults to OPEN."""
+        _, site = _create_org_site(db_session)
+        insight = BillingInsight(
+            site_id=site.id, type="shadow_gap", severity="high",
+            message="Test insight default status",
+        )
+        db_session.add(insight)
+        db_session.commit()
+        assert insight.insight_status == InsightStatus.OPEN
+
+    def test_create_import_batch(self, db_session):
+        """V1.1: BillingImportBatch creation with stats."""
+        batch = BillingImportBatch(
+            org_id=None, filename="test.csv",
+            content_hash="abc123def456", rows_total=10,
+            rows_inserted=8, rows_skipped=2,
+        )
+        db_session.add(batch)
+        db_session.commit()
+        assert batch.id is not None
+        assert batch.rows_total == 10
+        assert batch.rows_inserted == 8
+        assert batch.imported_at is not None
 
 
 # ========================================
@@ -331,6 +357,72 @@ class TestBillingService:
         assert result["site_id"] == site.id
         assert len(result["contracts"]) == 1
         assert len(result["invoices"]) == 1
+
+    def test_ref_price_from_contract(self, db_session):
+        """V1.1: get_reference_price priority 1 — active contract."""
+        from services.billing_service import get_reference_price
+        _, site = _create_org_site(db_session)
+        contract = EnergyContract(
+            site_id=site.id, energy_type=BillingEnergyType.ELEC,
+            supplier_name="EDF", price_ref_eur_per_kwh=0.22,
+            start_date=date(2025, 1, 1), end_date=date(2025, 12, 31),
+        )
+        db_session.add(contract)
+        db_session.commit()
+
+        price, source = get_reference_price(db_session, site.id, "elec", date(2025, 3, 1), date(2025, 3, 31))
+        assert price == 0.22
+        assert "contract" in source
+
+    def test_ref_price_from_tariff_profile(self, db_session):
+        """V1.1: get_reference_price priority 2 — SiteTariffProfile."""
+        from services.billing_service import get_reference_price
+        _, site = _create_org_site(db_session)
+        tp = SiteTariffProfile(site_id=site.id, price_ref_eur_per_kwh=0.19)
+        db_session.add(tp)
+        db_session.commit()
+
+        price, source = get_reference_price(db_session, site.id, "elec")
+        assert price == 0.19
+        assert source == "site_tariff_profile"
+
+    def test_ref_price_fallback(self, db_session):
+        """V1.1: get_reference_price priority 3 — default fallback."""
+        from services.billing_service import get_reference_price
+        _, site = _create_org_site(db_session)
+        db_session.commit()
+
+        price_e, src_e = get_reference_price(db_session, site.id, "elec")
+        price_g, src_g = get_reference_price(db_session, site.id, "gaz")
+        assert price_e == 0.18
+        assert src_e == "default_elec"
+        assert price_g == 0.09
+        assert src_g == "default_gaz"
+
+    def test_rule_metrics_have_inputs(self, db_session):
+        """V1.1: all triggered rules include 'inputs' in metrics."""
+        from services.billing_service import run_anomaly_engine
+        _, site = _create_org_site(db_session)
+        contract = EnergyContract(
+            site_id=site.id, energy_type=BillingEnergyType.ELEC,
+            supplier_name="EDF", price_ref_eur_per_kwh=0.18,
+        )
+        db_session.add(contract)
+        db_session.flush()
+        # Invoice designed to trigger shadow_gap + price_drift
+        invoice = EnergyInvoice(
+            site_id=site.id, contract_id=contract.id,
+            invoice_number="PROOF-001",
+            total_eur=1400, energy_kwh=5000,
+            period_start=date(2025, 1, 1), period_end=date(2025, 1, 31),
+        )
+        db_session.add(invoice)
+        db_session.commit()
+
+        anomalies = run_anomaly_engine(invoice, [], contract, db_session)
+        assert len(anomalies) > 0
+        for a in anomalies:
+            assert "inputs" in a.get("metrics", {}), f"Rule {a['type']} missing 'inputs' in metrics"
 
 
 # ========================================
@@ -537,6 +629,107 @@ class TestBillingAPI:
         assert s["total_invoices"] == 5
         assert s["total_insights"] > 0
         assert s["total_estimated_loss_eur"] > 0
+
+    def test_csv_import_idempotent(self, client, db_session):
+        """V1.1: 2nd upload of identical CSV → already_imported."""
+        _, site = _create_org_site(db_session)
+        db_session.commit()
+
+        csv_content = f"site_id,invoice_number,total_eur,energy_kwh\n{site.id},IDEM-001,1000,5000\n"
+        files = {"file": ("invoices.csv", io.BytesIO(csv_content.encode()), "text/csv")}
+
+        r1 = client.post("/api/billing/import-csv", files=files)
+        assert r1.status_code == 200
+        assert r1.json()["status"] == "ok"
+        assert r1.json()["imported"] == 1
+        batch_id = r1.json()["batch_id"]
+        assert batch_id is not None
+
+        # 2nd upload identical content
+        files2 = {"file": ("invoices.csv", io.BytesIO(csv_content.encode()), "text/csv")}
+        r2 = client.post("/api/billing/import-csv", files=files2)
+        assert r2.status_code == 200
+        assert r2.json()["status"] == "already_imported"
+        assert r2.json()["batch_id"] == batch_id
+
+    def test_list_import_batches(self, client, db_session):
+        """V1.1: GET /import/batches returns created batch."""
+        _, site = _create_org_site(db_session)
+        db_session.commit()
+
+        csv_content = f"site_id,invoice_number,total_eur,energy_kwh\n{site.id},BATCH-001,800,4000\n"
+        client.post(
+            "/api/billing/import-csv",
+            files={"file": ("test.csv", io.BytesIO(csv_content.encode()), "text/csv")},
+        )
+
+        r = client.get("/api/billing/import/batches")
+        assert r.status_code == 200
+        data = r.json()
+        assert data["count"] >= 1
+        assert data["batches"][0]["filename"] == "test.csv"
+        assert data["batches"][0]["rows_inserted"] == 1
+
+    def test_patch_insight_status(self, client, db_session):
+        """V1.1: PATCH insight → status=ack, owner set."""
+        _, site = _create_org_site(db_session)
+        insight = BillingInsight(
+            site_id=site.id, type="shadow_gap", severity="high",
+            message="Test patch", estimated_loss_eur=100,
+        )
+        db_session.add(insight)
+        db_session.commit()
+
+        r = client.patch(f"/api/billing/insights/{insight.id}", json={
+            "status": "ack", "owner": "Jean Dupont",
+        })
+        assert r.status_code == 200
+        assert r.json()["insight_status"] == "ack"
+        assert r.json()["owner"] == "Jean Dupont"
+
+    def test_resolve_insight(self, client, db_session):
+        """V1.1: POST resolve → status=resolved."""
+        _, site = _create_org_site(db_session)
+        insight = BillingInsight(
+            site_id=site.id, type="price_drift", severity="medium",
+            message="Test resolve",
+        )
+        db_session.add(insight)
+        db_session.commit()
+
+        r = client.post(f"/api/billing/insights/{insight.id}/resolve", params={"notes": "Corrige"})
+        assert r.status_code == 200
+        assert r.json()["insight_status"] == "resolved"
+
+    def test_list_insights_filter_status(self, client, db_session):
+        """V1.1: GET insights?status=open filters correctly."""
+        _, site = _create_org_site(db_session)
+        i1 = BillingInsight(
+            site_id=site.id, type="shadow_gap", severity="high",
+            message="Open one", insight_status=InsightStatus.OPEN,
+        )
+        i2 = BillingInsight(
+            site_id=site.id, type="price_drift", severity="medium",
+            message="Resolved one", insight_status=InsightStatus.RESOLVED,
+        )
+        db_session.add_all([i1, i2])
+        db_session.commit()
+
+        # Filter open only
+        r = client.get("/api/billing/insights", params={"status": "open"})
+        assert r.status_code == 200
+        assert r.json()["count"] == 1
+        assert r.json()["insights"][0]["insight_status"] == "open"
+
+        # Filter resolved
+        r2 = client.get("/api/billing/insights", params={"status": "resolved"})
+        assert r2.status_code == 200
+        assert r2.json()["count"] == 1
+
+        # No filter → all
+        r3 = client.get("/api/billing/insights")
+        assert r3.status_code == 200
+        assert r3.json()["count"] == 2
 
     def test_dashboard_2min_includes_billing(self, client, db_session):
         """Dashboard 2min should include billing section after seed."""

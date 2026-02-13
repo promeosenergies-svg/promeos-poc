@@ -1,0 +1,36 @@
+id: FLEX_EFFACEMENT_0
+type: knowledge
+domain: usages
+title: TL;DR – Flexibilité & Effacement en France 2025-2026
+summary: 'La flexibilité électrique (capacité à moduler consommation/production) est
+  devenue stratégique. En France, trois mécanismes réglementés principaux permettent
+  la valorisation B2B : NEBEF (effacement ex...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: 'La flexibilité électrique (capacité à moduler consommation/production)
+  est devenue stratégique. En France, trois mécanismes réglementés principaux permettent
+  la valorisation B2B : NEBEF (effacement explicite, marché de l’énergie via EPEX
+  SPOT), Réserves/Ajustement (services système RTE, appels d’offres et temps réel),
+  et Mécanisme de Capacité (nouveau en nov. 2026, enchères centralisées). Une flexibilité
+  implicite existe via pilotage prix spot/négatifs. Accès via agrégateurs (regroupement
+  multi-sites) ou direct (>15 MW). Mesure rigoureuse (baseline, courbe charge Enedis),
+  pénalités écarts, rémunération post-livraison.'
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: TL;DR – Flexibilité & Effacement en France 2025-2026
+  anchor: '#tldr-flexibilit-effacement-en-france-2025-2026'
+  excerpt_short: La flexibilité électrique (capacité à moduler consommation/production)
+    est devenue stratégique. En F...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

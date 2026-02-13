@@ -1,0 +1,92 @@
+[
+  {
+    "chunk_id": "VEILLE_S52_2025_chunk_0",
+    "doc_id": "VEILLE_S52_2025",
+    "section_path": "Executive Summary",
+    "anchor": "#executive-summary",
+    "text": "Période : 22–29 décembre 2025",
+    "word_count": 5,
+    "chunk_index": 0
+  },
+  {
+    "chunk_id": "VEILLE_S52_2025_chunk_1",
+    "doc_id": "VEILLE_S52_2025",
+    "section_path": "3 Faits Majeurs",
+    "anchor": "#3-faits-majeurs",
+    "text": "- Fin ARENH (31 déc. 2025 → VNU dès le 1er janv. 2026) — Stabilité tarifaire 2026-27 annoncée. Prix de gros ~50 €/MWh, sous les seuils VNU (78/110 €/MWh). \n- Paquet Réseaux Électriques de la Commission UE (10 déc. 2025) — 8 autoroutes énergétiques + 1 200 Mds€ d'ici 2040. Confirmation de 2 interconnexions Pyrénées. \n- Partenariat LEAP + ENEL (16 déc. 2025) — Plateforme VPP C&I : 400 k équipements, 100+ partenaires. Menace directe pour PROMEOS sur l'ACC opérationnel .",
+    "word_count": 81,
+    "chunk_index": 1
+  },
+  {
+    "chunk_id": "VEILLE_S52_2025_chunk_2",
+    "doc_id": "VEILLE_S52_2025",
+    "section_path": "3 Tendances / Signaux Faibles",
+    "anchor": "#3-tendances-signaux-faibles",
+    "text": "- Data Act appliqué depuis le 12 sept. 2025 — Accès et réutilisation des données industrielles obligatoires. Interopérabilité cloud-agnostic en janv. 2027. \n- TURPE 7 influence les batteries — Tarifs optionnels pour l'injection dans les zones EnR (+1,7 % TRI). Incitation à l'agrégation locale et au stockage décentralisé. \n- Standard Flex Ready (mai 2025) — Interopérabilité BACS + EMS. Momentum pour l'orchestration intégrée des bâtiments.",
+    "word_count": 65,
+    "chunk_index": 2
+  },
+  {
+    "chunk_id": "VEILLE_S52_2025_chunk_3",
+    "doc_id": "VEILLE_S52_2025",
+    "section_path": "3 Implications B2B",
+    "anchor": "#3-implications-b2b",
+    "text": "- Conformité NEBEF + Data Act urgente — Les nouveaux entrants ACC doivent maîtriser la réconciliation Enedis et les droits d'accès tiers. \n- L'automatisation VPP commoditise la flexibilité — Les micro-fournisseurs doivent se différencier par la traçabilité énergétique et le bill intelligence temps réel . \n- Le décret BACS 2027 rend l'EMS indispensable — Le seuil baisse à 70 kW. Le tertiaire SME demande des solutions intégrées.",
+    "word_count": 67,
+    "chunk_index": 3
+  },
+  {
+    "chunk_id": "VEILLE_S52_2025_chunk_4",
+    "doc_id": "VEILLE_S52_2025",
+    "section_path": "CRE Watch — Délibérations & Consultations Clés",
+    "anchor": "#cre-watch-dlibrations-consultations-cls",
+    "text": "- Délibération 2025-274 (17 déc.) : Zone de mutualisation RTE « Plan de Campagne ». Densification des raccordements EnR territoriaux. \n- FPE 2026-2029 : EEWF (+35 % stockage), EDF SEI (−22 %), Gérédis (−14 %). La tarification flex+stockage remonte. \n- Fin ARENH (31 déc. 2025) : Le VNU remplace l'ARENH. Seuils 78/110 €/MWh. TRV stable 2026-27. \n- Mécanisme Capacité : Le prix chute à 0 €/MW (2025) vs 6 192 €/MW (oct. 2024). Baisse de 42 % attendue en 2026.",
+    "word_count": 80,
+    "chunk_index": 4
+  },
+  {
+    "chunk_id": "VEILLE_S52_2025_chunk_5",
+    "doc_id": "VEILLE_S52_2025",
+    "section_path": "Réforme Marché & Cadres",
+    "anchor": "#rforme-march-cadres",
+    "text": "- Paquet Réseaux (10 déc., Commission) : 8 autoroutes énergétiques, 2 interconnexions Pyrénées, 1 200 Mds€ d'ici 2040. \n- CBAM Électricité : Modifications fuitées en déc. 2025. Clarifications sur les PPA EnR et exemptions transfrontalières. \n- ACER Équilibrage (Consultation fin janv. 2026) : Harmonisation PICASSO+MARI pour les services d'équilibrage UE. \n- Directive PEB 2024/1275 : Exigences solaire 2027-2032, plans de rénovation nationaux, lien explicite BACS+flex.",
+    "word_count": 65,
+    "chunk_index": 5
+  },
+  {
+    "chunk_id": "VEILLE_S52_2025_chunk_6",
+    "doc_id": "VEILLE_S52_2025",
+    "section_path": "Opportunités Produit (Priorités MVP)",
+    "anchor": "#opportunits-produit-priorits-mvp",
+    "text": "- Bill Intelligence Temps Réel + Clearing Micro (Score : 8/10) \n- Traçabilité Carbone Locale (Score : 8/10) \n- BACS Compliance as a Service (Score : 7/10) \n- ACC Agrégation Micro (Clustering Local) (Score : 7/10)",
+    "word_count": 36,
+    "chunk_index": 6
+  },
+  {
+    "chunk_id": "VEILLE_S52_2025_chunk_7",
+    "doc_id": "VEILLE_S52_2025",
+    "section_path": "Décisions Top 3",
+    "anchor": "#dcisions-top-3",
+    "text": "- Lancer un partenariat CRE/RTE sur l'harmonisation ACC Micro (T1 2026) \n- Intégrer Bill Intelligence + Clearing Micro dans le MVP (T1 2026) \n- Pilote BACS Compliance Audit gratuit (5 clients, Île-de-France, T1-T2 2026)",
+    "word_count": 34,
+    "chunk_index": 7
+  },
+  {
+    "chunk_id": "VEILLE_S52_2025_chunk_8",
+    "doc_id": "VEILLE_S52_2025",
+    "section_path": "Backlog Impacté",
+    "anchor": "#backlog-impact",
+    "text": "MUST : Conformité Data Act + Module Clé de Répartition ACC + API Portail NEBEF Enedis \n\nSHOULD : Tableau de bord Bill Intelligence + Vérificateur BACS Readiness + Traçabilité Carbone \n\nCOULD : Interface Micro Agrégation + Intégration Pennylane + ML Prévision Flex",
+    "word_count": 42,
+    "chunk_index": 8
+  },
+  {
+    "chunk_id": "VEILLE_S52_2025_chunk_9",
+    "doc_id": "VEILLE_S52_2025",
+    "section_path": "À Surveiller Semaine Prochaine (6–12 janvier 2026)",
+    "anchor": "#-surveiller-semaine-prochaine-612-janvier-2026",
+    "text": "- Officialisations CRE post-fin ARENH (communiqués détaillant TRV/VNU) \n- Vérifications implémentation BACS (premières saisies de non-conformité fin janv. ?) \n- Lever partenaires technologiques : Appel Itron/Schneider pour accès DERMS (cloud interop) \n- Momentum LEAP/ENEL : Annonces d'expansion territoriale, modèle de pricing \n- Vagues de conformité Data Act : Premiers signalements de non-conformité ; retours du cabinet juridique",
+    "word_count": 57,
+    "chunk_index": 9
+  }
+]

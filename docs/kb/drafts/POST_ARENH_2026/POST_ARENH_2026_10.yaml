@@ -1,0 +1,39 @@
+id: POST_ARENH_2026_10
+type: knowledge
+domain: usages
+title: Guichets d’Acomptes et Calendrier
+summary: Les fournisseurs ne supportent pas la perte de recettes due à la minoration.
+  La CRE met en place un système de compensation piloté par guichets d’acomptes en
+  cours de période et un guichet de compensa...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Les fournisseurs ne supportent pas la perte de recettes due à la minoration.\
+  \ La CRE met en place un système de compensation piloté par guichets d’acomptes\
+  \ en cours de période et un guichet de compensation finale . 25 \n\nPour chaque\
+  \ guichet d’acompte, le calendrier est strictement encadré : 26 Étape Délai maximal\
+  \ Fournisseurs déclarent consommations (avec justificatifs) J+6 après fin dernier\
+  \ mois couvert CRE publie consommation totale J+11 CRE notifie montants aux ministres\
+  \ J+20 Ministres instruisent comptable public J+21 ouvré Versement aux fournisseurs\
+  \ J+26 ouvrés (≈ 30 jours) \n\nLa CRE détermine la fréquence minimale des guichets\
+  \ (au moins deux par période d’application) en fonction du coût de trésorerie supporté\
+  \ par les fournisseurs. Plus le tarif unitaire est élevé, plus les guichets sont\
+  \ fréquents."
+logic: null
+sources:
+- doc_id: POST_ARENH_2026
+  label: Post-ARENH 2026
+  section: Guichets d’Acomptes et Calendrier
+  anchor: '#guichets-dacomptes-et-calendrier'
+  excerpt_short: Les fournisseurs ne supportent pas la perte de recettes due à la
+    minoration. La CRE met en place un ...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

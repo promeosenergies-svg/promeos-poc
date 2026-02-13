@@ -1,0 +1,36 @@
+id: DT_OPERAT_2026_20
+type: rule
+domain: reglementaire
+title: Non-respect des objectifs de réduction 2030
+summary: "Conditions : \n- Absence de justification recevable (modulation non approuvée,\
+  \ pas de plan d’action) \n- Non-réalisation du programme d’actions validé par le\
+  \ préfet \n\nSanctions : \n- Mise en demeure pour..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Conditions : \n- Absence de justification recevable (modulation non approuvée,\
+  \ pas de plan d’action) \n- Non-réalisation du programme d’actions validé par le\
+  \ préfet \n\nSanctions : \n- Mise en demeure pour présenter un plan d’actions sous\
+  \ 6 mois \n- Publication « Name and Shame » (réputation/RSE) \n- Amende administrative\
+  \ : jusqu’à 7 500 € par personne morale (par EFA) 45 46 \n\nNote : Le gouvernement\
+  \ a signalé dans le PNIEC 2024 un potentiel renforcement des sanctions post-2026\
+  \ pour garantir l’efficacité du dispositif. 47 \n\nSource : Décret n° 2019-771,\
+  \ art. 13–15 ; Arrêtés d’application ; Legifrance 48 49 50"
+logic: null
+sources:
+- doc_id: DT_OPERAT_2026
+  label: Decret Tertiaire / OPERAT - Obligations 2026
+  section: Non-respect des objectifs de réduction 2030
+  anchor: '#non-respect-des-objectifs-de-rduction-2030'
+  excerpt_short: "Conditions : \n- Absence de justification recevable (modulation\
+    \ non approuvée, pas de plan d’action) ..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

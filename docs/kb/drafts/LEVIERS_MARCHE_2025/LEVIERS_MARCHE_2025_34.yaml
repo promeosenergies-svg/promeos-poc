@@ -1,0 +1,43 @@
+id: LEVIERS_MARCHE_2025_34
+type: knowledge
+domain: acc
+title: 'Catégorie 1 : EMS Généralistes (Energy Management Systems) Acteur Positionnement
+  Offre ACC Offre Compliance Limites Différenciation Advizeo (Hager) Dashboard énergie
+  multi-sites Non (aucune) Décret Tertiaire baseline Pas ACC, pas settlement Puissance
+  analyse prédictive Deepki SaaS data énergie buildings Non Tertiaire + BACS Pas ACC,
+  support basique Intelligence données immobilier Datanumia Intelligence énergétique
+  Non Monitoring coûts Pas ACC, pas settlement Billing énergétique mais pas ACC WeSmart
+  Plateforme locale ENR Partiel (ACC consultation) Non ACC limité, pas automatisation
+  UI attrayante, modèle éducatif'
+summary: 'Verdict : Aucun EMS n’offre ACC opérationnelle + facturation ; marché blanc
+  à PROMEOS.'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: 'Verdict : Aucun EMS n’offre ACC opérationnelle + facturation ; marché
+  blanc à PROMEOS.'
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: 'Catégorie 1 : EMS Généralistes (Energy Management Systems) Acteur Positionnement
+    Offre ACC Offre Compliance Limites Différenciation Advizeo (Hager) Dashboard énergie
+    multi-sites Non (aucune) Décret Tertiaire baseline Pas ACC, pas settlement Puissance
+    analyse prédictive Deepki SaaS data énergie buildings Non Tertiaire + BACS Pas
+    ACC, support basique Intelligence données immobilier Datanumia Intelligence énergétique
+    Non Monitoring coûts Pas ACC, pas settlement Billing énergétique mais pas ACC
+    WeSmart Plateforme locale ENR Partiel (ACC consultation) Non ACC limité, pas automatisation
+    UI attrayante, modèle éducatif'
+  anchor: '#catgorie-1-ems-gnralistes-energy-management-systems-acteur-positionnement-offre-acc-offre-compliance-limites-diffrenciation-advizeo-hager-dashboard-nergie-multi-sites-non-aucune-dcret-tertiaire-baseline-pas-acc-pas-settlement-puissance-analyse-prdictive-deepki-saas-data-nergie-buildings-non-tertiaire-bacs-pas-acc-support-basique-intelligence-donnes-immobilier-datanumia-intelligence-nergtique-non-monitoring-cots-pas-acc-pas-settlement-billing-nergtique-mais-pas-acc-wesmart-plateforme-locale-enr-partiel-acc-consultation-non-acc-limit-pas-automatisation-ui-attrayante-modle-ducatif'
+  excerpt_short: 'Verdict : Aucun EMS n’offre ACC opérationnelle + facturation ; marché
+    blanc à PROMEOS....'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

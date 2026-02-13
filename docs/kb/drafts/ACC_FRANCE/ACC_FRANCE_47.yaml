@@ -1,0 +1,46 @@
+id: ACC_FRANCE_47
+type: knowledge
+domain: acc
+title: 3. 180-Day v1.0 (Q2–Q3 2026)
+summary: "Goal : Full operational product (ACC Ops), monetize, prove unit economics\
+  \ \n\nScope : \n- ✅ Enedis DataHub API integration (auto-pull P30, consent gates,\
+  \ retry logic) \n- ✅ Advanced clés (dynamique simple..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Goal : Full operational product (ACC Ops), monetize, prove unit economics\
+  \ \n\nScope : \n- ✅ Enedis DataHub API integration (auto-pull P30, consent gates,\
+  \ retry logic) \n- ✅ Advanced clés (dynamique simple + full, multi-scenario editor,\
+  \ version control) \n- ✅ Settlement module (P30 + clés = TAc/TAp auto-calc, vs Enedis\
+  \ reconcile, export XML/CSV) \n- ✅ Shadow billing engine (compare Enedis data vs\
+  \ fournisseur invoice, flag discrepancies) \n- ✅ Participant portal (login, facture\
+  \ history, TAc/TAp transparency, contact PMO 1-click) \n- ✅ Compliance reporting\
+  \ (auto-export CRE format, audit log, attestation signature) \n\nTech Stack : \n\
+  - Backend : FastAPI (Python) for data science (P30 processing, reconciliation logic)\
+  \ \n- Frontend : React Dashboards (Material-UI or shadcn/ui) \n- Database : PostgreSQL\
+  \ + Redis (cache, session) \n- Integration : Enedis DataHub (OAuth2 + API calls),\
+  \ SEPA batch (plaid or natixis) \n- Cost : ~€8–10k/mth infra + server costs + ~400h\
+  \ dev \n\nGo-to-Market : \n- Expand to 500–1000 PMOs (100–200 live operations) \n\
+  - Partner with 1 major fournisseur (EDF, Enercoop) for settlement integration \n\
+  - Community building (Discord for PMOs, monthly webinar) \n- Pricing : €200–400/mth\
+  \ Ops, €500 setup \n\nSuccess Criteria : \n- MRR €50–80k (200 avg customers × €300)\
+  \ \n- Churn <4% MoM \n- Customer effort score (CES) >7/10 (operability) \n- 90%\
+  \ of ACC operations in settlement module (not manual)"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: 3. 180-Day v1.0 (Q2–Q3 2026)
+  anchor: '#3-180-day-v10-q2q3-2026'
+  excerpt_short: "Goal : Full operational product (ACC Ops), monetize, prove unit\
+    \ economics \n\nScope : \n- ✅ Enedis Data..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

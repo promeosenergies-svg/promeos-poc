@@ -1,0 +1,33 @@
+id: BACS_COMPLET_16
+type: knowledge
+domain: facturation
+title: Définition TRI (Temps Retour Investissement) TRI (ans) = S / (G × C)
+summary: "Avec :\n S = Surcoût BACS (€) = Coût installation - Aides financières\n\
+  \ • Coût installation = matériel + MO + paramétrage + analyse fonctionnelle + logiciels/ingénierie\n\
+  \ G = Gain énergétique (kWh/an) = ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Avec :\n S = Surcoût BACS (€) = Coût installation - Aides financières\n\
+  \ • Coût installation = matériel + MO + paramétrage + analyse fonctionnelle + logiciels/ingénierie\n\
+  \ G = Gain énergétique (kWh/an) = (Conso moy 2 ans) × Taux réduction (%)\n • Taux\
+  \ par défaut = 15% (ou audit spécialisé si différent)\n C = Coût énergétique moyen\
+  \ (€/kWh) = moyenne tarif facturé 12 mois avant demande"
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Définition TRI (Temps Retour Investissement) TRI (ans) = S / (G × C)
+  anchor: '#dfinition-tri-temps-retour-investissement-tri-ans-s-g-c'
+  excerpt_short: "Avec :\n S = Surcoût BACS (€) = Coût installation - Aides financières\n\
+    \ • Coût installation = matériel..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

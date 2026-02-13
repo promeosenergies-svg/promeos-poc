@@ -1,0 +1,31 @@
+id: STRATEGIE_NEBCO_21
+type: knowledge
+domain: reglementaire
+title: 3. Process Léger Agroalimentaire (Broyage, Emballage, Dosage)
+summary: "- Flexibilité : Arrêt ligne 30–120 min (produit stockable pré/post) \n-\
+  \ Gisement : 500 kW–2 MW ; 20–40 jours/an \n- Revenu/site : €10–40k/an (20–30 PME\
+  \ = €200–1.2M potentiel)"
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Flexibilité : Arrêt ligne 30–120 min (produit stockable pré/post) \n\
+  - Gisement : 500 kW–2 MW ; 20–40 jours/an \n- Revenu/site : €10–40k/an (20–30 PME\
+  \ = €200–1.2M potentiel)"
+logic: null
+sources:
+- doc_id: STRATEGIE_NEBCO
+  label: Analyse strategique NEBCO
+  section: 3. Process Léger Agroalimentaire (Broyage, Emballage, Dosage)
+  anchor: '#3-process-lger-agroalimentaire-broyage-emballage-dosage'
+  excerpt_short: "- Flexibilité : Arrêt ligne 30–120 min (produit stockable pré/post)\
+    \ \n- Gisement : 500 kW–2 MW ; 20–4..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

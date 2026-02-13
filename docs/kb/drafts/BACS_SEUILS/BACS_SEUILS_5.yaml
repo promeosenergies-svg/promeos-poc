@@ -1,0 +1,40 @@
+id: BACS_SEUILS_5
+type: rule
+domain: reglementaire
+title: Conditions d’exemption 3
+summary: Un bâtiment peut être exempté de l’obligation BACS si le propriétaire démontre
+  que l’installation n’est pas réalisable avec un TRI inférieur à 10 ans , déduction
+  faite des aides financières publiques ...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Un bâtiment peut être exempté de l’obligation BACS si le propriétaire\
+  \ démontre que l’installation n’est pas réalisable avec un TRI inférieur à 10 ans\
+  \ , déduction faite des aides financières publiques . \n\nFormule officielle de\
+  \ calcul du TRI (Annexe 1, Arrêté du 7 avril 2023) : TRI = S / (Σ énergie Génergie\
+  \ × Cénergie) \n\nOù : \n- S = Coût d’installation du BACS (€) \n- Génergie = Gain\
+  \ énergétique annuel par type d’énergie (kWh) \n- Cénergie = Coût unitaire de l’énergie\
+  \ économisée (€/kWh) \n- TRI = Arrondi au chiffre supérieur, exprimé en années \n\
+  \nRègle décisoire : Lorsque TRI > 10 ans , l’absence de rentabilité est avérée et\
+  \ l’exemption est justifiée. 4 \n\nApplication pratique : \n- Les aides CEE (Certificats\
+  \ d’Économies d’Énergie), subventions publiques doivent être déduites du coût S.\
+  \ \n- L’étude justificative doit suivre rigoureusement cette méthodologie. \n- Le\
+  \ dossier doit être conservé pendant 10 ans à titre de preuve."
+logic: null
+sources:
+- doc_id: BACS_SEUILS
+  label: Decret BACS - Seuils, dates, exemptions
+  section: Conditions d’exemption 3
+  anchor: '#conditions-dexemption-3'
+  excerpt_short: Un bâtiment peut être exempté de l’obligation BACS si le propriétaire
+    démontre que l’installation n’...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

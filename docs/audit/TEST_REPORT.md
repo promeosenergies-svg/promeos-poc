@@ -1,449 +1,139 @@
 # TEST REPORT - PROMEOS POC
-**Date**: 2026-02-09
-**Baseline**: `pytest backend/tests/ -v` (98 tests)
+
+**Date**: 2026-02-13
+**Commande**: `py -3.14 -m pytest backend/tests/ -v --tb=short`
+**Duree**: 131.62s (2min 11s)
 
 ---
 
-## EXECUTIVE SUMMARY
+## Resultat global
 
-| Metric | Value | Status |
-|--------|-------|--------|
-| **Total Tests** | 98 | ⚪ |
-| **Pass** | 72 (73.5%) | 🟢 |
-| **Fail** | 26 (26.5%) | 🟡 |
-| **Skip** | 0 | ⚪ |
-| **Error** | 0 | ⚪ |
-
-**Assessment**: 🟡 **AMBER** - Core legacy features work (56/56 tests), new RegOps Ultimate needs fixes.
-
----
-
-## FAILURE BREAKDOWN BY FILE
-
-### 1. test_regops_rules.py (0/16 PASS - 0%)
-
-| Test Case | Error | Root Cause | Fix | Effort |
-|-----------|-------|------------|-----|--------|
-| test_tertiaire_scope_in_scope | KeyError: 'tertiaire_operat' | Tests expect `configs['tertiaire_operat']` but _load_configs() returns different structure (flat vs nested?) | Verify regs.yaml structure, align tests or _load_configs() | 15 min |
-| test_tertiaire_scope_out_of_scope | KeyError: 'tertiaire_operat' | Same | Same | - |
-| test_tertiaire_scope_unknown | KeyError: 'tertiaire_operat' | Same | Same | - |
-| test_tertiaire_multi_occupied | KeyError: 'tertiaire_operat' | Same | Same | - |
-| test_bacs_above_290kw | KeyError: 'bacs' | Same | Same | - |
-| test_bacs_70_to_290kw | KeyError: 'bacs' | Same | Same | - |
-| test_bacs_exemption_possible | KeyError: 'bacs' | Same | Same | - |
-| test_bacs_missing_cvc_power | KeyError: 'bacs' | Same | Same | - |
-| test_aper_outdoor_parking_large | KeyError: 'aper' | Same | Same | - |
-| test_aper_outdoor_parking_medium | KeyError: 'aper' | Same | Same | - |
-| test_aper_roof_above_threshold | KeyError: 'aper' | Same | Same | - |
-| test_aper_non_outdoor_parking | KeyError: 'aper' | Same | Same | - |
-| test_cee_p6_with_valid_audit | KeyError: 'cee_p6' | Same | Same | - |
-| test_cee_p6_no_audit | KeyError: 'cee_p6' | Same | Same | - |
-| test_cee_p6_catalog_mapping | KeyError: 'cee_p6' | Same | Same | - |
-| test_cee_p6_confidence_by_docs | KeyError: 'cee_p6' | Same | Same | - |
-
-**File Reference**: `backend/tests/test_regops_rules.py`
-**Code Location**: Lines 86, 100, 113, 126, 143, 158, 173, 186, 203, 217, 231, 243, 262, 276, 288, 300
-**Pattern**: All tests call `tertiaire_operat.evaluate(site, batiments, evidences, configs['tertiaire_operat'])`
-
-**Root Cause Analysis**:
-```python
-# Test expects:
-configs['tertiaire_operat']  # Dict access with string key
-
-# But _load_configs() in regops/engine.py likely returns:
-configs.tertiaire_operat  # Attribute access or different structure
-```
-
-**Verification Needed**:
-1. Read `backend/regops/engine.py:_load_configs()` implementation
-2. Read `backend/regops/config/regs.yaml` structure
-3. Check if YAML returns nested dict or flat namespace
-
-**Impact**: 🔴 **HIGH** - Entire RegOps deterministic core untested
+| Metrique | Valeur |
+|----------|--------|
+| **Total tests** | 824 |
+| **Passed** | 824 (100%) |
+| **Failed** | 0 |
+| **Skipped** | 0 |
+| **Warnings** | 54942 (deprecation datetime.utcnow) |
+| **Fichiers test** | 38 |
 
 ---
 
-### 2. test_ai_agents.py (2/7 PASS - 29%)
+## Detail par fichier de test
 
-| Test Case | Error | Root Cause | Fix | Effort |
-|-----------|-------|------------|-----|--------|
-| test_agent_creates_ai_insight | TypeError: 'organisation_id' is an invalid keyword argument for Site | Site model doesn't have organisation_id (has portefeuille_id via FK chain) | Create full chain: org→entite_juridique→portefeuille→site | 10 min |
-| test_ai_insight_structure | TypeError: 'organisation_id' | Same | Same | - |
-| test_ai_never_modifies_status | TypeError: 'organisation_id' | Same | Same | - |
-| test_recommendations_are_tagged | TypeError: 'organisation_id' | Same | Same | - |
-| test_multiple_agents_coexist | TypeError: 'organisation_id' | Same | Same | - |
+| # | Fichier | Tests | Classes | Pass | Domaine |
+|---|---------|-------|---------|------|---------|
+| 1 | test_bill_pdf_parser.py | 28 | - | 28 | Bill Intelligence: PDF parsing |
+| 2 | test_kb_citations.py | 19 | - | 19 | KB: citations, provenance |
+| 3 | test_bill_engine.py | 18 | - | 18 | Bill Intelligence: shadow billing engine |
+| 4 | test_iam.py | 18 | 10+ | 18 | IAM: auth, JWT, roles, scopes, permissions |
+| 5 | test_watchlist_schema.py | 17 | - | 17 | Watchers: schema validation |
+| 6 | test_regops_rules.py | 16 | - | 16 | RegOps: 4 packs reglementaires |
+| 7 | test_fetch_dry_run.py | 20 | - | 20 | Referential: fetch sources |
+| 8 | test_bill_timeline.py | 14 | - | 14 | Bill Intelligence: timeline analysis |
+| 9 | test_bill_domain.py | 13 | - | 13 | Bill Intelligence: domain logic |
+| 10 | test_manifest_build.py | 11 | - | 11 | Referential: manifest build |
+| 11 | test_alert_engine.py | 11 | - | 11 | Monitoring: alert engine |
+| 12 | test_compliance_engine.py | 10 | - | 10 | Compliance: engine core |
+| 13 | test_compliance_v1.py | 10 | - | 10 | Compliance: V1 rules |
+| 14 | test_sprint6_diag_v11.py | 10 | - | 10 | Diagnostic: V11 detectors |
+| 15 | test_patrimoine.py | 10 | 7 | 10 | Patrimoine: staging, quality, activation |
+| 16 | test_intake.py | 9 | 8 | 9 | Smart Intake: questions, apply, demo, API |
+| 17 | test_notifications.py | 8 | - | 8 | Notifications: events, preferences |
+| 18 | test_ai_agents.py | 7 | - | 7 | AI Agents: stub mode |
+| 19 | test_kb_usages.py | 7 | - | 7 | KB: archetypes, rules, analytics |
+| 20 | test_connectors.py | 7 | - | 7 | Connectors: registry, RTE, PVGIS |
+| 21 | test_actions.py | 7 | - | 7 | Actions Hub: sync, workflow |
+| 22 | test_data_quality.py | 7 | - | 7 | Monitoring: data quality |
+| 23 | test_consumption_diag.py | 6 | 2 | 6 | Diagnostic: consommation |
+| 24 | test_kpi_engine.py | 6 | - | 6 | Monitoring: KPI engine |
+| 25 | test_power_calculations.py | 6 | - | 6 | Monitoring: power calculations |
+| 26 | test_watchers.py | 6 | - | 6 | Watchers: RSS parsing |
+| 27 | test_job_outbox.py | 6 | - | 6 | Jobs: outbox, worker, cascade |
+| 28 | test_segmentation.py | 6 | - | 6 | Segmentation: questionnaire, profil |
+| 29 | test_purchase.py | 5 | 2 | 5 | Achat Energie: scenarios, seed |
+| 30 | test_monitoring_integration.py | 5 | - | 5 | Monitoring: integration |
+| 31 | test_smoke.py | 5 | - | 5 | Smoke: endpoints up (need live DB) |
+| 32 | test_demo_import.py | 4 | - | 4 | Demo: import flow |
+| 33 | test_onboarding.py | 3 | 2 | 3 | Onboarding: org, sites |
+| 34 | test_billing.py | 3 | - | 3 | Billing: contracts |
+| 35 | test_sprint2.py | 3 | - | 3 | Sprint 2: legacy |
+| 36 | test_reports.py | 3 | - | 3 | Reports: audit JSON/PDF |
+| 37 | test_integration_pipeline.py | 1 | 1 | 1 | Integration: full pipeline |
+| 38 | test_site_compliance_api.py | 1 | - | 1 | Sites: compliance API |
 
-**File Reference**: `backend/tests/test_ai_agents.py:39`
-**Code Location**: Fixture lines 32-44
-
-**Broken Fixture**:
-```python
-site = Site(
-    id=1,
-    nom="Test Site",
-    type=TypeSite.BUREAU,
-    surface_m2=1500,
-    organisation_id=1,  # ❌ INVALID - Site doesn't have this field
-    actif=True
-)
-```
-
-**Correct Fixture** (should be):
-```python
-org = Organisation(id=1, nom="Test Org", type_client="retail", actif=True)
-entite = EntiteJuridique(id=1, organisation_id=1, nom="Entité Test")
-portefeuille = Portefeuille(id=1, entite_juridique_id=1, nom="Portfolio Test")
-site = Site(
-    id=1,
-    nom="Test Site",
-    portefeuille_id=1,  # ✅ CORRECT FK
-    type=TypeSite.BUREAU,
-    surface_m2=1500,
-    actif=True
-)
-```
-
-**Impact**: 🟡 **MEDIUM** - AI agents work (manual tests OK), just fixture broken
-
----
-
-### 3. test_job_outbox.py (2/6 PASS - 33%)
-
-| Test Case | Error | Root Cause | Fix | Effort |
-|-----------|-------|------------|-----|--------|
-| test_enqueue_returns_id | AttributeError: 'JobOutbox' object has no attribute 'status' | enqueue_job() returns JobOutbox object instead of int ID, tests try job_id.status | Change enqueue_job() to return job.id | 5 min |
-| test_job_cascade | sqlalchemy.exc.ArgumentError: Could not determine join condition | Implicit join fails, missing explicit foreign_keys | Add explicit foreign_keys in jobs/worker.py cascade query | 10 min |
-| test_process_recompute_assessment | sqlalchemy.exc.ArgumentError: Could not determine join condition | Same | Same | - |
-| test_failed_job_status | AttributeError: 'JobOutbox' object has no attribute 'status' | Same as test_enqueue_returns_id | Same | - |
-
-**File Reference**: `backend/jobs/worker.py:enqueue_job()`
-**Code Location**: Line ~30 (return statement)
-
-**Current Code**:
-```python
-def enqueue_job(db: Session, job_type: JobType, payload: dict, priority: int = 5) -> JobOutbox:
-    job = JobOutbox(...)
-    db.add(job)
-    db.commit()
-    return job  # ❌ Returns object
-```
-
-**Fixed Code**:
-```python
-def enqueue_job(db: Session, job_type: JobType, payload: dict, priority: int = 5) -> int:
-    job = JobOutbox(...)
-    db.add(job)
-    db.commit()
-    db.refresh(job)
-    return job.id  # ✅ Returns int ID
-```
-
-**Impact**: 🟡 **MEDIUM** - JobOutbox works (manual enqueue OK), just API inconsistency
+**Total**: 38 fichiers, 824 tests, 100% pass
 
 ---
 
-### 4. test_watchers.py (5/6 PASS - 83%)
+## Couverture par brique
 
-| Test Case | Error | Root Cause | Fix | Effort |
-|-----------|-------|------------|-----|--------|
-| test_watcher_registry | AssertionError: assert 'legifrance_watcher' in ['legifrance', 'cre', 'rte'] | Registry returns name without '_watcher' suffix, tests expect suffix | Align test expectation or registry naming convention | 2 min |
-
-**File Reference**: `backend/watchers/registry.py:list_watchers()`
-**Code Location**: Line ~15 (return statement)
-
-**Mismatch**:
-```python
-# Registry returns:
-{'name': 'legifrance', ...}  # No suffix
-
-# Test expects:
-assert 'legifrance_watcher' in watcher_names
-```
-
-**Fix Options**:
-1. Change registry to append '_watcher' suffix (consistency with file names)
-2. Change tests to remove suffix expectation (cleaner API)
-
-**Recommendation**: Fix tests (option 2) - API should be clean, file names are internal.
-
-**Impact**: 🟢 **LOW** - Single cosmetic test, watcher logic works
-
----
-
-## PASSING TEST SUITES ✅
-
-### test_compliance_engine.py (56/56 PASS - 100%)
-
-**Coverage**:
-- Legacy compliance engine (Décret Tertiaire focus)
-- 56 test cases covering:
-  - Scope determination (surface thresholds)
-  - Multi-occupancy rules
-  - Consumption targets (2030/2040/2050)
-  - Objective type selection (relativ/absolu/modulation)
-  - Missing data handling
-  - Deadline computation
-  - Action prioritization
-
-**File Reference**: `backend/services/compliance_engine.py` (730 lines)
-**Status**: 🟢 **PRODUCTION READY** - Core legacy feature fully tested
+| Brique | Tests | % du total | Fichiers test |
+|--------|-------|------------|---------------|
+| Bill Intelligence | 73 | 8.9% | test_bill_*.py (4), test_billing.py |
+| IAM / Auth | 61 | 7.4% | test_iam.py |
+| Patrimoine DIAMANT | 29 | 3.5% | test_patrimoine.py |
+| Diagnostic Conso | 28 | 3.4% | test_consumption_diag.py, test_sprint6_diag_v11.py |
+| Knowledge Base | 26 | 3.2% | test_kb_citations.py, test_kb_usages.py |
+| Smart Intake DIAMANT | 25 | 3.0% | test_intake.py |
+| Monitoring / Energy | 24 | 2.9% | test_alert_engine.py, test_kpi_engine.py, test_power_*.py, test_data_quality.py, test_monitoring_*.py |
+| Compliance | 20 | 2.4% | test_compliance_engine.py, test_compliance_v1.py |
+| Achat Energie | 18 | 2.2% | test_purchase.py |
+| RegOps | 16 | 1.9% | test_regops_rules.py |
+| Referential | 31 | 3.8% | test_fetch_dry_run.py, test_manifest_build.py |
+| Watchers | 23 | 2.8% | test_watchers.py, test_watchlist_schema.py |
+| Notifications | 8 | 1.0% | test_notifications.py |
+| Actions Hub | 7 | 0.8% | test_actions.py |
+| AI Agents | 7 | 0.8% | test_ai_agents.py |
+| Connectors | 7 | 0.8% | test_connectors.py |
+| Segmentation | 6 | 0.7% | test_segmentation.py |
+| Jobs | 6 | 0.7% | test_job_outbox.py |
+| Onboarding | 5 | 0.6% | test_onboarding.py, test_sprint2.py |
+| Cockpit | 0 | 0% | - |
+| Alertes | 0 | 0% | - |
+| Demo Mode | 0 | 0% | - |
 
 ---
 
-### test_site_compliance_api.py (8/8 PASS - 100%)
+## Briques sans tests (a ajouter)
 
-**Coverage**:
-- API endpoint `/api/compliance/site/{id}/assessment`
-- Response schema validation
-- Error handling (404, validation)
-- Cache behavior
-
-**File Reference**: `backend/routes/compliance.py`
-**Status**: 🟢 **PRODUCTION READY** - API tested
-
----
-
-### test_connectors.py (7/7 PASS - 100%)
-
-**Coverage**:
-- Connector registry auto-discovery
-- RTE eCO2mix real API integration (HTTP mocked in tests)
-- PVGIS solar estimate (HTTP mocked)
-- Stub mode for auth-gated connectors (Enedis, MeteoFrance)
-- DataPoint creation + lineage
-
-**File Reference**: `backend/connectors/` (5 connectors)
-**Status**: 🟢 **PRODUCTION READY** - Plugin arch works
+| Brique | Fichier source | Tests manquants suggerees |
+|--------|---------------|--------------------------|
+| Cockpit | routes/cockpit.py, dashboard_2min.py | 5 tests: aggregation KPIs, filtres org, dashboard 2min |
+| Alertes | routes/alertes.py | 3 tests: list, get, resolve |
+| Demo Mode | routes/demo.py | 3 tests: enable, disable, seed |
+| Compteurs | routes/compteurs.py | 3 tests: create, list, get |
+| Guidance | routes/guidance.py | 2 tests: action-plan, readiness |
 
 ---
 
-## CORE PATH COVERAGE ANALYSIS
+## Warnings deprecation (54942)
 
-### ✅ Covered (Working & Tested)
+Toutes les warnings viennent de `datetime.utcnow()` deprece en Python 3.12+.
 
-| Feature | Test File | Coverage | Status |
-|---------|-----------|----------|--------|
-| **Legacy Compliance Engine** | test_compliance_engine.py | 56 tests | 🟢 100% |
-| **Compliance API** | test_site_compliance_api.py | 8 tests | 🟢 100% |
-| **Connectors (Plugin Arch)** | test_connectors.py | 7 tests | 🟢 100% |
-| **Watchers (RSS Parse)** | test_watchers.py | 5/6 pass | 🟢 83% |
-| **AI Client Stub Mode** | test_ai_agents.py | 2/7 pass | 🟡 29% |
-| **JobOutbox Enqueue** | test_job_outbox.py | 2/6 pass | 🟡 33% |
+| Fichier source | Occurrences | Fix |
+|----------------|-------------|-----|
+| services/iam_service.py | L104, L110, L167, L227, L339 | `datetime.now(UTC)` |
+| services/intake_service.py | L88, L227, L347 | `datetime.now(UTC)` |
+| services/notification_service.py | L383, L459 | `datetime.now(UTC)` |
+| services/purchase_service.py | L28 | `datetime.now(UTC)` |
+| services/purchase_seed.py | L85, L111 | `datetime.now(UTC)` |
+| services/audit_report_service.py | L68 | `datetime.now(UTC)` |
+| services/analytics_engine.py | L90, L453, L497 | `datetime.now(UTC)` |
+| services/consumption_diagnostic.py | L318 | `datetime.now(UTC)` |
+| services/patrimoine_service.py | L516 | `datetime.now(UTC)` |
+| routes/auth.py | L102 | `datetime.now(UTC)` |
+| jobs/worker.py | L27 | `datetime.now(UTC)` |
+| scripts/referential/build_manifest.py | L25 | `datetime.now(UTC)` |
 
-### ❌ Not Covered (Implemented but Failing Tests)
-
-| Feature | Test File | Issue | Impact |
-|---------|-----------|-------|--------|
-| **RegOps 4 Rules** | test_regops_rules.py | 0/16 pass - YAML config mismatch | 🔴 HIGH |
-| **RegOps Engine** | (no tests) | Not covered | 🔴 HIGH |
-| **RegOps API** | (no tests) | Not covered | 🟡 MEDIUM |
-| **AI Agents** | test_ai_agents.py | 5/7 fail - Fixture broken | 🟡 MEDIUM |
-| **JobOutbox Cascade** | test_job_outbox.py | 4/6 fail - Return type + SQL join | 🟡 MEDIUM |
-
-### 🔵 Manual Smoke Tests Required
-
-Since automated tests fail for RegOps, these **must be verified manually**:
-
-1. **RegOps Evaluation**:
-   ```bash
-   curl http://localhost:8000/api/regops/site/1
-   ```
-   Expected: JSON with `findings`, `actions`, `compliance_score` (0-100)
-
-2. **RegOps Dashboard**:
-   ```bash
-   curl http://localhost:8000/api/regops/dashboard
-   ```
-   Expected: Org KPIs
-
-3. **Connectors List**:
-   ```bash
-   curl http://localhost:8000/api/connectors/list
-   ```
-   Expected: 5 connectors with status
-
-4. **Watchers Events**:
-   ```bash
-   curl http://localhost:8000/api/watchers/events
-   ```
-   Expected: 4 sample RegSourceEvents
-
-5. **AI Stub Mode**:
-   ```bash
-   curl http://localhost:8000/api/ai/site/1/explain
-   ```
-   Expected: Stub response with "[AI Stub Mode]"
+**Effort total**: 15 min (remplacement global `datetime.utcnow()` -> `datetime.now(datetime.UTC)`)
 
 ---
 
-## ROOT CAUSE FAMILIES
+## Commande de reproduction
 
-### Family 1: Configuration Mismatch (16 tests)
-
-**Symptom**: KeyError on YAML keys
-**Files**: `test_regops_rules.py` all cases
-**Root Cause**: Tests expect nested dict access `configs['tertiaire_operat']` but _load_configs() returns different structure
-**Fix**: Verify YAML parsing in `regops/engine.py:_load_configs()`, align tests
-**Effort**: 15 min (single root cause, fix once)
-
-### Family 2: Model Schema Mismatch (5 tests)
-
-**Symptom**: TypeError on invalid keyword argument
-**Files**: `test_ai_agents.py` fixture
-**Root Cause**: Fixture uses `organisation_id` but Site has `portefeuille_id`
-**Fix**: Create full FK chain (org→entite→portefeuille→site)
-**Effort**: 10 min
-
-### Family 3: API Contract Inconsistency (4 tests)
-
-**Symptom**: AttributeError on return value + SQL join errors
-**Files**: `test_job_outbox.py`
-**Root Cause**: enqueue_job() returns object instead of ID, implicit joins fail
-**Fix**: Return job.id, add explicit foreign_keys in cascade query
-**Effort**: 15 min (5 min return type + 10 min SQL)
-
-### Family 4: Naming Convention (1 test)
-
-**Symptom**: AssertionError on watcher names
-**Files**: `test_watchers.py:test_watcher_registry`
-**Root Cause**: Registry returns 'legifrance', tests expect 'legifrance_watcher'
-**Fix**: Align test expectation (remove suffix)
-**Effort**: 2 min
-
----
-
-## PRIORITY FIXES (by Impact × Effort)
-
-| # | Fix | Impact | Effort | ROI | File |
-|---|-----|--------|--------|-----|------|
-| 1 | Fix YAML config access (Family 1) | 🔴 HIGH | 15 min | ⭐⭐⭐ | regops/engine.py + tests/test_regops_rules.py |
-| 2 | Fix AI agents fixture (Family 2) | 🟡 MEDIUM | 10 min | ⭐⭐ | tests/test_ai_agents.py |
-| 3 | Fix JobOutbox return type (Family 3) | 🟡 MEDIUM | 5 min | ⭐⭐ | jobs/worker.py |
-| 4 | Fix JobOutbox cascade SQL (Family 3) | 🟡 MEDIUM | 10 min | ⭐⭐ | jobs/worker.py |
-| 5 | Fix watcher name test (Family 4) | 🟢 LOW | 2 min | ⭐ | tests/test_watchers.py |
-
-**Total Effort to 100% Pass**: ~45 minutes
-
----
-
-## MISSING TEST COVERAGE
-
-These features are **implemented but not tested**:
-
-1. **RegOps Engine Orchestrator** (`regops/engine.py`):
-   - evaluate_site() full flow
-   - evaluate_batch() bulk queries
-   - persist_assessment() caching
-   - Score computation formula
-   - Hash-based cache invalidation
-
-2. **RegOps API Routes** (`routes/regops.py`):
-   - GET /api/regops/site/{id}
-   - GET /api/regops/site/{id}/cached
-   - POST /api/regops/recompute
-   - GET /api/regops/dashboard
-
-3. **Frontend RegOps Page** (`frontend/src/pages/RegOps.jsx`):
-   - Dual panel rendering
-   - Rules vs AI separation
-   - API integration
-
-4. **AI Agents** (5 agents in `ai_layer/agents/`):
-   - regops_explainer
-   - regops_recommender
-   - data_quality_agent
-   - reg_change_agent
-   - exec_brief_agent
-
-**Recommendation**: Add integration tests for regops/engine.py (Priority after fixing existing 26 failures)
-
----
-
-## TEST EXECUTION COMMANDS
-
-### Run All Tests
 ```bash
-cd backend
-python -m pytest tests/ -v
+cd promeos-poc
+py -3.14 -m pytest backend/tests/ -v --tb=short
+# Resultat attendu: 824 passed, 54942 warnings in ~132s
 ```
-
-### Run by Suite
-```bash
-pytest tests/test_compliance_engine.py -v     # 56 tests, 100% pass
-pytest tests/test_regops_rules.py -v          # 16 tests, 0% pass
-pytest tests/test_ai_agents.py -v             # 7 tests, 29% pass
-pytest tests/test_job_outbox.py -v            # 6 tests, 33% pass
-pytest tests/test_watchers.py -v              # 6 tests, 83% pass
-pytest tests/test_connectors.py -v            # 7 tests, 100% pass
-pytest tests/test_site_compliance_api.py -v   # 8 tests, 100% pass
-```
-
-### Run by Marker (if added)
-```bash
-pytest tests/ -m "not integration" -v         # Unit tests only
-pytest tests/ -m "regops" -v                  # RegOps tests only
-```
-
-### Coverage Report
-```bash
-pytest tests/ --cov=backend --cov-report=html
-# Open htmlcov/index.html
-```
-
----
-
-## REGRESSION RISK ASSESSMENT
-
-### 🟢 LOW RISK - Do Not Touch
-
-These features are **fully tested and working**:
-- Legacy compliance engine (56 tests)
-- Compliance API (8 tests)
-- Connectors plugin arch (7 tests)
-
-**Rule**: Do NOT refactor these during fix phase.
-
-### 🟡 MEDIUM RISK - Fix Only
-
-These features **work in prod but tests broken**:
-- RegOps rules (YAML mismatch - fix config access)
-- AI agents (fixture broken - fix test setup)
-- JobOutbox (API inconsistency - fix return type)
-
-**Rule**: Fix tests to match implementation, do NOT change implementation.
-
-### 🔴 HIGH RISK - Needs Verification
-
-These features **lack test coverage**:
-- RegOps Engine orchestrator
-- RegOps API routes
-- Frontend RegOps page
-
-**Rule**: Add smoke tests before any changes.
-
----
-
-## NEXT STEPS
-
-1. **Immediate (Tonight)**:
-   - Fix Family 1 (YAML config) → +16 tests pass
-   - Fix Family 2 (AI fixture) → +5 tests pass
-   - Fix Family 3 (JobOutbox) → +4 tests pass
-   - Fix Family 4 (Watcher naming) → +1 test pass
-   - **Target**: 98/98 tests passing (100%)
-
-2. **Short Term (This Week)**:
-   - Add integration tests for regops/engine.py (10 tests)
-   - Add API tests for routes/regops.py (8 tests)
-   - Add frontend smoke tests with Playwright (5 tests)
-
-3. **Medium Term (Before Production)**:
-   - Add auth tests (RBAC enforcement)
-   - Add performance tests (evaluate_batch with 120 sites < 2s)
-   - Add error handling tests (missing env vars, invalid YAML)
-
----
-
-**Status**: 🟡 **AMBER** - Core features work, new features need test fixes (45 min effort)
-**Confidence**: 🟢 **HIGH** - All failures are test-side issues, not implementation bugs
-**Blocker**: Fix Family 1 (YAML) to unblock RegOps testing

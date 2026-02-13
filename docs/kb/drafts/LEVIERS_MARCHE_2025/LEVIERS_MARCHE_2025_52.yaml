@@ -1,0 +1,32 @@
+id: LEVIERS_MARCHE_2025_52
+type: knowledge
+domain: acc
+title: K.4 – Templates Documents (Intégrés PROMEOS MVP)
+summary: "- Statuts PMO (association SAS SARL SEM) – 3 variantes \n- Convention Enedis\
+  \ PMO – pré-complétée template \n- Contrat interne participant – droits/devoirs\
+  \ \n- Mandat SEPA – format standard CBI \n- Facture..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Statuts PMO (association SAS SARL SEM) – 3 variantes \n- Convention\
+  \ Enedis PMO – pré-complétée template \n- Contrat interne participant – droits/devoirs\
+  \ \n- Mandat SEPA – format standard CBI \n- Facture interne ACC – format compliant\
+  \ TVA \n- Rapport clés répartition – audit trail"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: K.4 – Templates Documents (Intégrés PROMEOS MVP)
+  anchor: '#k4-templates-documents-intgrs-promeos-mvp'
+  excerpt_short: "- Statuts PMO (association SAS SARL SEM) – 3 variantes \n- Convention\
+    \ Enedis PMO – pré-complétée temp..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

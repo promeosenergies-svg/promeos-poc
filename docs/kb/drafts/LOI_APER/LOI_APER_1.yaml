@@ -1,0 +1,33 @@
+id: LOI_APER_1
+type: knowledge
+domain: acc
+title: Définition et objectif (Articles 4-7, Article L141-5-3 code énergie)
+summary: Les Zones d’Accélération pour l’implantation d’installations de production
+  d’Énergies Renouvelables (ZAENR) sont des périmètres identifiés par communes pour
+  favoriser ENR (éolien, PV, hydro, gaz renou...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: 'Les Zones d’Accélération pour l’implantation d’installations de production
+  d’Énergies Renouvelables (ZAENR) sont des périmètres identifiés par communes pour
+  favoriser ENR (éolien, PV, hydro, gaz renouvelable, géothermie). Objectif : atteindre
+  objectifs régionaux PPE (Programmation Pluriannuelle Énergie) ; simplifier procédures
+  projets situés ZAENR.'
+logic: null
+sources:
+- doc_id: LOI_APER
+  label: Loi APER - Acceleration Production Energies Renouvelables
+  section: Définition et objectif (Articles 4-7, Article L141-5-3 code énergie)
+  anchor: '#dfinition-et-objectif-articles-4-7-article-l141-5-3-code-nergie'
+  excerpt_short: Les Zones d’Accélération pour l’implantation d’installations de production
+    d’Énergies Renouvelables ...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

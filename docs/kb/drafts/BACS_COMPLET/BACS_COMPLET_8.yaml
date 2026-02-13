@@ -1,0 +1,31 @@
+id: BACS_COMPLET_8
+type: knowledge
+domain: reglementaire
+title: Systèmes de climatisation
+summary: "- PAC réversible + appoint froid : Somme (ex : 180 kW + 120 kW = 300 kW)\
+  \ \n- Systèmes thermodynamiques même bâtiment : Somme toutes unités \n- Climatiseurs\
+  \ individuels : Somme tous les climatiseurs"
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- PAC réversible + appoint froid : Somme (ex : 180 kW + 120 kW = 300\
+  \ kW) \n- Systèmes thermodynamiques même bâtiment : Somme toutes unités \n- Climatiseurs\
+  \ individuels : Somme tous les climatiseurs"
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Systèmes de climatisation
+  anchor: '#systmes-de-climatisation'
+  excerpt_short: "- PAC réversible + appoint froid : Somme (ex : 180 kW + 120 kW =\
+    \ 300 kW) \n- Systèmes thermodynamique..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

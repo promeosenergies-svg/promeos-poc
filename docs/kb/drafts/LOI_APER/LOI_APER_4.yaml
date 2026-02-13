@@ -1,0 +1,31 @@
+id: LOI_APER_4
+type: knowledge
+domain: usages
+title: Définition et cadre légal (Article L315-2 code énergie + article 88 APER)
+summary: Autoconsommation collective = fourniture électricité entre producteur(s)
+  et consommateur(s) finals , organisés au sein d’une Personne Morale Organisatrice
+  (PMO) , via réseau public, avec clé répartiti...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: Autoconsommation collective = fourniture électricité entre producteur(s)
+  et consommateur(s) finals , organisés au sein d’une Personne Morale Organisatrice
+  (PMO) , via réseau public, avec clé répartition définie.
+logic: null
+sources:
+- doc_id: LOI_APER
+  label: Loi APER - Acceleration Production Energies Renouvelables
+  section: Définition et cadre légal (Article L315-2 code énergie + article 88 APER)
+  anchor: '#dfinition-et-cadre-lgal-article-l315-2-code-nergie-article-88-aper'
+  excerpt_short: Autoconsommation collective = fourniture électricité entre producteur(s)
+    et consommateur(s) finals ,...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

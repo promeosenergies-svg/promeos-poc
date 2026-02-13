@@ -1,0 +1,32 @@
+id: DT_SYNTHESE_13
+type: knowledge
+domain: reglementaire
+title: Modèles d’économies réalisables
+summary: "Cas d’école bureau 5 000 m² (Île-de-France, conso ref 180 kWh/m²/an) : \n\
+  - Cible 2030 : 108 kWh/m²/an (méthode relative -40%) \n- Gisement : 72 kWh/m²/an\
+  \ = 360 000 kWh/an \n- Valeur énergétique annuelle ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Cas d’école bureau 5 000 m² (Île-de-France, conso ref 180 kWh/m²/an)\
+  \ : \n- Cible 2030 : 108 kWh/m²/an (méthode relative -40%) \n- Gisement : 72 kWh/m²/an\
+  \ = 360 000 kWh/an \n- Valeur énergétique annuelle : ~72 000€ (200€/MWh moyen) \n\
+  - Bilan CAPEX optimal : 300-400k€ d’investissements (gestion + équip), ROI 5-6 ans"
+logic: null
+sources:
+- doc_id: DT_SYNTHESE
+  label: Decret Tertiaire - Synthese PROMEOS
+  section: Modèles d’économies réalisables
+  anchor: '#modles-dconomies-ralisables'
+  excerpt_short: "Cas d’école bureau 5 000 m² (Île-de-France, conso ref 180 kWh/m²/an)\
+    \ : \n- Cible 2030 : 108 kWh/m²/an..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

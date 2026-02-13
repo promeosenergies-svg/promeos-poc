@@ -21,7 +21,12 @@ from models import (
     Evidence, TypeEvidence, StatutEvidence,
     # RegOps models
     DataPoint, RegAssessment, JobOutbox, RegSourceEvent,
-    ParkingType, OperatStatus, EnergyVector, SourceType, JobType, JobStatus
+    ParkingType, OperatStatus, EnergyVector, SourceType, JobType, JobStatus,
+    # Sprint 9: Compliance workflow
+    ComplianceFinding, ComplianceRunBatch, InsightStatus,
+    # IAM
+    User, UserOrgRole, UserScope, AuditLog,
+    UserRole, ScopeLevel,
 )
 from database import engine, SessionLocal
 
@@ -702,6 +707,363 @@ def create_sample_jobs(db: Session):
     print(f"  {len(jobs_data)} jobs créés")
 
 
+def run_compliance_rules(db: Session, org: Organisation):
+    """Run compliance rules engine + set workflow demo data on findings."""
+    print("  Evaluation conformite (compliance_rules engine)...")
+
+    from services.compliance_rules import evaluate_organisation
+
+    result = evaluate_organisation(db, org.id)
+    print(f"  Batch #{result['batch_id']}: {result['total_findings']} findings "
+          f"({result['nok_count']} NOK, {result['unknown_count']} UNKNOWN)")
+
+    # Set workflow status on some findings for demo variety
+    findings = db.query(ComplianceFinding).all()
+    demo_owners = ["j.dupont@acme.fr", "m.martin@acme.fr", "s.leroy@acme.fr"]
+
+    for i, f in enumerate(findings):
+        if f.status == "OK":
+            # 50% of OK findings -> resolved
+            if random.random() < 0.50:
+                f.insight_status = InsightStatus.RESOLVED
+                f.owner = random.choice(demo_owners)
+                f.notes = "Conforme - verifie lors de l'audit"
+        elif f.status == "NOK":
+            # 30% -> ack (in progress), 10% -> false_positive
+            r = random.random()
+            if r < 0.30:
+                f.insight_status = InsightStatus.ACK
+                f.owner = random.choice(demo_owners)
+                f.notes = "Pris en charge, travaux en cours"
+            elif r < 0.40:
+                f.insight_status = InsightStatus.FALSE_POSITIVE
+                f.owner = random.choice(demo_owners)
+                f.notes = "Faux positif - derogation accordee"
+
+    db.commit()
+
+    # Count workflow distribution
+    wf_counts = {}
+    for f in findings:
+        key = f.insight_status.value if f.insight_status else "open"
+        wf_counts[key] = wf_counts.get(key, 0) + 1
+    print(f"  Workflow demo: {wf_counts}")
+
+
+def sync_action_hub(db: Session, org: Organisation):
+    """Run Action Hub sync + set demo workflow variety."""
+    print("  Synchronisation Action Hub...")
+
+    from services.action_hub_service import sync_actions
+    from models import ActionItem, ActionStatus
+
+    result = sync_actions(db, org.id, triggered_by="seed")
+    print(f"  Action Hub batch #{result['batch_id']}: "
+          f"{result['created']} created, {result['updated']} updated, "
+          f"{result['skipped']} skipped, {result['closed']} closed")
+
+    # Set demo variety on actions
+    items = db.query(ActionItem).filter(ActionItem.org_id == org.id).all()
+    demo_owners = ["j.dupont@acme.fr", "m.martin@acme.fr", "s.leroy@acme.fr"]
+
+    for item in items:
+        r = random.random()
+        if r < 0.15:
+            item.status = ActionStatus.IN_PROGRESS
+            item.owner = random.choice(demo_owners)
+            item.notes = "En cours de traitement"
+        elif r < 0.25:
+            item.status = ActionStatus.DONE
+            item.owner = random.choice(demo_owners)
+            item.notes = "Termine"
+        elif r < 0.30:
+            item.status = ActionStatus.BLOCKED
+            item.notes = "En attente budget"
+        elif r < 0.50:
+            item.owner = random.choice(demo_owners)
+
+    db.commit()
+
+    # Count distribution
+    dist = {}
+    for item in items:
+        key = item.status.value if item.status else "open"
+        dist[key] = dist.get(key, 0) + 1
+    print(f"  Action Hub demo: {len(items)} actions, distribution: {dist}")
+
+
+def sync_notifications_demo(db: Session, org: Organisation):
+    """Run Notification sync + set demo variety (some READ/DISMISSED)."""
+    print("  Synchronisation Notifications...")
+
+    from services.notification_service import sync_notifications
+    from models import NotificationEvent, NotificationStatus
+
+    result = sync_notifications(db, org.id, triggered_by="seed")
+    print(f"  Notifications batch #{result['batch_id']}: "
+          f"{result['created']} created, {result['updated']} updated, "
+          f"{result['skipped']} skipped")
+
+    # Set demo variety
+    events = db.query(NotificationEvent).filter(NotificationEvent.org_id == org.id).all()
+    for event in events:
+        r = random.random()
+        if r < 0.20:
+            event.status = NotificationStatus.READ
+        elif r < 0.30:
+            event.status = NotificationStatus.DISMISSED
+
+    db.commit()
+
+    # Count distribution
+    dist = {}
+    for event in events:
+        key = event.status.value if event.status else "new"
+        dist[key] = dist.get(key, 0) + 1
+    print(f"  Notifications demo: {len(events)} events, distribution: {dist}")
+
+
+def seed_iam_demo(db: Session, org: Organisation):
+    """Create 10 IAM demo personas for Groupe Atlas / Casino demo."""
+    print("  Creation des utilisateurs IAM demo...")
+
+    from services.iam_service import (
+        create_user, assign_role, assign_scope, hash_password, log_audit,
+    )
+
+    # Resolve entity and site IDs for scoped users
+    entites = db.query(EntiteJuridique).filter(
+        EntiteJuridique.organisation_id == org.id
+    ).all()
+    entite_idf = entites[0] if entites else None
+
+    sites = db.query(Site).join(
+        Portefeuille, Site.portefeuille_id == Portefeuille.id
+    ).join(
+        EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id
+    ).filter(
+        EntiteJuridique.organisation_id == org.id
+    ).all()
+    first_site = sites[0] if sites else None
+    # Pick a second site for prestataire dual-scope
+    second_site = sites[2] if len(sites) > 2 else first_site
+
+    PERSONAS = [
+        # (prenom, nom, email, role, scope_type, scope_ref, expires_days)
+        ("Sophie", "Durand", "sophie@atlas.demo", UserRole.DG_OWNER, "org", None, None),
+        ("Marc", "Leroy", "marc@atlas.demo", UserRole.DSI_ADMIN, "org", None, None),
+        ("Claire", "Martin", "claire@atlas.demo", UserRole.DAF, "org", None, None),
+        ("Thomas", "Petit", "thomas@atlas.demo", UserRole.ACHETEUR, "org", None, None),
+        ("Nadia", "Benali", "nadia@atlas.demo", UserRole.RESP_CONFORMITE, "org", None, None),
+        ("Lucas", "Moreau", "lucas@atlas.demo", UserRole.ENERGY_MANAGER, "org", None, None),
+        ("Julie", "Lambert", "julie@atlas.demo", UserRole.RESP_IMMOBILIER, "entite", entite_idf, None),
+        ("Pierre", "Garcia", "pierre@atlas.demo", UserRole.RESP_SITE, "site", first_site, None),
+        ("Karim", "Diallo", "karim@atlas.demo", UserRole.PRESTATAIRE, "site", first_site, 90),
+        ("Emma", "Roux", "emma@atlas.demo", UserRole.AUDITEUR, "org", None, None),
+    ]
+
+    users_created = []
+    for prenom, nom, email, role, scope_type, scope_ref, expires_days in PERSONAS:
+        user = create_user(db, email=email, password="demo2024", nom=nom, prenom=prenom)
+        uor = assign_role(db, user_id=user.id, org_id=org.id, role=role)
+
+        # Assign scope
+        if scope_type == "org":
+            assign_scope(db, uor.id, ScopeLevel.ORG, org.id)
+        elif scope_type == "entite" and scope_ref:
+            assign_scope(db, uor.id, ScopeLevel.ENTITE, scope_ref.id)
+        elif scope_type == "site" and scope_ref:
+            expires_at = (datetime.utcnow() + timedelta(days=expires_days)) if expires_days else None
+            assign_scope(db, uor.id, ScopeLevel.SITE, scope_ref.id, expires_at=expires_at)
+            # Karim gets a second site scope
+            if email == "karim@atlas.demo" and second_site and second_site.id != scope_ref.id:
+                assign_scope(db, uor.id, ScopeLevel.SITE, second_site.id, expires_at=expires_at)
+
+        users_created.append(user)
+
+    # Create some audit log entries
+    log_audit(db, users_created[0].id, "login", detail={"method": "password"})
+    log_audit(db, users_created[1].id, "login", detail={"method": "password"})
+    log_audit(db, users_created[1].id, "edit", "user", str(users_created[7].id),
+              detail={"action": "assign_scope", "site_id": first_site.id if first_site else 0})
+
+    db.commit()
+    print(f"  {len(users_created)} utilisateurs IAM crees avec roles et scopes")
+    print(f"  Login demo: sophie@atlas.demo / demo2024 (DG/Owner)")
+    return users_created
+
+
+def seed_patrimoine_demo(db: Session) -> dict:
+    """Seed patrimoine demo: Collectivite Azur (10 sites, 13 compteurs, N-N links).
+
+    Idempotent: skips if org 'Collectivite Azur' already exists.
+    Can be called from route POST /api/patrimoine/demo/load or from main().
+    """
+    from models import (
+        OrgEntiteLink, PortfolioEntiteLink,
+        Compteur, TypeCompteur, EnergyVector,
+    )
+    from services.onboarding_service import create_site_from_data, provision_site
+
+    # Idempotence check
+    existing = db.query(Organisation).filter(Organisation.nom == "Collectivite Azur").first()
+    if existing:
+        sites_count = db.query(Site).join(
+            Portefeuille, Site.portefeuille_id == Portefeuille.id
+        ).join(
+            EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id
+        ).filter(EntiteJuridique.organisation_id == existing.id).count()
+        return {"status": "already_exists", "org_id": existing.id, "sites": sites_count}
+
+    print("  Creation Collectivite Azur (patrimoine demo)...")
+
+    # --- Organisation ---
+    org = Organisation(nom="Collectivite Azur", type_client="collectivite", actif=True, siren="200054781")
+    db.add(org)
+    db.flush()
+
+    # --- Entites juridiques ---
+    mairie = EntiteJuridique(
+        organisation_id=org.id, nom="Mairie de Nice", siren="200054781", siret="20005478100015",
+        naf_code="84.11Z", region_code="93", insee_code="06088",
+    )
+    ccas = EntiteJuridique(
+        organisation_id=org.id, nom="CCAS Nice", siren="200054799", siret="20005479900012",
+        naf_code="88.99B", region_code="93", insee_code="06088",
+    )
+    db.add_all([mairie, ccas])
+    db.flush()
+
+    # --- N-N links (OrgEntiteLink) ---
+    link_org_mairie = OrgEntiteLink(
+        organisation_id=org.id, entite_juridique_id=mairie.id,
+        role="proprietaire", confidence=1.0,
+    )
+    link_org_ccas = OrgEntiteLink(
+        organisation_id=org.id, entite_juridique_id=ccas.id,
+        role="proprietaire", confidence=1.0,
+    )
+    db.add_all([link_org_mairie, link_org_ccas])
+    db.flush()
+
+    # --- Portefeuilles ---
+    pf_equip = Portefeuille(entite_juridique_id=mairie.id, nom="Equipements publics",
+                            description="Mairie, ecoles, gymnases, creches")
+    pf_voirie = Portefeuille(entite_juridique_id=mairie.id, nom="Voirie & Eclairage",
+                             description="Parkings et eclairage public")
+    pf_medico = Portefeuille(entite_juridique_id=ccas.id, nom="Medico-social",
+                             description="EHPAD, foyers, centres sociaux")
+    db.add_all([pf_equip, pf_voirie, pf_medico])
+    db.flush()
+
+    # --- N-N links (PortfolioEntiteLink) ---
+    link_pf_ccas = PortfolioEntiteLink(
+        portefeuille_id=pf_medico.id, entite_juridique_id=ccas.id, role="gestionnaire",
+    )
+    link_pf_mairie_medico = PortfolioEntiteLink(
+        portefeuille_id=pf_medico.id, entite_juridique_id=mairie.id, role="tutelle",
+    )
+    db.add_all([link_pf_ccas, link_pf_mairie_medico])
+    db.flush()
+
+    # --- Sites data ---
+    SITES_DATA = [
+        # (portefeuille, nom, type_site, surface, adresse, cp, ville, compteurs)
+        (pf_equip, "Mairie Centre Nice", "collectivite", 2500,
+         "5 rue de la Prefecture", "06300", "Nice",
+         [("electricite", "MR-E01", 120), ("gaz", "MR-G01", None)]),
+        (pf_equip, "Ecole Victor Hugo", "enseignement", 1800,
+         "12 avenue Victor Hugo", "06000", "Nice",
+         [("electricite", "VH-E01", 60), ("gaz", "VH-G01", None)]),
+        (pf_equip, "Gymnase Municipal Magnan", "collectivite", 900,
+         "45 boulevard de Magnan", "06200", "Nice",
+         [("electricite", "GY-E01", 36)]),
+        (pf_equip, "Bibliotheque Raimbaldi", "collectivite", 600,
+         "1 place Pierre Gautier", "06300", "Nice",
+         [("electricite", "BR-E01", 36)]),
+        (pf_equip, "Creche Les Oliviers", "sante", 400,
+         "8 rue des Oliviers", "06100", "Nice",
+         [("electricite", "CR-E01", 24)]),
+        (pf_voirie, "Parking Massena", "entrepot", 5000,
+         "Place Massena", "06000", "Nice",
+         [("electricite", "PM-E01", 150)]),
+        (pf_voirie, "Eclairage Promenade des Anglais", "collectivite", 0,
+         "Promenade des Anglais", "06200", "Nice",
+         [("electricite", "PA-E01", 200)]),
+        (pf_medico, "EHPAD Les Mimosas", "sante", 3000,
+         "22 chemin des Mimosas", "06100", "Nice",
+         [("electricite", "EH-E01", 90), ("gaz", "EH-G01", None)]),
+        (pf_medico, "Foyer Jeunes Travailleurs", "logement_social", 1200,
+         "15 rue Barla", "06300", "Nice",
+         [("electricite", "FJ-E01", 60)]),
+        (pf_medico, "Centre Social Ariane", "collectivite", 800,
+         "3 boulevard de l'Ariane", "06300", "Nice",
+         [("electricite", "CS-E01", 36)]),
+    ]
+
+    sites_created = 0
+    compteurs_created = 0
+    batiments_count = 0
+    obligations_count = 0
+
+    _ENERGY_MAP = {
+        "electricite": (TypeCompteur.ELECTRICITE, EnergyVector.ELECTRICITY),
+        "gaz": (TypeCompteur.GAZ, EnergyVector.GAS),
+        "eau": (TypeCompteur.EAU, None),
+    }
+
+    for pf, nom, type_site, surface, adresse, cp, ville, compteurs_data in SITES_DATA:
+        site = create_site_from_data(
+            db=db, portefeuille_id=pf.id, nom=nom, type_site=type_site,
+            adresse=adresse, code_postal=cp, ville=ville,
+            surface_m2=float(surface) if surface else None,
+        )
+        site.data_source = "demo"
+        site.data_source_ref = "patrimoine_demo"
+        site.latitude = 43.7102 + random.uniform(-0.02, 0.02)
+        site.longitude = 7.2620 + random.uniform(-0.02, 0.02)
+        site.region = "Provence-Alpes-Cote d'Azur"
+
+        prov = provision_site(db, site)
+        batiments_count += 1
+        obligations_count += prov.get("obligations", 0)
+        sites_created += 1
+
+        for ctype, serie_suffix, puissance in compteurs_data:
+            tc, ev = _ENERGY_MAP.get(ctype, (TypeCompteur.ELECTRICITE, EnergyVector.ELECTRICITY))
+            compteur = Compteur(
+                site_id=site.id,
+                type=tc,
+                numero_serie=f"AZR-{serie_suffix}",
+                meter_id=f"{random.randint(10000000000000, 99999999999999)}",
+                energy_vector=ev,
+                puissance_souscrite_kw=puissance,
+                actif=True,
+                data_source="demo",
+                data_source_ref="patrimoine_demo",
+            )
+            db.add(compteur)
+            compteurs_created += 1
+
+    db.flush()
+
+    result = {
+        "status": "created",
+        "org_id": org.id,
+        "org_name": org.nom,
+        "entites": 2,
+        "portefeuilles": 3,
+        "sites": sites_created,
+        "compteurs": compteurs_created,
+        "batiments": batiments_count,
+        "obligations": obligations_count,
+        "nn_links": 4,
+    }
+    print(f"  Collectivite Azur: {sites_created} sites, {compteurs_created} compteurs, "
+          f"{batiments_count} batiments, {obligations_count} obligations")
+    return result
+
+
 def main():
     """Script principal de seed"""
     print("=" * 70)
@@ -741,18 +1103,34 @@ def main():
         run_regops_assessments(db, sites)
         create_sample_jobs(db)
 
+        # Sprint 9: Compliance rules evaluation + workflow demo
+        run_compliance_rules(db, org)
+
+        # Sprint 10: Action Hub sync
+        sync_action_hub(db, org)
+
+        # Sprint 10.2: Notifications sync
+        sync_notifications_demo(db, org)
+
+        # Sprint 11: IAM demo users
+        seed_iam_demo(db, org)
+
+        # DIAMANT: Patrimoine demo (Collectivite Azur)
+        patrimoine_result = seed_patrimoine_demo(db)
+        db.commit()
+
         print("\n" + "=" * 70)
         print("SEED TERMINE AVEC SUCCES !")
         print("=" * 70)
-        print(f"Résumé :")
-        print(f"   - 1 Organisation (Groupe Casino)")
-        print(f"   - 1 Entité juridique")
-        print(f"   - 3 Portefeuilles")
-        print(f"   - 120 Sites (avec champs RegOps)")
-        print(f"   - 120 Bâtiments")
+        print(f"Resume :")
+        print(f"   - 1 Organisation (Groupe Casino) + 1 Organisation (Collectivite Azur)")
+        print(f"   - 3 Entites juridiques (Casino + Mairie + CCAS)")
+        print(f"   - 6 Portefeuilles (3 Casino + 3 Azur)")
+        print(f"   - 130 Sites (120 Casino + 10 Azur)")
+        print(f"   - 130 Batiments")
         print(f"   - ~300 Usages")
-        print(f"   - ~150 Obligations")
-        print(f"   - ~50 Compteurs (avec meter_id + energy_vector)")
+        print(f"   - ~150+ Obligations")
+        print(f"   - ~63 Compteurs (50 Casino + 13 Azur)")
         print(f"   - ~8400 Consommations (7j)")
         print(f"   - ~500 Evidences")
         print(f"   - 20 Alertes actives")
@@ -760,6 +1138,11 @@ def main():
         print(f"   - 4 RegSourceEvents")
         print(f"   - 120 RegAssessments (from RegOps engine)")
         print(f"   - 4 JobOutbox entries")
+        print(f"   - ComplianceFindings (from rules engine, with workflow demo)")
+        print(f"   - ActionItems (from Action Hub sync, with workflow demo)")
+        print(f"   - NotificationEvents (from Alert Center sync, with READ/DISMISSED demo)")
+        print(f"   - 10 Users IAM (roles + scopes, login: sophie@atlas.demo / demo2024)")
+        print(f"   - 4 N-N links (OrgEntiteLink + PortfolioEntiteLink)")
         print("=" * 70)
 
     except Exception as e:

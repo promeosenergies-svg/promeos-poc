@@ -1,0 +1,33 @@
+id: ARRETE_ACC_2025_12
+type: knowledge
+domain: reglementaire
+title: 5.1 Adoption sur le terrain
+summary: "Au 31 décembre 2024 (avant entrée en vigueur définitive) : \n- Opérations\
+  \ actives: 698 \n- Opérations en projet: ~1,095 \n- Puissance totale cumulée: 73,6\
+  \ MWc \n- Consommateurs participants: ~7,232 \n- Pro..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Au 31 décembre 2024 (avant entrée en vigueur définitive) : \n- Opérations\
+  \ actives: 698 \n- Opérations en projet: ~1,095 \n- Puissance totale cumulée: 73,6\
+  \ MWc \n- Consommateurs participants: ~7,232 \n- Producteurs participants: ~1,110\
+  \ \n- Croissance annuelle: +393 opérations depuis début 2024 27 \n- Ratio moyen:\
+  \ ~2 producteurs et 10 consommateurs par opération"
+logic: null
+sources:
+- doc_id: ARRETE_ACC_2025
+  label: Arrete 21 fevrier 2025 - ACC 5MW/10MW
+  section: 5.1 Adoption sur le terrain
+  anchor: '#51-adoption-sur-le-terrain'
+  excerpt_short: "Au 31 décembre 2024 (avant entrée en vigueur définitive) : \n- Opérations\
+    \ actives: 698 \n- Opérations ..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

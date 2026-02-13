@@ -1,0 +1,43 @@
+id: FLEX_EFFACEMENT_12
+type: rule
+domain: facturation
+title: 2.5 Rémunération & Coûts
+summary: "Réserve Primaire (FCR) : 8 \n- Prime capacité fixe (appel d’offres transfrontalier\
+  \ annuel) : ~€3–5/MW/h. \n- Pas rémunération énergie (fonction régulation auto).\
+  \ \n- Activation continu = usure/coûts d’ex..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Réserve Primaire (FCR) : 8 \n- Prime capacité fixe (appel d’offres transfrontalier\
+  \ annuel) : ~€3–5/MW/h. \n- Pas rémunération énergie (fonction régulation auto).\
+  \ \n- Activation continu = usure/coûts d’exploitation (risque net). \n\nRéserve\
+  \ Secondaire (aFRR) : \n- Prime capacité fixe : ~€4–7/MW/h. \n- Énergie : Prix SPOT\
+  \ moy. France (30 j glissants), rémunérée si activation. \n- Inégalité hausse/baisse\
+  \ : baisse souvent non-rémunérée (excédent prod), hausse premium. \n\nmFRR/RR-RC\
+  \ [artifact:] : \n- Prix d’enchère : Appels d’offres périodiques (trimestriels 2026,\
+  \ ex. jan/avr/juil/oct pour RR ; jan/avr pour RC). \n- Résultats 10h30 J-1, AOP\
+  \ journaliers “best-of” jusqu’au dernier jour livraison. \n- Rémunération : Prix\
+  \ marginal sélectionné. Volumes 2026 : 500 MW RR ↑, 250 MW RC ↑. \n- Défaut disponibilité\
+  \ : Pénalités (indemnités écart) appliquées post-livraison. \n\nGaranties Financières\
+  \ : Gage-espèces (dépôt trésorier), surtout si mFRR/RR-RC (risque écarts). Montant\
+  \ ~€20–50k typique. \n\nRevenus Bruts (Scénario 10 MW) : \n- aFRR prime : 365 ×\
+  \ 24 × 10 MW × €5/MWh = €438k/an . \n- Énergie : Variable (activation 30–50%), ~\
+  \ €50–100k/an . \n- Total : ~ €500k/an avant coûts télécommande/IT."
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: 2.5 Rémunération & Coûts
+  anchor: '#25-rmunration-cots'
+  excerpt_short: "Réserve Primaire (FCR) : 8 \n- Prime capacité fixe (appel d’offres\
+    \ transfrontalier annuel) : ~€3–5/MW..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

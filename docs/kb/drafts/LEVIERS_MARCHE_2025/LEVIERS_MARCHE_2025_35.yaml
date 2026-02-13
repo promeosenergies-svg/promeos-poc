@@ -1,0 +1,49 @@
+id: LEVIERS_MARCHE_2025_35
+type: knowledge
+domain: acc
+title: 'Catégorie 2 : Plateformes ACC Spécialisées Acteur Positionnement Opérations
+  gérées Segmentation Modèle Limites Différenciation Enogrid/EnoPower Leader ACC opération
+  200+ opérations Multi-secteur SaaS (€) + services Pas compliance tertiaire, clés
+  statiques Scalabilité opérations, UX EDF – Communitiz Fournisseur + ACC 50–100 opérations
+  Collectivités surtout SaaS captif EDF Verrouillage EDF, pas agnostique Assistance
+  déploiement, crédibilité Enercoop – Elocoop Coopérative citoyenne 30–50 opérations
+  Coopératives/citoyens Modèle équitable Petite taille, peu scaling Mission éthique,
+  gouvernance Sunchain (blockchain) Blockchain ACC <20 opérations Tech-forward Experimental
+  Adoption faible, coûts élevés Transparence blockchain HubWatt Facturation ACC +
+  monitoring 100+ opérations Multi-secteur SaaS + support Pas compliance multi-réglementaire,
+  pas montage ACC Facturation robuste, intégration compta'
+summary: 'Verdict : Enogrid/EnoPower = leader ACC, mais pas compliance tertiaire (Data
+  & Conformité). Ouverture pour PROMEOS « double compétence ».'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: 'Verdict : Enogrid/EnoPower = leader ACC, mais pas compliance tertiaire
+  (Data & Conformité). Ouverture pour PROMEOS « double compétence ».'
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: 'Catégorie 2 : Plateformes ACC Spécialisées Acteur Positionnement Opérations
+    gérées Segmentation Modèle Limites Différenciation Enogrid/EnoPower Leader ACC
+    opération 200+ opérations Multi-secteur SaaS (€) + services Pas compliance tertiaire,
+    clés statiques Scalabilité opérations, UX EDF – Communitiz Fournisseur + ACC 50–100
+    opérations Collectivités surtout SaaS captif EDF Verrouillage EDF, pas agnostique
+    Assistance déploiement, crédibilité Enercoop – Elocoop Coopérative citoyenne 30–50
+    opérations Coopératives/citoyens Modèle équitable Petite taille, peu scaling Mission
+    éthique, gouvernance Sunchain (blockchain) Blockchain ACC <20 opérations Tech-forward
+    Experimental Adoption faible, coûts élevés Transparence blockchain HubWatt Facturation
+    ACC + monitoring 100+ opérations Multi-secteur SaaS + support Pas compliance multi-réglementaire,
+    pas montage ACC Facturation robuste, intégration compta'
+  anchor: '#catgorie-2-plateformes-acc-spcialises-acteur-positionnement-oprations-gres-segmentation-modle-limites-diffrenciation-enogridenopower-leader-acc-opration-200-oprations-multi-secteur-saas-services-pas-compliance-tertiaire-cls-statiques-scalabilit-oprations-ux-edf-communitiz-fournisseur-acc-50100-oprations-collectivits-surtout-saas-captif-edf-verrouillage-edf-pas-agnostique-assistance-dploiement-crdibilit-enercoop-elocoop-cooprative-citoyenne-3050-oprations-cooprativescitoyens-modle-quitable-petite-taille-peu-scaling-mission-thique-gouvernance-sunchain-blockchain-blockchain-acc-20-oprations-tech-forward-experimental-adoption-faible-cots-levs-transparence-blockchain-hubwatt-facturation-acc-monitoring-100-oprations-multi-secteur-saas-support-pas-compliance-multi-rglementaire-pas-montage-acc-facturation-robuste-intgration-compta'
+  excerpt_short: 'Verdict : Enogrid/EnoPower = leader ACC, mais pas compliance tertiaire
+    (Data & Conformité). Ouvertur...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

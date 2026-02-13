@@ -1,0 +1,33 @@
+id: DT_OPERAT_2026_0
+type: rule
+domain: reglementaire
+title: Décret tertiaire / OPERAT — obligations 2026 et 2030
+summary: "“Récapitulatif officiel décret tertiaire : obligations OPERAT, échéances,\
+  \ sanctions, évolutions 2025 (valeurs absolues), citer ADEME/Legifrance. \n\nTrès\
+  \ bien. J’ai maintenant suffisamment d’information..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "“Récapitulatif officiel décret tertiaire : obligations OPERAT, échéances,\
+  \ sanctions, évolutions 2025 (valeurs absolues), citer ADEME/Legifrance. \n\nTrès\
+  \ bien. J’ai maintenant suffisamment d’informations précises. Laissez-moi créer\
+  \ un rapport complet et officiel sur le Décret tertiaire et OPERAT avec les obligations\
+  \ 2026 et 2030."
+logic: null
+sources:
+- doc_id: DT_OPERAT_2026
+  label: Decret Tertiaire / OPERAT - Obligations 2026
+  section: Décret tertiaire / OPERAT — obligations 2026 et 2030
+  anchor: '#dcret-tertiaire-operat-obligations-2026-et-2030'
+  excerpt_short: '“Récapitulatif officiel décret tertiaire : obligations OPERAT, échéances,
+    sanctions, évolutions 2025...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

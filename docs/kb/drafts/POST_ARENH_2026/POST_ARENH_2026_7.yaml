@@ -1,0 +1,38 @@
+id: POST_ARENH_2026_7
+type: knowledge
+domain: usages
+title: Révisions et Modifications du Tarif Unitaire
+summary: 'Le cadre prévoir trois modalités de révision du tarif unitaire : 21 Événement
+  Conditions Calendrier Organe Décideur Révision en cours de période Écarts significatifs
+  détectés sur revenus/consommations...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Le cadre prévoir trois modalités de révision du tarif unitaire : 21 Événement\
+  \ Conditions Calendrier Organe Décideur Révision en cours de période Écarts significatifs\
+  \ détectés sur revenus/consommations CRE informe sous 2 sem.; arrêté dans 10 j.o.\
+  \ Ministres (énergie/économie) Modification rétroactive (Montants à compenser >\
+  \ redistribution) ET (minoration N+1 insuffisante) Jusqu’à 11 mois après fin période\
+  \ Ministres sur demande Consolidation ex-post Fin année civile Révision sur revenus\
+  \ constatés d’EDF CRE, via comptabilité appropriée \n\nCes révisions permettent\
+  \ d’ajuster le mécanisme aux réalités observées, mais elles introduisent également\
+  \ une instabilité potentielle pour les factures des consommateurs et obligent les\
+  \ fournisseurs à gérer une trésorerie soumise à des régularisations ultérieures."
+logic: null
+sources:
+- doc_id: POST_ARENH_2026
+  label: Post-ARENH 2026
+  section: Révisions et Modifications du Tarif Unitaire
+  anchor: '#rvisions-et-modifications-du-tarif-unitaire'
+  excerpt_short: 'Le cadre prévoir trois modalités de révision du tarif unitaire :
+    21 Événement Conditions Calendrier ...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

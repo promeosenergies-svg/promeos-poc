@@ -1,0 +1,31 @@
+id: BACS_COMPLET_22
+type: rule
+domain: acc
+title: Évaluation exigences moyens (sauf réinspection sans changement)
+summary: "- Interopérabilité : Connexions toujours au standard (API, protocole) \n\
+  - Arrêt manuel : Possibilité toujours présente et testée \n- Recommandations accessibles\
+  \ : Rapports générés automatiquement pour e..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Interopérabilité : Connexions toujours au standard (API, protocole)\
+  \ \n- Arrêt manuel : Possibilité toujours présente et testée \n- Recommandations\
+  \ accessibles : Rapports générés automatiquement pour exploitant"
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Évaluation exigences moyens (sauf réinspection sans changement)
+  anchor: '#valuation-exigences-moyens-sauf-rinspection-sans-changement'
+  excerpt_short: "- Interopérabilité : Connexions toujours au standard (API, protocole)\
+    \ \n- Arrêt manuel : Possibilité ..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

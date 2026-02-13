@@ -1,0 +1,32 @@
+id: STRATEGIE_NEBCO_27
+type: knowledge
+domain: reglementaire
+title: 'Décision 4: Capital & Resource Allocation'
+summary: "Recommandation : €150–250k pilot investment Y1 (vs. €500k–1M scale) \n-\
+  \ Breakdown: €50k OE partnership setup ; €40k cockpit/IoT pilot config ; €30k legal/compliance\
+  \ ; €20k audit costs (sunk) ; €10k con..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Recommandation : €150–250k pilot investment Y1 (vs. €500k–1M scale) \n\
+  - Breakdown: €50k OE partnership setup ; €40k cockpit/IoT pilot config ; €30k legal/compliance\
+  \ ; €20k audit costs (sunk) ; €10k contingency \n- Headcount : 1 FTE Tech Lead (pilot\
+  \ ) + Sales/Ops support"
+logic: null
+sources:
+- doc_id: STRATEGIE_NEBCO
+  label: Analyse strategique NEBCO
+  section: 'Décision 4: Capital & Resource Allocation'
+  anchor: '#dcision-4-capital-resource-allocation'
+  excerpt_short: "Recommandation : €150–250k pilot investment Y1 (vs. €500k–1M scale)\
+    \ \n- Breakdown: €50k OE partnershi..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

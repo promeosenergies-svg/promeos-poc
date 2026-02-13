@@ -1,0 +1,34 @@
+id: FLEX_EFFACEMENT_38
+type: knowledge
+domain: facturation
+title: Sensibilités Clés
+summary: "Impactants (↑ €100–200k/an) : \n- ⬆️ Prix SPOT moyen (+€50/MWh NEBEF) →\
+  \ +€100k. \n- ⬆️ Fréquence activations (tempête/sécheresse) → +€150k. \n- ⬆️ Efficacité\
+  \ baseline (méthode optimisée) → gain €30k (moi..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Impactants (↑ €100–200k/an) : \n- ⬆️ Prix SPOT moyen (+€50/MWh NEBEF)\
+  \ → +€100k. \n- ⬆️ Fréquence activations (tempête/sécheresse) → +€150k. \n- ⬆️ Efficacité\
+  \ baseline (méthode optimisée) → gain €30k (moins contestations). \n\nAtténuants\
+  \ (↓ €50–150k/an) : \n- ⬇️ Baisse prix spot (EnR massif) → −€80k NEBEF. \n- ⬇️ Indisponibilité\
+  \ (panne GTB) → pénalités €20–50k/incident. \n- ⬇️ Augmentation coûts téléconduite\
+  \ RTE → +€30k."
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: Sensibilités Clés
+  anchor: '#sensibilits-cls'
+  excerpt_short: "Impactants (↑ €100–200k/an) : \n- ⬆️ Prix SPOT moyen (+€50/MWh NEBEF)\
+    \ → +€100k. \n- ⬆️ Fréquence activ..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

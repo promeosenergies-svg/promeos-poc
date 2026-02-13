@@ -1,0 +1,31 @@
+id: STRATEGIE_NEBCO_10
+type: knowledge
+domain: reglementaire
+title: A) Réglementaire
+summary: "- Risque : Audit RTE pénalités (€0–100k/an OE si non-conformité M&V) \n\
+  - Mitigation : Dashboard alertes temps réel ; monitoring strict baseline ; taux\
+  \ réussite ≥80%"
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Risque : Audit RTE pénalités (€0–100k/an OE si non-conformité M&V)\
+  \ \n- Mitigation : Dashboard alertes temps réel ; monitoring strict baseline ; taux\
+  \ réussite ≥80%"
+logic: null
+sources:
+- doc_id: STRATEGIE_NEBCO
+  label: Analyse strategique NEBCO
+  section: A) Réglementaire
+  anchor: '#a-rglementaire'
+  excerpt_short: "- Risque : Audit RTE pénalités (€0–100k/an OE si non-conformité\
+    \ M&V) \n- Mitigation : Dashboard alert..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

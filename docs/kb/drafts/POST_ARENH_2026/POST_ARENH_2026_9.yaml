@@ -1,0 +1,37 @@
+id: POST_ARENH_2026_9
+type: rule
+domain: facturation
+title: Modalités de Facturation Selon le Type de Client
+summary: "La loi prévient une complication opérationnelle en fonction du mode de facturation\
+  \ : 24 \n- Clients avec facturation mensuelle réelle : La minoration s’applique\
+  \ sur la facture du mois écoulé, permettan..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "La loi prévient une complication opérationnelle en fonction du mode de\
+  \ facturation : 24 \n- Clients avec facturation mensuelle réelle : La minoration\
+  \ s’applique sur la facture du mois écoulé, permettant au consommateur de percevoir\
+  \ effectivement la réduction quelques jours après la fin du mois. \n- Clients avec\
+  \ paiement lissé : Seule la facture annuelle de régularisation est obligatoirement\
+  \ minorée. Les fournisseurs disposent de marges pour lisser la minoration sur l’ensemble\
+  \ de l’année, mais cette discrétion crée des variations difficiles à comparer lors\
+  \ de changements de fournisseur. \n\nCe mécanisme deux vitesses risque de susciter\
+  \ des incompréhensions, en particulier chez les consommateurs résidentiels non avertis."
+logic: null
+sources:
+- doc_id: POST_ARENH_2026
+  label: Post-ARENH 2026
+  section: Modalités de Facturation Selon le Type de Client
+  anchor: '#modalits-de-facturation-selon-le-type-de-client'
+  excerpt_short: "La loi prévient une complication opérationnelle en fonction du mode\
+    \ de facturation : 24 \n- Clients a..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

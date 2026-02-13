@@ -1,0 +1,45 @@
+id: MARCHE_ENERGIE_2025_0
+type: rule
+domain: acc
+title: I. RÉSUMÉ EXÉCUTIF
+summary: Le marché de l’énergie français connaît en 2025 une inflexion majeure après
+  trois années de volatilité extrême. Les prix de l’électricité baissent enfin (-22,4%
+  annuel), offrant une fenêtre de consoli...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Le marché de l’énergie français connaît en 2025 une inflexion majeure\
+  \ après trois années de volatilité extrême. Les prix de l’électricité baissent enfin\
+  \ (-22,4% annuel), offrant une fenêtre de consolidation. Simultanément, la fin de\
+  \ l’ARENH (31 décembre 2025) marque une rupture structurelle : le marché bascule\
+  \ d’une régulation dirigiste à un équilibre post-nucléaire complexe dominé par la\
+  \ volatilité énergétique européenne, notamment allemande. Pour PROMEOS—opérateur\
+  \ tertiaire multi-sites—cette dualité crée des opportunités tactiques (réduction\
+  \ coûts) mais impose des adaptations stratégiques urgentes (contrats long terme,\
+  \ hedging volatilité). \n\nSynthèse en trois points clés : \n1. Baisse prix 2025\
+  \ = fenêtre de consolidation : les factures énergétiques baissent structurellement,\
+  \ offrant marge opérationnelle récupérée à investir en rénovation décret tertiaire.\
+  \ \n2. Fin ARENH = rupture concurrence fournisseurs : accès au nucléaire régulé\
+  \ à 42€/MWh disparaît ; fournisseurs alternatifs doivent repositionner offres. Pour\
+  \ PROMEOS, urgence d’anticiper contracting post-VNU. \n3. Volatilité EnRi allemande\
+  \ = risque systématique : l’Allemagne déséquilibre marché électrique européen via\
+  \ surproduction intermittente ; France exposée imports hiver = pics prix imprévisibles.\
+  \ Stratégie d’achat doit se blinder long terme."
+logic: null
+sources:
+- doc_id: MARCHE_ENERGIE_2025
+  label: Analyse marche energie France-Europe 2025
+  section: I. RÉSUMÉ EXÉCUTIF
+  anchor: '#i-rsum-excutif'
+  excerpt_short: Le marché de l’énergie français connaît en 2025 une inflexion majeure
+    après trois années de volatili...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

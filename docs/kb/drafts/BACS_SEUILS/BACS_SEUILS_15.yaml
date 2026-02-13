@@ -1,0 +1,33 @@
+id: BACS_SEUILS_15
+type: rule
+domain: usages
+title: 11. INTÉGRATION AVEC AUTRES OBLIGATIONS
+summary: "Le décret BACS est complémentaire du : \n- Décret Tertiaire (Éco-Énergie\
+  \ Tertiaire) — Réduction des consommations -40% d’ici 2030 \n- Loi APER (2023) —\
+  \ Solarisation des parkings > 1 500 m² à 50% d’ici 2..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Le décret BACS est complémentaire du : \n- Décret Tertiaire (Éco-Énergie\
+  \ Tertiaire) — Réduction des consommations -40% d’ici 2030 \n- Loi APER (2023) —\
+  \ Solarisation des parkings > 1 500 m² à 50% d’ici 2026–2028 \n- Directives ISO\
+  \ 50001 — Management de l’énergie \n\nLe BACS constitue l’outil d’optimisation concrète\
+  \ permettant d’atteindre les objectifs de réduction du Tertiaire."
+logic: null
+sources:
+- doc_id: BACS_SEUILS
+  label: Decret BACS - Seuils, dates, exemptions
+  section: 11. INTÉGRATION AVEC AUTRES OBLIGATIONS
+  anchor: '#11-intgration-avec-autres-obligations'
+  excerpt_short: "Le décret BACS est complémentaire du : \n- Décret Tertiaire (Éco-Énergie\
+    \ Tertiaire) — Réduction des c..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

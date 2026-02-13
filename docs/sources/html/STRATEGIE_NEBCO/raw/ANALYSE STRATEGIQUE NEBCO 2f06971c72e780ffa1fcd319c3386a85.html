@@ -1,0 +1,714 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><title>ANALYSE STRATEGIQUE NEBCO</title><style>
+/* cspell:disable-file */
+/* webkit printing magic: print all background colors */
+html {
+	-webkit-print-color-adjust: exact;
+}
+* {
+	box-sizing: border-box;
+	-webkit-print-color-adjust: exact;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+}
+@media only screen {
+	body {
+		margin: 2em auto;
+		max-width: 900px;
+		color: rgb(55, 53, 47);
+	}
+}
+
+body {
+	line-height: 1.5;
+	white-space: pre-wrap;
+}
+
+a,
+a.visited {
+	color: inherit;
+	text-decoration: underline;
+}
+
+.pdf-relative-link-path {
+	font-size: 80%;
+	color: #444;
+}
+
+h1,
+h2,
+h3 {
+	letter-spacing: -0.01em;
+	line-height: 1.2;
+	font-weight: 600;
+	margin-bottom: 0;
+}
+
+/* Override strong tags inside headings to maintain consistent weight */
+h1 strong,
+h2 strong,
+h3 strong {
+	font-weight: 600;
+}
+
+.page-title {
+	font-size: 2.5rem;
+	font-weight: 700;
+	margin-top: 0;
+	margin-bottom: 0.75em;
+}
+
+h1 {
+	font-size: 1.875rem;
+	margin-top: 1.875rem;
+}
+
+h2 {
+	font-size: 1.5rem;
+	margin-top: 1.5rem;
+}
+
+h3 {
+	font-size: 1.25rem;
+	margin-top: 1.25rem;
+}
+
+.source {
+	border: 1px solid #ddd;
+	border-radius: 3px;
+	padding: 1.5em;
+	word-break: break-all;
+}
+
+.callout {
+	border-radius: 10px;
+	padding: 1rem;
+}
+
+figure {
+	margin: 1.25em 0;
+	page-break-inside: avoid;
+}
+
+figcaption {
+	opacity: 0.5;
+	font-size: 85%;
+	margin-top: 0.5em;
+}
+
+mark {
+	background-color: transparent;
+}
+
+.indented {
+	padding-left: 1.5em;
+}
+
+hr {
+	background: transparent;
+	display: block;
+	width: 100%;
+	height: 1px;
+	visibility: visible;
+	border: none;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.09);
+}
+
+img {
+	max-width: 100%;
+}
+
+@media only print {
+	img {
+		max-height: 100vh;
+		object-fit: contain;
+	}
+}
+
+@page {
+	margin: 1in;
+}
+
+.collection-content {
+	font-size: 0.875rem;
+}
+
+.collection-content td {
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.column-list {
+	display: flex;
+	justify-content: space-between;
+}
+
+.column {
+	padding: 0 1em;
+}
+
+.column:first-child {
+	padding-left: 0;
+}
+
+.column:last-child {
+	padding-right: 0;
+}
+
+.table_of_contents-item {
+	display: block;
+	font-size: 0.875rem;
+	line-height: 1.3;
+	padding: 0.125rem;
+}
+
+.table_of_contents-indent-1 {
+	margin-left: 1.5rem;
+}
+
+.table_of_contents-indent-2 {
+	margin-left: 3rem;
+}
+
+.table_of_contents-indent-3 {
+	margin-left: 4.5rem;
+}
+
+.table_of_contents-link {
+	text-decoration: none;
+	opacity: 0.7;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.18);
+}
+
+table,
+th,
+td {
+	border: 1px solid rgba(55, 53, 47, 0.09);
+	border-collapse: collapse;
+}
+
+table {
+	border-left: none;
+	border-right: none;
+}
+
+th,
+td {
+	font-weight: normal;
+	padding: 0.25em 0.5em;
+	line-height: 1.5;
+	min-height: 1.5em;
+	text-align: left;
+}
+
+th {
+	color: rgba(55, 53, 47, 0.6);
+}
+
+ol,
+ul {
+	margin: 0;
+	margin-block-start: 0.6em;
+	margin-block-end: 0.6em;
+}
+
+li > ol:first-child,
+li > ul:first-child {
+	margin-block-start: 0.6em;
+}
+
+ul > li {
+	list-style: disc;
+}
+
+ul.to-do-list {
+	padding-inline-start: 0;
+}
+
+ul.to-do-list > li {
+	list-style: none;
+}
+
+.to-do-children-checked {
+	text-decoration: line-through;
+	opacity: 0.375;
+}
+
+ul.toggle > li {
+	list-style: none;
+}
+
+ul {
+	padding-inline-start: 1.7em;
+}
+
+ul > li {
+	padding-left: 0.1em;
+}
+
+ol {
+	padding-inline-start: 1.6em;
+}
+
+ol > li {
+	padding-left: 0.2em;
+}
+
+.mono ol {
+	padding-inline-start: 2em;
+}
+
+.mono ol > li {
+	text-indent: -0.4em;
+}
+
+.toggle {
+	padding-inline-start: 0em;
+	list-style-type: none;
+}
+
+/* Indent toggle children */
+.toggle > li > details {
+	padding-left: 1.7em;
+}
+
+.toggle > li > details > summary {
+	margin-left: -1.1em;
+}
+
+.selected-value {
+	display: inline-block;
+	padding: 0 0.5em;
+	background: rgba(206, 205, 202, 0.5);
+	border-radius: 3px;
+	margin-right: 0.5em;
+	margin-top: 0.3em;
+	margin-bottom: 0.3em;
+	white-space: nowrap;
+}
+
+.collection-title {
+	display: inline-block;
+	margin-right: 1em;
+}
+
+.page-description {
+	margin-bottom: 2em;
+}
+
+.simple-table {
+	margin-top: 1em;
+	font-size: 0.875rem;
+	empty-cells: show;
+}
+.simple-table td {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table th {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table-header-color {
+	background: rgb(247, 246, 243);
+	color: black;
+}
+.simple-table-header {
+	font-weight: 500;
+}
+
+time {
+	opacity: 0.5;
+}
+
+.icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	max-width: 1.2em;
+	max-height: 1.2em;
+	text-decoration: none;
+	vertical-align: text-bottom;
+	margin-right: 0.5em;
+}
+
+img.icon {
+	border-radius: 3px;
+}
+
+.callout img.notion-static-icon {
+	width: 1em;
+	height: 1em;
+}
+
+.callout p {
+	margin: 0;
+}
+
+.callout h1,
+.callout h2,
+.callout h3 {
+	margin: 0 0 0.6rem;
+}
+
+.user-icon {
+	width: 1.5em;
+	height: 1.5em;
+	border-radius: 100%;
+	margin-right: 0.5rem;
+}
+
+.user-icon-inner {
+	font-size: 0.8em;
+}
+
+.text-icon {
+	border: 1px solid #000;
+	text-align: center;
+}
+
+.page-cover-image {
+	display: block;
+	object-fit: cover;
+	width: 100%;
+	max-height: 30vh;
+}
+
+.page-header-icon {
+	font-size: 3rem;
+	margin-bottom: 1rem;
+}
+
+.page-header-icon-with-cover {
+	margin-top: -0.72em;
+	margin-left: 0.07em;
+}
+
+.page-header-icon img {
+	border-radius: 3px;
+}
+
+.link-to-page {
+	margin: 1em 0;
+	padding: 0;
+	border: none;
+	font-weight: 500;
+}
+
+p > .user {
+	opacity: 0.5;
+}
+
+td > .user,
+td > time {
+	white-space: nowrap;
+}
+
+input[type="checkbox"] {
+	transform: scale(1.5);
+	margin-right: 0.6em;
+	vertical-align: middle;
+}
+
+p {
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+}
+
+.image {
+	border: none;
+	margin: 1.5em 0;
+	padding: 0;
+	border-radius: 0;
+	text-align: center;
+}
+
+.code,
+code {
+	background: rgba(135, 131, 120, 0.15);
+	border-radius: 3px;
+	padding: 0.2em 0.4em;
+	border-radius: 3px;
+	font-size: 85%;
+	tab-size: 2;
+}
+
+code {
+	color: #eb5757;
+}
+
+.code {
+	padding: 1.5em 1em;
+}
+
+.code-wrap {
+	white-space: pre-wrap;
+	word-break: break-all;
+}
+
+.code > code {
+	background: none;
+	padding: 0;
+	font-size: 100%;
+	color: inherit;
+}
+
+blockquote {
+	font-size: 1em;
+	margin: 1em 0;
+	padding-left: 1em;
+	border-left: 3px solid rgb(55, 53, 47);
+}
+
+blockquote.quote-large {
+	font-size: 1.25em;
+}
+
+.bookmark {
+	text-decoration: none;
+	max-height: 8em;
+	padding: 0;
+	display: flex;
+	width: 100%;
+	align-items: stretch;
+}
+
+.bookmark-title {
+	font-size: 0.85em;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	height: 1.75em;
+	white-space: nowrap;
+}
+
+.bookmark-text {
+	display: flex;
+	flex-direction: column;
+}
+
+.bookmark-info {
+	flex: 4 1 180px;
+	padding: 12px 14px 14px;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+}
+
+.bookmark-image {
+	width: 33%;
+	flex: 1 1 180px;
+	display: block;
+	position: relative;
+	object-fit: cover;
+	border-radius: 1px;
+}
+
+.bookmark-description {
+	color: rgba(55, 53, 47, 0.6);
+	font-size: 0.75em;
+	overflow: hidden;
+	max-height: 4.5em;
+	word-break: break-word;
+}
+
+.bookmark-href {
+	font-size: 0.75em;
+	margin-top: 0.25em;
+}
+
+.sans { font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"; }
+.code { font-family: "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace; }
+.serif { font-family: Lyon-Text, Georgia, ui-serif, serif; }
+.mono { font-family: iawriter-mono, Nitti, Menlo, Courier, monospace; }
+.pdf .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK JP'; }
+.pdf:lang(zh-CN) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK SC'; }
+.pdf:lang(zh-TW) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK TC'; }
+.pdf:lang(ko-KR) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK KR'; }
+.pdf .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.pdf .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK JP'; }
+.pdf:lang(zh-CN) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK SC'; }
+.pdf:lang(zh-TW) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK TC'; }
+.pdf:lang(ko-KR) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK KR'; }
+.pdf .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.highlight-default {
+	color: rgba(44, 44, 43, 1);
+}
+.highlight-gray {
+	color: rgba(125, 122, 117, 1);
+	fill: rgba(125, 122, 117, 1);
+}
+.highlight-brown {
+	color: rgba(159, 118, 90, 1);
+	fill: rgba(159, 118, 90, 1);
+}
+.highlight-orange {
+	color: rgba(210, 123, 45, 1);
+	fill: rgba(210, 123, 45, 1);
+}
+.highlight-yellow {
+	color: rgba(203, 148, 52, 1);
+	fill: rgba(203, 148, 52, 1);
+}
+.highlight-teal {
+	color: rgba(80, 148, 110, 1);
+	fill: rgba(80, 148, 110, 1);
+}
+.highlight-blue {
+	color: rgba(56, 125, 201, 1);
+	fill: rgba(56, 125, 201, 1);
+}
+.highlight-purple {
+	color: rgba(154, 107, 180, 1);
+	fill: rgba(154, 107, 180, 1);
+}
+.highlight-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.highlight-red {
+	color: rgba(207, 81, 72, 1);
+	fill: rgba(207, 81, 72, 1);
+}
+.highlight-default_background {
+	color: rgba(44, 44, 43, 1);
+}
+.highlight-gray_background {
+	background: rgba(42, 28, 0, 0.07);
+}
+.highlight-brown_background {
+	background: rgba(139, 46, 0, 0.086);
+}
+.highlight-orange_background {
+	background: rgba(224, 101, 1, 0.129);
+}
+.highlight-yellow_background {
+	background: rgba(211, 168, 0, 0.137);
+}
+.highlight-teal_background {
+	background: rgba(0, 100, 45, 0.09);
+}
+.highlight-blue_background {
+	background: rgba(0, 124, 215, 0.094);
+}
+.highlight-purple_background {
+	background: rgba(102, 0, 178, 0.078);
+}
+.highlight-pink_background {
+	background: rgba(197, 0, 93, 0.086);
+}
+.highlight-red_background {
+	background: rgba(223, 22, 0, 0.094);
+}
+.block-color-default {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray {
+	color: rgba(125, 122, 117, 1);
+	fill: rgba(125, 122, 117, 1);
+}
+.block-color-brown {
+	color: rgba(159, 118, 90, 1);
+	fill: rgba(159, 118, 90, 1);
+}
+.block-color-orange {
+	color: rgba(210, 123, 45, 1);
+	fill: rgba(210, 123, 45, 1);
+}
+.block-color-yellow {
+	color: rgba(203, 148, 52, 1);
+	fill: rgba(203, 148, 52, 1);
+}
+.block-color-teal {
+	color: rgba(80, 148, 110, 1);
+	fill: rgba(80, 148, 110, 1);
+}
+.block-color-blue {
+	color: rgba(56, 125, 201, 1);
+	fill: rgba(56, 125, 201, 1);
+}
+.block-color-purple {
+	color: rgba(154, 107, 180, 1);
+	fill: rgba(154, 107, 180, 1);
+}
+.block-color-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.block-color-red {
+	color: rgba(207, 81, 72, 1);
+	fill: rgba(207, 81, 72, 1);
+}
+.block-color-default_background {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray_background {
+	background: rgba(240, 239, 237, 1);
+}
+.block-color-brown_background {
+	background: rgba(245, 237, 233, 1);
+}
+.block-color-orange_background {
+	background: rgba(251, 235, 222, 1);
+}
+.block-color-yellow_background {
+	background: rgba(249, 243, 220, 1);
+}
+.block-color-teal_background {
+	background: rgba(232, 241, 236, 1);
+}
+.block-color-blue_background {
+	background: rgba(229, 242, 252, 1);
+}
+.block-color-purple_background {
+	background: rgba(243, 235, 249, 1);
+}
+.block-color-pink_background {
+	background: rgba(250, 233, 241, 1);
+}
+.block-color-red_background {
+	background: rgba(252, 233, 231, 1);
+}
+.select-value-color-default { background-color: rgba(42, 28, 0, 0.07); }
+.select-value-color-gray { background-color: rgba(28, 19, 1, 0.11); }
+.select-value-color-brown { background-color: rgba(127, 51, 0, 0.156); }
+.select-value-color-orange { background-color: rgba(196, 88, 0, 0.203); }
+.select-value-color-yellow { background-color: rgba(209, 156, 0, 0.282); }
+.select-value-color-green { background-color: rgba(0, 96, 38, 0.156); }
+.select-value-color-blue { background-color: rgba(0, 118, 217, 0.203); }
+.select-value-color-purple { background-color: rgba(92, 0, 163, 0.141); }
+.select-value-color-pink { background-color: rgba(183, 0, 78, 0.152); }
+.select-value-color-red { background-color: rgba(206, 24, 0, 0.164); }
+
+.checkbox {
+	display: inline-flex;
+	vertical-align: text-bottom;
+	width: 16;
+	height: 16;
+	background-size: 16px;
+	margin-left: 2px;
+	margin-right: 5px;
+}
+
+.checkbox-on {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20width%3D%2216%22%20height%3D%2216%22%20fill%3D%22%2358A9D7%22%2F%3E%0A%3Cpath%20d%3D%22M6.71429%2012.2852L14%204.9995L12.7143%203.71436L6.71429%209.71378L3.28571%206.2831L2%207.57092L6.71429%2012.2852Z%22%20fill%3D%22white%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+
+.checkbox-off {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20x%3D%220.75%22%20y%3D%220.75%22%20width%3D%2214.5%22%20height%3D%2214.5%22%20fill%3D%22white%22%20stroke%3D%22%2336352F%22%20stroke-width%3D%221.5%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+	
+</style></head><body><article id="2f06971c-72e7-80ff-a1fc-d319c3386a85" class="page sans"><header><h1 class="page-title" dir="auto">ANALYSE STRATEGIQUE NEBCO</h1><p class="page-description" dir="auto"></p></header><div class="page-body"><div style="display:contents" dir="auto"><hr id="2f06971c-72e7-818e-9009-c8118b878b1d"/></div><div style="display:contents" dir="auto"><h1 id="2f06971c-72e7-816a-b469-d010c31d6be1" class="">ANALYSE STRATEGIQUE NEBCO POUR PROMEOS</h1></div><div style="display:contents" dir="auto"><h2 id="2f06971c-72e7-814f-a5b4-f885a9f091c8" class="">Opportunités, Risques &amp; Décisions Go/No-Go — Flexibilité Électrique France 2025</h2></div><div style="display:contents" dir="auto"><p id="2f06971c-72e7-813f-8972-cb1eb6c3e9ac" class=""><strong>Analyste:</strong> PROMEOS Research &amp; Markets<br/><strong>Date:</strong> 22 janvier 2026<br/><strong>Classification:</strong> Confidentiel — Décision Exécutive</p></div><div style="display:contents" dir="auto"><hr id="2f06971c-72e7-819e-bc0b-e5e56490722a"/></div><div style="display:contents" dir="auto"><h2 id="2f06971c-72e7-81d5-8148-ce05f3ee18fc" class="">RÉSUMÉ EXÉCUTIF</h2></div><div style="display:contents" dir="auto"><p id="2f06971c-72e7-810d-87ad-ce8a35721de5" class=""><strong>NEBCO</strong> (Notification d’Échange de Bloc de Consommation) est le mécanisme réglementaire français permettant aux consommateurs d’électricité de valoriser sur les marchés énergétiques leurs réductions de consommation (<em>effacement</em>) ET les décalages avant/après (<em>reports/anticipations</em>). Depuis le 1er septembre 2025, il remplace le système NEBEF.<a href="about:blank#fn1">1</a><a href="about:blank#fn2">2</a></p></div><div style="display:contents" dir="auto"><p id="2f06971c-72e7-8182-aa4d-ce7b77d72068" class="">Pour <strong>PROMEOS</strong>, NEBCO offre un axe de croissance <strong>crédible mais exigeant</strong>. Le marché s’élargit : flexibilité française de 2,9 GW (2024, +8% YoY) vers 6,5 GW en 2028. Les segments cibles (retail multisites, PME/ETI tertiaire, petits industriels) sont accessibles via la plateforme advizeo existante. Or, <strong>l’exécution requiert</strong> partenariat OE structuré, qualification RTE coûteuse, et données fiables (GTB/télérelève).<a href="about:blank#fn3">3</a></p></div><div style="display:contents" dir="auto"><p id="2f06971c-72e7-812f-ba3b-dc85c584c267" class=""><strong>Verdict provisoire</strong>: NEBCO n’est <strong>pas un MVP seul</strong>, mais un <strong>module V1 viable</strong> s’il est <strong>bundlé</strong> avec audit d’efficacité énergétique et pilotage cockpit. Potentiel : €500k–1M revenue Y1 (50–100 sites), €1.5–3M Y2.</p></div><div style="display:contents" dir="auto"><p id="2f06971c-72e7-81ed-9316-ec52bc506f62" class=""><strong>Recommandation immédiate</strong>: Lancer <strong>pilot 30 jours</strong> (audit pré-flex 2–3 clients, partenariat OE, validation data) pour décision GO/NO-GO conditionnel. <strong>Deadline décisions: 22 février 2026</strong>.</p></div><div style="display:contents" dir="auto"><hr id="2f06971c-72e7-81bf-9aa0-db6f70916c0d"/></div><div style="display:contents" dir="auto"><h2 id="2f06971c-72e7-8158-a330-d31e37dab8e8" class="">1. FAITS CLÉS (SOURCÉS)</h2></div><div style="display:contents" dir="auto"><h3 id="2f06971c-72e7-8197-bf9d-fa4c0dd14c4a" class="">Définition &amp; Cadre Réglementaire</h3></div><div style="display:contents" dir="auto"><p id="2f06971c-72e7-8183-a978-ced17c65f468" class="">NEBCO, défini dans le <strong>Code de l’énergie</strong> (articles L.271-1, L.271-2, L.321-15-1, R.271-1) et approuvé par la <strong>CRE délibération 2025-199</strong> du 23 juillet 2025, permet la valorisation de trois types de modulations de consommation:<a href="about:blank#fn4">4</a></p></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8146-a108-e22efc2df5bd" class="numbered-list" start="1"><li><strong>Effacement</strong> (réduction) – Modulation à la baisse classique</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8183-9d69-d2fe3189dbea" class="numbered-list" start="2"><li><strong>Report</strong> – Hausse APRÈS l’effacement (dans les 7 jours Sites Télérelevés ; 2 jours Profilés)</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8164-a31e-e6ad9f25242b" class="numbered-list" start="3"><li><strong>Anticipation</strong> – Hausse AVANT l’effacement</li></ol></div><div style="display:contents" dir="auto"><p id="2f06971c-72e7-8140-a80a-c87435b5780c" class="">L’innovation majeure vs. NEBEF : la <strong>valorisation explicite des reports/anticipations</strong>, reconnaissant que les sites compensent après arrêt d’équipements.<a href="about:blank#fn5">5</a></p></div><div style="display:contents" dir="auto"><h3 id="2f06971c-72e7-8103-9994-dac77bf74b04" class="">Acteurs &amp; Responsabilités</h3></div><div style="display:contents" dir="ltr"><table id="2f06971c-72e7-8132-9227-eceb910c9016" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-8145-b857-fc39a23ef6dc"><th id="aNxg" class="simple-table-header-color simple-table-header"><strong>Acteur</strong></th><th id=":^\b" class="simple-table-header-color simple-table-header"><strong>Responsabilité Clé</strong></th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-81fb-91e7-d74220a30cdf"><td id="aNxg" class=""><strong>RTE</strong></td><td id=":^\b" class="">Certifie effacements ; délivre Agréments Techniques ; contrôle M&amp;V ; publie données</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-81ea-9ebb-ca680bf7b7f1"><td id="aNxg" class=""><strong>Opérateur d’Effacement (OE)</strong></td><td id=":^\b" class="">Signe Accord de Participation ; déclare Programmes Modulation ; verse Fournisseurs</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-8150-b9db-f4399225e18a"><td id="aNxg" class=""><strong>Gestionnaire Réseau Distribution (GRD)</strong></td><td id=":^\b" class="">Fournit courbes charge (15 min ≤36kVA ; 5 min &gt;36kVA) ; conventions techniques</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-81e0-9600-fbd19cee3336"><td id="aNxg" class=""><strong>Site Soutirage</strong></td><td id=":^\b" class="">Donne accord écrit ; réalise modulation dans contraintes métier</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><h3 id="2f06971c-72e7-81e3-acf8-e82963a9468a" class="">Marché &amp; Dynamique 2024–2025</h3></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-81b8-8c64-f9ddd3becf3e" class="bulleted-list"><li style="list-style-type:disc"><strong>Capacité totale (2024)</strong> : 2,9 GW (+8% YoY, 4e augmentation consécutive)<a href="about:blank#fn6">6</a></li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-81b4-98ce-c9b622a3ae5e" class="bulleted-list"><li style="list-style-type:disc"><strong>Objectif 2028</strong> : 6,5 GW<a href="about:blank#fn7">7</a></li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-81f0-ade7-c81636e4b431" class="bulleted-list"><li style="list-style-type:disc"><strong>Gisement géographique</strong> : Anciennement industrie lourde ; <strong>nouvelle opportunité en tertiaire</strong> (bureaux, retail, hôtellerie)</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-8157-b16d-ec7012fc6242" class="bulleted-list"><li style="list-style-type:disc"><strong>Prices EPEX spot</strong> : 72,89 €/MWh (jan 2026) ; pics 122 €/MWh (fév 2025) ; spreads volatiles<a href="about:blank#fn8">8</a></li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-817f-8e42-c7ce4ab16869" class="bulleted-list"><li style="list-style-type:disc"><strong>Mécanisme capacité (2025)</strong> : 0 €/MW (suroffre) ; refonte prévue 2026<a href="about:blank#fn9">9</a></li></ul></div><div style="display:contents" dir="auto"><h3 id="2f06971c-72e7-81f8-af5e-c72cca99f4cb" class="">Éligibilité &amp; Prérequis</h3></div><div style="display:contents" dir="auto"><p id="2f06971c-72e7-8158-92b3-e3104723e9f1" class="">Tous les sites France métropolitaine continentale éligibles <strong>si</strong> :</p></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-811b-965e-eb0089664b5f" class="bulleted-list"><li style="list-style-type:disc">Accord écrit du titulaire CART/CARD<a href="about:blank#fn10">10</a></li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-8103-9eeb-f4d0b1a867d3" class="bulleted-list"><li style="list-style-type:disc"><strong>Puissance effaçable ≥ 100 kW</strong> minimum</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-81ed-ae5d-dcd68cc753d9" class="bulleted-list"><li style="list-style-type:disc"><strong>Data</strong>: Télérelevé (PS ≥ seuil profilage) OU Profilé (&lt;seuil) OU sous-mesure expérimentale (jusqu’au 31/12/2025, limites 100 sites/OE)</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-8107-985e-f875a37cc080" class="bulleted-list"><li style="list-style-type:disc"><strong>Agrément Technique Modulation Consommation</strong> (OE must pass RTE tests ; fiabilité ≥50%)<a href="about:blank#fn11">11</a></li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-81ea-a19b-fa8e986d9b4e" class="bulleted-list"><li style="list-style-type:disc"><strong>Conformité bilan énergétique</strong> : Volumes hausse ≤ volumes baisse (7–2 jours glissants) ; bilan mensuel/annuel ≥ -5%, sinon suspension M+2 (capacité réduite 60%)<a href="about:blank#fn12">12</a></li></ul></div><div style="display:contents" dir="auto"><hr id="2f06971c-72e7-8118-9d47-d0173cdef4c6"/></div><div style="display:contents" dir="auto"><h2 id="2f06971c-72e7-81c4-aaef-dec35cad3f3e" class="">2. CHAÎNE DE VALEUR &amp; ÉCONOMIE</h2></div><div style="display:contents" dir="auto"><h3 id="2f06971c-72e7-8185-b87d-f08f3eebda54" class="">Formule Revenue</h3></div><div style="display:contents" dir="auto"><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerPolicy="no-referrer"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" referrerPolicy="no-referrer"/><pre id="2f06971c-72e7-81f8-969c-efece0535329" class="code code-wrap"><code class="language-Plain Text" style="white-space:pre-wrap;word-break:break-all">Revenue Annuel (Net) ≈ Σ [ Énergie Modulée (MWh) × Spread (€/MWh) × Taux Réussite (%) ]
+                       − Pénalités − Agrégateur Margin − Coûts IT − Frais PROMEOS</code></pre></div><div style="display:contents" dir="auto"><h3 id="2f06971c-72e7-8193-846f-e7e618eb5812" class="">Trois Scénarios Réalistes</h3></div><div style="display:contents" dir="auto"><h3 id="2f06971c-72e7-811b-9403-e7b800dbf50a" class="">Scénario 1: PRUDENT (Retail Standard)</h3></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-8199-8f9d-c687e37d834d" class="bulleted-list"><li style="list-style-type:disc"><strong>Amplitude</strong>: 1 MW | <strong>Durée</strong>: 1.5h/evt | <strong>Fréquence</strong>: 20 evt/an | <strong>Spread</strong>: 40 €/MWh | <strong>Taux réussite</strong>: 75%</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-813e-8864-d9560d007999" class="bulleted-list"><li style="list-style-type:disc"><strong>Énergie modulée</strong>: 30 MWh/an</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-8109-8d6c-e9b47d1fdcad" class="bulleted-list"><li style="list-style-type:disc"><strong>Revenu brut</strong>: €1,200</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-81b8-b779-d013094862f1" class="bulleted-list"><li style="list-style-type:disc"><strong>Après coûts</strong> (pénalités, OE 20%, SaaS €300, success fee 10%): <strong>€480 client net</strong></li></ul></div><div style="display:contents" dir="auto"><h3 id="2f06971c-72e7-8111-a222-ccb51008b75e" class="">Scénario 2: CENTRAL (Typique, Multi-site)</h3></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-81f0-bb89-e9adf29219b5" class="bulleted-list"><li style="list-style-type:disc"><strong>Amplitude</strong>: 2.5 MW | <strong>Durée</strong>: 2h/evt | <strong>Fréquence</strong>: 40 evt/an | <strong>Spread</strong>: 75 €/MWh | <strong>Taux réussite</strong>: 85%</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-81e6-8df1-d4b964ff7d3e" class="bulleted-list"><li style="list-style-type:disc"><strong>Énergie modulée</strong>: 170 MWh/an</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-81f2-86d2-e97207fc4519" class="bulleted-list"><li style="list-style-type:disc"><strong>Revenu brut</strong>: €12,750</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-81d2-ac48-e623eaa1d8c5" class="bulleted-list"><li style="list-style-type:disc"><strong>Après coûts</strong>: <strong>€7,222 client net</strong></li></ul></div><div style="display:contents" dir="auto"><h3 id="2f06971c-72e7-812c-b46d-e7c357951ebd" class="">Scénario 3: OFFENSIF (Multi-équipement Optimisé, 50+ sites agrégés)</h3></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-8172-88e2-e82745eb8479" class="bulleted-list"><li style="list-style-type:disc"><strong>Amplitude</strong>: 5 MW | <strong>Durée</strong>: 3h/evt | <strong>Fréquence</strong>: 60 evt/an | <strong>Spread</strong>: 100 €/MWh | <strong>Taux réussite</strong>: 92%</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-81a5-a494-c730da7fb6f7" class="bulleted-list"><li style="list-style-type:disc"><strong>Énergie modulée</strong>: 828 MWh/an</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-8157-b66e-ef20145a930a" class="bulleted-list"><li style="list-style-type:disc"><strong>Revenu brut</strong>: €82,800</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-813d-aaf6-fcf8c0f49e89" class="bulleted-list"><li style="list-style-type:disc"><strong>Après coûts</strong> (scale economies SaaS): <strong>€55,565 client net</strong></li></ul></div><div style="display:contents" dir="auto"><p id="2f06971c-72e7-81ee-96a2-f435f72230d4" class=""><strong>Insight clé</strong> : Fréquence &amp; amplitude dominent. PROMEOS doit viser <strong>≥50 sites</strong> pour amortir infrastructure.</p></div><div style="display:contents" dir="auto"><hr id="2f06971c-72e7-81eb-abe8-cb1fece4f259"/></div><div style="display:contents" dir="auto"><h2 id="2f06971c-72e7-814d-8b0c-d1eda822c340" class="">3. POSITIONNEMENT PROMEOS vs. 3 FAMILLES CONCURRENTES</h2></div><div style="display:contents" dir="auto"><h3 id="2f06971c-72e7-81e2-a9ca-eda065a73559" class="">Comparaison Stratégique</h3></div><div style="display:contents" dir="ltr"><table id="2f06971c-72e7-81fb-b5d4-d7225bca62ae" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-8148-bad6-ea84b0c7fe42"><th id="MlsY" class="simple-table-header-color simple-table-header"><strong>Dimension</strong></th><th id="tKZM" class="simple-table-header-color simple-table-header"><strong>Cabinet Énergie</strong></th><th id="tv}a" class="simple-table-header-color simple-table-header"><strong>Outil EMS/BMS</strong></th><th id="k_g?" class="simple-table-header-color simple-table-header"><strong>Agrégateur/OE</strong></th><th id="`&lt;WT" class="simple-table-header-color simple-table-header"><strong>PROMEOS (Proposé)</strong></th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-81f2-8a55-c746abae811f"><td id="MlsY" class="">Audit gisement</td><td id="tKZM" class="">✅✅</td><td id="tv}a" class="">—</td><td id="k_g?" class="">✅</td><td id="`&lt;WT" class="">✅✅ (via advizeo)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-81bf-bc15-d9f8db96e6be"><td id="MlsY" class="">Monitoring continu</td><td id="tKZM" class="">—</td><td id="tv}a" class="">✅✅</td><td id="k_g?" class="">✅</td><td id="`&lt;WT" class="">✅✅</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-8112-88c2-c10cf832b25a"><td id="MlsY" class="">Pilotage ops</td><td id="tKZM" class="">—</td><td id="tv}a" class="">△ (passif)</td><td id="k_g?" class="">✅✅</td><td id="`&lt;WT" class="">✅✅</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-8140-8e6f-df4aa51ee7e1"><td id="MlsY" class="">Contractualisation RTE</td><td id="tKZM" class="">△</td><td id="tv}a" class="">—</td><td id="k_g?" class="">✅✅</td><td id="`&lt;WT" class="">△ (via OE)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-81f5-af81-d9ca8680b841"><td id="MlsY" class="">Data integration</td><td id="tKZM" class="">—</td><td id="tv}a" class="">✅</td><td id="k_g?" class="">—</td><td id="`&lt;WT" class="">✅✅</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-8117-8871-e474ecddbfa1"><td id="MlsY" class="">Revenue-share transparent</td><td id="tKZM" class="">—</td><td id="tv}a" class="">—</td><td id="k_g?" class="">✅</td><td id="`&lt;WT" class="">✅✅</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-81e6-9a10-c08b113d521b"><td id="MlsY" class="">Bundle efficacité</td><td id="tKZM" class="">✅</td><td id="tv}a" class="">△</td><td id="k_g?" class="">—</td><td id="`&lt;WT" class="">✅</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-817d-998d-cd1e524046b9"><td id="MlsY" class=""><strong>Stickiness</strong></td><td id="tKZM" class="">Bas</td><td id="tv}a" class="">Moyen</td><td id="k_g?" class="">Élevé</td><td id="`&lt;WT" class=""><strong>Très Élevé</strong></td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><h3 id="2f06971c-72e7-8137-b727-f29ab2885236" class="">Formule Différenciation</h3></div><div style="display:contents" dir="auto"><p id="2f06971c-72e7-813a-95f2-fc79be3dcbde" class="">PROMEOS = <strong>“Cockpit + Readiness Audit + Light Ops + Revenue Share Transparent”</strong></p></div><div style="display:contents" dir="auto"><p id="2f06971c-72e7-81e1-8c2d-d3a1f1b234ba" class=""><strong>Avantage compétitif unique</strong> :</p></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-8101-bca8-fde86a59e315" class="bulleted-list"><li style="list-style-type:disc">Intégration complète : données advizeo existantes → identif. gisements → pilotage continu</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-818d-aa2f-d4629f007f35" class="bulleted-list"><li style="list-style-type:disc">Modèle économique clair : client retient <strong>70–80% spread</strong> (vs. agrégateurs 20–30% marge OE)</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-8106-a9dd-cea7e0e339f2" class="bulleted-list"><li style="list-style-type:disc">Non-OE burden : PROMEOS advisor role → flexibility légale, pas risk-bearing pénalités RTE</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-81ad-a7eb-c888b2f9eea3" class="bulleted-list"><li style="list-style-type:disc">Bundle opérationnel : efficacité énergétique + flexibilité = ROI 3 ans combiné</li></ul></div><div style="display:contents" dir="auto"><hr id="2f06971c-72e7-8174-8ac8-c2d180939758"/></div><div style="display:contents" dir="auto"><h2 id="2f06971c-72e7-81ff-9c04-e170eaa407fa" class="">4. HUIT OPPORTUNITÉS MÉTIER (PRIORITÉS)</h2></div><div style="display:contents" dir="ltr"><table id="2f06971c-72e7-818f-bd83-c29de2eb94ea" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-816f-9cce-f46de1bc437b"><th id="Ibf~" class="simple-table-header-color simple-table-header"><strong>Opportunité</strong></th><th id="vKqW" class="simple-table-header-color simple-table-header"><strong>Impact</strong></th><th id="@X&lt;L" class="simple-table-header-color simple-table-header"><strong>Facilité</strong></th><th id="tuNw" class="simple-table-header-color simple-table-header"><strong>Modèle Revenu</strong></th><th id="uL?_" class="simple-table-header-color simple-table-header"><strong>Cible</strong></th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-81f3-9579-e82f5c9711d6"><td id="Ibf~" class="">1. Audit Pré-Flex &amp; Readiness</td><td id="vKqW" class="">HAUT</td><td id="@X&lt;L" class="">HAUTE</td><td id="tuNw" class="">Forfait €5–10k + success fee</td><td id="uL?_" class="">Retail multi-sites</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-812d-b5a1-c4ea47727163"><td id="Ibf~" class="">2. Cockpit + Monitoring Ops Light</td><td id="vKqW" class="">HAUT</td><td id="@X&lt;L" class="">MOYEN</td><td id="tuNw" class="">SaaS €150–300/site/an + % spread</td><td id="uL?_" class="">Retail, tertiaire</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-818a-8cd1-fbb0a4a73968"><td id="Ibf~" class="">3. Partenariat OE Mutualisé</td><td id="vKqW" class="">HAUT</td><td id="@X&lt;L" class="">MOYEN</td><td id="tuNw" class="">Revenue split 70/30 client-OE</td><td id="uL?_" class="">50+ sites agrégés</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-8169-afe3-e7a5babf2302"><td id="Ibf~" class="">4. Bundle Efficacité + NEBCO</td><td id="vKqW" class="">MOYEN</td><td id="@X&lt;L" class="">HAUTE</td><td id="tuNw" class="">Audit combo €8–15k + revenue share</td><td id="uL?_" class="">PME tertiaire</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-816d-b9fc-e6c79bcd13f9"><td id="Ibf~" class="">5. Formation &amp; Change Mgmt</td><td id="vKqW" class="">MOYEN</td><td id="@X&lt;L" class="">HAUTE</td><td id="tuNw" class="">Modules €2k/an × 20 clients</td><td id="uL?_" class="">Tous segments</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-816d-bbc0-dd7c7db588e6"><td id="Ibf~" class="">6. Intégration IoT &amp; Sub-metering</td><td id="vKqW" class="">MOYEN</td><td id="@X&lt;L" class="">MOYEN</td><td id="tuNw" class="">CAPEX client + €150–200/yr</td><td id="uL?_" class="">Sites sans data fine</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-811e-b912-c8bc7855fce2"><td id="Ibf~" class="">7. Audit Conformité Réglementaire</td><td id="vKqW" class="">MOYEN</td><td id="@X&lt;L" class="">MOYEN</td><td id="tuNw" class="">€5–10k/audit; risk mitigation</td><td id="uL?_" class="">Tous (pré-launch)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-8167-bf46-eb7d62c6fdbc"><td id="Ibf~" class="">8. Marketplace Agrégation (V2/V3)</td><td id="vKqW" class="">MOYEN</td><td id="@X&lt;L" class="">DIFFICILE</td><td id="tuNw" class="">Frais plateforme 5–10%</td><td id="uL?_" class="">Long terme</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><hr id="2f06971c-72e7-816c-9a1a-f2ec6b6fefe1"/></div><div style="display:contents" dir="auto"><h2 id="2f06971c-72e7-8148-bfd7-d300118fc070" class="">5. RISQUES MAJEURS &amp; MITIGATIONS</h2></div><div style="display:contents" dir="auto"><h3 id="2f06971c-72e7-81ff-93bd-cab33ca46040" class="">A) Réglementaire</h3></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-816f-a172-e00d0fa0dc9d" class="bulleted-list"><li style="list-style-type:disc"><strong>Risque</strong>: Audit RTE pénalités (€0–100k/an OE si non-conformité M&amp;V)</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-8159-82a7-d99430a1f992" class="bulleted-list"><li style="list-style-type:disc"><strong>Mitigation</strong>: Dashboard alertes temps réel ; monitoring strict baseline ; taux réussite ≥80%</li></ul></div><div style="display:contents" dir="auto"><h3 id="2f06971c-72e7-8102-920b-d93080c22411" class="">B) Opérationnel</h3></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-8139-8bed-da7bf8f5ec15" class="bulleted-list"><li style="list-style-type:disc"><strong>Risque</strong>: Dérives baseline, non-disponibilité sites, bruit données → réalisé invalide</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-816a-8d7d-c8e64d9cf175" class="bulleted-list"><li style="list-style-type:disc"><strong>Mitigation</strong>: Sub-comptage qualifié (IoT) + validation pré-activation ; redundancy data</li></ul></div><div style="display:contents" dir="auto"><h3 id="2f06971c-72e7-8134-a1e3-fcfc27c7804f" class="">C) Financier</h3></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-81e7-a26f-ea990d3e03ca" class="bulleted-list"><li style="list-style-type:disc"><strong>Risque</strong>: Volatilité spread (€20–200/MWh) ; impossible promettre gains stables</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-8178-9d3e-cab86012bfe7" class="bulleted-list"><li style="list-style-type:disc"><strong>Mitigation</strong>: Communicate ranges (3 scénarios) ; success-fee sur net spread seulement</li></ul></div><div style="display:contents" dir="auto"><h3 id="2f06971c-72e7-81f7-8941-f2775bf2a389" class="">D) Contractuel</h3></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-8114-99ed-de7ddb5e4faf" class="bulleted-list"><li style="list-style-type:disc"><strong>Risque</strong>: Ambiguïté responsabilité pénalités (OE vs. Client vs. PROMEOS)</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-810b-afa7-f987aa0efc81" class="bulleted-list"><li style="list-style-type:disc"><strong>Mitigation</strong>: Clauses cristal-claires : OE = responsable légal M&amp;V ; PROMEOS = audit advisor</li></ul></div><div style="display:contents" dir="auto"><h3 id="2f06971c-72e7-811f-a3bb-de834a2120e1" class="">E) Réputation</h3></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-8101-9f0f-df780662c717" class="bulleted-list"><li style="list-style-type:disc"><strong>Risque</strong>: Surestimation gains → client déception → brand damage</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-8121-be1c-d4624d4464c6" class="bulleted-list"><li style="list-style-type:disc"><strong>Mitigation</strong>: Estimates conservateurs (italicize volatilité) ; 3e-party audit crédibilité</li></ul></div><div style="display:contents" dir="auto"><hr id="2f06971c-72e7-81ce-ba94-f88aefe8ce0d"/></div><div style="display:contents" dir="auto"><h2 id="2f06971c-72e7-81a4-9fcd-d1c3dc223be9" class="">6. PRÉREQUIS &amp; INFRASTRUCTURE</h2></div><div style="display:contents" dir="auto"><h3 id="2f06971c-72e7-81a0-bf1c-ccec4d1998c5" class="">Données Minimales</h3></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-81a6-9499-c8ff6c9d0084" class="bulleted-list"><li style="list-style-type:disc"><strong>Granularité</strong>: 10–30 min sub-metering; GRD fournit 15 min (≤36kVA) / 5 min (&gt;36kVA)</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-81d5-b2b5-d2fd02f60b73" class="bulleted-list"><li style="list-style-type:disc"><strong>Historique</strong>: 2–3 ans données consommation</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-811b-9d27-e0a019e5e92f" class="bulleted-list"><li style="list-style-type:disc"><strong>Télérelève</strong>: Active, pas de lacunes</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-81e5-a597-c55c020d30a9" class="bulleted-list"><li style="list-style-type:disc"><strong>Métadonnées</strong>: Équipements, P. souscrite, horaires, arrêts prévus</li></ul></div><div style="display:contents" dir="auto"><h3 id="2f06971c-72e7-816c-9983-dc6e8c9197d8" class="">Capacité Pilotage</h3></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-818c-843e-d404b9f00280" class="bulleted-list"><li style="list-style-type:disc"><strong>GTB/BMS</strong>: Contrôle automates ; commande distance</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-810d-ac67-c743778ed9ce" class="bulleted-list"><li style="list-style-type:disc"><strong>IoT</strong>: Sous-comptage, capteurs T°, présence (optionnel, +précision)</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-811b-abb3-e00560c6cf23" class="bulleted-list"><li style="list-style-type:disc"><strong>Contraintes métier</strong>: Confort min, % production loss toléré</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-81ad-8db7-e020cc090cd6" class="bulleted-list"><li style="list-style-type:disc"><strong>Horaires</strong>: Fenêtres opérationnelles (7h–20h? Weekends? Vacances?)</li></ul></div><div style="display:contents" dir="auto"><h3 id="2f06971c-72e7-8121-b178-cf91064c18e6" class="">IT Infrastructure</h3></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-815b-948d-f71f11476f9b" class="bulleted-list"><li style="list-style-type:disc"><strong>Pipeline données</strong> (daily sync) : advizeo SaaS ~€150–300/site/an</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-8156-8d34-df02c862340b" class="bulleted-list"><li style="list-style-type:disc"><strong>Moteur règles</strong> : Baseline vs. réalisé ; détection écarts</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-8134-9342-e01bf27e5892" class="bulleted-list"><li style="list-style-type:disc"><strong>Journal audit</strong> : Logs RTE-compliance</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-81ea-b933-dc47e9d59ebe" class="bulleted-list"><li style="list-style-type:disc"><strong>Alerting</strong>: Seuils dépassés (email/SMS)</li></ul></div><div style="display:contents" dir="auto"><h3 id="2f06971c-72e7-81c6-935b-d2d0f9e2b3df" class="">Partenaires Must-Have</h3></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-81f5-81b6-e04fbf09e85f" class="numbered-list" start="1"><li><strong>OE opérateur</strong> (Energy Pool, Enerdigit) : Contractualisation RTE, M&amp;V cert., risk bearing</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-813b-9ffd-ef59822c1092" class="numbered-list" start="2"><li><strong>Advizeo cockpit</strong> : EMS/BMS monitoring, data integration</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8169-b2f7-e44b541851ac" class="numbered-list" start="3"><li><strong>Installateur IoT</strong> (si needed) : Pose sous-compteurs</li></ol></div><div style="display:contents" dir="auto"><hr id="2f06971c-72e7-8121-8bfb-c42010c6f903"/></div><div style="display:contents" dir="auto"><h2 id="2f06971c-72e7-81bb-8839-ffb15e3dd386" class="">7. WORKFLOW OPÉRATIONNEL (12 ÉTAPES, 30–365 JOURS)</h2></div><div style="display:contents" dir="ltr"><table id="2f06971c-72e7-81ff-af17-dff2dc91b1fb" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-81d1-8946-e5b9d8786781"><th id="TDw&lt;" class="simple-table-header-color simple-table-header"><strong>Étape</strong></th><th id="ua;p" class="simple-table-header-color simple-table-header"><strong>Titre</strong></th><th id="TFvt" class="simple-table-header-color simple-table-header"><strong>Durée</strong></th><th id="hG~Q" class="simple-table-header-color simple-table-header"><strong>Livrable</strong></th><th id="df=K" class="simple-table-header-color simple-table-header"><strong>Risque Principal</strong></th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-810a-9c94-dab5e4f6dfd9"><td id="TDw&lt;" class="">1–2</td><td id="ua;p" class="">Sourcing &amp; Proposal</td><td id="TFvt" class="">2–3 sem</td><td id="hG~Q" class="">Liste prospects ; devis audit</td><td id="df=K" class="">Cibles pas matures (pas GTB)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-8135-ae4c-c4c048ee7019"><td id="TDw&lt;" class="">3–4</td><td id="ua;p" class="">Data Recovery &amp; Gisement Audit</td><td id="TFvt" class="">5–7 sem</td><td id="hG~Q" class="">Rapport: X MW, Y jours, ~€Z revenu</td><td id="df=K" class="">Données corrompues ; surestimation gains</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-818b-a8d8-e642434a58bd"><td id="TDw&lt;" class="">5–6</td><td id="ua;p" class="">Readiness &amp; Contrats</td><td id="TFvt" class="">3–4 sem</td><td id="hG~Q" class="">Devis cockpit/IoT ; templates légaux</td><td id="df=K" class="">Coûts cachés GTB mods</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-8175-b91f-e7ca44f67bb8"><td id="TDw&lt;" class="">7–8</td><td id="ua;p" class="">Déploiement Cockpit &amp; RTE Qualification</td><td id="TFvt" class="">8–12 sem</td><td id="hG~Q" class="">Cockpit prod. ; Agrément Tech. tests</td><td id="df=K" class="">Retards intégration ; tests failed</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-8121-915a-f672e9bdd380"><td id="TDw&lt;" class="">9–10</td><td id="ua;p" class="">Launch NEBCO (J0) &amp; First Activations</td><td id="TFvt" class="">Continu</td><td id="hG~Q" class="">Programmes Modulation déclarés → RTE</td><td id="df=K" class="">Sync GTB/RTE failures</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-81cc-bb31-e9803e5924a0"><td id="TDw&lt;" class="">11–12</td><td id="ua;p" class="">Ops Monitoring &amp; M&amp;V Settlement</td><td id="TFvt" class="">Trimestriel</td><td id="hG~Q" class="">Alertes ; chroniques réalisés ; revenue share</td><td id="df=K" class="">Non-conformité bilans ; litiges RTE</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><hr id="2f06971c-72e7-8140-89eb-e7278352dc8e"/></div><div style="display:contents" dir="auto"><h2 id="2f06971c-72e7-819a-9bba-f67b1a040586" class="">8. SEGMENTATION CIBLE (ICP)</h2></div><div style="display:contents" dir="auto"><h3 id="2f06971c-72e7-81b3-b9e8-e353ab7e7744" class="">Trois Wedge Use-Cases Réalistes</h3></div><div style="display:contents" dir="auto"><h3 id="2f06971c-72e7-81ef-ba4e-f511de1b3582" class="">1. <strong>Retail Froid Alimentaire</strong> (Supermarchés 3k–5k m²)</h3></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-8147-b325-fe4078dd039c" class="bulleted-list"><li style="list-style-type:disc"><strong>Flexibilité</strong>: Arrêt réfrigérateurs 30–60 min; inertie thermale maintient T°</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-8196-8af9-e9b400dfcae8" class="bulleted-list"><li style="list-style-type:disc"><strong>Gisement</strong>: 500 kW–1.5 MW ; ~50 jours/an profitable</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-81dc-ae89-e6be890f79be" class="bulleted-list"><li style="list-style-type:disc"><strong>Revenu/site</strong>: €8–20k/an (30 sites cluster = €240k–600k potentiel)</li></ul></div><div style="display:contents" dir="auto"><h3 id="2f06971c-72e7-8136-8516-ecdadbd5efd6" class="">2. <strong>CVC Tertiaire &amp; Bureaux</strong> (PME 1k–20k m²)</h3></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-813b-a1a9-ffb09567a181" class="bulleted-list"><li style="list-style-type:disc"><strong>Flexibilité</strong>: Pre-cool 1–2h avant pic ; relâcher 0.5–1°C confort</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-81c8-95c2-c3410a4d2b20" class="bulleted-list"><li style="list-style-type:disc"><strong>Gisement</strong>: 200–800 kW ; ~60 jours/an</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-816a-afb8-e41f36ad4f54" class="bulleted-list"><li style="list-style-type:disc"><strong>Revenu/site</strong>: €3–10k/an (50 PME = €150–500k potentiel)</li></ul></div><div style="display:contents" dir="auto"><h3 id="2f06971c-72e7-81a7-8038-f2a84d4879de" class="">3. <strong>Process Léger Agroalimentaire</strong> (Broyage, Emballage, Dosage)</h3></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-811e-895a-cf3a5f92a86e" class="bulleted-list"><li style="list-style-type:disc"><strong>Flexibilité</strong>: Arrêt ligne 30–120 min (produit stockable pré/post)</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-8134-8eac-dd06dbb213af" class="bulleted-list"><li style="list-style-type:disc"><strong>Gisement</strong>: 500 kW–2 MW ; 20–40 jours/an</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-81bb-a9af-e2b431ad8903" class="bulleted-list"><li style="list-style-type:disc"><strong>Revenu/site</strong>: €10–40k/an (20–30 PME = €200–1.2M potentiel)</li></ul></div><div style="display:contents" dir="auto"><h3 id="2f06971c-72e7-81da-b7e3-ed3d18770202" class="">10 Critères Qualification (Go/No-Go)</h3></div><div style="display:contents" dir="ltr"><table id="2f06971c-72e7-818a-9f86-d11137d94f8a" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-8174-bc27-fc3fbda4508a"><th id="y|@g" class="simple-table-header-color simple-table-header"><strong>Critère</strong></th><th id="DzfB" class="simple-table-header-color simple-table-header"><strong>Go</strong></th><th id="VuVp" class="simple-table-header-color simple-table-header"><strong>No-Go</strong></th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-81c4-857b-e682c732976d"><td id="y|@g" class="">Multi-sites ≥5</td><td id="DzfB" class="">✓</td><td id="VuVp" class="">&lt;5</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-814c-89b9-df609fba10d6"><td id="y|@g" class="">P. installée ≥500 kW</td><td id="DzfB" class="">✓</td><td id="VuVp" class="">&lt;500 kW</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-81e1-be5c-ce9065a32b5f"><td id="y|@g" class="">GTB existant ou retrofit &lt;€20k</td><td id="DzfB" class="">✓</td><td id="VuVp" class="">Manquant &gt;€50k</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-812a-a801-e6d249822e76"><td id="y|@g" class="">Télérelève GRD actif</td><td id="DzfB" class="">✓</td><td id="VuVp" class="">Non (need sub-meter)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-815d-94fb-f44502b17e20"><td id="y|@g" class="">Energy manager/contact tech.</td><td id="DzfB" class="">✓</td><td id="VuVp" class="">Aucun</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-8122-85f6-c4322ff7f4fb"><td id="y|@g" class="">Budget audit + SaaS 1yr</td><td id="DzfB" class="">✓</td><td id="VuVp" class="">&lt;€5k</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-811a-a464-cbdec1d255e8"><td id="y|@g" class="">Équipements flexibles identifiés</td><td id="DzfB" class="">✓</td><td id="VuVp" class="">None / critical</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-810b-a85a-e8120fa9d670"><td id="y|@g" class="">Accord exec 2 ans</td><td id="DzfB" class="">✓</td><td id="VuVp" class="">Reluctant</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-81f8-ac88-da35776879b1"><td id="y|@g" class="">Objectif efficacité (DEET/RSE)</td><td id="DzfB" class="">✓</td><td id="VuVp" class="">Pure cash play</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-8157-a663-d191e1f2e85b"><td id="y|@g" class="">Pas de contrats OE exclusifs</td><td id="DzfB" class="">✓</td><td id="VuVp" class="">Locked-in</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><p id="2f06971c-72e7-81f5-9fab-fb0f0c561d47" class=""><strong>Scoring</strong>: 8–10 ✓ = GO ; 5–7 = YELLOW ; &lt;5 = NO-GO.</p></div><div style="display:contents" dir="auto"><hr id="2f06971c-72e7-81e6-8de5-f7b3b7d42305"/></div><div style="display:contents" dir="auto"><h2 id="2f06971c-72e7-81ef-b70b-ee79bd48105a" class="">9. PLAN DE PREUVES 30 JOURS (ICE PRIORITÉ)</h2></div><div style="display:contents" dir="auto"><h3 id="2f06971c-72e7-8183-801c-c20e9c93027c" class="">12 Hypothèses Clés (Priorisées)</h3></div><div style="display:contents" dir="ltr"><table id="2f06971c-72e7-810e-9103-e159162aef0d" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-81e0-9506-e228b4ce3b37"><th id="xC:w" class="simple-table-header-color simple-table-header">#</th><th id="]{Zq" class="simple-table-header-color simple-table-header"><strong>Hypothèse</strong></th><th id="&gt;}CE" class="simple-table-header-color simple-table-header"><strong>ICE Score</strong></th><th id="uEga" class="simple-table-header-color simple-table-header"><strong>Preuve Attendue</strong></th><th id="RQ\]" class="simple-table-header-color simple-table-header"><strong>Délai</strong></th><th id="um&lt;D" class="simple-table-header-color simple-table-header"><strong>Owner</strong></th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-8113-a8bf-eee46fb95c4e"><td id="xC:w" class="">1</td><td id="]{Zq" class="">Clients retail intéressés NEBCO</td><td id="&gt;}CE" class=""><strong>8.0</strong></td><td id="uEga" class="">2+ LOI prospects</td><td id="RQ\]" class="">J7</td><td id="um&lt;D" class="">Sales</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-811b-9128-caaa5522827e"><td id="xC:w" class="">2</td><td id="]{Zq" class="">Gisement moyen 1–2 MW/cluster</td><td id="&gt;}CE" class=""><strong>7.5</strong></td><td id="uEga" class="">1 audit pré-flex 5 magasins</td><td id="RQ\]" class="">J14</td><td id="um&lt;D" class="">Tech</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-81c7-92e4-f1c9708fa7e6"><td id="xC:w" class="">3</td><td id="]{Zq" class="">Revenue formula validated</td><td id="&gt;}CE" class=""><strong>8.5</strong></td><td id="uEga" class="">vs. public data (SIA, RTE)</td><td id="RQ\]" class="">J3</td><td id="um&lt;D" class="">Finance</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-81c6-9cab-c9f7adc00e2e"><td id="xC:w" class="">4</td><td id="]{Zq" class="">OE partner accept mutualisé</td><td id="&gt;}CE" class=""><strong>5.0</strong></td><td id="uEga" class="">LOI signée Energy Pool</td><td id="RQ\]" class="">J21</td><td id="um&lt;D" class="">Partnerships</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-81b8-9bdb-fdb9c6681c60"><td id="xC:w" class="">5</td><td id="]{Zq" class="">Cockpit advizeo sufficient</td><td id="&gt;}CE" class=""><strong>8.0</strong></td><td id="uEga" class="">Data quality validation</td><td id="RQ\]" class="">J7</td><td id="um&lt;D" class="">Tech</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-81ca-8721-e3e0b4b4d3a6"><td id="xC:w" class="">6</td><td id="]{Zq" class="">Tertiaire PME data feasible</td><td id="&gt;}CE" class=""><strong>6.0</strong></td><td id="uEga" class="">1 site diagnostique CVC</td><td id="RQ\]" class="">J10</td><td id="um&lt;D" class="">Tech</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-8130-b6b2-cd62647887a2"><td id="xC:w" class="">7</td><td id="]{Zq" class="">IoT installation &lt;€1k/site</td><td id="&gt;}CE" class=""><strong>6.0</strong></td><td id="uEga" class="">3 devis intégrateurs</td><td id="RQ\]" class="">J10</td><td id="um&lt;D" class="">Ops</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-8188-b3f3-feadc65a99a7"><td id="xC:w" class="">8</td><td id="]{Zq" class="">Client willingness €2–5k audit</td><td id="&gt;}CE" class=""><strong>7.0</strong></td><td id="uEga" class="">3+ interviews intent</td><td id="RQ\]" class="">J5</td><td id="um&lt;D" class="">Sales</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-8117-bb24-c12bc57b2bd7"><td id="xC:w" class="">9</td><td id="]{Zq" class="">Taux réussite 75–85% realistic</td><td id="&gt;}CE" class=""><strong>6.5</strong></td><td id="uEga" class="">Model sensitivity analysis</td><td id="RQ\]" class="">J7</td><td id="um&lt;D" class="">Tech</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-8164-8371-c1a62231ff66"><td id="xC:w" class="">10</td><td id="]{Zq" class="">Contrats &amp; liability clear</td><td id="&gt;}CE" class=""><strong>6.5</strong></td><td id="uEga" class="">Legal template review</td><td id="RQ\]" class="">J14</td><td id="um&lt;D" class="">Legal</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-8112-9036-f92ed44c901f"><td id="xC:w" class="">11</td><td id="]{Zq" class="">OE partner reputation safe</td><td id="&gt;}CE" class=""><strong>7.5</strong></td><td id="uEga" class="">Compliance audit Energy Pool</td><td id="RQ\]" class="">J21</td><td id="um&lt;D" class="">Ops</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-8168-a95b-d03395ff5b2d"><td id="xC:w" class="">12</td><td id="]{Zq" class="">Seasonal opportunity Q2 2025</td><td id="&gt;}CE" class=""><strong>7.0</strong></td><td id="uEga" class="">RTE calendar activations</td><td id="RQ\]" class="">J3</td><td id="um&lt;D" class="">Tech</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><p id="2f06971c-72e7-81c3-8fb9-ca70218d61f2" class=""><strong>Go-gate J30</strong>: ≥5/12 hypothèses validées + ≥4 critères clés (OE LOI, 2 audits, cockpit sign-off, contrats) → <strong>LAUNCH pilot</strong>.</p></div><div style="display:contents" dir="auto"><hr id="2f06971c-72e7-81f1-b720-edb224b54a81"/></div><div style="display:contents" dir="auto"><h2 id="2f06971c-72e7-813e-9107-f869da7cb2e5" class="">10. TOP 5 DÉCISIONS IMMÉDIALES</h2></div><div style="display:contents" dir="auto"><h3 id="2f06971c-72e7-81fb-9417-fc353ec9c546" class="">Décision 1: Partenariat OE — Make vs. Partner</h3></div><div style="display:contents" dir="auto"><p id="2f06971c-72e7-8117-91e4-d585dfec9354" class=""><strong>Recommandation</strong>: ✅ <strong>PARTNER (Energy Pool ou Enerdigit)</strong></p></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-8132-9436-ea5e08907aba" class="bulleted-list"><li style="list-style-type:disc"><strong>Why</strong>: CapEx €50–100k (vs. €200–500k in-house) ; timeline 6–8 sem (vs. 12 mois)</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-812b-ac26-d9d741c5a545" class="bulleted-list"><li style="list-style-type:disc"><strong>Action</strong>: Contact Energy Pool partnership director J1 ; propose pilot mutualisé 50–100 sites Q2 2026</li></ul></div><div style="display:contents" dir="auto"><h3 id="2f06971c-72e7-81de-af39-d7c6327c58c5" class="">Décision 2: Focus Segment V1</h3></div><div style="display:contents" dir="auto"><p id="2f06971c-72e7-819d-b52d-d5aa33d356b2" class=""><strong>Recommandation</strong>: ✅ <strong>RETAIL PRIMARY</strong> (Carrefour/Burger King touchpoints); Tertiaire SECONDARY</p></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-81d0-8baa-ef581138f9bc" class="bulleted-list"><li style="list-style-type:disc"><strong>Why</strong>: Mature market (DEET/BACS pressure), centralized GTB, existing advizeo clients</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-8163-8e91-e9e58e1cb2d7" class="bulleted-list"><li style="list-style-type:disc"><strong>Action</strong>: Pilot audit = Carrefour 5 magasins ; roadmap 20–50 sites Q2–Q3 2026</li></ul></div><div style="display:contents" dir="auto"><h3 id="2f06971c-72e7-813c-9f6b-ef86935c7863" class="">Décision 3: Data Scope Minimal</h3></div><div style="display:contents" dir="auto"><p id="2f06971c-72e7-81eb-9c1a-c22884587661" class=""><strong>Recommandation</strong>: ✅ <strong>GRD + Strategic Sub-metering</strong> (froid + CVC key equipment only)</p></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-8141-8469-d0ab403e89e0" class="bulleted-list"><li style="list-style-type:disc"><strong>Why</strong>: 80% precision at 20% cost ; 2–4 week deployment (vs. 8–12 weeks full IoT)</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-8171-a11e-d043d3d86ad2" class="bulleted-list"><li style="list-style-type:disc"><strong>Action</strong>: Pilot = GRD (free) + 2–3 sous-compteurs critiques (~€500–1k total setup)</li></ul></div><div style="display:contents" dir="auto"><h3 id="2f06971c-72e7-81fc-a414-eda2802c9b64" class="">Décision 4: Capital &amp; Resource Allocation</h3></div><div style="display:contents" dir="auto"><p id="2f06971c-72e7-81f3-abde-ca6b46b3b3f7" class=""><strong>Recommandation</strong>: <strong>€150–250k pilot investment Y1</strong> (vs. €500k–1M scale)</p></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-8110-b04b-c96f42536a19" class="bulleted-list"><li style="list-style-type:disc">Breakdown: €50k OE partnership setup ; €40k cockpit/IoT pilot config ; €30k legal/compliance ; €20k audit costs (sunk) ; €10k contingency</li></ul></div><div style="display:contents" dir="auto"><ul id="2f06971c-72e7-8199-a0be-ea5d1e21fc5e" class="bulleted-list"><li style="list-style-type:disc"><strong>Headcount</strong>: 1 FTE Tech Lead (pilot ) + Sales/Ops support</li></ul></div><div style="display:contents" dir="auto"><h3 id="2f06971c-72e7-8187-a6f6-e4146d7cbae4" class="">Décision 5: Go/No-Go Threshold (J30)</h3></div><div style="display:contents" dir="auto"><p id="2f06971c-72e7-8129-9760-d01ec9b67097" class=""><strong>Recommandation</strong>: <strong>Advance IF ≥4/5 conditions validated</strong>:</p></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-818c-af73-ed9985091ef3" class="numbered-list" start="1"><li>✅ OE Partner LOI signed</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-81c7-b956-ff8dc96c32ac" class="numbered-list" start="2"><li>✅ ≥2 retail LOI prospects (audit interest)</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8186-9703-d289521434b7" class="numbered-list" start="3"><li>✅ Advizeo cockpit M&amp;V-capable (tech sign-off)</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8135-b165-d46fb4390515" class="numbered-list" start="4"><li>✅ Contrats templates finalized</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-81c2-a6d3-f115cfd0aaa3" class="numbered-list" start="5"><li>✅ €1M+ Y1 revenue potential identified</li></ol></div><div style="display:contents" dir="auto"><p id="2f06971c-72e7-81f0-a088-e8beb287465f" class=""><strong>If 3/5 or fewer</strong> → EXTEND J60 ; refine model.<br/><strong>If &lt;2/5 or blockers</strong> → SUNSET ; explore alternative flex products.</p></div><div style="display:contents" dir="auto"><hr id="2f06971c-72e7-81bc-b02c-c5d28fb673b9"/></div><div style="display:contents" dir="auto"><h2 id="2f06971c-72e7-814b-bbf6-f7e7b4461b45" class="">11. TOP 5 ACTIONS (OBLIGATION IMMÉDIATE)</h2></div><div style="display:contents" dir="ltr"><table id="2f06971c-72e7-81a1-aa61-c33e5fb764a9" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-812e-b954-c9e5b69cc21c"><th id="[en:" class="simple-table-header-color simple-table-header"><strong>Action</strong></th><th id="HelS" class="simple-table-header-color simple-table-header"><strong>Owner</strong></th><th id="wNW\" class="simple-table-header-color simple-table-header"><strong>Effort</strong></th><th id="mEIu" class="simple-table-header-color simple-table-header"><strong>Deadline</strong></th><th id="fXsS" class="simple-table-header-color simple-table-header"><strong>Output</strong></th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-81f8-962b-d348a207e40e"><td id="[en:" class=""><strong>1.</strong> Contact Energy Pool ; LOI pilot mutualisé</td><td id="HelS" class="">Partnership Mgr</td><td id="wNW\" class="">2 jours</td><td id="mEIu" class=""><strong>29 janv.</strong></td><td id="fXsS" class="">LOI signed / feedback</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-81e9-99e6-d639a414fc3f"><td id="[en:" class=""><strong>2.</strong> Lancer audit pré-flex 1 client retail (Carrefour 5 magasins)</td><td id="HelS" class="">Tech Lead</td><td id="wNW\" class="">10 jours</td><td id="mEIu" class=""><strong>5 fév.</strong></td><td id="fXsS" class="">Dossier gisement</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-81a5-b468-fbc02640cf33"><td id="[en:" class=""><strong>3.</strong> Advizeo technical: cockpit M&amp;V capability sign-off</td><td id="HelS" class="">Tech + Advizeo</td><td id="wNW\" class="">3 jours</td><td id="mEIu" class=""><strong>29 janv.</strong></td><td id="fXsS" class="">Email validation / plan</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-8176-9310-d6b1c805c727"><td id="[en:" class=""><strong>4.</strong> Legal: finalize PROMEOS-Client + OE contrats</td><td id="HelS" class="">General Counsel</td><td id="wNW\" class="">7 jours</td><td id="mEIu" class=""><strong>5 fév.</strong></td><td id="fXsS" class="">3 templates signed</td></tr></div><div style="display:contents" dir="ltr"><tr id="2f06971c-72e7-81ba-997f-f8995a128911"><td id="[en:" class=""><strong>5.</strong> Market consolidation &amp; decision gate J30</td><td id="HelS" class="">Executive Mgmt</td><td id="wNW\" class="">5 jours</td><td id="mEIu" class=""><strong>22 fév.</strong></td><td id="fXsS" class="">Go/YELLOW/NO-GO memo</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><hr id="2f06971c-72e7-8115-977e-d244e0e639ca"/></div><div style="display:contents" dir="auto"><h2 id="2f06971c-72e7-818f-94a5-e4bfc6e4da42" class="">CONCLUSION</h2></div><div style="display:contents" dir="auto"><p id="2f06971c-72e7-810d-b719-d72954df18f3" class=""><strong>NEBCO is strategically attractive but operationally demanding.</strong> PROMEOS can capture €500k–1M Y1 revenue and €1.5–3M Y2 <strong>if</strong> partnerships are structured (Energy Pool), data infrastructure proven (advizeo cockpit), and execution ruthlessly disciplined (50+ sites scale, compliance-first).</p></div><div style="display:contents" dir="auto"><p id="2f06971c-72e7-81ab-a27e-f56b66f840a8" class=""><strong>This is not a quick-win wedge, but a scalable B2B motion</strong> — especially bundled with energy efficiency (DEET/BACS), where client ROI is 3x higher and churn lower.</p></div><div style="display:contents" dir="auto"><p id="2f06971c-72e7-8190-97b9-d4379860dd43" class=""><strong>Verdict: GO PILOT 30 DAYS</strong> (conditions validation J22 Feb 2026).</p></div><div style="display:contents" dir="auto"><hr id="2f06971c-72e7-8125-b069-fd6012517505"/></div><div style="display:contents" dir="auto"><p id="2f06971c-72e7-81ea-9b3a-e06a2d82f282" class=""><strong>References:</strong> <a href="about:blank#fn13">13</a> RTE NEBCO Règles Ch.5 | <a href="about:blank#fn14">14</a> CRE délibération 2025-199 | <a href="about:blank#fn15">15</a> ACTEE audit effacement tertiaire | <a href="about:blank#fn16">16</a> EPEX Spot pricing Jan 2026 | <a href="about:blank#fn17">17</a> Advizeo internal pricing | [6–13] Industry sources (Energy Pool, Akéa, SIA Partners, Xerfi)</p></div><div style="display:contents" dir="auto"><hr id="2f06971c-72e7-812f-be92-d70aa58bd342"/></div><div style="display:contents" dir="auto"><p id="2f06971c-72e7-8128-9278-ed9b955f6f39" class=""><em>Fin du rapport.</em><a href="about:blank#fn18">18</a><a href="about:blank#fn19">19</a><a href="about:blank#fn20">20</a><a href="about:blank#fn21">21</a><a href="about:blank#fn22">22</a><a href="about:blank#fn23">23</a><a href="about:blank#fn24">24</a><a href="about:blank#fn25">25</a><a href="about:blank#fn26">26</a><a href="about:blank#fn27">27</a><a href="about:blank#fn28">28</a><a href="about:blank#fn29">29</a><a href="about:blank#fn30">30</a><a href="about:blank#fn31">31</a><a href="about:blank#fn32">32</a><a href="about:blank#fn33">33</a><a href="about:blank#fn34">34</a><a href="about:blank#fn35">35</a><a href="about:blank#fn36">36</a><a href="about:blank#fn37">37</a><a href="about:blank#fn38">38</a><a href="about:blank#fn39">39</a><a href="about:blank#fn40">40</a><a href="about:blank#fn41">41</a><a href="about:blank#fn42">42</a><a href="about:blank#fn43">43</a><a href="about:blank#fn44">44</a><a href="about:blank#fn45">45</a><a href="about:blank#fn46">46</a><a href="about:blank#fn47">47</a><a href="about:blank#fn48">48</a><a href="about:blank#fn49">49</a><a href="about:blank#fn50">50</a><a href="about:blank#fn51">51</a><a href="about:blank#fn52">52</a><a href="about:blank#fn53">53</a><a href="about:blank#fn54">54</a><a href="about:blank#fn55">55</a><a href="about:blank#fn56">56</a><a href="about:blank#fn57">57</a><a href="about:blank#fn58">58</a><a href="about:blank#fn59">59</a><a href="about:blank#fn60">60</a><a href="about:blank#fn61">61</a><a href="about:blank#fn62">62</a><a href="about:blank#fn63">63</a><a href="about:blank#fn64">64</a><a href="about:blank#fn65">65</a><a href="about:blank#fn66">66</a><a href="about:blank#fn67">67</a><a href="about:blank#fn68">68</a><a href="about:blank#fn69">69</a><a href="about:blank#fn70">70</a><a href="about:blank#fn71">71</a><a href="about:blank#fn72">72</a><a href="about:blank#fn73">73</a><a href="about:blank#fn74">74</a><a href="about:blank#fn75">75</a><a href="about:blank#fn76">76</a><a href="about:blank#fn77">77</a><a href="about:blank#fn78">78</a><a href="about:blank#fn79">79</a><a href="about:blank#fn80">80</a><a href="about:blank#fn81">81</a><a href="about:blank#fn82">82</a><a href="about:blank#fn83">83</a><a href="about:blank#fn84">84</a><a href="about:blank#fn85">85</a><a href="about:blank#fn86">86</a><a href="about:blank#fn87">87</a><a href="about:blank#fn88">88</a></p></div><div style="display:contents" dir="auto"><p id="2f06971c-72e7-81fa-a02e-c26abe83b193" class="">⁂</p></div><div style="display:contents" dir="auto"><hr id="2f06971c-72e7-813b-b5d3-d9d74059b922"/></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-81f8-bc36-fcca8d19f386" class="numbered-list" start="1"><li>Guide Utilisation Archelios Pro.pptx<a href="about:blank#fnref1">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8197-b9d0-dcc291d61182" class="numbered-list" start="2"><li>Profil_Conso.csv<a href="about:blank#fnref2">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-81e5-92f7-fa34acf3f660" class="numbered-list" start="3"><li>Guide Archelios Pro et Etudes de cas.docx<a href="about:blank#fnref3">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8102-a9b1-fe22b8ee7e0d" class="numbered-list" start="4"><li>Guide Utilisation Archelios Pro.pptx<a href="about:blank#fnref4">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-812a-b62e-dd93cb4690e4" class="numbered-list" start="5"><li>Guide Utilisation Archelios Pro.pptx<a href="about:blank#fnref5">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8180-93b2-e64f71dfcbdb" class="numbered-list" start="6"><li>Guide Archelios Pro et Etudes de cas.docx<a href="about:blank#fnref6">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8195-a721-fad9b8ea75ff" class="numbered-list" start="7"><li>Guide Archelios Pro et Etudes de cas.docx<a href="about:blank#fnref7">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-81c5-9b64-d836917b4fcf" class="numbered-list" start="8"><li>Presentation-advizeo-V2025.pdf<a href="about:blank#fnref8">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-81c9-8a9b-de82f96c2568" class="numbered-list" start="9"><li>Presentation-advizeo-V2025.pdf<a href="about:blank#fnref9">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-810a-bd8d-d289473d67ee" class="numbered-list" start="10"><li>Guide Utilisation Archelios Pro.pptx<a href="about:blank#fnref10">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-81a1-80e8-d1cb9ddba43b" class="numbered-list" start="11"><li>Guide Utilisation Archelios Pro.pptx<a href="about:blank#fnref11">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-81b8-8b63-c3f648221439" class="numbered-list" start="12"><li>Guide Utilisation Archelios Pro.pptx<a href="about:blank#fnref12">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8129-b40f-e988bb887f2c" class="numbered-list" start="13"><li>Guide Utilisation Archelios Pro.pptx<a href="about:blank#fnref13">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8126-b85d-d52645ddb687" class="numbered-list" start="14"><li>Profil_Conso.csv<a href="about:blank#fnref14">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8160-8650-e72870388119" class="numbered-list" start="15"><li>Guide Archelios Pro et Etudes de cas.docx<a href="about:blank#fnref15">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-81ad-9678-e4612757a4d9" class="numbered-list" start="16"><li>Presentation-advizeo-V2025.pdf<a href="about:blank#fnref16">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8166-a260-e13031285a0b" class="numbered-list" start="17"><li>Devis-ENDESA ENERGIA-ENOGRID-2025-03-1423.pdf<a href="about:blank#fnref17">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8150-bd26-e53d7c3e064b" class="numbered-list" start="18"><li>Presentation-advizeo-V2025-002.pdf<a href="about:blank#fnref18">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-811d-8353-f4e1d991f550" class="numbered-list" start="19"><li>advizeo-Schema-economique-Partenaires.pdf<a href="about:blank#fnref19">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-81b9-9a41-cce3903815c1" class="numbered-list" start="20"><li>Energy management avec advizeo.pdf<a href="about:blank#fnref20">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8142-920e-d798b97685a5" class="numbered-list" start="21"><li>Presentation-advizeo-cockpit.pdf<a href="about:blank#fnref21">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-819b-8ea6-cf29d5c1fb7d" class="numbered-list" start="22"><li>Advizeo.docx<a href="about:blank#fnref22">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-81f7-9de7-e21cbe10f744" class="numbered-list" start="23"><li>Présentation Tilt.pdf<a href="about:blank#fnref23">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-819b-9e31-e7e2ab5b59c0" class="numbered-list" start="24"><li>Tilt X Endesa I Intégration technique v2.docx.pdf<a href="about:blank#fnref24">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8121-a900-dd27f4ecfb37" class="numbered-list" start="25"><li>Tilt X Endesa I Kick-off 0307 (1).docx<a href="about:blank#fnref25">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-810d-91ca-e0b28c156985" class="numbered-list" start="26"><li>Tilt X Endesa I Intégration technique.docx<a href="about:blank#fnref26">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-81b9-8ea7-e05d94c2c191" class="numbered-list" start="27"><li>Flux projet TILT - version finale.docx<a href="about:blank#fnref27">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-816d-9630-eb0d9eee8abe" class="numbered-list" start="28"><li>Tilt Energy X Endesa I Proposition commerciale.pdf<a href="about:blank#fnref28">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-81dc-852b-ea5d7c46f4a6" class="numbered-list" start="29"><li>https://roia.centre-mersenne.org/item/10.5802/roia.85.pdf<a href="about:blank#fnref29">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8115-af4b-e2a2908e8c27" class="numbered-list" start="30"><li>https://arxiv.org/pdf/2102.08690.pdf<a href="about:blank#fnref30">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8151-8777-e72fa62aee69" class="numbered-list" start="31"><li>https://www.cre.fr/actualites/toute-lactualite/la-cre-approuve-les-regles-nebco-notification-dechange-de-bloc-de-consommation-qui-viennent-remplacer-les-regles-nebef-notification-dechange-de-blocs-deffacement-et-entreront-en-vigueur-au-1er-septembre-2025.html<a href="about:blank#fnref31">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-810b-84e8-f88485bba895" class="numbered-list" start="32"><li>https://www.cre.fr/actualites/toute-lactualite/lenergie-du-droit-numero-87.html<a href="about:blank#fnref32">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8117-9b1d-cdec82f056e5" class="numbered-list" start="33"><li>https://solutions.acciona-energia.fr/blog/services-systeme-frequence-et-reserve-tertiaire/<a href="about:blank#fnref33">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8184-a407-d0912cc0b501" class="numbered-list" start="34"><li>https://www.cre.fr/actualites/nos-lettres-dinformation/la-cre-approuve-les-regles-nebco-notification-dechange-de-bloc-de-consommation-qui-viennent-remplacer-les-regles-nebef-notification-dechange-de-blocs-deffacement-et-entreront-en-vigueur-au-1er-septembre-2025.html<a href="about:blank#fnref34">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8110-8b44-e86afda07b57" class="numbered-list" start="35"><li>https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000047949331<a href="about:blank#fnref35">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8195-b869-f6f70a93dd28" class="numbered-list" start="36"><li>https://www.services-rte.com/fr/decouvrez-nos-offres-de-services/participer-au-mecanisme-d-ajustement.html<a href="about:blank#fnref36">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-81f9-8277-eac92e9705f1" class="numbered-list" start="37"><li>https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000045973775<a href="about:blank#fnref37">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8150-9c37-fa3a880d52f5" class="numbered-list" start="38"><li>https://www.services-rte.com/files/live/sites/services-rte/files/documentsLibrary/RM-5-NEBCO-V01-20250901_4990_fr<a href="about:blank#fnref38">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-810b-a613-eac3c87b0b60" class="numbered-list" start="39"><li>https://www.services-rte.com/fr/decouvrez-nos-offres-de-services/valorisez-vos-flexibilites.html<a href="about:blank#fnref39">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8160-8b9f-c802bc135949" class="numbered-list" start="40"><li>https://www.services-rte.com/files/live/sites/services-rte/files/Regles NEBCO 1.0.pdf<a href="about:blank#fnref40">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-810a-847e-c7192949230a" class="numbered-list" start="41"><li>https://fr.linkedin.com/posts/energy-pool_nebef-nebco-flexibilit%C3%A9-activity-7356288719986814976-8ztw<a href="about:blank#fnref41">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-819b-8a68-c11d87b1091b" class="numbered-list" start="42"><li>https://www.ecologie.gouv.fr/sites/default/files/documents/Consultation publique mécanisme de capacité.pdf<a href="about:blank#fnref42">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-81f5-a2c9-c44f927ad625" class="numbered-list" start="43"><li>https://enerdigit.fr/nebef/<a href="about:blank#fnref43">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8194-b845-e0c77c33b33a" class="numbered-list" start="44"><li>https://www.purecontrol.com/expertise/flexibilite-energetique<a href="about:blank#fnref44">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-815e-bd09-d92dbab4bc6c" class="numbered-list" start="45"><li>https://programme-cee-actee.fr/wp-content/uploads/2023/06/211004_FLEXMDE_Rapport-detude_VF.pdf<a href="about:blank#fnref45">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8139-b7f0-df4bc5d791e0" class="numbered-list" start="46"><li>https://www.qeios.com/read/JX9VH2/pdf<a href="about:blank#fnref46">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-81cc-a613-fca81bb41fc3" class="numbered-list" start="47"><li>https://www.cairn.info/load_pdf.php?ID_ARTICLE=REOF_176_0297&amp;download=1<a href="about:blank#fnref47">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8191-a50e-dc840afb3a6e" class="numbered-list" start="48"><li>https://www.matec-conferences.org/articles/matecconf/pdf/2023/06/matecconf_sfgp23_07003.pdf<a href="about:blank#fnref48">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-81af-8c6b-e4e4a1a40553" class="numbered-list" start="49"><li>https://www.sia-partners.com/system/files/document_download/file/2024-09/2024_DECRYPTAGE_Offres%20des%20agr%C3%A9gateurs%20aux%20consommateurs%20-%20Volet%20II_0.pdf<a href="about:blank#fnref49">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-81df-b489-e0b4aa4845c2" class="numbered-list" start="50"><li>https://www.optima-energie.fr/blog/actualites/prix-electricite-evolution/<a href="about:blank#fnref50">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8195-a2e6-ec154d122f68" class="numbered-list" start="51"><li>https://opera-energie.com/consultant-efficacite-energetique/<a href="about:blank#fnref51">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-81de-b2f1-ebe57b4340b0" class="numbered-list" start="52"><li>https://enerdigit.fr<a href="about:blank#fnref52">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-81e9-9622-d03942397046" class="numbered-list" start="53"><li>https://www.optima-energie.fr/blog/actualites/prix-de-lelectricite-et-du-gaz-evolution/<a href="about:blank#fnref53">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8187-a0ec-f93e7fae27d7" class="numbered-list" start="54"><li>https://capitole-energie.com/2024/04/09/consultant-en-efficacite-energetique-pour-professionnel/<a href="about:blank#fnref54">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-819c-bb92-f7d86c270500" class="numbered-list" start="55"><li>https://opera-energie.com/solutions-efficacite-energetique/effacement-electrique/<a href="about:blank#fnref55">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-812a-83fa-dcc631faf3fb" class="numbered-list" start="56"><li>https://selectra.info/energie/actualites/marche/prix-electricite/2025-12-03<a href="about:blank#fnref56">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8195-bf24-e518ba74110a" class="numbered-list" start="57"><li>https://www.ubigreen.com/conseil-en-efficacite-energetique/<a href="about:blank#fnref57">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-81fc-8983-ead07da07d34" class="numbered-list" start="58"><li>https://www.fournisseurs-electricite.com/contrat-electricite/prix/evolution<a href="about:blank#fnref58">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-819c-9c86-e5105a04d90f" class="numbered-list" start="59"><li>https://www.akea-energies.com<a href="about:blank#fnref59">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-81d7-836e-e5787aca2929" class="numbered-list" start="60"><li>https://www.services-rte.com/fr/visualisez-les-donnees-publiees-par-rte/effacements-de-consommation-nebef.html<a href="about:blank#fnref60">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8181-88ec-e7dc70d55401" class="numbered-list" start="61"><li>https://entreprises.selectra.info/energie/electricite/marche-de-gros<a href="about:blank#fnref61">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-81d5-be4b-c75463c19472" class="numbered-list" start="62"><li>https://cristal-decisions.com/energie/<a href="about:blank#fnref62">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-81cd-b542-c438fc984a42" class="numbered-list" start="63"><li>https://zenodo.org/record/4534136/files/Towards Data Markets in Renewable Energy.pdf<a href="about:blank#fnref63">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-81a5-ad86-f07a79f7e198" class="numbered-list" start="64"><li>https://arxiv.org/pdf/2310.05811.pdf<a href="about:blank#fnref64">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8126-89c8-d438cb4091d7" class="numbered-list" start="65"><li>https://pmc.ncbi.nlm.nih.gov/articles/PMC11372380/<a href="about:blank#fnref65">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8170-80da-eafa799718c8" class="numbered-list" start="66"><li>https://arxiv.org/pdf/2404.12974.pdf<a href="about:blank#fnref66">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8184-9647-c463553c7bb5" class="numbered-list" start="67"><li>https://www.mdpi.com/2079-9276/7/1/10/pdf<a href="about:blank#fnref67">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-81ce-850a-ebc238651700" class="numbered-list" start="68"><li>Plaquette EnoPower.pdf<a href="about:blank#fnref68">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8193-842e-fdef29fc7833" class="numbered-list" start="69"><li>https://www.mdpi.com/2071-1050/10/3/576/pdf<a href="about:blank#fnref69">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-815d-8f31-df87685beb7e" class="numbered-list" start="70"><li>http://arxiv.org/pdf/2405.09004.pdf<a href="about:blank#fnref70">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8110-aa7a-e7dd69d0bb91" class="numbered-list" start="71"><li>http://arxiv.org/pdf/2401.10451.pdf<a href="about:blank#fnref71">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-819c-be42-eb6ba0db2bf6" class="numbered-list" start="72"><li>https://www.actu-environnement.com/ae/news/reseau-electrique-effacement-2024-43272.php4<a href="about:blank#fnref72">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8114-b4ea-c0e8bfbd4183" class="numbered-list" start="73"><li>https://programme-cee-actee.fr/wp-content/uploads/2023/06/Cahier-des-charges-audit-effacement-tertiaire-collectivites-1.pdf<a href="about:blank#fnref73">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-815a-902f-d72b9ad883f5" class="numbered-list" start="74"><li>https://www.lajauneetlarouge.com/energy-pool-concepteur-et-operateur-de-solutions-pour-une-energie-flexible-et-bas-carbone/<a href="about:blank#fnref74">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8154-af7b-f8a11a6c12c9" class="numbered-list" start="75"><li>https://www.france-renouvelables.fr/wp-content/uploads/2024/10/Observatoire-Systeme-Electrique-Renouvelables-2024_Maj.pdf<a href="about:blank#fnref75">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-81b5-a0d5-e1cd661d027a" class="numbered-list" start="76"><li>https://www.cre.fr/fileadmin/Documents/Deliberations/import/130724-Annexe4-AvantagesEffacementCollectivite.pdf<a href="about:blank#fnref76">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-814b-ba18-e65aa34361df" class="numbered-list" start="77"><li>https://www.energy-pool.eu/wp-content/uploads/2018/07/CP-EP-040718.pdf<a href="about:blank#fnref77">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-81e6-b4d5-c83b2cf71cda" class="numbered-list" start="78"><li>https://www.cre.fr/fileadmin/Documents/Deliberations/import/Projet_de_regles_NEBEF_3_3.pdf<a href="about:blank#fnref78">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-819e-92c4-e90d4a8eff8d" class="numbered-list" start="79"><li>Présentation Enogrid.pdf<a href="about:blank#fnref79">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-81ab-80f7-dc594fec22d8" class="numbered-list" start="80"><li>https://www.xerfi.com/presentationetude/le-marche-de-l-agregation-d-energie_SCO53<a href="about:blank#fnref80">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8193-931b-e0841d7f1940" class="numbered-list" start="81"><li>https://analysesetdonnees.rte-france.com/flexibilites/effacement<a href="about:blank#fnref81">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8190-9d12-d19d7bd14445" class="numbered-list" start="82"><li>https://www.services-rte.com/files/live/sites/services-rte/files/pdf/NEBEF/Règles NEBEF 3.1.pdf<a href="about:blank#fnref82">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8141-a824-c9cb158ede9d" class="numbered-list" start="83"><li>https://energy-pool.com/fr<a href="about:blank#fnref83">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8187-b209-c535313e95f6" class="numbered-list" start="84"><li>https://www.senat.fr/rap/r23-714-1/r23-714-147.html<a href="about:blank#fnref84">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8116-b7fa-f62a68d31d78" class="numbered-list" start="85"><li>https://www.ecologie.gouv.fr/sites/default/files/documents/2021-12-28_REGLES_MECANISME_DE_CAPACITE_Vpublication.pdf<a href="about:blank#fnref85">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-81c8-aa34-edc0a81db849" class="numbered-list" start="86"><li>https://www.yele.fr/wp-content/uploads/Etude-Luciole-Yele-Consulting-FLEX.pdf<a href="about:blank#fnref86">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-810c-8c6b-d1621cbff2ec" class="numbered-list" start="87"><li>Plaquette EnoLab.pdf<a href="about:blank#fnref87">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2f06971c-72e7-8197-b762-e8c2a8fa4489" class="numbered-list" start="88"><li>Note ACC ENOGRID.docx<a href="about:blank#fnref88">↩︎</a></li></ol></div></div></article><span class="sans" style="font-size:14px;padding-top:2em"></span></body></html>

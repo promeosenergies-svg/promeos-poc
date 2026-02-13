@@ -1,0 +1,42 @@
+id: LEVIERS_MARCHE_2025_46
+type: rule
+domain: usages
+title: J.1 – Roadmap 90 j / 180 j / 12 mois (T0 2025 → T3 2025)
+summary: "T0 : 90 jours (Jan–Mar 2025) – Fondation MVP \n- ✓ Auth & user management\
+  \ (SSO compatible) \n- ✓ PMO workspace (gestion profil, docs storage) \n- ✓ Participant\
+  \ portal (inscription, portal consultation) \n..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "T0 : 90 jours (Jan–Mar 2025) – Fondation MVP \n- ✓ Auth & user management\
+  \ (SSO compatible) \n- ✓ PMO workspace (gestion profil, docs storage) \n- ✓ Participant\
+  \ portal (inscription, portal consultation) \n- ✓ Settlement calc (import CSV Enedis\
+  \ → répartition) \n- ✓ Billing draft (génération factures PDF) \n- ✓ Beta launch\
+  \ 5–10 opérations pilots (collectivités amies) \n\nT0–T1 : 180 jours (Jan–Jun 2025)\
+  \ – API Enedis + Compliance Lite \n- ✓ API Enedis Data Connect (branchement courbes\
+  \ 15 min) \n- ✓ API ACC Enedis (déclaration opération + suivi statut) \n- ✓ Décret\
+  \ Tertiaire monitoring (tableau bord baseline) \n- ✓ SEPA mandate + prélèvement\
+  \ auto (premiers clients paying) \n- ✓ First 20 paying customers (Starter + Ops)\
+  \ \n\nT0–T3 : 12 mois (Jan–Dec 2025) – Scale + Intelligence \n- ✓ Clés dynamiques\
+  \ v1.0 (règles ML simples basées météo + historique) \n- ✓ Data & Conformité v1.0\
+  \ (full Décret Tertiaire, BACS alert, APER tracker) \n- ✓ Agrégation multi-ACC (portfolio\
+  \ PMO) \n- ✓ 100+ opérations actives, 1000+ participants \n- ✓ 10+ bailleurs/collectivités\
+  \ engagés (Data & Compliance)"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: J.1 – Roadmap 90 j / 180 j / 12 mois (T0 2025 → T3 2025)
+  anchor: '#j1-roadmap-90-j-180-j-12-mois-t0-2025-t3-2025'
+  excerpt_short: "T0 : 90 jours (Jan–Mar 2025) – Fondation MVP \n- ✓ Auth & user management\
+    \ (SSO compatible) \n- ✓ PMO w..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

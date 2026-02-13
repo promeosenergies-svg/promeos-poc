@@ -1,0 +1,88 @@
+id: ACC_FRANCE_19
+type: knowledge
+domain: acc
+title: 'Scénario A : Bailleur Social 50 kWc / 100 participants INVESTISSEMENT (CAPEX)'
+summary: '├─ Installation PV (50 kWc) : €50,000
+
+  ├─ Électronique (onduleur, monitoring) : €5,000
+
+  ├─ Raccordement Enedis : €3,000
+
+  ├─ PMO setup (statuts, registre) : €1,500
+
+  └─ Total CAPEX : €59,500
+
+
+  REVENUS ANNUEL...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: '├─ Installation PV (50 kWc) : €50,000
+
+  ├─ Électronique (onduleur, monitoring) : €5,000
+
+  ├─ Raccordement Enedis : €3,000
+
+  ├─ PMO setup (statuts, registre) : €1,500
+
+  └─ Total CAPEX : €59,500
+
+
+  REVENUS ANNUELS (année 1)
+
+  ├─ Production brute : 50 × 0.9 × 1,000h = 45 MWh/an (facteur charge 18%)
+
+  ├─ Taux autocons. estimé : 55%
+
+  ├─ TAc = 45 × 55% = 24.75 MWh/an @ €0.18/kWh (prix convenu) : €4,455
+
+  ├─ Surplus vendu (marché spot, 45% produit) : 20.25 MWh @ €60/MWh : €1,215
+
+  ├─ Prime investissement (CRE 2025) : €0–2,000 (dégression)
+
+  └─ Autres aides (région) : €4,000–8,000 (premier an)
+
+
+  COÛTS OPÉRATIONNELS ANNUELS (OpEx)
+
+  ├─ Assurance RC/équipement : €300
+
+  ├─ Maintenance & nettoyage : €400
+
+  ├─ PMO gestion (estimé sans SaaS) : €2,000–3,000
+
+  ├─ Frais bancaires/comptabilité : €200
+
+  └─ Total OpEx : €2,900–3,600
+
+
+  RÉSULTAT NET ANNUEL (année 1 avec aides)
+
+  └─ €4,455 (TAc) + €1,215 (surplus) + €5,000 (aides) – €3,300 (OpEx) = **€7,370/an**
+
+
+  PAYBACK SIMPLE (sans aides 2026+)
+
+  └─ (€59,500 – aides) / €5,670 (révenu annuel stabilisé) = **7–9 ans**'
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: 'Scénario A : Bailleur Social 50 kWc / 100 participants INVESTISSEMENT
+    (CAPEX)'
+  anchor: '#scnario-a-bailleur-social-50-kwc-100-participants-investissement-capex'
+  excerpt_short: '├─ Installation PV (50 kWc) : €50,000
+
+    ├─ Électronique (onduleur, monitoring) : €5,000
+
+    ├─ Raccordemen...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

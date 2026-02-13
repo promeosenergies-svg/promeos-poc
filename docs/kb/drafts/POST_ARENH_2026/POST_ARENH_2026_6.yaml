@@ -1,0 +1,39 @@
+id: POST_ARENH_2026_6
+type: rule
+domain: usages
+title: Période d’Application par Défaut
+summary: Un aspect controversé du cadre post-ARENH concerne la période d’application
+  par défaut , fixée aux mois d’avril à octobre (jours complets) par le décret. Ce
+  choix, bien que justifié par le souci de mo...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Un aspect controversé du cadre post-ARENH concerne la période d’application\
+  \ par défaut , fixée aux mois d’avril à octobre (jours complets) par le décret.\
+  \ Ce choix, bien que justifié par le souci de moduler les signaux tarifaires (inciter\
+  \ à la sobriété hivernale), présente plusieurs inconvénients : 19 \n- Effet redistributif\
+  \ inéquitable : Les consommateurs à profil thermosensible (chauffage électrique\
+  \ hivernal) bénéficient moins de la minoration que les consommateurs à profil «\
+  \ en bandeau » (industries, data centers). \n- Complexité de lisibilité : Pour les\
+  \ clients finals, les variations mensuelles de grilles tarifaires TTC deviennent\
+  \ difficiles à appréhender, notamment lors de changements de fournisseur. \n\nLa\
+  \ CRE a émis des réserves explicites sur ce choix, soulignant que l’impact redistributif\
+  \ limité ne justifie pas la complexité opérationnelle induite. 20"
+logic: null
+sources:
+- doc_id: POST_ARENH_2026
+  label: Post-ARENH 2026
+  section: Période d’Application par Défaut
+  anchor: '#priode-dapplication-par-dfaut'
+  excerpt_short: Un aspect controversé du cadre post-ARENH concerne la période d’application
+    par défaut , fixée aux m...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

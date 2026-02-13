@@ -1,0 +1,39 @@
+id: STOCKAGE_ACC_24
+type: rule
+domain: usages
+title: Glossaire
+summary: "- ACC : Autoconsommation Collective (décret 2017-676) \n- TAc : Taux d’Autoconsommation\
+  \ = kWh produits consommés / kWh produits \n- TAp : Taux d’Autoproduction = kWh\
+  \ produits / kWh consommés \n- PMO : Pe..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- ACC : Autoconsommation Collective (décret 2017-676) \n- TAc : Taux\
+  \ d’Autoconsommation = kWh produits consommés / kWh produits \n- TAp : Taux d’Autoproduction\
+  \ = kWh produits / kWh consommés \n- PMO : Personne Morale Organisatrice (gestionnaire\
+  \ ACC) \n- BESS : Battery Energy Storage System (système batterie électrique) \n\
+  - EMS : Energy Management System (logiciel pilotage) \n- GTB : Gestion Technique\
+  \ Bâtiment (automatisation/contrôle) \n- TURPE : Tarif d’Utilisation du Réseau Public\
+  \ d’Électricité (CRE) \n- mFRR : Manual Frequency Restoration Reserve (service balancing\
+  \ RTE) \n- VPP : Virtual Power Plant (agrégation smart centralisée) \n- LFP : Lithium\
+  \ Iron Phosphate (chimie batterie sûre) \n- LCOE : Levelized Cost of Energy (coût\
+  \ ramené €/kWh) \n- ICPE : Installation Classée pour la Protection Environnement\
+  \ (seuil réglementation)"
+logic: null
+sources:
+- doc_id: STOCKAGE_ACC
+  label: Stockage et Autoconsommation Collective
+  section: Glossaire
+  anchor: '#glossaire'
+  excerpt_short: "- ACC : Autoconsommation Collective (décret 2017-676) \n- TAc :\
+    \ Taux d’Autoconsommation = kWh produit..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,31 @@
+id: VEILLE_S52_2025_7
+type: knowledge
+domain: acc
+title: Décisions Top 3
+summary: "- Lancer un partenariat CRE/RTE sur l'harmonisation ACC Micro (T1 2026)\
+  \ \n- Intégrer Bill Intelligence + Clearing Micro dans le MVP (T1 2026) \n- Pilote\
+  \ BACS Compliance Audit gratuit (5 clients, Île-de-..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Lancer un partenariat CRE/RTE sur l'harmonisation ACC Micro (T1 2026)\
+  \ \n- Intégrer Bill Intelligence + Clearing Micro dans le MVP (T1 2026) \n- Pilote\
+  \ BACS Compliance Audit gratuit (5 clients, Île-de-France, T1-T2 2026)"
+logic: null
+sources:
+- doc_id: VEILLE_S52_2025
+  label: Semaine 52 2025 - Veille Marche Energie PROMEOS
+  section: Décisions Top 3
+  anchor: '#dcisions-top-3'
+  excerpt_short: "- Lancer un partenariat CRE/RTE sur l'harmonisation ACC Micro (T1\
+    \ 2026) \n- Intégrer Bill Intelligenc..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

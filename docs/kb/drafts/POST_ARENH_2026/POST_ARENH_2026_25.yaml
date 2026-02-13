@@ -1,0 +1,42 @@
+id: POST_ARENH_2026_25
+type: rule
+domain: acc
+title: Conclusion
+summary: 'Le cadre post-ARENH applicable au 1er janvier 2026 repose sur une architecture
+  réglementaire novatrice : le Versement Nucléaire Universel redistribue les revenus
+  excédentaires d’EDF selon des seuils p...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Le cadre post-ARENH applicable au 1er janvier 2026 repose sur une architecture\
+  \ réglementaire novatrice : le Versement Nucléaire Universel redistribue les revenus\
+  \ excédentaires d’EDF selon des seuils progressifs, tandis que les Contrats d’Allocation\
+  \ de Production Nucléaire sécurisent partiellement l’approvisionnement des industriels\
+  \ électro-intensifs. Ce dispositif rompt avec la logique de tarif administré uniforme\
+  \ pour adopter une logique de marché régulée, fondée sur la transparence des coûts\
+  \ complets et une surveillance étroite par la CRE. \n\nPour le court terme (2026-2027),\
+  \ l’absence d’activation du VNU du fait des revenus estimés en-dessous des seuils\
+  \ de taxation signifie une exposition accrue des consommateurs professionnels à\
+  \ la volatilité du marché . Les 250 000+ sites professionnels devront s’adapter\
+  \ via des stratégies d’achat renouvelées, une couverture long terme où possible,\
+  \ et une diversification des sources de fourniture. La complexité opérationnelle\
+  \ du système (guichets de compensation, régularisations, révisions) exige également\
+  \ une vigilance accrue de la part des fournisseurs et des gestionnaires d’énergie."
+logic: null
+sources:
+- doc_id: POST_ARENH_2026
+  label: Post-ARENH 2026
+  section: Conclusion
+  anchor: '#conclusion'
+  excerpt_short: Le cadre post-ARENH applicable au 1er janvier 2026 repose sur une
+    architecture réglementaire novatri...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

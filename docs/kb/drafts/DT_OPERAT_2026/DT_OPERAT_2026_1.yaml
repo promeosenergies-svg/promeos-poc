@@ -1,0 +1,35 @@
+id: DT_OPERAT_2026_1
+type: rule
+domain: usages
+title: Executive Summary
+summary: Le Décret tertiaire (décret n° 2019-771 du 23 juillet 2019), aussi appelé
+  dispositif Éco-Énergie Tertiaire (EET), impose aux propriétaires et locataires de
+  bâtiments tertiaires de réduire progressivem...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: Le Décret tertiaire (décret n° 2019-771 du 23 juillet 2019), aussi appelé
+  dispositif Éco-Énergie Tertiaire (EET), impose aux propriétaires et locataires de
+  bâtiments tertiaires de réduire progressivement leur consommation d’énergie finale
+  selon trois paliers décennaux. Depuis 2025, le cadre s’est précisé avec la publication
+  de l’arrêté « Valeurs Absolues VI » (septembre 2025), qui couvre désormais 100%
+  des catégories d’activité. Les obligations actuelles et les échéances critiques
+  de 2026 et 2030 imposent une action immédiate pour les entités assujetties.
+logic: null
+sources:
+- doc_id: DT_OPERAT_2026
+  label: Decret Tertiaire / OPERAT - Obligations 2026
+  section: Executive Summary
+  anchor: '#executive-summary'
+  excerpt_short: Le Décret tertiaire (décret n° 2019-771 du 23 juillet 2019), aussi
+    appelé dispositif Éco-Énergie Ter...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

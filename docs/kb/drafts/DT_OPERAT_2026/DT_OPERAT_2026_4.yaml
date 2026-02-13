@@ -1,0 +1,33 @@
+id: DT_OPERAT_2026_4
+type: rule
+domain: reglementaire
+title: Objectifs décennaux Échéance Réduction (Crelat) Statut 31 décembre 2030 −40%
+  En cours d’atteinte ; premiers bilans prévus après 2031 31 décembre 2040 −50% Objectif
+  intermédiaire 31 décembre 2050 −60% Trajectoire long terme vers neutralité carbone
+summary: 'Source : Décret n° 2019-771, articles 1-3 ; Arrêté du 10 avril 2020 6 7'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: 'Source : Décret n° 2019-771, articles 1-3 ; Arrêté du 10 avril 2020 6
+  7'
+logic: null
+sources:
+- doc_id: DT_OPERAT_2026
+  label: Decret Tertiaire / OPERAT - Obligations 2026
+  section: Objectifs décennaux Échéance Réduction (Crelat) Statut 31 décembre 2030
+    −40% En cours d’atteinte ; premiers bilans prévus après 2031 31 décembre 2040
+    −50% Objectif intermédiaire 31 décembre 2050 −60% Trajectoire long terme vers
+    neutralité carbone
+  anchor: '#objectifs-dcennaux-chance-rduction-crelat-statut-31-dcembre-2030-40-en-cours-datteinte-premiers-bilans-prvus-aprs-2031-31-dcembre-2040-50-objectif-intermdiaire-31-dcembre-2050-60-trajectoire-long-terme-vers-neutralit-carbone'
+  excerpt_short: 'Source : Décret n° 2019-771, articles 1-3 ; Arrêté du 10 avril 2020
+    6 7...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

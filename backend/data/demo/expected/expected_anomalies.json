@@ -1,0 +1,1148 @@
+{
+  "version": "0.1.0-poc",
+  "total_invoices": 69,
+  "results": [
+    {
+      "invoice_id": "DEMO-ELEC-001",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 145.92,
+        "fourniture": 1605.06,
+        "acheminement": 565.68,
+        "taxes": 455.75,
+        "tva": 2772.41
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-ERR-TVA",
+      "energy_type": "elec",
+      "total_anomalies": 5,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": 20.0,
+      "anomalies": [
+        {
+          "anomaly_type": "tva_error",
+          "severity": "error",
+          "rule_card_id": "RULE_R03_TVA_RATE",
+          "component_type": "abonnement"
+        },
+        {
+          "anomaly_type": "tva_error",
+          "severity": "error",
+          "rule_card_id": "RULE_R03_TVA_RATE",
+          "component_type": "turpe_fixe"
+        },
+        {
+          "anomaly_type": "tva_error",
+          "severity": "error",
+          "rule_card_id": "RULE_R03_TVA_RATE",
+          "component_type": "cta"
+        },
+        {
+          "anomaly_type": "other",
+          "severity": "info",
+          "rule_card_id": "RULE_R09_OPAQUE",
+          "component_type": "autre"
+        },
+        {
+          "anomaly_type": "tva_error",
+          "severity": "error",
+          "rule_card_id": "RULE_R18_SUM_TVA",
+          "component_type": null
+        }
+      ],
+      "concept_allocations": {
+        "abonnement": 120.0,
+        "fourniture": 1140.0,
+        "acheminement": 18.48,
+        "taxes": 296.52,
+        "autre": 275.0
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-001-202301",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 145.92,
+        "fourniture": 1933.82,
+        "acheminement": 565.68,
+        "taxes": 547.22,
+        "tva": 3192.64
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-001-202302",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 145.92,
+        "fourniture": 1984.71,
+        "acheminement": 565.68,
+        "taxes": 559.29,
+        "tva": 3255.6
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-001-202303",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 145.92,
+        "fourniture": 1443.15,
+        "acheminement": 565.68,
+        "taxes": 416.1,
+        "tva": 2570.85
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-001-202304",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 145.92,
+        "fourniture": 1521.43,
+        "acheminement": 565.68,
+        "taxes": 437.4,
+        "tva": 2670.43
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-001-202305",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 145.92,
+        "fourniture": 1461.22,
+        "acheminement": 565.68,
+        "taxes": 414.81,
+        "tva": 2587.63
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-001-202306",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 145.92,
+        "fourniture": 1314.41,
+        "acheminement": 565.68,
+        "taxes": 383.23,
+        "tva": 2409.24
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-001-202307",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 145.92,
+        "fourniture": 1242.96,
+        "acheminement": 565.68,
+        "taxes": 371.14,
+        "tva": 2325.7
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-001-202308",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 145.92,
+        "fourniture": 1200.14,
+        "acheminement": 565.68,
+        "taxes": 360.62,
+        "tva": 2272.36
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-001-202309",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 145.92,
+        "fourniture": 1505.64,
+        "acheminement": 565.68,
+        "taxes": 425.39,
+        "tva": 2642.63
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-001-202310",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 145.92,
+        "fourniture": 1516.52,
+        "acheminement": 565.68,
+        "taxes": 427.83,
+        "tva": 2655.95
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-001-202311",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 145.92,
+        "fourniture": 1529.28,
+        "acheminement": 565.68,
+        "taxes": 445.03,
+        "tva": 2685.91
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-001-202312",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 145.92,
+        "fourniture": 2020.59,
+        "acheminement": 565.68,
+        "taxes": 558.53,
+        "tva": 3290.72
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-001-202401",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 145.92,
+        "fourniture": 1998.33,
+        "acheminement": 565.68,
+        "taxes": 529.34,
+        "tva": 3239.27
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-001-202402",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 145.92,
+        "fourniture": 2056.04,
+        "acheminement": 565.68,
+        "taxes": 535.77,
+        "tva": 3303.41
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-001-202403",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 145.92,
+        "fourniture": 1603.79,
+        "acheminement": 565.68,
+        "taxes": 434.9,
+        "tva": 2750.29
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-001-202404",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 145.92,
+        "fourniture": 1730.98,
+        "acheminement": 565.68,
+        "taxes": 464.27,
+        "tva": 2906.85
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-001-202405",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 145.92,
+        "fourniture": 1616.71,
+        "acheminement": 565.68,
+        "taxes": 441.49,
+        "tva": 2769.8
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-001-202406",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 145.92,
+        "fourniture": 1288.66,
+        "acheminement": 565.68,
+        "taxes": 361.55,
+        "tva": 2361.81
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-001-202407",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 145.92,
+        "fourniture": 1336.82,
+        "acheminement": 565.68,
+        "taxes": 373.03,
+        "tva": 2421.45
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-001-202408",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 145.92,
+        "fourniture": 1292.15,
+        "acheminement": 565.68,
+        "taxes": 369.7,
+        "tva": 2373.45
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-001-202409",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 145.92,
+        "fourniture": 1686.38,
+        "acheminement": 565.68,
+        "taxes": 450.21,
+        "tva": 2848.19
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-001-202410",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 145.92,
+        "fourniture": 1614.31,
+        "acheminement": 565.68,
+        "taxes": 438.2,
+        "tva": 2764.11
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-001-202411",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 145.92,
+        "fourniture": 1697.93,
+        "acheminement": 565.68,
+        "taxes": 456.3,
+        "tva": 2865.83
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-001-202412",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 145.92,
+        "fourniture": 2172.29,
+        "acheminement": 565.68,
+        "taxes": 564.21,
+        "tva": 3448.1
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-002-202301",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 98.4,
+        "fourniture": 1266.82,
+        "acheminement": 383.28,
+        "taxes": 376.36,
+        "tva": 2124.86
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-002-202302",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 98.4,
+        "fourniture": 1248.68,
+        "acheminement": 383.28,
+        "taxes": 367.85,
+        "tva": 2098.21
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-002-202303",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 98.4,
+        "fourniture": 1024.89,
+        "acheminement": 383.28,
+        "taxes": 315.72,
+        "tva": 1822.29
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-002-202305",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 98.4,
+        "fourniture": 1052.77,
+        "acheminement": 383.28,
+        "taxes": 319.2,
+        "tva": 1853.65
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-002-202306",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 98.4,
+        "fourniture": 841.73,
+        "acheminement": 383.28,
+        "taxes": 273.23,
+        "tva": 1596.64
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-002-202307",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 98.4,
+        "fourniture": 833.61,
+        "acheminement": 383.28,
+        "taxes": 265.41,
+        "tva": 1580.7
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-002-202309",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 98.4,
+        "fourniture": 1047.78,
+        "acheminement": 383.28,
+        "taxes": 319.47,
+        "tva": 1848.93
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-002-202310",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 98.4,
+        "fourniture": 976.03,
+        "acheminement": 383.28,
+        "taxes": 303.78,
+        "tva": 1761.49
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-002-202312",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 98.4,
+        "fourniture": 1287.28,
+        "acheminement": 383.28,
+        "taxes": 373.54,
+        "tva": 2142.5
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-002-202401",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 98.4,
+        "fourniture": 1394.43,
+        "acheminement": 383.28,
+        "taxes": 383.1,
+        "tva": 2259.21
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-002-202402",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 98.4,
+        "fourniture": 1461.86,
+        "acheminement": 383.28,
+        "taxes": 396.42,
+        "tva": 2339.96
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-002-202403",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 98.4,
+        "fourniture": 1050.81,
+        "acheminement": 383.28,
+        "taxes": 310.22,
+        "tva": 1842.71
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-002-202405",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 98.4,
+        "fourniture": 1131.8,
+        "acheminement": 383.28,
+        "taxes": 323.95,
+        "tva": 1937.43
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-002-202406",
+      "energy_type": "elec",
+      "total_anomalies": 1,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [
+        {
+          "anomaly_type": "tva_error",
+          "severity": "error",
+          "rule_card_id": "RULE_R03_TVA_RATE",
+          "component_type": "abonnement"
+        }
+      ],
+      "concept_allocations": {
+        "abonnement": 98.4,
+        "fourniture": 936.13,
+        "acheminement": 383.28,
+        "taxes": 276.29,
+        "tva": 1694.1
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-002-202407",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 98.4,
+        "fourniture": 857.82,
+        "acheminement": 383.28,
+        "taxes": 259.93,
+        "tva": 1599.43
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-002-202409",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 98.4,
+        "fourniture": 1123.65,
+        "acheminement": 383.28,
+        "taxes": 325.28,
+        "tva": 1930.61
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-002-202410",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 98.4,
+        "fourniture": 1093.8,
+        "acheminement": 383.28,
+        "taxes": 317.82,
+        "tva": 1893.3
+      }
+    },
+    {
+      "invoice_id": "DEMO-ELEC-002-202412",
+      "energy_type": "elec",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 98.4,
+        "fourniture": 1376.04,
+        "acheminement": 383.28,
+        "taxes": 384.52,
+        "tva": 2242.24
+      }
+    },
+    {
+      "invoice_id": "DEMO-GAZ-001",
+      "energy_type": "gaz",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 91.3,
+        "fourniture": 962.5,
+        "acheminement": 155.0,
+        "taxes": 214.87,
+        "tva": 1423.67
+      }
+    },
+    {
+      "invoice_id": "DEMO-GAZ-001-202301",
+      "energy_type": "gaz",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 91.3,
+        "fourniture": 1849.4,
+        "acheminement": 289.55,
+        "taxes": 388.49,
+        "tva": 2618.74
+      }
+    },
+    {
+      "invoice_id": "DEMO-GAZ-001-202302",
+      "energy_type": "gaz",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 91.3,
+        "fourniture": 1654.5,
+        "acheminement": 266.44,
+        "taxes": 358.66,
+        "tva": 2370.9
+      }
+    },
+    {
+      "invoice_id": "DEMO-GAZ-001-202303",
+      "energy_type": "gaz",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 91.3,
+        "fourniture": 1229.29,
+        "acheminement": 188.65,
+        "taxes": 258.29,
+        "tva": 1767.53
+      }
+    },
+    {
+      "invoice_id": "DEMO-GAZ-001-202304",
+      "energy_type": "gaz",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 91.3,
+        "fourniture": 704.25,
+        "acheminement": 116.44,
+        "taxes": 165.11,
+        "tva": 1077.1
+      }
+    },
+    {
+      "invoice_id": "DEMO-GAZ-001-202305",
+      "energy_type": "gaz",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 91.3,
+        "fourniture": 702.13,
+        "acheminement": 112.49,
+        "taxes": 160.01,
+        "tva": 1065.93
+      }
+    },
+    {
+      "invoice_id": "DEMO-GAZ-001-202306",
+      "energy_type": "gaz",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 91.3,
+        "fourniture": 311.03,
+        "acheminement": 47.38,
+        "taxes": 76.01,
+        "tva": 525.72
+      }
+    },
+    {
+      "invoice_id": "DEMO-GAZ-001-202307",
+      "energy_type": "gaz",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 91.3,
+        "fourniture": 260.89,
+        "acheminement": 44.93,
+        "taxes": 72.85,
+        "tva": 469.97
+      }
+    },
+    {
+      "invoice_id": "DEMO-GAZ-001-202308",
+      "energy_type": "gaz",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 91.3,
+        "fourniture": 276.6,
+        "acheminement": 45.49,
+        "taxes": 73.57,
+        "tva": 486.96
+      }
+    },
+    {
+      "invoice_id": "DEMO-GAZ-001-202309",
+      "energy_type": "gaz",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 91.3,
+        "fourniture": 661.5,
+        "acheminement": 102.79,
+        "taxes": 147.5,
+        "tva": 1003.09
+      }
+    },
+    {
+      "invoice_id": "DEMO-GAZ-001-202310",
+      "energy_type": "gaz",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 91.3,
+        "fourniture": 731.45,
+        "acheminement": 111.7,
+        "taxes": 159.0,
+        "tva": 1093.45
+      }
+    },
+    {
+      "invoice_id": "DEMO-GAZ-001-202311",
+      "energy_type": "gaz",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 91.3,
+        "fourniture": 1178.81,
+        "acheminement": 177.39,
+        "taxes": 243.77,
+        "tva": 1691.27
+      }
+    },
+    {
+      "invoice_id": "DEMO-GAZ-001-202312",
+      "energy_type": "gaz",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 91.3,
+        "fourniture": 1837.79,
+        "acheminement": 297.5,
+        "taxes": 398.74,
+        "tva": 2625.33
+      }
+    },
+    {
+      "invoice_id": "DEMO-GAZ-001-202401",
+      "energy_type": "gaz",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 91.3,
+        "fourniture": 1865.41,
+        "acheminement": 282.78,
+        "taxes": 379.74,
+        "tva": 2619.23
+      }
+    },
+    {
+      "invoice_id": "DEMO-GAZ-001-202402",
+      "energy_type": "gaz",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 91.3,
+        "fourniture": 1505.53,
+        "acheminement": 260.73,
+        "taxes": 351.3,
+        "tva": 2208.86
+      }
+    },
+    {
+      "invoice_id": "DEMO-GAZ-001-202403",
+      "energy_type": "gaz",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 91.3,
+        "fourniture": 1221.39,
+        "acheminement": 182.47,
+        "taxes": 250.32,
+        "tva": 1745.48
+      }
+    },
+    {
+      "invoice_id": "DEMO-GAZ-001-202404",
+      "energy_type": "gaz",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 91.3,
+        "fourniture": 696.91,
+        "acheminement": 111.65,
+        "taxes": 158.93,
+        "tva": 1058.79
+      }
+    },
+    {
+      "invoice_id": "DEMO-GAZ-001-202405",
+      "energy_type": "gaz",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 91.3,
+        "fourniture": 765.82,
+        "acheminement": 116.37,
+        "taxes": 165.03,
+        "tva": 1138.52
+      }
+    },
+    {
+      "invoice_id": "DEMO-GAZ-001-202406",
+      "energy_type": "gaz",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 91.3,
+        "fourniture": 296.31,
+        "acheminement": 49.25,
+        "taxes": 78.42,
+        "tva": 515.28
+      }
+    },
+    {
+      "invoice_id": "DEMO-GAZ-001-202407",
+      "energy_type": "gaz",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 91.3,
+        "fourniture": 303.39,
+        "acheminement": 46.79,
+        "taxes": 75.25,
+        "tva": 516.73
+      }
+    },
+    {
+      "invoice_id": "DEMO-GAZ-001-202408",
+      "energy_type": "gaz",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 91.3,
+        "fourniture": 326.97,
+        "acheminement": 49.69,
+        "taxes": 78.98,
+        "tva": 546.94
+      }
+    },
+    {
+      "invoice_id": "DEMO-GAZ-001-202409",
+      "energy_type": "gaz",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 91.3,
+        "fourniture": 627.42,
+        "acheminement": 101.3,
+        "taxes": 145.58,
+        "tva": 965.6
+      }
+    },
+    {
+      "invoice_id": "DEMO-GAZ-001-202410",
+      "energy_type": "gaz",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 91.3,
+        "fourniture": 654.41,
+        "acheminement": 109.36,
+        "taxes": 155.98,
+        "tva": 1011.05
+      }
+    },
+    {
+      "invoice_id": "DEMO-GAZ-001-202411",
+      "energy_type": "gaz",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 91.3,
+        "fourniture": 1068.33,
+        "acheminement": 177.1,
+        "taxes": 243.39,
+        "tva": 1580.12
+      }
+    },
+    {
+      "invoice_id": "DEMO-GAZ-001-202412",
+      "energy_type": "gaz",
+      "total_anomalies": 0,
+      "critical_anomalies": 0,
+      "coverage_level": "L1",
+      "potential_savings_eur": null,
+      "anomalies": [],
+      "concept_allocations": {
+        "abonnement": 91.3,
+        "fourniture": 1555.57,
+        "acheminement": 262.08,
+        "taxes": 353.04,
+        "tva": 2261.99
+      }
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+id: STOCKAGE_ACC_18
+type: rule
+domain: acc
+title: 'Playbook A : ACC Petit Tertiaire (1 producteur, 2–3 consommateurs, 20–40 kWc)'
+summary: "Phase 1 (Mois 0–1) : Diagnostic Rapide \n- Collect courbes 12 mois PV +\
+  \ conso (compteurs Enedis) \n- Calcul TAc/surplus simplifié (1 page Excel) \n- Budget\
+  \ CAPEX sketch (batterie 8 kWh ~10 k€) \n- Réunion..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Phase 1 (Mois 0–1) : Diagnostic Rapide \n- Collect courbes 12 mois PV\
+  \ + conso (compteurs Enedis) \n- Calcul TAc/surplus simplifié (1 page Excel) \n\
+  - Budget CAPEX sketch (batterie 8 kWh ~10 k€) \n- Réunion gouvernance : accord propriété\
+  \ batterie, clé répartition \n- Livrables : 1 page décision GO/NO-GO, 1 ppt synthèse\
+  \ stakeholders \n\nPhase 2 (Mois 1–2) : Conception Détaillée \n- Modelage 365 jours\
+  \ (kWh batterie, kW puissance, ROI 8–12 ans) \n- Sélection technologie : LFP 8 kWh\
+  \ 120–130 €/kWh supplier \n- Schema raccordement définitif (batterie derrière onduleur\
+  \ vs commun) \n- Pré-accord Enedis (email demande, délai 2–3 semaines) \n- Devis\
+  \ intégrateur (3 fournisseurs, négociation) \n- Livrables : schéma technique, devis\
+  \ détaillé, lettre Enedis OK \n\nPhase 3 (Mois 2–4) : Pilot & Déploiement \n- Commande\
+  \ batterie + onduleur + EMS (délai 4–8 semaines) \n- Travaux installation 2–5 jours\
+  \ (coupe brève) \n- Test mise en service + étalonnage onduleur \n- Formation PMO\
+  \ exploitation cockpit EMS \n- Livrables : batterie opérationnelle, rapport mise\
+  \ en service, manuel PMO \n\nPhase 4 (Mois 4–12) : Monitoring & Ajustement \n- Suivi\
+  \ mensuel KPI (TAc, cycles, revenue) \n- Réunion trimestrielle stakeholders (reporting\
+  \ gains) \n- Entretien annuel batterie (inspection, firmware) \n- Ajustement règles\
+  \ EMS si performance sous-objectif \n- Livrables : rapport 1 an, ROI confirmer vs. projection\
+  \ \n\nBudget Timing Typique : \n- Étude : 3 k€ \n- Batterie/onduleur/EMS : 12–15\
+  \ k€ \n- Installation : 2–3 k€ \n- Pilot 3 mois : 0 (inclus) \n- Total : 17–21 k€\
+  \ (pour 8 kWh LFP) \n- Timeline : 4 mois conception + installation + pilot"
+logic: null
+sources:
+- doc_id: STOCKAGE_ACC
+  label: Stockage et Autoconsommation Collective
+  section: 'Playbook A : ACC Petit Tertiaire (1 producteur, 2–3 consommateurs, 20–40
+    kWc)'
+  anchor: '#playbook-a-acc-petit-tertiaire-1-producteur-23-consommateurs-2040-kwc'
+  excerpt_short: "Phase 1 (Mois 0–1) : Diagnostic Rapide \n- Collect courbes 12 mois\
+    \ PV + conso (compteurs Enedis) \n- C..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

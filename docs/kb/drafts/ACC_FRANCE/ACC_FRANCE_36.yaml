@@ -1,0 +1,32 @@
+id: ACC_FRANCE_36
+type: knowledge
+domain: reglementaire
+title: Security & Compliance
+summary: "- Auth : OAuth2 (PMO + participant separate scopes) \n- Data : All participant/consumption\
+  \ data encrypted at rest (AES-256), in transit (TLS) \n- RGPD : explicit consent\
+  \ gate (Docusign), right-to-delete..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Auth : OAuth2 (PMO + participant separate scopes) \n- Data : All participant/consumption\
+  \ data encrypted at rest (AES-256), in transit (TLS) \n- RGPD : explicit consent\
+  \ gate (Docusign), right-to-delete workflow, DPIA doc \n- Audit : immutable logs,\
+  \ crypto signature on key transmission to Enedis"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: Security & Compliance
+  anchor: '#security-compliance'
+  excerpt_short: "- Auth : OAuth2 (PMO + participant separate scopes) \n- Data : All\
+    \ participant/consumption data encry..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,43 @@
+id: LEVIERS_MARCHE_2025_26
+type: knowledge
+domain: usages
+title: MVP (T0–T3 2025, ~10–12 sem dev)
+summary: "Modules : \n- PMO Workspace (gestion gouvernance) \n- Inscription PMO, profil,\
+  \ documents (statuts, convention Enedis) \n- Liste participants + rôles (producteur/consommateur/trésorier)\
+  \ \n- Gestion clés de..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Modules : \n- PMO Workspace (gestion gouvernance) \n- Inscription PMO,\
+  \ profil, documents (statuts, convention Enedis) \n- Liste participants + rôles\
+  \ (producteur/consommateur/trésorier) \n- Gestion clés de répartition (statique\
+  \ par défaut, éditable) \n- Data & Monitoring (import + KPI) \n- Intégration CSV\
+  \ Enedis (courbes export manuel → automation API T1 2026) \n- Calcul ratios : TAc\
+  \ (taux autoconsommation), TAp (taux autoproduction) \n- Graphs temps réel (prod/conso/surplus)\
+  \ + alertes anomalies \n- Settlement & Billing (ventilation + facturation) \n- Calcul\
+  \ mensuel parts énergétiques (clés × courbes) \n- Génération factures internes (PDF\
+  \ exportés) \n- Suivi paiements manuels (checklist + email relance simple) \n- Participant\
+  \ Portal (vue consommateur/producteur) \n- Login simple, affichage conso locale\
+  \ + économies \n- PDF facture téléchargeable \n- FAQ intégré \n\nTech Stack (Recommandation):\
+  \ \n- Frontend : React/Vue.js (PWA, responsive mobile) \n- Backend : Node.js/Python\
+  \ FastAPI (API-first) \n- Data : PostgreSQL (données transactionnelles) + TimescaleDB\
+  \ (séries temporelles) \n- Auth : OAuth2 (Keycloak), e-sign (Universign API) \n\
+  - Infra : K8s managed (GCP/AWS/OVH French)"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: MVP (T0–T3 2025, ~10–12 sem dev)
+  anchor: '#mvp-t0t3-2025-1012-sem-dev'
+  excerpt_short: "Modules : \n- PMO Workspace (gestion gouvernance) \n- Inscription\
+    \ PMO, profil, documents (statuts, con..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

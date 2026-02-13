@@ -1,0 +1,713 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><title>Décret BACS — seuils, dates, exemptions TRI_“Synth</title><style>
+/* cspell:disable-file */
+/* webkit printing magic: print all background colors */
+html {
+	-webkit-print-color-adjust: exact;
+}
+* {
+	box-sizing: border-box;
+	-webkit-print-color-adjust: exact;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+}
+@media only screen {
+	body {
+		margin: 2em auto;
+		max-width: 900px;
+		color: rgb(55, 53, 47);
+	}
+}
+
+body {
+	line-height: 1.5;
+	white-space: pre-wrap;
+}
+
+a,
+a.visited {
+	color: inherit;
+	text-decoration: underline;
+}
+
+.pdf-relative-link-path {
+	font-size: 80%;
+	color: #444;
+}
+
+h1,
+h2,
+h3 {
+	letter-spacing: -0.01em;
+	line-height: 1.2;
+	font-weight: 600;
+	margin-bottom: 0;
+}
+
+/* Override strong tags inside headings to maintain consistent weight */
+h1 strong,
+h2 strong,
+h3 strong {
+	font-weight: 600;
+}
+
+.page-title {
+	font-size: 2.5rem;
+	font-weight: 700;
+	margin-top: 0;
+	margin-bottom: 0.75em;
+}
+
+h1 {
+	font-size: 1.875rem;
+	margin-top: 1.875rem;
+}
+
+h2 {
+	font-size: 1.5rem;
+	margin-top: 1.5rem;
+}
+
+h3 {
+	font-size: 1.25rem;
+	margin-top: 1.25rem;
+}
+
+.source {
+	border: 1px solid #ddd;
+	border-radius: 3px;
+	padding: 1.5em;
+	word-break: break-all;
+}
+
+.callout {
+	border-radius: 10px;
+	padding: 1rem;
+}
+
+figure {
+	margin: 1.25em 0;
+	page-break-inside: avoid;
+}
+
+figcaption {
+	opacity: 0.5;
+	font-size: 85%;
+	margin-top: 0.5em;
+}
+
+mark {
+	background-color: transparent;
+}
+
+.indented {
+	padding-left: 1.5em;
+}
+
+hr {
+	background: transparent;
+	display: block;
+	width: 100%;
+	height: 1px;
+	visibility: visible;
+	border: none;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.09);
+}
+
+img {
+	max-width: 100%;
+}
+
+@media only print {
+	img {
+		max-height: 100vh;
+		object-fit: contain;
+	}
+}
+
+@page {
+	margin: 1in;
+}
+
+.collection-content {
+	font-size: 0.875rem;
+}
+
+.collection-content td {
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.column-list {
+	display: flex;
+	justify-content: space-between;
+}
+
+.column {
+	padding: 0 1em;
+}
+
+.column:first-child {
+	padding-left: 0;
+}
+
+.column:last-child {
+	padding-right: 0;
+}
+
+.table_of_contents-item {
+	display: block;
+	font-size: 0.875rem;
+	line-height: 1.3;
+	padding: 0.125rem;
+}
+
+.table_of_contents-indent-1 {
+	margin-left: 1.5rem;
+}
+
+.table_of_contents-indent-2 {
+	margin-left: 3rem;
+}
+
+.table_of_contents-indent-3 {
+	margin-left: 4.5rem;
+}
+
+.table_of_contents-link {
+	text-decoration: none;
+	opacity: 0.7;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.18);
+}
+
+table,
+th,
+td {
+	border: 1px solid rgba(55, 53, 47, 0.09);
+	border-collapse: collapse;
+}
+
+table {
+	border-left: none;
+	border-right: none;
+}
+
+th,
+td {
+	font-weight: normal;
+	padding: 0.25em 0.5em;
+	line-height: 1.5;
+	min-height: 1.5em;
+	text-align: left;
+}
+
+th {
+	color: rgba(55, 53, 47, 0.6);
+}
+
+ol,
+ul {
+	margin: 0;
+	margin-block-start: 0.6em;
+	margin-block-end: 0.6em;
+}
+
+li > ol:first-child,
+li > ul:first-child {
+	margin-block-start: 0.6em;
+}
+
+ul > li {
+	list-style: disc;
+}
+
+ul.to-do-list {
+	padding-inline-start: 0;
+}
+
+ul.to-do-list > li {
+	list-style: none;
+}
+
+.to-do-children-checked {
+	text-decoration: line-through;
+	opacity: 0.375;
+}
+
+ul.toggle > li {
+	list-style: none;
+}
+
+ul {
+	padding-inline-start: 1.7em;
+}
+
+ul > li {
+	padding-left: 0.1em;
+}
+
+ol {
+	padding-inline-start: 1.6em;
+}
+
+ol > li {
+	padding-left: 0.2em;
+}
+
+.mono ol {
+	padding-inline-start: 2em;
+}
+
+.mono ol > li {
+	text-indent: -0.4em;
+}
+
+.toggle {
+	padding-inline-start: 0em;
+	list-style-type: none;
+}
+
+/* Indent toggle children */
+.toggle > li > details {
+	padding-left: 1.7em;
+}
+
+.toggle > li > details > summary {
+	margin-left: -1.1em;
+}
+
+.selected-value {
+	display: inline-block;
+	padding: 0 0.5em;
+	background: rgba(206, 205, 202, 0.5);
+	border-radius: 3px;
+	margin-right: 0.5em;
+	margin-top: 0.3em;
+	margin-bottom: 0.3em;
+	white-space: nowrap;
+}
+
+.collection-title {
+	display: inline-block;
+	margin-right: 1em;
+}
+
+.page-description {
+	margin-bottom: 2em;
+}
+
+.simple-table {
+	margin-top: 1em;
+	font-size: 0.875rem;
+	empty-cells: show;
+}
+.simple-table td {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table th {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table-header-color {
+	background: rgb(247, 246, 243);
+	color: black;
+}
+.simple-table-header {
+	font-weight: 500;
+}
+
+time {
+	opacity: 0.5;
+}
+
+.icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	max-width: 1.2em;
+	max-height: 1.2em;
+	text-decoration: none;
+	vertical-align: text-bottom;
+	margin-right: 0.5em;
+}
+
+img.icon {
+	border-radius: 3px;
+}
+
+.callout img.notion-static-icon {
+	width: 1em;
+	height: 1em;
+}
+
+.callout p {
+	margin: 0;
+}
+
+.callout h1,
+.callout h2,
+.callout h3 {
+	margin: 0 0 0.6rem;
+}
+
+.user-icon {
+	width: 1.5em;
+	height: 1.5em;
+	border-radius: 100%;
+	margin-right: 0.5rem;
+}
+
+.user-icon-inner {
+	font-size: 0.8em;
+}
+
+.text-icon {
+	border: 1px solid #000;
+	text-align: center;
+}
+
+.page-cover-image {
+	display: block;
+	object-fit: cover;
+	width: 100%;
+	max-height: 30vh;
+}
+
+.page-header-icon {
+	font-size: 3rem;
+	margin-bottom: 1rem;
+}
+
+.page-header-icon-with-cover {
+	margin-top: -0.72em;
+	margin-left: 0.07em;
+}
+
+.page-header-icon img {
+	border-radius: 3px;
+}
+
+.link-to-page {
+	margin: 1em 0;
+	padding: 0;
+	border: none;
+	font-weight: 500;
+}
+
+p > .user {
+	opacity: 0.5;
+}
+
+td > .user,
+td > time {
+	white-space: nowrap;
+}
+
+input[type="checkbox"] {
+	transform: scale(1.5);
+	margin-right: 0.6em;
+	vertical-align: middle;
+}
+
+p {
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+}
+
+.image {
+	border: none;
+	margin: 1.5em 0;
+	padding: 0;
+	border-radius: 0;
+	text-align: center;
+}
+
+.code,
+code {
+	background: rgba(135, 131, 120, 0.15);
+	border-radius: 3px;
+	padding: 0.2em 0.4em;
+	border-radius: 3px;
+	font-size: 85%;
+	tab-size: 2;
+}
+
+code {
+	color: #eb5757;
+}
+
+.code {
+	padding: 1.5em 1em;
+}
+
+.code-wrap {
+	white-space: pre-wrap;
+	word-break: break-all;
+}
+
+.code > code {
+	background: none;
+	padding: 0;
+	font-size: 100%;
+	color: inherit;
+}
+
+blockquote {
+	font-size: 1em;
+	margin: 1em 0;
+	padding-left: 1em;
+	border-left: 3px solid rgb(55, 53, 47);
+}
+
+blockquote.quote-large {
+	font-size: 1.25em;
+}
+
+.bookmark {
+	text-decoration: none;
+	max-height: 8em;
+	padding: 0;
+	display: flex;
+	width: 100%;
+	align-items: stretch;
+}
+
+.bookmark-title {
+	font-size: 0.85em;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	height: 1.75em;
+	white-space: nowrap;
+}
+
+.bookmark-text {
+	display: flex;
+	flex-direction: column;
+}
+
+.bookmark-info {
+	flex: 4 1 180px;
+	padding: 12px 14px 14px;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+}
+
+.bookmark-image {
+	width: 33%;
+	flex: 1 1 180px;
+	display: block;
+	position: relative;
+	object-fit: cover;
+	border-radius: 1px;
+}
+
+.bookmark-description {
+	color: rgba(55, 53, 47, 0.6);
+	font-size: 0.75em;
+	overflow: hidden;
+	max-height: 4.5em;
+	word-break: break-word;
+}
+
+.bookmark-href {
+	font-size: 0.75em;
+	margin-top: 0.25em;
+}
+
+.sans { font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"; }
+.code { font-family: "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace; }
+.serif { font-family: Lyon-Text, Georgia, ui-serif, serif; }
+.mono { font-family: iawriter-mono, Nitti, Menlo, Courier, monospace; }
+.pdf .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK JP'; }
+.pdf:lang(zh-CN) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK SC'; }
+.pdf:lang(zh-TW) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK TC'; }
+.pdf:lang(ko-KR) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK KR'; }
+.pdf .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.pdf .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK JP'; }
+.pdf:lang(zh-CN) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK SC'; }
+.pdf:lang(zh-TW) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK TC'; }
+.pdf:lang(ko-KR) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK KR'; }
+.pdf .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.highlight-default {
+	color: rgba(44, 44, 43, 1);
+}
+.highlight-gray {
+	color: rgba(125, 122, 117, 1);
+	fill: rgba(125, 122, 117, 1);
+}
+.highlight-brown {
+	color: rgba(159, 118, 90, 1);
+	fill: rgba(159, 118, 90, 1);
+}
+.highlight-orange {
+	color: rgba(210, 123, 45, 1);
+	fill: rgba(210, 123, 45, 1);
+}
+.highlight-yellow {
+	color: rgba(203, 148, 52, 1);
+	fill: rgba(203, 148, 52, 1);
+}
+.highlight-teal {
+	color: rgba(80, 148, 110, 1);
+	fill: rgba(80, 148, 110, 1);
+}
+.highlight-blue {
+	color: rgba(56, 125, 201, 1);
+	fill: rgba(56, 125, 201, 1);
+}
+.highlight-purple {
+	color: rgba(154, 107, 180, 1);
+	fill: rgba(154, 107, 180, 1);
+}
+.highlight-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.highlight-red {
+	color: rgba(207, 81, 72, 1);
+	fill: rgba(207, 81, 72, 1);
+}
+.highlight-default_background {
+	color: rgba(44, 44, 43, 1);
+}
+.highlight-gray_background {
+	background: rgba(42, 28, 0, 0.07);
+}
+.highlight-brown_background {
+	background: rgba(139, 46, 0, 0.086);
+}
+.highlight-orange_background {
+	background: rgba(224, 101, 1, 0.129);
+}
+.highlight-yellow_background {
+	background: rgba(211, 168, 0, 0.137);
+}
+.highlight-teal_background {
+	background: rgba(0, 100, 45, 0.09);
+}
+.highlight-blue_background {
+	background: rgba(0, 124, 215, 0.094);
+}
+.highlight-purple_background {
+	background: rgba(102, 0, 178, 0.078);
+}
+.highlight-pink_background {
+	background: rgba(197, 0, 93, 0.086);
+}
+.highlight-red_background {
+	background: rgba(223, 22, 0, 0.094);
+}
+.block-color-default {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray {
+	color: rgba(125, 122, 117, 1);
+	fill: rgba(125, 122, 117, 1);
+}
+.block-color-brown {
+	color: rgba(159, 118, 90, 1);
+	fill: rgba(159, 118, 90, 1);
+}
+.block-color-orange {
+	color: rgba(210, 123, 45, 1);
+	fill: rgba(210, 123, 45, 1);
+}
+.block-color-yellow {
+	color: rgba(203, 148, 52, 1);
+	fill: rgba(203, 148, 52, 1);
+}
+.block-color-teal {
+	color: rgba(80, 148, 110, 1);
+	fill: rgba(80, 148, 110, 1);
+}
+.block-color-blue {
+	color: rgba(56, 125, 201, 1);
+	fill: rgba(56, 125, 201, 1);
+}
+.block-color-purple {
+	color: rgba(154, 107, 180, 1);
+	fill: rgba(154, 107, 180, 1);
+}
+.block-color-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.block-color-red {
+	color: rgba(207, 81, 72, 1);
+	fill: rgba(207, 81, 72, 1);
+}
+.block-color-default_background {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray_background {
+	background: rgba(240, 239, 237, 1);
+}
+.block-color-brown_background {
+	background: rgba(245, 237, 233, 1);
+}
+.block-color-orange_background {
+	background: rgba(251, 235, 222, 1);
+}
+.block-color-yellow_background {
+	background: rgba(249, 243, 220, 1);
+}
+.block-color-teal_background {
+	background: rgba(232, 241, 236, 1);
+}
+.block-color-blue_background {
+	background: rgba(229, 242, 252, 1);
+}
+.block-color-purple_background {
+	background: rgba(243, 235, 249, 1);
+}
+.block-color-pink_background {
+	background: rgba(250, 233, 241, 1);
+}
+.block-color-red_background {
+	background: rgba(252, 233, 231, 1);
+}
+.select-value-color-default { background-color: rgba(42, 28, 0, 0.07); }
+.select-value-color-gray { background-color: rgba(28, 19, 1, 0.11); }
+.select-value-color-brown { background-color: rgba(127, 51, 0, 0.156); }
+.select-value-color-orange { background-color: rgba(196, 88, 0, 0.203); }
+.select-value-color-yellow { background-color: rgba(209, 156, 0, 0.282); }
+.select-value-color-green { background-color: rgba(0, 96, 38, 0.156); }
+.select-value-color-blue { background-color: rgba(0, 118, 217, 0.203); }
+.select-value-color-purple { background-color: rgba(92, 0, 163, 0.141); }
+.select-value-color-pink { background-color: rgba(183, 0, 78, 0.152); }
+.select-value-color-red { background-color: rgba(206, 24, 0, 0.164); }
+
+.checkbox {
+	display: inline-flex;
+	vertical-align: text-bottom;
+	width: 16;
+	height: 16;
+	background-size: 16px;
+	margin-left: 2px;
+	margin-right: 5px;
+}
+
+.checkbox-on {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20width%3D%2216%22%20height%3D%2216%22%20fill%3D%22%2358A9D7%22%2F%3E%0A%3Cpath%20d%3D%22M6.71429%2012.2852L14%204.9995L12.7143%203.71436L6.71429%209.71378L3.28571%206.2831L2%207.57092L6.71429%2012.2852Z%22%20fill%3D%22white%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+
+.checkbox-off {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20x%3D%220.75%22%20y%3D%220.75%22%20width%3D%2214.5%22%20height%3D%2214.5%22%20fill%3D%22white%22%20stroke%3D%22%2336352F%22%20stroke-width%3D%221.5%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+	
+</style></head><body><article id="2ec6971c-72e7-8049-a99b-dca759d46b3a" class="page sans"><header><h1 class="page-title" dir="auto">Décret BACS — seuils, dates, exemptions TRI_“Synth</h1><p class="page-description" dir="auto"></p></header><div class="page-body"><div style="display:contents" dir="ltr"><figure id="2ec6971c-72e7-81a2-be73-e934a4fb56f1" class="image"><a href="https://r2cdn.perplexity.ai/pplx-full-logo-primary-dark%402x.png"><img src="https://r2cdn.perplexity.ai/pplx-full-logo-primary-dark%402x.png"/></a></figure></div><div style="display:contents" dir="auto"><h1 id="2ec6971c-72e7-81f7-b654-f24ca7634b49" class="">Décret BACS — seuils, dates, exemptions TRI</h1></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81f9-99f0-d573ee8bb021" class="">“Synthèse officielle décret BACS : seuils 290 kW/70 kW, dates applicables, exemptions TRI, inspections, citer Legifrance.”</p></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-810d-a351-eefa21358660" class="">Excellent! Now I have all the official information from Legifrance. Let me compile this into a comprehensive synthesis document.</p></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-8137-a0c0-e308b317ef64"/></div><div style="display:contents" dir="auto"><h1 id="2ec6971c-72e7-8118-9767-e60be31e2be4" class=""><strong>DÉCRET BACS — Synthèse Officielle</strong></h1></div><div style="display:contents" dir="auto"><h2 id="2ec6971c-72e7-81b8-90aa-e54245863577" class="">Seuils, Dates Applicables, Exemptions TRI, Inspections</h2></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-817c-b9d6-c635657e72f7" class=""><strong>1. CONTEXTE RÉGLEMENTAIRE OFFICIEL</strong></h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81b4-b789-e32b9e760afa" class="">Le <strong>Décret n° 2020-887 du 20 juillet 2020</strong> (Legifrance) transposant la Directive UE 2018/844 crée l’obligation d’installer des <strong>Systèmes d’Automatisation et de Contrôle des Bâtiments (BACS)</strong> dans les bâtiments tertiaires. Ce texte a été <strong>modifié par le Décret n° 2023-259 du 7 avril 2023</strong>, qui introduit un seuil de puissance abaissé et des inspections périodiques obligatoires.</p></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81b8-abd6-e319bc66bc41" class=""><strong>Références légales :</strong></p></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8173-b328-f7f89f8a651d" class="bulleted-list"><li style="list-style-type:disc">Décret n° 2020-887 du 20 juillet 2020 — Legifrance<a href="about:blank#fn1">1</a></li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-814e-af95-e5fe3420734f" class="bulleted-list"><li style="list-style-type:disc">Décret n° 2023-259 du 7 avril 2023 — Legifrance</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8115-bdf6-dd3ccc6d5e30" class="bulleted-list"><li style="list-style-type:disc">Code de la Construction et de l’Habitation, articles R.175-1 à R.175-6</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8161-8c7c-d7e8401be739" class="bulleted-list"><li style="list-style-type:disc">Arrêté du 7 avril 2023 (Legifrance) — Modalités de calcul du TRI et inspections</li></ul></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-8178-a742-f20696f04fa7"/></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-814b-82c4-d3825e66eea8" class=""><strong>2. CHAMP D’APPLICATION</strong></h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8184-afb2-cad2c0bcfe50" class=""><strong>Bâtiments concernés :</strong></p></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8111-967e-d687bb63f523" class="bulleted-list"><li style="list-style-type:disc">Bâtiments tertiaires non résidentiels (activités marchandes ou non marchandes)</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81c1-809d-f4d1c520e159" class="bulleted-list"><li style="list-style-type:disc">Bâtiments du secteur primaire ou secondaire hébergeant des activités tertiaires</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-812e-a84a-f6c87ece9405" class="bulleted-list"><li style="list-style-type:disc">Équipés d’un système de chauffage <strong>OU</strong> de climatisation, <strong>combiné ou non</strong> avec ventilation</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81df-ad16-cfb5171f7802" class="bulleted-list"><li style="list-style-type:disc">Critère : <strong>Puissance nominale utile</strong> des systèmes techniques</li></ul></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-818c-9377-e69ee74440e4"/></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-819b-a90c-f027503bb93b" class=""><strong>3. SEUILS RÉGLEMENTAIRES ET ÉCHÉANCES</strong></h3></div><div style="display:contents" dir="ltr"><table id="2ec6971c-72e7-81a6-8e55-f9dc3f684475" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81b1-a890-f73ee905a86a"><th id="[YL^" class="simple-table-header-color simple-table-header"><strong>Puissance CVC</strong></th><th id="AeR~" class="simple-table-header-color simple-table-header"><strong>Bâtiments existants</strong></th><th id="&lt;B{y" class="simple-table-header-color simple-table-header"><strong>Bâtiments neufs</strong></th><th id="wwt:" class="simple-table-header-color simple-table-header"><strong>Mise en conformité requise</strong></th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-8175-83ff-c4d87114edab"><td id="[YL^" class=""><strong>≥ 290 kW</strong></td><td id="AeR~" class="">Obligation depuis 22/07/2020</td><td id="&lt;B{y" class="">Obligation depuis 21/07/2021<a href="about:blank#fn2">2</a></td><td id="wwt:" class=""><strong>1er janvier 2025</strong></td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-8147-ae07-f9160ae6da6a"><td id="[YL^" class=""><strong>70–290 kW</strong></td><td id="AeR~" class="">Obligation depuis 09/04/2023</td><td id="&lt;B{y" class="">Obligation depuis 08/04/2024</td><td id="wwt:" class=""><strong>1er janvier 2027</strong></td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81f6-9dd7-e6fba07565ad" class=""><strong>Interprétation :</strong></p></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8114-88a0-d4380fc69d37" class="bulleted-list"><li style="list-style-type:disc">Les <strong>bâtiments existants</strong> dont la puissance CVC dépasse 290 kW doivent être équipés avant le <strong>1er janvier 2025</strong>.</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8173-bbb2-e70bb3808422" class="bulleted-list"><li style="list-style-type:disc">Les <strong>bâtiments existants</strong> de 70–290 kW doivent être conformes avant le <strong>1er janvier 2027</strong>.</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-812f-85a8-fc1074b23934" class="bulleted-list"><li style="list-style-type:disc">Pour les <strong>bâtiments neufs</strong>, l’obligation s’applique dès le dépôt du permis de construire après les dates susmentionnées (21/07/2021 pour ≥290 kW ; 08/04/2024 pour ≥70 kW).</li></ul></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-81b0-8a49-f3f4868504ad"/></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-814e-bdb7-f0c8911c5ff7" class=""><strong>4. EXEMPTIONS — CRITÈRE DU TEMPS DE RETOUR SUR INVESTISSEMENT (TRI)</strong></h3></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-810e-bf58-c5d4e17bbe7b" class=""><strong>Modification du seuil en 2023</strong></h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81c5-8845-cc163d2eade3" class="">Le Décret n° 2023-259 a <strong>relevé le seuil d’exemption de 6 ans à 10 ans</strong>.</p></div><div style="display:contents" dir="ltr"><table id="2ec6971c-72e7-8156-9543-f165fb1ad0ca" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81b5-b68b-dfd3594c0b91"><th id="\WCL" class="simple-table-header-color simple-table-header"><strong>Décret initial (2020)</strong></th><th id="vSiK" class="simple-table-header-color simple-table-header"><strong>Décret modifié (2023)</strong></th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-8123-b3b0-c9934ee3b139"><td id="\WCL" class="">TRI &lt; 6 ans</td><td id="vSiK" class="">TRI &lt; <strong>10 ans</strong></td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-812a-99d2-d297849f2b64" class=""><strong>Conditions d’exemption</strong><a href="about:blank#fn3">3</a></h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-819d-b190-e8fbbb77d5f7" class="">Un bâtiment peut être <strong>exempté</strong> de l’obligation BACS si le propriétaire démontre que l’installation n’est <strong>pas réalisable avec un TRI inférieur à 10 ans</strong>, déduction faite des <strong>aides financières publiques</strong>.</p></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81c2-9d93-c1e5d0235f36" class=""><strong>Formule officielle de calcul du TRI</strong> (Annexe 1, Arrêté du 7 avril 2023) :</p></div><div style="display:contents" dir="auto"><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerPolicy="no-referrer"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" referrerPolicy="no-referrer"/><pre id="2ec6971c-72e7-8156-8834-c05beba08af7" class="code code-wrap"><code class="language-Plain Text" style="white-space:pre-wrap;word-break:break-all">TRI = S / (Σ énergie Génergie × Cénergie)</code></pre></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81a8-984f-e8995d1c6130" class="">Où :</p></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8139-ba20-f406d34b2f75" class="bulleted-list"><li style="list-style-type:disc"><strong>S</strong> = Coût d’installation du BACS (€)</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8149-b7da-cef16c32976f" class="bulleted-list"><li style="list-style-type:disc"><strong>Génergie</strong> = Gain énergétique annuel par type d’énergie (kWh)</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8168-840b-ce4f1de3ca74" class="bulleted-list"><li style="list-style-type:disc"><strong>Cénergie</strong> = Coût unitaire de l’énergie économisée (€/kWh)</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8179-9914-fba0a8a1ff60" class="bulleted-list"><li style="list-style-type:disc"><strong>TRI</strong> = Arrondi au chiffre supérieur, exprimé en années</li></ul></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81b7-bbb7-f6e8d9e5a5c8" class=""><strong>Règle décisoire :</strong> Lorsque <strong>TRI &gt; 10 ans</strong>, l’absence de rentabilité est avérée et l’exemption est justifiée.<a href="about:blank#fn4">4</a></p></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81d0-bdbe-f3fa85398f62" class=""><strong>Application pratique :</strong></p></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8128-96db-d05bb70c117c" class="bulleted-list"><li style="list-style-type:disc">Les aides CEE (Certificats d’Économies d’Énergie), subventions publiques doivent être déduites du coût S.</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81ca-8e2f-ca0cceeadbda" class="bulleted-list"><li style="list-style-type:disc">L’étude justificative doit suivre rigoureusement cette méthodologie.</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81d5-8eda-cb31b238f249" class="bulleted-list"><li style="list-style-type:disc">Le dossier doit être <strong>conservé</strong> pendant 10 ans à titre de preuve.</li></ul></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-81f4-9adc-e380a1c1ebc8"/></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-8158-9622-c4fd1743d3b0" class=""><strong>5. EXIGENCES FONCTIONNELLES DU BACS</strong></h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8133-80df-d7e49a337c0c" class="">Le BACS doit remplir les <strong>5 fonctions obligatoires</strong> :</p></div><div style="display:contents" dir="ltr"><table id="2ec6971c-72e7-81c7-87fe-cdfaf8225db8" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81f9-8379-e63b8b81eecb"><th id="QQwg" class="simple-table-header-color simple-table-header"><strong>Fonction</strong></th><th id="Y~xP" class="simple-table-header-color simple-table-header"><strong>Description</strong></th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81de-9cfa-c117c7438e94"><td id="QQwg" class=""><strong>Suivi &amp; Enregistrement</strong></td><td id="Y~xP" class="">Mesure continue (pas horaire), par zone, de la production et consommation énergétique des systèmes CVC. Archivage mensuel 5 ans minimum.</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-8156-a6b1-d41142027041"><td id="QQwg" class=""><strong>Référence &amp; Détection</strong></td><td id="Y~xP" class="">Situe l’efficacité vs. valeurs de référence ; détecte pertes d’efficacité ; informe l’exploitant des possibilités d’amélioration.</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-8179-a19d-cf25b19462e7"><td id="QQwg" class=""><strong>Ajustement</strong></td><td id="Y~xP" class="">Ajuste automatiquement les systèmes techniques en conséquence des données.</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81c0-9536-c684fbaab709"><td id="QQwg" class=""><strong>Interopérabilité</strong></td><td id="Y~xP" class="">Communication avec divers systèmes (CVC, clairage, etc.) via protocoles standards.</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81ed-8afd-c76c276cb38d"><td id="QQwg" class=""><strong>Pilotage Manuel-Automatique</strong></td><td id="Y~xP" class="">Régulation autonome optimisée + possibilité de reprise manuelle.</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8157-a0a1-c358433ee306" class=""><strong>Classe de performance :</strong> Le BACS doit atteindre <strong>classe C minimum</strong> selon <strong>NF EN ISO 52120-1:2022</strong> (norme définie par arrêté du 7 avril 2023). Seules les classes <strong>A, B, C</strong> sont considérées conformes.<a href="about:blank#fn5">5</a><a href="about:blank#fn6">6</a></p></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-81ec-b95a-f486911f4e54"/></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-8197-a769-d7c8fe3a7a5b" class=""><strong>6. INSPECTIONS PÉRIODIQUES OBLIGATOIRES</strong></h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81fd-a675-e7274fd2b87f" class="">Le Décret n° 2023-259 (article R.175-5) introduit une <strong>obligation d’inspection régulière</strong>, supprimant l’exemption antérieure relative à l’entretien.<a href="about:blank#fn7">7</a></p></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-812a-9e88-f8e2378d430c" class=""><strong>Fréquence d’inspection</strong></h3></div><div style="display:contents" dir="ltr"><table id="2ec6971c-72e7-8130-95cd-f369f97597ff" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-8187-9348-eb13febc4f41"><th id="qAwf" class="simple-table-header-color simple-table-header"><strong>Situation</strong></th><th id="SdmD" class="simple-table-header-color simple-table-header"><strong>Délai</strong></th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81a2-bf0a-c3321da67da6"><td id="qAwf" class=""><strong>Première inspection</strong> (après installation ou remplacement du BACS)</td><td id="SdmD" class=""><strong>2 ans maximum</strong> après mise en service</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-815b-9c9f-f9bb00b2b15e"><td id="qAwf" class=""><strong>Inspections suivantes</strong></td><td id="SdmD" class=""><strong>5 ans maximum</strong></td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-8144-88a8-e3c9d1cf4e26" class=""><strong>Contenu obligatoire de l’inspection</strong><a href="about:blank#fn8">8</a></h3></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81a3-861d-cb0629ed07e0" class="numbered-list" start="1"><li><strong>Examen documentaire</strong> — Vérification de l’analyse fonctionnelle du système.</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-811c-84ed-ffa75c37995b" class="numbered-list" start="2"><li><strong>Vérification sur site</strong> — Bon fonctionnement du BACS et des systèmes reliés.</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8174-b292-f3ff0d0580fa" class="numbered-list" start="3"><li><strong>Paramétrage</strong> — Évaluation du respect des exigences de l’article R.175-3 et pertinence des réglages par rapport à l’usage du bâtiment.</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-812f-a7ae-ff6b3e4c60ef" class="numbered-list" start="4"><li><strong>Recommandations</strong> — Portant sur :<div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81a7-8344-f526223a0392" class="bulleted-list"><li style="list-style-type:disc">Bon usage du système en place</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8137-a19a-e427430143cd" class="bulleted-list"><li style="list-style-type:disc">Améliorations possibles de l’installation globale</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8131-9a98-edaf49556f3b" class="bulleted-list"><li style="list-style-type:disc">Intérêt éventuel du remplacement</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8122-9d31-d9ed01349049" class="bulleted-list"><li style="list-style-type:disc">Autres solutions envisageables</li></ul></div></li></ol></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-81d8-bc06-f2e5e4c40288" class=""><strong>Responsabilités &amp; Délais de remise</strong></h3></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-812d-a023-d3dc389a8e98" class="bulleted-list"><li style="list-style-type:disc"><strong>Charge</strong> : Propriétaire du BACS</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81d2-b8f3-fb6c8d469a23" class="bulleted-list"><li style="list-style-type:disc"><strong>Professionnel requis</strong> : Prestataire externe ou personnel interne compétent</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81a3-8910-ca351d30786b" class="bulleted-list"><li style="list-style-type:disc"><strong>Délai de remise du rapport</strong> : <strong>1 mois</strong> après inspection au propriétaire</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81c2-9d2d-d7407272d11f" class="bulleted-list"><li style="list-style-type:disc"><strong>Conservation</strong> : Rapport conservé <strong>10 ans minimum</strong></li></ul></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-8184-a9a6-d9ba47de2205"/></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-8118-acc3-e31f509fafc6" class=""><strong>7. OBLIGATIONS DE RELATION AU BACS POUR SYSTÈMES TECHNIQUES</strong></h3></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-818d-8f4b-cb9aad1759cb" class=""><strong>Bâtiments existants</strong></h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8179-8d0e-d17b6267aaa9" class="">Sont reliés au BACS <strong>tous les systèmes techniques pour lesquels la connexion est réalisable avec un TRI &lt; 10 ans</strong> (déduction faite des aides).</p></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-8128-842c-d8890e3a4517" class=""><strong>Obligation lors de remplacement d’équipement</strong></h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81a2-baad-de5982cddbd5" class="">Depuis le 09/04/2023, dès qu’un système de chauffage ou climatisation est <strong>remplacé ou installé</strong> dans un bâtiment assujetti, une <strong>régulation conforme au décret BACS doit être mise en place</strong>, même avant les échéances globales 2025 ou 2027.</p></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-81da-934e-ea280dcae174"/></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-817d-88b4-e8857707ed39" class=""><strong>8. MODALITÉS DE CONFORMITÉ &amp; PREUVES REQUISES</strong></h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-814d-8d98-f63c568f4c0a" class=""><strong>Pas de déclaration centralisée</strong> (contrairement au décret Tertiaire/OPERAT)</p></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-814b-92ac-e6d97fe87d82" class=""><strong>Preuves à conserver :</strong></p></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-811b-8cd6-f01476f710b5" class="numbered-list" start="1"><li><strong>Attestation d’installation/mise en service</strong> fournie par l’intégrateur</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8157-ab4d-cb5ee707a945" class="numbered-list" start="2"><li><strong>Spécifications techniques du BACS</strong> (classe de performance atteinte, fonctions mises en œuvre)</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8193-928d-edebc41ca382" class="numbered-list" start="3"><li><strong>Rapports d’inspection périodique</strong> (tous les 2–5 ans)</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8118-8037-e86d83b1fb7a" class="numbered-list" start="4"><li><strong>Étude de TRI justificative</strong> (si exemption revendiquée)</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81b2-9e61-c30270d2ca09" class="numbered-list" start="5"><li><strong>Documentation du paramétrage</strong> et consignes écrites au gestionnaire</li></ol></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8121-82b5-ce1a7ee0e241" class=""><strong>Vérification administrative :</strong> Contrôle possible par :</p></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81d9-b112-ddd7491321bb" class="bulleted-list"><li style="list-style-type:disc">Agents de la DREAL (Direction Régionale de l’Environnement, de l’Aménagement et du Logement)</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8113-8bf5-cbfe24f387c3" class="bulleted-list"><li style="list-style-type:disc">Agents assermentés</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-817b-a354-d261020d68ac" class="bulleted-list"><li style="list-style-type:disc">Inspections liées aux permis d’exploiter (ERP), audits énergétiques, audits ISO 50001</li></ul></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-81cd-ab86-dd52fdafb8cd"/></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-811b-97a2-f905236ea097" class=""><strong>9. SANCTIONS &amp; MISE EN CONFORMITÉ</strong></h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8134-80c9-fd19681d191b" class=""><strong>Absence de régime d’amende forfaitaire explicite</strong>, contrairement au décret Tertiaire, mais :</p></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-816a-b03d-c4b0b1c14e21" class="bulleted-list"><li style="list-style-type:disc"><strong>Manquement au code de la construction</strong> → Articles R.131-38 à R.131-41</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8199-a1c9-d9b69754bdee" class="bulleted-list"><li style="list-style-type:disc"><strong>Mise en demeure préfectorale</strong> possible en cas de non-conformité constatée</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81ac-8b58-ca2b54c6ac0b" class="bulleted-list"><li style="list-style-type:disc"><strong>Astreintes administratives</strong> et amendes administratives sur la base du Code de l’énergie</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81af-8c10-d6398e0b71e3" class="bulleted-list"><li style="list-style-type:disc"><strong>Responsabilité civile du propriétaire</strong> en cas d’incident lié à l’absence de GTB conforme</li></ul></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81ab-853e-e714d24decdd" class=""><strong>Non-respect des inspections :</strong> Peut exposer à des mises en demeure de conformité et à des contrôles externes renforcés.</p></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-8137-b552-ef66b240bf94"/></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-8168-a86a-f92667ee869f" class=""><strong>10. TAUX DE COUVERTURE DE L’OBLIGATION</strong></h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8131-b523-fe72ccadf941" class="">À titre informatif, le seuil de <strong>70 kW</strong> (en vigueur depuis 2023 pour le neuf, 2027 pour l’existant) couvre approximativement <strong>2 500 m² de bureaux thermiquement régulés</strong>, ce qui signifie que <strong>la quasi-totalité des bâtiments tertiaires</strong> &gt; 1 000 m² seront concernés.</p></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81d2-a7c2-e51ad514c25f" class="">Selon les analyses, environ <strong>920 000 bâtiments tertiaires</strong> en France sont potentiellement assujettis au décret Tertiaire et par extension au décret BACS.<a href="about:blank#fn9">9</a></p></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-8118-b715-ea3c15cfce45"/></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-8166-8105-e079c432d856" class=""><strong>11. INTÉGRATION AVEC AUTRES OBLIGATIONS</strong></h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-817d-9247-e66df27c0908" class="">Le décret BACS est <strong>complémentaire</strong> du :</p></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81a8-8502-c72fd1ed38d3" class="bulleted-list"><li style="list-style-type:disc"><strong>Décret Tertiaire</strong> (Éco-Énergie Tertiaire) — Réduction des consommations -40% d’ici 2030</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-817d-b50f-e23f508ce22c" class="bulleted-list"><li style="list-style-type:disc"><strong>Loi APER</strong> (2023) — Solarisation des parkings &gt; 1 500 m² à 50% d’ici 2026–2028</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81a3-8850-ffcbf5268f70" class="bulleted-list"><li style="list-style-type:disc"><strong>Directives ISO 50001</strong> — Management de l’énergie</li></ul></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8170-96ca-e878e01de668" class="">Le BACS constitue <strong>l’outil d’optimisation concrète</strong> permettant d’atteindre les objectifs de réduction du Tertiaire.</p></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-8164-abeb-ff88a9967f9c"/></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-8166-b626-f7fdd8a25ae5" class=""><strong>12. RÉFÉRENCES OFFICIELLES</strong></h3></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8148-a796-e3690ab671ab" class="bulleted-list"><li style="list-style-type:disc"><strong>Legifrance — Décret n° 2020-887 du 20 juillet 2020</strong><br/>https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000042128488/</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81b3-be5b-d522ebe76d30" class="bulleted-list"><li style="list-style-type:disc"><strong>Legifrance — Décret n° 2023-259 du 7 avril 2023</strong><br/>Entrée en vigueur : 9 avril 2023</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8167-b234-c377a8fcefe0" class="bulleted-list"><li style="list-style-type:disc"><strong>Legifrance — Arrêté du 7 avril 2023 relatif aux systèmes d’automatisation et de contrôle des bâtiments tertiaires</strong><br/>Annexe 1 : Modalités de calcul du TRI<br/>https://www.legifrance.gouv.fr/loda/article_lc/LEGIARTI000047426532</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8196-a80d-fd6284785e4e" class="bulleted-list"><li style="list-style-type:disc"><strong>Code de la Construction et de l’Habitation</strong>, articles R.175-1 à R.175-6<br/>https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT000006074096/LEGISCTA000043819533/</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81cd-9f40-dcd017d3c518" class="bulleted-list"><li style="list-style-type:disc"><strong>Guide officiel du Décret BACS</strong> (Ministère de la Transition écologique)<br/>https://rt-re-batiment.developpement-durable.gouv.fr/presentation-et-guide-du-decret-bacs-a712.html</li></ul></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-81c8-90d2-dbf3b4ada3c9"/></div><div style="display:contents" dir="auto"><h2 id="2ec6971c-72e7-81f4-82a9-df1a7a148d0d" class=""><strong>SYNTHÈSE EXÉCUTIVE</strong></h2></div><div style="display:contents" dir="ltr"><table id="2ec6971c-72e7-813f-a917-fd779e7618c8" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81d7-badd-f5a88a6bb80a"><th id="jlTn" class="simple-table-header-color simple-table-header"><strong>Aspect</strong></th><th id="\WUm" class="simple-table-header-color simple-table-header"><strong>Détail</strong></th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81c4-b210-d2c0942e878b"><td id="jlTn" class=""><strong>Obligation principale</strong></td><td id="\WUm" class="">Installation d’un BACS (GTB classe C min.) pour tous bâtiments tertiaires ≥ 70 kW</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-8170-954a-f0a4fa9dd1f1"><td id="jlTn" class=""><strong>Seuils clés</strong></td><td id="\WUm" class="">290 kW (échéance 01/01/2025) ; 70 kW (échéance 01/01/2027)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-8103-8ecd-d1b59c0e7091"><td id="jlTn" class=""><strong>Exemption</strong></td><td id="\WUm" class="">TRI &gt; 10 ans (déduction aides) — Justification exigée, conservée 10 ans</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81b9-a74f-dfb890f8f265"><td id="jlTn" class=""><strong>Inspections</strong></td><td id="\WUm" class="">Tous les 2 ans (post-installation) puis tous les 5 ans ; rapport obligatoire 1 mois ; conservation 10 ans</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81f3-8103-dc8bdd08a10c"><td id="jlTn" class=""><strong>Pas de plateforme déclarative</strong></td><td id="\WUm" class="">Contrairement au Tertiaire (OPERAT) — Conformité via dossiers / preuves conservés</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-8109-8c2f-de4d543705f0"><td id="jlTn" class=""><strong>Fonction clé</strong></td><td id="\WUm" class="">Suivi horaire énergie, détection pertes efficacité, ajustement automatique, pilotage manuel</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-8175-aa23-d7c5a0d2717b"><td id="jlTn" class=""><strong>Responsabilité</strong></td><td id="\WUm" class="">Propriétaire des systèmes CVC ; formation exploitant obligatoire</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8157-92c3-dceffcb9cb1a" class=""><a href="about:blank#fn10">10</a><a href="about:blank#fn11">11</a><a href="about:blank#fn12">12</a><a href="about:blank#fn13">13</a><a href="about:blank#fn14">14</a><a href="about:blank#fn15">15</a><a href="about:blank#fn16">16</a><a href="about:blank#fn17">17</a><a href="about:blank#fn18">18</a><a href="about:blank#fn19">19</a><a href="about:blank#fn20">20</a><a href="about:blank#fn21">21</a><a href="about:blank#fn22">22</a><a href="about:blank#fn23">23</a><a href="about:blank#fn24">24</a><a href="about:blank#fn25">25</a><a href="about:blank#fn26">26</a><a href="about:blank#fn27">27</a><a href="about:blank#fn28">28</a><a href="about:blank#fn29">29</a><a href="about:blank#fn30">30</a><a href="about:blank#fn31">31</a><a href="about:blank#fn32">32</a><a href="about:blank#fn33">33</a><a href="about:blank#fn34">34</a><a href="about:blank#fn35">35</a><a href="about:blank#fn36">36</a><a href="about:blank#fn37">37</a><a href="about:blank#fn38">38</a><a href="about:blank#fn39">39</a><a href="about:blank#fn40">40</a><a href="about:blank#fn41">41</a><a href="about:blank#fn42">42</a><a href="about:blank#fn43">43</a><a href="about:blank#fn44">44</a><a href="about:blank#fn45">45</a><a href="about:blank#fn46">46</a><a href="about:blank#fn47">47</a><a href="about:blank#fn48">48</a><a href="about:blank#fn49">49</a><a href="about:blank#fn50">50</a><a href="about:blank#fn51">51</a><a href="about:blank#fn52">52</a></p></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81bf-af67-f4b367c8077d" class="">⁂</p></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-81b3-8ecc-dc7463afbd28"/></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81a7-8f9a-c66e2a0d050a" class="numbered-list" start="1"><li>https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000042128488?init=true&amp;page=1&amp;query=2020-887&amp;searchField=ALL&amp;tab_selection=all<a href="about:blank#fnref1">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81d4-a669-df38642ccb27" class="numbered-list" start="2"><li>https://www.dekra-industrial.fr/news/decrets-bacs-<a href="about:blank#fnref2">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-811c-909f-cdf9fe55ef83" class="numbered-list" start="3"><li>https://www.legifrance.gouv.fr/loda/article_lc/LEGIARTI000047426532<a href="about:blank#fnref3">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8187-b324-f638d925c1e3" class="numbered-list" start="4"><li>https://www.legifrance.gouv.fr/loda/article_lc/LEGIARTI000047426532<a href="about:blank#fnref4">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81a6-b0c6-d36cd176790b" class="numbered-list" start="5"><li>https://www.e-nergys.com/reglementation/decret-bacs/<a href="about:blank#fnref5">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8182-bc64-e0665cd6cfca" class="numbered-list" start="6"><li>https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000047422562<a href="about:blank#fnref6">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-816b-8fe4-e0d169fe51ef" class="numbered-list" start="7"><li>https://www.ffie.fr/actualites-et-evenements/actualites/detail/actualite/evolution-de-la-reglementation-relative-aux-bacs<a href="about:blank#fnref7">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8148-a0e0-fa9451cb2901" class="numbered-list" start="8"><li>https://france.apave.com/Actualites/News/Ameliorer-performance-energetique-des-batiments-tertiaires-impacts-Decret-BACS<a href="about:blank#fnref8">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-819b-92c2-dc26238f1ffc" class="numbered-list" start="9"><li>Reglementations-energetiques-_-donnees-a-surveiller-et-formules-de-calcul.pdf<a href="about:blank#fnref9">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8108-a14c-f73fa6972868" class="numbered-list" start="10"><li>Profil_Conso.csv<a href="about:blank#fnref10">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81ac-85c2-c178ec012ed3" class="numbered-list" start="11"><li>Guide Archelios Pro et Etudes de cas.docx<a href="about:blank#fnref11">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81d9-a12b-e9d45b12d900" class="numbered-list" start="12"><li>Présentation advizeo V2025.pdf<a href="about:blank#fnref12">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-816f-bf73-e9ab676d0436" class="numbered-list" start="13"><li>Devis-ENDESA ENERGIA-ENOGRID-2025-03-1423.pdf<a href="about:blank#fnref13">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81d1-b7f3-fbeca1fefee0" class="numbered-list" start="14"><li>Plaquette EnoPower.pdf<a href="about:blank#fnref14">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81b0-a241-daea9ec3e9ae" class="numbered-list" start="15"><li>Présentation Enogrid.pdf<a href="about:blank#fnref15">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81c8-9793-e7e70db6db3d" class="numbered-list" start="16"><li>Plaquette EnoLab.pdf<a href="about:blank#fnref16">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81d8-b59f-d827badf625d" class="numbered-list" start="17"><li>Note ACC ENOGRID.docx<a href="about:blank#fnref17">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81bb-8526-d662df31808d" class="numbered-list" start="18"><li>Présentation advizeo V2025 (002).pdf<a href="about:blank#fnref18">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81e3-b06b-d00e7101f53b" class="numbered-list" start="19"><li>advizeo - Schéma économique Partenaires.pdf<a href="about:blank#fnref19">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-813f-843f-f9a3183772e3" class="numbered-list" start="20"><li>Energy management avec advizeo.pdf<a href="about:blank#fnref20">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8126-a78e-f42962afd69e" class="numbered-list" start="21"><li>Présentation advizeo cockpit.pdf<a href="about:blank#fnref21">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8186-8419-dee84a908439" class="numbered-list" start="22"><li>Advizeo.docx<a href="about:blank#fnref22">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-819e-9363-d82d76abc774" class="numbered-list" start="23"><li>Présentation Tilt.pdf<a href="about:blank#fnref23">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8152-9ddb-cf949194bcbc" class="numbered-list" start="24"><li>Tilt X Endesa I Intégration technique v2.docx.pdf<a href="about:blank#fnref24">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-812a-b54f-d72dbaa61088" class="numbered-list" start="25"><li>Tilt X Endesa I Kick-off 0307 (1).docx<a href="about:blank#fnref25">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-810e-b0d7-f6c817ea4af8" class="numbered-list" start="26"><li>Tilt X Endesa I Intégration technique.docx<a href="about:blank#fnref26">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8176-bc00-f9c690fea274" class="numbered-list" start="27"><li>Flux projet TILT - version finale.docx<a href="about:blank#fnref27">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8176-933e-e3fcc4cbed65" class="numbered-list" start="28"><li>Tilt Energy X Endesa I Proposition commerciale.pdf<a href="about:blank#fnref28">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-816b-a3ef-dd5bf823b9c5" class="numbered-list" start="29"><li>PROMEOS-Simulateur-ACC-Conformite-v0.md<a href="about:blank#fnref29">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-817d-b554-d4ec8698973f" class="numbered-list" start="30"><li>Analyse-experte-Obligations-reglementaires-module-Data-Conformite-multi-energie-France-B2B.pdf<a href="about:blank#fnref30">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8181-bf54-fc83cfa59558" class="numbered-list" start="31"><li>MVP-PROMEOS.xlsx<a href="about:blank#fnref31">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-818e-8283-e9c212f10156" class="numbered-list" start="32"><li>https://www.calculcee.fr/article/decret-bacs-gtb/<a href="about:blank#fnref32">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81c9-83b0-f0e1ad8e2d5d" class="numbered-list" start="33"><li>https://www.hellio.com/actualites/reglementation/decret-bacs<a href="about:blank#fnref33">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8188-b73c-dca9782ec5c7" class="numbered-list" start="34"><li>https://www.terao.fr/decret-bacs-obligations-gtb-batiments-tertiaires/<a href="about:blank#fnref34">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8141-ae16-f6b715f73f28" class="numbered-list" start="35"><li>https://www.novabuild.fr/wp-content/uploads/2024/02/2024-02-FICHE-TECHNIQUE-decryptage-decret-BACS.pdf<a href="about:blank#fnref35">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-811c-8b3f-d613ab2542df" class="numbered-list" start="36"><li>https://www.gac-res.com/blog/decret-bacs-parc-immobilier/<a href="about:blank#fnref36">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-814d-befb-d5009e20da7c" class="numbered-list" start="37"><li>https://decret-bacs.fr<a href="about:blank#fnref37">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81e9-b379-d173930bc6fd" class="numbered-list" start="38"><li>https://www.nrgys.fr/2023/03/20/batiments-tertiaires-decret-bacs/<a href="about:blank#fnref38">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8175-bfd4-eb5358a1bb4d" class="numbered-list" start="39"><li>https://programme-cee-actee.fr/wp-content/uploads/2023/11/Webinaire-ACTEE_Decret-BACS_17_10_2023-1.pdf<a href="about:blank#fnref39">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81e7-8d97-e2a26969b7e9" class="numbered-list" start="40"><li>https://solutions.acciona-energia.fr/blog/decret-bacs-obligation-dequiper-les-batiments-tertiaires-de-systemes-dautomatisation-et-de-controle/<a href="about:blank#fnref40">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81f3-9dc4-e2da554b8e5b" class="numbered-list" start="41"><li>https://www.echoline.fr/blog/decret-bacs-performance-energetique-tertiaire<a href="about:blank#fnref41">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-817c-95fb-ef47732e8d7f" class="numbered-list" start="42"><li>https://cegibat.grdf.fr/reglementation/energetique/decret-bacs-obligations-batiments-tertiaires<a href="about:blank#fnref42">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81cd-8ddb-d30d8e0cd973" class="numbered-list" start="43"><li>https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000042128488/<a href="about:blank#fnref43">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8168-812b-f787c65e7a7c" class="numbered-list" start="44"><li>https://www.ec35.bzh/voy_content/uploads/2022/09/MAJ-FAQ-09-2022-.pdf<a href="about:blank#fnref44">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8199-9774-f344f75e47a8" class="numbered-list" start="45"><li>https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000041991293<a href="about:blank#fnref45">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81c5-84f7-d611da29a2a9" class="numbered-list" start="46"><li>https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000041996366<a href="about:blank#fnref46">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8173-9d36-ce3782e8222b" class="numbered-list" start="47"><li>https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000047439578<a href="about:blank#fnref47">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8145-8a11-eb76bcd43b56" class="numbered-list" start="48"><li>https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT000006074096/LEGISCTA000043819533/<a href="about:blank#fnref48">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-816e-be28-df0a8ce2456c" class="numbered-list" start="49"><li>https://www.legifrance.gouv.fr/loda/id/JORFTEXT000042138295/<a href="about:blank#fnref49">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8189-baab-e7b968c60440" class="numbered-list" start="50"><li>https://rt-re-batiment.developpement-durable.gouv.fr/presentation-et-guide-du-decret-bacs-a712.html<a href="about:blank#fnref50">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8123-ae40-e14d05d9421b" class="numbered-list" start="51"><li>https://www.advizeo.io/smart-buildings/faq-bacs-dans-quels-cas-de-figures-le-decret-nest-pas-applicable/<a href="about:blank#fnref51">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81f1-84d1-cbe5d4dc38e5" class="numbered-list" start="52"><li>Guide Utilisation Archelios Pro.pptx<a href="about:blank#fnref52">↩︎</a></li></ol></div></div></article><span class="sans" style="font-size:14px;padding-top:2em"></span></body></html>

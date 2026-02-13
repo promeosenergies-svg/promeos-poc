@@ -1,0 +1,337 @@
+"""
+PROMEOS — Achat Energie Service V1
+Estimation conso, profil, scenarios fixe/indexe/spot, recommandation.
+"""
+import hashlib
+import json as _json
+from datetime import datetime, timedelta
+from typing import Optional
+
+from sqlalchemy.orm import Session
+from sqlalchemy import func
+
+from models import (
+    MeterReading, EnergyInvoice, SiteOperatingSchedule,
+    PurchaseStrategy, Site, EntiteJuridique, Portefeuille,
+)
+from services.billing_service import get_reference_price
+
+# Fallback volume if no data found
+DEFAULT_VOLUME_KWH_AN = 500_000
+
+
+def estimate_consumption(db: Session, site_id: int) -> dict:
+    """
+    Estimate annual consumption for a site.
+    Priority: MeterReading > EnergyInvoice > default fallback.
+    """
+    twelve_months_ago = datetime.utcnow() - timedelta(days=365)
+
+    # Priority 1: MeterReading (sum last 12 months)
+    meter_sum = (
+        db.query(func.sum(MeterReading.value_kwh))
+        .filter(
+            MeterReading.meter_id == site_id,
+            MeterReading.timestamp >= twelve_months_ago,
+        )
+        .scalar()
+    )
+    if meter_sum and meter_sum > 0:
+        # Count distinct months covered
+        months_covered = (
+            db.query(func.count(func.distinct(
+                func.strftime("%Y-%m", MeterReading.timestamp)
+            )))
+            .filter(
+                MeterReading.meter_id == site_id,
+                MeterReading.timestamp >= twelve_months_ago,
+            )
+            .scalar()
+        ) or 1
+        # Annualize if partial
+        volume = meter_sum * (12 / months_covered) if months_covered < 12 else meter_sum
+        return {
+            "volume_kwh_an": round(volume, 0),
+            "source": "meter_readings",
+            "months_covered": months_covered,
+        }
+
+    # Priority 2: EnergyInvoice (sum energy_kwh last 12 months)
+    invoice_sum = (
+        db.query(func.sum(EnergyInvoice.energy_kwh))
+        .filter(
+            EnergyInvoice.site_id == site_id,
+            EnergyInvoice.period_start >= twelve_months_ago.date(),
+        )
+        .scalar()
+    )
+    if invoice_sum and invoice_sum > 0:
+        invoice_months = (
+            db.query(func.count(func.distinct(
+                func.strftime("%Y-%m", EnergyInvoice.period_start)
+            )))
+            .filter(
+                EnergyInvoice.site_id == site_id,
+                EnergyInvoice.period_start >= twelve_months_ago.date(),
+            )
+            .scalar()
+        ) or 1
+        volume = invoice_sum * (12 / invoice_months) if invoice_months < 12 else invoice_sum
+        return {
+            "volume_kwh_an": round(volume, 0),
+            "source": "invoices",
+            "months_covered": invoice_months,
+        }
+
+    # Priority 3: Default fallback
+    return {
+        "volume_kwh_an": DEFAULT_VOLUME_KWH_AN,
+        "source": "default",
+        "months_covered": 0,
+    }
+
+
+def compute_profile_factor(db: Session, site_id: int) -> float:
+    """
+    Compute profile factor from SiteOperatingSchedule.
+    >1 = peak profile (higher spot cost), <1 = flat profile.
+    """
+    schedule = (
+        db.query(SiteOperatingSchedule)
+        .filter(SiteOperatingSchedule.site_id == site_id)
+        .first()
+    )
+    if not schedule:
+        return 1.0
+
+    if schedule.is_24_7:
+        return 0.85  # Flat profile
+
+    # Standard business hours (8h-19h weekdays) → peak profile
+    if schedule.open_time <= "08:00" and schedule.close_time >= "19:00":
+        return 1.25
+
+    return 1.0
+
+
+def compute_scenarios(
+    db: Session,
+    site_id: int,
+    volume_kwh_an: float,
+    profile_factor: float = 1.0,
+    energy_type: str = "elec",
+) -> list:
+    """
+    Generate 3 purchase scenarios: Fixe, Indexe, Spot.
+    Returns list of 3 scenario dicts.
+    """
+    ref_price, price_source = get_reference_price(db, site_id, energy_type)
+
+    scenarios = []
+
+    # ── Fixe: price = ref * 1.05 (risk premium), low risk ──
+    fixe_price = round(ref_price * 1.05, 4)
+    fixe_total = round(fixe_price * volume_kwh_an, 2)
+    scenarios.append({
+        "strategy": PurchaseStrategy.FIXE.value,
+        "price_eur_per_kwh": fixe_price,
+        "total_annual_eur": fixe_total,
+        "risk_score": 15,
+        "p10_eur": fixe_total,
+        "p90_eur": fixe_total,
+        "ref_price": ref_price,
+        "ref_price_source": price_source,
+    })
+
+    # ── Indexe: price = ref * 0.95, medium risk ──
+    indexe_price = round(ref_price * 0.95, 4)
+    indexe_total = round(indexe_price * volume_kwh_an, 2)
+    scenarios.append({
+        "strategy": PurchaseStrategy.INDEXE.value,
+        "price_eur_per_kwh": indexe_price,
+        "total_annual_eur": indexe_total,
+        "risk_score": 45,
+        "p10_eur": round(indexe_total * 0.85, 2),
+        "p90_eur": round(indexe_total * 1.20, 2),
+        "ref_price": ref_price,
+        "ref_price_source": price_source,
+    })
+
+    # ── Spot: price = ref * 0.88 * profile_factor, high risk ──
+    spot_price = round(ref_price * 0.88 * profile_factor, 4)
+    spot_total = round(spot_price * volume_kwh_an, 2)
+    scenarios.append({
+        "strategy": PurchaseStrategy.SPOT.value,
+        "price_eur_per_kwh": spot_price,
+        "total_annual_eur": spot_total,
+        "risk_score": 75,
+        "p10_eur": round(spot_total * 0.70, 2),
+        "p90_eur": round(spot_total * 1.45, 2),
+        "ref_price": ref_price,
+        "ref_price_source": price_source,
+    })
+
+    # Compute savings vs current (ref_price)
+    current_total = round(ref_price * volume_kwh_an, 2)
+    for s in scenarios:
+        if current_total > 0:
+            s["savings_vs_current_pct"] = round(
+                (1 - s["total_annual_eur"] / current_total) * 100, 1
+            )
+        else:
+            s["savings_vs_current_pct"] = 0
+
+    return scenarios
+
+
+def recommend_scenario(
+    scenarios: list,
+    risk_tolerance: str = "medium",
+    budget_priority: float = 0.5,
+    green_preference: bool = False,
+) -> list:
+    """
+    Score scenarios and mark the best as recommended.
+    Returns the updated scenarios list with is_recommended + reasoning.
+    """
+    if not scenarios:
+        return scenarios
+
+    # Filter by risk tolerance
+    if risk_tolerance == "low":
+        eligible = [s for s in scenarios if s["risk_score"] <= 50]
+    elif risk_tolerance == "high":
+        eligible = list(scenarios)
+    else:  # medium
+        eligible = [s for s in scenarios if s["risk_score"] <= 70]
+
+    if not eligible:
+        eligible = list(scenarios)  # fallback: all eligible
+
+    # Normalize savings for scoring (max savings = 100 pts)
+    max_savings = max(abs(s.get("savings_vs_current_pct", 0)) for s in eligible) or 1
+    for s in eligible:
+        savings_norm = (s.get("savings_vs_current_pct", 0) / max_savings) * 100
+        safety_score = 100 - s["risk_score"]
+        score = (1 - budget_priority) * safety_score + budget_priority * savings_norm
+
+        # Green bonus for indexe
+        if green_preference and s["strategy"] == PurchaseStrategy.INDEXE.value:
+            score += 5
+
+        s["_score"] = round(score, 1)
+
+    # Mark recommended
+    best = max(eligible, key=lambda s: s["_score"])
+    for s in scenarios:
+        s["is_recommended"] = (s["strategy"] == best["strategy"])
+
+    # Generate reasoning
+    strategy_labels = {"fixe": "Prix Fixe", "indexe": "Indexe", "spot": "Spot"}
+    reasoning_parts = []
+    reasoning_parts.append(
+        f"Strategie {strategy_labels.get(best['strategy'], best['strategy'])} recommandee"
+    )
+    if best["risk_score"] <= 30:
+        reasoning_parts.append("risque tres faible")
+    elif best["risk_score"] <= 50:
+        reasoning_parts.append("risque modere")
+    else:
+        reasoning_parts.append("economies significatives malgre un risque eleve")
+
+    savings = best.get("savings_vs_current_pct", 0)
+    if savings > 0:
+        reasoning_parts.append(f"economie de {savings}% vs prix actuel")
+
+    if green_preference and best["strategy"] == PurchaseStrategy.INDEXE.value:
+        reasoning_parts.append("compatible offre verte")
+
+    best["reasoning"] = " — ".join(reasoning_parts)
+
+    # Clean internal scores
+    for s in scenarios:
+        s.pop("_score", None)
+
+    return scenarios
+
+
+# ══════════════════════════════════════
+# V1.1 — Portfolio / History helpers
+# ══════════════════════════════════════
+
+def get_org_site_ids(db: Session, org_id: int) -> list:
+    """
+    Resolve all active site IDs for an organisation.
+    Path: Organisation → EntiteJuridique → Portefeuille → Site.
+    """
+    ej_ids = [
+        ej.id for ej in
+        db.query(EntiteJuridique.id).filter(EntiteJuridique.organisation_id == org_id).all()
+    ]
+    if not ej_ids:
+        return []
+    pf_ids = [
+        p.id for p in
+        db.query(Portefeuille.id).filter(Portefeuille.entite_juridique_id.in_(ej_ids)).all()
+    ]
+    if not pf_ids:
+        return []
+    return [
+        s.id for s in
+        db.query(Site.id).filter(Site.portefeuille_id.in_(pf_ids), Site.actif == True).all()
+    ]
+
+
+def compute_inputs_hash(
+    volume_kwh_an: float,
+    profile_factor: float,
+    horizon_months: int,
+    energy_type: str,
+    risk_tolerance: str,
+    budget_priority: float,
+    green_preference: bool,
+) -> str:
+    """SHA-256 of input parameters for run comparison / idempotency."""
+    payload = _json.dumps({
+        "volume_kwh_an": volume_kwh_an,
+        "profile_factor": profile_factor,
+        "horizon_months": horizon_months,
+        "energy_type": energy_type,
+        "risk_tolerance": risk_tolerance,
+        "budget_priority": budget_priority,
+        "green_preference": green_preference,
+    }, sort_keys=True)
+    return hashlib.sha256(payload.encode()).hexdigest()
+
+
+def aggregate_portfolio_results(results_by_site: list) -> dict:
+    """
+    Aggregate scenario results across multiple sites.
+    Weights risk & savings by each site's volume.
+    """
+    total_cost_eur = 0.0
+    total_risk_weighted = 0.0
+    total_volume_kwh = 0.0
+    total_savings_weighted = 0.0
+    sites_count = len(results_by_site)
+
+    for site_result in results_by_site:
+        reco = next((s for s in site_result["scenarios"] if s.get("is_recommended")), None)
+        if not reco:
+            continue
+        total_cost_eur += reco.get("total_annual_eur", 0)
+        volume = site_result.get("volume_kwh_an", 0)
+        total_volume_kwh += volume
+        total_risk_weighted += reco.get("risk_score", 0) * volume
+        total_savings_weighted += (reco.get("savings_vs_current_pct", 0) or 0) * volume
+
+    weighted_risk = round(total_risk_weighted / total_volume_kwh, 1) if total_volume_kwh > 0 else 0
+    weighted_savings = round(total_savings_weighted / total_volume_kwh, 1) if total_volume_kwh > 0 else 0
+
+    return {
+        "sites_count": sites_count,
+        "total_annual_cost_eur": round(total_cost_eur, 2),
+        "weighted_risk_score": weighted_risk,
+        "weighted_savings_pct": weighted_savings,
+        "total_volume_kwh_an": round(total_volume_kwh, 0),
+    }

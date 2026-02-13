@@ -1,0 +1,37 @@
+id: POST_ARENH_2026_18
+type: checklist
+domain: acc
+title: Secteurs les Plus Exposés
+summary: "Les impacts sectoriels varient : 39 40 \n- Industries électro-intensives\
+  \ (métallurgie, chimie, plasturgie) : Accès restreint aux CAPN (volume insuffisant)\
+  \ ; besoin de couvertures supplémentaires onéreu..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Les impacts sectoriels varient : 39 40 \n- Industries électro-intensives\
+  \ (métallurgie, chimie, plasturgie) : Accès restreint aux CAPN (volume insuffisant)\
+  \ ; besoin de couvertures supplémentaires onéreuses. \n- Data centers et logistiques\
+  \ : Exposition élevée à la volatilité spot, avec peu d’outils de mitigation autres\
+  \ que les contrats long terme (illiquides et rares). \n- Établissements publics\
+  \ et collectivités : Contraintes par les procédures d’appel d’offres ; capacité\
+  \ limitée à négocier des contrats fins ou à utiliser des couvertures financières.\
+  \ \n- PME et ETI : Moindre pouvoir de négociation que les grands comptes ; accès\
+  \ restreint aux CAPN (critères d’éligibilité élevés)."
+logic: null
+sources:
+- doc_id: POST_ARENH_2026
+  label: Post-ARENH 2026
+  section: Secteurs les Plus Exposés
+  anchor: '#secteurs-les-plus-exposs'
+  excerpt_short: "Les impacts sectoriels varient : 39 40 \n- Industries électro-intensives\
+    \ (métallurgie, chimie, plastu..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

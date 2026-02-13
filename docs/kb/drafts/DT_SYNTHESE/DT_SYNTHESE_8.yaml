@@ -1,0 +1,36 @@
+id: DT_SYNTHESE_8
+type: knowledge
+domain: usages
+title: Diagnostic initial requis
+summary: "Questions préalables pour chaque actif : \n- Périmètre assujetti : \n- Surface\
+  \ tertiaire > 1 000 m² ? \n- Catégorie d’activité (bureaux, commerce, enseignement,\
+  \ etc.) ? \n- Multi-occupation ou monolocatio..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Questions préalables pour chaque actif : \n- Périmètre assujetti : \n\
+  - Surface tertiaire > 1 000 m² ? \n- Catégorie d’activité (bureaux, commerce, enseignement,\
+  \ etc.) ? \n- Multi-occupation ou monolocation ? \n- Données existantes : \n- Année\
+  \ référence sélectionnée (2010-2019) ? \n- Historique consommations 2024-2025 par\
+  \ fluide (élec, gaz, fioul) ? \n- Données d’usage (USE) : occupants, horaires, taux\
+  \ occupation ? \n- Performance actuelle : \n- Distance à objectif 2030 ? \n- Trajectoire\
+  \ naturelle (ex. inflation énergétique, optimisations passées) ? \n- Potentiel gisement\
+  \ d’économies ?"
+logic: null
+sources:
+- doc_id: DT_SYNTHESE
+  label: Decret Tertiaire - Synthese PROMEOS
+  section: Diagnostic initial requis
+  anchor: '#diagnostic-initial-requis'
+  excerpt_short: "Questions préalables pour chaque actif : \n- Périmètre assujetti\
+    \ : \n- Surface tertiaire > 1 000 m² ? ..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

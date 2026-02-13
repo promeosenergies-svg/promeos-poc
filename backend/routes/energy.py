@@ -5,6 +5,7 @@ Import CSV/XLSX/JSON consumption data, run KB-driven analytics
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from sqlalchemy.orm import Session
 from database import get_db
+from middleware.auth import get_optional_auth, AuthContext
 from models import (
     Site, Meter, MeterReading, DataImportJob, UsageProfile,
     Anomaly as AnomalyModel, Recommendation as RecommendationModel,
@@ -125,10 +126,13 @@ def create_meter(meter: MeterCreate, db: Session = Depends(get_db)):
 @router.get("/meters", response_model=List[MeterResponse])
 def list_meters(
     site_id: Optional[int] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """List all meters, optionally filtered by site"""
     query = db.query(Meter)
+    if auth and auth.site_ids is not None:
+        query = query.filter(Meter.site_id.in_(auth.site_ids))
     if site_id:
         query = query.filter_by(site_id=site_id)
 

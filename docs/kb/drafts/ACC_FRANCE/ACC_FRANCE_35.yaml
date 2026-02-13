@@ -1,0 +1,38 @@
+id: ACC_FRANCE_35
+type: knowledge
+domain: facturation
+title: Data Model
+summary: "Entities : \n- Operation : id, name, address, PMO legal id, creation date,\
+  \ status (active/draft) \n- Participant : id, role (producer/consumer), PRM identifier\
+  \ (Linky point), name, email, consent_rgpd, ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Entities : \n- Operation : id, name, address, PMO legal id, creation\
+  \ date, status (active/draft) \n- Participant : id, role (producer/consumer), PRM\
+  \ identifier (Linky point), name, email, consent_rgpd, join_date, exit_date \n-\
+  \ Clés : id, operation_id, version, type (statique/dyn simple/dyn full), coefficients\
+  \ (JSON), effective_date, notified_enedis_date \n- P30 Feed : operation_id, date,\
+  \ quarter (15min slot), prod_kWh, conso_kWh, tac_kWh, tap_kWh (from Enedis or manual)\
+  \ \n- Facture : id, participant_id, month, amount_tac_eur, tax_eur, total_eur, status\
+  \ (draft/sent/paid), sent_date, payment_date \n- Audit Log : timestamp, user_id,\
+  \ operation_id, action (add_participant, change_keys, send_facture, etc.), before/after\
+  \ JSON"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: Data Model
+  anchor: '#data-model'
+  excerpt_short: "Entities : \n- Operation : id, name, address, PMO legal id, creation\
+    \ date, status (active/draft) \n- P..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

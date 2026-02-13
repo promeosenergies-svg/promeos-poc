@@ -1,0 +1,33 @@
+id: LEVIERS_MARCHE_2025_23
+type: knowledge
+domain: acc
+title: 'Package 1 : ACC Starter (Incubation, 3–6 mois déploiement)'
+summary: "- Clients : PMO + collectivités/bailleurs pour 1ère ACC \n- Features MVP\
+  \ : \n- Wizard configuration ACC (participants, clés, docs) \n- Auto-génération\
+  \ convention Enedis + contrats \n- API submit Enedis (g..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Clients : PMO + collectivités/bailleurs pour 1ère ACC \n- Features\
+  \ MVP : \n- Wizard configuration ACC (participants, clés, docs) \n- Auto-génération\
+  \ convention Enedis + contrats \n- API submit Enedis (guichet) \n- Portal participants\
+  \ (consultation simple) \n- Tarif : €300–600 setup + €100/mois portal \n- Success\
+  \ metrics : Temps montage < 6 sem, 100% dossier accepté Enedis"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: 'Package 1 : ACC Starter (Incubation, 3–6 mois déploiement)'
+  anchor: '#package-1-acc-starter-incubation-36-mois-dploiement'
+  excerpt_short: "- Clients : PMO + collectivités/bailleurs pour 1ère ACC \n- Features\
+    \ MVP : \n- Wizard configuration AC..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

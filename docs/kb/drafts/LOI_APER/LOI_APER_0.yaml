@@ -1,0 +1,53 @@
+id: LOI_APER_0
+type: rule
+domain: usages
+title: TL;DR – 10 POINTS CLÉS
+summary: '- Loi n° 2023-175 du 10 mars 2023 : Obligation solarisation parkings >1
+  500 m² (avant juillet 2026/2028) et toitures bâtiments (avant janvier 2028) ; échéances
+  strictes, sanctions annuelles 20-40 k€. ...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Loi n° 2023-175 du 10 mars 2023 : Obligation solarisation parkings\
+  \ >1 500 m² (avant juillet 2026/2028) et toitures bâtiments (avant janvier 2028)\
+  \ ; échéances strictes, sanctions annuelles 20-40 k€. \n- Solarisation parkings\
+  \ : 50% en ombrières PV ; délai différencié (2026 si >10 000 m² ; 2028 sinon) ;\
+  \ dérogations techniques/économiques possibles mais justifiées. \n- Solarisation\
+  \ toitures : 30% → 40% (2026) → 50% (2027) pour constructions neuves/extensions/rénovations\
+  \ lourdes ; 1er janvier 2028 : tous bâtiments tertiaires/industriels >500 m² existants.\
+  \ \n- Zones d’accélération ENR (ZAENR) : Communes identifient sites favorables ENR\
+  \ ; 2e relève en cours (oct 2024 - déc 2024) ; projets en ZAENR bénéficient délais\
+  \ réduits (3 mois vs 6 mois d’instruction). \n- Agrivoltaïsme : Définition juridique\
+  \ (décret avril 2024) ; condition obligatoire : ≥1 service agricole (agronomie,\
+  \ climat, aléas, bien-être animal) + production agricole significative (≥90% zone\
+  \ témoin) + revenu agricole. \n- Autoconsommation collective : Périmètre 2 km (dérogation\
+  \ 10-20 km) ; PMO obligatoire (pas fournisseur) ; <5 MW puissance ; article 88 APER\
+  \ simplifie (pas régie obligatoire pour surplus). \n- Contrats d’achat direct (PPA/CPPA)\
+  \ : Article 86 APER ouvre PPA aux collectivités publiques + acheteurs privés ; responsable\
+  \ périmètre d’équilibre obligatoire (fourniture RTE). \n- Partage territorial de\
+  \ la valeur : Obligation contribution 17 500 €/MW pour lauréats appels d’offres\
+  \ CRE (avant mise en service) ; financement projets communes + biodiversité. \n\
+  - Textes d’application : Décrets parkings (publié 15 novembre 2024) et agrivoltaïsme\
+  \ (publié 9 avril 2024) live ; toitures, ACC, partage valeur : décrets attendus\
+  \ fin 2024/début 2025. \n- Risque juridique ACC + “fourniture” : PMO ≠ fournisseur\
+  \ si contrat direct producteur-consommateurs ; si PMO achète-revend = obligation\
+  \ autorisation CRE = compliance complexe. Article 86 apaise par délégation fournisseur\
+  \ acceptable."
+logic: null
+sources:
+- doc_id: LOI_APER
+  label: Loi APER - Acceleration Production Energies Renouvelables
+  section: TL;DR – 10 POINTS CLÉS
+  anchor: '#tldr-10-points-cls'
+  excerpt_short: '- Loi n° 2023-175 du 10 mars 2023 : Obligation solarisation parkings
+    >1 500 m² (avant juillet 2026/2...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

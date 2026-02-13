@@ -1,0 +1,36 @@
+id: STRATEGIE_NEBCO_2
+type: rule
+domain: usages
+title: Définition & Cadre Réglementaire
+summary: NEBCO, défini dans le Code de l’énergie (articles L.271-1, L.271-2, L.321-15-1,
+  R.271-1) et approuvé par la CRE délibération 2025-199 du 23 juillet 2025, permet
+  la valorisation de trois types de modul...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "NEBCO, défini dans le Code de l’énergie (articles L.271-1, L.271-2, L.321-15-1,\
+  \ R.271-1) et approuvé par la CRE délibération 2025-199 du 23 juillet 2025, permet\
+  \ la valorisation de trois types de modulations de consommation: 4 \n- Effacement\
+  \ (réduction) – Modulation à la baisse classique \n- Report – Hausse APRÈS l’effacement\
+  \ (dans les 7 jours Sites Télérelevés ; 2 jours Profilés) \n- Anticipation – Hausse\
+  \ AVANT l’effacement \n\nL’innovation majeure vs. NEBEF : la valorisation explicite\
+  \ des reports/anticipations , reconnaissant que les sites compensent après arrêt\
+  \ d’équipements. 5"
+logic: null
+sources:
+- doc_id: STRATEGIE_NEBCO
+  label: Analyse strategique NEBCO
+  section: Définition & Cadre Réglementaire
+  anchor: '#dfinition-cadre-rglementaire'
+  excerpt_short: NEBCO, défini dans le Code de l’énergie (articles L.271-1, L.271-2,
+    L.321-15-1, R.271-1) et approuvé...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

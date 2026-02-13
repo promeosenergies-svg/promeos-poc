@@ -77,6 +77,19 @@ class ComponentType(str, Enum):
     AUTRE = "autre"
 
 
+class BillingConcept(str, Enum):
+    """Concepts de facturation energie (famille de postes)."""
+    FOURNITURE = "fourniture"           # Energie (HP, HC, base, pointe...)
+    ACHEMINEMENT = "acheminement"       # TURPE / ATRD (fixe + variable)
+    TAXES_CONTRIBUTIONS = "taxes"       # Accise, CTA, CEE
+    TVA = "tva"                         # TVA reduite + normale
+    ABONNEMENT = "abonnement"           # Abonnement / prime fixe
+    CAPACITE = "capacite"               # Depassement, reactive, puissance
+    AJUSTEMENT = "ajustement"           # Prorata, regularisation, remise
+    PENALITE = "penalite"              # Penalites contractuelles
+    AUTRE = "autre"                     # Non identifie
+
+
 class AnomalyType(str, Enum):
     """Types d'anomalies detectees par l'audit."""
     ARITHMETIC_ERROR = "arithmetic_error"
@@ -109,6 +122,21 @@ class AnomalySeverity(str, Enum):
 # ========================================
 
 @dataclass
+class ConceptAllocation:
+    """Allocation d'une composante a un concept de facturation."""
+    concept_id: str                    # BillingConcept value
+    confidence: float = 1.0            # 0.0-1.0
+    matched_rules: List[str] = field(default_factory=list)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "concept_id": self.concept_id,
+            "confidence": self.confidence,
+            "matched_rules": self.matched_rules,
+        }
+
+
+@dataclass
 class InvoiceComponent:
     """Une ligne/composante d'une facture."""
     component_type: ComponentType
@@ -123,6 +151,7 @@ class InvoiceComponent:
     period_start: Optional[date] = None
     period_end: Optional[date] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
+    allocation: Optional[ConceptAllocation] = None
 
 
 @dataclass
@@ -209,6 +238,7 @@ class Invoice:
                     "period_start": str(c.period_start) if c.period_start else None,
                     "period_end": str(c.period_end) if c.period_end else None,
                     "metadata": c.metadata,
+                    "allocation": c.allocation.to_dict() if c.allocation else None,
                 }
                 for c in self.components
             ],
@@ -299,3 +329,4 @@ class AuditReport:
     explain_log: List[str] = field(default_factory=list)
     generated_at: Optional[str] = None
     engine_version: Optional[str] = None
+    concept_allocations: Dict[str, float] = field(default_factory=dict)

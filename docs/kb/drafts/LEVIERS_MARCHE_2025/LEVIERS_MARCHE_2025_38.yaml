@@ -1,0 +1,33 @@
+id: LEVIERS_MARCHE_2025_38
+type: rule
+domain: acc
+title: 1) “Compliance-Driven Energy Communities”
+summary: "- What : PROMEOS is 1st platform integrating natively regulatory compliance\
+  \ (Décret Tertiaire, BACS, APER, accise) into ACC operation \n- Why it matters :\
+  \ Clients manage energy compliance + local shari..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- What : PROMEOS is 1st platform integrating natively regulatory compliance\
+  \ (Décret Tertiaire, BACS, APER, accise) into ACC operation \n- Why it matters :\
+  \ Clients manage energy compliance + local sharing in same portal → risk mitigation\
+  \ + time savings (separate tools cost 2x, time 3x) \n- Competitor gap : Enogrid/Communitiz\
+  \ = zero compliance; Deepki/Advizeo = zero ACC → PROMEOS fills gap"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: 1) “Compliance-Driven Energy Communities”
+  anchor: '#1-compliance-driven-energy-communities'
+  excerpt_short: '- What : PROMEOS is 1st platform integrating natively regulatory
+    compliance (Décret Tertiaire, BACS,...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

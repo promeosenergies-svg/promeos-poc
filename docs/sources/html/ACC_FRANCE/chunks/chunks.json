@@ -1,0 +1,533 @@
+[
+  {
+    "chunk_id": "ACC_FRANCE_chunk_0",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "Executive Summary",
+    "anchor": "#executive-summary",
+    "text": "L’ autoconsommation collective (ACC) est en phase de transformation structurelle en France fin 2025. Passée de 77 opérations en 2021 à ~900+ en juin 2025 (110+ MWc), elle bénéficie d’un cadre réglementaire enfin matérisant : l’arrêté du 21 février 2025 a porté le seuil de puissance de 3 à 5 MW (10 MW pour les collectivités), le TURPE 7 a simplifié la tarification depuis août 2025, et l’accise est passée à 0€/MWh. Ces trois pivots réglementaires déverrouillent une croissance exponentielle 2026–2030 : scénario central projette 6 000 opérations et 900 MWc (vs prudent : 2 700 opérations, 380 MWc; accéléré : 10 500 opérations, 1 400 MWc). \n\nPour PROMEOS, l’ intégration d’une brique ACC transforme le positionnement en « micro-fournisseur local (2.0) + cockpit settlement + flexibilité » – un différentiel majeur face aux agrégateurs classiques et fournisseurs haut-débit. Le time-to-market clé : réduire le cycle projet de 12–24 mois actuels à 3–6 mois via standardisation juridique, APIs DataHub/DataConnect, shadow billing, et KYC automatisé. Trois packages : ACC Starter (diagnostic+kit PMO), ACC Ops (data+clés+facturation), ACC Optim (flex+prix+arbitrage) , portés par une roadmap MVP 90j (MVP 1.0), puis v1 à 180j, v2 à 12m . \n\nLes 10 leviers critiques pour croissance 2025–2030 sont : (1) seuil 5MW, (2) TURPE 7 option ACC, (3) DataHub/API, (4) standardisation PMO, (5) shadow billing, (6) tarification dynamique, (7) flex implicite/IRVE, (8) agrégation multi-sites, (9) primes investissement, (10) exemption d’accise 1MW. Les 10 irritants majeurs et solutions SaaS sont cartographiés fin de rapport. \n\nSources principales : Legifrance, CRE délibérations 2024–2025, Enedis conventions, ADEME, RTE, Enogrid (370+ projets), Livre Blanc ACC 2024, DataHub-Enedis API, études SER/FNCCR. Dernière mise à jour : décembre 2025; horizons : données 2024-Q4 à 2025-Q2 consolidées .",
+    "word_count": 284,
+    "chunk_index": 0
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_1",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "1. Définitions & Architecture Légale",
+    "anchor": "#1-dfinitions-architecture-lgale",
+    "text": "L’ autoconsommation collective (article L315-2, Code de l’énergie) est définie comme : « opération permettant à un ou plusieurs producteurs et un ou plusieurs consommateurs finals de partager localement l’électricité produite, au sein d’une personne morale organisatrice (PMO) ». 1 2 3 \n\nDeux périmètres coexistent : 4 5 6 Élément ACC Simple (même bâtiment) ACC Étendue (multi-sites) Critère géographique Points injection/soutirage au « même bâtiment » Distance max. 2 km (baseline); 20 km possible sur dérogation Puissance cumulée 3 MW (baseline historique) 5 MW (depuis 6 mars 2025) ; 10 MW dérogation collectivités Réglementation L315-2 Code énergie Arrêté 21 nov. 2019 + modifié 21 fév. 2025 Participants Illimité (producteurs + consommateurs) Idem Cas d’usage Copropriétés, bailleur monolithe Parcs activités, quartiers, multi-communes Obligation PMO Oui, obligatoire Oui, toujours obligatoire (sauf exc. bailleur social) \n\nArrêté pivot du 21 février 2025 (publié JO 5 mars 2025) : 7 8 9 10 \n- ✅ Augmentation 3 MW → 5 MW pour ACC étendue métropole continentale \n- ✅ Dérogation 10 MW pour communes/EPCI à fiscalité propre (si tous acteurs = mission service public ou SEM locales) \n- ⚠️ CRE avait préconisé 8 MW , mais gouvernement a retenu 10 MW → crédibilité politique signale engagement fort ACC",
+    "word_count": 202,
+    "chunk_index": 1
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_2",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "Personne Morale Organisatrice (PMO) 11 12 13",
+    "anchor": "#personne-morale-organisatrice-pmo-11-12-13",
+    "text": "Définition & mission obligatoires : \n- Entité juridique regroupant producteurs + consommateurs \n- Responsable unique vis-à-vis d’Enedis/GRD pour : \n- Signature convention ACC avec GRD \n- Définition clés de répartition (statique/dynamique simple/dynamique full) \n- Gestion entrées/sorties participants \n- Transmission données CRE (annuellement) \n- Maintien registre transparent participants \n\nFormes juridiques possibles : 14 \n- Association loi 1901 (simplest, 60% réalité) \n- SARL / SAS (si financement tiers ou service payant) \n- SEM (communes/collectivités) \n- Exception bailleurs sociaux : peuvent être PMO seuls (sans création structure supplémentaire) 15 \n\nCoûts estimés PMO (2024–2025) : 16 17 \n- Création structure : €0–2 000 (assoc.) vs €1 000–5 000 (SAS/SARL) \n- Gestion opérationnelle : €500–2 000/an (petit projet) à €3 000–10 000/an (multi-sites) \n- Enjeu clé : absence standardisation = chaque PMO réinvente la roue",
+    "word_count": 130,
+    "chunk_index": 2
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_3",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "Gestionnaire Réseau Distribution (Enedis, ELD) 18 19 20",
+    "anchor": "#gestionnaire-rseau-distribution-enedis-eld-18-19-20",
+    "text": "Responsabilités opérationnelles : \n- Relever courbes conso/production (P30 = 30 min.) \n- Calculer TAc (part autoconsommée) / TAp (part alloconsommée) mensuellement \n- Transmettre données à fournisseur de complément & producteur \n- Notifier changements clés répartition à PMO (4j ouvrés) \n- Assurer conformité technique/réglementaire \n\nContrat ACC obligatoire avec chaque opération : durée usuelle 3–5 ans, renouvelable.",
+    "word_count": 55,
+    "chunk_index": 3
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_4",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "Fournisseur de Complément (électricité alloconsommée) 21 22",
+    "anchor": "#fournisseur-de-complment-lectricit-alloconsomme-21-22",
+    "text": "- Client conserve liberté choix fournisseur \n- Reçoit de Enedis données TAp (part fournie par lui) chaque mois \n- Facture = TAp × prix client-PMO + TURPE + taxes \n- TURPE 7 option ACC (depuis août 2025) : majoration fixe « gestion » mais rabais possible si taux autocons. élevé",
+    "word_count": 50,
+    "chunk_index": 4
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_5",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "Producteur (PV local) 23 24 25",
+    "anchor": "#producteur-pv-local-23-24-25",
+    "text": "- Vend électricité ACc à PMO/consommateurs via contrat libre (prix négocié) \n- Perd rigidité tarif achat garanti (obligation achat) → risque prix négatif croissant \n- Surplus injecté = part non-ACc → marché spot ou contrat fournisseur \n- Opportunité : flexibilité implicite (réduction volontaire injection lors prix négatifs)",
+    "word_count": 47,
+    "chunk_index": 5
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_6",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "3. Clés de Répartition : Mécanique Opérationnelle Clé 26 27 28",
+    "anchor": "#3-cls-de-rpartition-mcanique-oprationnelle-cl-26-27-28",
+    "text": "Enedis propose 4 modalités (choisies par PMO, modifiables mensuellement sur préavis 4j) : Clé Fonctionnement Complexité Équité Cas d’usage Statique % fixes prédéfinis (ex: consomm. 25%, 35%, 40%) Basse Moyenne (inflexible) Petit collectif stable Dynamique par défaut Enedis calcule TAc prorata consommation réelle P30 Moyenne Haute Standard ACC Dynamique Simple PMO calcule % selon ses critères (ex: priorité charges communes) Haute Flexible Bailleurs sociaux Dynamique Full PMO optimise 15-min à 15-min selon production/conso temps réel Très haute Maximum ZAC multi-usages, tertiaire \n\nIrritant majeur identifié : 29 30 31 \n- PMO doit changer clés manuellement chaque mois → lourdeur admin \n- Feedback terrain : 15–30h/mois pour PMO small-medium \n- Solution SaaS PROMEOS : calcul auto + simulation + envoi Enedis 1-click",
+    "word_count": 120,
+    "chunk_index": 6
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_7",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "4. Cadre Contractuel : Convention Enedis & Obligations Spécifiques 32 33 34",
+    "anchor": "#4-cadre-contractuel-convention-enedis-obligations-spcifiques-32-33-34",
+    "text": "Convention ACC (1 par opération) doit préciser : \n- Identité PMO, producteurs, consommateurs, coordonnées bancaires \n- Localisation injection/soutirage, PRM identifiants \n- Clé de répartition choisie + modalités modification \n- Responsabilité d’équilibre (qui = fournisseur complément) \n- Durée, conditions résiliation \n\nPrérequis avant signature avec Enedis : 35 \n- Tous participants équipés Linky (obligatoire pour ACC) \n- Consentement écrit conso/producteur (RGPD courbes charge) \n- CAE (Contrat Accès Exploitation) producteur déjà en place \n- PMO prouve en capacité (statuts, trésorerie, mandat direction) \n\nDélais typiques : 36 37 \n- Instruction Enedis : 5 jours ouvrés (notification date démarrage) \n- Raccordement « simple » : 2 mois \n- Raccordement « complexe » (HTA, travaux réseau) : 12–18 mois",
+    "word_count": 113,
+    "chunk_index": 7
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_8",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "5. Conformité & Risques : Exigences Type-Fournisseur 38 39 40",
+    "anchor": "#5-conformit-risques-exigences-type-fournisseur-38-39-40",
+    "text": "Point critique : responsabilités ne sont pas du type « licence fourniture » au sens strict (PMO ≠ fournisseur légal). Mais obligations ressemblent à gestion d’équilibriste : 41 Obligation Acteur resp. Pénalité non-respect Automatisation possible? Transmission clés répartition à Enedis (4j max.) PMO Retard facturation, litiges participants ✅ Oui (API Enedis) Gestion entrées/sorties (préavis, rééquilibre) PMO Erreurs TAc/TAp, facturation incorrecte ✅ Oui (registre digital) Collecte consentement RGPD courbes PMO Amende CNIL (€500–€50k) ✅ Oui (e-signature) Facturation consommateurs ACC correcte PMO ou fournisseur Litiges, rupture contrat ✅ Oui (shadow billing) Réconciliation mensuelle Enedis/fournisseur Fournisseur + Enedis Divergence facturation ✅ Partiellement (API) Raportage CRE annuel (opérations, puissance,…) PMO Avertissement CRE (rare) ✅ Oui (automation) Prévention fraude, audit trail PMO + Enedis Possibilité révocation ACC ✅ Oui (blockchain possible, logs) \n\n“Painful point” le plus fréquemment cité : pas d’exigence d’autorisation-fournisseur explicite , mais si PMO facture ACC à consommateurs, elle doit être “prestataire de services responsable” (droit commercial) → assurance RC professionnelle requise + conformité droit consommateur (délai rétractation, facturation claire, etc.).",
+    "word_count": 169,
+    "chunk_index": 8
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_9",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "Pistes de simplification 2026–2030 (données SER/ADEME/CRE): 42 43",
+    "anchor": "#pistes-de-simplification-20262030-donnes-serademecre-42-43",
+    "text": "- Standardisation modèle convention : un template unique Enedis + guide PMO \n- API DataHub/DataConnect : transmission auto. clés et données \n- Exemption reporting manuel : auto-reporting via plateforme SaaS \n- E-signature template : consentement RGPD pré-rempli \n- Responsabilité partagée clarifiée : fiche « qui fait quoi » 1 page",
+    "word_count": 50,
+    "chunk_index": 9
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_10",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "TURPE 7 (1er août 2025) 44 45",
+    "anchor": "#turpe-7-1er-aot-2025-44-45",
+    "text": "- Nouvelle tarification d’acheminement Enedis \n- Option ACC : majoration fixe (€/an) compensée par rabais possible si taux d’autocons. > seuil \n- Pour PROMEOS : impact : clients doivent calculer « coût TURPE net » → intégrer dans pricing \n- Calendrier : révision tous 4 ans → prochain 2029",
+    "word_count": 49,
+    "chunk_index": 10
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_11",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "Arrêté Accise (1er mars 2025) 46 47",
+    "anchor": "#arrt-accise-1er-mars-2025-46-47",
+    "text": "- Installations ≤ 1 MWc : exonération accise à 0 €/MWh (vs 30–40 €/MWh avant) \n- ≥ 1 MWc : tarif normal applicable \n- Impact : redynamise petit/moyen collectif, zones rurales",
+    "word_count": 31,
+    "chunk_index": 11
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_12",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "BACS (depuis 1er janvier 2025) 48",
+    "anchor": "#bacs-depuis-1er-janvier-2025-48",
+    "text": "- Obligation d’automatisation bâtiments ≥ 290 kW (2027 : ≥ 70 kW) \n- Pour ACC tertiaire : système de contrôle automatisé quasi-obligatoire → intégration SaaS EMS + ACC",
+    "word_count": 28,
+    "chunk_index": 12
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_13",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "Agenda non-certains (lobbying FNCCR/SER) : 49",
+    "anchor": "#agenda-non-certains-lobbying-fnccrser-49",
+    "text": "- ⚠️ Assouplissement critère distance (de 2 km → 5–20 km régulier) : demande en cours, réponse 2026? \n- ⚠️ Intégration communautés d’énergie (RED directive UE) : transposition France 2026? \n- ⚠️ Tarification TURPE 8 (post-2029) : inclure signal flex/prix négatif?",
+    "word_count": 41,
+    "chunk_index": 13
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_14",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "1. Chiffres Clés & Dynamique 2021–2025",
+    "anchor": "#1-chiffres-cls-dynamique-20212025",
+    "text": "Trajectoire observée : 50 51 52 53 54 Période Opérations actives Puissance (MWc) Compteurs Croissance YoY 2021-Q4 77 ~2.4 N/A – 2022-Q4 ~140 ~6.5 ~1,500 +82% ops 2023-Q4 ~300 ~15 ~4,500 +114% ops 2024-Q2 ~500 ~50 ~7,000 (trending) 2024-Q4 698 73.6 8,342 + 233% ops (3 ans) 2025-Q2 ~900+ ~110 ~12,000 +40% ops (à l’année) \n\nObservations : \n- Croissance exponentielle pré-2025 : règle de 70 → doublement ~2.5 ans \n- Accélération visuelle 2024–2025 : arrêté février a déclenché > 200 projets nouveaux en pipeline pré-automne 2025 \n- Ratio PRM/operation : moy. ~11–14 compteurs/projet (bailleurs sociaux : 50–200; ZAC : 20–50)",
+    "word_count": 100,
+    "chunk_index": 14
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_15",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "A. Bailleurs Sociaux (40–45% du marché 2025) 59 60",
+    "anchor": "#a-bailleurs-sociaux-4045-du-march-2025-59-60",
+    "text": "Cas type : Immeuble collectif HLM 100+ logements + toit PV 50–150 kWc \n\nModèle opérationnel : \n- PMO = bailleur lui-même (exception légale, bailleurs sociaux) \n- Électricité produite → priorité charges communes (ascenseurs, couloirs, eau chaude) \n- Surplus → participants logements (consentants parmi locataires) \n- Bénéfice : réduction charges communes ~15–25%/an, lutte précarité énergétique \n\nROI économique : 61 62 \n- Investissement CAPEX : ~€80–120k pour 50 kWc (aides CRE/régionales : €20–40k) \n- Économies annuelles : €12–18k (conso communes + survalue locataires) \n- Payback : 5–8 ans (avec aides); 10–12 ans (sans) \n- Sensibilité : très bonne si > 30% taux autocons. \n\nCas clients réels : \n- Habitat 17 (78m² PV, 78 logements) \n- Habitat Hauts-de-France (exploitée via Enogrid) \n- RIVP Nord (Paris, multi-sites)",
+    "word_count": 123,
+    "chunk_index": 15
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_16",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "B. Collectivités Territoriales & Parcs Activités (30–35%) 63 64",
+    "anchor": "#b-collectivits-territoriales-parcs-activits-3035-63-64",
+    "text": "Cas type 1 : ZAC/parc activités \n- Producteur = entité municipale ou SEM \n- Consommateurs = 5–15 entreprises petit/moyen (manufactures, commerces, services) \n- Modèle = vente AC à prix « local » (€0.12–0.18/kWh vs marché €0.20+) \n- Complexité : clés dynamiques, entrées/sorties entreprises, multi-secteurs consommation \n\nCas type 2 : Patrimoine public mutualisé \n- Mairie + écoles + médiathèque + piscine = PMO \n- Autocons. simple (même commune), clés statiques par bâtiment \n- Avantage : aucun participant privé, gouvernance simple \n- Baisse consommation électricité : 12–20%/an \n\nCas clients : Communes Occitanie/Bretagne (données SER 2024), collectivités Normandie (FNCCR accompagnement)",
+    "word_count": 97,
+    "chunk_index": 16
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_17",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "C. Tertiaire Multi-Sites & Entreprises Privées (15–20%) 65 66",
+    "anchor": "#c-tertiaire-multi-sites-entreprises-prives-1520-65-66",
+    "text": "Cas type : Groupe immobilier/retail > 3 sites dans même commune \n- Production : toitures sites A/B + ombrières parking C \n- Consommateurs : bureaux, stockages, charges communes \n- Besoin clé : flex implicite (modulation conso lors pics PV) \n- Pénalité : prix négatifs (récurrent 2025+) = perte €/MWh pour producteur → nécessite contrat « prix minimum » ou pilotage actif \n\nSens économique : \n- Sans ACC : marché spot ~€55–65/MWh (2025) avec risque négatif \n- Avec ACC : €0.15–0.18/kWh (localisé) → economie 20–35% vs marché spot \n- Caveat : nécessite synchronisation conso/production (~50% taux ok; >70% = très bon)",
+    "word_count": 100,
+    "chunk_index": 17
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_18",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "D. Copropriétés Résidentielles (5–10%, en croissance) 67 68",
+    "anchor": "#d-coproprits-rsidentielles-510-en-croissance-67-68",
+    "text": "Cas type : Immeuble 50–100 lgt privés, assemblée générale vote ACC \n\nModèle : \n- PMO = syndic ou association AC dédiée \n- PV toiture (~30 kWc typique) \n- Participants = consentants seulement (pas obligation) \n\nDéfis majeurs : \n- Vote majorité simple (art. 25 loi 1965) exige concertation \n- Taux participation : moy. 40–60% (vs 95% bailleurs) \n- Litiges : facturation, charge commune vs privative \n- Fatigue démocratique : renouvellement AC chaque an coûteux administrativement \n\nROI moins attractif : payback 10–15 ans → frilosité acheteurs énergies renouvelables classe moyenne",
+    "word_count": 88,
+    "chunk_index": 18
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_19",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "Scénario A : Bailleur Social 50 kWc / 100 participants INVESTISSEMENT (CAPEX)",
+    "anchor": "#scnario-a-bailleur-social-50-kwc-100-participants-investissement-capex",
+    "text": "├─ Installation PV (50 kWc) : €50,000\n├─ Électronique (onduleur, monitoring) : €5,000\n├─ Raccordement Enedis : €3,000\n├─ PMO setup (statuts, registre) : €1,500\n└─ Total CAPEX : €59,500\n\nREVENUS ANNUELS (année 1)\n├─ Production brute : 50 × 0.9 × 1,000h = 45 MWh/an (facteur charge 18%)\n├─ Taux autocons. estimé : 55%\n├─ TAc = 45 × 55% = 24.75 MWh/an @ €0.18/kWh (prix convenu) : €4,455\n├─ Surplus vendu (marché spot, 45% produit) : 20.25 MWh @ €60/MWh : €1,215\n├─ Prime investissement (CRE 2025) : €0–2,000 (dégression)\n└─ Autres aides (région) : €4,000–8,000 (premier an)\n\nCOÛTS OPÉRATIONNELS ANNUELS (OpEx)\n├─ Assurance RC/équipement : €300\n├─ Maintenance & nettoyage : €400\n├─ PMO gestion (estimé sans SaaS) : €2,000–3,000\n├─ Frais bancaires/comptabilité : €200\n└─ Total OpEx : €2,900–3,600\n\nRÉSULTAT NET ANNUEL (année 1 avec aides)\n└─ €4,455 (TAc) + €1,215 (surplus) + €5,000 (aides) – €3,300 (OpEx) = **€7,370/an**\n\nPAYBACK SIMPLE (sans aides 2026+)\n└─ (€59,500 – aides) / €5,670 (révenu annuel stabilisé) = **7–9 ans**",
+    "word_count": 171,
+    "chunk_index": 19
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_20",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "Scénario B : ZAC Activités 200 kWc / 12 entreprises INVESTISSEMENT (CAPEX)",
+    "anchor": "#scnario-b-zac-activits-200-kwc-12-entreprises-investissement-capex",
+    "text": "├─ Installation PV (200 kWc) : €180,000\n├─ Onduleurs + monitoring avancé (temps réel) : €18,000\n├─ Raccordement HTA Enedis : €12,000\n├─ PMO (SAS dédiée, légal/gouvernance) : €5,000\n├─ Plateforme gestion clés (estimation) : €3,000\n└─ Total CAPEX : €218,000\n\nREVENUS ANNUELS (année 1)\n├─ Production brute : 200 × 0.85 × 1,100h = 187 MWh/an\n├─ Taux autocons. estimé (petits tertiaires) : 60%\n├─ TAc = 187 × 60% = 112.2 MWh @ €0.165/kWh : €18,513\n├─ Surplus vendu (marché) : 74.8 MWh @ €55/MWh : €4,114\n├─ Subvention CRE (appel d'offres, si admis) : €12,000–20,000\n└─ TOTAL REVENUS (année 1) : **€34,627 + aides**\n\nCOÛTS OPÉRATIONNELS ANNUELS\n├─ Assurance : €600\n├─ Maintenance : €1,200\n├─ PMO gestion (sans SaaS) : €4,000–6,000\n├─ Gestion courbes/clés répartition (15h/mois manuel) : €2,400\n├─ Plateforme/APIs (estimation) : €500\n└─ Total OpEx : **€8,700–10,200**\n\nRÉSULTAT NET ANNUEL (année 2–3, sans aides répétées)\n└─ €18,513 (TAc) + €4,114 (surplus) – €9,500 (OpEx) = **€13,127/an**\n\nPAYBACK (avec aides première année)\n└─ (€218,000 – €18,000 aides) / €13,127 = **15.2 ans**\n└─ **Limite rentabilité économique** → nécessite contrats durée 15+ ans ou nouveau modèle flex/services",
+    "word_count": 191,
+    "chunk_index": 20
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_21",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "Scénario C : Entreprise Tertiaire 100 kWc / Multi-sites 3 points INVESTISSEMENT (CAPEX)",
+    "anchor": "#scnario-c-entreprise-tertiaire-100-kwc-multi-sites-3-points-investissement-capex",
+    "text": "├─ Installation PV (3 sites × 33 kWc) : €90,000\n├─ Onduleurs + box données décentralisé : €9,000\n├─ Raccordement (3 sites) : €9,000\n├─ SaaS settlement (estimation) : €2,000\n└─ Total : €110,000\n\nÉCONOMIES ANNUELLES vs. MARCHÉ SPOT (année 1)\n├─ Consommation 300 MWh/an (mix 40% jour, 60% nuit)\n├─ Production autoconsommable (60% sync.) : 61.2 MWh @ €0.17/kWh vs marché €0.55/MWh\n├─ Économie par MWh : €0.38/kWh × 61.2 MWh = **€23,256/an**\n├─ OpEx ACC (low-touch SaaS) : €2,500\n├─ Flex services (réduction prix négatifs) : +€2,000–5,000 (bonus si pilotage)\n└─ **NET BENEFIT YEAR 1 : €22,500–25,500**\n\nPAYBACK : 110,000 / 23,500 = **4.7 ans** ✅ (attractive)",
+    "word_count": 109,
+    "chunk_index": 21
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_22",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "4. Segmentation Rentabilité : Cas Gagnants vs. Difficiles 73 74",
+    "anchor": "#4-segmentation-rentabilit-cas-gagnants-vs-difficiles-73-74",
+    "text": "Gagnants : \n- ✅ Bailleur social > 50 kWc, taux autocons. > 50% \n- ✅ ZAC activités tertiaire synchrone, 150+ kWc \n- ✅ Collectivité patrimonial (écoles/médiathèques) > 50 kWc \n- ✅ Copropriété > 80 kWc, participation > 70%, coûts gestion < €100/an \n- ✅ Entreprise multi-site, profil conso stable \n\nDifficiles : \n- ❌ Petit collectif (<30 kWc), peu de consommateurs (taux autocons. < 40%) \n- ❌ Production intermittente non-synchrone (ex: PV nuit, conso jour décalée) \n- ❌ Zone rurale : coûts Enedis raccordement ↑, peu de participants \n- ❌ Habitat collectif privé petit : friction vote, participation <50%",
+    "word_count": 98,
+    "chunk_index": 22
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_23",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "1. Trois Scénarios Probabilistes (Data-Driven Projection)",
+    "anchor": "#1-trois-scnarios-probabilistes-data-driven-projection",
+    "text": "Baseline 2025 : 900 opérations, 110 MWc (consolidées H1 2025) \n\nAssumptions par scénario : Driver Prudent Central Accéléré Croissance opérations/an (%) +25% +40% +55% Croissance puissance/an (%) +30% +45% +60% Taux adoption collectivités 10% 25% 45% Taux adoption bailleurs 15% 30% 50% Avg taille projet (MWc) 0.12 0.13–0.15 0.18 Enablers clés Lite: TURPE 7 + seuil 5MW Moderate: API Enedis + shadow billing Aggressive: Full SaaS + flex market \n\nProjections : Année Prudent Ops Central Ops Accél. Ops Central Power (MWc) 2025 (réel mi-année) 900 900 900 110 2026-Q2 (projec.) 1,200 1,500 2,000 160 2027-Q4 1,600 2,500 3,800 320 2028-Q4 2,100 4,000 6,500 550 2029-Q4 2,700 6,000 10,500 900 2030-Q4 2,700 6,000 10,500 900 MWc \n\nInterprétation : \n- Prudent = réalisation règlementaire partielle + friction SaaS + fatigue collectivités \n- Central (meilleure base) = plan gouvernement 2025–2026 mis en œuvre (API, TURPE, standardisation) \n- Accéléré = écosystème full digitalisé + tarification flex + communautés énergie transposées",
+    "word_count": 156,
+    "chunk_index": 23
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_24",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "3. Signaux Faibles à Surveiller 2026+",
+    "anchor": "#3-signaux-faibles-surveiller-2026",
+    "text": "Monitoring clé pour PROMEOS : \n- RED III transposition (Directive UE énergie renouvelable 2023/2413) : communautés énergie peuvent élargir périmètre 10+ km (France attendu 2026) \n- Arrêté flex/prix négatifs (loi finances 2025, art. 175) : pilotabilité production >10MW → ACC <10MW reste “demandeur” flex , mais nouvel arbitrage économique PV vs stockage vs flex \n- TICFE taux révisé (2027) : impact fiscal ACC si évolution \n- Évolution TURPE 8 (post-2029) : signal prix négatif vs TAc intégré? → tester hypothèse",
+    "word_count": 80,
+    "chunk_index": 24
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_25",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "Récapitulatif : Impact Cumulé si 100% Solutions Implémentées",
+    "anchor": "#rcapitulatif-impact-cumul-si-100-solutions-implmentes",
+    "text": "Before (2025 state): \n- Cycle projet : 4–8 mois \n- Friction cumul. : ~100–150h/an par opération \n- Erreurs facturation : 5–10% projets/an \n- Taux abandonn. PMO : 10–15% \n\nAfter (PROMEOS full, 2027+): \n- Cycle projet : 3–4 mois (-50%) \n- Friction cumul. : 15–25h/an (-80%) \n- Erreurs : <1% \n- Taux abandon : <3% \n\nImpact marché : +40% opérations viables en small/medium, -30% coûts PMO → +2x croissance en scénario central",
+    "word_count": 71,
+    "chunk_index": 25
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_26",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "1. Positionnement Stratégique : PROMEOS = “Cockpit Local Energy 2.0”",
+    "anchor": "#1-positionnement-stratgique-promeos-cockpit-local-energy-20",
+    "text": "Avant PROMEOS : \n- Fournisseurs classiques = fourniture + facturation (baseline) \n- Agrégateurs flex = marché spot + services système (haut-débit) \n- Gap : pas de “single pane of glass” pour collectifs locaux + settlement robuste + micro-transactions \n\nAprès PROMEOS + brique ACC : \n- Micro-fournisseur augmenté : “fourniture complément local + settlement ACC + flex implicite + cockpit décision” \n- Différenciation : \n- ✅ Upsell PMO vers “ABC Ops” (data+facturation) \n- ✅ Cross-sell flex/IRVE (services additionnels) \n- ✅ Valeur PMO = “time ROI” (10h/mois économisées = €400–600/mois) \n- ✅ Valeur consommateurs = “transparency + economie 15–30% vs marché” \n\nTarget customer : \n- PMO startup (300–400 projets/an nouveaux) : besoin help desk + legal template \n- PMO établie (bailleurs, SEM) : besoin DP optimization + multi-sites \n- Fournisseur micro : besoin settlement + facturation décorrelée fourniture",
+    "word_count": 136,
+    "chunk_index": 26
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_27",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "ACC Starter (MVP Focus, Q1 2026)",
+    "anchor": "#acc-starter-mvp-focus-q1-2026",
+    "text": "Positioning : “Diagnostic + kit PMO + validation conformité” \n\nFeatures : \n- ACC viability check (input: adresses, conso profiles Linky) → output : “go/no-go + devis temps” \n- Modèle statuts PMO compatible Enedis (downloadable, e-signable) \n- RGPD consent kit (templates, DocuSign integr.) \n- Pre-filled Enedis “demande d’entrée acc” form \n- Cost : €500–1,500/projet (one-shot) OR subscription €100/mois lock-in \n- Audience : petits collectifs, bailleurs exploring",
+    "word_count": 65,
+    "chunk_index": 27
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_28",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "ACC Ops (Core, 180j focus)",
+    "anchor": "#acc-ops-core-180j-focus",
+    "text": "Positioning : “Production to settlement, fully managed” \n\nFeatures : \n- Data & Monitoring : P30 curves from Enedis DataHub (API), dashboard prod/conso/TAc/TAp real-time \n- Clés Calculator : statique/dynamique simple/full auto (P30-based, editable scenario), monthly Enedis notification API-driven \n- Facturation ACC : shadow billing (PMO or reseller-agnostic), templates PDF/digital, paiement SEPA auto \n- Settlement : Enedis reconciliation log, export comptable (CSV/XML), audit trail horodaté \n- Participant Portal : login participant = sees facture ACC + estimated 3 months, contact PMO \n- Support : onboarding + monthly check-in \n\nCost : €200–500/mois per operation (based on participants, complexity) \nSLA : 99.5% uptime, support <24h \nAudience : active PMOs (50–200 sites), bailleurs sociaux, collectivités",
+    "word_count": 110,
+    "chunk_index": 28
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_29",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "ACC Optim (Premium, 12m focus)",
+    "anchor": "#acc-optim-premium-12m-focus",
+    "text": "Positioning : “Active optimization + flex market + price arbitrage” \n\nFeatures : \n- Everything in Ops + \n- Price Negative Monitoring : RTE DataConnect alert (day-ahead), auto-notification producteur + “reduce production?” or “pilot consumption” recommendation \n- Flex Dashboard : interface producteur = accept/decline flex offer, track margin impact \n- Implicit Flex : auto-pilot conso (partner IRVE, EMS buildings) during peak PV, “load shift” scoring \n- Arbitrage Engine : producteur voit “TAc price vs spot M0 today”, chooses best routing (ACC lock-in vs spot) \n- Ancillary Services : track capability for RTE mFRR (manoeuvrability frequency restoration) + revenue share model \n- Cost : €500–1,500/mth (premium), +% of flex revenue capture (e.g., 10–15%) \n\nAudience : Advanced PMOs, greenfield ACC projects with >500 kWc, industrial/multi-sites needing demand response",
+    "word_count": 125,
+    "chunk_index": 29
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_30",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "3. Modules Logiciels (MVP → v1 → v2)",
+    "anchor": "#3-modules-logiciels-mvp-v1-v2",
+    "text": "Tech Stack (proposed): \n- Frontend : React (Acc Starter web form), Next.js (Ops + Optim dashboards) \n- Backend : Node.js + FastAPI (Python for data science), PostgreSQL \n- Integrations : Enedis API DataHub (OAuth2), Docusign API (e-sig), SEPA/bank APIs (settlement), Strapi CMS (template library) \n- Security : ISO 27001, encryption AES-256, audit logs, rate-limit Enedis API \n\nModule Roadmap : Phase Timeline MVP Scope v1 Scope v2 Scope (optional) PMO Workspace 0–90d Statuts templates, registre participants (spreadsheet export), contact directory E-sign integr., auto-notification Enedis, versioning doc Blockchain audit trail, instant notary integration Data & Monitoring 30–90d Manual P30 upload (CSV), basic dashboard (Grafana clone) Enedis DataHub API auto-pull (RGPD consent gate), alerts Predictive models (ML) for TAc forecasting, anomaly detection Clés & Settlement 60–150d Calc tool (spreadsheet + validation) Auto-calc from P30, Enedis API notify, scenario sim Full optimizer (mixed-integer programming) for > 3 producteurs Shadow Billing 90–180d Template factures Word/PDF Auto-gen from settlement logs, XML export, SEPA batch files Real-time billing (P15 if Enedis allows), instant invoice delivery Compliance Add-ons 120–180d Manual OPERAT export Auto-export structure (CSV format CRE), audit UI Integration BACS/OPERAT APIs API & Integrations 90–180d Webhook for Enedis events (polling) REST API for partners (PMO embedding), OAuth GraphQL, real-time subscriptions, Enedis <> PROMEOS sync",
+    "word_count": 207,
+    "chunk_index": 30
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_31",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "Problem Statement",
+    "anchor": "#problem-statement",
+    "text": "- Currently : ACC PMOs spend 100–150h/year per operation on administrative overhead (clés, facturation, RGPD, registre) \n- Enablers exist : Linky data, Enedis API, e-sig tools, but fragmented, not coordinated \n- Market bottleneck : high time-to-market (4–8 mths) + low success rate (~85%) + churn from PMO fatigue",
+    "word_count": 48,
+    "chunk_index": 31
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_32",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "Users (Personas)",
+    "anchor": "#users-personas",
+    "text": "- Alice, PMO bailieur 50 kWc, 100 logements \n- Goal : “Reduce paperwork from 30h/year to <5h, make participants happy” \n- Pain : manual Excel clés, participant complaints re: invoice clarity \n- Willingness to pay : €150–300/mth \n- Bob, ZAC collectivité 200 kWc, 12 companies \n- Goal : “Optimize TAc with dynamic keys, avoid negative prices” \n- Pain : no visibility into hourly arbitrage, lost revenue ~€5k/year \n- Willingness to pay : €400–800/mth \n- Carol, Fournisseur micro (50+ clients ACC) \n- Goal : “Automate facturation ACC clients, reduce reconciliation disputes” \n- Pain : manual shadow billing vs Enedis feeds, 1 error/50 = low NPS \n- Willingness to pay : % of volume (e.g., €0.01–0.03/MWh)",
+    "word_count": 114,
+    "chunk_index": 32
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_33",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "Jobs-to-be-Done",
+    "anchor": "#jobs-to-be-done",
+    "text": "- Job 1 : Onboard new participants without legal/admin friction (enable PMO growth) \n- Job 2 : Calculate fair keys from real data, avoid manual errors (build trust) \n- Job 3 : Create accurate participant invoices, enable self-service clarity (reduce churn) \n- Job 4 : Report compliance to CRE/Enedis with zero re-work (regulatory peace) \n- Job 5 (premium) : Monitor spot prices, maximize ACC margin vs arbitrage (grow revenue)",
+    "word_count": 69,
+    "chunk_index": 33
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_34",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "Core Features (MVP)",
+    "anchor": "#core-features-mvp",
+    "text": "Must-Have : \n- ✅ Statuts PMO templates (auto-fill, e-sign) \n- ✅ Participant registry (add/remove, versioning) \n- ✅ P30 import (manual CSV 90d, then auto Enedis API) \n- ✅ Clés calc (statique + dyn. simple, Enedis notify) \n- ✅ Facture template (PDF/email bulk) \n- ✅ Audit log (all events timestamped, exported) \n\nNice-to-Have (v1) : \n- 🟡 Enedis DataHub API integration (auto-pull) \n- 🟡 Shadow billing reconciliation (vs Enedis feed) \n- 🟡 Participant portal (login, see invoice) \n- 🟡 SEPA batch export \n\nFuture (v2+) : \n- 🟢 RTE price feed + flex arbitrage \n- 🟢 ML forecasting \n- 🟢 Blockchain audit",
+    "word_count": 99,
+    "chunk_index": 34
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_35",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "Data Model",
+    "anchor": "#data-model",
+    "text": "Entities : \n- Operation : id, name, address, PMO legal id, creation date, status (active/draft) \n- Participant : id, role (producer/consumer), PRM identifier (Linky point), name, email, consent_rgpd, join_date, exit_date \n- Clés : id, operation_id, version, type (statique/dyn simple/dyn full), coefficients (JSON), effective_date, notified_enedis_date \n- P30 Feed : operation_id, date, quarter (15min slot), prod_kWh, conso_kWh, tac_kWh, tap_kWh (from Enedis or manual) \n- Facture : id, participant_id, month, amount_tac_eur, tax_eur, total_eur, status (draft/sent/paid), sent_date, payment_date \n- Audit Log : timestamp, user_id, operation_id, action (add_participant, change_keys, send_facture, etc.), before/after JSON",
+    "word_count": 88,
+    "chunk_index": 35
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_36",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "Security & Compliance",
+    "anchor": "#security-compliance",
+    "text": "- Auth : OAuth2 (PMO + participant separate scopes) \n- Data : All participant/consumption data encrypted at rest (AES-256), in transit (TLS) \n- RGPD : explicit consent gate (Docusign), right-to-delete workflow, DPIA doc \n- Audit : immutable logs, crypto signature on key transmission to Enedis",
+    "word_count": 45,
+    "chunk_index": 36
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_37",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "Pricing Model (recommended SaaS hybrid)",
+    "anchor": "#pricing-model-recommended-saas-hybrid",
+    "text": "Opción A : Seat-based + Usage \n- Base : €200/mth per operation (includes 1 PMO user, 100 participants) \n- Overage : +€50 per 50 participants \n- Premium : +€300/mth for Optim module (flex + arbitrage) \n- Setup : €500 (one-shot) \n\nARR example : \n- 500 opérations × €200 = €100k/mth baseline \n- 150 opérations Optim × €300 = €45k premium \n- Setup revenue : ~€5k/mth amortized \n- Total MRR target : €150k (€1.8M ARR, year 2)",
+    "word_count": 76,
+    "chunk_index": 37
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_38",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "Success Metrics (KPIs)",
+    "anchor": "#success-metrics-kpis",
+    "text": "Product : \n- DAU (daily active PMO users) : target 50% of customers by M12 \n- Time-to-value : 90% of onboarded ops live in <30d (vs 4m before) \n- Feature adoption : clés auto-notify = 70%+ by M12; shadow bill = 40%+ by M18 \n\nBusiness : \n- CAC payback : <12 months (assuming €300/mth ARPU) \n- NPS : target 45+ (SMB SaaS median ~30) \n- Churn : <5% MoM (target, vs industry 3–7%) \n- Expansion revenue : 15% (upsell Optim to 20% of base) \n\nMarket Impact : \n- Opérations onboardées (cumul.) : 100 by M6, 500 by M12, 2,000 by M24 \n- Power additionnal enabled : 50 MWc by M12, 300 MWc by M24 (vs 110 MWc baseline 2025) \n- Estimated contribution to market growth (Central scenario) : 25–35%",
+    "word_count": 129,
+    "chunk_index": 38
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_39",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "1. Paysage Concurrentiel Actuel",
+    "anchor": "#1-paysage-concurrentiel-actuel",
+    "text": "Acteurs clés 2025 : 84 85 86 87 88 Joueur Produit Core Type Couverture Avantages Limits Enogrid (lead market) EnoLab (étude) + EnoPower (gestion) + MonEnergie Collective (portal) SaaS + Services 370+ projets, 23 MW gérés Full suite (study→exec), strong brand Plateforme legacy (onboarding toujours ~3m), pas de settlement financier HubWatt Plateforme ACC (registre, clés, facturation) SaaS ~100+ projets estimé Facturation élégante, UX clean Petit market share, peu de visibilité, API Enedis intégration non-public EnoPower (Enogrid) Software gestion opérationnelle ACC SaaS 20+ MWc en produção Intégration Enedis native, interface simple Coûteux (€500–1k/mth estimé), pas d’onboarding, pas d’arbitrage prix Fournisseurs classiques (EDF, Enercoop, Ekwateur) Settlement + facturation (ACC = overlay) Aggrégat Partial (seulement clients propres) Couverture réseau, force commercial Pas d’outil PMO dédié, facturation 2-tiers complexe, pas de flex Bohr Énergie (Animergy partner) Agrégateur + arbitrage prix (“mandataire PMO”) Service 50+ projets en pipeline Flex + prix arbitrage, lève VC récente Modèle 2-sided (producteur + PMO), pas de SaaS PMO propre, few regions Plateformes européennes (Austria: Wenet, Slovenia: …very few) Full energy communities OS SaaS <10 deployments outside HQ Tech mature, RED III aligned Régulières non-transposables à France (régime collecte différent) \n\nObservation clé : marché très fragmenté = 5–10 SaaS minor + services ad-hoc. Aucun leader consolidé avec full stack (study + gestion + settlement + flex). Enogrid = closest, mais plateforme legacy (EnoLab = outil études, EnoPower = gestion basique).",
+    "word_count": 230,
+    "chunk_index": 39
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_40",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "Blanc 1 : “PMO-in-a-box” pour petits collectifs",
+    "anchor": "#blanc-1-pmo-in-a-box-pour-petits-collectifs",
+    "text": "- Gap : Bailleurs/collectivités petites (30–100 logements, <50 kWc) intimidé par “besoin SaaS complexe” \n- PROMEOS opportunity : lightweight starter (templates, consentements, simple clés statiques), mobile-friendly, pricing €100–150/mth \n- Win vs Enogrid : EnoLab = outil études (€500/projet), EnoPower = gestion avancée (€500/mth). Aucune solution intermédiaire",
+    "word_count": 46,
+    "chunk_index": 40
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_41",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "Blanc 2 : Full settlement (PMO + fournisseur + Enedis 3-way)",
+    "anchor": "#blanc-2-full-settlement-pmo-fournisseur-enedis-3-way",
+    "text": "- Gap : Erreurs facturation ACC = 5–10% projets (données terrain Animergy). Concurrence propose “2-way max” (PMO+Enedis ou fournisseur+Enedis) \n- PROMEOS opportunité : shadow billing avec API Enedis (3-way reconciliation auto) + participant visibility \n- Win : 1 truth source (PROMEOS) vs. 3 spreadsheets = -80% disputes, -15% chargeback",
+    "word_count": 49,
+    "chunk_index": 41
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_42",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "Blanc 3 : Flex/arbitrage implicite < 1 MW",
+    "anchor": "#blanc-3-flexarbitrage-implicite-1-mw",
+    "text": "- Gap : Bohr/Animergy = agrégateurs (service boutique, >5 projets min). <5 projets = pas attractive. Petit ACC orphelin sur prix négatifs \n- PROMEOS opportunité : low-touch “flex dashboard” (prix spot alerts + reco) dans module Optim. Auto-connect IRVE/EMS para pilotage semi-auto \n- Win : 10–20 petits ACC + flex = collectively “big” aggregation, avec PROMEOS comme platform",
+    "word_count": 58,
+    "chunk_index": 42
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_43",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "Blanc 4 : Intégration directe GRD hors-Enedis",
+    "anchor": "#blanc-4-intgration-directe-grd-hors-enedis",
+    "text": "- Gap : ELD (Entreprises Locales Distribution) = ~150 GRD régionales. None have native ACC SaaS offre \n- PROMEOS opportunité : white-label “ACC Manager by [GRD name]” → ELD peut market à clients, PROMEOS opère backend \n- Win : distribution partner strategy = 150 GRD × 20 small ACC/an = 3k projects/an incremental",
+    "word_count": 53,
+    "chunk_index": 43
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_44",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "Blanc 5 : “Micro-fournisseur” cockpit = PROMEOS + fourniture",
+    "anchor": "#blanc-5-micro-fournisseur-cockpit-promeos-fourniture",
+    "text": "- Gap : PROMEOS = PMO tool. But PMO often wants = someone to “resell AC electricity” + handle facturation complément \n- PROMEOS opportunity : embedded “fournisseur de complément” module (PROMEOS owns supply layer, white-label to PMO or partner) → 1 invoice to end customer \n- Win : higher margin (cream 0.5–2€/MWh spread = €500–2k/operation/year), better NPS (1 invoice instead of 2)",
+    "word_count": 62,
+    "chunk_index": 44
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_45",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "1. Phasing & Dependencies ┌─────────────────────────────────────────────────────────────┐",
+    "anchor": "#1-phasing-dependencies-",
+    "text": "│ PROMEOS ACC Integration Roadmap 2026 (High-Level) │\n├─────────────────────────────────────────────────────────────┤\n│ Q1 2026 (Jan-Mar) : MVP 1.0 — Starter Pack │\n│ Q2-Q3 2026 (Apr-Sep) : v1.0 — Full Ops │\n│ Q4 2026-Q1 2027 (Oct-Mar) : v2.0 — Optim + Integrations │\n└─────────────────────────────────────────────────────────────┘",
+    "word_count": 43,
+    "chunk_index": 45
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_46",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "2. 90-Day MVP 1.0 (Q1 2026)",
+    "anchor": "#2-90-day-mvp-10-q1-2026",
+    "text": "Goal : Validate problem (PMO onboarding friction), build landed product (Starter), acquire first 50–100 PMOs \n\nScope : \n- ✅ PMO templates (statuts, conventions, RGPD docs) — downloadable, e-signable via DocuSign \n- ✅ Participant registry (spreadsheet export, basic dashboard, contact directory) \n- ✅ Clés calculator (upload P30 CSV, calc statique, notify Enedis template auto) \n- ✅ Facture template (doc generator, bulk email, PDF archive) \n- ✅ Website + onboarding flow (Webflow or simple React SPA) \n\nTech Stack : \n- Frontend : Next.js (Vercel deploy) \n- Backend : Node.js Express + PostgreSQL (Railway or DigitalOcean) \n- Integration : Docusign API, SendGrid (email), manual CSV input (no API yet) \n- Cost : ~€3–5k/mth infra + ~200h dev \n\nGo-to-Market : \n- B2B2C : partner 2–3 major bailleurs (Habitat HF, RIVP) for pilot \n- Webinar + case study (FNCCR amplify) \n- Pricing : €100–200/mth starter, €500 setup (recoup dev in 1–2 customers) \n\nSuccess Criteria : \n- 50–100 PMOs onboarded (10–20 live ACC operations) \n- 80% report “onboarding time -30% vs before” \n- NPS 30+ \n- Churn <5% MoM (new product, expected)",
+    "word_count": 176,
+    "chunk_index": 46
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_47",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "3. 180-Day v1.0 (Q2–Q3 2026)",
+    "anchor": "#3-180-day-v10-q2q3-2026",
+    "text": "Goal : Full operational product (ACC Ops), monetize, prove unit economics \n\nScope : \n- ✅ Enedis DataHub API integration (auto-pull P30, consent gates, retry logic) \n- ✅ Advanced clés (dynamique simple + full, multi-scenario editor, version control) \n- ✅ Settlement module (P30 + clés = TAc/TAp auto-calc, vs Enedis reconcile, export XML/CSV) \n- ✅ Shadow billing engine (compare Enedis data vs fournisseur invoice, flag discrepancies) \n- ✅ Participant portal (login, facture history, TAc/TAp transparency, contact PMO 1-click) \n- ✅ Compliance reporting (auto-export CRE format, audit log, attestation signature) \n\nTech Stack : \n- Backend : FastAPI (Python) for data science (P30 processing, reconciliation logic) \n- Frontend : React Dashboards (Material-UI or shadcn/ui) \n- Database : PostgreSQL + Redis (cache, session) \n- Integration : Enedis DataHub (OAuth2 + API calls), SEPA batch (plaid or natixis) \n- Cost : ~€8–10k/mth infra + server costs + ~400h dev \n\nGo-to-Market : \n- Expand to 500–1000 PMOs (100–200 live operations) \n- Partner with 1 major fournisseur (EDF, Enercoop) for settlement integration \n- Community building (Discord for PMOs, monthly webinar) \n- Pricing : €200–400/mth Ops, €500 setup \n\nSuccess Criteria : \n- MRR €50–80k (200 avg customers × €300) \n- Churn <4% MoM \n- Customer effort score (CES) >7/10 (operability) \n- 90% of ACC operations in settlement module (not manual)",
+    "word_count": 212,
+    "chunk_index": 47
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_48",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "4. 12-Month v2.0 (Q4 2026–Q1 2027)",
+    "anchor": "#4-12-month-v20-q4-2026q1-2027",
+    "text": "Goal : Premium features (Optim), market leadership, ecosystem lock-in \n\nScope : \n- ✅ Flex Dashboard + Price Arbitrage (RTE spot feed, alert producer, recommendation engine) \n- ✅ Implicit flex (IRVE + EMS partners, auto-pilot consumption, load shift scoring) \n- ✅ Advanced analytics (predictive TAc forecasting, anomaly detection, benchmarking vs similar projects) \n- ✅ Multi-site aggregation (group clés optimizer for 3+ sites, maximize collective TAc) \n- ✅ Marketplace (templates, integrations, partners: onduleurs, IRVE, GTB) — small commission \n- ✅ Open API (REST/GraphQL for PMO white-label, fournisseur integrations) \n\nTech Stack : \n- ML/AI : Time-series forecasting (Prophet or similar), clustering (K-means for benchmarking) \n- Real-time : WebSocket (Fastify or GraphQL subscriptions for price alerts) \n- Partner ecosystem : Stripe for marketplace, OAuth2 for 3P integrations \n- Cost : ~€15–20k/mth infra + ~600h dev \n\nGo-to-Market : \n- Acquire 2,000+ PMO accounts (500–800 live operations) \n- Launch Optim premium (30% upsell target = 400–500 accounts) \n- Partner integrations (2–3 major EMS, 5+ IRVE suppliers) \n- Thought leadership (case studies, whitepapers, speaking CRE) \n- Pricing : €300–500/mth Ops (expanded), €600–1500/mth Optim (flex) \n\nSuccess Criteria : \n- MRR €250–350k (goal for year-end 2027) \n- ARPU €300–400 (expansion revenue +20%) \n- NPS 50+ \n- CAC payback <10 months \n- Profitability target (depending on VC/bootstrap trajectory)",
+    "word_count": 208,
+    "chunk_index": 48
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_49",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "B. Liens & Ressources Clés",
+    "anchor": "#b-liens-ressources-cls",
+    "text": "Officiels : \n- Légifrance Code de l’énergie L315-1 à L315-8 95 \n- CRE Délibération 2024-231 (18 déc. 2024) 96 \n- Enedis Convention Model ACC 97 \n- ADEME Guide ACC 2024 98 \n\nMarché : \n- Enogrid : ACC pour bailleurs sociaux 2024 99 \n- Livre Blanc ACC & Communautés Énergie (2024) 100 \n- Enogrid Europe ACC 2025 benchmark 101 \n\nData & Monitoring : \n- Enedis Observatoire ACC (fin 2024 : 698 ops, 73.6 MWc) 102 \n- Enedis DataHub/DataConnect API 103 \n\nCommunautés Énergétiques Citoyennes : \n- Énergie Partagée (réseau citoyen) 104 105 \n- FNCCR (collectivités) 106",
+    "word_count": 94,
+    "chunk_index": 49
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_50",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "Checklist Montage PMO [utilisable directement]",
+    "anchor": "#checklist-montage-pmo-utilisable-directement",
+    "text": "- Étape 1 : Viabilité (1–2 sem.) \n- Lister participants (producteurs, consommateurs) \n- Valider localisation (<2 km ou dérogation demandée?) \n- Additionner puissance producteurs (≤3–5–10 MW?) \n- Estimer taux autocons. (courbes Linky si possible) \n- Faire devis CAPEX PV + raccordement Enedis \n- Étape 2 : Structure PMO (2–4 sem.) \n- Choisir forme juridique (asso / SAS / SEM) \n- Préparer statuts (utiliser template PROMEOS) \n- Ouvrir compte bancaire PMO \n- Enregistrer à la préfecture/sous-préfecture (si obligatoire) \n- Souscrire assurance RC professionnel \n- Étape 3 : Consentements & Mandats (3–4 sem.) \n- Collecter consentement RGPD (tous participants) \n- Signer mandats Enedis (producteur = CAE/CARD-i, consommateur = accès courbes) \n- Créer registre participants (initial) \n- E-signature tous docs (DocuSign ou équivalent) \n- Étape 4 : Convention Enedis (2–4 sem.) \n- Pré-remplir template convention (PROMEOS auto-fill?) \n- Définir clés répartition (type + valeurs) \n- Signer avec Enedis (envoyer par portail Enedis DataHub) \n- Attendre confirmation Enedis (5 jours ouvrés max.) \n- Planifier date démarrage ACC (généralement J+15 jours) \n- Étape 5 : Mise en Service (2–6 mois, paralléle) \n- Installer PV + onduleur (entreprise RGE) \n- Raccordement Enedis (2 mois simple, 12–18 mois complexe) \n- Tests conformité (Consuel) \n- Lancer facturation ACC (premiers mois : vérifier TAc/TAp) \n- Activer participant portal \n\nTotal : 3–6 mois (avec PROMEOS = -50% si outils auto-fill + e-sig)",
+    "word_count": 222,
+    "chunk_index": 50
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_51",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "Modèle Contrat PMO–Consommateur ACC (simplifié) CONTRAT D'AUTOCONSOMMATION COLLECTIVE",
+    "anchor": "#modle-contrat-pmoconsommateur-acc-simplifi-contrat-dautoconsommation-collective",
+    "text": "Entre [PMO], [Date], Durée [3–5 ans]\n\n1. PARTIES\n - PMO Organisatrice : [Nom], [SIRET], [Adresse]\n - Consommateur : [Nom], PRM [xxxxxx], [Adresse]\n - Producteur : [Nom], PRM [yyyyy]\n\n2. OBJET\n Partage électricité produite localement par producteur vers consommateur.\n\n3. ÉLECTRICITÉ FOURNIE (TAc = \"Traction Autoconsommée\")\n - Quantité : calculée mensuellement par Enedis selon clé répartition\n - Prix : [€/kWh] = prix négocié entre producteur et consommateurs\n - Facturation : par PMO ou fournisseur complément, mensuel ou [autre]\n - Paiement : SEPA / virement / chèque, dans [^10] jours après facture\n\n4. ÉLECTRICITÉ COMPLÉMENT (TAp = \"Traction Alloconsommée\")\n - Fournisseur : client conserve liberté choix\n - Fournisseur reçoit de Enedis : part non-fournie par ACC\n - Facturation : par fournisseur, selon contrat distinct\n\n5. DROITS ET OBLIGATIONS\n - Consommateur : accepte participation ACC, consentement RGPD courbes\n - PMO : assure transparency TAc/TAp, gère registre, notifie changements\n - Producteur : garantit production disponibilité raisonnable, assurance RC\n\n6. RÉSILIATION\n - Participants peuvent quitter ACC à tout moment, [préavis 30 jours]\n - PMO peut exclure participant si défaut paiement [60 jours]\n - En cas sortie, clés recalculées, notifié Enedis [J-1]\n\n7. LITIGES\n - Domiciliation : [lieu], droit français\n - Escalade : PMO → médiation, puis tribunal [ville]\n\nSIGNATURES : PMO, Consommateur, Producteur, [date]",
+    "word_count": 209,
+    "chunk_index": 51
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_52",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "D. Données Manquantes & Prochaines Études Recommandées",
+    "anchor": "#d-donnes-manquantes-prochaines-tudes-recommandes",
+    "text": "Gaps actuels identifiés (données insuffisamment précises) : \n- Distribution statuts juridiques PMO : proportion asso / SAS / SEM / bailleur-PMO (données Enedis confidentielles) \n- Cost curve installations PV 2025 par région : variances de cost CAPEX très importantes entre Île-de-France vs. zones rurales \n- Profiling consommateurs ACC : quels secteurs > ROI? Résidentiel vs. tertiaire vs. industriel (données FNCCR à consolider) \n- Taux autocons. réels observés : moyenne, écart-type, saisonnalité (données Enedis non-publiées officiellement) \n- Willingness-to-pay PMO pour SaaS : étude pricing (few PMO data points) \n- Litiges / taux d’abandon : % projets échoués, causes principales (données anecdotiques vs. systématiques) \n- Calendrier transposition RED III : quand France auto-rises périmètre? (gouvernement non-confirmé) \n\nRecommandations études complémentaires : \n- Enquête SER/FNCCR auprès 200+ PMO (taille, secteurs, coûts opérationnels, satisfaction) \n- Benchmark prix SaaS PMO (Enogrid vs. HubWatt vs. fournisseurs custom) \n- Cost-benefit analysis ACC vs. achat-vente classique pour 10 typologies (ROI par cas d’usage)",
+    "word_count": 154,
+    "chunk_index": 52
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_53",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "1. Synthèse Position Marché",
+    "anchor": "#1-synthse-position-march",
+    "text": "L’ ACC France est à un point d’inflexion (Q1 2026) : réglementation matière (3→5 MW, TURPE 7, accise 0€), mais opérationalisation très lourde (100–150h/an friction). PROMEOS a fenêtre d’opportunité de 12–18 mois pour devenir platform-of-choice PMO. \n\nDifférenciation clé : settlement 3-way (PMO + fournisseur + Enedis) + onboarding rapide (<4 sem. vs. 4–8 mois) + optional flex/arbitrage. Aucun concurrent offre cette stack .",
+    "word_count": 63,
+    "chunk_index": 53
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_54",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "Immédiat (Q4 2025–Q1 2026) :",
+    "anchor": "#immdiat-q4-2025q1-2026-",
+    "text": "- Valider hypothèses PMO : interview 20–30 PMO (bailleurs, collectivités, ZAC) → coût réel gestion, painpoints prioritaires \n- Sécuriser partnerships : \n- Enedis : accord DataHub API access (production + PMO test accounts) \n- FNCCR : co-marketing pre-launch \n- DocuSign : intégration e-sig (priority partnership) \n- Définir MVP 1.0 scope : templates + registre + clés + facturation. Lancer développement Q1 2026",
+    "word_count": 62,
+    "chunk_index": 54
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_55",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "Court terme (Q2–Q3 2026) :",
+    "anchor": "#court-terme-q2q3-2026-",
+    "text": "- Acquisition pilote : 50–100 PMO (via bailleurs/collectivités partenaires, FNCCR événements) \n- Build + iterate : v1.0 (Ops complet) → test 50 customers, gather feedback \n- Pricing clarity : valider ARPU €300/mth, setup fees",
+    "word_count": 34,
+    "chunk_index": 55
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_56",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "Moyen terme (Q4 2026–2027) :",
+    "anchor": "#moyen-terme-q4-20262027-",
+    "text": "- Scale GTM : partnerships ELD (white-label), direct sales to VC-backed ACC companies (Bohr, Animergy) \n- Expand features : Optim module (flex) → 30% of base upsell = €80k MRR incrementally \n- Target 2,000 PMOs by end-2027 (500–800 live operations, 300+ MWc enabled)",
+    "word_count": 43,
+    "chunk_index": 56
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_57",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "3. Financial Projection (Unit Economics) 107 108 109",
+    "anchor": "#3-financial-projection-unit-economics-107-108-109",
+    "text": "Assumptions : \n- CAC : €500 per PMO (direct sales + partnerships, amortized 18 months) \n- ARPU : €300/mth base, +20% expansion (Optim + multi-site) \n- Churn : 4% MoM (target, SaaS SMB standard) \n- Gross margin : 80% (SaaS software, low variable cost) \n\nYear 1 (2026) : \n- Customer acquisition : 100–200 PMOs (end of year) \n- MRR : €20–40k \n- ARR : €240–480k \n- Unit economics : LTV (€16.7k annualized) / CAC (€500) = 33x ✅ (attractive) \n\nYear 2 (2027) : \n- Customer base : 500–1000 PMOs \n- MRR : €100–200k \n- ARR : €1.2–2.4M \n- Blended ARPU : €350 (after churn/expansion) \n- Profitability : EBITDA positive likely (team of 5–8)",
+    "word_count": 113,
+    "chunk_index": 57
+  },
+  {
+    "chunk_id": "ACC_FRANCE_chunk_58",
+    "doc_id": "ACC_FRANCE",
+    "section_path": "4. Success Criteria (12m Horizon)",
+    "anchor": "#4-success-criteria-12m-horizon",
+    "text": "Product : >90% of new ACC opérations using PROMEOS for clés + settlement \nMarket : Capture 30–40% of new PMO market (2,000 opérations = 1,500–2,000 PMOs) by end 2027 \nEconomic : ARR €1–2M, path to profitability, CAC payback <12 months \nStrategic : become synonymous with « ACC enabler » — referenced in FNCCR, CRE, government policy \n\nReport compiled: December 30, 2025 | Data freshness: August 2025 (latest regulatory); June 2025 (market data) | Next update: Q2 2026 \n110 111 112 113 114 115 116 117 118 119 120 121 122 123 124 125 126 127 128 129 130 131 132 133 134 135 136 137 138 139 140 141 142 143 144 145 146 147 148 149 150 151 152 153 154 155 156 157 158 159 160 161 162 163 164 165 166 167 168 169 170 171 172 173 174 175 176 177 178 179 180 181 182 183 184 185 186 187 188 189 190 191 192 193 194 195 196 \n\n⁂ \n- https://enogrid.com/europe-autoconsommation-collective-2025/ ↩︎ \n- https://www.edf.fr/collectivites/decryptages/accompagner-votre-transition-durable/autoconsommation-collective-quelle-application-pour-les-collectivites ↩︎ \n- https://www.legifrance.gouv.fr/codes/id/LEGISCTA000032939883 ↩︎ \n- https://www.cre.fr/fileadmin/Documents/Deliberations/2024/241218_2024-231_Projet_Arrete_Autoconso_Collective.pdf ↩︎ \n- https://www.hellio.com/actualites/conseils/autoconsommation-collective ↩︎ \n- https://enogrid.com/europe-autoconsommation-collective-2025/ ↩︎ \n- https://www.gossement-avocats.com/blog/autoconsommation-collective-publication-de-larrete-du-21-fevrier-2025-modifiant-les-criteres-dune-operation-dautoconsommation-collective-etendue-et-prevoyant-une-nouvelle/ ↩︎ \n- https://www.journal-photovoltaique.org/les-actus/seuils-de-puissance-augmentes-pour-lautoconsommation-collective/ ↩︎ \n- https://www.enerplan.asso.fr/medias/publication/Jour2_Presentations.pdf ↩︎ \n- https://www.cre.fr/fileadmin/Documents/Deliberations/2024/241218_2024-231_Projet_Arrete_Autoconso_Collective.pdf ↩︎ \n- https://www.ville-de-saint-pierre-les-elbeuf.fr/wp-content/uploads/2025/07/2025-03-15-annexe.pdf ↩︎ \n- https://www.enedis.fr/sites/default/files/documents/pdf/autoconsommation-collective-guide-pedagogique.pdf ↩︎ \n- https://vendee-transitions.fr/habiter/autoconsommation-collective-guide-complet/ ↩︎ \n- https://wesmart.com/es/blog/autoconsommation-collective-france-2025 ↩︎ \n- https://enogrid.com/guide-de-lautoconsommation-collective-pour-les-bailleurs-sociaux/ ↩︎ \n- https://hubwatt.fr/vente-delectricite-en-autoconsommation-collective/ ↩︎ \n- https://wesmart.com/es/blog/autoconsommation-collective-france-2025 ↩︎ \n- https://www.enedis.fr/sites/default/files/documents/pdf/autoconsommation-collective-guide-pedagogique.pdf ↩︎ \n- https://vendee-transitions.fr/habiter/autoconsommation-collective-guide-complet/ ↩︎ \n- https://www.ville-de-saint-pierre-les-elbeuf.fr/wp-content/uploads/2025/07/2025-03-15-annexe.pdf ↩︎ \n- https://www.enedis.fr/sites/default/files/documents/pdf/autoconsommation-collective-guide-pedagogique.pdf ↩︎ \n- https://hubwatt.fr/vente-delectricite-en-autoconsommation-collective/ ↩︎ \n- https://www.sdec-energie.fr/sites/sdec.createurdimage.fr/files/2021-05-06_-enedis_autoconsommation_collective.pdf ↩︎ \n- https://hubwatt.fr/vente-delectricite-en-autoconsommation-collective/ ↩︎ \n- https://www.enedis.fr/sites/default/files/documents/pdf/autoconsommation-collective-guide-pedagogique.pdf ↩︎ \n- https://enogrid.com/les-cles-de-repartition-en-autoconsommation-collective/ ↩︎ \n- https://www.ville-de-saint-pierre-les-elbeuf.fr/wp-content/uploads/2025/07/2025-03-15-annexe.pdf ↩︎ \n- https://wesmart.com/es/blog/autoconsommation-collective-france-2025 ↩︎ \n- https://www.ecologie.gouv.fr/sites/default/files/documents/Lab2051_Autoconsommation_collective_Incubation.pdf ↩︎ \n- https://animergy.com/sans-obligation-achat-valoriser-production-pv/ ↩︎ \n- https://hubwatt.fr/vente-delectricite-en-autoconsommation-collective/ ↩︎ \n- https://www.ville-de-saint-pierre-les-elbeuf.fr/wp-content/uploads/2025/07/2025-03-15-annexe.pdf ↩︎ \n- https://www.enedis.fr/media/1881/download ↩︎ \n- https://www.enedis.fr/sites/default/files/documents/pdf/autoconsommation-collective-guide-pedagogique.pdf ↩︎ \n- https://www.enedis.fr/sites/default/files/documents/pdf/autoconsommation-collective-guide-pedagogique.pdf ↩︎ \n- https://www.ecologie.gouv.fr/sites/default/files/documents/Lab2051_Autoconsommation_collective_Incubation.pdf ↩︎ \n- https://www.enedis.fr/sites/default/files/documents/pdf/autoconsommation-collective-guide-pedagogique.pdf ↩︎ \n- https://enogrid.com/europe-autoconsommation-collective-2025/ ↩︎ \n- https://www.cre.fr/fileadmin/Documents/Deliberations/2024/241218_2024-231_Projet_Arrete_Autoconso_Collective.pdf ↩︎ \n- https://www.enedis.fr/sites/default/files/documents/pdf/autoconsommation-collective-guide-pedagogique.pdf ↩︎ \n- https://www.enedis.fr/sites/default/files/documents/pdf/autoconsommation-collective-guide-pedagogique.pdf ↩︎ \n- https://www.ecologie.gouv.fr/sites/default/files/documents/Lab2051_Autoconsommation_collective_Incubation.pdf ↩︎ \n- https://librairie.ademe.fr/energies/7854-autoconsommation-collective-photovoltaique-guide-pratique-a-l-attention-des-collectivites-territoriales.html ↩︎ \n- https://enogrid.com/turpe-7/ ↩︎ \n- https://www.enedis.fr/presse/facturation-pour-la-releve-des-compteurs-ce-quil-faut-savoir ↩︎ \n- https://www.les-energies-renouvelables.eu/conseils/autoconsommation/autoconsommation-collective-energie-panneau-solaire-photovoltaique/ ↩︎ \n- https://wesmart.com/es/blog/autoconsommation-collective-france-2025 ↩︎ \n- https://www.energystream-wavestone.com/2025/06/ems-outil-cle-pour-la-performance-energetique-des-batiments-panorama-du-marche-francais/ ↩︎ \n- https://solaire-info.fr/wp-content/uploads/2024/09/Livreblancautoconsommation_collective.pdf ↩︎ \n- https://enogrid.com/europe-autoconsommation-collective-2025/ ↩︎ \n- https://www.pv-magazine.fr/2025/01/20/dossier-autoconsommation-le-collectif-monte-en-puissance/ ↩︎ \n- https://observatoire.enedis.fr/autoconsommation ↩︎ \n- https://wesmart.com/es/blog/autoconsommation-collective-france-2025 ↩︎ \n- https://www.myelectricity.fr/guide-autoconsommation-collective-photovoltaique/ ↩︎ \n- https://www.pv-magazine.fr/2025/01/20/dossier-autoconsommation-le-collectif-monte-en-puissance/ ↩︎ \n- https://wesmart.com/es/blog/autoconsommation-collective-france-2025 ↩︎ \n- https://enogrid.com/guide-de-lautoconsommation-collective-pour-les-bailleurs-sociaux/ ↩︎ \n- https://atee.fr/system/files/2025-04/ATEE_BFC_Conf%C3%A9rence_PV_Autoconsommation_collective%20-%2013.03%202.pdf ↩︎ \n- https://enogrid.com/guide-de-lautoconsommation-collective-pour-les-bailleurs-sociaux/ ↩︎ \n- https://atee.fr/system/files/2025-04/ATEE_BFC_Conf%C3%A9rence_PV_Autoconsommation_collective%20-%2013.03%202.pdf ↩︎ \n- https://solaire-info.fr/wp-content/uploads/2024/09/Livreblancautoconsommation_collective.pdf ↩︎ \n- https://enogrid.com/guide-de-lautoconsommation-collective-pour-les-bailleurs-sociaux/ ↩︎ \n- https://atee.fr/system/files/2025-04/ATEE_BFC_Conf%C3%A9rence_PV_Autoconsommation_collective%20-%2013.03%202.pdf ↩︎ \n- https://solaire-info.fr/wp-content/uploads/2024/09/Livreblancautoconsommation_collective.pdf ↩︎ \n- https://www.idex.fr/le-blog/autoconsommation-collective-une-solution-solaire-pour-les-entreprises ↩︎ \n- https://atee.fr/system/files/2025-04/ATEE_BFC_Conf%C3%A9rence_PV_Autoconsommation_collective%20-%2013.03%202.pdf ↩︎ \n- https://wesmart.com/es/blog/autoconsommation-collective-france-2025 ↩︎ \n- https://atee.fr/system/files/2025-04/ATEE_BFC_Conf%C3%A9rence_PV_Autoconsommation_collective%20-%2013.03%202.pdf ↩︎ \n- https://www.enedis.fr/sites/default/files/documents/pdf/autoconsommation-collective-guide-pedagogique.pdf ↩︎ \n- https://animergy.com/sans-obligation-achat-valoriser-production-pv/ ↩︎ \n- https://hubwatt.fr/vente-delectricite-en-autoconsommation-collective/ ↩︎ \n- https://wesmart.com/es/blog/autoconsommation-collective-france-2025 ↩︎ \n- https://www.ecologie.gouv.fr/sites/default/files/documents/Lab2051_Autoconsommation_collective_Incubation.pdf ↩︎ \n- https://solaire-info.fr/wp-content/uploads/2024/09/Livreblancautoconsommation_collective.pdf ↩︎ \n- https://enogrid.com/europe-autoconsommation-collective-2025/ ↩︎ \n- https://www.cre.fr/fileadmin/Documents/Deliberations/2024/241218_2024-231_Projet_Arrete_Autoconso_Collective.pdf ↩︎ \n- https://www.ecologie.gouv.fr/sites/default/files/documents/Lab2051_Autoconsommation_collective_Incubation.pdf ↩︎ \n- https://enogrid.com/turpe-7/ ↩︎ \n- https://solaire-info.fr/wp-content/uploads/2024/09/Livreblancautoconsommation_collective.pdf ↩︎ \n- https://www.twobirds.com/fr/insights/2025/france/nouvelles-règles-sur-les-prix-négatifs-de-l’électricité ↩︎ \n- https://www.les-energies-renouvelables.eu/conseils/photovoltaique/les-chiffres-essentiels-du-photovoltaique/ ↩︎ \n- https://wesmart.com/es/blog/autoconsommation-collective-france-2025 ↩︎ \n- https://hubwatt.fr/vente-delectricite-en-autoconsommation-collective/ ↩︎ \n- https://www.lechodusolaire.fr/enogrid-et-bohr-energie-sallient-pour-accompagner-les-producteurs-delectricite-vers-lautoconsommation-collective/ ↩︎ \n- https://www.innovation24.news/2025/01/21/enogrid-lautoconsommation-collective-pour-tous-partout-en-france/ ↩︎ \n- https://enogrid.com/enopower/ ↩︎ \n- https://enogrid.com ↩︎ \n- https://www.wattselse.com/entreprises/enogrid ↩︎ \n- https://enogrid.com/europe-autoconsommation-collective-2025/ ↩︎ \n- https://www.cre.fr/fileadmin/Documents/Deliberations/2024/241218_2024-231_Projet_Arrete_Autoconso_Collective.pdf ↩︎ \n- https://www.gossement-avocats.com/blog/autoconsommation-collective-publication-de-larrete-du-21-fevrier-2025-modifiant-les-criteres-dune-operation-dautoconsommation-collective-etendue-et-prevoyant-une-nouvelle/ ↩︎ \n- https://www.ecologie.gouv.fr/sites/default/files/documents/220803-Plan-mise-en-oeuvre-autorites-francaises.pdf ↩︎ \n- https://solaire-info.fr/wp-content/uploads/2024/09/Livreblancautoconsommation_collective.pdf ↩︎ \n- https://www.twobirds.com/fr/insights/2025/france/nouvelles-règles-sur-les-prix-négatifs-de-l’électricité ↩︎ \n- https://www.legifrance.gouv.fr/codes/id/LEGISCTA000032939883 ↩︎ \n- https://www.cre.fr/fileadmin/Documents/Deliberations/2024/241218_2024-231_Projet_Arrete_Autoconso_Collective.pdf ↩︎ \n- https://www.enedis.fr/media/1881/download ↩︎ \n- https://librairie.ademe.fr/energies/7854-autoconsommation-collective-photovoltaique-guide-pratique-a-l-attention-des-collectivites-territoriales.html ↩︎ \n- https://enogrid.com/guide-de-lautoconsommation-collective-pour-les-bailleurs-sociaux/ ↩︎ \n- https://solaire-info.fr/wp-content/uploads/2024/09/Livreblancautoconsommation_collective.pdf ↩︎ \n- https://enogrid.com/europe-autoconsommation-collective-2025/ ↩︎ \n- https://observatoire.enedis.fr/autoconsommation ↩︎ \n- https://www.enedis.fr/acceder-aux-donnees-fournies-par-enedis ↩︎ \n- https://www.ess-france.org/sites/default/files/Energie_Energie%20Partag%C3%A9e_France.pdf ↩︎ \n- https://energie-partagee.org/wp-content/uploads/2025/05/rapport-dactivite-2024.pdf ↩︎ \n- https://www.fnccr.asso.fr ↩︎ \n- https://uniprice-consulting.com/les-4-modeles-de-tarification-saas-trouver-le-bon-equilibre-pour-votre-croissance/ ↩︎ \n- https://stripe.com/fr/guides/atlas/business-of-saas ↩︎ \n- https://poyesis.fr/blogs/guide-strategies-pricing-saas/ ↩︎ \n- https://www.union-habitat.org/centre-de-ressources/energie-environnement/habitat-17-choisit-l-autoconsommation-collective-pour ↩︎ \n- https://www.greenunivers.com/2025/03/lautoconsommation-collective-delectricite-passe-a-5-mw-383304/ ↩︎ \n- https://www.banque-france.fr/system/files/2023-05/822288_livre_diip_v2.pdf ↩︎ \n- https://www.senat.fr/rap/r19-007-1/r19-007-11.pdf ↩︎ \n- https://www.strategie-plan.gouv.fr/files/files/Publications/2016 SP/2016-11-29 - Rapport La révolution numérique et logement/rapport-logement-vorms-11-2016_0.pdf ↩︎ \n- https://www.yele.fr/wp-content/uploads/Etude-Luciole-Yele-Consulting-FLEX.pdf ↩︎ \n- https://cler.org/partager-equitablement-les-benefices-des-projets-denergies-renouvelables-2/ ↩︎ \n- https://www.bnains.org/archives/communiques/Worldline/20180321_Document_de_reference_2017_Worldline.pdf ↩︎ \n- https://www.technavio.com/report/energy-management-systems-market-analysis ↩︎ \n- https://energie-partagee.org/prise-de-valeur-placement-energie-partagee-2024/ ↩︎ \n- https://investors.worldline.com/content/dam/investors-worldline-com/assets/documents/general-meeting/2020/worldline-document-d-enregistrement-universel-2019.pdf ↩︎ \n- https://www.gminsights.com/fr/industry-analysis/energy-management-system-ems-market ↩︎ \n- https://www.energie-solidaire.org/quand-les-dividendes-deviennent-solidaires/ ↩︎ \n- https://www.efeo.fr/uploads/docs/Rapport annuel 2014-2015.pdf ↩︎ \n- https://www.cre.fr/fileadmin/Documents/Rapports_et_etudes/2025/CRE_RA2024-en.pdf ↩︎ \n- https://energie-partagee.org/assemblee-generale-epa-2024/ ↩︎ \n- https://www.sieml.fr/wp-content/uploads/2017/06/fascicule_rapports_CoSy_Sieml_25AVRIL.pdf ↩︎ \n- https://www.nrjx.tech/blog/en-quoi-un-logiciel-ems-permet-doptimiser-ses-processus-industriels ↩︎ \n- https://www.consultations-publiques.developpement-durable.gouv.fr/IMG/pdf/02__projet_de_ppe_3.pdf ↩︎ \n- https://solairepv.fr/wp-content/uploads/SolairePVEnFranceV3.1.pdf ↩︎ \n- https://www.france-renouvelables.fr/wp-content/uploads/2024/10/Observatoire-Systeme-Electrique-Renouvelables-2024_Maj.pdf ↩︎ \n- https://www.optima-energie.fr/blog/actualites/prix-electricite-evolution/ ↩︎ \n- https://www.rte-france.com/donnees-publications/etudes-prospectives/futurs-energetique-2050 ↩︎ \n- https://www.zuora.com/fr/guides/saas-pricing-models/ ↩︎ \n- https://www.lechodusolaire.fr/les-enr-domineraient-le-mix-energetique-en-france-dici-2027-selon-globaldata/ ↩︎ \n- https://www.connaissancedesenergies.org/questions-et-reponses-energies/ou-le-solaire-photovoltaique-est-il-le-plus-developpe-en-france-metropolitaine ↩︎ \n- https://cpl.thalesgroup.com/fr/software-monetization/saas-pricing-models-examples ↩︎ \n- https://condorito.fr/saas-modele-economique/ ↩︎ \n- https://www.france-renouvelables.fr/wp-content/uploads/2025/10/OBSERVATOIRE_systeme_EnR_2025_VF.pdf ↩︎ \n- https://rte-futursenergetiques2050.com/scenarios/m1 ↩︎ \n- https://www.placedesenergies.com/professionnels/actualites/tendances-de-l-energie-08-07-2025 ↩︎ \n- https://openenergytracker.org/fr/docs/france/renewables/ ↩︎ \n- https://www.custup.com/tarification-abonnement-saas/ ↩︎ \n- https://www.regie-energis.com/distribution/wp-content/uploads/2022/12/Modele-de-convention-relative-a-la-mise-en-oeuvre-dune-operation-dautoconsommation-collective.pdf ↩︎ \n- https://observatoire-electricite.fr/systeme-electrique/article/le-developpement-de-l-autoconsommation ↩︎ \n- https://rouen.fr/sites/default/files/cm/2023-10-09/7-47ann1.pdf ↩︎ \n- https://www.gossement-avocats.com/blog/autoconsommation-collective-publication-de-l-arrete-permettant-des-operations-d-autoconsommation-collective-dans-un-rayon-de-20-km/ ↩︎ \n- https://www.cre.fr/electricite/autoconsommation.html ↩︎ \n- https://enotea.fr/autoconsommation-collective/ ↩︎ \n- https://www.statistiques.developpement-durable.gouv.fr/edition-numerique/chiffres-cles-energies-renouvelables/fr/14-solaire-photovoltaique- ↩︎ \n- https://www.cre.fr/fileadmin/Documents/Deliberations/import/180215-027_AUTOCONSOMMATION.pdf ↩︎ \n- https://www.auvergnerhonealpes-ee.fr/fileadmin/mediatheque_Cdr/Documents/ENR/Energie_photovoltaique/Photovoltaique-Autoconsommation-collective-synthese-012363.pdf ↩︎ \n- https://observatoire.enedis.fr/article/lautoconsommation-collective-dans-les-starting-blocks ↩︎ \n- https://www.urbanisme-puca.gouv.fr/IMG/pdf/rapport_final_vf.pdf ↩︎ \n- https://www.enedis.fr/combien-coute-et-rapporte-lautoconsommation-collective ↩︎ \n- https://observatoire-electricite.fr/systeme-electrique/article/les-dispositifs-de-soutien-publics-a-l-autoconsommation ↩︎ \n- https://adherents.energie-partagee.org/wp-content/uploads/2024/02/guide-acc-citoyenne-fevrier-2024-1.pdf ↩︎ \n- https://sonergy.fr/autoconsommation-collective-energie-partagee-locale/ ↩︎ \n- https://www.citepa.org/consommation-denergie-la-part-des-enr-a-progresse-de-13-points-en-france-depuis-2005-mais-reste-insuffisante-au-regard-des-objectifs-europeens/ ↩︎ \n- https://www.tresor.economie.gouv.fr/Articles/f6e70afa-7b97-4eaa-8ce3-892a4be60211/files/10caa42b-c3c8-44ca-8a6e-9847f4f55b34 ↩︎ \n- https://concertation-strategie-energie-climat.gouv.fr/sites/default/files/2024-11/241104_Projet%20de%20Programmation%20pluriannuelle%20de%20l’%C3%A9nergie%203%20VFF.pdf ↩︎ \n- https://www.rexecode.fr/conjoncture-previsions/veille-documentaire/document-de-la-semaine/la-banque-de-france-abaisse-ses-perspectives-de-croissance-2025-2027 ↩︎ \n- https://energie-partagee.org/wp-content/uploads/2024/09/eurobserver-etat-energies-renouvelables-2023.pdf ↩︎ \n- https://www.daf-mag.fr/reglementation-1243/fiscalite-2115/croissance-en-france-bruxelles-revoit-ses-previsions-a-la-baisse-23286 ↩︎ \n- https://www.papernest.com/demarches-energie/decrypter/mix-energetique-comparaison/ ↩︎ \n- https://contrepoints.org/previsions-de-croissance-2026-la-france-est-3e-sur-le-podium-des-plus-mauvais-eleves-europeens/ ↩︎ \n- https://www.statistiques.developpement-durable.gouv.fr/les-energies-renouvelables-en-france-en-2024-dans-le-cadre-du-suivi-de-la-directive-ue-20182001 ↩︎ \n- https://www.banque-france.fr/fr/publications-et-statistiques/publications/projections-macroeconomiques-intermediaires-septembre-2025 ↩︎ \n- https://enogrid.prezly.com ↩︎ \n- https://www.notre-environnement.gouv.fr/actualites/breves/article/l-energie-en-france-et-dans-le-monde-deux-bouquets-bien-differents ↩︎ \n- https://www.assemblee-nationale.fr/dyn/dyn/contenu/visualisation/1087987/file/PAP2026_BG_Investir_France_2030_AV.pdf ↩︎ \n- https://www.lechodusolaire.fr/enogrid-deploie-une-suite-logicielle-complete-pour-lautoconsommation-collective/ ↩︎ \n- https://ec.europa.eu/eurostat/web/interactive-publications/energy-2025 ↩︎ \n- https://www.miedepain.asso.fr/wp-content/uploads/2012/09/MANUEL_VF-_maquette-web.pdf ↩︎ \n- https://doc.vayandata.com/documentation-active/51.2.0.5/enedis ↩︎ \n- https://programme-cee-actee.fr/wp-content/uploads/2024/02/CDC-AAP-AMO-CPE-VF_2024_14_03-1-1.pdf ↩︎ \n- https://www.edf.fr/collectivites/faq/facture/gerer-votre-facture/comment-automatiser-le-traitement-de-vos-donnees-de-facturation ↩︎ \n- https://programme-cee-actee.fr ↩︎ \n- https://www.centre-val-de-loire.ars.sante.fr/media/1633/download ↩︎ \n- https://www.fnccr.asso.fr/article/guide-fnccr-cot-cop-pour-les-projets-enr-thermiques-des-territoires/ ↩︎ \n- https://www.enerplan.asso.fr/dl-fichier-actualite?media=41896 ↩︎ \n- https://www.deepki.com/fr/blog/compteurs-linky-exploiter-donnees/ ↩︎ \n- https://www.ville-thonon.fr/service-public/particuliers?xml=F71 ↩︎ \n- https://community.gladysassistant.com/t/integration-enedis-linky/7470 ↩︎ \n- https://www.facebook.com/FimecoWalterFrance/posts/-exclure-un-membre-dune-association-attention-à-bien-respecter-ses-droits-un-rap/1508715047100238/ ↩︎ \n- https://www.strategie-plan.gouv.fr/files/2025-02/HE_Broschure_FR_act.pdf ↩︎ \n- https://priips.predica.com/credit-agricole/PS_LU1900068914.pdf ↩︎ \n- https://github.com/consometers/data-connect ↩︎ \n- https://www.ccomptes.fr/sites/default/files/2024-03/20240312-RPA-2024-ENPA-gestion-trait-de-cote.pdf ↩︎ \n- https://www.pv-magazine.fr/2025/03/10/lautoconsommation-collective-etendue-a-5-mwc/ ↩︎ \n- https://www.lechodusolaire.fr/autoconsommation-collective-un-bond-en-avant-avec-le-seuil-porte-a-5-mw/ ↩︎ \n- https://www.budget.gouv.fr/documentation/file-download/21111 ↩︎ \n- https://www.seban-associes.avocat.fr/modification-des-criteres-de-lautoconsommation-collective-etendue/ ↩︎ \n- https://www.sde35.fr/sites/default/files/2024-07/SDE35-RA-2023.pdf ↩︎ \n- https://www.hlm.coop/actualites/24/18892 ↩︎ \n- https://www.apem-energie.fr/🚨-nouvelle-evolution-pour-lautoconsommation-collective-en-france-🚨/ ↩︎ \n- https://journals.openedition.org/metropoles/11977 ↩︎ État 2025, Leviers de Marché & Plan de Simplification (2026–2030) Stockage & Autoconsommation Collective Arrêté 21 février 2025 — ACC (5MW_10MW, rayon, mod",
+    "word_count": 786,
+    "chunk_index": 58
+  }
+]

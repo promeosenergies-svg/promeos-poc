@@ -1,0 +1,236 @@
+[
+  {
+    "chunk_id": "MARCHE_ENERGIE_2025_chunk_0",
+    "doc_id": "MARCHE_ENERGIE_2025",
+    "section_path": "I. RÉSUMÉ EXÉCUTIF",
+    "anchor": "#i-rsum-excutif",
+    "text": "Le marché de l’énergie français connaît en 2025 une inflexion majeure après trois années de volatilité extrême. Les prix de l’électricité baissent enfin (-22,4% annuel), offrant une fenêtre de consolidation. Simultanément, la fin de l’ARENH (31 décembre 2025) marque une rupture structurelle : le marché bascule d’une régulation dirigiste à un équilibre post-nucléaire complexe dominé par la volatilité énergétique européenne, notamment allemande. Pour PROMEOS—opérateur tertiaire multi-sites—cette dualité crée des opportunités tactiques (réduction coûts) mais impose des adaptations stratégiques urgentes (contrats long terme, hedging volatilité). \n\nSynthèse en trois points clés : \n1. Baisse prix 2025 = fenêtre de consolidation : les factures énergétiques baissent structurellement, offrant marge opérationnelle récupérée à investir en rénovation décret tertiaire. \n2. Fin ARENH = rupture concurrence fournisseurs : accès au nucléaire régulé à 42€/MWh disparaît ; fournisseurs alternatifs doivent repositionner offres. Pour PROMEOS, urgence d’anticiper contracting post-VNU. \n3. Volatilité EnRi allemande = risque systématique : l’Allemagne déséquilibre marché électrique européen via surproduction intermittente ; France exposée imports hiver = pics prix imprévisibles. Stratégie d’achat doit se blinder long terme.",
+    "word_count": 173,
+    "chunk_index": 0
+  },
+  {
+    "chunk_id": "MARCHE_ENERGIE_2025_chunk_1",
+    "doc_id": "MARCHE_ENERGIE_2025",
+    "section_path": "A. Prix de l’Électricité France",
+    "anchor": "#a-prix-de-llectricit-france",
+    "text": "Trajectoire positive 2025 : Fin de la crise énergétique 2022-2023. Métrique Valeur Variation Tarif réglementé Février 2025 20,16 cts€ TTC/kWh -15% vs jan 2025 Tarif réglementé Août 2025 19,52 cts€ TTC/kWh -3% vs fév 2025 Baisse annuelle kWh -22,4% vs février 2024 (0,2516€) Facture mensuelle ménage 84,68€ (355 kWh/mois) -16,8% vs fév 2024 Marché gros (CAL26) 55-59 €/MWh Baisse gaz + charbon \n\nStructure tarifaire post-février 2025 : \n- Composante kWh : baisse 20% HT (marchés gros bas) \n- Composante abonnement : hausse 9% (TVA 5,5%→20% en août, TURPE +5%) \n- Net pour gros consommateurs : économies réelles (volume > effets fixes) \n\nImplication PROMEOS : Baisse 15-20% factures électricité 2025 vs 2024 libère trésorerie. Opportunité investir rénovation décret tertiaire immédiatement (amortissement accéléré via baisse opéex).",
+    "word_count": 124,
+    "chunk_index": 1
+  },
+  {
+    "chunk_id": "MARCHE_ENERGIE_2025_chunk_2",
+    "doc_id": "MARCHE_ENERGIE_2025",
+    "section_path": "B. Prix du Gaz Naturel",
+    "anchor": "#b-prix-du-gaz-naturel",
+    "text": "Marché plus stable mais structure tarifaire change : Profil Prix kWh HT Abonnement annuel Accessibilité T1 (≤6k kWh/an) 0,1117€ HT 111,78€ Petits tertiaires T2 (6k-300k kWh/an) 0,086€ HT 275,67€ PME tertiaire T3/T4 (>300k kWh) Sur-mesure Négociable Grands sites \n\nChocs structurels : \n- TVA abonnements : 5,5% → 20% (août 2025) = impact +14,5% sur partie fixe (exemple : abonnement 30€/mois → +4,35€) \n- Accise : 17,16 €/MWh (janvier 2025), stable \n- Terme stockage : +138% (avril 2025)—reflet tensions approvisionnement hiver \n\nImplication PROMEOS : Gaz devient moins prévisible. Sites gaz chauffage collectif : négocier contrats 3-5 ans avant hivers 2025-26 pour éviter pics saisonniers. Pompes à chaleur électriques deviennent comparables économiquement (si électricité reste 55€/MWh spot).",
+    "word_count": 115,
+    "chunk_index": 2
+  },
+  {
+    "chunk_id": "MARCHE_ENERGIE_2025_chunk_3",
+    "doc_id": "MARCHE_ENERGIE_2025",
+    "section_path": "Allemagne : Intermittence Déstabilisante",
+    "anchor": "#allemagne-intermittence-dstabilisante",
+    "text": "Paradoxe allemand : 267 GW puissance installée vs 75-95 GW consommation pic. Caractéristique Situation Capacité EnRi (éolien+solaire) 168 GW (2x demande peak) Prix spot hivernaux Pic 370€/MWh (déc-jan), creux -100€/MWh (miséason) Puissance pilotable Réduite 15 GW (fermeture charbon) Comportement RTE/nucléaire Réductions de production en milieu journée (surproduction solaire) Dépendance imports 10-20 GW hiver (dont France principal fournisseur) \n\nCascade de conséquences : \n- France obligée exporter nucléaire à heures solaires (value destruction) → réduit capacité piloter pics propres \n- Pics prix européens quand Allemagne sans vent/soleil + consommation haute = France pénalisée par prix de marché \n- Volatilité accrue : contrats court terme (spot, 1-3 mois) exposent PROMEOS à pics imprévisibles \n\nPrévention RTE : 1er avril 2025, nucléaire français a failli ne pas pouvoir compenser baisse EnRi allemande—quasi-blackout évité. Signal que marge de sécurité se réduit.",
+    "word_count": 135,
+    "chunk_index": 3
+  },
+  {
+    "chunk_id": "MARCHE_ENERGIE_2025_chunk_4",
+    "doc_id": "MARCHE_ENERGIE_2025",
+    "section_path": "Royaume-Uni : Alerte Capacité",
+    "anchor": "#royaume-uni-alerte-capacit",
+    "text": "Janvier 2025 : gestionnaire réseau britannique émet alerte capacité rare. Marges de 215 MW seulement (déficit potentiel). Activation urgence turbines à gaz à prix exorbitant (5750 GBP/MWh = 15x tarif normal). Stocks gaz <1 semaine consommation. Reflète même syndrome allemand : trop EnRi, pas assez backup pilotable.",
+    "word_count": 47,
+    "chunk_index": 4
+  },
+  {
+    "chunk_id": "MARCHE_ENERGIE_2025_chunk_5",
+    "doc_id": "MARCHE_ENERGIE_2025",
+    "section_path": "France : Position Favorable mais Fragile",
+    "anchor": "#france-position-favorable-mais-fragile",
+    "text": "Stabilité RTE : parc nucléaire 51 GW garantis + hydraulique 16 GW + gaz 11 GW = 83 GW de capacité régulée. Pic consommation hiver ~95 GW (cas froid extrême) couvrable par imports. Bilan prévisionnel RTE 2025-2035 : position avantageuse, abondance électricité. \n\nMais fragile : dépendance imports allemands en cas déficit ENRi hivernaux. RTE redoute scénarios « wind drought » = demande haute, peu vent/soleil ailleurs = pics prix européens touchent France via interconnexions. \n\nImplication PROMEOS : France bénéficie prix bas moyen terme (nucléaire stable), mais risque pics hivernaux imprévisibles (2-3 fois/hiver). Contrats couvrant hiver obligatoires, pas court terme.",
+    "word_count": 99,
+    "chunk_index": 5
+  },
+  {
+    "chunk_id": "MARCHE_ENERGIE_2025_chunk_6",
+    "doc_id": "MARCHE_ENERGIE_2025",
+    "section_path": "A. Mécanisme ARENH (1er juillet 2011 - 31 décembre 2025)",
+    "anchor": "#a-mcanisme-arenh-1er-juillet-2011---31-dcembre-2025",
+    "text": "Fonctionnement clé : \n- Fournisseurs alternatifs (Engie, Eni, Vattenfall, etc.) peuvent acheter électricité nucléaire EDF à prix régulé 42€/MWh \n- Volume plafonné 100 TWh/an (~25% production nucléaire) \n- Reste à prix marché (quand >100 TWh, écrêtement au prorata) \n- Prix fixe depuis 2012, jamais révisé upward—créait avantage concurrentiel fournisseurs \n\nImpact concurrence : \n- EDF : penalisée (vend nucléaire à 42€ vs marché 55-75€) → revenus insuffisants entretien parc \n- Fournisseurs alternatifs : profitent accès bon marché, peuvent agresser tarifs petits clients \n- Consommateurs : illusion protection (ARENH favorise churn, mais factures resteraient hautes marché) \n- UE : juge dispositif dépassé, crée distorsion concurrence intra-UE",
+    "word_count": 104,
+    "chunk_index": 6
+  },
+  {
+    "chunk_id": "MARCHE_ENERGIE_2025_chunk_7",
+    "doc_id": "MARCHE_ENERGIE_2025",
+    "section_path": "B. Remplacement : Versement Nucléaire Universel (VNU) - 1er janvier 2026",
+    "anchor": "#b-remplacement-versement-nuclaire-universel-vnu---1er-janvier-2026",
+    "text": "Mécanisme nouveau : \n- EDF vend toute sa production nucléaire au prix de marché (~70€/MWh en 2025-26) \n- État prélève revenus excédentaires via VNU progressif : \n- Entre +5 et +25€/MWh au-dessus coût complet : 50% des revenus prélevés \n- Au-delà +25€/MWh : jusqu’à 90% des revenus (si dépasse 115€/MWh) \n- Montant total redistribué à tous les consommateurs en réduction facture (indépendant fournisseur) \n- Incertitude critique : seuils exacts (coût complet de référence, taux réduction par profil) non finalisés décembre 2025 \n\nImpact fournisseurs B2B : \n- Fin accès nucléaire régulé = augmentation coûts d’approvisionnement immédiate \n- Alternative 1 : Contrats CAPN (Contrats Approvisionnement Pluriannuel Nucléaire) avec EDF (long terme, > volumes, participation risques) \n- Réservés industries électro-intensives \n- Enchères prévues mais calendrier flou (H1 2026?) \n- Pas accessible PME tertiaires \n- Alternative 2 : Marché de gros (spot 1-3 mois, futures 1-5 ans) = maximum exposition volatilité \n- Alternative 3 : PPA renouvelables (10-25 ans fixes) = sécurité long terme \n\nScénario 2026 : Si marché reste 55-60€/MWh, VNU NE SE DÉCLENCHE PAS. Fournisseurs paient EDF ~70€/MWh de base, VNU = zéro réduction. Cela signifie : factures entreprises resteraient stables 2025-26 via VNU redistribution, mais structures de coûts fournisseurs changent radicalement. \n\nImplication PROMEOS : \n- Fournisseurs alternatifs devront augmenter prix ou réduire marges → compétition moins agressive post-2026 \n- Opportunité négocier contrats 3-5 ans AVANT fin ARENH (décembre 2025) pour sécuriser tarifs transitoires \n- Après décembre 2025 : contrats devront intégrer risque VNU + volatilité marché = prix plus élevé \n- CAPN accès nucléaire : non pertinent PROMEOS (pas électro-intensif), mais comprendre calendrier aide négociation avec fournisseurs",
+    "word_count": 266,
+    "chunk_index": 7
+  },
+  {
+    "chunk_id": "MARCHE_ENERGIE_2025_chunk_8",
+    "doc_id": "MARCHE_ENERGIE_2025",
+    "section_path": "C. Autres Dispositifs Post-ARENH",
+    "anchor": "#c-autres-dispositifs-post-arenh",
+    "text": "Extension TRV (Tarif Réglementé Vente) à PME : \n- PME <10 salariés, CA <2M€ : accès TRV étendu (indépendamment niveau consommation) \n- Impact limité PROMEOS (tertiaire souvent >36 kVA actuels) \n\nContrats moyen terme (4-5 ans) : \n- Deviennent norme post-ARENH pour PME/ETI tertiaires \n- Niveaux de prix attendus : ~65-85€/MWh (vs 42€ ARENH ancien) \n- Pertinent PROMEOS : stratégie hybriding (10% court terme spot, 20% moyen terme fixes, 70% long terme PPA) limite expositions pics",
+    "word_count": 75,
+    "chunk_index": 8
+  },
+  {
+    "chunk_id": "MARCHE_ENERGIE_2025_chunk_9",
+    "doc_id": "MARCHE_ENERGIE_2025",
+    "section_path": "A. Opportunités",
+    "anchor": "#a-opportunits",
+    "text": "1. Repositionnement offres post-ARENH \n- Clients actuels ARENH doivent renouveler contrats fin 2025 = fenêtre fidélisation agressive \n- Proposition valeur : courtage transition (explique VNU, CAPN, alternatives), accompagnement renegotiation \n\n2. Hybridation portefeuilles clients \n- Fournisseur peut proposer portefeuille diversifié : court terme (spot hedge, volatilité) + moyen (3-5 ans fixes) + long terme (PPA) \n- Limite concentration risque pour client, sécurise revenus fournisseur \n\n3. PPA comme arme commerciale \n- Croissance rapide : 1,2 GW contractualisées début 2025 (600 MW en 2024) \n- Prix attractifs : 65-85€/MWh sur 10-15 ans (vs 55€/MWh spot aujourd’hui, risque pics 360€/MWh) \n- Durée longue : 15-25 ans standard = visibilité décennies , atout concurrentiel immense \n- Clientèle : grandes entreprises (Bouygues, industriels), collectivités, PME conscientes risques \n\n4. Décret tertiaire comme levier vente \n- Clients immobilier tertiaire doivent réduire -40% consommation 2030 = rénovent équipements \n- Rénovation = réduction consommation 20-30% = opportunité renégocier fourniture à baisse \n- Fournisseur peut proposer : audit énergétique + recommandations rénovation + contrat post-rénovation (baisse volume consommé) \n\n5. Décret BACS (Building Automation Control Systems) \n- Obligation GTB/GTC installations >290 kW = nouveaux clients automation energie \n- Fournisseur peut intégrer monitoring → propose optimisation opéex = valeur ajoutée",
+    "word_count": 197,
+    "chunk_index": 9
+  },
+  {
+    "chunk_id": "MARCHE_ENERGIE_2025_chunk_10",
+    "doc_id": "MARCHE_ENERGIE_2025",
+    "section_path": "B. Risques",
+    "anchor": "#b-risques",
+    "text": "1. Barrière entrée élevée post-ARENH \n- Fournisseurs alternatifs perdent régulation ARENH = coûts approvisionnement augmentent 28€/MWh (de 42 à 70€ base) \n- Doivent se refinancer sur marché futures (1-5 ans) ou négocier CAPN (industriels only) ou investir PPA \n- Impact : consolidation marché fournisseurs (petits joueurs disparaissent) \n\n2. Volatilité marché limite compétitivité \n- Pics allemands 360€/MWh + déficit hivernaux français = prix imprédictibles \n- Fournisseurs ne peuvent garantir prix court terme, donc offrent moins de rabais = client cherche ailleurs \n- Contrats longs (3-5 ans) deviennent obligatoires, pas optionnels \n\n3. PPA compétition \n- Producteurs renouvelables (Engie, EDF Renew, indépendants) signent PPA directement clients = court-circuit fournisseurs traditionnels \n- Marge compression pour distributeurs électricité si pas propres assets PPA \n\n4. Interventionnisme État \n- VNU seuils à définir = risque politique. Si gouvernement plus tard juge VNU insuffisant, peut imposer contrôle prix = marge fournisseurs réduite \n- Exemple : UK, Espagne ont aussi dû arbitrer politique énergétique = volatilité réglementaire",
+    "word_count": 158,
+    "chunk_index": 10
+  },
+  {
+    "chunk_id": "MARCHE_ENERGIE_2025_chunk_11",
+    "doc_id": "MARCHE_ENERGIE_2025",
+    "section_path": "C. Stratégies Recommandées Fournisseurs",
+    "anchor": "#c-stratgies-recommandes-fournisseurs",
+    "text": "Court terme (avant décembre 2025) : \n1. Offensive fidélisation clients ARENH : courtage transition + offres moyen terme sécurisées \n2. Portfolio PPA : si pas existants, conclure alliances producteurs renouvelables pour offrir mix \n3. GTB/GTC consulting : former equipes décret BACS, proposer service intégré monitoring \n\nMoyen terme (2026-2027) : \n1. Modèle CAPN : si client électro-intensif, accompagner dossier CAPN (même si fournisseur n’est pas EDF, valeur ajoutée courtage) \n2. Contrats évolutifs : prix avec clauses RPI (inflation-linked) plutôt qu’absolus, atténue volatilité \n3. Efficacité énergétique : accompagnement rénovation décret tertiaire → baisse volume = réduction facture = fidélisation",
+    "word_count": 97,
+    "chunk_index": 11
+  },
+  {
+    "chunk_id": "MARCHE_ENERGIE_2025_chunk_12",
+    "doc_id": "MARCHE_ENERGIE_2025",
+    "section_path": "A. Audit Énergie par Périmètre",
+    "anchor": "#a-audit-nergie-par-primtre",
+    "text": "Portfeuille type PROMEOS (hypothèse) : \n- 50-200 sites tertiaires (bureaux, commerces, logistique) \n- Surface moyenne par site : 3 000-10 000 m² (assujettis décret tertiaire) \n- Consommation électricité : 200-250 kWh/m²/an (avant rénovation) \n- Consommation gaz : 100-150 kWh/m²/an (chauffage, ECS) \n\nCoûts énergétiques estimés : \n| Flux | kWh/m²/an | €/kWh (dec 2025) | €/m²/an | Impact 100 sites 50 000m² | \n|—|—|—|—|—| \n| Électricité | 200 | 0,195 (TTC) | 39€ | 1,95M€ | \n| Gaz | 100 | 0,1117 (T2 repère) | 11,17€ | 559k€ | \n| TOTAL | 300 | - | 50€ | 2,51M€ | \n\nVariation 2025 vs 2024 : \n- Électricité : baisse -22,4% = économie 440k€ (50 000 m² / 100 sites) \n- Gaz : structure tarifaire change (TVA +14,5% abonnements) = HAUSSE +3-5% = surcoût 17-28k€ \n- NET 2025 : économie ~415k€ \n\nOpportunité redéploiement : ~415k€ d’économies 2025 → redéployer immédiatement en rénovation décret tertiaire (optimise amortissement, satisfait objectifs -40% 2030).",
+    "word_count": 158,
+    "chunk_index": 12
+  },
+  {
+    "chunk_id": "MARCHE_ENERGIE_2025_chunk_13",
+    "doc_id": "MARCHE_ENERGIE_2025",
+    "section_path": "B. Contrats Énergie : Recommandations Stratégiques",
+    "anchor": "#b-contrats-nergie-recommandations-stratgiques",
+    "text": "Etat actuel (décembre 2025) : \n- Contrats ARENH expirent 31 décembre 2025 \n- Plupart clients sur offres court terme (spot, 1-12 mois) ou 1-2 ans \n- Fournisseurs réticents long terme (incertitude VNU) \n\nActions urgentes janvier-février 2026 : \n\nÉtape 1 : Diagnostiquer portefeuille \n- Lister tous contrats énergie par site, échéance \n- Identifier sites critiques (gros consommateurs, contrats expirant Q1 2026) \n- Classer par profil : PME tertiaire (T2) vs gros consommateurs (T3/T4) \n\nÉtape 2 : Stratégie d’achat hybride (recommandé) \n- Petit lot 10% court terme (spot 1-3 mois) : flexibilité, coûts variables \n- Lot moyen 20% moyen terme (3-5 ans fixes) : sécurité partielle, prix ~65-75€/MWh (électricité) \n- Lot principal 70% long terme : PPA renouvelables (10-25 ans) OU contrats CAPN si éligible (industriels) \n\nRationalisation moyen terme : \n| Contrat | Horizon | Volume % | Tarif estimé 2026 | Avantage | \n|—|—|—|—|—| \n| Spot | 1-3 mois | 10% | 60-80€/MWh variable | Flexibilité | \n| Moyen | 3-5 ans | 20% | 70-75€/MWh fixe | Sécurité partielle | \n| PPA solaire | 10-15 ans | 40% | 68-75€/MWh fixe | Long terme stable | \n| PPA éolien | 15-25 ans | 30% | 65-72€/MWh fixe | Très long terme | \n| CAPN | (si industriel) | - | Subnégotié EDF | Accès nucléaire | \n\nAvantage mix : limite exposition volatilité, moyenne coûts sur spectre temporel, permet ajustement si gestion courante change. \n\nÉtape 3 : Engagement immédiat (janvier-février 2026 ) \n- Lancer appels offres fournisseurs pour contrats 3-5 ans (moyen terme) \n- Parallel : explorer PPA avec producteurs renouvelables (durée plus longue, délai signature 3-4 mois) \n- Sécuriser court terme (spot) avec clauses exit (au cas où PPA ou moyen terme échouent négociation) \n\nÉtape 4 : Suivi VNU (H1 2026) \n- Une fois seuils VNU fixés, recalculer économies/pénalités par scénario prix \n- Ajuster mix si VNU crée arbitrage nouveau (ex : si VNU très favorable, peut allonger short term)",
+    "word_count": 320,
+    "chunk_index": 13
+  },
+  {
+    "chunk_id": "MARCHE_ENERGIE_2025_chunk_14",
+    "doc_id": "MARCHE_ENERGIE_2025",
+    "section_path": "C. Décret Tertiaire : Fenêtre Investissement Ouverte",
+    "anchor": "#c-dcret-tertiaire-fentre-investissement-ouverte",
+    "text": "Opportunité coïncidence timing : \n1. Baisse prix électricité 2025 (~415k€/50 000m² économies) \n2. Décret tertiaire 2030 (-40% obligation) \n3. Financements CEE/MaPrimeRénov disponibles \n4. Contrats énergie doivent se renouveler = négociation haut du levier \n\nScénario d’investissement optimal : Phase Action Coût estimé ROI Optimisation exploitation Gestion active, GTB pilotage 50k€/site 2-3 ans Équipements LED, échangeurs, GTB auto 150k€/site 5-7 ans Isolation Isolation murs/toiture 200k€/site 8-12 ans \n\nPrioriser : sites T1 (top 20% consommateurs). Investir phases 1-2 avant 2028, laisser phase 3 si besoin post-2028. \n\nFinancement mix : CEE 15-20% + MaPrimeRénov 10-15% + autofinancement 65-70% (économies 2025 aident)",
+    "word_count": 97,
+    "chunk_index": 14
+  },
+  {
+    "chunk_id": "MARCHE_ENERGIE_2025_chunk_15",
+    "doc_id": "MARCHE_ENERGIE_2025",
+    "section_path": "D. Risques Spécifiques PROMEOS",
+    "anchor": "#d-risques-spcifiques-promeos",
+    "text": "1. Volatilité hivernale \n- Hiver 2025-26 : si vague froid intense + peu vent → pics prix 200-300€/MWh possibles \n- Contrats court terme découverts = surcoûts brutaux \n- Mitigation : bloquer 70% consommation en contrats long terme AVANT hiver \n\n2. Décret BACS obligation accélérée \n- Si gouvernement accélère calendrier, sites >290 kW doivent installer GTB/GTC plus tôt \n- CAPEX supplémentaire non budgété = contrainte cashflow \n- Surveillance : décrets d’application BACS (attendus H1 2026) \n\n3. Budget MaPrimeRénov gelé (2025) \n- Absence loi finances 2025 retarde paiements dossiers \n- Dossiers déposés 2024-2025 risquent délais impactant cashflow \n- Stratégie : prioriser financements CEE (plus rapides, 60j) vs MaPrimeRénov (plus lents) \n\n4. Interconnexions France-Allemagne \n- Si Allemagne crise EnRi hiver severe → France doit exporter nucléaire = pics prix touchent PROMEOS \n- Impossible prévoir, mais contrats longs réduisent exposition",
+    "word_count": 136,
+    "chunk_index": 15
+  },
+  {
+    "chunk_id": "MARCHE_ENERGIE_2025_chunk_16",
+    "doc_id": "MARCHE_ENERGIE_2025",
+    "section_path": "E. Opportunités à Court Terme (6-12 mois)",
+    "anchor": "#e-opportunits-court-terme-6-12-mois",
+    "text": "1. Renegotiation fournisseurs \n- Clients ARENH doivent renouveler = opportunité prix aggressifs (fournisseurs veulent fidéliser) \n- Appel offres multi-fournisseurs : 3-5 anscontrats à 65-75€/MWh électricité (baisse vs ARENH 70€ équivalent post-markup) \n\n2. PPA adoption \n- Marché PPA mature début 2025 (1,2 GW contractualisées, prix 65-85€/MWh) \n- Accès facilité PME/ETI tertiaires via structures tiers-investissement ou crédit-bail \n- Délai signature : 3-4 mois pour sites <50 000 m² multi-site \n\n3. Valeur patrimoniale \n- Sites rénové (décret tertiaire -40%) = attractivité occupants + prime valeur + facilité refinancement \n- ROI immobilier 5-8% sup. pour bâtiments conformes vs non-rénové",
+    "word_count": 95,
+    "chunk_index": 16
+  },
+  {
+    "chunk_id": "MARCHE_ENERGIE_2025_chunk_17",
+    "doc_id": "MARCHE_ENERGIE_2025",
+    "section_path": "Phase 1 : Immediate (Janvier-Février 2026)",
+    "anchor": "#phase-1-immediate-janvier-fvrier-2026",
+    "text": "Gouvernance énergétique \n- Désigner responsable unique « transition post-ARENH » (reporting mensuel) \n- Audit interne contrats existants + chronogramme expirations \n\nPortefeuille contracting \n- Lancer appel offres fournisseurs pour 3-5 ans (moyen terme) : cible prix 70€/MWh (électricité) \n- Identifier 5-10 sites PPA pilotes : combiner avec rénovation (baisse volume post-réno = meilleur PPA terms) \n\nPréparation décret tertiaire \n- Commencer audit énergétique sites critiques (top 20%) \n- Budgéter rénovation phases 1-2 (optimisation + équipements) pour 2026-2028",
+    "word_count": 75,
+    "chunk_index": 17
+  },
+  {
+    "chunk_id": "MARCHE_ENERGIE_2025_chunk_18",
+    "doc_id": "MARCHE_ENERGIE_2025",
+    "section_path": "Phase 2 : Court Terme (Février-Juin 2026)",
+    "anchor": "#phase-2-court-terme-fvrier-juin-2026",
+    "text": "Signature contrats \n- Finaliser 3-5 ans moyen terme (Février-Mars) \n- Lancer PPA pour pilotes (délai 3-4 mois signature) \n- Sécuriser court terme spot (clause flexibilité) \n\nDécret tertiaire \n- Déclaration 2025 sur OPERAT (30 sept 2026) : préparer dossiers \n- Dossiers modulation si nécessaire (justifier impossibilité atteinte -40%) \n- Lancer rénovations phase 1 (optimisation exploitation, GTB) \n\nVNU monitoring \n- Suivre décrets d’application VNU (attendus H1 2026) \n- Recalculer scénarios selon seuils VNU finalisés",
+    "word_count": 72,
+    "chunk_index": 18
+  },
+  {
+    "chunk_id": "MARCHE_ENERGIE_2025_chunk_19",
+    "doc_id": "MARCHE_ENERGIE_2025",
+    "section_path": "Phase 3 : Moyen Terme (Juillet 2026-2027)",
+    "anchor": "#phase-3-moyen-terme-juillet-2026-2027",
+    "text": "Décret tertiaire éxecution \n- Lancercrénovations phases 2-3 selon budget/priorités \n- Suivi consommations : dashboard équipe interne \n- Renouvellement contrats énergie anticipant -20 à -30% volumes post-réno \n\nPortfolio énergétique \n- Évaluer renégociation moyen terme si PPA lancés (potentiel réduction prix second contrat) \n- Ajuster mix court/moyen/long selon réalité VNU et volatilité observée",
+    "word_count": 51,
+    "chunk_index": 19
+  },
+  {
+    "chunk_id": "MARCHE_ENERGIE_2025_chunk_20",
+    "doc_id": "MARCHE_ENERGIE_2025",
+    "section_path": "VIII. ACTIONS CONCRÈTES NOTION",
+    "anchor": "#viii-actions-concrtes-notion",
+    "text": "Créer sections Notion :",
+    "word_count": 4,
+    "chunk_index": 20
+  },
+  {
+    "chunk_id": "MARCHE_ENERGIE_2025_chunk_21",
+    "doc_id": "MARCHE_ENERGIE_2025",
+    "section_path": "Section 1 : Benchmark Énergétique",
+    "anchor": "#section-1-benchmark-nergtique",
+    "text": "- Tableau contrats énergie (site, échéance, prix, volume) \n- Calcul ROI rénovation par site (coûts vs économies énergétiques) \n- Suivi consommations (tendances, comparaisons année/année)",
+    "word_count": 24,
+    "chunk_index": 21
+  },
+  {
+    "chunk_id": "MARCHE_ENERGIE_2025_chunk_22",
+    "doc_id": "MARCHE_ENERGIE_2025",
+    "section_path": "Section 2 : Stratégie Contrats Post-ARENH",
+    "anchor": "#section-2-stratgie-contrats-post-arenh",
+    "text": "- Fournisseurs qualifiés (appel offres résultats) \n- Calendrier signature (court/moyen/long terme) \n- Mix prévisionnel (10% court, 20% moyen, 70% long)",
+    "word_count": 20,
+    "chunk_index": 22
+  },
+  {
+    "chunk_id": "MARCHE_ENERGIE_2025_chunk_23",
+    "doc_id": "MARCHE_ENERGIE_2025",
+    "section_path": "Section 3 : Décret Tertiaire 2030",
+    "anchor": "#section-3-dcret-tertiaire-2030",
+    "text": "- Audit énergétique sites (kWh/m² actuel, cible 2030, gap) \n- Budget rénovations phases 1-2-3 \n- Dossiers déclaration OPERAT + modulation (si applicable)",
+    "word_count": 22,
+    "chunk_index": 23
+  },
+  {
+    "chunk_id": "MARCHE_ENERGIE_2025_chunk_24",
+    "doc_id": "MARCHE_ENERGIE_2025",
+    "section_path": "Section 4 : Monitorage Marché",
+    "anchor": "#section-4-monitorage-march",
+    "text": "- Prix spot électricité/gaz (mise à jour hebdo) \n- Statut VNU seuils (suivre décrets H1 2026) \n- Alerte fournisseurs (nouvelles offres, changements marché)",
+    "word_count": 23,
+    "chunk_index": 24
+  },
+  {
+    "chunk_id": "MARCHE_ENERGIE_2025_chunk_25",
+    "doc_id": "MARCHE_ENERGIE_2025",
+    "section_path": "CONCLUSION",
+    "anchor": "#conclusion",
+    "text": "2025-2026 marque un tournant critique pour la stratégie énergétique PROMEOS. La baisse prix électricité offre fenêtre de consolidation (réductions factures = marge opéra libérée). Parallèlement, fin ARENH exige repositionnement urgent : fournisseurs alternatifs perdent accès nucléaire régulé, marché bascule à équilibre VNU + PPA + volatilité EnRi allemande. \n\nAction clé immédiate : bloquer 70% consommation électricité en contrats long terme (PPA ou moyen terme 3-5 ans) AVANT fin ARENH (31 décembre 2025). Délai critique : appels offres fournisseurs janvier-février 2026. Après décembre 2025, prix structurellement plus élevés (+28€/MWh base nucléaire). \n\nFenêtre rénovation décret tertiaire : aligner rénovation phases 1-2 (2026-2028) avec baisse prix 2025 et financements CEE/MaPrimeRénov. ROI accéléré, prime valeur patrimoniale, conformité réglementaire 2030 sécurisée. \n\nSurveillance : VNU seuils (H1 2026), BACS calendrier, MaPrimeRénov budgets (loi rectificative attendue Q1 2026). \n\nDocument préparé janvier 2026 | Analyse marchés spot France/Europe, législation VNU/ARENH, décret tertiaire",
+    "word_count": 144,
+    "chunk_index": 25
+  }
+]

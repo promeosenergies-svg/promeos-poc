@@ -73,8 +73,8 @@ function ImportPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">
-      <h1 className="text-2xl font-bold text-gray-800 mb-2">Importer des fichiers</h1>
-      <p className="text-gray-500 mb-8">Importez vos sites via un fichier CSV ou chargez les donnees de demonstration.</p>
+      <h1 className="text-2xl font-bold text-gray-800 mb-2">Imports</h1>
+      <p className="text-gray-500 mb-8">Fichiers, CSV, historiques & contrôles</p>
 
       {/* Demo seed button */}
       <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-8 flex items-center justify-between">

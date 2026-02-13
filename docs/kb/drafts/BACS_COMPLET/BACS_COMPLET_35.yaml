@@ -1,0 +1,48 @@
+id: BACS_COMPLET_35
+type: rule
+domain: usages
+title: Cahier des charges
+summary: '- ⬜ Zones fonctionnelles identifiées (bureaux, halls, RDC, etc) – usage
+  homogène par zone
+
+  - ⬜ Systèmes à embarquer listés : chauffage, climatisation, ventilation, ECS, éclairage,
+  production élec (oui/...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: '- ⬜ Zones fonctionnelles identifiées (bureaux, halls, RDC, etc) – usage
+  homogène par zone
+
+  - ⬜ Systèmes à embarquer listés : chauffage, climatisation, ventilation, ECS, éclairage,
+  production élec (oui/non)
+
+  - ⬜ Niveaux automatisation définis (régulation seule vs optimisation vs prédictif)
+
+  - ⬜ Architecture BACS spécifiée (centralisée / distribuée / hybride)
+
+  - ⬜ Interopérabilité exigée (normes ouvertes demandées : BACnet, Modbus, Z-Wave,
+  etc)
+
+  - ⬜ Archivage 5 ans données spécifié (capacité stockage, accès propriétaire)
+
+  - ⬜ Formation exploitant incluse dans scope (nombre jours, sujets)'
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Cahier des charges
+  anchor: '#cahier-des-charges'
+  excerpt_short: '- ⬜ Zones fonctionnelles identifiées (bureaux, halls, RDC, etc)
+    – usage homogène par zone
+
+    - ⬜ Systèm...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

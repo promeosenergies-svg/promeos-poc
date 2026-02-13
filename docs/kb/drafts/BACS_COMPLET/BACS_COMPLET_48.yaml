@@ -1,0 +1,38 @@
+id: BACS_COMPLET_48
+type: knowledge
+domain: reglementaire
+title: Amélioration continue
+summary: '- ⬜ Bilan annuel énergie vs objectifs (économies réelles vs prévisions)
+
+  - ⬜ Recommandations mises en œuvre évaluées (gain mesurable ?)
+
+  - ⬜ Nouvelles optimisations identifiées (ex : occupancy sensors p...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: '- ⬜ Bilan annuel énergie vs objectifs (économies réelles vs prévisions)
+
+  - ⬜ Recommandations mises en œuvre évaluées (gain mesurable ?)
+
+  - ⬜ Nouvelles optimisations identifiées (ex : occupancy sensors pour éclairage)
+
+  - ⬜ Investissements futurs justifiés sur base données BACS (TRI moyen terme)'
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Amélioration continue
+  anchor: '#amlioration-continue'
+  excerpt_short: '- ⬜ Bilan annuel énergie vs objectifs (économies réelles vs prévisions)
+
+    - ⬜ Recommandations mises en...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

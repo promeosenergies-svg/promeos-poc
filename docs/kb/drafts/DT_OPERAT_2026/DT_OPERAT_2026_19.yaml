@@ -1,0 +1,33 @@
+id: DT_OPERAT_2026_19
+type: checklist
+domain: reglementaire
+title: Non-déclaration ou déclaration incomplète sur OPERAT
+summary: "Processus : \n- Mise en demeure envoyée par le préfet → délai 3 mois pour\
+  \ régulariser \n- Publication « Name and Shame » sur site officiel si non-respect\
+  \ après mise en demeure \n- Amende administrative (..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Processus : \n- Mise en demeure envoyée par le préfet → délai 3 mois\
+  \ pour régulariser \n- Publication « Name and Shame » sur site officiel si non-respect\
+  \ après mise en demeure \n- Amende administrative (après procédure contradictoire)\
+  \ \n\nMontant : Jusqu’à 7 500 € pour personne morale (par EFA en infraction) 43\
+  \ 44"
+logic: null
+sources:
+- doc_id: DT_OPERAT_2026
+  label: Decret Tertiaire / OPERAT - Obligations 2026
+  section: Non-déclaration ou déclaration incomplète sur OPERAT
+  anchor: '#non-dclaration-ou-dclaration-incomplte-sur-operat'
+  excerpt_short: "Processus : \n- Mise en demeure envoyée par le préfet → délai 3\
+    \ mois pour régulariser \n- Publication ..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

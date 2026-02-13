@@ -1,0 +1,29 @@
+id: FLEX_EFFACEMENT_28
+type: knowledge
+domain: reglementaire
+title: 4.6 Stacking
+summary: '✅ Possible : MA + Réserves + Capacité + NEBEF (cohérence priorités, ex.
+  réserves activées > offres MA).'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: '✅ Possible : MA + Réserves + Capacité + NEBEF (cohérence priorités, ex.
+  réserves activées > offres MA).'
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: 4.6 Stacking
+  anchor: '#46-stacking'
+  excerpt_short: '✅ Possible : MA + Réserves + Capacité + NEBEF (cohérence priorités,
+    ex. réserves activées > offres M...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

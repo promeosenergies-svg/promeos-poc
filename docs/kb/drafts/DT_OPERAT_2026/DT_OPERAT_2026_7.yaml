@@ -1,0 +1,36 @@
+id: DT_OPERAT_2026_7
+type: knowledge
+domain: reglementaire
+title: Échéances de déclaration annuelle Année de consommation Date limite de dépôt
+  Statut 2024 30 septembre 2025 En cours 2025 30 septembre 2026 Prochaine échéance
+  2026–2030 30 septembre (N+1) Annuel jusqu’à bilan 2030
+summary: 'Important : Après le 1er juillet 2026 , l’utilisation de l’ attestation
+  numérique OPERAT (modèle standardisé intégré à la plateforme) devient obligatoire
+  en lieu et place des anciens modèles PDF manue...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Important : Après le 1er juillet 2026 , l’utilisation de l’ attestation\
+  \ numérique OPERAT (modèle standardisé intégré à la plateforme) devient obligatoire\
+  \ en lieu et place des anciens modèles PDF manuels. 15 \n\nSource : Arrêté du 1er\
+  \ août 2025 (modifications OPERAT) ; ADEME 16 17"
+logic: null
+sources:
+- doc_id: DT_OPERAT_2026
+  label: Decret Tertiaire / OPERAT - Obligations 2026
+  section: Échéances de déclaration annuelle Année de consommation Date limite de
+    dépôt Statut 2024 30 septembre 2025 En cours 2025 30 septembre 2026 Prochaine
+    échéance 2026–2030 30 septembre (N+1) Annuel jusqu’à bilan 2030
+  anchor: '#chances-de-dclaration-annuelle-anne-de-consommation-date-limite-de-dpt-statut-2024-30-septembre-2025-en-cours-2025-30-septembre-2026-prochaine-chance-20262030-30-septembre-n1-annuel-jusqu-bilan-2030'
+  excerpt_short: 'Important : Après le 1er juillet 2026 , l’utilisation de l’ attestation
+    numérique OPERAT (modèle sta...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

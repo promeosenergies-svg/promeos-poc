@@ -1,0 +1,31 @@
+id: STRATEGIE_NEBCO_0
+type: knowledge
+domain: reglementaire
+title: Opportunités, Risques & Décisions Go/No-Go — Flexibilité Électrique France
+  2025
+summary: "Analyste: PROMEOS Research & Markets \nDate: 22 janvier 2026 \nClassification:\
+  \ Confidentiel — Décision Exécutive"
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Analyste: PROMEOS Research & Markets \nDate: 22 janvier 2026 \nClassification:\
+  \ Confidentiel — Décision Exécutive"
+logic: null
+sources:
+- doc_id: STRATEGIE_NEBCO
+  label: Analyse strategique NEBCO
+  section: Opportunités, Risques & Décisions Go/No-Go — Flexibilité Électrique France
+    2025
+  anchor: '#opportunits-risques-dcisions-gono-go-flexibilit-lectrique-france-2025'
+  excerpt_short: "Analyste: PROMEOS Research & Markets \nDate: 22 janvier 2026 \n\
+    Classification: Confidentiel — Décision..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

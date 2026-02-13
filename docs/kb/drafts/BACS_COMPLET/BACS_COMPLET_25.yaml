@@ -1,0 +1,39 @@
+id: BACS_COMPLET_25
+type: knowledge
+domain: reglementaire
+title: Coûts typiques inspection BACS (données marché 2025) Type bâtiment Taille BACS
+  Durée insp. Coût HT approx. PME tertiaire simple 1 site, 1-2 systèmes 4-6h 1 500
+  – 2 000€ Immeuble moyen 1 site, 3-4 systèmes, multi-zones 6-8h 2 000 – 3 000€ Grand
+  tertiaire 1 site complexe OU multi-sites pilotage 8-12h 3 000 – 5 000€ Portfolio
+  multi-sites (x10 sites) Audit global + inspections coordonnées 40-60h 12 000 – 20
+  000€ (économies d’échelle)
+summary: 'Remarque : Aides possibles (CEE audit, partenaires GTB) peuvent couvrir
+  30-50% inspection.'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: 'Remarque : Aides possibles (CEE audit, partenaires GTB) peuvent couvrir
+  30-50% inspection.'
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Coûts typiques inspection BACS (données marché 2025) Type bâtiment Taille
+    BACS Durée insp. Coût HT approx. PME tertiaire simple 1 site, 1-2 systèmes 4-6h
+    1 500 – 2 000€ Immeuble moyen 1 site, 3-4 systèmes, multi-zones 6-8h 2 000 – 3
+    000€ Grand tertiaire 1 site complexe OU multi-sites pilotage 8-12h 3 000 – 5 000€
+    Portfolio multi-sites (x10 sites) Audit global + inspections coordonnées 40-60h
+    12 000 – 20 000€ (économies d’échelle)
+  anchor: '#cots-typiques-inspection-bacs-donnes-march-2025-type-btiment-taille-bacs-dure-insp-cot-ht-approx-pme-tertiaire-simple-1-site-1-2-systmes-4-6h-1-500-2-000-immeuble-moyen-1-site-3-4-systmes-multi-zones-6-8h-2-000-3-000-grand-tertiaire-1-site-complexe-ou-multi-sites-pilotage-8-12h-3-000-5-000-portfolio-multi-sites-x10-sites-audit-global-inspections-coordonnes-40-60h-12-000-20-000-conomies-dchelle'
+  excerpt_short: 'Remarque : Aides possibles (CEE audit, partenaires GTB) peuvent
+    couvrir 30-50% inspection....'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

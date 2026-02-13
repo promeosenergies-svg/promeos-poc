@@ -1,0 +1,28 @@
+id: STRATEGIE_NEBCO_5
+type: knowledge
+domain: reglementaire
+title: Formule Revenue Revenue Annuel (Net) ≈ Σ [ Énergie Modulée (MWh) × Spread (€/MWh)
+  × Taux Réussite (%) ]
+summary: − Pénalités − Agrégateur Margin − Coûts IT − Frais PROMEOS
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: − Pénalités − Agrégateur Margin − Coûts IT − Frais PROMEOS
+logic: null
+sources:
+- doc_id: STRATEGIE_NEBCO
+  label: Analyse strategique NEBCO
+  section: Formule Revenue Revenue Annuel (Net) ≈ Σ [ Énergie Modulée (MWh) × Spread
+    (€/MWh) × Taux Réussite (%) ]
+  anchor: '#formule-revenue-revenue-annuel-net-nergie-module-mwh-spread-mwh-taux-russite-'
+  excerpt_short: − Pénalités − Agrégateur Margin − Coûts IT − Frais PROMEOS...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

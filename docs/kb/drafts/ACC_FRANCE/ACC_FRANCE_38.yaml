@@ -1,0 +1,37 @@
+id: ACC_FRANCE_38
+type: knowledge
+domain: reglementaire
+title: Success Metrics (KPIs)
+summary: "Product : \n- DAU (daily active PMO users) : target 50% of customers by\
+  \ M12 \n- Time-to-value : 90% of onboarded ops live in <30d (vs 4m before) \n- Feature\
+  \ adoption : clés auto-notify = 70%+ by M12; sha..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Product : \n- DAU (daily active PMO users) : target 50% of customers\
+  \ by M12 \n- Time-to-value : 90% of onboarded ops live in <30d (vs 4m before) \n\
+  - Feature adoption : clés auto-notify = 70%+ by M12; shadow bill = 40%+ by M18 \n\
+  \nBusiness : \n- CAC payback : <12 months (assuming €300/mth ARPU) \n- NPS : target\
+  \ 45+ (SMB SaaS median ~30) \n- Churn : <5% MoM (target, vs industry 3–7%) \n- Expansion\
+  \ revenue : 15% (upsell Optim to 20% of base) \n\nMarket Impact : \n- Opérations\
+  \ onboardées (cumul.) : 100 by M6, 500 by M12, 2,000 by M24 \n- Power additionnal\
+  \ enabled : 50 MWc by M12, 300 MWc by M24 (vs 110 MWc baseline 2025) \n- Estimated\
+  \ contribution to market growth (Central scenario) : 25–35%"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: Success Metrics (KPIs)
+  anchor: '#success-metrics-kpis'
+  excerpt_short: "Product : \n- DAU (daily active PMO users) : target 50% of customers\
+    \ by M12 \n- Time-to-value : 90% of..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

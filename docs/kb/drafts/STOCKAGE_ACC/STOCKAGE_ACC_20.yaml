@@ -1,0 +1,44 @@
+id: STOCKAGE_ACC_20
+type: knowledge
+domain: acc
+title: H.3 Architecture Cible EMS + Fonctionnalités Clés
+summary: "Composants Logiciels Minimum : \n- Connectivité Données (cloud AWS/Azure/OVH)\
+  \ \n- API Enedis Data Connect (OAuth2, refresh token) \n- Stockage time-series données\
+  \ 15-min (InfluxDB, TimescaleDB) \n- Webhoo..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Composants Logiciels Minimum : \n- Connectivité Données (cloud AWS/Azure/OVH)\
+  \ \n- API Enedis Data Connect (OAuth2, refresh token) \n- Stockage time-series données\
+  \ 15-min (InfluxDB, TimescaleDB) \n- Webhook alertes (Slack, email) \n- Logique\
+  \ Métier \n- Calcul clé répartition (template Excel → moteur Python/SQL) \n- Optimisation\
+  \ batterie (heuristique ou MPC) \n- Facturation & settlement (PDF generation, SEPA)\
+  \ \n- Indicateurs KPI (TAc, TAp, cycles, LCOE) \n- Interface Utilisateur \n- Cockpit\
+  \ PMO (React/Vue dashboard temps-réel) \n- Portail participant (authenticated, vue\
+  \ personnelle) \n- Admin panel (gestion clé, alertes, users) \n- Infrastructure\
+  \ \n- Serveur VPS 4 vCPU, 16 GB RAM (100–200 €/mois) \n- Certificats SSL/TLS \n\
+  - Backup quotidien \n\nCoûts SaaS Estimation : Rubrique Startup Interne Service\
+  \ Tiers Développement initial 30–50 k€ (2–3 devs × 3 mois) 0 (outsource) Infrastructure\
+  \ cloud 200 €/mois × 12 = 2.4 k€/an Inclus SaaS Maintenance/update 5–8 k€/an (support)\
+  \ Inclus Support utilisateurs 3–5 k€/an Inclus Total année 1 ~40–60 k€ 150–300 €/mois\
+  \ (1.8–3.6 k€/an) Total années 2+ ~8–15 k€/an ~2–4 k€/an \n\nRecommandation : Pour\
+  \ ACC petit-moyen (< 30 kWh batterie), SaaS tiers (Enogrid, Communitiz, PROMEOS)\
+  \ préférable. Pour ACC grande/stratégique, build interne si ressources."
+logic: null
+sources:
+- doc_id: STOCKAGE_ACC
+  label: Stockage et Autoconsommation Collective
+  section: H.3 Architecture Cible EMS + Fonctionnalités Clés
+  anchor: '#h3-architecture-cible-ems-fonctionnalits-cls'
+  excerpt_short: "Composants Logiciels Minimum : \n- Connectivité Données (cloud AWS/Azure/OVH)\
+    \ \n- API Enedis Data Conn..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

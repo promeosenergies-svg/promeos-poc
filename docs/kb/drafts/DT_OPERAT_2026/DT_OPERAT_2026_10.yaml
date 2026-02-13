@@ -1,0 +1,33 @@
+id: DT_OPERAT_2026_10
+type: knowledge
+domain: reglementaire
+title: Qui peut moduler ?
+summary: "Les assujettis qui justifient de contraintes : \n- Techniques : impossibilité\
+  \ techniquement réalisable (ex. bâtiment avec fondations fragiles empêchant isolation)\
+  \ \n- Architecturales/Patrimoniales : bât..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Les assujettis qui justifient de contraintes : \n- Techniques : impossibilité\
+  \ techniquement réalisable (ex. bâtiment avec fondations fragiles empêchant isolation)\
+  \ \n- Architecturales/Patrimoniales : bâtiment classé, protection ABF (Architecte\
+  \ Bâtiments de France) \n- Économiques : temps de retour sur investissement (TRB)\
+  \ > 10 ans pour les opérations proposées 24"
+logic: null
+sources:
+- doc_id: DT_OPERAT_2026
+  label: Decret Tertiaire / OPERAT - Obligations 2026
+  section: Qui peut moduler ?
+  anchor: '#qui-peut-moduler-'
+  excerpt_short: "Les assujettis qui justifient de contraintes : \n- Techniques :\
+    \ impossibilité techniquement réalisabl..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

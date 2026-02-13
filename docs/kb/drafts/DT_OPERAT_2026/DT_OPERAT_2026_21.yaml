@@ -1,0 +1,33 @@
+id: DT_OPERAT_2026_21
+type: knowledge
+domain: reglementaire
+title: Arrêté du 1er août 2025 (modifications OPERAT)
+summary: "- Attestation numérique standardisée intégrée à OPERAT (obligatoire après\
+  \ 1er juillet 2026) \n- Clarification des zones climatiques pour calcul CVC \n-\
+  \ Précisions sur mutualisation des résultats multi-s..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Attestation numérique standardisée intégrée à OPERAT (obligatoire après\
+  \ 1er juillet 2026) \n- Clarification des zones climatiques pour calcul CVC \n-\
+  \ Précisions sur mutualisation des résultats multi-sites \n- Adaptation des coefficients\
+  \ de conversion énergie finale \n- Phase transitoire (jusqu’au 1er juillet 2026)\
+  \ : affichage et export attestation restent facultatifs 51"
+logic: null
+sources:
+- doc_id: DT_OPERAT_2026
+  label: Decret Tertiaire / OPERAT - Obligations 2026
+  section: Arrêté du 1er août 2025 (modifications OPERAT)
+  anchor: '#arrt-du-1er-aot-2025-modifications-operat'
+  excerpt_short: "- Attestation numérique standardisée intégrée à OPERAT (obligatoire\
+    \ après 1er juillet 2026) \n- Clari..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

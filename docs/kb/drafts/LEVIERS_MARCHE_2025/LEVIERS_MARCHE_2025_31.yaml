@@ -1,0 +1,54 @@
+id: LEVIERS_MARCHE_2025_31
+type: knowledge
+domain: acc
+title: '**Users & Jobs-to-be-Done**'
+summary: '| User | Job-to-be-Done |
+
+  |------|---|
+
+  | **PMO (rôle structure)** | Créer opération légalement, gérer participants, encaisser
+  paiements, rester conforme |
+
+  | **Collectivité/baillet responsable** | Dépl...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: '| User | Job-to-be-Done |
+
+  |------|---|
+
+  | **PMO (rôle structure)** | Créer opération légalement, gérer participants, encaisser
+  paiements, rester conforme |
+
+  | **Collectivité/baillet responsable** | Déployer ACC énergie local rapidement,
+  sécuriser budget électricité 5–20 ans |
+
+  | **Participant consommateur** | Acheter électricité locale moins chère, voir impact
+  économie, payer facilement |
+
+  | **Participant producteur** | Vendre production localement sans marché spot volatilité,
+  maximiser valorisation |
+
+  | **Energy manager multi-sites** | Piloter conformité tertiaire, intégrer ACC, tracker
+  KPI énergies, auditer facilement |'
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: '**Users & Jobs-to-be-Done**'
+  anchor: '#users-jobs-to-be-done'
+  excerpt_short: '| User | Job-to-be-Done |
+
+    |------|---|
+
+    | **PMO (rôle structure)** | Créer opération légalement, gére...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

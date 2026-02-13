@@ -1,0 +1,29 @@
+id: FLEX_EFFACEMENT_32
+type: knowledge
+domain: facturation
+title: 5.4 Risques
+summary: "- Pas garantie prix, pas revenu assuré. \n- Fournisseur peut modifier tarif.\
+  \ \n- Dépend volatilité climatique (ex. sécheresse hydro = prix bas ↓)."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Pas garantie prix, pas revenu assuré. \n- Fournisseur peut modifier\
+  \ tarif. \n- Dépend volatilité climatique (ex. sécheresse hydro = prix bas ↓)."
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: 5.4 Risques
+  anchor: '#54-risques'
+  excerpt_short: "- Pas garantie prix, pas revenu assuré. \n- Fournisseur peut modifier\
+    \ tarif. \n- Dépend volatilité cli..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

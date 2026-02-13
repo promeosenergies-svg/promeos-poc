@@ -1,0 +1,34 @@
+id: DT_OPERAT_2026_6
+type: knowledge
+domain: usages
+title: Plateforme OPERAT (ADEME)
+summary: "OPERAT (Observatoire de la Performance Énergétique de la Rénovation et des\
+  \ Actions du Tertiaire) est la plateforme officielle et obligatoire de l’ADEME pour\
+  \ : \n- Déclarer les consommations annuelles d..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "OPERAT (Observatoire de la Performance Énergétique de la Rénovation et\
+  \ des Actions du Tertiaire) est la plateforme officielle et obligatoire de l’ADEME\
+  \ pour : \n- Déclarer les consommations annuelles d’énergie finale \n- Calculer\
+  \ automatiquement les trajectoires et objectifs \n- Générer des attestations de\
+  \ performance \n- Assigner une notation Éco-Énergie Tertiaire (feuilles : \U0001F33F\
+  \ à \U0001F33F\U0001F33F\U0001F33F) 13 14"
+logic: null
+sources:
+- doc_id: DT_OPERAT_2026
+  label: Decret Tertiaire / OPERAT - Obligations 2026
+  section: Plateforme OPERAT (ADEME)
+  anchor: '#plateforme-operat-ademe'
+  excerpt_short: OPERAT (Observatoire de la Performance Énergétique de la Rénovation
+    et des Actions du Tertiaire) est...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

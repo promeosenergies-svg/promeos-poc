@@ -1,0 +1,32 @@
+id: ACC_FRANCE_10
+type: rule
+domain: acc
+title: TURPE 7 (1er août 2025) 44 45
+summary: "- Nouvelle tarification d’acheminement Enedis \n- Option ACC : majoration\
+  \ fixe (€/an) compensée par rabais possible si taux d’autocons. > seuil \n- Pour\
+  \ PROMEOS : impact : clients doivent calculer « coû..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Nouvelle tarification d’acheminement Enedis \n- Option ACC : majoration\
+  \ fixe (€/an) compensée par rabais possible si taux d’autocons. > seuil \n- Pour\
+  \ PROMEOS : impact : clients doivent calculer « coût TURPE net » → intégrer dans\
+  \ pricing \n- Calendrier : révision tous 4 ans → prochain 2029"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: TURPE 7 (1er août 2025) 44 45
+  anchor: '#turpe-7-1er-aot-2025-44-45'
+  excerpt_short: "- Nouvelle tarification d’acheminement Enedis \n- Option ACC : majoration\
+    \ fixe (€/an) compensée par r..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

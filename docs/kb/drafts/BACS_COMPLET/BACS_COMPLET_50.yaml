@@ -1,0 +1,34 @@
+id: BACS_COMPLET_50
+type: rule
+domain: reglementaire
+title: Q1. « Mon immeuble de bureaux a 250 kW chaud + 300 kW froid. Suis-je concerné
+  ? »
+summary: R1. Oui, OBLIGATION immédiate. Max(250 chaud, 300 froid) = 300 kW > 290 kW
+  → Deadline 01/01/2025 . Si pas BACS aujourd’hui = non-conforme risque pénalité .
+  Lancer audit TRI rapide (exemption si TRI > ...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: R1. Oui, OBLIGATION immédiate. Max(250 chaud, 300 froid) = 300 kW > 290
+  kW → Deadline 01/01/2025 . Si pas BACS aujourd’hui = non-conforme risque pénalité
+  . Lancer audit TRI rapide (exemption si TRI > 10 ans) ou devis BACS urgent (délai
+  install 4-8 semaines).
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Q1. « Mon immeuble de bureaux a 250 kW chaud + 300 kW froid. Suis-je concerné
+    ? »
+  anchor: '#q1-mon-immeuble-de-bureaux-a-250-kw-chaud-300-kw-froid-suis-je-concern-'
+  excerpt_short: R1. Oui, OBLIGATION immédiate. Max(250 chaud, 300 froid) = 300 kW
+    > 290 kW → Deadline 01/01/2025 . S...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -563,7 +563,7 @@ export default function ConsommationsUsages() {
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-6">
-      <h2 className="text-2xl font-bold mb-6">Consommations & Usages</h2>
+      <h2 className="text-2xl font-bold mb-6">Consommations</h2>
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6">

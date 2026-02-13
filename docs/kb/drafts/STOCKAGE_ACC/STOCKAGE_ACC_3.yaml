@@ -1,0 +1,40 @@
+id: STOCKAGE_ACC_3
+type: rule
+domain: acc
+title: A.3 Contexte Réglementaire France ACC 2025
+summary: "Cadre légal : Décret 2017-676 (ACC), décret 2023-256 (approche PMO), ordonnance\
+  \ 2023-1110 (Electricity Directive transposition). Règles clés : \n- Rayon 2 km\
+  \ maximal entre producteur/consommateur (en l..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Cadre légal : Décret 2017-676 (ACC), décret 2023-256 (approche PMO),\
+  \ ordonnance 2023-1110 (Electricity Directive transposition). Règles clés : \n-\
+  \ Rayon 2 km maximal entre producteur/consommateur (en ligne électrique, pas vol\
+  \ d’oiseau) \n- Points de livraison multiples (> 1 production, > 1 conso) → repartition\
+  \ via clé (fixe ou dynamique mensuelle) \n- Personne Morale Organisatrice (PMO)\
+  \ responsable administratif/fisc \n- Mesure 15 min par point via Linky (quasi-temps\
+  \ réel Enedis API) \n- GRD Enedis approuve ACC, gère comptage/facturation par participant\
+  \ (en France UTE/distribution) \n\nPas de stockage prévu nativement dans réglementACC\
+  \ : batterie = actif externe pilotable (EMS peut la charger/décharger) mais comptage\
+  \ reste au PDL (point de livraison). Schéma de raccordement = clé : batterie en\
+  \ arrière-compteur (derrière producteur) vs batterie sur réseau commun vs batterie\
+  \ chez consommateur."
+logic: null
+sources:
+- doc_id: STOCKAGE_ACC
+  label: Stockage et Autoconsommation Collective
+  section: A.3 Contexte Réglementaire France ACC 2025
+  anchor: '#a3-contexte-rglementaire-france-acc-2025'
+  excerpt_short: 'Cadre légal : Décret 2017-676 (ACC), décret 2023-256 (approche PMO),
+    ordonnance 2023-1110 (Electrici...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

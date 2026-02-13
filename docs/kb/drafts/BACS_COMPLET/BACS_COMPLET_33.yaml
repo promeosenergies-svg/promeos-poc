@@ -1,0 +1,53 @@
+id: BACS_COMPLET_33
+type: knowledge
+domain: usages
+title: Audit TRI (si exemption envisagée)
+summary: '- ⬜ Consommations énergétiques année N-2 collectées (kWh élec, gaz, autres)
+
+  - ⬜ Consommations année N-1 collectées (idem)
+
+  - ⬜ Moyenne 2 ans calculée (par fluide)
+
+  - ⬜ Tarifs €/kWh collectés (factures 1...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: '- ⬜ Consommations énergétiques année N-2 collectées (kWh élec, gaz, autres)
+
+  - ⬜ Consommations année N-1 collectées (idem)
+
+  - ⬜ Moyenne 2 ans calculée (par fluide)
+
+  - ⬜ Tarifs €/kWh collectés (factures 12 mois antérieurs)
+
+  - ⬜ Gain énergétique estimé : 15% par défaut OU audit spécialisé en cours (%)
+
+  - ⬜ Coût BACS : devis complet intégrateur BACS reçu (matériel + MO + param + logiciels)
+
+  - ⬜ Aides identifiées : CEE prévisionnel, MaPrimeRénov, Éco-PTZ, autres (montants)
+
+  - ⬜ Surcoût BACS = Coût – Aides calculé (€ net)
+
+  - ⬜ TRI calculé = S / (G€) = X années
+
+  - ⬜ Résultat TRI : > 10 ans → EXEMPTION POSSIBLE ; ≤ 10 ans → BACS OBLIGATOIRE'
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Audit TRI (si exemption envisagée)
+  anchor: '#audit-tri-si-exemption-envisage'
+  excerpt_short: '- ⬜ Consommations énergétiques année N-2 collectées (kWh élec, gaz,
+    autres)
+
+    - ⬜ Consommations année ...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

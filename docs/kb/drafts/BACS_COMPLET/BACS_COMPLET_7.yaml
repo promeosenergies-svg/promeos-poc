@@ -1,0 +1,34 @@
+id: BACS_COMPLET_7
+type: knowledge
+domain: reglementaire
+title: Systèmes de chauffage
+summary: "- Chaudières combustion (cascade/réseau) : Somme puissances nominales =\
+  \ 2×200 kW = 400 kW \n- PAC réversible : Puissance utile chaud (label) \n- Chauffage\
+  \ électrique : Puissance électrique max appelée (..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Chaudières combustion (cascade/réseau) : Somme puissances nominales\
+  \ = 2×200 kW = 400 kW \n- PAC réversible : Puissance utile chaud (label) \n- Chauffage\
+  \ électrique : Puissance électrique max appelée (somme tous radiateurs électriques)\
+  \ \n- Systèmes distincts (PAC + chaudière) : Max (150 kW + 50 kW) = 150 kW (pas\
+  \ somme) \n- Règle générale : Si composantes en réseau/cascade = somme ; si indépendants\
+  \ = max"
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Systèmes de chauffage
+  anchor: '#systmes-de-chauffage'
+  excerpt_short: "- Chaudières combustion (cascade/réseau) : Somme puissances nominales\
+    \ = 2×200 kW = 400 kW \n- PAC rév..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

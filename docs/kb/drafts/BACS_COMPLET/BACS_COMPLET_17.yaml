@@ -1,0 +1,35 @@
+id: BACS_COMPLET_17
+type: knowledge
+domain: usages
+title: Méthodologie calcul (arrêté 07/04/2023)
+summary: "- Consommation de base : Moyenne consommations 2 dernières années (kWh électricité,\
+  \ gaz, etc.) \n- Gain estimé : 15% par défaut OU valeur audit spécialisé (ex : 8%\
+  \ suite audit thermique) \n- Coût énergi..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Consommation de base : Moyenne consommations 2 dernières années (kWh\
+  \ électricité, gaz, etc.) \n- Gain estimé : 15% par défaut OU valeur audit spécialisé\
+  \ (ex : 8% suite audit thermique) \n- Coût énergie : Prix moyen du kWh facturé 12\
+  \ mois antérieurs (distinct par fluide) \n- Gain énergétique : Conso base × % réduction\
+  \ = kWh économisés \n- Gain monétaire : kWh gains × prix €/kWh = € économies annuelles\
+  \ \n- Surcoût BACS : Devis complet moins aides (CEE, MaPrimeRénov, etc.) \n- Calcul\
+  \ TRI : S / (G€) = années retour \n- Exemption si : TRI > 10 ans strictement"
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Méthodologie calcul (arrêté 07/04/2023)
+  anchor: '#mthodologie-calcul-arrt-07042023'
+  excerpt_short: "- Consommation de base : Moyenne consommations 2 dernières années\
+    \ (kWh électricité, gaz, etc.) \n- Ga..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

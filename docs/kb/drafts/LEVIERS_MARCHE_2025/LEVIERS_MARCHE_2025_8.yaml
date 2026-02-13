@@ -1,0 +1,37 @@
+id: LEVIERS_MARCHE_2025_8
+type: knowledge
+domain: acc
+title: 'Scénario 2 : CENTRAL (Croissance 100% annuelle jusqu’2027, 60% après)'
+summary: "Hypothèses : \n- Accélération simplification réglementaire (automatisation\
+  \ API Enedis, templates juridiques) \n- Arrêté 21/02/2025 pleinement implémenté\
+  \ + 10 MW collectivités standardisé \n- Émergence 3–..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Hypothèses : \n- Accélération simplification réglementaire (automatisation\
+  \ API Enedis, templates juridiques) \n- Arrêté 21/02/2025 pleinement implémenté\
+  \ + 10 MW collectivités standardisé \n- Émergence 3–4 plateformes SaaS dominantes\
+  \ (EnoPower, EDF Communitiz, PROMEOS, …) \n- Adoption diversifiée : collectivités\
+  \ 40%, bailleurs 25%, PME 20%, particuliers (AMEP) 15% \n- PV raccordé France :\
+  \ 50+ GW (vs 24 GW fin 2024) \n\nProjections 2030: \n- Opérations : ~12 000 (vs\
+  \ 1 100 en 2025) \n- Puissance : ~1 800 MW (vs 161 MW 2025) \n- Participants : ~120\
+  \ 000 (vs 10 600 en 2025) \n- Coûts PMO : réduire à 3–6 mois avec automation \n\
+  - Taux churn : 5–10%/an (confiance + UX améliorée)"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: 'Scénario 2 : CENTRAL (Croissance 100% annuelle jusqu’2027, 60% après)'
+  anchor: '#scnario-2-central-croissance-100-annuelle-jusqu2027-60-aprs'
+  excerpt_short: "Hypothèses : \n- Accélération simplification réglementaire (automatisation\
+    \ API Enedis, templates juri..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

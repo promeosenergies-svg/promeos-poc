@@ -1,0 +1,34 @@
+id: BACS_COMPLET_67
+type: rule
+domain: usages
+title: 8. Matrice Décisionnel Rapport/Exemption
+summary: "- Interface guidée : saisir Putile + type bâtiment (neuf/existant) + renouvellement\
+  \ ? → Recommandation \n- Matrice visuelle : “290-70 kW existant sans renouvellement\
+  \ = deadline 2030 (pas urgent)” \n- Li..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Interface guidée : saisir Putile + type bâtiment (neuf/existant) +\
+  \ renouvellement ? → Recommandation \n- Matrice visuelle : “290-70 kW existant sans\
+  \ renouvellement = deadline 2030 (pas urgent)” \n- Liens documentations : si BACS\
+  \ obligatoire → lien CdC; si exemption possible → lien formulaire TRI \n- Simulation\
+  \ budget : saisir coûts → automatique TRI calculé → statut décision \n- Cas d’usage\
+  \ : PME immobilier petite équipe → outil guide conformité sans BET externe"
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: 8. Matrice Décisionnel Rapport/Exemption
+  anchor: '#8-matrice-dcisionnel-rapportexemption'
+  excerpt_short: '- Interface guidée : saisir Putile + type bâtiment (neuf/existant)
+    + renouvellement ? → Recommandati...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

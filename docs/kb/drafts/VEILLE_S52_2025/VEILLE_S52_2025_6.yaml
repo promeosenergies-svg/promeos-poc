@@ -1,0 +1,31 @@
+id: VEILLE_S52_2025_6
+type: knowledge
+domain: acc
+title: Opportunités Produit (Priorités MVP)
+summary: "- Bill Intelligence Temps Réel + Clearing Micro (Score : 8/10) \n- Traçabilité\
+  \ Carbone Locale (Score : 8/10) \n- BACS Compliance as a Service (Score : 7/10)\
+  \ \n- ACC Agrégation Micro (Clustering Local) (S..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Bill Intelligence Temps Réel + Clearing Micro (Score : 8/10) \n- Traçabilité\
+  \ Carbone Locale (Score : 8/10) \n- BACS Compliance as a Service (Score : 7/10)\
+  \ \n- ACC Agrégation Micro (Clustering Local) (Score : 7/10)"
+logic: null
+sources:
+- doc_id: VEILLE_S52_2025
+  label: Semaine 52 2025 - Veille Marche Energie PROMEOS
+  section: Opportunités Produit (Priorités MVP)
+  anchor: '#opportunits-produit-priorits-mvp'
+  excerpt_short: "- Bill Intelligence Temps Réel + Clearing Micro (Score : 8/10) \n\
+    - Traçabilité Carbone Locale (Score ..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

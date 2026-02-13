@@ -1,0 +1,32 @@
+id: LEVIERS_MARCHE_2025_10
+type: knowledge
+domain: acc
+title: 1. Automatisation API Enedis (DataConnect + ACC)
+summary: "- Action : Intégration native PROMEOS avec courbes de charge 15 min (Data\
+  \ Connect) + déclaration opération (API ACC) \n- Gain : Zéro ressaisie données,\
+  \ facturation générée automatiquement \n- Impact tim..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Action : Intégration native PROMEOS avec courbes de charge 15 min (Data\
+  \ Connect) + déclaration opération (API ACC) \n- Gain : Zéro ressaisie données,\
+  \ facturation générée automatiquement \n- Impact time-to-market : –3 mois montage,\
+  \ settlement fiabilisé"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: 1. Automatisation API Enedis (DataConnect + ACC)
+  anchor: '#1-automatisation-api-enedis-dataconnect-acc'
+  excerpt_short: '- Action : Intégration native PROMEOS avec courbes de charge 15
+    min (Data Connect) + déclaration opé...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

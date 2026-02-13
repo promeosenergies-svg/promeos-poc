@@ -1,0 +1,46 @@
+id: STOCKAGE_ACC_5
+type: knowledge
+domain: usages
+title: B.2 Règles de Dimensionnement
+summary: "Inputs requis (obligatoires) : \n- Courbes PV 15 min sur 1–2 ans (Pmax kW,\
+  \ TAp cible %) \n- Profils conso 15 min par participant (Pmoyenne, pics) \n- Règles\
+  \ ACC (clé répartition fixe/dynamique ?) \n- Ened..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Inputs requis (obligatoires) : \n- Courbes PV 15 min sur 1–2 ans (Pmax\
+  \ kW, TAp cible %) \n- Profils conso 15 min par participant (Pmoyenne, pics) \n\
+  - Règles ACC (clé répartition fixe/dynamique ?) \n- Enedis info : limite injection\
+  \ réseau, tarifs TURPE 7 zone \n- Budget CAPEX disponible \n- Objectif : TAc (%),\
+  \ Wh décalé (kWh), pic puissance (kW), indépendance nuits (h) \n\nMéthode heuristique\
+  \ rapide (1 page) : \n- Calcul surplus PV mensuel : Pprod,mois – Cconso,mois = Esurplus,mois\
+  \ \n- Identification heures « gaspillées » : Esurplus qui n’a pas de conso (injection\
+  \ > 25% conso) \n- Batterie kWh min : 0.1–0.3 × Esurplus,mois (25–30% des surplus\
+  \ stockés, reste injections) \n- Batterie kW puissance : 20–30% × Pprod,max (charge/décharge\
+  \ rapide à midi/soir, pas undersized) \n- Scénario sensibilité : varié tarif batterie\
+  \ (100, 130, 170 €/kWh) → ROI 8, 10, 12 ans ? \n- Décision GO : Si TAc final > objectif\
+  \ + ROI < 10 ans → OK. Sinon → batterie surdimensionnée ou ACC déjà optimisé. \n\
+  \nExemple numérique : \n- ACC 80 kWc, 50 kWh/j conso moyenne → TAp = 60–70% \n-\
+  \ Surplus détecté : 30 kWh/j mid-day, 0 kWh night \n- Batterie recommandée : 10–15\
+  \ kWh (33–50% surplus), 25 kW (puissance) \n- Coût : 15 kWh × 130 €/kWh + 25 kW\
+  \ × 400 €/kW (onduleur/install) = 1950 + 10k = ~12 k€ total (si integration, 10–15\
+  \ k€) \n- ROI : si gain 2500 €/an (TAc amélioration 15%, TURPE baisse) → 4–5 ans\
+  \ payback ✅"
+logic: null
+sources:
+- doc_id: STOCKAGE_ACC
+  label: Stockage et Autoconsommation Collective
+  section: B.2 Règles de Dimensionnement
+  anchor: '#b2-rgles-de-dimensionnement'
+  excerpt_short: "Inputs requis (obligatoires) : \n- Courbes PV 15 min sur 1–2 ans\
+    \ (Pmax kW, TAp cible %) \n- Profils co..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

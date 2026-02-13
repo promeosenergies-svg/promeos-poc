@@ -1,0 +1,43 @@
+id: STOCKAGE_ACC_21
+type: checklist
+domain: usages
+title: I.2 Conformité Réglementaire (Checklist Pré-Installation)
+summary: "Avant installation batterie, vérifier 100% coches : \n- Enedis accord :\
+  \ Dossier de demande d’adhésion ACC + schéma raccordement batterie signé Enedis\
+  \ (minimum 2 semaines) \n- ICPE classification : Batte..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Avant installation batterie, vérifier 100% coches : \n- Enedis accord\
+  \ : Dossier de demande d’adhésion ACC + schéma raccordement batterie signé Enedis\
+  \ (minimum 2 semaines) \n- ICPE classification : Batterie < 200 kW ET < 3 MWh →\
+  \ EXEMPT. Sinon, dossier Préfecture (délai 4–6 mois) \n- Normes sécurité : Batterie\
+  \ certifiée CE, onduleur CEI 62040-2, câblage aux normes NF C 15-100 \n- Assurance\
+  \ : Responsabilité civile (batterie incluse), assurance BEEM si batterie > 200 kWh\
+  \ \n- Contrats juridiques : Statuts PMO, convention ACC signée, contrats participants,\
+  \ PV de gouvernance \n- Comptage : Linky pré-requis, Enedis vérifie accessibilité\
+  \ index (smart meter obligatoire) \n- Data protection : Conformité RGPD (données\
+  \ consommation sensibles), politique confidentialité PMO \n- Audit énergétique :\
+  \ Rapport initial (TAc, TAp, surplus) baseline pour après-batterie (obligatoire)\
+  \ \n- Plan de secours : Procédure si batterie en panne (comment consommer sans batterie\
+  \ ?) \n- Rayon 2 km : Géolocalisation PDL producteur/consommateur, distance en ligne\
+  \ confirmée < 2 km par Enedis \n\nDélai total conformité : 8–12 semaines (dont 6\
+  \ semaines attente Enedis)."
+logic: null
+sources:
+- doc_id: STOCKAGE_ACC
+  label: Stockage et Autoconsommation Collective
+  section: I.2 Conformité Réglementaire (Checklist Pré-Installation)
+  anchor: '#i2-conformit-rglementaire-checklist-pr-installation'
+  excerpt_short: "Avant installation batterie, vérifier 100% coches : \n- Enedis accord\
+    \ : Dossier de demande d’adhésion..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

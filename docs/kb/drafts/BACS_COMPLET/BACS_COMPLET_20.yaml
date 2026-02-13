@@ -1,0 +1,31 @@
+id: BACS_COMPLET_20
+type: checklist
+domain: reglementaire
+title: Examen fonctionnel (1ère inspection uniquement)
+summary: "- Vérification architecture BACS (diagramme systèmes, capteurs, actionneurs,\
+  \ supervision) \n- Documentation équipements (plans, listes matériels) \n- Paramétrage\
+  \ initial vs besoins bâtiment"
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Vérification architecture BACS (diagramme systèmes, capteurs, actionneurs,\
+  \ supervision) \n- Documentation équipements (plans, listes matériels) \n- Paramétrage\
+  \ initial vs besoins bâtiment"
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Examen fonctionnel (1ère inspection uniquement)
+  anchor: '#examen-fonctionnel-1re-inspection-uniquement'
+  excerpt_short: "- Vérification architecture BACS (diagramme systèmes, capteurs,\
+    \ actionneurs, supervision) \n- Documen..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

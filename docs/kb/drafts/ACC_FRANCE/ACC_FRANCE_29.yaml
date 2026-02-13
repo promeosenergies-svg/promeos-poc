@@ -1,0 +1,39 @@
+id: ACC_FRANCE_29
+type: knowledge
+domain: acc
+title: ACC Optim (Premium, 12m focus)
+summary: "Positioning : “Active optimization + flex market + price arbitrage” \n\n\
+  Features : \n- Everything in Ops + \n- Price Negative Monitoring : RTE DataConnect\
+  \ alert (day-ahead), auto-notification producteur +..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Positioning : “Active optimization + flex market + price arbitrage” \n\
+  \nFeatures : \n- Everything in Ops + \n- Price Negative Monitoring : RTE DataConnect\
+  \ alert (day-ahead), auto-notification producteur + “reduce production?” or “pilot\
+  \ consumption” recommendation \n- Flex Dashboard : interface producteur = accept/decline\
+  \ flex offer, track margin impact \n- Implicit Flex : auto-pilot conso (partner\
+  \ IRVE, EMS buildings) during peak PV, “load shift” scoring \n- Arbitrage Engine\
+  \ : producteur voit “TAc price vs spot M0 today”, chooses best routing (ACC lock-in\
+  \ vs spot) \n- Ancillary Services : track capability for RTE mFRR (manoeuvrability\
+  \ frequency restoration) + revenue share model \n- Cost : €500–1,500/mth (premium),\
+  \ +% of flex revenue capture (e.g., 10–15%) \n\nAudience : Advanced PMOs, greenfield\
+  \ ACC projects with >500 kWc, industrial/multi-sites needing demand response"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: ACC Optim (Premium, 12m focus)
+  anchor: '#acc-optim-premium-12m-focus'
+  excerpt_short: "Positioning : “Active optimization + flex market + price arbitrage”\
+    \ \n\nFeatures : \n- Everything in Op..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

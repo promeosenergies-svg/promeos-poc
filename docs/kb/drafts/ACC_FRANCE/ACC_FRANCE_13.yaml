@@ -1,0 +1,32 @@
+id: ACC_FRANCE_13
+type: knowledge
+domain: facturation
+title: 'Agenda non-certains (lobbying FNCCR/SER) : 49'
+summary: "- ⚠️ Assouplissement critère distance (de 2 km → 5–20 km régulier) : demande\
+  \ en cours, réponse 2026? \n- ⚠️ Intégration communautés d’énergie (RED directive\
+  \ UE) : transposition France 2026? \n- ⚠️ Tarif..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- ⚠️ Assouplissement critère distance (de 2 km → 5–20 km régulier) :\
+  \ demande en cours, réponse 2026? \n- ⚠️ Intégration communautés d’énergie (RED\
+  \ directive UE) : transposition France 2026? \n- ⚠️ Tarification TURPE 8 (post-2029)\
+  \ : inclure signal flex/prix négatif?"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: 'Agenda non-certains (lobbying FNCCR/SER) : 49'
+  anchor: '#agenda-non-certains-lobbying-fnccrser-49'
+  excerpt_short: '- ⚠️ Assouplissement critère distance (de 2 km → 5–20 km régulier)
+    : demande en cours, réponse 2026?...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

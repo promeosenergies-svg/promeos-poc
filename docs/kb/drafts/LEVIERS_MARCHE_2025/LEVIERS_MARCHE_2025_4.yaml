@@ -1,0 +1,44 @@
+id: LEVIERS_MARCHE_2025_4
+type: rule
+domain: usages
+title: Cas Rentables (2025)
+summary: "1) Collectivités + écoles/équipements publics \n- Profil : 5–20 bâtiments\
+  \ publics, puissance 200–500 kWc \n- Économie : 15–30% réduction facture électricité\
+  \ locale \n- Drivers : obligation décret Tertiai..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "1) Collectivités + écoles/équipements publics \n- Profil : 5–20 bâtiments\
+  \ publics, puissance 200–500 kWc \n- Économie : 15–30% réduction facture électricité\
+  \ locale \n- Drivers : obligation décret Tertiaire (-40% 2030), aide région, maturité\
+  \ PMO \n- Exemple : Mairie + 5 écoles, 300 kWc PV, 15 participants = ~50 kWh/j partagé\
+  \ \n- TRI typique : 6–8 ans ; NPV+ après subventions ; sensible aux prix marché\
+  \ \n\n2) Bailleurs sociaux + copropriétés résidentielles \n- Profil : Copro > 200\
+  \ logements, PV toiture + parking, 150–600 kWc \n- Économie : 8–15% réduction charges\
+  \ communes, copropriétaires satisfaits \n- Drivers : obligation solarisation parkings\
+  \ (loi APER 2023), économies visibles, engagement RSE \n- Exemple : 300 logts, 400\
+  \ kWc toiture + 200 kWc parking = 150 kWh/j local \n- TRI typique : 8–12 ans (ROI\
+  \ construction); motivation de copropriété > financière \n\n3) Zones d’activités\
+  \ / PME mutualisées \n- Profil : Parc de 5–50 PME, puissance 500 kWc–3 MW \n- Économie\
+  \ : 10–25% réduction coûts énergie (usage complémentaire bureau/atelier) \n- Drivers\
+  \ : prix marché volatil post-ARENH (fin 2025), réduction prix négatifs, sécurisation\
+  \ tarif 15–20 ans \n- Exemple : 20 PME 50 kWh/j usage moyen, 800 kWc PV partagé\
+  \ = 60% autoconso \n- TRI typique : 5–7 ans (profils entreprises sensibles ROI court)"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: Cas Rentables (2025)
+  anchor: '#cas-rentables-2025'
+  excerpt_short: "1) Collectivités + écoles/équipements publics \n- Profil : 5–20\
+    \ bâtiments publics, puissance 200–500 ..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

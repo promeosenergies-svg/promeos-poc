@@ -1,0 +1,36 @@
+id: FLEX_EFFACEMENT_11
+type: rule
+domain: reglementaire
+title: 2.4 Mesure & Vérification
+summary: "Réserve Primaire (FCR) : Continu, mesure fréquence pan-européenne (capteurs\
+  \ RTE). Pas de baseline, contribution implicite. Activation = ΔF détecté. \n\nRéserve\
+  \ Secondaire (aFRR) : Basée programmes d’app..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Réserve Primaire (FCR) : Continu, mesure fréquence pan-européenne (capteurs\
+  \ RTE). Pas de baseline, contribution implicite. Activation = ΔF détecté. \n\nRéserve\
+  \ Secondaire (aFRR) : Basée programmes d’appel J. Écart vs. programme = contribution\
+  \ secondaire. Mesure par RTE (télétélémetrie). \n\nmFRR/RR-RC : Puissance mobilisée\
+  \ en temps réel. Offres déclarées vs. réalisées. RTE contrôle démarrage <13 min,\
+  \ durée ≥15 min. Dépassement sanction. \n\nSous-ensembles : Sites de soutirage en\
+  \ aFRR peuvent avoir modèle sans prise en compte énergie (insensibilisation RE)\
+  \ ; données Linky utilisées contrôle."
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: 2.4 Mesure & Vérification
+  anchor: '#24-mesure-vrification'
+  excerpt_short: 'Réserve Primaire (FCR) : Continu, mesure fréquence pan-européenne
+    (capteurs RTE). Pas de baseline, c...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

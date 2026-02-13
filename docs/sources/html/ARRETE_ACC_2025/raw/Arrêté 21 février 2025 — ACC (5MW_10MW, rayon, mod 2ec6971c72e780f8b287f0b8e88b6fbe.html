@@ -1,0 +1,713 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><title>Arrêté 21 février 2025 — ACC (5MW_10MW, rayon, mod</title><style>
+/* cspell:disable-file */
+/* webkit printing magic: print all background colors */
+html {
+	-webkit-print-color-adjust: exact;
+}
+* {
+	box-sizing: border-box;
+	-webkit-print-color-adjust: exact;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+}
+@media only screen {
+	body {
+		margin: 2em auto;
+		max-width: 900px;
+		color: rgb(55, 53, 47);
+	}
+}
+
+body {
+	line-height: 1.5;
+	white-space: pre-wrap;
+}
+
+a,
+a.visited {
+	color: inherit;
+	text-decoration: underline;
+}
+
+.pdf-relative-link-path {
+	font-size: 80%;
+	color: #444;
+}
+
+h1,
+h2,
+h3 {
+	letter-spacing: -0.01em;
+	line-height: 1.2;
+	font-weight: 600;
+	margin-bottom: 0;
+}
+
+/* Override strong tags inside headings to maintain consistent weight */
+h1 strong,
+h2 strong,
+h3 strong {
+	font-weight: 600;
+}
+
+.page-title {
+	font-size: 2.5rem;
+	font-weight: 700;
+	margin-top: 0;
+	margin-bottom: 0.75em;
+}
+
+h1 {
+	font-size: 1.875rem;
+	margin-top: 1.875rem;
+}
+
+h2 {
+	font-size: 1.5rem;
+	margin-top: 1.5rem;
+}
+
+h3 {
+	font-size: 1.25rem;
+	margin-top: 1.25rem;
+}
+
+.source {
+	border: 1px solid #ddd;
+	border-radius: 3px;
+	padding: 1.5em;
+	word-break: break-all;
+}
+
+.callout {
+	border-radius: 10px;
+	padding: 1rem;
+}
+
+figure {
+	margin: 1.25em 0;
+	page-break-inside: avoid;
+}
+
+figcaption {
+	opacity: 0.5;
+	font-size: 85%;
+	margin-top: 0.5em;
+}
+
+mark {
+	background-color: transparent;
+}
+
+.indented {
+	padding-left: 1.5em;
+}
+
+hr {
+	background: transparent;
+	display: block;
+	width: 100%;
+	height: 1px;
+	visibility: visible;
+	border: none;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.09);
+}
+
+img {
+	max-width: 100%;
+}
+
+@media only print {
+	img {
+		max-height: 100vh;
+		object-fit: contain;
+	}
+}
+
+@page {
+	margin: 1in;
+}
+
+.collection-content {
+	font-size: 0.875rem;
+}
+
+.collection-content td {
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.column-list {
+	display: flex;
+	justify-content: space-between;
+}
+
+.column {
+	padding: 0 1em;
+}
+
+.column:first-child {
+	padding-left: 0;
+}
+
+.column:last-child {
+	padding-right: 0;
+}
+
+.table_of_contents-item {
+	display: block;
+	font-size: 0.875rem;
+	line-height: 1.3;
+	padding: 0.125rem;
+}
+
+.table_of_contents-indent-1 {
+	margin-left: 1.5rem;
+}
+
+.table_of_contents-indent-2 {
+	margin-left: 3rem;
+}
+
+.table_of_contents-indent-3 {
+	margin-left: 4.5rem;
+}
+
+.table_of_contents-link {
+	text-decoration: none;
+	opacity: 0.7;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.18);
+}
+
+table,
+th,
+td {
+	border: 1px solid rgba(55, 53, 47, 0.09);
+	border-collapse: collapse;
+}
+
+table {
+	border-left: none;
+	border-right: none;
+}
+
+th,
+td {
+	font-weight: normal;
+	padding: 0.25em 0.5em;
+	line-height: 1.5;
+	min-height: 1.5em;
+	text-align: left;
+}
+
+th {
+	color: rgba(55, 53, 47, 0.6);
+}
+
+ol,
+ul {
+	margin: 0;
+	margin-block-start: 0.6em;
+	margin-block-end: 0.6em;
+}
+
+li > ol:first-child,
+li > ul:first-child {
+	margin-block-start: 0.6em;
+}
+
+ul > li {
+	list-style: disc;
+}
+
+ul.to-do-list {
+	padding-inline-start: 0;
+}
+
+ul.to-do-list > li {
+	list-style: none;
+}
+
+.to-do-children-checked {
+	text-decoration: line-through;
+	opacity: 0.375;
+}
+
+ul.toggle > li {
+	list-style: none;
+}
+
+ul {
+	padding-inline-start: 1.7em;
+}
+
+ul > li {
+	padding-left: 0.1em;
+}
+
+ol {
+	padding-inline-start: 1.6em;
+}
+
+ol > li {
+	padding-left: 0.2em;
+}
+
+.mono ol {
+	padding-inline-start: 2em;
+}
+
+.mono ol > li {
+	text-indent: -0.4em;
+}
+
+.toggle {
+	padding-inline-start: 0em;
+	list-style-type: none;
+}
+
+/* Indent toggle children */
+.toggle > li > details {
+	padding-left: 1.7em;
+}
+
+.toggle > li > details > summary {
+	margin-left: -1.1em;
+}
+
+.selected-value {
+	display: inline-block;
+	padding: 0 0.5em;
+	background: rgba(206, 205, 202, 0.5);
+	border-radius: 3px;
+	margin-right: 0.5em;
+	margin-top: 0.3em;
+	margin-bottom: 0.3em;
+	white-space: nowrap;
+}
+
+.collection-title {
+	display: inline-block;
+	margin-right: 1em;
+}
+
+.page-description {
+	margin-bottom: 2em;
+}
+
+.simple-table {
+	margin-top: 1em;
+	font-size: 0.875rem;
+	empty-cells: show;
+}
+.simple-table td {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table th {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table-header-color {
+	background: rgb(247, 246, 243);
+	color: black;
+}
+.simple-table-header {
+	font-weight: 500;
+}
+
+time {
+	opacity: 0.5;
+}
+
+.icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	max-width: 1.2em;
+	max-height: 1.2em;
+	text-decoration: none;
+	vertical-align: text-bottom;
+	margin-right: 0.5em;
+}
+
+img.icon {
+	border-radius: 3px;
+}
+
+.callout img.notion-static-icon {
+	width: 1em;
+	height: 1em;
+}
+
+.callout p {
+	margin: 0;
+}
+
+.callout h1,
+.callout h2,
+.callout h3 {
+	margin: 0 0 0.6rem;
+}
+
+.user-icon {
+	width: 1.5em;
+	height: 1.5em;
+	border-radius: 100%;
+	margin-right: 0.5rem;
+}
+
+.user-icon-inner {
+	font-size: 0.8em;
+}
+
+.text-icon {
+	border: 1px solid #000;
+	text-align: center;
+}
+
+.page-cover-image {
+	display: block;
+	object-fit: cover;
+	width: 100%;
+	max-height: 30vh;
+}
+
+.page-header-icon {
+	font-size: 3rem;
+	margin-bottom: 1rem;
+}
+
+.page-header-icon-with-cover {
+	margin-top: -0.72em;
+	margin-left: 0.07em;
+}
+
+.page-header-icon img {
+	border-radius: 3px;
+}
+
+.link-to-page {
+	margin: 1em 0;
+	padding: 0;
+	border: none;
+	font-weight: 500;
+}
+
+p > .user {
+	opacity: 0.5;
+}
+
+td > .user,
+td > time {
+	white-space: nowrap;
+}
+
+input[type="checkbox"] {
+	transform: scale(1.5);
+	margin-right: 0.6em;
+	vertical-align: middle;
+}
+
+p {
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+}
+
+.image {
+	border: none;
+	margin: 1.5em 0;
+	padding: 0;
+	border-radius: 0;
+	text-align: center;
+}
+
+.code,
+code {
+	background: rgba(135, 131, 120, 0.15);
+	border-radius: 3px;
+	padding: 0.2em 0.4em;
+	border-radius: 3px;
+	font-size: 85%;
+	tab-size: 2;
+}
+
+code {
+	color: #eb5757;
+}
+
+.code {
+	padding: 1.5em 1em;
+}
+
+.code-wrap {
+	white-space: pre-wrap;
+	word-break: break-all;
+}
+
+.code > code {
+	background: none;
+	padding: 0;
+	font-size: 100%;
+	color: inherit;
+}
+
+blockquote {
+	font-size: 1em;
+	margin: 1em 0;
+	padding-left: 1em;
+	border-left: 3px solid rgb(55, 53, 47);
+}
+
+blockquote.quote-large {
+	font-size: 1.25em;
+}
+
+.bookmark {
+	text-decoration: none;
+	max-height: 8em;
+	padding: 0;
+	display: flex;
+	width: 100%;
+	align-items: stretch;
+}
+
+.bookmark-title {
+	font-size: 0.85em;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	height: 1.75em;
+	white-space: nowrap;
+}
+
+.bookmark-text {
+	display: flex;
+	flex-direction: column;
+}
+
+.bookmark-info {
+	flex: 4 1 180px;
+	padding: 12px 14px 14px;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+}
+
+.bookmark-image {
+	width: 33%;
+	flex: 1 1 180px;
+	display: block;
+	position: relative;
+	object-fit: cover;
+	border-radius: 1px;
+}
+
+.bookmark-description {
+	color: rgba(55, 53, 47, 0.6);
+	font-size: 0.75em;
+	overflow: hidden;
+	max-height: 4.5em;
+	word-break: break-word;
+}
+
+.bookmark-href {
+	font-size: 0.75em;
+	margin-top: 0.25em;
+}
+
+.sans { font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"; }
+.code { font-family: "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace; }
+.serif { font-family: Lyon-Text, Georgia, ui-serif, serif; }
+.mono { font-family: iawriter-mono, Nitti, Menlo, Courier, monospace; }
+.pdf .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK JP'; }
+.pdf:lang(zh-CN) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK SC'; }
+.pdf:lang(zh-TW) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK TC'; }
+.pdf:lang(ko-KR) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK KR'; }
+.pdf .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.pdf .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK JP'; }
+.pdf:lang(zh-CN) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK SC'; }
+.pdf:lang(zh-TW) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK TC'; }
+.pdf:lang(ko-KR) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK KR'; }
+.pdf .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.highlight-default {
+	color: rgba(44, 44, 43, 1);
+}
+.highlight-gray {
+	color: rgba(125, 122, 117, 1);
+	fill: rgba(125, 122, 117, 1);
+}
+.highlight-brown {
+	color: rgba(159, 118, 90, 1);
+	fill: rgba(159, 118, 90, 1);
+}
+.highlight-orange {
+	color: rgba(210, 123, 45, 1);
+	fill: rgba(210, 123, 45, 1);
+}
+.highlight-yellow {
+	color: rgba(203, 148, 52, 1);
+	fill: rgba(203, 148, 52, 1);
+}
+.highlight-teal {
+	color: rgba(80, 148, 110, 1);
+	fill: rgba(80, 148, 110, 1);
+}
+.highlight-blue {
+	color: rgba(56, 125, 201, 1);
+	fill: rgba(56, 125, 201, 1);
+}
+.highlight-purple {
+	color: rgba(154, 107, 180, 1);
+	fill: rgba(154, 107, 180, 1);
+}
+.highlight-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.highlight-red {
+	color: rgba(207, 81, 72, 1);
+	fill: rgba(207, 81, 72, 1);
+}
+.highlight-default_background {
+	color: rgba(44, 44, 43, 1);
+}
+.highlight-gray_background {
+	background: rgba(42, 28, 0, 0.07);
+}
+.highlight-brown_background {
+	background: rgba(139, 46, 0, 0.086);
+}
+.highlight-orange_background {
+	background: rgba(224, 101, 1, 0.129);
+}
+.highlight-yellow_background {
+	background: rgba(211, 168, 0, 0.137);
+}
+.highlight-teal_background {
+	background: rgba(0, 100, 45, 0.09);
+}
+.highlight-blue_background {
+	background: rgba(0, 124, 215, 0.094);
+}
+.highlight-purple_background {
+	background: rgba(102, 0, 178, 0.078);
+}
+.highlight-pink_background {
+	background: rgba(197, 0, 93, 0.086);
+}
+.highlight-red_background {
+	background: rgba(223, 22, 0, 0.094);
+}
+.block-color-default {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray {
+	color: rgba(125, 122, 117, 1);
+	fill: rgba(125, 122, 117, 1);
+}
+.block-color-brown {
+	color: rgba(159, 118, 90, 1);
+	fill: rgba(159, 118, 90, 1);
+}
+.block-color-orange {
+	color: rgba(210, 123, 45, 1);
+	fill: rgba(210, 123, 45, 1);
+}
+.block-color-yellow {
+	color: rgba(203, 148, 52, 1);
+	fill: rgba(203, 148, 52, 1);
+}
+.block-color-teal {
+	color: rgba(80, 148, 110, 1);
+	fill: rgba(80, 148, 110, 1);
+}
+.block-color-blue {
+	color: rgba(56, 125, 201, 1);
+	fill: rgba(56, 125, 201, 1);
+}
+.block-color-purple {
+	color: rgba(154, 107, 180, 1);
+	fill: rgba(154, 107, 180, 1);
+}
+.block-color-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.block-color-red {
+	color: rgba(207, 81, 72, 1);
+	fill: rgba(207, 81, 72, 1);
+}
+.block-color-default_background {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray_background {
+	background: rgba(240, 239, 237, 1);
+}
+.block-color-brown_background {
+	background: rgba(245, 237, 233, 1);
+}
+.block-color-orange_background {
+	background: rgba(251, 235, 222, 1);
+}
+.block-color-yellow_background {
+	background: rgba(249, 243, 220, 1);
+}
+.block-color-teal_background {
+	background: rgba(232, 241, 236, 1);
+}
+.block-color-blue_background {
+	background: rgba(229, 242, 252, 1);
+}
+.block-color-purple_background {
+	background: rgba(243, 235, 249, 1);
+}
+.block-color-pink_background {
+	background: rgba(250, 233, 241, 1);
+}
+.block-color-red_background {
+	background: rgba(252, 233, 231, 1);
+}
+.select-value-color-default { background-color: rgba(42, 28, 0, 0.07); }
+.select-value-color-gray { background-color: rgba(28, 19, 1, 0.11); }
+.select-value-color-brown { background-color: rgba(127, 51, 0, 0.156); }
+.select-value-color-orange { background-color: rgba(196, 88, 0, 0.203); }
+.select-value-color-yellow { background-color: rgba(209, 156, 0, 0.282); }
+.select-value-color-green { background-color: rgba(0, 96, 38, 0.156); }
+.select-value-color-blue { background-color: rgba(0, 118, 217, 0.203); }
+.select-value-color-purple { background-color: rgba(92, 0, 163, 0.141); }
+.select-value-color-pink { background-color: rgba(183, 0, 78, 0.152); }
+.select-value-color-red { background-color: rgba(206, 24, 0, 0.164); }
+
+.checkbox {
+	display: inline-flex;
+	vertical-align: text-bottom;
+	width: 16;
+	height: 16;
+	background-size: 16px;
+	margin-left: 2px;
+	margin-right: 5px;
+}
+
+.checkbox-on {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20width%3D%2216%22%20height%3D%2216%22%20fill%3D%22%2358A9D7%22%2F%3E%0A%3Cpath%20d%3D%22M6.71429%2012.2852L14%204.9995L12.7143%203.71436L6.71429%209.71378L3.28571%206.2831L2%207.57092L6.71429%2012.2852Z%22%20fill%3D%22white%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+
+.checkbox-off {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20x%3D%220.75%22%20y%3D%220.75%22%20width%3D%2214.5%22%20height%3D%2214.5%22%20fill%3D%22white%22%20stroke%3D%22%2336352F%22%20stroke-width%3D%221.5%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+	
+</style></head><body><article id="2ec6971c-72e7-80f8-b287-f0b8e88b6fbe" class="page sans"><header><h1 class="page-title" dir="auto">Arrêté 21 février 2025 — ACC (5MW_10MW, rayon, mod</h1><p class="page-description" dir="auto"></p></header><div class="page-body"><div style="display:contents" dir="ltr"><figure id="2ec6971c-72e7-8145-81a3-f289e0e9d6e7" class="image"><a href="https://r2cdn.perplexity.ai/pplx-full-logo-primary-dark%402x.png"><img src="https://r2cdn.perplexity.ai/pplx-full-logo-primary-dark%402x.png"/></a></figure></div><div style="display:contents" dir="auto"><h1 id="2ec6971c-72e7-818b-956f-e2bbf0b1919d" class="">Arrêté 21 février 2025 — ACC (5MW/10MW, rayon, modalités)</h1></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8128-97bf-dde50d7cdf4f" class="">“Résumé officiel arrêté du 21 février 2025 sur l’autoconsommation collective (seuils, périmètre, changements), citer JO/Legifrance/Enedis.”</p></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81df-84da-ea39e6147f35" class="">Now I’ll create a comprehensive professional report for the user.</p></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-8111-8ad7-e9560b2a466b"/></div><div style="display:contents" dir="auto"><h1 id="2ec6971c-72e7-8102-9322-de29459b2340" class="">Arrêté du 21 février 2025 — Autoconsommation Collective (ACC)</h1></div><div style="display:contents" dir="auto"><h2 id="2ec6971c-72e7-810b-8898-e53bebc04e3e" class="">Résumé officiel des seuils, périmètres et modalités</h2></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8172-a4bc-f89f6270001a" class=""><strong>Publication:</strong> Journal Officiel du 5 mars 2025<a href="about:blank#fn1">1</a><strong>Référence Legifrance:</strong> JORFTEXT000051292744<a href="about:blank#fn2">2</a><strong>Texte modifié:</strong> Arrêté du 21 novembre 2019 fixant le critère de proximité géographique de l’autoconsommation collective étendue<br/><strong>Avis préalable CRE:</strong> Délibération n°2024-231 du 18 décembre 2024<a href="about:blank#fn3">3</a></p></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-8190-80f8-e1f446737260"/></div><div style="display:contents" dir="auto"><h2 id="2ec6971c-72e7-8143-ab37-fb57e288bdc6" class="">1. Augmentation des seuils de puissance cumulée</h2></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-81b6-87c7-f5c6673ceade" class="">1.1 Seuil standard — Métropole continentale</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8131-bea9-c9cd8af31f72" class="">L’arrêté du 21 février 2025 relève de manière significative la puissance maximale cumulée des installations de production au sein d’une opération d’autoconsommation collective étendue, en application du territoire métropolitain continental:<a href="about:blank#fn4">4</a><a href="about:blank#fn5">5</a></p></div><div style="display:contents" dir="ltr"><table id="2ec6971c-72e7-815e-8295-ec957121b5b9" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-814b-8e17-fcdeb8067f7b"><th id="f[hS" class="simple-table-header-color simple-table-header">Paramètre</th><th id="?{p}" class="simple-table-header-color simple-table-header">Régime antérieur</th><th id="jkNi" class="simple-table-header-color simple-table-header">Nouveau régime</th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81b3-ae97-c6e3b98795b3"><td id="f[hS" class=""><strong>Puissance cumulée</strong></td><td id="?{p}" class="">3 MW</td><td id="jkNi" class=""><strong>5 MW</strong></td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-8196-a79a-fbd84b1a31f1"><td id="f[hS" class=""><strong>Zones non-interconnectées</strong></td><td id="?{p}" class="">0,5 MW</td><td id="jkNi" class=""><strong>0,5 MW</strong> (inchangé)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81ad-9044-c6868960cd5d"><td id="f[hS" class=""><strong>Effectif</strong></td><td id="?{p}" class="">Depuis nov. 2019</td><td id="jkNi" class="">Depuis 6 mars 2025</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8113-a0d9-f7960a2455fe" class="">Cette augmentation de 66% (de 3 à 5 MW) répond à une demande longtemps formulée par la filière, visant à améliorer la viabilité économique des opérations et à étendre les bénéfices du partage d’électricité locale. Cet ajustement s’inscrit dans une politique d’assouplissement réglementaire progressif en faveur de l’autoconsommation collective.<a href="about:blank#fn6">6</a></p></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-817c-b7d4-f8d48c31ec9d" class="">1.2 Dérogation pour les collectivités territoriales — 10 MW</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81f3-af58-defad8add824" class="">En parallèle, l’arrêté institue une <strong>nouvelle dérogation spécifique</strong> permettant certains projets de monter jusqu’à 10 MW de puissance cumulée. Cette dérogation bénéficie exclusivement aux opérations répondant cumulativement aux critères suivants :<a href="about:blank#fn7">7</a></p></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8107-ba5f-f8d41d46aa7b" class=""><strong>Critères cumulatifs de la dérogation 10 MW:</strong></p></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81e3-a5c6-eb32c7688074" class="numbered-list" start="1"><li><strong>Participant collectif obligatoire</strong> — L’un des producteurs ou des consommateurs participants doit être une commune ou un établissement public de coopération intercommunale (EPCI) à fiscalité propre<a href="about:blank#fn8">8</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81bc-94cb-e41645dafa5a" class="numbered-list" start="2"><li><strong>Composition des participants</strong> — L’ensemble des producteurs et consommateurs participants doivent être soit :<div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81eb-9c65-e4dbc0300c38" class="bulleted-list"><li style="list-style-type:disc">Des organismes publics exerçant une mission de service public</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81d8-8831-f0b204e12201" class="bulleted-list"><li style="list-style-type:disc">Des organismes privés exerçant une mission de service public</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8163-a5e1-c160e28a7488" class="bulleted-list"><li style="list-style-type:disc">Des sociétés d’économie mixtes locales mentionnées à l’article L.1522-1 du Code général des collectivités territoriales et leurs filiales<a href="about:blank#fn9">9</a></li></ul></div></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-813d-8f84-fe6daa777044" class="numbered-list" start="3"><li><strong>Périmètre géographique</strong> — Les points de soutirage et d’injection doivent être situés <strong>exclusivement</strong> dans le ressort géographique de l’EPCI à fiscalité propre participant au projet, ou auquel adhèrent les communes participant au projet<a href="about:blank#fn10">10</a></li></ol></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81ca-ac32-c52272b2dd42" class=""><strong>Impact:</strong> Cette dérogation double le plafond de puissance, mais reste limitée aux acteurs publics et parapublics, excluant les investisseurs privés stricto sensu. Elle facilite cependant les projets portés par les collectivités territoriales en centralisant l’ensemble de l’opération sur leur ressort géographique.<a href="about:blank#fn11">11</a></p></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-8150-931d-ec949497381d"/></div><div style="display:contents" dir="auto"><h2 id="2ec6971c-72e7-8186-89e2-fadbd72d0bb6" class="">2. Critères de proximité géographique et périmètres d’application</h2></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-8115-a10e-fab53bbd8abc" class="">2.1 Règle générale — Rayon de 2 km</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8106-867f-c8d97a6f4d3e" class="">Le cadre de base demeure inchangé par l’arrêté du 21 février 2025. L’article L315-2 du Code de l’énergie exige que :</p></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8116-b5df-e4e625d780fd" class="bulleted-list"><li style="list-style-type:disc">Les producteurs et consommateurs soient raccordés au <strong>réseau basse tension d’un unique gestionnaire de distribution</strong> (Enedis sur le territoire métropolitain continental)</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81b5-99cb-ee799226d660" class="bulleted-list"><li style="list-style-type:disc">La <strong>distance entre les deux participants les plus éloignés n’excède pas 2 km</strong>, mesurée à partir du point d’injection (production) et du point de livraison (consommation)<a href="about:blank#fn12">12</a></li></ul></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-812e-8e3f-c3a9a06f3dc4" class="">2.2 Dérogations de périmètre — Typologies et procédures</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81ce-97c9-cc35b30d929c" class="">L’arrêté confirme et précise l’applicabilité des dérogations existantes, tout en en créant une nouvelle :</p></div><div style="display:contents" dir="ltr"><table id="2ec6971c-72e7-8169-96fd-e95b9fe1cb20" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-8134-bda9-cd5fc9ec5f3c"><th id="EQir" class="simple-table-header-color simple-table-header">Régime de dérogation</th><th id="g\TW" class="simple-table-header-color simple-table-header">Distance</th><th id="zujd" class="simple-table-header-color simple-table-header">Conditions</th><th id="pdje" class="simple-table-header-color simple-table-header">Procédure</th><th id="[|Zd" class="simple-table-header-color simple-table-header">Effectif</th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-813d-a6ee-c95a65a7ba3b"><td id="EQir" class=""><strong>De base</strong></td><td id="g\TW" class="">2 km</td><td id="zujd" class="">Aucune</td><td id="pdje" class="">—</td><td id="[|Zd" class="">Depuis origine</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-8106-96f6-e0db30740f02"><td id="EQir" class=""><strong>Zones semi-urbaines/périurbaines</strong></td><td id="g\TW" class="">10 km</td><td id="zujd" class="">Codes INSEE 3-7</td><td id="pdje" class="">Demande dérogatoire</td><td id="[|Zd" class="">Depuis sept. 2023<a href="about:blank#fn13">13</a></td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81a3-8075-f753915fc57d"><td id="EQir" class=""><strong>Zones rurales</strong></td><td id="g\TW" class="">20 km</td><td id="zujd" class="">Codes INSEE 5-7</td><td id="pdje" class="">Demande dérogatoire</td><td id="[|Zd" class="">Depuis sept. 2023<a href="about:blank#fn14">14</a></td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81f1-9a02-dfa864f581a9"><td id="EQir" class=""><strong>SIS</strong></td><td id="g\TW" class=""><strong>20 km</strong></td><td id="zujd" class="">Service incendie/secours</td><td id="pdje" class=""><strong>Automatique</strong> (pas demande)</td><td id="[|Zd" class="">Depuis <strong>2 mai 2025</strong><a href="about:blank#fn15">15</a></td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81ef-8526-d48ec346e418"><td id="EQir" class=""><strong>EPCI/Commune</strong></td><td id="g\TW" class=""><strong>Périmètre total EPCI</strong></td><td id="zujd" class="">EPCI à fiscalité propre + critères cumulatifs</td><td id="pdje" class="">Demande dérogatoire</td><td id="[|Zd" class="">Depuis <strong>21 février 2025</strong></td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-812c-9238-f34f451bfad9" class="">2.3 Dérogation pour Services d’Incendie et de Secours (SIS) — Innovation du 2 mai 2025</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-812b-98b4-d50e94d59b15" class="">Bien que non explicitement mentionnée dans l’arrêté du 21 février, cette dérogation a été mise en œuvre effectivement le 2 mai 2025 via un arrêté complémentaire. Elle constitue une simplification majeure :<a href="about:blank#fn16">16</a></p></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8168-96e2-fa5cecebec60" class="bulleted-list"><li style="list-style-type:disc"><strong>Périmètre étendu automatiquement à 20 km</strong> sans demande ministérielle préalable</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-811a-97f2-c509e288c9b3" class="bulleted-list"><li style="list-style-type:disc"><strong>Bénéficiaires:</strong> SDIS, STIS, services locaux d’incendie et de secours, services militaires (Paris, Marseille)<a href="about:blank#fn17">17</a></li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8189-82c6-e09e200c2d03" class="bulleted-list"><li style="list-style-type:disc"><strong>Avantage procédural:</strong> Accélération du lancement des projets, applicabilité rétroactive aux opérations existantes souhaitant s’agrandir<a href="about:blank#fn18">18</a></li></ul></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-81a0-9424-f8f743598088" class="">2.4 Dérogation EPCI — Périmètre dérogatoire illimité</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8106-9510-d655a1ec11c6" class="">La dérogation créée par l’arrêté du 21 février 2025 pour les communes et EPCI permet un périmètre sans limite géographique explicite, tant qu’il reste <strong>exclusivement au sein du ressort de l’EPCI</strong> participant. Cela signifie :<a href="about:blank#fn19">19</a></p></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81c6-b12a-cd5dbc8b355a" class="bulleted-list"><li style="list-style-type:disc">Un EPCI de plusieurs centaines de km² peut englober l’ensemble de son territoire</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-818b-9a56-c5847452c52d" class="bulleted-list"><li style="list-style-type:disc">Aucune limite km n’est spécifiée dans le texte</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-814a-aab9-f8ca5f94a1fa" class="bulleted-list"><li style="list-style-type:disc">Le critère délimitant est la frontière administrative de la collectivité, non une distance</li></ul></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-81dd-a3b7-f4eff850e72c"/></div><div style="display:contents" dir="auto"><h2 id="2ec6971c-72e7-81bf-af6e-e4bf9ce7c32d" class="">3. Modalités d’implémentation et rôles des acteurs</h2></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-816f-87b9-c97273e515c5" class="">3.1 Gestionnaire de Réseau — Responsabilités d’Enedis</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81b8-a6e4-f307d1fb1470" class="">Enedis, en tant que gestionnaire du réseau public de distribution d’électricité, endosse plusieurs responsabilités critiques :</p></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81b7-8647-f11864b2290f" class=""><strong>Interface administrative et technique:</strong></p></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8145-a30e-e1dff00784a7" class="bulleted-list"><li style="list-style-type:disc">Validation des demandes de raccordement et d’injections</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81fc-b405-cb0f521b5d97" class="bulleted-list"><li style="list-style-type:disc">Signature du <strong>contrat d’injection</strong> (pour alimenter le réseau de l’excédent produit)</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81e6-a0c7-dcb6375779e1" class="bulleted-list"><li style="list-style-type:disc">Obtention de l’<strong>accord de rattachement</strong> à un périmètre d’équilibre dans le cadre du contrat d’obligation d’achat</li></ul></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81c6-82cc-d8aa56386463" class=""><strong>Gestion des données et facturation:</strong></p></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8142-8bb3-ff02e039537a" class="bulleted-list"><li style="list-style-type:disc">Transmission mensuelle des relevés de production, consommation, autoconsommation et surplus<a href="about:blank#fn20">20</a></li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81ba-b129-ee0f930ad421" class="bulleted-list"><li style="list-style-type:disc">Réception et intégration des <strong>clés de répartition</strong> définies par la Personne Morale Organisatrice</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81a2-b68d-c36b2381b202" class="bulleted-list"><li style="list-style-type:disc">Interfaces d’échanges automatisées pour la déduction de la part autoconsommée sur les factures clients<a href="about:blank#fn21">21</a></li></ul></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-811d-b9d1-e61cf3863cb6" class=""><strong>Innovation technologique 2025:</strong></p></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8194-992d-d845eb4b63a3" class="bulleted-list"><li style="list-style-type:disc">Nouvelle clé de répartition dite <strong>“Full Dynamique”</strong> permettant une répartition producteur-par-producteur vers chaque consommateur de l’opération (au lieu d’une clé agrégée)<a href="about:blank#fn22">22</a></li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81d7-9eff-ca7d861c7c15" class="bulleted-list"><li style="list-style-type:disc">Systèmes de reporting transparent vers les participants</li></ul></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-8137-a446-dc7563088f42" class="">3.2 Personne Morale Organisatrice (PMO)</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8195-9063-f0d98734ec29" class="">La PMO est l’élément central de la gouvernance d’une opération ACC :</p></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81b7-bc7b-de357889c6ca" class="bulleted-list"><li style="list-style-type:disc"><strong>Définition:</strong> Entité juridique liant contractuellement producteurs et consommateurs finaux (forme libre : association, coopérative, copropriété, SEM, etc.)</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-817d-810c-fe6c44fa29d0" class="bulleted-list"><li style="list-style-type:disc"><strong>Responsabilités principales:</strong><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81fd-a241-d117eec32ec7" class="bulleted-list"><li style="list-style-type:circle">Choix et transmission des clés de répartition de l’électricité à Enedis<a href="about:blank#fn23">23</a></li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8171-98df-cd9085cc2348" class="bulleted-list"><li style="list-style-type:circle">Gestion administrative de l’opération et communication avec les participants</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8191-9d72-f1a9d5825104" class="bulleted-list"><li style="list-style-type:circle">Signature de la <strong>convention d’autoconsommation collective</strong> avec le fournisseur (EDF obligation d’achat pour métropole continentale)</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81e6-a879-f2026121d2b6" class="bulleted-list"><li style="list-style-type:circle">Dépôt et suivi des demandes de dérogation auprès du ministère chargé de l’Énergie (si applicable)</li></ul></div></li></ul></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-8183-900c-e92e9c1ca118" class="">3.3 Procédure de demande de dérogation</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81ce-85d0-f7de3b27f818" class="">Pour tout projet nécessitant une dérogation (distance &gt; 2 km ou puissance &gt; 5 MW) :</p></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81c9-b07d-cd22337572c5" class=""><strong>Canal administratif:</strong></p></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-817d-a555-c80940b4dca0" class="bulleted-list"><li style="list-style-type:disc">Plateforme numérique : https://demarche.numerique.gouv.fr (formulaire dédié aux dérogations)<a href="about:blank#fn24">24</a></li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-818d-b4f7-c2ed15738265" class="bulleted-list"><li style="list-style-type:disc">Demande motivée adressée au ministère chargé de l’Énergie</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-816b-a4c4-cf52c6cdc483" class="bulleted-list"><li style="list-style-type:disc">Examen sur critères objectifs énoncés dans l’arrêté</li></ul></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-816a-8f78-f13c812e5409" class=""><strong>Délais et traitement:</strong></p></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8167-9f82-f2bd90f2aab8" class="bulleted-list"><li style="list-style-type:disc">Aucun délai légal spécifié dans l’arrêté</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81af-9b0c-d73fa76af748" class="bulleted-list"><li style="list-style-type:disc">Pratique administrative : plusieurs semaines à quelques mois selon complexité</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81f6-8465-db0d400ca489" class="bulleted-list"><li style="list-style-type:disc">Pour dérogation EPCI : critères objectifs, pas d’appréciation discrétionnaire du ministère<a href="about:blank#fn25">25</a></li></ul></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-8184-ac61-d6e8caf6c7fb"/></div><div style="display:contents" dir="auto"><h2 id="2ec6971c-72e7-81d9-a3ce-ebe30b946201" class="">4. Contexte réglementaire et mesures connexes</h2></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-8114-823d-d7e9fac51d57" class="">4.1 Exonération d’accise (1er mars 2025)</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-810a-b01e-fda9c867800a" class="">Parallèlement à l’augmentation des seuils de puissance, le gouvernement a appliqué une mesure fiscale favorable :</p></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-811d-a9fc-c17edd4eabb0" class="bulleted-list"><li style="list-style-type:disc"><strong>Exonération totale d’accise</strong> (0€) pour les opérations d’ACC de puissance &lt; 1 MW<a href="about:blank#fn26">26</a></li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-815e-926a-f3e8c5d16d02" class="bulleted-list"><li style="list-style-type:disc"><strong>Effectif:</strong> 1er mars 2025</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81de-84c5-dbd5ea9600ee" class="bulleted-list"><li style="list-style-type:disc"><strong>Alignement:</strong> Parité fiscale avec l’autoconsommation individuelle</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-819f-949b-f2049e81a21d" class="bulleted-list"><li style="list-style-type:disc"><strong>Impact économique:</strong> Amélioration de la rentabilité des petits projets collectifs</li></ul></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-81a9-8c72-c9e93f98aae4" class="">4.2 Cadre legal global</h3></div><div style="display:contents" dir="ltr"><table id="2ec6971c-72e7-819b-acbc-e00c408554c4" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81a7-8f3e-f658f683979f"><th id="Ty[a" class="simple-table-header-color simple-table-header">Texte</th><th id="YPZm" class="simple-table-header-color simple-table-header">Date</th><th id="E;Pe" class="simple-table-header-color simple-table-header">Objet</th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-8164-a9fb-ee7682285a2c"><td id="Ty[a" class="">Loi PACTE</td><td id="YPZm" class="">2019</td><td id="E;Pe" class="">Création ACC en France</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81b3-9369-cc29f104425d"><td id="Ty[a" class="">Arrêté 21/11/2019</td><td id="YPZm" class="">2019</td><td id="E;Pe" class="">Critères base: 3MW, 2km</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-812e-a9e8-fe64cb441d14"><td id="Ty[a" class="">Arrêté 14/10/2020</td><td id="YPZm" class="">2020</td><td id="E;Pe" class="">Dérogation 20km générale</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-814d-8e9e-fa17ed7cbbdf"><td id="Ty[a" class="">Arrêté 19/09/2023</td><td id="YPZm" class="">2023</td><td id="E;Pe" class="">Dérogations zones rurales/semi-urbaines (10-20km)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-8103-8135-c475a3f94387"><td id="Ty[a" class=""><strong>Arrêté 21/02/2025</strong></td><td id="YPZm" class=""><strong>2025</strong></td><td id="E;Pe" class=""><strong>Seuils 5MW/10MW + dérogation EPCI</strong></td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81b1-b70c-df0566d05a1b"><td id="Ty[a" class="">Arrêté complémentaire</td><td id="YPZm" class="">2/05/2025</td><td id="E;Pe" class="">Dérogation SIS 20km auto</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-81a6-ab90-d431357a8e7a"/></div><div style="display:contents" dir="auto"><h2 id="2ec6971c-72e7-8155-bb68-fb09a43aa4bf" class="">5. Métriques et impact opérationnel</h2></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-81dd-a946-dbd75e3e3367" class="">5.1 Adoption sur le terrain</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8171-8211-eb0255c5bc4f" class="">Au 31 décembre 2024 (avant entrée en vigueur définitive) :</p></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-817e-b64e-df05bf339f07" class="bulleted-list"><li style="list-style-type:disc"><strong>Opérations actives:</strong> 698</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8156-bfc0-c730c6d211ee" class="bulleted-list"><li style="list-style-type:disc"><strong>Opérations en projet:</strong> ~1,095</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81ea-a535-c50dcfa0e39f" class="bulleted-list"><li style="list-style-type:disc"><strong>Puissance totale cumulée:</strong> 73,6 MWc</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8153-9322-fa4a651a0d37" class="bulleted-list"><li style="list-style-type:disc"><strong>Consommateurs participants:</strong> ~7,232</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81d5-b2d6-e0f14c17b026" class="bulleted-list"><li style="list-style-type:disc"><strong>Producteurs participants:</strong> ~1,110</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81f3-bb39-e80a0473ee46" class="bulleted-list"><li style="list-style-type:disc"><strong>Croissance annuelle:</strong> +393 opérations depuis début 2024<a href="about:blank#fn27">27</a></li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8105-aaaf-de80e062f758" class="bulleted-list"><li style="list-style-type:disc"><strong>Ratio moyen:</strong> ~2 producteurs et 10 consommateurs par opération</li></ul></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-8198-aa23-feca888098cd" class="">5.2 Cas d’usage exemplaires</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8194-bb3e-df0aa4e843c8" class="">Le plus grand projet français répertorié a rassemblé <strong>plus de 140 consommateurs</strong> alimentés par 4 sites produisant 276 MWh/an, permettant :</p></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8125-95a9-ed32e5906301" class="bulleted-list"><li style="list-style-type:disc">Couverture des besoins: 36%</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-813b-98f0-dccb606fa93f" class="bulleted-list"><li style="list-style-type:disc">Économies moyennes: 17% sur les factures<a href="about:blank#fn28">28</a></li></ul></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-8126-9f12-f8dfd94f5ab2"/></div><div style="display:contents" dir="auto"><h2 id="2ec6971c-72e7-81f5-8654-d83bcd50ca11" class="">Conclusion</h2></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8122-95ca-ebd5974398fc" class="">L’arrêté du 21 février 2025 (publié JO 5 mars 2025) constitue une avancée importante du cadre réglementaire de l’autoconsommation collective en France. Par l’augmentation des seuils de puissance (3 → 5 MW, avec dérogation 10 MW pour collectivités) et la création d’une dérogation EPCI aux critères géographiques, il élargit significativement les opportunités de projets collectifs, tout en maintenant l’exigence de proximité locale. L’ajout de la dérogation SIS (2 mai 2025) renforce cette tendance libéralisatrice. Enedis et les Personnes Morales Organisatrices doivent adapter leurs processus d’implémentation, notamment via les nouvelles clés de répartition “Full Dynamique” et les interfaces automatisées pour la facturation.</p></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-8105-828e-f209f6621fda"/></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8114-b850-c46b85390845" class="">JORFTEXT000051292744, Légifrance (5 mars 2025)<a href="about:blank#fn29">29</a><br/>Délibération CRE n°2024-231 (18 décembre 2024)<a href="about:blank#fn30">30</a><br/>, Gossement Avocats (5 mars 2025)<a href="about:blank#fn31">31</a><br/>, Enogrid (13 mai 2025)<a href="about:blank#fn32">32</a><br/>, APEM-Énergie (10 mars 2025)<a href="about:blank#fn33">33</a><br/>, FNCCR (19 septembre 2023)<a href="about:blank#fn34">34</a><br/>, PV Magazine (13 mai 2025)<a href="about:blank#fn35">35</a><br/>, ATEE (13 mars 2025)<a href="about:blank#fn36">36</a><br/>, Demarche.numerique.gouv.fr<a href="about:blank#fn37">37</a><br/>, Seban Avocats (15 janvier 2025)<a href="about:blank#fn38">38</a><a href="about:blank#fn39">39</a><a href="about:blank#fn40">40</a><a href="about:blank#fn41">41</a><a href="about:blank#fn42">42</a><a href="about:blank#fn43">43</a><a href="about:blank#fn44">44</a><a href="about:blank#fn45">45</a><a href="about:blank#fn46">46</a><a href="about:blank#fn47">47</a><a href="about:blank#fn48">48</a><a href="about:blank#fn49">49</a><a href="about:blank#fn50">50</a><a href="about:blank#fn51">51</a><a href="about:blank#fn52">52</a><a href="about:blank#fn53">53</a><a href="about:blank#fn54">54</a><a href="about:blank#fn55">55</a><a href="about:blank#fn56">56</a><a href="about:blank#fn57">57</a><a href="about:blank#fn58">58</a><a href="about:blank#fn59">59</a><a href="about:blank#fn60">60</a><a href="about:blank#fn61">61</a><a href="about:blank#fn62">62</a><a href="about:blank#fn63">63</a><a href="about:blank#fn64">64</a><a href="about:blank#fn65">65</a><a href="about:blank#fn66">66</a><a href="about:blank#fn67">67</a><a href="about:blank#fn68">68</a><a href="about:blank#fn69">69</a><a href="about:blank#fn70">70</a><a href="about:blank#fn71">71</a><a href="about:blank#fn72">72</a><a href="about:blank#fn73">73</a><a href="about:blank#fn74">74</a><a href="about:blank#fn75">75</a><a href="about:blank#fn76">76</a><a href="about:blank#fn77">77</a><a href="about:blank#fn78">78</a><a href="about:blank#fn79">79</a><a href="about:blank#fn80">80</a><a href="about:blank#fn81">81</a><a href="about:blank#fn82">82</a><a href="about:blank#fn83">83</a><a href="about:blank#fn84">84</a><a href="about:blank#fn85">85</a></p></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-813c-ae0b-d497c8a31038" class="">⁂</p></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-814a-a3ed-c0da87f3bd6a"/></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81a0-ace9-fa44bb847890" class="numbered-list" start="1"><li>Guide Utilisation Archelios Pro.pptx<a href="about:blank#fnref1">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8177-ba0e-f213fa101de6" class="numbered-list" start="2"><li>Guide Utilisation Archelios Pro.pptx<a href="about:blank#fnref2">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81e1-9f98-ee30bdd02e44" class="numbered-list" start="3"><li>Profil_Conso.csv<a href="about:blank#fnref3">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81e6-b026-caba298fa7e6" class="numbered-list" start="4"><li>Guide Archelios Pro et Etudes de cas.docx<a href="about:blank#fnref4">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8164-83e9-f710944ddb39" class="numbered-list" start="5"><li>Guide Utilisation Archelios Pro.pptx<a href="about:blank#fnref5">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8171-8d45-ee079c02835b" class="numbered-list" start="6"><li>Présentation advizeo V2025.pdf<a href="about:blank#fnref6">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81ea-85a0-f549773bbb4b" class="numbered-list" start="7"><li>Guide Utilisation Archelios Pro.pptx<a href="about:blank#fnref7">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81dd-9f19-f7cae55470bd" class="numbered-list" start="8"><li>Guide Utilisation Archelios Pro.pptx<a href="about:blank#fnref8">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8143-8ad6-ca9accf734d4" class="numbered-list" start="9"><li>Guide Utilisation Archelios Pro.pptx<a href="about:blank#fnref9">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81ca-9ca6-caf5db4d9c34" class="numbered-list" start="10"><li>Guide Utilisation Archelios Pro.pptx<a href="about:blank#fnref10">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-815c-b160-ea27b1782583" class="numbered-list" start="11"><li>Devis-ENDESA ENERGIA-ENOGRID-2025-03-1423.pdf<a href="about:blank#fnref11">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8107-838e-e4b1c53ae60f" class="numbered-list" start="12"><li>Guide Utilisation Archelios Pro.pptx<a href="about:blank#fnref12">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8179-a4ac-c42f9bac676e" class="numbered-list" start="13"><li>Plaquette EnoPower.pdf<a href="about:blank#fnref13">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81d4-82e8-f0c09c9ba7b7" class="numbered-list" start="14"><li>Plaquette EnoPower.pdf<a href="about:blank#fnref14">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-814e-977d-dd887d6b405b" class="numbered-list" start="15"><li>Présentation Enogrid.pdf<a href="about:blank#fnref15">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81a9-a887-c9da9bbbf54c" class="numbered-list" start="16"><li>Présentation Enogrid.pdf<a href="about:blank#fnref16">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8114-b83a-dfa334953cbd" class="numbered-list" start="17"><li>Présentation Enogrid.pdf<a href="about:blank#fnref17">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81fd-a285-ea8a4a16f425" class="numbered-list" start="18"><li>Présentation Enogrid.pdf<a href="about:blank#fnref18">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8121-88f8-f37e92e6f58b" class="numbered-list" start="19"><li>Guide Utilisation Archelios Pro.pptx<a href="about:blank#fnref19">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8139-a212-d90963d01720" class="numbered-list" start="20"><li>Plaquette EnoLab.pdf<a href="about:blank#fnref20">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-811e-b7f8-d28b5027b4b1" class="numbered-list" start="21"><li>Plaquette EnoLab.pdf<a href="about:blank#fnref21">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8151-a888-ebb12a60e419" class="numbered-list" start="22"><li>Plaquette EnoLab.pdf<a href="about:blank#fnref22">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8101-bd5e-ca091ba12d03" class="numbered-list" start="23"><li>Plaquette EnoLab.pdf<a href="about:blank#fnref23">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8167-8338-e924ba967413" class="numbered-list" start="24"><li>Note ACC ENOGRID.docx<a href="about:blank#fnref24">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8117-a34e-e865b5b42a28" class="numbered-list" start="25"><li>Présentation advizeo V2025 (002).pdf<a href="about:blank#fnref25">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81de-b553-d699579f0eeb" class="numbered-list" start="26"><li>Présentation advizeo V2025.pdf<a href="about:blank#fnref26">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81ea-a65a-ef1e7e616e06" class="numbered-list" start="27"><li>Plaquette EnoLab.pdf<a href="about:blank#fnref27">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8189-8a5c-d4c5784cc216" class="numbered-list" start="28"><li>Guide Archelios Pro et Etudes de cas.docx<a href="about:blank#fnref28">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-818f-b592-ecc88c0899f8" class="numbered-list" start="29"><li>Guide Utilisation Archelios Pro.pptx<a href="about:blank#fnref29">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81fd-b7e2-fc7122e2af6a" class="numbered-list" start="30"><li>Profil_Conso.csv<a href="about:blank#fnref30">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-819b-8a33-ce4262de7ab3" class="numbered-list" start="31"><li>Guide Archelios Pro et Etudes de cas.docx<a href="about:blank#fnref31">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-813b-b2f2-c5db13661ba8" class="numbered-list" start="32"><li>Présentation advizeo V2025.pdf<a href="about:blank#fnref32">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8145-b13c-e6381d56a37c" class="numbered-list" start="33"><li>Devis-ENDESA ENERGIA-ENOGRID-2025-03-1423.pdf<a href="about:blank#fnref33">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81d6-a024-e934dabf7acf" class="numbered-list" start="34"><li>Plaquette EnoPower.pdf<a href="about:blank#fnref34">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81ba-a224-fbaa760a9ac8" class="numbered-list" start="35"><li>Présentation Enogrid.pdf<a href="about:blank#fnref35">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8156-903a-fbf53d3a6fba" class="numbered-list" start="36"><li>Plaquette EnoLab.pdf<a href="about:blank#fnref36">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81b8-962e-f16b1676e09d" class="numbered-list" start="37"><li>Note ACC ENOGRID.docx<a href="about:blank#fnref37">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81e0-9546-c8bd0ecd1cb3" class="numbered-list" start="38"><li>Présentation advizeo V2025 (002).pdf<a href="about:blank#fnref38">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81cc-bd7c-d25fb22dbef9" class="numbered-list" start="39"><li>advizeo - Schéma économique Partenaires.pdf<a href="about:blank#fnref39">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8109-9831-d60416fc154a" class="numbered-list" start="40"><li>Energy management avec advizeo.pdf<a href="about:blank#fnref40">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81c4-8aea-f0e61ae14c45" class="numbered-list" start="41"><li>Présentation advizeo cockpit.pdf<a href="about:blank#fnref41">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-812a-8a53-f1efd1226504" class="numbered-list" start="42"><li>Advizeo.docx<a href="about:blank#fnref42">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-812d-9b4c-df8618f7c098" class="numbered-list" start="43"><li>Présentation Tilt.pdf<a href="about:blank#fnref43">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-810d-b31e-d02fe875b3ba" class="numbered-list" start="44"><li>Tilt X Endesa I Intégration technique v2.docx.pdf<a href="about:blank#fnref44">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8192-8e4d-c5a24a6497e1" class="numbered-list" start="45"><li>Tilt X Endesa I Kick-off 0307 (1).docx<a href="about:blank#fnref45">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81f8-845f-c9306a735711" class="numbered-list" start="46"><li>Tilt X Endesa I Intégration technique.docx<a href="about:blank#fnref46">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81a5-8b81-c24b18b15554" class="numbered-list" start="47"><li>Flux projet TILT - version finale.docx<a href="about:blank#fnref47">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8174-918b-d7984bdf48bf" class="numbered-list" start="48"><li>Tilt Energy X Endesa I Proposition commerciale.pdf<a href="about:blank#fnref48">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8191-9c72-d54dcf21e443" class="numbered-list" start="49"><li>https://www.gossement-avocats.com/blog/autoconsommation-collective-publication-de-larrete-du-21-fevrier-2025-modifiant-les-criteres-dune-operation-dautoconsommation-collective-etendue-et-prevoyant-une-nouvelle/<a href="about:blank#fnref49">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81ef-b625-e8549a3cf587" class="numbered-list" start="50"><li>https://enogrid.com/un-trimestre-de-bouleversements-reglementaires/<a href="about:blank#fnref50">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81e9-a117-db18c4e401fb" class="numbered-list" start="51"><li>https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000051235780<a href="about:blank#fnref51">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81bc-8796-c9d547d98003" class="numbered-list" start="52"><li>https://www.pv-magazine.fr/2025/03/10/lautoconsommation-collective-etendue-a-5-mwc/<a href="about:blank#fnref52">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8121-8242-d9ed0185df32" class="numbered-list" start="53"><li>https://www.actu-environnement.com/depeches/autoconsommation-collective-arrete-21-n-104.html<a href="about:blank#fnref53">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-815b-8fec-fa4f19408a3e" class="numbered-list" start="54"><li>https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000052212417<a href="about:blank#fnref54">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8102-bb3e-c07b9d6c6630" class="numbered-list" start="55"><li>https://fr.linkedin.com/posts/arnaudgossement_autoconsommation-collective-publication-activity-7303014508317343744-MXuW<a href="about:blank#fnref55">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-819e-98da-c173d07d2657" class="numbered-list" start="56"><li>https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT000023983208/LEGISCTA000023986314/2025-12-17/<a href="about:blank#fnref56">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8129-a8c6-eaf7e6675144" class="numbered-list" start="57"><li>https://www.lagazettedescommunes.com/973062/les-conditions-de-lautoconsommation-collective-etendue-sassouplissent/<a href="about:blank#fnref57">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81c9-9cfc-f784fa06723e" class="numbered-list" start="58"><li>https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT000023983208/LEGISCTA000032939883/2025-05-31/<a href="about:blank#fnref58">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81ee-9016-dede159b7e74" class="numbered-list" start="59"><li>https://www.apem-energie.fr/🚨-nouvelle-evolution-pour-lautoconsommation-collective-en-france-🚨/<a href="about:blank#fnref59">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-810a-9847-d5a59c1c317e" class="numbered-list" start="60"><li>https://www.legifrance.gouv.fr/loda/id/JORFTEXT000051292744/2025-03-10<a href="about:blank#fnref60">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81cd-ad1b-dba989f06076" class="numbered-list" start="61"><li>https://www.seban-associes.avocat.fr/modification-des-criteres-de-lautoconsommation-collective-etendue/<a href="about:blank#fnref61">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81af-ab14-e743b4c1db55" class="numbered-list" start="62"><li>https://www.legifrance.gouv.fr/loda/article_lc/LEGIARTI000051560836/2025-11-02<a href="about:blank#fnref62">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81c5-a982-d81335f664ab" class="numbered-list" start="63"><li>https://www.journal-photovoltaique.org/les-actus/seuils-de-puissance-augmentes-pour-lautoconsommation-collective/<a href="about:blank#fnref63">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81e8-a088-c207ca2fd3af" class="numbered-list" start="64"><li>https://www.hellio.com/actualites/conseils/autoconsommation-collective<a href="about:blank#fnref64">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-812f-93b9-ff5cb8f78acf" class="numbered-list" start="65"><li>https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000051244959<a href="about:blank#fnref65">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8173-b069-d3cb2357343b" class="numbered-list" start="66"><li>https://enogrid.com/autoconsommation-collective-comment-ca-marche/<a href="about:blank#fnref66">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81df-a2cf-f6b5e44f9711" class="numbered-list" start="67"><li>https://www.cre.fr/fileadmin/Documents/Actualites/2025/l-energie-du-droit-numero-83.pdf<a href="about:blank#fnref67">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-810e-9776-e4da3d8be300" class="numbered-list" start="68"><li>https://atee.fr/system/files/2025-04/ATEE_BFC_Conf%C3%A9rence_PV_Autoconsommation_collective%20-%2013.03%202.pdf<a href="about:blank#fnref68">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8152-817d-eee7740448d7" class="numbered-list" start="69"><li>https://www.lesepl.fr/2025/03/raccordement-au-reseau-delectricite-le-traitement-des-demandes-evolue/<a href="about:blank#fnref69">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81ce-bc35-c27e7b649a72" class="numbered-list" start="70"><li>https://hubwatt.fr/autoconsommation-collective-tout-savoir-sur-la-reglementation-actuelle/<a href="about:blank#fnref70">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81d4-bd39-d503c5cf9a53" class="numbered-list" start="71"><li>https://observatoire.enedis.fr/autoconsommation<a href="about:blank#fnref71">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81ce-8ab2-f1e69626b90c" class="numbered-list" start="72"><li>https://www.union-habitat.org/espace-droit-et-fiscalite/flash-juridique-ndeg-6-du-6-mars-2025-arrete-du-21-fevrier-2025<a href="about:blank#fnref72">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8185-874d-fca40c24651a" class="numbered-list" start="73"><li>https://www.pv-magazine.fr/2025/05/13/service-dincendie-et-de-secours-un-bon-client-a-recruter-pour-lautoconsommation-collective/<a href="about:blank#fnref73">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81c0-ac0d-d13a8482aa7e" class="numbered-list" start="74"><li>https://www.gossement-avocats.com/blog/autoconsommation-collective-publication-de-l-arrete-permettant-des-operations-d-autoconsommation-collective-dans-un-rayon-de-20-km/<a href="about:blank#fnref74">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81ad-b0df-ceb01661a4a5" class="numbered-list" start="75"><li>https://www.synops-conseil.fr/blog/autoconsommation-collective-principes-de-fonctionnement/<a href="about:blank#fnref75">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8113-8c08-ed1939037226" class="numbered-list" start="76"><li>https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000051292744<a href="about:blank#fnref76">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81be-9a7a-db0520d193a9" class="numbered-list" start="77"><li>https://www.fnccr.asso.fr/article/arrete-critere-proximite-geographique-de-lautoconsommation-collective/<a href="about:blank#fnref77">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8164-ae94-f6992fbf30d7" class="numbered-list" start="78"><li>https://www.fnccr.asso.fr/article/projet-dextension-du-perimetre-de-lautoconsommation-collective/<a href="about:blank#fnref78">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8102-961b-e17ff567fba5" class="numbered-list" start="79"><li>https://www.seban-associes.avocat.fr/autoconsommation-collective-etendue-un-nouveau-critere-de-proximite-geographique-taillee-sur-mesure-pour-les-communes-et-etablissements-publics-de-cooperation-intercommunale-epci/<a href="about:blank#fnref79">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81b9-8444-ed83f7f5e60e" class="numbered-list" start="80"><li>https://demarche.numerique.gouv.fr/commencer/demande-de-derogation-au-critere-de-proximite-geog-2/dossier_vide<a href="about:blank#fnref80">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8194-a58a-c29f18d2144b" class="numbered-list" start="81"><li>https://enogrid.com/faq-autoconsommation-collective/<a href="about:blank#fnref81">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8148-9e72-f890bf982df2" class="numbered-list" start="82"><li>https://www.legifrance.gouv.fr/loda/id/JORFTEXT000039417566<a href="about:blank#fnref82">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-815d-a4a7-d0755197ad70" class="numbered-list" start="83"><li>https://questions.assemblee-nationale.fr/q17/17-3895QE.htm<a href="about:blank#fnref83">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-817f-9c8d-f5b3228cf5d9" class="numbered-list" start="84"><li>https://enogrid.com/europe-autoconsommation-collective-2025/<a href="about:blank#fnref84">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81e6-91cf-cfaf1c964f56" class="numbered-list" start="85"><li>https://www.cre.fr/fileadmin/Documents/Deliberations/2024/241218_2024-231_Projet_Arrete_Autoconso_Collective.pdf<a href="about:blank#fnref85">↩︎</a></li></ol></div></div></article><span class="sans" style="font-size:14px;padding-top:2em"></span></body></html>

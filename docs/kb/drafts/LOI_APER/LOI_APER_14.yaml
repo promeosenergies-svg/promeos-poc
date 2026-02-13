@@ -1,0 +1,85 @@
+id: LOI_APER_14
+type: knowledge
+domain: reglementaire
+title: 'H. TABLEAU SYNTHÉTIQUE : OBLIGATION APER → FEATURE SAAS → KPI/ROI Obligation
+  APER Besoin client Feature plateforme Exemple KPI ROI estimé Payback Solarisation
+  parkings >1500 m² (2026/2028) Identifier 100% sites assujettis + calendrier alertes
+  Scoring géolocalisation auto (cadastre + parking type) ; calendrier deadline par
+  site 95% couverture patrimoine en 2 mois Gain amorce proj +50k€ (accéléré) 6 mois
+  Toitures bâtiments 2028 Gisement PV + simulation économique Calcul irradiation (Météonorm/PVGIS)
+  + TRI/payback auto TRI 8-12% ; Payback 7-9 ans Économie études -20% 6 mois ZAENR
+  accélération Identifier sites en zone accélération + impact délai Cartographie ZAENR
+  (API portail national) ; Impact - 3 mois si ZAENR Délai réduit 20% sites ZAENR Gain
+  temps instruction = gain 50k€/projet 3 mois Agrivoltaïsme critères Screening parcelles
+  agricoles ; critères services Classification parcelle (BD agricole) + checklist
+  services (agronomie, climat, aléas, bien-être) Pré-screening 90% accuracy Gain études
+  20% 4 mois ACC multi-sites <2 km Identifier participants proches ; simulation conso
+  réduction Cartographie proximité sites (2 km) + simulation ACC (répartition conso,
+  TUI réduit) Réduction facture 20-30% Gain annuel +10-50k€ (selon puissance) 18-24
+  mois Contrats PPA / AO CRE Gestion compétitif ; suivi obligation partage valeur
+  Suivi AO CRE (calendrier, montants, obligations transparence) ; template contrib.
+  partage valeur Soumission anticipée +20% Conformité 100% = évite amende Immédiat
+  Compliance solarisation (2026/2028) Suivi obligation + preuves (études, permis,
+  contrats) Calendrier automatisé (obligation vs réalisation) ; alertes 6/3/1 mois
+  avant deadline Risque amende -100% ; audit 2h vs 2j Évite 20-40k€/an amende <3 mois
+  EMS / Flex demand Pilotage production vs consommation ; maximiser autoconso Monitoring
+  temps réel (injection/soutrage GRD) + optimisation charge (IRVE, ECS, stockage batterie)
+  Auto-conso +15-25% TUI pics -10% ; surplus +5-10% 24-36 mois Gestion documentaire
+  compliance Preuves centralisées (permis, contrats, GRD, inspections) Archivage numérique
+  + export audit/sanction Audit réglementaire 2h vs 2j Réduction risque contention
+  Immédiat Reporting ESG / CSRD Automatiser déclaration empreinte carbone ENR Intégration
+  KPI prod/conso > calcul tCO2 réduit ; export CSRD/AGEC tCO2 réduit automatisé Conformité
+  CSRD Immédiat'
+summary: 'Conclusion produit : Combinaison scoring + alertes + monitoring + EMS =
+  valeur max pour B2B multi-sites (ROI combiné = 1-2 ans payback total).'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: 'Conclusion produit : Combinaison scoring + alertes + monitoring + EMS
+  = valeur max pour B2B multi-sites (ROI combiné = 1-2 ans payback total).'
+logic: null
+sources:
+- doc_id: LOI_APER
+  label: Loi APER - Acceleration Production Energies Renouvelables
+  section: 'H. TABLEAU SYNTHÉTIQUE : OBLIGATION APER → FEATURE SAAS → KPI/ROI Obligation
+    APER Besoin client Feature plateforme Exemple KPI ROI estimé Payback Solarisation
+    parkings >1500 m² (2026/2028) Identifier 100% sites assujettis + calendrier alertes
+    Scoring géolocalisation auto (cadastre + parking type) ; calendrier deadline par
+    site 95% couverture patrimoine en 2 mois Gain amorce proj +50k€ (accéléré) 6 mois
+    Toitures bâtiments 2028 Gisement PV + simulation économique Calcul irradiation
+    (Météonorm/PVGIS) + TRI/payback auto TRI 8-12% ; Payback 7-9 ans Économie études
+    -20% 6 mois ZAENR accélération Identifier sites en zone accélération + impact
+    délai Cartographie ZAENR (API portail national) ; Impact - 3 mois si ZAENR Délai
+    réduit 20% sites ZAENR Gain temps instruction = gain 50k€/projet 3 mois Agrivoltaïsme
+    critères Screening parcelles agricoles ; critères services Classification parcelle
+    (BD agricole) + checklist services (agronomie, climat, aléas, bien-être) Pré-screening
+    90% accuracy Gain études 20% 4 mois ACC multi-sites <2 km Identifier participants
+    proches ; simulation conso réduction Cartographie proximité sites (2 km) + simulation
+    ACC (répartition conso, TUI réduit) Réduction facture 20-30% Gain annuel +10-50k€
+    (selon puissance) 18-24 mois Contrats PPA / AO CRE Gestion compétitif ; suivi
+    obligation partage valeur Suivi AO CRE (calendrier, montants, obligations transparence)
+    ; template contrib. partage valeur Soumission anticipée +20% Conformité 100% =
+    évite amende Immédiat Compliance solarisation (2026/2028) Suivi obligation + preuves
+    (études, permis, contrats) Calendrier automatisé (obligation vs réalisation) ;
+    alertes 6/3/1 mois avant deadline Risque amende -100% ; audit 2h vs 2j Évite 20-40k€/an
+    amende <3 mois EMS / Flex demand Pilotage production vs consommation ; maximiser
+    autoconso Monitoring temps réel (injection/soutrage GRD) + optimisation charge
+    (IRVE, ECS, stockage batterie) Auto-conso +15-25% TUI pics -10% ; surplus +5-10%
+    24-36 mois Gestion documentaire compliance Preuves centralisées (permis, contrats,
+    GRD, inspections) Archivage numérique + export audit/sanction Audit réglementaire
+    2h vs 2j Réduction risque contention Immédiat Reporting ESG / CSRD Automatiser
+    déclaration empreinte carbone ENR Intégration KPI prod/conso > calcul tCO2 réduit
+    ; export CSRD/AGEC tCO2 réduit automatisé Conformité CSRD Immédiat'
+  anchor: '#h-tableau-synthtique-obligation-aper-feature-saas-kpiroi-obligation-aper-besoin-client-feature-plateforme-exemple-kpi-roi-estim-payback-solarisation-parkings-1500-m-20262028-identifier-100-sites-assujettis-calendrier-alertes-scoring-golocalisation-auto-cadastre-parking-type-calendrier-deadline-par-site-95-couverture-patrimoine-en-2-mois-gain-amorce-proj-50k-acclr-6-mois-toitures-btiments-2028-gisement-pv-simulation-conomique-calcul-irradiation-mtonormpvgis-tripayback-auto-tri-8-12-payback-7-9-ans-conomie-tudes--20-6-mois-zaenr-acclration-identifier-sites-en-zone-acclration-impact-dlai-cartographie-zaenr-api-portail-national-impact---3-mois-si-zaenr-dlai-rduit-20-sites-zaenr-gain-temps-instruction-gain-50kprojet-3-mois-agrivoltasme-critres-screening-parcelles-agricoles-critres-services-classification-parcelle-bd-agricole-checklist-services-agronomie-climat-alas-bien-tre-pr-screening-90-accuracy-gain-tudes-20-4-mois-acc-multi-sites-2-km-identifier-participants-proches-simulation-conso-rduction-cartographie-proximit-sites-2-km-simulation-acc-rpartition-conso-tui-rduit-rduction-facture-20-30-gain-annuel-10-50k-selon-puissance-18-24-mois-contrats-ppa-ao-cre-gestion-comptitif-suivi-obligation-partage-valeur-suivi-ao-cre-calendrier-montants-obligations-transparence-template-contrib-partage-valeur-soumission-anticipe-20-conformit-100-vite-amende-immdiat-compliance-solarisation-20262028-suivi-obligation-preuves-tudes-permis-contrats-calendrier-automatis-obligation-vs-ralisation-alertes-631-mois-avant-deadline-risque-amende--100-audit-2h-vs-2j-vite-20-40kan-amende-3-mois-ems-flex-demand-pilotage-production-vs-consommation-maximiser-autoconso-monitoring-temps-rel-injectionsoutrage-grd-optimisation-charge-irve-ecs-stockage-batterie-auto-conso-15-25-tui-pics--10-surplus-5-10-24-36-mois-gestion-documentaire-compliance-preuves-centralises-permis-contrats-grd-inspections-archivage-numrique-export-auditsanction-audit-rglementaire-2h-vs-2j-rduction-risque-contention-immdiat-reporting-esg-csrd-automatiser-dclaration-empreinte-carbone-enr-intgration-kpi-prodconso-calcul-tco2-rduit-export-csrdagec-tco2-rduit-automatis-conformit-csrd-immdiat'
+  excerpt_short: 'Conclusion produit : Combinaison scoring + alertes + monitoring
+    + EMS = valeur max pour B2B multi-si...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

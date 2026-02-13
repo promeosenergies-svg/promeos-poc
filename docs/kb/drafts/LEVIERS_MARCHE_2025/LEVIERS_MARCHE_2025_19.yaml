@@ -1,0 +1,33 @@
+id: LEVIERS_MARCHE_2025_19
+type: knowledge
+domain: facturation
+title: '10. Marché de data/flex (API exposée partenaires : agrégateurs, VPP, DR)'
+summary: "- Action : PROMEOS expose API flex : surplus production disponible, capacité\
+  \ effacement (bornes EV, chaufage) → agrégateurs can consommer \n- Gain : Valorisation\
+  \ additionnel €500–2000/an par opération,..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Action : PROMEOS expose API flex : surplus production disponible, capacité\
+  \ effacement (bornes EV, chaufage) → agrégateurs can consommer \n- Gain : Valorisation\
+  \ additionnel €500–2000/an par opération, réduction prix négatifs producteur \n\
+  - Impact : Revenue stream additionnel pour PMO (partage), attractivité producteur\
+  \ +25%"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: '10. Marché de data/flex (API exposée partenaires : agrégateurs, VPP, DR)'
+  anchor: '#10-march-de-dataflex-api-expose-partenaires-agrgateurs-vpp-dr'
+  excerpt_short: '- Action : PROMEOS expose API flex : surplus production disponible,
+    capacité effacement (bornes EV, ...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

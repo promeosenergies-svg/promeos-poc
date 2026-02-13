@@ -1,0 +1,88 @@
+id: STOCKAGE_ACC_15
+type: knowledge
+domain: reglementaire
+title: G.1 Situation Réglementaire Comparée Pays Status Batterie BESS Incitation Prix
+  Règles ACC/Communautés Barrier d’Entrée 🇫🇷 France Tari TURPE 7 injection-soutirage
+  août 2026, favorab… ✅ Tarif local dynamique, mFRR obligation 2026 > 10 MW ✅ Décret
+  2017-676 ACC cadre clair, PMO simple ⚠️ Comptage complexe si batterie commune, réglementACC
+  encore rigide 🇩🇪 Allemagne Exempt grid fees 2026–2029 (extension), privilège planning
+  § 35 BauGB ✅ Marchés intraday volatiles, revenu arbitrage fort ✅ Genossenschaft
+  (coop) + tiers-lieux, cadre très flexible ✅ Planification favorable (sauf distance
+  200m contrainte 2025) 🇵🇱 Pologne Peu réglementé, pricing incitatif début ⚠️ Électricité
+  bon marché localement, arbitrage limite ❌ Communautés émergeantes, cadre incomplet
+  ⚠️ Infrastructure DNO ancienne, grid faible stabilité 🇸🇪 Suède Batterie intégrée
+  hydroélectricité (balancing clé) ✅ Revenu balancing très élevé (Nordic price) ⚠️
+  Micro-réseaux avancés, ACC peu pertinent ✅ Infrastructure VPP leader (Statkraft
+  10 GW) 🇮🇹 Italie Amélioration 2024–2025, tarifs légaux introduction ⚠️ Projet tarifario
+  (en cours 2025), non encore appliqué ✅ Comunità energetiche décret stable (2017),
+  retard implmentation ❌ Contexte politique instable, barrière légale RECs fournitures
+  🇳🇱 Pays-Bas Flexgrids 2025+, tarif dégressif injection ✅ Marché prix temps-réel
+  maître, arbitrage optimisé ✅ Energiecoöperaties framework mature, 200+ opérationnels
+  ✅ Leader Europe, modèles copiables (ZuidtrAnt, etc.) 🇬🇧 Royaume-Uni Post-Brexit,
+  cadre réglementaire clarification 2025 ⚠️ Marché prix élevé, tarif batterie non
+  harmonisé ❌ Community Energy peu soutenu après politique, modèles rares ⚠️ Coût
+  batterie + électricité élevés (ROI difficile) 🇪🇸 Espagne Légalisation autoconsumo
+  colectivo 2021–2023, in momentum ✅ Tarif autoconsommation compétitif, ajustement
+  annuel ✅ Marcos normativos ACC claro desde 2021, maturité montante ✅ Boom PV + ACC
+  simultané, modèles répliquent rapide 🇨🇭 Suisse Batteri peu incentivée (électricité
+  bon marché historiquement) ⚠️ Tarif faible injection, arbitrage nul ✅ Micro-réseaux
+  décentralisés normatif ✅ Léger, infrastructure stable, peu nécessité batterie 🇯🇵
+  Japon Très matur, batterie réseau grande capacité (GW) ✅ Régulation marché souple,
+  service ancillaire fortement rémunérés ⚠️ Communautés énergie peu développées (focus
+  centralisé EDF-type) ✅ Leader tech batterie (Sony, Panasonic), mais coûteux
+summary: 'Conclusion Benchmark : France 2026 se positionne bien (TURPE 7 attrayant),
+  rattrape Allemagne/NL mais moins avancée politiquement. Modèle Allemagne (flexibilité
+  planning) et Néerlandais (VPP mature) s...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: 'Conclusion Benchmark : France 2026 se positionne bien (TURPE 7 attrayant),
+  rattrape Allemagne/NL mais moins avancée politiquement. Modèle Allemagne (flexibilité
+  planning) et Néerlandais (VPP mature) sont transférables si harmonisation UE continue.'
+logic: null
+sources:
+- doc_id: STOCKAGE_ACC
+  label: Stockage et Autoconsommation Collective
+  section: G.1 Situation Réglementaire Comparée Pays Status Batterie BESS Incitation
+    Prix Règles ACC/Communautés Barrier d’Entrée 🇫🇷 France Tari TURPE 7 injection-soutirage
+    août 2026, favorab… ✅ Tarif local dynamique, mFRR obligation 2026 > 10 MW ✅ Décret
+    2017-676 ACC cadre clair, PMO simple ⚠️ Comptage complexe si batterie commune,
+    réglementACC encore rigide 🇩🇪 Allemagne Exempt grid fees 2026–2029 (extension),
+    privilège planning § 35 BauGB ✅ Marchés intraday volatiles, revenu arbitrage fort
+    ✅ Genossenschaft (coop) + tiers-lieux, cadre très flexible ✅ Planification favorable
+    (sauf distance 200m contrainte 2025) 🇵🇱 Pologne Peu réglementé, pricing incitatif
+    début ⚠️ Électricité bon marché localement, arbitrage limite ❌ Communautés émergeantes,
+    cadre incomplet ⚠️ Infrastructure DNO ancienne, grid faible stabilité 🇸🇪 Suède
+    Batterie intégrée hydroélectricité (balancing clé) ✅ Revenu balancing très élevé
+    (Nordic price) ⚠️ Micro-réseaux avancés, ACC peu pertinent ✅ Infrastructure VPP
+    leader (Statkraft 10 GW) 🇮🇹 Italie Amélioration 2024–2025, tarifs légaux introduction
+    ⚠️ Projet tarifario (en cours 2025), non encore appliqué ✅ Comunità energetiche
+    décret stable (2017), retard implmentation ❌ Contexte politique instable, barrière
+    légale RECs fournitures 🇳🇱 Pays-Bas Flexgrids 2025+, tarif dégressif injection
+    ✅ Marché prix temps-réel maître, arbitrage optimisé ✅ Energiecoöperaties framework
+    mature, 200+ opérationnels ✅ Leader Europe, modèles copiables (ZuidtrAnt, etc.)
+    🇬🇧 Royaume-Uni Post-Brexit, cadre réglementaire clarification 2025 ⚠️ Marché prix
+    élevé, tarif batterie non harmonisé ❌ Community Energy peu soutenu après politique,
+    modèles rares ⚠️ Coût batterie + électricité élevés (ROI difficile) 🇪🇸 Espagne
+    Légalisation autoconsumo colectivo 2021–2023, in momentum ✅ Tarif autoconsommation
+    compétitif, ajustement annuel ✅ Marcos normativos ACC claro desde 2021, maturité
+    montante ✅ Boom PV + ACC simultané, modèles répliquent rapide 🇨🇭 Suisse Batteri
+    peu incentivée (électricité bon marché historiquement) ⚠️ Tarif faible injection,
+    arbitrage nul ✅ Micro-réseaux décentralisés normatif ✅ Léger, infrastructure stable,
+    peu nécessité batterie 🇯🇵 Japon Très matur, batterie réseau grande capacité (GW)
+    ✅ Régulation marché souple, service ancillaire fortement rémunérés ⚠️ Communautés
+    énergie peu développées (focus centralisé EDF-type) ✅ Leader tech batterie (Sony,
+    Panasonic), mais coûteux
+  anchor: '#g1-situation-rglementaire-compare-pays-status-batterie-bess-incitation-prix-rgles-acccommunauts-barrier-dentre-france-tari-turpe-7-injection-soutirage-aot-2026-favorab-tarif-local-dynamique-mfrr-obligation-2026-10-mw-dcret-2017-676-acc-cadre-clair-pmo-simple-comptage-complexe-si-batterie-commune-rglementacc-encore-rigide-allemagne-exempt-grid-fees-20262029-extension-privilge-planning-35-baugb-marchs-intraday-volatiles-revenu-arbitrage-fort-genossenschaft-coop-tiers-lieux-cadre-trs-flexible-planification-favorable-sauf-distance-200m-contrainte-2025-pologne-peu-rglement-pricing-incitatif-dbut-lectricit-bon-march-localement-arbitrage-limite-communauts-mergeantes-cadre-incomplet-infrastructure-dno-ancienne-grid-faible-stabilit-sude-batterie-intgre-hydrolectricit-balancing-cl-revenu-balancing-trs-lev-nordic-price-micro-rseaux-avancs-acc-peu-pertinent-infrastructure-vpp-leader-statkraft-10-gw-italie-amlioration-20242025-tarifs-lgaux-introduction-projet-tarifario-en-cours-2025-non-encore-appliqu-comunit-energetiche-dcret-stable-2017-retard-implmentation-contexte-politique-instable-barrire-lgale-recs-fournitures-pays-bas-flexgrids-2025-tarif-dgressif-injection-march-prix-temps-rel-matre-arbitrage-optimis-energiecoperaties-framework-mature-200-oprationnels-leader-europe-modles-copiables-zuidtrant-etc-royaume-uni-post-brexit-cadre-rglementaire-clarification-2025-march-prix-lev-tarif-batterie-non-harmonis-community-energy-peu-soutenu-aprs-politique-modles-rares-cot-batterie-lectricit-levs-roi-difficile-espagne-lgalisation-autoconsumo-colectivo-20212023-in-momentum-tarif-autoconsommation-comptitif-ajustement-annuel-marcos-normativos-acc-claro-desde-2021-maturit-montante-boom-pv-acc-simultan-modles-rpliquent-rapide-suisse-batteri-peu-incentive-lectricit-bon-march-historiquement-tarif-faible-injection-arbitrage-nul-micro-rseaux-dcentraliss-normatif-lger-infrastructure-stable-peu-ncessit-batterie-japon-trs-matur-batterie-rseau-grande-capacit-gw-rgulation-march-souple-service-ancillaire-fortement-rmunrs-communauts-nergie-peu-dveloppes-focus-centralis-edf-type-leader-tech-batterie-sony-panasonic-mais-coteux'
+  excerpt_short: 'Conclusion Benchmark : France 2026 se positionne bien (TURPE 7 attrayant),
+    rattrape Allemagne/NL mai...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

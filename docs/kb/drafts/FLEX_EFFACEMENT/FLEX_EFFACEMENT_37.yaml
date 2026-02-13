@@ -1,0 +1,40 @@
+id: FLEX_EFFACEMENT_37
+type: knowledge
+domain: reglementaire
+title: Scénario “Factory 38” (10 MW, Multi-Site Tertiaire/Industrie) Scenario Activation
+  Heures/an NEBEF €/an Réserves €/an Capacité €/an Total Brut Après Coûts Marge Conservateur
+  100 h (NEBEF), 50% prime (Réserves) €90k €200k €100k €390k €330k 15% Nominal 200
+  h, 70% €150k €350k €250k €750k €630k 16% Optimiste 300 h, 85% €220k €500k €350k
+  €1.07M €880k 18%
+summary: "Hypothèses : \n- 10 MW potentiel effacement, réparti 3–5 sites. \n- Barème\
+  \ NEBEF €90/MWh moyen. \n- Prime réserves €5/MW/h (aFRR) × 70% utilisation. \n-\
+  \ Capacité AL-1 : €35/MW/an. \n- Coûts opération : 16%..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Hypothèses : \n- 10 MW potentiel effacement, réparti 3–5 sites. \n- Barème\
+  \ NEBEF €90/MWh moyen. \n- Prime réserves €5/MW/h (aFRR) × 70% utilisation. \n-\
+  \ Capacité AL-1 : €35/MW/an. \n- Coûts opération : 16% revenues (agrégateur, instrumentation,\
+  \ R&D baseline)."
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: Scénario “Factory 38” (10 MW, Multi-Site Tertiaire/Industrie) Scenario
+    Activation Heures/an NEBEF €/an Réserves €/an Capacité €/an Total Brut Après Coûts
+    Marge Conservateur 100 h (NEBEF), 50% prime (Réserves) €90k €200k €100k €390k
+    €330k 15% Nominal 200 h, 70% €150k €350k €250k €750k €630k 16% Optimiste 300 h,
+    85% €220k €500k €350k €1.07M €880k 18%
+  anchor: '#scnario-factory-38-10-mw-multi-site-tertiaireindustrie-scenario-activation-heuresan-nebef-an-rserves-an-capacit-an-total-brut-aprs-cots-marge-conservateur-100-h-nebef-50-prime-rserves-90k-200k-100k-390k-330k-15-nominal-200-h-70-150k-350k-250k-750k-630k-16-optimiste-300-h-85-220k-500k-350k-107m-880k-18'
+  excerpt_short: "Hypothèses : \n- 10 MW potentiel effacement, réparti 3–5 sites.\
+    \ \n- Barème NEBEF €90/MWh moyen. \n- Pri..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -6,12 +6,13 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Building2, Search, RotateCcw, BookmarkPlus, Download, Star,
-  Plus, ChevronDown, Rows3, Rows4,
+  Plus, ChevronDown, Rows3, Rows4, Upload,
 } from 'lucide-react';
 import { Card, Badge, Button, Select, Pagination, EmptyState, TrustBadge } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td, ThCheckbox, TdCheckbox } from '../ui';
 import { useScope } from '../contexts/ScopeContext';
 import CreateActionModal from '../components/CreateActionModal';
+import PatrimoineWizard from '../components/PatrimoineWizard';
 import { track } from '../services/tracker';
 
 const DEFAULT_PAGE_SIZE = 25;
@@ -55,6 +56,7 @@ export default function Patrimoine() {
   const [selected, setSelected] = useState(new Set());
   const [compact, setCompact] = useState(false);
   const [showActionModal, setShowActionModal] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
   const [savedViews, setSavedViews] = useState(loadViews);
   const [showViewMenu, setShowViewMenu] = useState(false);
   const [favorites, setFavorites] = useState(() => {
@@ -166,7 +168,7 @@ export default function Patrimoine() {
           <p className="text-sm text-gray-500 mt-0.5">{scopedSites.length} sites dans le scope</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="secondary" size="sm" onClick={() => navigate('/import')}>Importer</Button>
+          <Button variant="secondary" size="sm" onClick={() => setShowWizard(true)}><Upload size={14} className="mr-1" />Importer patrimoine</Button>
           <Button onClick={() => setShowActionModal(true)}><Plus size={16} /> Creer action</Button>
         </div>
       </div>
@@ -282,6 +284,7 @@ export default function Patrimoine() {
       )}
 
       <CreateActionModal open={showActionModal} onClose={() => setShowActionModal(false)} onSave={() => {}} />
+      {showWizard && <PatrimoineWizard onClose={() => setShowWizard(false)} />}
     </div>
   );
 }

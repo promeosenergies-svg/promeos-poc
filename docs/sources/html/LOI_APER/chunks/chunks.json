@@ -1,0 +1,155 @@
+[
+  {
+    "chunk_id": "LOI_APER_chunk_0",
+    "doc_id": "LOI_APER",
+    "section_path": "TL;DR – 10 POINTS CLÉS",
+    "anchor": "#tldr-10-points-cls",
+    "text": "- Loi n° 2023-175 du 10 mars 2023 : Obligation solarisation parkings >1 500 m² (avant juillet 2026/2028) et toitures bâtiments (avant janvier 2028) ; échéances strictes, sanctions annuelles 20-40 k€. \n- Solarisation parkings : 50% en ombrières PV ; délai différencié (2026 si >10 000 m² ; 2028 sinon) ; dérogations techniques/économiques possibles mais justifiées. \n- Solarisation toitures : 30% → 40% (2026) → 50% (2027) pour constructions neuves/extensions/rénovations lourdes ; 1er janvier 2028 : tous bâtiments tertiaires/industriels >500 m² existants. \n- Zones d’accélération ENR (ZAENR) : Communes identifient sites favorables ENR ; 2e relève en cours (oct 2024 - déc 2024) ; projets en ZAENR bénéficient délais réduits (3 mois vs 6 mois d’instruction). \n- Agrivoltaïsme : Définition juridique (décret avril 2024) ; condition obligatoire : ≥1 service agricole (agronomie, climat, aléas, bien-être animal) + production agricole significative (≥90% zone témoin) + revenu agricole. \n- Autoconsommation collective : Périmètre 2 km (dérogation 10-20 km) ; PMO obligatoire (pas fournisseur) ; <5 MW puissance ; article 88 APER simplifie (pas régie obligatoire pour surplus). \n- Contrats d’achat direct (PPA/CPPA) : Article 86 APER ouvre PPA aux collectivités publiques + acheteurs privés ; responsable périmètre d’équilibre obligatoire (fourniture RTE). \n- Partage territorial de la valeur : Obligation contribution 17 500 €/MW pour lauréats appels d’offres CRE (avant mise en service) ; financement projets communes + biodiversité. \n- Textes d’application : Décrets parkings (publié 15 novembre 2024) et agrivoltaïsme (publié 9 avril 2024) live ; toitures, ACC, partage valeur : décrets attendus fin 2024/début 2025. \n- Risque juridique ACC + “fourniture” : PMO ≠ fournisseur si contrat direct producteur-consommateurs ; si PMO achète-revend = obligation autorisation CRE = compliance complexe. Article 86 apaise par délégation fournisseur acceptable.",
+    "word_count": 286,
+    "chunk_index": 0
+  },
+  {
+    "chunk_id": "LOI_APER_chunk_1",
+    "doc_id": "LOI_APER",
+    "section_path": "Définition et objectif (Articles 4-7, Article L141-5-3 code énergie)",
+    "anchor": "#dfinition-et-objectif-articles-4-7-article-l141-5-3-code-nergie",
+    "text": "Les Zones d’Accélération pour l’implantation d’installations de production d’Énergies Renouvelables (ZAENR) sont des périmètres identifiés par communes pour favoriser ENR (éolien, PV, hydro, gaz renouvelable, géothermie). Objectif : atteindre objectifs régionaux PPE (Programmation Pluriannuelle Énergie) ; simplifier procédures projets situés ZAENR.",
+    "word_count": 41,
+    "chunk_index": 1
+  },
+  {
+    "chunk_id": "LOI_APER_chunk_2",
+    "doc_id": "LOI_APER",
+    "section_path": "Critères identification ZAENR (Article L141-5-3 code énergie) 2",
+    "anchor": "#critres-identification-zaenr-article-l141-5-3-code-nergie-2",
+    "text": "Les communes doivent respecter principes (L141-5-3 I) : \n- Cohérence schémas aménagement territoire (SCoT, PLU) \n- Préservation biodiversité, paysages, patrimoine (zones Natura 2000, sites protégés = avis gestionnaire) \n- Valorisation zones activité économique (L318-8-2 code urbanisme) \n- Diversification mix énergétique régional (priorités CRE) \n- Enjeux conflits usage (agricole, forestier, résidentiel)",
+    "word_count": 50,
+    "chunk_index": 2
+  },
+  {
+    "chunk_id": "LOI_APER_chunk_3",
+    "doc_id": "LOI_APER",
+    "section_path": "Cartographie actualisée (Décembre 2024) 5 6 7 Région/Département Statut 1ère relève Statut 2e relève Avis CRE Notes Bretagne 20% communes (janvier 2024) 63% communes (octobre 2024) ; 110 804 ZAENR déposées 1ère relève ; CRE jugé insuffisant CRE vote relève complémentaire 2e relève deadline : 31/12/2024 (avis CRE 15 janv 2025) Hérault 23 communes ; cartographie 4 juin 2024 2e relève 14 oct - 31 déc 2024 19 juillet 2024 : jugé insuffisant vs objectifs Besoin +++ zones Morbihan 23 communes ; 526 ZAENR ; arrêté 4 juin 2024 En cours 2e relève 2 oct 2024 : insuffisant (région Bretagne) Guide DREAL agrivoltaïsme dispo Nationale (moyenne) ~10% communes engagées (31 déc 2023) ~35-40% communes (nov 2024) selon WWF Très variable par région",
+    "anchor": "#cartographie-actualise-dcembre-2024-5-6-7-rgiondpartement-statut-1re-relve-statut-2e-relve-avis-cre-notes-bretagne-20-communes-janvier-2024-63-communes-octobre-2024-110-804-zaenr-dposes-1re-relve-cre-jug-insuffisant-cre-vote-relve-complmentaire-2e-relve-deadline-31122024-avis-cre-15-janv-2025-hrault-23-communes-cartographie-4-juin-2024-2e-relve-14-oct---31-dc-2024-19-juillet-2024-jug-insuffisant-vs-objectifs-besoin-zones-morbihan-23-communes-526-zaenr-arrt-4-juin-2024-en-cours-2e-relve-2-oct-2024-insuffisant-rgion-bretagne-guide-dreal-agrivoltasme-dispo-nationale-moyenne-10-communes-engages-31-dc-2023-35-40-communes-nov-2024-selon-wwf-trs-variable-par-rgion",
+    "text": "Conclusion ZAENR : Cartographie très inachevée fin 2024. Beaucoup communes n’ont pas encore délibéré. Attendre avis CRE 2e relève (janvier 2025) pour clarification suffisance régionale.",
+    "word_count": 25,
+    "chunk_index": 3
+  },
+  {
+    "chunk_id": "LOI_APER_chunk_4",
+    "doc_id": "LOI_APER",
+    "section_path": "Définition et cadre légal (Article L315-2 code énergie + article 88 APER)",
+    "anchor": "#dfinition-et-cadre-lgal-article-l315-2-code-nergie-article-88-aper",
+    "text": "Autoconsommation collective = fourniture électricité entre producteur(s) et consommateur(s) finals , organisés au sein d’une Personne Morale Organisatrice (PMO) , via réseau public, avec clé répartition définie.",
+    "word_count": 27,
+    "chunk_index": 4
+  },
+  {
+    "chunk_id": "LOI_APER_chunk_5",
+    "doc_id": "LOI_APER",
+    "section_path": "RISQUE : Qualification faussement “fourniture” 10",
+    "anchor": "#risque-qualification-faussement-fourniture-10",
+    "text": "Scénario problématique : \n- PMO = structure intermédiaire \n- PMO achète producteur → stocke compte escrow → revend consommateurs au pro-rata conso réelle \n- Résultat = PMO achète-revend = qualification fournisseur d’électricité = obligation autorisation CRE \n\nConséquences : \n- Déclaration CRE + frais \n- Obligations : sécurité approvisionnement, gestion aléas, reporting \n- Contrats standard impose (délai <2h fourniture si défaillance) \n- Assurance responsabilité accentuée",
+    "word_count": 64,
+    "chunk_index": 5
+  },
+  {
+    "chunk_id": "LOI_APER_chunk_6",
+    "doc_id": "LOI_APER",
+    "section_path": "SOLUTION CONFORME (article 88 APER + clarification)",
+    "anchor": "#solution-conforme-article-88-aper-clarification",
+    "text": "Contrat direct producteur-consommateurs : \n- PMO = gestionnaire interface (clés répartition, gouvernance) \n- Producteur signe contrats directs consommateurs (à quelle fréquence ? flux variable) \n- Surplus = délégué fournisseur tiers (article 86 APER autorise, contrat de complément possible) \n- GRD calcule répartition par mesure temps réel",
+    "word_count": 46,
+    "chunk_index": 6
+  },
+  {
+    "chunk_id": "LOI_APER_chunk_7",
+    "doc_id": "LOI_APER",
+    "section_path": "Cas d’usage ACC multi-sites B2B 16 17",
+    "anchor": "#cas-dusage-acc-multi-sites-b2b-16-17",
+    "text": "Exemple : Parc industriel 10 ha, 5 entreprises, distance max 1 km \n- PMO créée (association ou SAS) \n- Producteur (T1) = ombrière parking ou toiture usine T1 \n- Consommateurs : T1, T2, T3, T4, T5 \n- Contrats producteurs-consommateurs : clés répartition mensuel (≈50% T1, 20% T2, 15% T3, etc., selon production/conso) \n- Fournisseur surplus (EDF ou tiers acheteur) : contrat appel d’offres ou obligation d’achat \n- GRD (Enedis) : mesures injection/soutrage, calcule répartition, facture couronne normale + réduction autoconso \n\nRisques : \n- Surplus fluctue = flux contrats variables = PMO doit assurer stabilité \n- Défaillance producteur = perte courant consommateurs (coupure non-autorisée) = fournisseur tiers décale approvisionnement \n- Clés répartition contestées (météo, maintenance, variations) = conflits participants",
+    "word_count": 118,
+    "chunk_index": 7
+  },
+  {
+    "chunk_id": "LOI_APER_chunk_8",
+    "doc_id": "LOI_APER",
+    "section_path": "Veille 2025 : Décrets ACC attendus 18",
+    "anchor": "#veille-2025-dcrets-acc-attendus-18",
+    "text": "- Clarification PMO statut vs fournisseur (article 88 APER) \n- Convention GRD standardisée (modèle Enedis mis à jour ?) \n- Responsable périmètre équilibre : obligations précises (article 86) \n- Délai convention GRD (actuellement 4-8 semaines ; cible 2 semaines ?)",
+    "word_count": 40,
+    "chunk_index": 8
+  },
+  {
+    "chunk_id": "LOI_APER_chunk_9",
+    "doc_id": "LOI_APER",
+    "section_path": "PHASE 1 : DIAGNOSTIC FONCIER & RÉGLEMENTAIRE (Semaines 1-4)",
+    "anchor": "#phase-1-diagnostic-foncier-rglementaire-semaines-1-4",
+    "text": "1.1 Identification sites concernés \n- Liste patrimoine immobilier (adresses, secteur, type bâtiment) \n- Plans cadastraux + surfaces parkings (m²) ; distinguer : couvert vs découvert, intérieur vs extérieur \n- Emprise sol bâtiments (tertiaire, industriel, administratif, autre) \n- Terrains agricoles / naturels (potentiel agrivoltaïsme ?) \n- Croisement ZAENR (portail national) = sites en zone accélération ? \n\n1.2 Détermination statut réglementaire Type Obligation Délai Seuil Priority Parkings Ombrières 50% 2026 / 2028 >1 500 m² URGENCE 2026 Toitures PV/Vegetal 30%+ 2025-2027 escalade >500 m² 2028 pour existants Agrivo Contrib. agr. durable Permis post-9/5/2024 Terres agr. Faible priorité (peu propriétaires agr.) ZAENR Proc. accélérée N/A (prise compte auto.) Implantation zone +3 mois délai mais pas obligation \n\n1.3 Compilation diagnostic réglementaire \n- Tableau sites > seuils = X parkings assujettis + Y bâtiments assujettis \n- Roadmap calendrier : Parkings >10k m² (2026) ; Parkings <10k m² (2028) ; Toitures 2028 \n- Statut ZAENR pour chaque site (oui/non ; impact délai si oui)",
+    "word_count": 158,
+    "chunk_index": 9
+  },
+  {
+    "chunk_id": "LOI_APER_chunk_10",
+    "doc_id": "LOI_APER",
+    "section_path": "PHASE 2 : PRIORISATION & ÉTUDE DE FAISABILITÉ (Semaines 4-8)",
+    "anchor": "#phase-2-priorisation-tude-de-faisabilit-semaines-4-8",
+    "text": "2.1 Priorisation sites Critère Score Exemple Urgence réglementaire 1-3 Parking >10k m² 2026 = 3 (urgent) ; Toiture 2028 = 1 (moins urgent) Potentiel gisement PV 1-3 Site sud France + toiture large dégagée = 3 ; Site nord + ombres = 1 OPEX réduction possible 1-3 Facture électricité >100 k€/an = 3 ; <30 k€ = 1 Facilité raccordement 1-3 GRD proche, capacité réseau = 3 ; Délai raccordement >2 ans = 1 Propriété/contrôle 1-3 Propriété pleine + exploitation directe = 3 ; Location immeuble locataire = 1 \n\n→ Sélectionner TOP 3-5 sites pour études approfondie \n\n2.2 Étude gisement PV (par site) \n- Technique : Irradiation (kWh/m²/an) ; ombres (arbres, bâtiments) ; structure existante support ; accès toiture/parking \n- Capacité réseau : Schéma raccordement GRD (puissance dispo, délai, coûts infrastructure) \n- Urbanisme : Permis/déclaration requise ? Contraintes patrimoine ? Zone protégée ? \n- Économique : Capex (€/kWc) + OPEX maintenance ; revenus (autoconso + surplus vente ou obligation achat) \n\n→ TRI, payback, IRR estimés \n\n2.3 Modèles économiques envisagés Modèle Capex OPEX Revenu Avantage Autoconsommation pure (propriétaire) Entreprise finance Entreprise gère Réduction facture Flexibilité max Tiers-financement (locationof ombrières) Prestataire finance Prestataire gère Loyer fixe 15+ ans Capex 0 ; risque tiers-défaillance ACC multi-sites Producteur finance PMO gère + GRD Surplus vente + compta Complexité ACC PPA + vente surplus Producteur finance Producteur gère Contrat PPA 15-20 ans + obligation achat Sécurité revenu AO CRE Producteur finance Producteur gère Complément rémunération 10-15 ans Subvention État (mais concurrentiel) \n\n→ Sélectionner modèle par site (selon propriété, OPEX capacité, objectif ESG)",
+    "word_count": 257,
+    "chunk_index": 10
+  },
+  {
+    "chunk_id": "LOI_APER_chunk_11",
+    "doc_id": "LOI_APER",
+    "section_path": "PHASE 3 : ÉTUDES DÉTAILLÉES & AUTORISATIONS (Semaines 8-20)",
+    "anchor": "#phase-3-tudes-dtailles-autorisations-semaines-8-20",
+    "text": "3.1 Urbanisme & Foncier \n- Demande permis construire / déclaration préalable (délai : 2 mois instruction) \n- Avis architecte des bâtiments de France (si patrimoine) \n- Accord propriétaire/usufruitier (si location) \n- Convention servitude (si ombrières affectent tiers) \n\n3.2 Schéma raccordement réseau \n- Demande auprès GRD (Enedis ou ELD) \n- Étude faisabilité raccordement \n- Devis infrastructure (frais de raccordement ; délai) \n- Signature convention raccordement GRD \n\n3.3 Contrôles & Certifications \n- Étude d’impact environnemental (si >1MW ou zone sensible) \n- Attestation conformité sécurité électrique (Consuel) \n- Déclaration ICPE (si >250kW ; installation classée) \n\n3.4 Contrats & Financement \n- Contrats producteur-consommateurs (si ACC) \n- Contrat achat surplus (obligation d’achat ou PPA) \n- Contrat tiers-financement (si locationoff ombrières) \n- Montage financement (crédit, subventions ADEME/région, CEE)",
+    "word_count": 122,
+    "chunk_index": 11
+  },
+  {
+    "chunk_id": "LOI_APER_chunk_12",
+    "doc_id": "LOI_APER",
+    "section_path": "PHASE 4 : MISE EN ŒUVRE TRAVAUX (Semaines 20-60)",
+    "anchor": "#phase-4-mise-en-uvre-travaux-semaines-20-60",
+    "text": "- Appel d’offres installateur / EPC (délai : 4-8 semaines) \n- Travaux : 2-6 mois selon envergure \n- Inspection GRD & mise en service (1-2 mois post-travaux) \n- Contrôle conformité obligatoire (4 ans : inspection technique)",
+    "word_count": 36,
+    "chunk_index": 12
+  },
+  {
+    "chunk_id": "LOI_APER_chunk_13",
+    "doc_id": "LOI_APER",
+    "section_path": "PHASE 5 : EXPLOITATION & CONFORMITÉ (Post-mise service)",
+    "anchor": "#phase-5-exploitation-conformit-post-mise-service",
+    "text": "5.1 Monitoring \n- Dashboard production temps réel (EMS) vs consommation \n- Reporting mensuel/annuel (production, surplus, auto-conso %) \n- Optimisation (shift load IRVE, ECS, charge flexibilité) \n\n5.2 Maintenance \n- Nettoyage PV (1-2x/an) \n- Inspection 4 ans (obligation légale) \n- Garantie inverseur (10 ans) + panneaux (25 ans) \n\n5.3 Compliance \n- Déclaration impôts (revenus surplus si vente) \n- CVAE si multisite >250 salariés (localisation fiscale) \n- Audit preuve conformité solarisation (si contrôle préfet = dossier complet) \n- Reporting ESG/RSE (empreinte carbone réduite)",
+    "word_count": 80,
+    "chunk_index": 13
+  },
+  {
+    "chunk_id": "LOI_APER_chunk_14",
+    "doc_id": "LOI_APER",
+    "section_path": "H. TABLEAU SYNTHÉTIQUE : OBLIGATION APER → FEATURE SAAS → KPI/ROI Obligation APER Besoin client Feature plateforme Exemple KPI ROI estimé Payback Solarisation parkings >1500 m² (2026/2028) Identifier 100% sites assujettis + calendrier alertes Scoring géolocalisation auto (cadastre + parking type) ; calendrier deadline par site 95% couverture patrimoine en 2 mois Gain amorce proj +50k€ (accéléré) 6 mois Toitures bâtiments 2028 Gisement PV + simulation économique Calcul irradiation (Météonorm/PVGIS) + TRI/payback auto TRI 8-12% ; Payback 7-9 ans Économie études -20% 6 mois ZAENR accélération Identifier sites en zone accélération + impact délai Cartographie ZAENR (API portail national) ; Impact - 3 mois si ZAENR Délai réduit 20% sites ZAENR Gain temps instruction = gain 50k€/projet 3 mois Agrivoltaïsme critères Screening parcelles agricoles ; critères services Classification parcelle (BD agricole) + checklist services (agronomie, climat, aléas, bien-être) Pré-screening 90% accuracy Gain études 20% 4 mois ACC multi-sites <2 km Identifier participants proches ; simulation conso réduction Cartographie proximité sites (2 km) + simulation ACC (répartition conso, TUI réduit) Réduction facture 20-30% Gain annuel +10-50k€ (selon puissance) 18-24 mois Contrats PPA / AO CRE Gestion compétitif ; suivi obligation partage valeur Suivi AO CRE (calendrier, montants, obligations transparence) ; template contrib. partage valeur Soumission anticipée +20% Conformité 100% = évite amende Immédiat Compliance solarisation (2026/2028) Suivi obligation + preuves (études, permis, contrats) Calendrier automatisé (obligation vs réalisation) ; alertes 6/3/1 mois avant deadline Risque amende -100% ; audit 2h vs 2j Évite 20-40k€/an amende <3 mois EMS / Flex demand Pilotage production vs consommation ; maximiser autoconso Monitoring temps réel (injection/soutrage GRD) + optimisation charge (IRVE, ECS, stockage batterie) Auto-conso +15-25% TUI pics -10% ; surplus +5-10% 24-36 mois Gestion documentaire compliance Preuves centralisées (permis, contrats, GRD, inspections) Archivage numérique + export audit/sanction Audit réglementaire 2h vs 2j Réduction risque contention Immédiat Reporting ESG / CSRD Automatiser déclaration empreinte carbone ENR Intégration KPI prod/conso > calcul tCO2 réduit ; export CSRD/AGEC tCO2 réduit automatisé Conformité CSRD Immédiat",
+    "anchor": "#h-tableau-synthtique-obligation-aper-feature-saas-kpiroi-obligation-aper-besoin-client-feature-plateforme-exemple-kpi-roi-estim-payback-solarisation-parkings-1500-m-20262028-identifier-100-sites-assujettis-calendrier-alertes-scoring-golocalisation-auto-cadastre-parking-type-calendrier-deadline-par-site-95-couverture-patrimoine-en-2-mois-gain-amorce-proj-50k-acclr-6-mois-toitures-btiments-2028-gisement-pv-simulation-conomique-calcul-irradiation-mtonormpvgis-tripayback-auto-tri-8-12-payback-7-9-ans-conomie-tudes--20-6-mois-zaenr-acclration-identifier-sites-en-zone-acclration-impact-dlai-cartographie-zaenr-api-portail-national-impact---3-mois-si-zaenr-dlai-rduit-20-sites-zaenr-gain-temps-instruction-gain-50kprojet-3-mois-agrivoltasme-critres-screening-parcelles-agricoles-critres-services-classification-parcelle-bd-agricole-checklist-services-agronomie-climat-alas-bien-tre-pr-screening-90-accuracy-gain-tudes-20-4-mois-acc-multi-sites-2-km-identifier-participants-proches-simulation-conso-rduction-cartographie-proximit-sites-2-km-simulation-acc-rpartition-conso-tui-rduit-rduction-facture-20-30-gain-annuel-10-50k-selon-puissance-18-24-mois-contrats-ppa-ao-cre-gestion-comptitif-suivi-obligation-partage-valeur-suivi-ao-cre-calendrier-montants-obligations-transparence-template-contrib-partage-valeur-soumission-anticipe-20-conformit-100-vite-amende-immdiat-compliance-solarisation-20262028-suivi-obligation-preuves-tudes-permis-contrats-calendrier-automatis-obligation-vs-ralisation-alertes-631-mois-avant-deadline-risque-amende--100-audit-2h-vs-2j-vite-20-40kan-amende-3-mois-ems-flex-demand-pilotage-production-vs-consommation-maximiser-autoconso-monitoring-temps-rel-injectionsoutrage-grd-optimisation-charge-irve-ecs-stockage-batterie-auto-conso-15-25-tui-pics--10-surplus-5-10-24-36-mois-gestion-documentaire-compliance-preuves-centralises-permis-contrats-grd-inspections-archivage-numrique-export-auditsanction-audit-rglementaire-2h-vs-2j-rduction-risque-contention-immdiat-reporting-esg-csrd-automatiser-dclaration-empreinte-carbone-enr-intgration-kpi-prodconso-calcul-tco2-rduit-export-csrdagec-tco2-rduit-automatis-conformit-csrd-immdiat",
+    "text": "Conclusion produit : Combinaison scoring + alertes + monitoring + EMS = valeur max pour B2B multi-sites (ROI combiné = 1-2 ans payback total).",
+    "word_count": 24,
+    "chunk_index": 14
+  },
+  {
+    "chunk_id": "LOI_APER_chunk_15",
+    "doc_id": "LOI_APER",
+    "section_path": "Points de vigilance réglementaire post-février 2025",
+    "anchor": "#points-de-vigilance-rglementaire-post-fvrier-2025",
+    "text": "- Double obligation (parking + toiture) : Bâtiment avec parking annexe >500 m² = cumul obligations ? \n- Calendrier chevauchant : Parkings >10k m² (2026) + toitures existants (2028) + escalade 2025-2027 = congestion travaux \n- Contrats long-terme (PPA/AO 20+ ans) : Flexibilité limitée pour pivots technologiques (batterie, flex demand) dans 2035+ \n- Régimes outre-mer : Seuils parkings/puissances adaptés (ex. Réunion <2 500 m² au lieu 1 500) = conformité locale requise \n- Risque contentieux AO CRE : Cahier des charges partage valeur contesté si non-transparent ; premiers jugements attendus 2025+",
+    "word_count": 91,
+    "chunk_index": 15
+  },
+  {
+    "chunk_id": "LOI_APER_chunk_16",
+    "doc_id": "LOI_APER",
+    "section_path": "ANNEXE : RESSOURCES OFFICIELLES & LIENS Source Lien Utilité Légifrance - Loi APER https://www.legifrance.gouv.fr/loda/id/JORFTEXT000047294244 Texte complet à jour Portail cartographique ZAENR (géré régions) Consultation zones accélération CRE - Délibérations APER https://www.cre.fr/ Avis CRE partage valeur, PPA, etc. ADEME - Guides ENR https://infos.ademe.fr Fiches pratiques solarisation, ACC RTE - Schémas raccordement https://www.rte-france.com Capacité réseau par région Enedis - Convention ACC https://www.enedis.fr Modèle convention autoconsommation Code de l’énergie (Légifrance) https://www.legifrance.gouv.fr/codes/code_de_l_energie/LEGITEXT000023519434 Références articles L/R Code urbanisme (Légifrance) https://www.legifrance.gouv.fr/codes/code_de_l_urbanisme Permis, autorisations Journal Officiel (JO) https://www.legifrance.gouv.fr/jorf/accueil Décrets/arrêtés parus",
+    "anchor": "#annexe-ressources-officielles-liens-source-lien-utilit-lgifrance---loi-aper-httpswwwlegifrancegouvfrlodaidjorftext000047294244-texte-complet-jour-portail-cartographique-zaenr-gr-rgions-consultation-zones-acclration-cre---dlibrations-aper-httpswwwcrefr-avis-cre-partage-valeur-ppa-etc-ademe---guides-enr-httpsinfosademefr-fiches-pratiques-solarisation-acc-rte---schmas-raccordement-httpswwwrte-francecom-capacit-rseau-par-rgion-enedis---convention-acc-httpswwwenedisfr-modle-convention-autoconsommation-code-de-lnergie-lgifrance-httpswwwlegifrancegouvfrcodescodedelenergielegitext000023519434-rfrences-articles-lr-code-urbanisme-lgifrance-httpswwwlegifrancegouvfrcodescodedelurbanisme-permis-autorisations-journal-officiel-jo-httpswwwlegifrancegouvfrjorfaccueil-dcretsarrts-parus",
+    "text": "Mise à jour : Décembre 2024 (recherches jusqu’au 29/12/2024) \nProchaine mise à jour recommandée : Février 2025 (post-CRE 2e relève ZAENR + décrets attendus) \nValidité : Conforme statut légal & réglementaire au moment rédaction \n\nCe dossier synthétise l’essentiel de la loi APER pour un directeur immobilier/énergie. Tous les éléments sont sourcés et justifiés (consultez tableau ressources pour liens). Copier dans Notion, adapter tableau RACI/checklist au contexte client, et utiliser roadmap priorité pour lancer études phare. \n19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 \n\n⁂ \n- https://www.legifrance.gouv.fr/loda/id/JORFTEXT000047294244 ↩︎ \n- https://www.legifrance.gouv.fr/loda/id/JORFTEXT000047294244 ↩︎ \n- https://www.engie-green.fr/enr/loi-acceleration-energies-renouvelables/ ↩︎ \n- https://www.legifrance.gouv.fr/loda/id/JORFTEXT000047294244 ↩︎ \n- https://www.herault.gouv.fr/Actions-de-l-Etat/Transition-energetique/Vous-etes-une-collectivite ↩︎ \n- https://rhone.chambres-agriculture.fr/sinformer/energies/agrivoltaisme ↩︎ \n- https://unit-e.fr/zones-acceleration-energies-renouvelables-zaenr/ ↩︎ \n- https://www.edf-oa.fr/l-autoconsommation-collective ↩︎ \n- https://www.village-justice.com/articles/autoconsommation-collective-electricite-personne-morale-organisatrice,50963.html ↩︎ \n- https://www.village-justice.com/articles/autoconsommation-collective-electricite-personne-morale-organisatrice,50963.html ↩︎ \n- https://hubwatt.fr/autoconsommation-collective-tout-savoir-sur-la-reglementation-actuelle/ ↩︎ \n- https://enogrid.com/derogation-perimetre-autoconsommation-collective/ ↩︎ \n- https://www.legifrance.gouv.fr/loda/id/JORFTEXT000039417566/ ↩︎ \n- https://enogrid.com/loi-acceleration-enr/ ↩︎ \n- https://www.apexenergies.fr/autoconsommation/cest-quoi-lautoconsommation-collective/ ↩︎ \n- https://hubwatt.fr/autoconsommation-collective-tout-savoir-sur-la-reglementation-actuelle/ ↩︎ \n- https://www.village-justice.com/articles/autoconsommation-collective-electricite-personne-morale-organisatrice,50963.html ↩︎ \n- https://enogrid.com/loi-acceleration-enr/ ↩︎ \n- https://engie-green.fr/enr/loi-acceleration-energies-renouvelables/ ↩︎ \n- https://cozen.energy/loi-aper-lobligation-de-solarisation-des-parkings-et-toitures-decryptee/ ↩︎ \n- https://www.actu-juridique.fr/administratif/energies-renouvelables-ce-que-va-changer-la-loi-n-2023-175-du-10-mars-2023/ ↩︎ \n- https://www.idex.fr/le-blog/loi-aper-calendrier-des-obligations-photovoltaiques-pour-les-parkings ↩︎ \n- https://www.loire-atlantique.gouv.fr/Actions-de-l-Etat/Developpement-durable-et-mobilite/Energies-renouvelables/Zones-d-acceleration-des-energies-renouvelables-loi-APER ↩︎ \n- https://www.pyrenees-orientales.gouv.fr/Actions-de-l-Etat/Environnement-eau-risques-naturels-et-technologiques/Energies-renouvelables/Planifier-les-energies-renouvelables/Loi-d-acceleration-pour-la-production-d-energies-renouvelables-Loi-APER ↩︎ \n- https://www.gide-realestate.com/obligation-de-solarisation-des-parkings-nouveaux-et-existants-le-decret-dapplication-est-paru/ ↩︎ \n- https://www.hellio.com/actualites/reglementation/loi-aper ↩︎ \n- https://www.seban-associes.avocat.fr/obligation-de-solarisation-des-parkings-publication-du-decret-dapplication-de-larticle-40-de-la-loi-aper/ ↩︎ \n- https://www.heliup-solar.com/billets/obligation-de-solarisation-des-batiments/ ↩︎ \n- https://atlansun.fr/actus/decret-article-40-de-la-loi-aper-resume/ ↩︎ \n- https://programme-cee-actee.fr/wp-content/uploads/2024/12/Presentation-webinaire-reglementation-vegetalisation.pdf ↩︎ \n- https://infos.ademe.fr/energies/2024/3-bonnes-raisons-de-choisir-lautoconsommation-collective/ ↩︎ \n- https://www.gossement-avocats.com/blog/solarisation-des-parkings-publication-du-decret-dapplication-de-larticle-40-de-la-loi-aper/ ↩︎ \n- https://www.banquedesterritoires.fr/ombrieres-photovoltaiques-sur-parkings-le-decret-pris-en-application-de-larticle-40-de-la-loi-aper ↩︎ \n- https://www.morbihan.gouv.fr/Actions-de-l-Etat/Amenagement-du-territoire-et-developpement-local-construction-logement-et-paysages/Planification-energetique ↩︎ \n- https://www.tse.energy/articles/le-cadre-reglementaire-de-lagrivoltaisme-pour-preserver-lagriculture-francaise ↩︎ \n- https://www.gossement-avocats.com/blog/solarisation-des-parcs-de-stationnement-arrete-du-4-decembre-2024-precisant-les-conditions-economiquement-acceptables-dinstallation-dombrieres/ ↩︎ \n- https://www.afnor.org/actualites/label-agrivoltaique-cultures-afnor-certification/ ↩︎ \n- https://www.oise.gouv.fr/Actions-de-l-Etat/Amenagement-durable-du-territoire/Transition-Ecologique-et-Energetique/Energies-renouvelables/La-loi-d-acceleration-pour-les-energies-renouvelables/Les-panneaux-photovoltaiques-sur-parkings ↩︎ \n- https://energie-partagee.org/les-ppa-ce-quil-faut-savoir-en-2024-sur-ces-contrats-directs-dachat-vente-delectricite/ ↩︎ \n- https://devedeix-avocat.fr/vente-directe/ ↩︎ \n- https://cms.law/fr/fra/news-information/commande-publique-l-autoconsommation-facilitee-par-la-loi-enr ↩︎ \n- https://www.cre.fr/actualites/toute-lactualite/developpement-des-contrats-de-type-ppa.html ↩︎ \n- https://hubwatt.fr/les-acteurs-dune-operation-dautoconsommation-collective/ ↩︎ \n- https://unit-e.fr/decret-agrivoltaisme/ ↩︎ \n- https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000049386027 ↩︎ \n- https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000047994041 ↩︎ \n- https://www.gossement-avocats.com/blog/agrivoltaisme-1/ ↩︎ \n- https://outil2amenagement.cerema.fr/actualites/decret-du-8-avril-2024-cadre-lagrivoltaisme-et-limplantation-des-installations ↩︎ \n- https://ccebo.cnce.fr/documentation/telecharger/8512 ↩︎ \n- https://www.gide-realestate.com/agrivoltaisme-le-decret-est-enfin-paru/ ↩︎ \n- https://www.france-renouvelables.fr/wp-content/uploads/2024/03/Suivi_Loi_APER_02_24.pdf ↩︎ \n- https://www.gide-realestate.com/publication-du-decret-sur-les-obligations-dinstallation-denergies-renouvelables-sur-les-batiments-et-parkings/ ↩︎ \n- https://www.banquedesterritoires.fr/simplification-du-droit-de-lenvironnement-un-nouveau-decret-est-paru ↩︎ \n- https://www.cre.fr/fileadmin/Documents/Deliberations/import/24011_2024-04_Avis_Decret_Partage_Valeur.pdf ↩︎ \n- https://programme-cee-actee.fr/wp-content/uploads/2025/10/Guide_solarisation-V2.pdf ↩︎ \n- https://green-law-avocat.fr/la-reforme-de-lautorisation-environnementale-fini-la-valse-a-quatre-temps-place-au-pogo/ ↩︎ \n- https://www.legifrance.gouv.fr/jorf/article_jo/JORFARTI000047294360 ↩︎ \n- https://entreprendre.service-public.gouv.fr/vosdroits/F38107 ↩︎ \n- https://blog.landot-avocats.net/2023/11/29/obligation-a-compter-du-1er-janvier-2024-de-notifier-les-recours-diriges-contre-les-autorisations-environnementales-lrar-dans-les-15-jours-francs/ ↩︎ \n- https://questions.assemblee-nationale.fr/q17/17-11694QE.htm ↩︎",
+    "word_count": 298,
+    "chunk_index": 16
+  }
+]

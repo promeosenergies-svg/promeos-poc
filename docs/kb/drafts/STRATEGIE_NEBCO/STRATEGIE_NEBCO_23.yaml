@@ -1,0 +1,51 @@
+id: STRATEGIE_NEBCO_23
+type: rule
+domain: reglementaire
+title: '12 Hypothèses Clés (Priorisées) # Hypothèse ICE Score Preuve Attendue Délai
+  Owner 1 Clients retail intéressés NEBCO 8.0 2+ LOI prospects J7 Sales 2 Gisement
+  moyen 1–2 MW/cluster 7.5 1 audit pré-flex 5 magasins J14 Tech 3 Revenue formula
+  validated 8.5 vs. public data (SIA, RTE) J3 Finance 4 OE partner accept mutualisé
+  5.0 LOI signée Energy Pool J21 Partnerships 5 Cockpit advizeo sufficient 8.0 Data
+  quality validation J7 Tech 6 Tertiaire PME data feasible 6.0 1 site diagnostique
+  CVC J10 Tech 7 IoT installation <€1k/site 6.0 3 devis intégrateurs J10 Ops 8 Client
+  willingness €2–5k audit 7.0 3+ interviews intent J5 Sales 9 Taux réussite 75–85%
+  realistic 6.5 Model sensitivity analysis J7 Tech 10 Contrats & liability clear 6.5
+  Legal template review J14 Legal 11 OE partner reputation safe 7.5 Compliance audit
+  Energy Pool J21 Ops 12 Seasonal opportunity Q2 2025 7.0 RTE calendar activations
+  J3 Tech'
+summary: 'Go-gate J30 : ≥5/12 hypothèses validées + ≥4 critères clés (OE LOI, 2 audits,
+  cockpit sign-off, contrats) → LAUNCH pilot .'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: 'Go-gate J30 : ≥5/12 hypothèses validées + ≥4 critères clés (OE LOI, 2
+  audits, cockpit sign-off, contrats) → LAUNCH pilot .'
+logic: null
+sources:
+- doc_id: STRATEGIE_NEBCO
+  label: Analyse strategique NEBCO
+  section: '12 Hypothèses Clés (Priorisées) # Hypothèse ICE Score Preuve Attendue
+    Délai Owner 1 Clients retail intéressés NEBCO 8.0 2+ LOI prospects J7 Sales 2
+    Gisement moyen 1–2 MW/cluster 7.5 1 audit pré-flex 5 magasins J14 Tech 3 Revenue
+    formula validated 8.5 vs. public data (SIA, RTE) J3 Finance 4 OE partner accept
+    mutualisé 5.0 LOI signée Energy Pool J21 Partnerships 5 Cockpit advizeo sufficient
+    8.0 Data quality validation J7 Tech 6 Tertiaire PME data feasible 6.0 1 site diagnostique
+    CVC J10 Tech 7 IoT installation <€1k/site 6.0 3 devis intégrateurs J10 Ops 8 Client
+    willingness €2–5k audit 7.0 3+ interviews intent J5 Sales 9 Taux réussite 75–85%
+    realistic 6.5 Model sensitivity analysis J7 Tech 10 Contrats & liability clear
+    6.5 Legal template review J14 Legal 11 OE partner reputation safe 7.5 Compliance
+    audit Energy Pool J21 Ops 12 Seasonal opportunity Q2 2025 7.0 RTE calendar activations
+    J3 Tech'
+  anchor: '#12-hypothses-cls-priorises-hypothse-ice-score-preuve-attendue-dlai-owner-1-clients-retail-intresss-nebco-80-2-loi-prospects-j7-sales-2-gisement-moyen-12-mwcluster-75-1-audit-pr-flex-5-magasins-j14-tech-3-revenue-formula-validated-85-vs-public-data-sia-rte-j3-finance-4-oe-partner-accept-mutualis-50-loi-signe-energy-pool-j21-partnerships-5-cockpit-advizeo-sufficient-80-data-quality-validation-j7-tech-6-tertiaire-pme-data-feasible-60-1-site-diagnostique-cvc-j10-tech-7-iot-installation-1ksite-60-3-devis-intgrateurs-j10-ops-8-client-willingness-25k-audit-70-3-interviews-intent-j5-sales-9-taux-russite-7585-realistic-65-model-sensitivity-analysis-j7-tech-10-contrats-liability-clear-65-legal-template-review-j14-legal-11-oe-partner-reputation-safe-75-compliance-audit-energy-pool-j21-ops-12-seasonal-opportunity-q2-2025-70-rte-calendar-activations-j3-tech'
+  excerpt_short: 'Go-gate J30 : ≥5/12 hypothèses validées + ≥4 critères clés (OE LOI,
+    2 audits, cockpit sign-off, cont...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

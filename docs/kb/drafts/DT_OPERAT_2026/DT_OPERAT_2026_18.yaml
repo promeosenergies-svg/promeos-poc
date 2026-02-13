@@ -1,0 +1,37 @@
+id: DT_OPERAT_2026_18
+type: rule
+domain: reglementaire
+title: Exemptions possibles
+summary: "- Contraintes techniques ou de sécurité insurmontables \n- Patrimoine protégé\
+  \ (avis négatif ABF) \n- Parking déjà ombragé ≥ 50% par arbres matures \n- Démantèlement\
+  \ programmé du parking (autorisation urb..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Contraintes techniques ou de sécurité insurmontables \n- Patrimoine\
+  \ protégé (avis négatif ABF) \n- Parking déjà ombragé ≥ 50% par arbres matures \n\
+  - Démantèlement programmé du parking (autorisation urbanisme antérieure) \n- Production\
+  \ ENR alternative équivalente sur le site (éoliennes, etc.) \n- Viabilité économique\
+  \ insuffisante (cas exceptionnel) \n\nImportant (janvier 2026) : La Loi DDADUE (30\
+  \ avril 2025) a introduit un sursis pour les parkings ≥ 10 000 m² ayant signé un\
+  \ contrat d’engagement avant le 31 décembre 2025 , autorisant report de l’installation\
+  \ jusqu’au 1er janvier 2028 . 39 \n\nSource : Loi n° 2023-175 (APER) ; Décret n°\
+  \ 2024-1023 (13 novembre 2024) ; Loi du 30 avril 2025 (DDADUE) 40 41 42"
+logic: null
+sources:
+- doc_id: DT_OPERAT_2026
+  label: Decret Tertiaire / OPERAT - Obligations 2026
+  section: Exemptions possibles
+  anchor: '#exemptions-possibles'
+  excerpt_short: "- Contraintes techniques ou de sécurité insurmontables \n- Patrimoine\
+    \ protégé (avis négatif ABF) \n- P..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

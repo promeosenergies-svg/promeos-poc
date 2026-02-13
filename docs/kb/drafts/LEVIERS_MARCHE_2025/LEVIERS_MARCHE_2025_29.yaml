@@ -1,0 +1,51 @@
+id: LEVIERS_MARCHE_2025_29
+type: rule
+domain: acc
+title: Roadmap Temporelle ```
+summary: "T0 (Jan–Mar 2025) – MVP Core Foundation \n├─ Sprint 1–3 : Auth, PMO workspace,\
+  \ data model \n├─ Sprint 4–6 : Participant portal, settlement calc \n└─ Sprint 7–9\
+  \ : Test UAT, go-live beta (10 opérations pil..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "T0 (Jan–Mar 2025) – MVP Core Foundation \n├─ Sprint 1–3 : Auth, PMO workspace,\
+  \ data model \n├─ Sprint 4–6 : Participant portal, settlement calc \n└─ Sprint 7–9\
+  \ : Test UAT, go-live beta (10 opérations pilotes) \n\nT1 (Apr–Jun 2025) – API Enedis\
+  \ + Compliance Lite \n├─ Integration Enedis Data Connect (courbes temps réel) \n\
+  ├─ API ACC Enedis (déclaration automatisée) \n├─ Décret Tertiaire monitoring (bêta)\
+  \ \n└─ First 20 paying customers \n\nT2 (Jul–Sep 2025) – Clés dynamiques + SEPA\
+  \ \n├─ Moteur clés dynamiques v1.0 (règles MBA) \n├─ SEPA mandate + prélèvements\
+  \ auto \n├─ Data & Conformité v1.0 (full module) \n└─ 50+ opérations actives \n\n\
+  T3 (Oct–Dec 2025) – Scaling + Intelligence \n├─ Agrégation multi-ACC (portfolio\
+  \ PMO) \n├─ Clés dynamiques IA (prédiction ML) \n├─ Intégration GTB (capteurs IoT)\
+  \ \n└─ 100+ opérations, 10+ bailleurs/collectivités engagées #### **Backlog Priorisé\
+  \ (MoSCoW + RICE)**\n\n| User Story | Module | MoSCoW | RICE Score | Statut T0 |\n\
+  |-----------|--------|--------|-----------|-----------|\n| En tant que PMO, je crée\
+  \ opération ACC en 15 min avec wizard | ACC Starter | **M** | 95 | Sprint 1–2 |\n\
+  | En tant que participant, je vois ma facture + économies | Portal | **M** | 90\
+  \ | Sprint 3–4 |\n| En tant que PMO, j'automatise la facturation SEPA | Billing\
+  \ | **M** | 85 | Sprint 4–6 |\n| En tant qu'admin, j'importe courbes Enedis automatiquement\
+  \ | Data & Mon | **M** | 80 | Sprint 6–9 (API T1) |\n| En tant que PMO, j'optimise\
+  \ clés de répartition avec IA | Settlement | **S** | 75 | T1 2026 |\n| En tant qu'energy\
+  \ manager, je piloter multi-sites + ACC | Compliance | **S** | 70 | T1 2025 beta\
+  \ |\n| En tant qu'agrégateur, j'accède aux surplus via API | Flex Broker | **C**\
+  \ | 55 | T2 2026 |\n| En tant que client data, j'exporte compliance rapports | Data\
+  \ & Mon | **C** | 50 | T2 2025 |"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: Roadmap Temporelle ```
+  anchor: '#roadmap-temporelle-'
+  excerpt_short: "T0 (Jan–Mar 2025) – MVP Core Foundation \n├─ Sprint 1–3 : Auth,\
+    \ PMO workspace, data model \n├─ Sprint ..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

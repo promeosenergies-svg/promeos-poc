@@ -1,0 +1,907 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><title>decret_bacs_promeos_complet</title><style>
+/* cspell:disable-file */
+/* webkit printing magic: print all background colors */
+html {
+	-webkit-print-color-adjust: exact;
+}
+* {
+	box-sizing: border-box;
+	-webkit-print-color-adjust: exact;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+}
+@media only screen {
+	body {
+		margin: 2em auto;
+		max-width: 900px;
+		color: rgb(55, 53, 47);
+	}
+}
+
+body {
+	line-height: 1.5;
+	white-space: pre-wrap;
+}
+
+a,
+a.visited {
+	color: inherit;
+	text-decoration: underline;
+}
+
+.pdf-relative-link-path {
+	font-size: 80%;
+	color: #444;
+}
+
+h1,
+h2,
+h3 {
+	letter-spacing: -0.01em;
+	line-height: 1.2;
+	font-weight: 600;
+	margin-bottom: 0;
+}
+
+/* Override strong tags inside headings to maintain consistent weight */
+h1 strong,
+h2 strong,
+h3 strong {
+	font-weight: 600;
+}
+
+.page-title {
+	font-size: 2.5rem;
+	font-weight: 700;
+	margin-top: 0;
+	margin-bottom: 0.75em;
+}
+
+h1 {
+	font-size: 1.875rem;
+	margin-top: 1.875rem;
+}
+
+h2 {
+	font-size: 1.5rem;
+	margin-top: 1.5rem;
+}
+
+h3 {
+	font-size: 1.25rem;
+	margin-top: 1.25rem;
+}
+
+.source {
+	border: 1px solid #ddd;
+	border-radius: 3px;
+	padding: 1.5em;
+	word-break: break-all;
+}
+
+.callout {
+	border-radius: 10px;
+	padding: 1rem;
+}
+
+figure {
+	margin: 1.25em 0;
+	page-break-inside: avoid;
+}
+
+figcaption {
+	opacity: 0.5;
+	font-size: 85%;
+	margin-top: 0.5em;
+}
+
+mark {
+	background-color: transparent;
+}
+
+.indented {
+	padding-left: 1.5em;
+}
+
+hr {
+	background: transparent;
+	display: block;
+	width: 100%;
+	height: 1px;
+	visibility: visible;
+	border: none;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.09);
+}
+
+img {
+	max-width: 100%;
+}
+
+@media only print {
+	img {
+		max-height: 100vh;
+		object-fit: contain;
+	}
+}
+
+@page {
+	margin: 1in;
+}
+
+.collection-content {
+	font-size: 0.875rem;
+}
+
+.collection-content td {
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.column-list {
+	display: flex;
+	justify-content: space-between;
+}
+
+.column {
+	padding: 0 1em;
+}
+
+.column:first-child {
+	padding-left: 0;
+}
+
+.column:last-child {
+	padding-right: 0;
+}
+
+.table_of_contents-item {
+	display: block;
+	font-size: 0.875rem;
+	line-height: 1.3;
+	padding: 0.125rem;
+}
+
+.table_of_contents-indent-1 {
+	margin-left: 1.5rem;
+}
+
+.table_of_contents-indent-2 {
+	margin-left: 3rem;
+}
+
+.table_of_contents-indent-3 {
+	margin-left: 4.5rem;
+}
+
+.table_of_contents-link {
+	text-decoration: none;
+	opacity: 0.7;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.18);
+}
+
+table,
+th,
+td {
+	border: 1px solid rgba(55, 53, 47, 0.09);
+	border-collapse: collapse;
+}
+
+table {
+	border-left: none;
+	border-right: none;
+}
+
+th,
+td {
+	font-weight: normal;
+	padding: 0.25em 0.5em;
+	line-height: 1.5;
+	min-height: 1.5em;
+	text-align: left;
+}
+
+th {
+	color: rgba(55, 53, 47, 0.6);
+}
+
+ol,
+ul {
+	margin: 0;
+	margin-block-start: 0.6em;
+	margin-block-end: 0.6em;
+}
+
+li > ol:first-child,
+li > ul:first-child {
+	margin-block-start: 0.6em;
+}
+
+ul > li {
+	list-style: disc;
+}
+
+ul.to-do-list {
+	padding-inline-start: 0;
+}
+
+ul.to-do-list > li {
+	list-style: none;
+}
+
+.to-do-children-checked {
+	text-decoration: line-through;
+	opacity: 0.375;
+}
+
+ul.toggle > li {
+	list-style: none;
+}
+
+ul {
+	padding-inline-start: 1.7em;
+}
+
+ul > li {
+	padding-left: 0.1em;
+}
+
+ol {
+	padding-inline-start: 1.6em;
+}
+
+ol > li {
+	padding-left: 0.2em;
+}
+
+.mono ol {
+	padding-inline-start: 2em;
+}
+
+.mono ol > li {
+	text-indent: -0.4em;
+}
+
+.toggle {
+	padding-inline-start: 0em;
+	list-style-type: none;
+}
+
+/* Indent toggle children */
+.toggle > li > details {
+	padding-left: 1.7em;
+}
+
+.toggle > li > details > summary {
+	margin-left: -1.1em;
+}
+
+.selected-value {
+	display: inline-block;
+	padding: 0 0.5em;
+	background: rgba(206, 205, 202, 0.5);
+	border-radius: 3px;
+	margin-right: 0.5em;
+	margin-top: 0.3em;
+	margin-bottom: 0.3em;
+	white-space: nowrap;
+}
+
+.collection-title {
+	display: inline-block;
+	margin-right: 1em;
+}
+
+.page-description {
+	margin-bottom: 2em;
+}
+
+.simple-table {
+	margin-top: 1em;
+	font-size: 0.875rem;
+	empty-cells: show;
+}
+.simple-table td {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table th {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table-header-color {
+	background: rgb(247, 246, 243);
+	color: black;
+}
+.simple-table-header {
+	font-weight: 500;
+}
+
+time {
+	opacity: 0.5;
+}
+
+.icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	max-width: 1.2em;
+	max-height: 1.2em;
+	text-decoration: none;
+	vertical-align: text-bottom;
+	margin-right: 0.5em;
+}
+
+img.icon {
+	border-radius: 3px;
+}
+
+.callout img.notion-static-icon {
+	width: 1em;
+	height: 1em;
+}
+
+.callout p {
+	margin: 0;
+}
+
+.callout h1,
+.callout h2,
+.callout h3 {
+	margin: 0 0 0.6rem;
+}
+
+.user-icon {
+	width: 1.5em;
+	height: 1.5em;
+	border-radius: 100%;
+	margin-right: 0.5rem;
+}
+
+.user-icon-inner {
+	font-size: 0.8em;
+}
+
+.text-icon {
+	border: 1px solid #000;
+	text-align: center;
+}
+
+.page-cover-image {
+	display: block;
+	object-fit: cover;
+	width: 100%;
+	max-height: 30vh;
+}
+
+.page-header-icon {
+	font-size: 3rem;
+	margin-bottom: 1rem;
+}
+
+.page-header-icon-with-cover {
+	margin-top: -0.72em;
+	margin-left: 0.07em;
+}
+
+.page-header-icon img {
+	border-radius: 3px;
+}
+
+.link-to-page {
+	margin: 1em 0;
+	padding: 0;
+	border: none;
+	font-weight: 500;
+}
+
+p > .user {
+	opacity: 0.5;
+}
+
+td > .user,
+td > time {
+	white-space: nowrap;
+}
+
+input[type="checkbox"] {
+	transform: scale(1.5);
+	margin-right: 0.6em;
+	vertical-align: middle;
+}
+
+p {
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+}
+
+.image {
+	border: none;
+	margin: 1.5em 0;
+	padding: 0;
+	border-radius: 0;
+	text-align: center;
+}
+
+.code,
+code {
+	background: rgba(135, 131, 120, 0.15);
+	border-radius: 3px;
+	padding: 0.2em 0.4em;
+	border-radius: 3px;
+	font-size: 85%;
+	tab-size: 2;
+}
+
+code {
+	color: #eb5757;
+}
+
+.code {
+	padding: 1.5em 1em;
+}
+
+.code-wrap {
+	white-space: pre-wrap;
+	word-break: break-all;
+}
+
+.code > code {
+	background: none;
+	padding: 0;
+	font-size: 100%;
+	color: inherit;
+}
+
+blockquote {
+	font-size: 1em;
+	margin: 1em 0;
+	padding-left: 1em;
+	border-left: 3px solid rgb(55, 53, 47);
+}
+
+blockquote.quote-large {
+	font-size: 1.25em;
+}
+
+.bookmark {
+	text-decoration: none;
+	max-height: 8em;
+	padding: 0;
+	display: flex;
+	width: 100%;
+	align-items: stretch;
+}
+
+.bookmark-title {
+	font-size: 0.85em;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	height: 1.75em;
+	white-space: nowrap;
+}
+
+.bookmark-text {
+	display: flex;
+	flex-direction: column;
+}
+
+.bookmark-info {
+	flex: 4 1 180px;
+	padding: 12px 14px 14px;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+}
+
+.bookmark-image {
+	width: 33%;
+	flex: 1 1 180px;
+	display: block;
+	position: relative;
+	object-fit: cover;
+	border-radius: 1px;
+}
+
+.bookmark-description {
+	color: rgba(55, 53, 47, 0.6);
+	font-size: 0.75em;
+	overflow: hidden;
+	max-height: 4.5em;
+	word-break: break-word;
+}
+
+.bookmark-href {
+	font-size: 0.75em;
+	margin-top: 0.25em;
+}
+
+.sans { font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"; }
+.code { font-family: "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace; }
+.serif { font-family: Lyon-Text, Georgia, ui-serif, serif; }
+.mono { font-family: iawriter-mono, Nitti, Menlo, Courier, monospace; }
+.pdf .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK JP'; }
+.pdf:lang(zh-CN) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK SC'; }
+.pdf:lang(zh-TW) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK TC'; }
+.pdf:lang(ko-KR) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK KR'; }
+.pdf .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.pdf .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK JP'; }
+.pdf:lang(zh-CN) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK SC'; }
+.pdf:lang(zh-TW) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK TC'; }
+.pdf:lang(ko-KR) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK KR'; }
+.pdf .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.highlight-default {
+	color: rgba(44, 44, 43, 1);
+}
+.highlight-gray {
+	color: rgba(125, 122, 117, 1);
+	fill: rgba(125, 122, 117, 1);
+}
+.highlight-brown {
+	color: rgba(159, 118, 90, 1);
+	fill: rgba(159, 118, 90, 1);
+}
+.highlight-orange {
+	color: rgba(210, 123, 45, 1);
+	fill: rgba(210, 123, 45, 1);
+}
+.highlight-yellow {
+	color: rgba(203, 148, 52, 1);
+	fill: rgba(203, 148, 52, 1);
+}
+.highlight-teal {
+	color: rgba(80, 148, 110, 1);
+	fill: rgba(80, 148, 110, 1);
+}
+.highlight-blue {
+	color: rgba(56, 125, 201, 1);
+	fill: rgba(56, 125, 201, 1);
+}
+.highlight-purple {
+	color: rgba(154, 107, 180, 1);
+	fill: rgba(154, 107, 180, 1);
+}
+.highlight-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.highlight-red {
+	color: rgba(207, 81, 72, 1);
+	fill: rgba(207, 81, 72, 1);
+}
+.highlight-default_background {
+	color: rgba(44, 44, 43, 1);
+}
+.highlight-gray_background {
+	background: rgba(42, 28, 0, 0.07);
+}
+.highlight-brown_background {
+	background: rgba(139, 46, 0, 0.086);
+}
+.highlight-orange_background {
+	background: rgba(224, 101, 1, 0.129);
+}
+.highlight-yellow_background {
+	background: rgba(211, 168, 0, 0.137);
+}
+.highlight-teal_background {
+	background: rgba(0, 100, 45, 0.09);
+}
+.highlight-blue_background {
+	background: rgba(0, 124, 215, 0.094);
+}
+.highlight-purple_background {
+	background: rgba(102, 0, 178, 0.078);
+}
+.highlight-pink_background {
+	background: rgba(197, 0, 93, 0.086);
+}
+.highlight-red_background {
+	background: rgba(223, 22, 0, 0.094);
+}
+.block-color-default {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray {
+	color: rgba(125, 122, 117, 1);
+	fill: rgba(125, 122, 117, 1);
+}
+.block-color-brown {
+	color: rgba(159, 118, 90, 1);
+	fill: rgba(159, 118, 90, 1);
+}
+.block-color-orange {
+	color: rgba(210, 123, 45, 1);
+	fill: rgba(210, 123, 45, 1);
+}
+.block-color-yellow {
+	color: rgba(203, 148, 52, 1);
+	fill: rgba(203, 148, 52, 1);
+}
+.block-color-teal {
+	color: rgba(80, 148, 110, 1);
+	fill: rgba(80, 148, 110, 1);
+}
+.block-color-blue {
+	color: rgba(56, 125, 201, 1);
+	fill: rgba(56, 125, 201, 1);
+}
+.block-color-purple {
+	color: rgba(154, 107, 180, 1);
+	fill: rgba(154, 107, 180, 1);
+}
+.block-color-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.block-color-red {
+	color: rgba(207, 81, 72, 1);
+	fill: rgba(207, 81, 72, 1);
+}
+.block-color-default_background {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray_background {
+	background: rgba(240, 239, 237, 1);
+}
+.block-color-brown_background {
+	background: rgba(245, 237, 233, 1);
+}
+.block-color-orange_background {
+	background: rgba(251, 235, 222, 1);
+}
+.block-color-yellow_background {
+	background: rgba(249, 243, 220, 1);
+}
+.block-color-teal_background {
+	background: rgba(232, 241, 236, 1);
+}
+.block-color-blue_background {
+	background: rgba(229, 242, 252, 1);
+}
+.block-color-purple_background {
+	background: rgba(243, 235, 249, 1);
+}
+.block-color-pink_background {
+	background: rgba(250, 233, 241, 1);
+}
+.block-color-red_background {
+	background: rgba(252, 233, 231, 1);
+}
+.select-value-color-default { background-color: rgba(42, 28, 0, 0.07); }
+.select-value-color-gray { background-color: rgba(28, 19, 1, 0.11); }
+.select-value-color-brown { background-color: rgba(127, 51, 0, 0.156); }
+.select-value-color-orange { background-color: rgba(196, 88, 0, 0.203); }
+.select-value-color-yellow { background-color: rgba(209, 156, 0, 0.282); }
+.select-value-color-green { background-color: rgba(0, 96, 38, 0.156); }
+.select-value-color-blue { background-color: rgba(0, 118, 217, 0.203); }
+.select-value-color-purple { background-color: rgba(92, 0, 163, 0.141); }
+.select-value-color-pink { background-color: rgba(183, 0, 78, 0.152); }
+.select-value-color-red { background-color: rgba(206, 24, 0, 0.164); }
+
+.checkbox {
+	display: inline-flex;
+	vertical-align: text-bottom;
+	width: 16;
+	height: 16;
+	background-size: 16px;
+	margin-left: 2px;
+	margin-right: 5px;
+}
+
+.checkbox-on {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20width%3D%2216%22%20height%3D%2216%22%20fill%3D%22%2358A9D7%22%2F%3E%0A%3Cpath%20d%3D%22M6.71429%2012.2852L14%204.9995L12.7143%203.71436L6.71429%209.71378L3.28571%206.2831L2%207.57092L6.71429%2012.2852Z%22%20fill%3D%22white%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+
+.checkbox-off {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20x%3D%220.75%22%20y%3D%220.75%22%20width%3D%2214.5%22%20height%3D%2214.5%22%20fill%3D%22white%22%20stroke%3D%22%2336352F%22%20stroke-width%3D%221.5%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+	
+</style></head><body><article id="2d86971c-72e7-809a-a0c6-cfd21c597b75" class="page sans"><header><div class="page-header-icon undefined"><span class="icon">1️⃣</span></div><h1 class="page-title" dir="auto">decret_bacs_promeos_complet</h1><p class="page-description" dir="auto"></p></header><div class="page-body"><div style="display:contents" dir="auto"><h1 id="2d86971c-72e7-81b7-98f5-c7e17399c0d1" class="">DÉCRET BACS : SYNTHÈSE COMPLÈTE &amp; OPÉRATIONNELLE PROMEOS 2.0</h1></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-8102-bec1-f0445ba0159f" class="">Bâtiments Tertiaires – Automation &amp; Control Systems</h2></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-811b-b685-c1549aa1e5f7" class=""><strong>Dernière mise à jour : 29 décembre 2025, 12h00 CET (Europe/Paris)</strong></p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8182-9008-db9e58dbf780" class=""><strong>Statut : Conforme aux décrets n°2020-887, n°2023-259, n°2025-1343 et arrêté 07/04/2023</strong></p></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-81b7-8631-cc2102aefb13"/></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-8195-837c-d4cb93828347" class="">TL;DR – 10 LIGNES CRITIQUES</h2></div><div style="display:contents" dir="ltr"><table id="2d86971c-72e7-8105-8767-d056fcaa93a6" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-810b-8423-f9c643bcd40a"><th id="CC^R" class="simple-table-header-color simple-table-header">Aspect</th><th id="Ch@v" class="simple-table-header-color simple-table-header">Information</th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81a7-bc78-df58289204a6"><td id="CC^R" class=""><strong>Quoi</strong></td><td id="Ch@v" class="">Obligation système d’automatisation CVC (chauffage/clim/ventilation) pour tertiaires</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8142-ad6d-fd7b5225cbee"><td id="CC^R" class=""><strong>Seuils</strong></td><td id="Ch@v" class="">&gt;290 kW (2025) et &gt;70 kW (anciennement 2027, <strong>reporté à 2030</strong>)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8196-9524-c790bbb326bf"><td id="CC^R" class=""><strong>&gt;290 kW</strong></td><td id="Ch@v" class="">Deadline 01/01/2025 – <strong>URGENCE</strong>, sites non conformes sont hors-la-loi</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8165-9557-d7e8bcdd9f1d"><td id="CC^R" class=""><strong>&gt;70 kW</strong></td><td id="Ch@v" class="">Deadline 01/01/2030 (report novembre 2025) – Délai relâché mais opportunité économique immédiate</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8124-a8ec-ffc38d31a641"><td id="CC^R" class=""><strong>Exemption</strong></td><td id="Ch@v" class="">TRI &gt; 10 ans = dérogation valide (audit TRI requis, documentation 10 ans)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-813c-bc7c-f410b9d0f187"><td id="CC^R" class=""><strong>Inspections</strong></td><td id="Ch@v" class="">Obligatoires : 5 ans max (2 ans post-installation), 1re avant 01/01/2025, rapport 10 ans</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81db-8df8-f17fc010bacd"><td id="CC^R" class=""><strong>Responsable</strong></td><td id="Ch@v" class="">Propriétaire équipement (locataire si proprio chaudière/clim)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8147-9e7a-cd63e0c70c29"><td id="CC^R" class=""><strong>Bâtiments neufs</strong></td><td id="Ch@v" class="">Obligation stricte sans exemption TRI (depuis PC post-21/07/2021 seuil 290 kW, post-08/04/2024 seuil 70 kW)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81d9-969b-cc53ff36fdf2"><td id="CC^R" class=""><strong>Articulation</strong></td><td id="Ch@v" class="">BACS = outil pour atteindre décret tertiaire -40% 2030 (obligations parallèles, pas annulation)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81ad-83fb-c8505f4f2c3e"><td id="CC^R" class=""><strong>Opportunité</strong></td><td id="Ch@v" class="">Gains 15-30% énergie, ROI 5-8 ans, compatibilité CEE/MaPrimeRénov tertiaire</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-816c-8cb9-eaaffbb1f06a"/></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-810e-a10b-d33335916389" class="">FICHE D’IDENTITÉ : BACS EN 30 SECONDES</h2></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81f7-b19a-d0d3dae70078" class="">Définition officielle (CCH art. R.175-1)</h3></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81d7-83b7-f3b2c54ae511" class=""><strong>Système d’automatisation et de contrôle</strong> : Tout système comprenant <strong>tous les produits, logiciels et services d’ingénierie</strong> à même de soutenir fonctionnement <strong>efficace énergétique/économique</strong> systèmes techniques bâtiment via <strong>commandes automatiques</strong> et gestion manuelle.[R175-1]</p></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-811d-a70c-e10ba674c557" class="">Objectifs</h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8127-957a-ef9e2d0b0ea6" class="bulleted-list"><li style="list-style-type:disc">Réduire consommations énergétiques 15-30% via optimisation équipements CVC</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81fd-a04e-ccc015fda75b" class="bulleted-list"><li style="list-style-type:disc">Détecter dérives performance (alarmes, alertes temps réel)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81ce-a6c3-c59fcf24d604" class="bulleted-list"><li style="list-style-type:disc">Soutenir atteinte objectifs décret tertiaire (-40% 2030, -50% 2040, -60% 2050)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81f6-941a-ea3260544941" class="bulleted-list"><li style="list-style-type:disc">Assurer confort/santé occupants sans surcoût énergétique</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-815a-a7a6-e16627f56581" class="">Équivalences terminologiques</h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81a3-bc7b-ef599b942e87" class="bulleted-list"><li style="list-style-type:disc"><strong>BACS</strong> = Building Automation Control System (anglais)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8138-a117-dd666f137d67" class="bulleted-list"><li style="list-style-type:disc"><strong>GTB</strong> = Gestion Technique du Bâtiment (français)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8120-8cdb-fcd392b0ab21" class="bulleted-list"><li style="list-style-type:disc"><strong>BMS</strong> = Building Management System (anglais alternatif)</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-8140-ac61-d45e4f85beb3" class="">Portée géographique</h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81c0-bea1-ff4a6ddb3b8f" class="bulleted-list"><li style="list-style-type:disc"><strong>Champ</strong> : Bâtiments <strong>tertiaires non-résidentiels</strong> (bureaux, commerces, hôtels, établissements scolaires/santé, loisirs, administrations, logistique)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-818a-aabe-fbc2afdb3c76" class="bulleted-list"><li style="list-style-type:disc"><strong>Surface minimale</strong> : Aucune (s’applique dès qu’un seul équipement CVC dépasse seuil puissance)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81d8-939b-dedb322a2daf" class="bulleted-list"><li style="list-style-type:disc"><strong>Applicabilité</strong> : France métropolitaine + DROM (même règles)</li></ul></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-8165-b057-e953b9f8d234"/></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-8158-87b0-f343e587675d" class="">RÉFÉRENCES JURIDIQUES OFFICIELLES</h2></div><div style="display:contents" dir="ltr"><table id="2d86971c-72e7-8129-bc2a-ec4cace88458" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81ae-b64d-fb742b7ceb11"><th id="KZCZ" class="simple-table-header-color simple-table-header">Texte</th><th id="YoS&lt;" class="simple-table-header-color simple-table-header">Nature</th><th id="}MVI" class="simple-table-header-color simple-table-header">Articles clés</th><th id="`jc&gt;" class="simple-table-header-color simple-table-header">Publié</th><th id="hPIU" class="simple-table-header-color simple-table-header">Statut</th><th id="Jq^V" class="simple-table-header-color simple-table-header">Changement majeur</th><th id="sX:&gt;" class="simple-table-header-color simple-table-header">Lien source</th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81db-820c-df5ded822b08"><td id="KZCZ" class=""><strong>Directive UE 2018/844</strong></td><td id="YoS&lt;" class="">Directive européenne</td><td id="}MVI" class="">Art. 8 (BACS obligatoires)</td><td id="`jc&gt;" class="">19/06/2018</td><td id="hPIU" class="">Transposée FR</td><td id="Jq^V" class="">Base légale comunitaire</td><td id="sX:&gt;" class="">EUR-Lex directive</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8143-a687-c4d244aa52d8"><td id="KZCZ" class=""><strong>Décret n°2020-887</strong></td><td id="YoS&lt;" class="">Décret initial BACS</td><td id="}MVI" class="">R.175-1 à R.175-5</td><td id="`jc&gt;" class="">20/07/2020 (JORF 22/07)</td><td id="hPIU" class="">En vigueur</td><td id="Jq^V" class="">Seuil 290 kW, bâtiments tertiaires</td><td id="sX:&gt;" class="">Légifrance</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81c7-9da4-e141efcc680c"><td id="KZCZ" class=""><strong>Décret n°2023-259</strong></td><td id="YoS&lt;" class="">Modification calendrier</td><td id="}MVI" class="">R.175-1 à R.175-5-1</td><td id="`jc&gt;" class="">07/04/2023 (JORF 08/04)</td><td id="hPIU" class="">En vigueur</td><td id="Jq^V" class="">Seuil 70 kW, inspections obligatoires TRI modal</td><td id="sX:&gt;" class="">Légifrance</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-816c-9696-f2abfb55805a"><td id="KZCZ" class=""><strong>Arrêté 07/04/2023</strong></td><td id="YoS&lt;" class="">Application BACS</td><td id="}MVI" class="">Annexes 1-3 (TRI, insp.)</td><td id="`jc&gt;" class="">07/04/2023 (JORF 08/04)</td><td id="hPIU" class="">En vigueur</td><td id="Jq^V" class="">Méthode TRI détaillée, fréquence inspection 5 ans</td><td id="sX:&gt;" class="">Légifrance</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8130-9cc0-df9a2d1c6603"><td id="KZCZ" class=""><strong>Décret n°2025-1343</strong></td><td id="YoS&lt;" class="">Report calendrier</td><td id="}MVI" class="">Modif. R.175-2 dates</td><td id="`jc&gt;" class="">12/2025 (JORF 28/12)</td><td id="hPIU" class=""><strong>En vigueur</strong></td><td id="Jq^V" class=""><strong>Seuil 70 kW = 01/01/2030</strong> (ex 2027)</td><td id="sX:&gt;" class="">Légifrance</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81d4-85e9-e6dfc650e5e8"><td id="KZCZ" class=""><strong>Code CCH</strong></td><td id="YoS&lt;" class="">Code référence</td><td id="}MVI" class="">R.175-1 à R.175-6</td><td id="`jc&gt;" class="">Continu</td><td id="hPIU" class="">Consolidé</td><td id="Jq^V" class="">Définitions, obligations, responsabilités</td><td id="sX:&gt;" class="">Légifrance CCH</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8161-b009-e1f4482a753b" class=""><strong>Lien centralisé accès textes</strong> : https://www.legifrance.gouv.fr (rechercher “R.175-1” ou “décret BACS”)</p></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-810d-89f4-f2b598d1f786"/></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-81ec-86b7-f69d82da5d25" class="">DECISION TREE : “SUIS-JE CONCERNÉ ?”</h2></div><div style="display:contents" dir="auto"><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerPolicy="no-referrer"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" referrerPolicy="no-referrer"/><pre id="2d86971c-72e7-8117-b713-fc61517b3908" class="code code-wrap"><code class="language-Plain Text" style="white-space:pre-wrap;word-break:break-all">┌─ BÂTIMENT TERTIAIRE NON-RÉSIDENTIEL ?
+│  ├─ NON → Pas concerné (BACS non obligatoire)
+│  └─ OUI
+│     ├─ SYSTÈME CHAUFFAGE OU CLIMATISATION (combiné ou non ventilation) ?
+│     │  ├─ NON → Pas concerné
+│     │  └─ OUI
+│     │     ├─ CALCUL PUISSANCE UTILE (Putile) :
+│     │     │  Additionner puissances (kW) selon règles :
+│     │     │  • Chaud : max(systèmes distincts) OU somme(systèmes réseau/cascade)
+│     │     │  • Froid : somme(thermodynamiques même bâtiment)
+│     │     │  • Si plusieurs systèmes : comparer chaud vs froid, retenir le plus élevé
+│     │     │
+│     │     ├─ Putile &gt; 290 kW ?
+│     │     │  ├─ OUI → OBLIGATION 01/01/2025 (URGENCE IMMÉDIATE)
+│     │     │  │        ├─ Bâtiment neuf (PC post-21/07/2021) : BACS obligatoire
+│     │     │  │        └─ Bâtiment existant : BACS si TRI &lt; 10 ans OU avant 01/01/2025
+│     │     │  │
+│     │     │  └─ NON (≤290 kW), Putile &gt; 70 kW ?
+│     │     │     ├─ OUI → OBLIGATION 01/01/2030 (Report novembre 2025)
+│     │     │     │        ├─ Bâtiment neuf (PC post-08/04/2024) : BACS obligatoire
+│     │     │     │        ├─ Bâtiment existant (renouvellement post-09/04/2023) : BACS
+│     │     │     │        └─ Bâtiment existant (sans renouvellement) : Avant 01/01/2030 OU audit TRI exemption
+│     │     │     │
+│     │     │     └─ NON (≤70 kW) → Pas concerné décret BACS
+│     │     │
+│     │     ├─ BÂTIMENT NEUF OU EXISTANT ?
+│     │     │  ├─ NEUF (PC déposé après 21/07/2021 seuil 290 kW, après 08/04/2024 seuil 70 kW)
+│     │     │  │  └─ BACS obligatoire SANS exemption TRI
+│     │     │  └─ EXISTANT
+│     │     │     ├─ Renouvellement équipement post-09/04/2023 ?
+│     │     │     │  ├─ OUI → BACS obligatoire, seuil 70 kW si renouvellement ≥09/04/2023
+│     │     │     │  └─ NON (ancien système)
+│     │     │     │     ├─ Putile &gt; 290 kW → Avant 01/01/2025 (sauf TRI &gt; 10 ans)
+│     │     │     │     └─ Putile 70-290 kW → Avant 01/01/2030 (sauf TRI &gt; 10 ans)
+│     │     │
+│     │     └─ TRI &gt; 10 ANS JUSTIFIÉ ?
+│     │        ├─ OUI (audit + documentation) → EXEMPTION VALIDE (conservation 10 ans)
+│     │        └─ NON → OBLIGATION BACS s&#x27;applique</code></pre></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-811c-ab7c-f9c828e5702b" class="">Calcul puissance utile (Putile) : RÈGLES PRÉCISES</h3></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81b8-bda0-d00077d2fb08" class="">Systèmes de chauffage</h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81df-af96-d16d69fd9b45" class="bulleted-list"><li style="list-style-type:disc"><strong>Chaudières combustion (cascade/réseau)</strong> : <strong>Somme</strong> puissances nominales = 2×200 kW = 400 kW</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8161-bb27-ea303b394143" class="bulleted-list"><li style="list-style-type:disc"><strong>PAC réversible</strong> : Puissance utile chaud (label)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8149-8f7b-e1fdbb9a2321" class="bulleted-list"><li style="list-style-type:disc"><strong>Chauffage électrique</strong> : Puissance électrique max appelée (somme tous radiateurs électriques)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8196-90fc-d59013e6af89" class="bulleted-list"><li style="list-style-type:disc"><strong>Systèmes distincts</strong> (PAC + chaudière) : <strong>Max</strong> (150 kW + 50 kW) = <strong>150 kW</strong> (pas somme)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8151-ba67-e88c54b547cc" class="bulleted-list"><li style="list-style-type:disc"><strong>Règle générale</strong> : Si composantes en réseau/cascade = somme ; si indépendants = max</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81f5-8545-e50ea0ec0123" class="">Systèmes de climatisation</h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81c1-8000-d86600df91e4" class="bulleted-list"><li style="list-style-type:disc"><strong>PAC réversible + appoint froid</strong> : <strong>Somme</strong> (ex : 180 kW + 120 kW = 300 kW)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8188-8810-dd9f18c25b48" class="bulleted-list"><li style="list-style-type:disc"><strong>Systèmes thermodynamiques même bâtiment</strong> : <strong>Somme</strong> toutes unités</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-810a-aa9c-cb9f0733e576" class="bulleted-list"><li style="list-style-type:disc"><strong>Climatiseurs individuels</strong> : <strong>Somme</strong> tous les climatiseurs</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-8139-a0d0-dbb45d3e51d6" class="">Logique déclenchement</h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8114-b86e-fa00f8da75ba" class="bulleted-list"><li style="list-style-type:disc"><strong>Obligation si</strong> : Putile chauffage <strong>OU</strong> Putile climatisation &gt; seuil (le plus élevé déclenche)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8139-813f-d52541610139" class="bulleted-list"><li style="list-style-type:disc"><strong>Exemple</strong> : Chaud 200 kW + Froid 320 kW → Froid déclenche obligation (320 &gt; 290 kW)</li></ul></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-81ab-9e67-df85118e894e"/></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-8153-b819-caa894d0c9a4" class="">CALENDRIER DES OBLIGATIONS : AVANT/APRÈS REPORT DÉCEMBRE 2025</h2></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-8149-b060-cb5127b73092" class="">Tableau synthétique (mise à jour avec Décret n°2025-1343)</h3></div><div style="display:contents" dir="ltr"><table id="2d86971c-72e7-8116-acb9-c1d8385383e7" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8118-830c-dcae386f6189"><th id="on|h" class="simple-table-header-color simple-table-header">Puissance utile</th><th id="=It\" class="simple-table-header-color simple-table-header">Bâtiments neufs (date PC)</th><th id="s:Z&gt;" class="simple-table-header-color simple-table-header">Bâtiments existants</th><th id="BdLd" class="simple-table-header-color simple-table-header">Date limite mise en conformité</th><th id="ZyWW" class="simple-table-header-color simple-table-header">Statut décembre 2025</th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81d8-af5e-e02c9a3718f5"><td id="on|h" class=""><strong>&gt; 290 kW</strong></td><td id="=It\" class="">PC post-21/07/2021</td><td id="s:Z&gt;" class="">Tous</td><td id="BdLd" class=""><strong>01/01/2025</strong></td><td id="ZyWW" class="">✓ <strong>EN VIGUEUR</strong> – Aucun changement</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8168-9912-ec5ffd2d5c38"><td id="on|h" class=""><strong>&gt; 70 kW</strong></td><td id="=It\" class="">PC post-08/04/2024</td><td id="s:Z&gt;" class="">Renouvellement ≥09/04/2023 + sans renouvellement</td><td id="BdLd" class=""><strong>01/01/2030</strong> (ex 2027)</td><td id="ZyWW" class="">⚠ <strong>REPORT confirmé</strong> (nov 2025)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8197-9c68-fa4d5e808427"><td id="on|h" class=""><strong>Inspections</strong></td><td id="=It\" class="">Tous BACS</td><td id="s:Z&gt;" class="">Tous BACS (1re avant 01/01/2025)</td><td id="BdLd" class="">Max 5 ans (2 ans post-install)</td><td id="ZyWW" class="">✓ <strong>OBLIGATOIRE</strong> – Inchangé</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81f3-bbc6-edd2c5cbfd5d" class="">Chronologie détaillée (historique + futur)</h3></div><div style="display:contents" dir="ltr"><table id="2d86971c-72e7-81e7-b77c-ed3a06ab7a60" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81f7-ae3a-fdcde8a1ad9e"><th id="Ryb}" class="simple-table-header-color simple-table-header">Date</th><th id="hvZ^" class="simple-table-header-color simple-table-header">Événement</th><th id="BD]Z" class="simple-table-header-color simple-table-header">Impact</th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81bb-9381-ce68fbc2a984"><td id="Ryb}" class=""><strong>22/07/2020</strong></td><td id="hvZ^" class="">Décret n°2020-887 publié (JORF)</td><td id="BD]Z" class="">Entrée en vigueur seuil 290 kW</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81e3-a145-d7b69890fc59"><td id="Ryb}" class=""><strong>21/07/2021</strong></td><td id="hvZ^" class="">Obligation bâtiments neufs (PC post cette date)</td><td id="BD]Z" class="">Bâtiments neufs &gt;290 kW assujettis</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81c3-9bce-ffd38f132e82"><td id="Ryb}" class=""><strong>08/04/2023</strong></td><td id="hvZ^" class="">Décret n°2023-259 publié (arrêté TRI 07/04/2023)</td><td id="BD]Z" class="">Seuil 290 kW baissé à 70 kW, inspections obligatoires</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8110-ad6c-eb987ac9bea6"><td id="Ryb}" class=""><strong>09/04/2023</strong></td><td id="hvZ^" class="">Entrée en vigueur seuil 70 kW (renouvellement)</td><td id="BD]Z" class="">Existants qui renouvellent &gt;70 kW = obligation</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8181-824c-f65d2ce2c5f5"><td id="Ryb}" class=""><strong>08/04/2024</strong></td><td id="hvZ^" class="">Obligation bâtiments neufs seuil 70 kW (PC post cette date)</td><td id="BD]Z" class="">Bâtiments neufs &gt;70 kW assujettis</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81e6-9299-d8aeadce5118"><td id="Ryb}" class=""><strong>01/01/2025</strong></td><td id="hvZ^" class=""><strong>DEADLINE &gt;290 kW bâtiments existants</strong></td><td id="BD]Z" class="">Tous &gt;290 kW doivent avoir BACS opérationnel</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81d7-94f4-fb6997a16083"><td id="Ryb}" class=""><strong>01/01/2025</strong></td><td id="hvZ^" class=""><strong>1ère inspection obligatoire (tous BACS existants)</strong></td><td id="BD]Z" class="">Inspection périodique commence</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8112-9b10-e83f5611b823"><td id="Ryb}" class=""><strong>20/11/2025</strong></td><td id="hvZ^" class="">Annonce report &gt;70 kW par PM Lecornu</td><td id="BD]Z" class="">Décalage calendrier confirmé</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8117-8078-c559104415e8"><td id="Ryb}" class=""><strong>04/12/2025</strong></td><td id="hvZ^" class="">Consultation publique closes + validation CSE</td><td id="BD]Z" class="">Décret modification finalisé</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-810e-9508-e999a647a690"><td id="Ryb}" class=""><strong>12/2025</strong></td><td id="hvZ^" class="">Décret n°2025-1343 publié (JORF 28/12/2025)</td><td id="BD]Z" class=""><strong>Seuil 70 kW = 01/01/2030</strong> (officiel)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8138-b2c6-e3d31349caf2"><td id="Ryb}" class=""><strong>01/01/2030</strong></td><td id="hvZ^" class=""><strong>DEADLINE &gt;70 kW bâtiments existants</strong></td><td id="BD]Z" class="">Tous 70-290 kW doivent avoir BACS opérationnel</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-8109-8020-e0bba1e0451a"/></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-81c5-a56f-c5e943850f92" class="">OBLIGATIONS FONCTIONNELLES MINIMALES : TERRAIN</h2></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81f7-a5d9-d197b7e65cdf" class="">Tout système BACS doit garantir 5 capacités clés (article R.175-3 CCH) :</p></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81bf-8ded-fa20e61525d1" class="">1️⃣ SUIVI &amp; ENREGISTREMENT CONTINU</h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81d6-aea6-d130ccb0bf26" class="bulleted-list"><li style="list-style-type:disc"><strong>Mesure</strong> : Données production/consommation énergétique <strong>par zone fonctionnelle</strong></li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-815b-8406-eae4d838a538" class="bulleted-list"><li style="list-style-type:disc"><strong>Archivage</strong> : Historiques enregistrées <strong>5 ans minimum</strong> (accès propriétaire garanti)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81d5-b5c8-dd7e43e76da5" class="bulleted-list"><li style="list-style-type:disc"><strong>Granularité</strong> : Au minimum par système technique (chauffage, clim, ventilation, ECS, éclairage, etc.)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8113-b51e-c930517bb069" class="bulleted-list"><li style="list-style-type:disc"><strong>Exemple</strong> : Bâtiment multi-étages → sous-comptage par étage OU automatisme par zone usage homogène</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-817c-8a8c-e885b086288d" class="">2️⃣ ANALYSE &amp; DÉTECTION DÉRIVES</h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81b1-bbee-e3f7ba12f1a2" class="bulleted-list"><li style="list-style-type:disc"><strong>Benchmark</strong> : Situer efficacité énergétique vs <strong>valeurs de référence</strong> (consommation théorique, année antérieure, secteur)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81cb-b467-fef157f433b1" class="bulleted-list"><li style="list-style-type:disc"><strong>Alertes</strong> : Détecter <strong>automatiquement pertes d’efficacité</strong> (ex : conso &gt; +10% vs normal, équipement défaillant)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8168-acad-df3fc8f3871c" class="bulleted-list"><li style="list-style-type:disc"><strong>Rapports</strong> : Fournir exploitant <strong>possibilités d’amélioration</strong> (pas juste données brutes)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-816f-a5ae-fee86e98fd86" class="bulleted-list"><li style="list-style-type:disc"><strong>Exemple</strong> : Caisson ventilation trop ouvert → surconso chaud/froid détectée, alerte = X€/mois perte</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-811c-834f-d495c76b21f8" class="">3️⃣ INTEROPÉRABILITÉ</h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8115-ab36-e89cad2f6031" class="bulleted-list"><li style="list-style-type:disc"><strong>Capacité</strong> : Communiquer avec autres systèmes (normes ouvertes, API standards)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8198-b614-fbcd1420aabe" class="bulleted-list"><li style="list-style-type:disc"><strong>Modularité</strong> : Architecture <strong>souple et évolutive</strong> (ajouter/retirer systèmes futurs sans refonte)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81e3-ae6f-e6df2fdd80e1" class="bulleted-list"><li style="list-style-type:disc"><strong>Intégration</strong> : Tous systèmes techniques (chaud, froid, ventilation, ECS, éclairage) = raccordables au BACS central</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81cd-b88c-de614d550160" class="bulleted-list"><li style="list-style-type:disc"><strong>Exemple</strong> : Remplacer chaudière → nouvelle chaudière se branche directement au BACS existant, pas refonte</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-8131-9814-c02c126ce686" class="">4️⃣ ARRÊT MANUEL &amp; AUTONOMIE</h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81a3-a350-e728857c1020" class="bulleted-list"><li style="list-style-type:disc"><strong>Contrôle manuel</strong> : Possibility d’arrêter/piloter manuellement tout ou partie BACS</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-811c-ad72-ef6b87ea8ac8" class="bulleted-list"><li style="list-style-type:disc"><strong>Autonomie</strong> : Gestion autonome systèmes (configurations multi-sites avec hyperviseur pilotant supervisions distantes = OK)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-814f-ac5e-fac4f473a841" class="bulleted-list"><li style="list-style-type:disc"><strong>Sécurité</strong> : Pas de dépendance réseau permanent (critères de basculement local)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81df-b49e-c0abeca9ba72" class="bulleted-list"><li style="list-style-type:disc"><strong>Exemple</strong> : PM émetrise hyperviseur 10 sites → chaque site fonctionne en autonomie locale + synchrone hyperviseur</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-8109-9296-c415c0ba5ead" class="">5️⃣ RECOMMANDATIONS &amp; AMÉLIORATIONS</h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8146-845b-c31b0f77819e" class="bulleted-list"><li style="list-style-type:disc"><strong>Rapport inspection</strong> : Fournir tous 5 ans document avec recommandations réglages, remplacement équip., solutions alternatives</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8155-ba08-e462c48111f1" class="bulleted-list"><li style="list-style-type:disc"><strong>Formation</strong> : Documenter bon usage système pour exploitant/gestionnaire</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81cb-88a8-d62431431970" class="bulleted-list"><li style="list-style-type:disc"><strong>Opportunités</strong> : Évaluer intérêt remplacement système (obsolescence, sur-consomé, etc.)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81bc-9b64-ce54fa4288b3" class="bulleted-list"><li style="list-style-type:disc"><strong>Exemple</strong> : Inspection détecte thermostat décalé -2°C → recommande recalibrage (gain -5% chaud)</li></ul></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-8140-a7b7-e5edd4808f22"/></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-819b-8f0f-ff508bdee83a" class="">EXEMPTIONS &amp; DÉROGATIONS : PREUVES REQUISES</h2></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81fe-923f-d68ad21e35eb" class="">SEULE EXEMPTION VALIDE : TRI &gt; 10 ANS (EXISTANT SEULEMENT)</h3></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81e3-b18d-d4a76445dd96" class="">Définition TRI (Temps Retour Investissement)</h3></div><div style="display:contents" dir="auto"><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerPolicy="no-referrer"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" referrerPolicy="no-referrer"/><pre id="2d86971c-72e7-81d5-afdc-de19b27fae50" class="code code-wrap"><code class="language-Plain Text" style="white-space:pre-wrap;word-break:break-all">TRI (ans) = S / (G × C)
+Avec :
+  S = Surcoût BACS (€) = Coût installation - Aides financières
+      • Coût installation = matériel + MO + paramétrage + analyse fonctionnelle + logiciels/ingénierie
+  G = Gain énergétique (kWh/an) = (Conso moy 2 ans) × Taux réduction (%)
+      • Taux par défaut = 15% (ou audit spécialisé si différent)
+  C = Coût énergétique moyen (€/kWh) = moyenne tarif facturé 12 mois avant demande</code></pre></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81f4-ab47-eddb9d45f4e1" class="">Méthodologie calcul (arrêté 07/04/2023)</h3></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-81c1-b5e8-d981c4bb5b3a" class="numbered-list" start="1"><li><strong>Consommation de base</strong> : Moyenne consommations 2 dernières années (kWh électricité, gaz, etc.)</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-8124-a576-cf2f5eff75c7" class="numbered-list" start="2"><li><strong>Gain estimé</strong> : 15% par défaut OU valeur audit spécialisé (ex : 8% suite audit thermique)</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-81a9-9904-c3fc26cebb99" class="numbered-list" start="3"><li><strong>Coût énergie</strong> : Prix moyen du kWh facturé 12 mois antérieurs (distinct par fluide)</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-81df-8524-df4f1fa6f52d" class="numbered-list" start="4"><li><strong>Gain énergétique</strong> : Conso base × % réduction = kWh économisés</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-81e7-a5a2-e523f3e75088" class="numbered-list" start="5"><li><strong>Gain monétaire</strong> : kWh gains × prix €/kWh = € économies annuelles</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-815c-a693-c3de251a71b0" class="numbered-list" start="6"><li><strong>Surcoût BACS</strong> : Devis complet moins aides (CEE, MaPrimeRénov, etc.)</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-81a4-b53b-db0c3264c996" class="numbered-list" start="7"><li><strong>Calcul TRI</strong> : S / (G€) = années retour</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2d86971c-72e7-8105-bfcf-ed3590a71351" class="numbered-list" start="8"><li><strong>Exemption si</strong> : TRI <strong>&gt; 10 ans strictement</strong></li></ol></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-818e-bee5-f9f328ab494d" class="">Exceptions à la base 2 ans</h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81c0-b1a2-c970c2f5e085" class="bulleted-list"><li style="list-style-type:disc"><strong>Rénovation énergétique 2 ans avant</strong> : Utiliser <strong>1 année la plus récente</strong> (consommation normalisée post-travaux)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8195-b402-d92e1063dcc7" class="bulleted-list"><li style="list-style-type:disc"><strong>Bâtiment vide 1 année</strong> : Utiliser uniquement années occupées (moyenne réduite)</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81c3-8b58-dceb8d32342f" class="">Documentation exemption (à conserver 10 ans)</h3></div><div style="display:contents" dir="ltr"><table id="2d86971c-72e7-81be-8e35-e391d94efa8a" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81af-88f7-d61593106dde"><th id="Pfwe" class="simple-table-header-color simple-table-header">Document</th><th id=";mJO" class="simple-table-header-color simple-table-header">Contenu</th><th id="uZom" class="simple-table-header-color simple-table-header">Qui produit</th><th id="AYAf" class="simple-table-header-color simple-table-header">Archivage</th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8160-8caf-cdcbcd4be2a0"><td id="Pfwe" class=""><strong>Audit TRI complet</strong></td><td id=";mJO" class="">Détail calcul, consommations, coût énergie, gain estimé, surcoût</td><td id="uZom" class="">Bureau d’études certifié</td><td id="AYAf" class="">Propriétaire 10 ans</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8153-b9a6-efb710614e81"><td id="Pfwe" class=""><strong>Devis BACS</strong></td><td id=";mJO" class="">Prix matériel, installation, paramétrage, services</td><td id="uZom" class="">Intégrateur BACS</td><td id="AYAf" class="">Propriétaire 10 ans</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81fb-847b-c2174a5c84d9"><td id="Pfwe" class=""><strong>Justificatif aides</strong></td><td id=";mJO" class="">Lettres engagement CEE, MaPrimeRénov, autres</td><td id="uZom" class="">Fournisseur aides</td><td id="AYAf" class="">Propriétaire 10 ans</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8175-8ddc-c7352dd16b2e"><td id="Pfwe" class=""><strong>Facturation énergétique</strong></td><td id=";mJO" class="">Derniers 24 mois (kWh + prix moyen)</td><td id="uZom" class="">Fournisseur énergie</td><td id="AYAf" class="">Propriétaire 10 ans</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8167-b3fa-c1d8626fc588"><td id="Pfwe" class=""><strong>Rapport d’exemption</strong></td><td id=";mJO" class="">Synthèse TRI conclusif (TRI = X ans &gt; 10 ans)</td><td id="uZom" class="">Propriétaire ou BE</td><td id="AYAf" class="">Propriétaire 10 ans</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-814d-b286-eeecdab8952a" class="">Risque audit non-conformité</h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8110-bdf1-d0fffe0c2e4e" class="bulleted-list"><li style="list-style-type:disc"><strong>Audit découvre exemption non-justifiée</strong> : Site classé non-conforme</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8170-87cc-efa15673c196" class="bulleted-list"><li style="list-style-type:disc"><strong>Pénalité administrative</strong> : Jusqu’à 300€/jour retard (cumul si multi-sites)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8135-a8a4-f2d06d553d8a" class="bulleted-list"><li style="list-style-type:disc"><strong>Obligation mise en conformité</strong> : Délai supplémentaire possible (à négocier)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8139-afce-f8083496c058" class="bulleted-list"><li style="list-style-type:disc"><strong>Responsabilité propriétaire</strong> : Preuve incombe assujetti</li></ul></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-8145-ba7e-c2ae6b786596"/></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-81f7-bf9a-ec39a8cda5e5" class="">INSPECTIONS PÉRIODIQUES OBLIGATOIRES : MODALITÉS &amp; COÛTS</h2></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-8137-86ba-da842d826fe5" class="">Fréquence &amp; Timing (arrêté 07/04/2023 + R.175-5-1 CCH)</h3></div><div style="display:contents" dir="ltr"><table id="2d86971c-72e7-81d4-a990-f5d90d559ba9" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8101-8a32-fe5ccbe10cd5"><th id="qr_@" class="simple-table-header-color simple-table-header">Cas</th><th id="OzUY" class="simple-table-header-color simple-table-header">Fréquence</th><th id="xu?l" class="simple-table-header-color simple-table-header">Timing</th><th id="z{=B" class="simple-table-header-color simple-table-header">Délai 1ère</th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8198-b2f6-d83c0db579d4"><td id="qr_@" class=""><strong>Installation/remplacement système</strong></td><td id="OzUY" class="">2 ans maxi post-installation</td><td id="xu?l" class="">Audit initial + 2 ans</td><td id="z{=B" class="">ASAP après install</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8118-af61-f62f3cf42d58"><td id="qr_@" class=""><strong>BACS existant en marche</strong></td><td id="OzUY" class="">5 ans maximum</td><td id="xu?l" class="">Récurrent</td><td id="z{=B" class="">01/01/2025 (deadline obligatoire tous anciens)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81bf-b805-c5f1652213d3"><td id="qr_@" class=""><strong>Post-inspection</strong></td><td id="OzUY" class="">5 ans après dernière insp.</td><td id="xu?l" class="">Glissement calendrier</td><td id="z{=B" class="">Basé dépôt rapport précédent</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81f7-acee-e154594c2d2e" class="">Contenu inspection (Annexe 1 arrêté 07/04/2023)</h3></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81ca-93e9-e7f114bf489b" class="">Examen fonctionnel (1ère inspection uniquement)</h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81e0-a8e3-d5fbfeda6bf8" class="bulleted-list"><li style="list-style-type:disc">Vérification architecture BACS (diagramme systèmes, capteurs, actionneurs, supervision)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8170-8d9d-f88ad07b30b5" class="bulleted-list"><li style="list-style-type:disc">Documentation équipements (plans, listes matériels)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81d0-9136-d05f38782c9a" class="bulleted-list"><li style="list-style-type:disc">Paramétrage initial vs besoins bâtiment</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-8173-a1a9-db4f53a529bd" class="">Vérification bon fonctionnement (ALL inspections)</h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81a6-aba9-d5ea532bb610" class="bulleted-list"><li style="list-style-type:disc">Test appareil de mesure (capteurs température, humidité, compteurs kWh) → étalonnage ✓/✗</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81a9-8e8f-d1c976edc4dd" class="bulleted-list"><li style="list-style-type:disc">Vérification algorithmes de régulation (chaud/froid/ventilation réagissent normally)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81e3-b4de-ca6eb411b83f" class="bulleted-list"><li style="list-style-type:disc">Détection dérives actives (alertes lorsque consommation dépasse +X%)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81f8-ae3b-e5e4997c6ce6" class="bulleted-list"><li style="list-style-type:disc">Archivage données fonctionne (historiques consultables, 5 ans présent)</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81f9-94d1-cbf887ba4ca6" class="">Évaluation exigences moyens (sauf réinspection sans changement)</h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8101-9630-f749d7d0c546" class="bulleted-list"><li style="list-style-type:disc">Interopérabilité : Connexions toujours au standard (API, protocole)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8138-8238-c6b2ca46609d" class="bulleted-list"><li style="list-style-type:disc">Arrêt manuel : Possibilité toujours présente et testée</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-819b-9e3e-dc9a9a09d943" class="bulleted-list"><li style="list-style-type:disc">Recommandations accessibles : Rapports générés automatiquement pour exploitant</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-819d-ac4e-f04a52020a01" class="">Paramétrage vs usage réel</h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-817e-a8a1-d9064219eca5" class="bulleted-list"><li style="list-style-type:disc">Consignes température correspondent-elles occupancy réelle ? (bureaux 8-18h = paramétré ?)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81bc-8388-df66de07eef1" class="bulleted-list"><li style="list-style-type:disc">ECS, éclairage, ventilation = réglés pour usage du bâtiment ? (overconsommation détectée ?)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81eb-8003-f45168735413" class="bulleted-list"><li style="list-style-type:disc">Calendrier saisonnier vs occupation vacances ? (consignes hiver/été justes ?)</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81d2-8e6f-f5f5c6553797" class="">Recommandations (Annexe 3 arrêté 07/04/2023)</h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-816f-91a2-d08bf32d6d12" class="bulleted-list"><li style="list-style-type:disc">Bon usage système en place (notice exploitant)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8185-92b0-ce8b37ad1610" class="bulleted-list"><li style="list-style-type:disc">Améliorations possibles installation (recalibrage, remplacement, économies rapides)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81e8-b6c3-cbcb7150b0f2" class="bulleted-list"><li style="list-style-type:disc">Intérêt remplacement BACS (obsolescence, architectures modernes)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-818c-b856-cd06b3f7634f" class="bulleted-list"><li style="list-style-type:disc">Solutions alternatives (autre BACS, sous-traitance gestion)</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81a1-95b6-eadd42800cde" class="">Rapport inspection (production &amp; archivage)</h3></div><div style="display:contents" dir="ltr"><table id="2d86971c-72e7-81f6-84f0-d6dc22c6e0ab" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81a6-bc5e-ee430a01878f"><th id="Cz&gt;O" class="simple-table-header-color simple-table-header">Élément</th><th id="s^Ds" class="simple-table-header-color simple-table-header">Responsable</th><th id="|]Yz" class="simple-table-header-color simple-table-header">Format</th><th id=":Sq&gt;" class="simple-table-header-color simple-table-header">Délai transmission</th><th id="_]}&lt;" class="simple-table-header-color simple-table-header">Conservation</th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-816f-8148-ccb09016dbde"><td id="Cz&gt;O" class=""><strong>Rapport écrit</strong></td><td id="s^Ds" class="">Inspecteur certifié (interne/externe)</td><td id="|]Yz" class="">PDF signé</td><td id=":Sq&gt;" class="">1 mois post-visite</td><td id="_]}&lt;" class="">Propriétaire 10 ans</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-815b-a8ea-dcc48fa3717d"><td id="Cz&gt;O" class=""><strong>Exécutif</strong></td><td id="s^Ds" class="">Inspecteur</td><td id="|]Yz" class="">Synthèse 1 page</td><td id=":Sq&gt;" class="">Avec rapport</td><td id="_]}&lt;" class="">10 ans</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81be-a42c-e4999d86739d"><td id="Cz&gt;O" class=""><strong>Données brutes</strong></td><td id="s^Ds" class="">Inspecteur</td><td id="|]Yz" class="">Tableaux étalonnage</td><td id=":Sq&gt;" class="">Annexe rapport</td><td id="_]}&lt;" class="">10 ans</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8110-a5f2-ce106cceb7fd"><td id="Cz&gt;O" class=""><strong>Plan d’action</strong></td><td id="s^Ds" class="">Inspecteur + Propriétaire</td><td id="|]Yz" class="">Checklist recommandations</td><td id=":Sq&gt;" class="">Avant clôture</td><td id="_]}&lt;" class="">10 ans (preuve suivi)</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81af-9536-e5fa9a402b67" class="">Coûts typiques inspection BACS (données marché 2025)</h3></div><div style="display:contents" dir="ltr"><table id="2d86971c-72e7-81cb-90db-e1025b96c467" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-811c-a9e4-c108c7e357c9"><th id="yyBz" class="simple-table-header-color simple-table-header">Type bâtiment</th><th id="l&lt;GT" class="simple-table-header-color simple-table-header">Taille BACS</th><th id="lk]&gt;" class="simple-table-header-color simple-table-header">Durée insp.</th><th id="Ud&gt;_" class="simple-table-header-color simple-table-header">Coût HT approx.</th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-811f-836b-ec31d6663f97"><td id="yyBz" class=""><strong>PME tertiaire simple</strong></td><td id="l&lt;GT" class="">1 site, 1-2 systèmes</td><td id="lk]&gt;" class="">4-6h</td><td id="Ud&gt;_" class="">1 500 – 2 000€</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8144-a614-d86ec4fab844"><td id="yyBz" class=""><strong>Immeuble moyen</strong></td><td id="l&lt;GT" class="">1 site, 3-4 systèmes, multi-zones</td><td id="lk]&gt;" class="">6-8h</td><td id="Ud&gt;_" class="">2 000 – 3 000€</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8100-84af-dc3e76abb0a4"><td id="yyBz" class=""><strong>Grand tertiaire</strong></td><td id="l&lt;GT" class="">1 site complexe OU multi-sites pilotage</td><td id="lk]&gt;" class="">8-12h</td><td id="Ud&gt;_" class="">3 000 – 5 000€</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8109-9f93-f60e0a7fefb2"><td id="yyBz" class=""><strong>Portfolio multi-sites</strong> (x10 sites)</td><td id="l&lt;GT" class="">Audit global + inspections coordonnées</td><td id="lk]&gt;" class="">40-60h</td><td id="Ud&gt;_" class="">12 000 – 20 000€ (économies d’échelle)</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81e9-b11e-fd08ecfc0740" class=""><strong>Remarque</strong> : Aides possibles (CEE audit, partenaires GTB) peuvent couvrir 30-50% inspection.</p></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-81d0-807c-c84ab81ad769"/></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-81ca-bcc0-eacfa4226d73" class="">PMO MISE EN CONFORMITÉ (8-12 SEMAINES)</h2></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-813c-a630-e3718f197c89" class="">Applicable bâtiments <strong>&gt;290 kW NON CONFORMES 2025</strong> ou <strong>&gt;70 kW EXISTANTS 2025-2030</strong></p></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-810b-914a-c832a2656f15" class="">Phase 1 : DIAGNOSTIC URGENT (Semaines 1-2)</h3></div><div style="display:contents" dir="ltr"><table id="2d86971c-72e7-8144-a23f-faa65e7eb74a" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8133-8773-f60d645ffab5"><th id="h?W&lt;" class="simple-table-header-color simple-table-header">Étape</th><th id="zEP`" class="simple-table-header-color simple-table-header">Livrables</th><th id="&gt;?:x" class="simple-table-header-color simple-table-header">Responsable</th><th id="N`JO" class="simple-table-header-color simple-table-header">Outils</th><th id="qCwv" class="simple-table-header-color simple-table-header">Risques</th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81bd-a848-c2f5a8678043"><td id="h?W&lt;" class=""><strong>Audit conformité rapide</strong></td><td id="zEP`" class="">Fiche site (puissance, équip., date instal., état BACS)</td><td id="&gt;?:x" class="">Gestionnaire + BET</td><td id="N`JO" class="">Fiche standardisée, visite site 2h</td><td id="qCwv" class="">Données puissance inexactes</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8143-a672-e7795e54efbf"><td id="h?W&lt;" class=""><strong>Calcul Putile</strong></td><td id="zEP`" class="">Tableaux puissance chauffage + climatisation, seuil dépassé confirmé</td><td id="&gt;?:x" class="">BET + Intégrateur</td><td id="N`JO" class="">Fiches équipements, plaques signalétiques</td><td id="qCwv" class="">Confusion systèmes distincts vs réseau</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81d1-811f-d9c0bb1d8972"><td id="h?W&lt;" class=""><strong>Audit TRI préalable</strong></td><td id="zEP`" class="">Consommations 2 ans, tarifs énergie, devis BACS indicatif</td><td id="&gt;?:x" class="">BE audit + Intégrateur</td><td id="N`JO" class="">Facturation énergie, appels offres rapides</td><td id="qCwv" class="">Aides estimées à défaut</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8195-bc73-e84648fc9bd3"><td id="h?W&lt;" class=""><strong>Risk score</strong></td><td id="zEP`" class="">Si &gt;290 kW + pas BACS 01/01/2025 = CRITICITÉ ROUGE</td><td id="&gt;?:x" class="">PM projets</td><td id="N`JO" class="">Checklist conformité</td><td id="qCwv" class="">Dépassement deadline imminent</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-815d-85a0-f8ab35dbdf78"><td id="h?W&lt;" class=""><strong>Décision stratégique</strong></td><td id="zEP`" class="">BACS vs exemption TRI vs mixte phasing</td><td id="&gt;?:x" class="">Direction immobilier</td><td id="N`JO" class="">Matrice décision TRI/CAPEX</td><td id="qCwv" class="">Choix tard = délai exécution</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81fc-9e28-e5ede54ba5f7" class=""><strong>GO/NO-GO : TRI &gt; 10 ans justifié ? OUI = exemption possible → Doc TRI ; NON = BACS obligatoire</strong></p></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-812a-be37-e7f7401f54fc" class="">Phase 2 : SPÉCIFICATIONS &amp; APPELS OFFRES (Semaines 3-5)</h3></div><div style="display:contents" dir="ltr"><table id="2d86971c-72e7-81fb-a911-cb6ec783debb" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8153-8a1f-c2aceeaa4cbf"><th id="BwLP" class="simple-table-header-color simple-table-header">Étape</th><th id="lWHQ" class="simple-table-header-color simple-table-header">Livrables</th><th id="?jtc" class="simple-table-header-color simple-table-header">Responsable</th><th id="hKKf" class="simple-table-header-color simple-table-header">Outils</th><th id="]qEy" class="simple-table-header-color simple-table-header">Risques</th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81b3-938e-f083259ab4c0"><td id="BwLP" class=""><strong>Cahier des charges BACS</strong></td><td id="lWHQ" class="">Spécifications techniques (architecte BACS), zones fonctionnelles, systèmes à intégrer, niveaux d’automatisation</td><td id="?jtc" class="">BE + Propriétaire</td><td id="hKKf" class="">Template CdC (+ guide RT-RE BACS)</td><td id="]qEy" class="">Spécifications incomplètes → débordement scope</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81ae-a9f6-f8247ffa3c5b"><td id="BwLP" class=""><strong>Appel d’offres</strong></td><td id="lWHQ" class="">Envoi 3-5 intégrateurs BACS (classement, délais, prix)</td><td id="?jtc" class="">Responsable appels</td><td id="hKKf" class="">RFQ standardisé, calendrier respect</td><td id="]qEy" class="">Réponses tardives, délais install impossibles</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8157-a6ff-fd138f0abc78"><td id="BwLP" class=""><strong>Aides financières identification</strong></td><td id="lWHQ" class="">Dossier CEE (fiche opération BACS), MaPrimeRénov tertiaire, Éco-PTZ si applicable</td><td id="?jtc" class="">Responsable financement</td><td id="hKKf" class="">Portails CEE/MaPrimeRénov, simulation</td><td id="]qEy" class="">Aides refusées = surcoût initial impact</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81a6-b1da-fa8a68cdef06"><td id="BwLP" class=""><strong>Sélection prestataire</strong></td><td id="lWHQ" class="">Contrat intégrateur signé (clauses conformité, délai, inspection incluse)</td><td id="?jtc" class="">Responsable contrat</td><td id="hKKf" class="">Contrat type GTB, clauses BACS</td><td id="]qEy" class="">Non-livraison conforme, débordement délai</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8151-acde-e0d04d7b696c"><td id="BwLP" class=""><strong>Planification détaillée</strong></td><td id="lWHQ" class="">Gantt 8-10 semaines (install, param., test, commissioning, 1ère insp.)</td><td id="?jtc" class="">Intégrateur + PM</td><td id="hKKf" class="">MS Project/Trello, jalons clairs</td><td id="]qEy" class="">Dérives calendrier = dépassement deadline</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8150-b78a-e886876dac68" class=""><strong>GO : Contrat signé, aides activées, démarrage imminent</strong></p></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-8155-9968-fa029c8d9f19" class="">Phase 3 : DÉPLOIEMENT BACS (Semaines 6-9)</h3></div><div style="display:contents" dir="ltr"><table id="2d86971c-72e7-8132-9ae9-e7daa97d4636" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81ff-8a58-fb36ff272434"><th id="F:[&lt;" class="simple-table-header-color simple-table-header">Étape</th><th id="Me`M" class="simple-table-header-color simple-table-header">Livrables</th><th id="emiK" class="simple-table-header-color simple-table-header">Responsable</th><th id="ds=g" class="simple-table-header-color simple-table-header">Outils</th><th id="[&gt;Vc" class="simple-table-header-color simple-table-header">Risques</th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-810f-bf29-e82f8699d103"><td id="F:[&lt;" class=""><strong>Installation matériel</strong></td><td id="Me`M" class="">Capteurs, actionneurs, automates, cabling, réseau déployés</td><td id="emiK" class="">Intégrateur + Électricien</td><td id="ds=g" class="">Plan câblage, checklist install</td><td id="[&gt;Vc" class="">Matériel défectueux, retard approvisionnement</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-810c-805f-d014b83a01f2"><td id="F:[&lt;" class=""><strong>Paramétrage systèmes</strong></td><td id="Me`M" class="">Consignes température, saisonnalité, occupancy programmés ; algorithmes test</td><td id="emiK" class="">Intégrateur + Exploitant</td><td id="ds=g" class="">Software BACS, documentation paramètres</td><td id="[&gt;Vc" class="">Paramètres incorrects = mauvaise perf</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8140-9653-c8e1cfa0bf80"><td id="F:[&lt;" class=""><strong>Tests/Commissioning</strong></td><td id="Me`M" class="">Vérification capteurs, actionneurs, alarmes, arrêts manuels, data archivage</td><td id="emiK" class="">Intégrateur + BET</td><td id="ds=g" class="">Plan test, reports test exécution</td><td id="[&gt;Vc" class="">Défaut détecté trop tard en prod</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81ef-b30c-ebc95c184d88"><td id="F:[&lt;" class=""><strong>Formation exploitant</strong></td><td id="Me`M" class="">Pilotage système, consultation données, alertes interprétation, maintenance basique</td><td id="emiK" class="">Intégrateur + Propriétaire</td><td id="ds=g" class="">Manuels, sessions formation 4h</td><td id="[&gt;Vc" class="">Exploitant sous-utilise système</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81d4-8485-ec337bd878b4"><td id="F:[&lt;" class=""><strong>Go-live &amp; suivi 1 mois</strong></td><td id="Me`M" class="">Mise en prod, monitoring, ajustements fin-tuning</td><td id="emiK" class="">Intégrateur + Exploitant</td><td id="ds=g" class="">Support 24h/7 inclus contrat</td><td id="[&gt;Vc" class="">Dérives perf post-install</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81dc-95e5-f451ec4ff93e" class="">Phase 4 : INSPECTION &amp; CONFORMITÉ (Semaines 10-12)</h3></div><div style="display:contents" dir="ltr"><table id="2d86971c-72e7-810d-b2b1-e3acee251280" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-811e-aec5-fa96e1a5b1d5"><th id="&gt;MBo" class="simple-table-header-color simple-table-header">Étape</th><th id="QA&gt;K" class="simple-table-header-color simple-table-header">Livrables</th><th id="V?K{" class="simple-table-header-color simple-table-header">Responsable</th><th id="RioX" class="simple-table-header-color simple-table-header">Outils</th><th id="&lt;w[d" class="simple-table-header-color simple-table-header">Risques</th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-813c-88b8-ff80759c4907"><td id="&gt;MBo" class=""><strong>1ère inspection obligatoire</strong></td><td id="QA&gt;K" class="">Audit complet par inspecteur certifié (2-5h selon complexité)</td><td id="V?K{" class="">Bureau inspection externe</td><td id="RioX" class="">Grille inspection arrêté 07/04/2023</td><td id="&lt;w[d" class="">Rapport critique = mise en conformité suppl.</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8185-bb9a-c660546c770e"><td id="&gt;MBo" class=""><strong>Rapport inspection</strong></td><td id="QA&gt;K" class="">Document signé + recommandations pour exploitant ; 1 copie archivage 10 ans</td><td id="V?K{" class="">BE inspection</td><td id="RioX" class="">Template rapport standardisé</td><td id="&lt;w[d" class="">Documentation incomplète → non-recevable audit</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8151-885a-f78ebda3d226"><td id="&gt;MBo" class=""><strong>Plan d’action recommandations</strong></td><td id="QA&gt;K" class="">Priorisation améliorations rapides, calendrier moyen/long terme</td><td id="V?K{" class="">Propriétaire + Exploitant</td><td id="RioX" class="">Tableau reco priorités</td><td id="&lt;w[d" class="">Recommandations ignorées = perf dégradée</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8152-b922-cc5fb0708dbc"><td id="&gt;MBo" class=""><strong>Attestation conformité</strong></td><td id="QA&gt;K" class="">Certificat “Conforme décret BACS” généré (archivage, justificatif audit)</td><td id="V?K{" class="">Intégrateur ou BE</td><td id="RioX" class="">PDF signé horodaté</td><td id="&lt;w[d" class="">Absence attestation = contestable légalement</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81ad-837d-cc6326484845"><td id="&gt;MBo" class=""><strong>Documentation finale</strong></td><td id="QA&gt;K" class="">Dossier complet (schémas, paramètres, rapports, formation) archivé 10 ans</td><td id="V?K{" class="">Propriétaire</td><td id="RioX" class="">Classeur physique + copie numérique</td><td id="&lt;w[d" class="">Perte doc → risque audit futur</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8185-81a2-ec043d7b38cd" class=""><strong>GO : Inspection réussie, rapport conforme, site déclaré conforme 01/01/2025</strong></p></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-8104-a18e-c9b1ff33771b"/></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-812c-b669-d208aa523fd5" class="">CHECKLIST CONFORMITÉ (NOTION-READY - À COPIER)</h2></div><div style="display:contents" dir="auto"><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" integrity="sha512-7Z9J3l1+EYfeaPKcGXu3MS/7T+w19WtKQY/n+xzmw4hZhJ9tyYmcUS+4QqAlzhicE5LAfMQSF3iFTK9bQdTxXg==" crossorigin="anonymous" referrerPolicy="no-referrer"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" referrerPolicy="no-referrer"/><pre id="2d86971c-72e7-81c5-9bc3-d34951bb0429" class="code code-wrap"><code class="language-Plain Text" style="white-space:pre-wrap;word-break:break-all"># ✅ CONFORMITÉ DÉCRET BACS – SITE [NOM SITE]
+
+## PHASE 1 : CADRAGE
+
+### Identification site
+- ⬜ Nom bâtiment &amp; adresse précis
+- ⬜ Propriétaire équipements identifié (bailleurs, locataires, mixed)
+- ⬜ Nature activité tertiaire confirmée (bureaux / commerces / santé / éducation / etc)
+- ⬜ Date permis de construire récupérée (ou date construction existant)
+
+### Diagnostic puissance utile
+- ⬜ Inventaire ALL équipements chauffage (chaudières, PAC, radiateurs élec, réseau chaleur)
+- ⬜ Plaques signalétiques relevées (puissance nominale utile en kW de chaque)
+- ⬜ Inventaire ALL équipements climatisation (PAC, clim split/centralisée, refroidisseurs)
+- ⬜ Plaques signalétiques climatisation (puissance utile froid kW)
+- ⬜ Ventilation présente ? (OU absent, et règle cumul appliquée ?)
+- ⬜ Calcul Putile chauffage (somme reseau OU max systèmes distincts)
+- ⬜ Calcul Putile climatisation (somme thermodynamiques)
+- ⬜ Seuil déclenche obligation confirmé : &gt; 290 kW OUI/NON, &gt; 70 kW OUI/NON
+
+### Assujettissement &amp; calendrier
+- ⬜ Seuil &gt; 290 kW → Deadline 01/01/2025 (URGENCE 2025)
+- ⬜ Seuil &gt; 70 kW + bâtiment neuf post-08/04/2024 → OBLIGATION BACS (néo pas exemption TRI)
+- ⬜ Seuil &gt; 70 kW + existant renouvellement post-09/04/2023 → OBLIGATION BACS au renouvellement
+- ⬜ Seuil &gt; 70 kW + existant sans renouvellement → Deadline 01/01/2030 (report)
+- ⬜ Responsable obligé identifié (propriétaire équip ou locataire ?)
+
+## PHASE 2 : AUDIT (PRISE DE DÉCISION TRI)
+
+### Audit TRI (si exemption envisagée)
+- ⬜ Consommations énergétiques année N-2 collectées (kWh élec, gaz, autres)
+- ⬜ Consommations année N-1 collectées (idem)
+- ⬜ Moyenne 2 ans calculée (par fluide)
+- ⬜ Tarifs €/kWh collectés (factures 12 mois antérieurs)
+- ⬜ Gain énergétique estimé : 15% par défaut OU audit spécialisé en cours (%)
+- ⬜ Coût BACS : devis complet intégrateur BACS reçu (matériel + MO + param + logiciels)
+- ⬜ Aides identifiées : CEE prévisionnel, MaPrimeRénov, Éco-PTZ, autres (montants)
+- ⬜ Surcoût BACS = Coût – Aides calculé (€ net)
+- ⬜ TRI calculé = S / (G€) = X années
+- ⬜ Résultat TRI : &gt; 10 ans → EXEMPTION POSSIBLE ; ≤ 10 ans → BACS OBLIGATOIRE
+
+### Décision stratégique
+- ⬜ SI exemption TRI justifiée (TRI &gt; 10) : Dossier TRI complet archivé 10 ans (preuve audit)
+- ⬜ SI BACS obligatoire : Lancer cahier des charges + appels offres phase 3
+
+## PHASE 3 : SPÉCIFICATIONS &amp; APPELS OFFRES
+
+### Cahier des charges
+- ⬜ Zones fonctionnelles identifiées (bureaux, halls, RDC, etc) – usage homogène par zone
+- ⬜ Systèmes à embarquer listés : chauffage, climatisation, ventilation, ECS, éclairage, production élec (oui/non)
+- ⬜ Niveaux automatisation définis (régulation seule vs optimisation vs prédictif)
+- ⬜ Architecture BACS spécifiée (centralisée / distribuée / hybride)
+- ⬜ Interopérabilité exigée (normes ouvertes demandées : BACnet, Modbus, Z-Wave, etc)
+- ⬜ Archivage 5 ans données spécifié (capacité stockage, accès propriétaire)
+- ⬜ Formation exploitant incluse dans scope (nombre jours, sujets)
+
+### Appels d&#x27;offres
+- ⬜ RFQ envoyé 3-5 intégrateurs BACS qualifiés (références secteur)
+- ⬜ Deadline réponse fixée (ex : 2 semaines)
+- ⬜ Critères évaluation définis (prix, délai, réf., garantie, support)
+- ⬜ Offres reçues analysées (meilleur value, pas juste prix bas)
+- ⬜ Sélection prestataire : contrat signé (clauses BACS, conformité, deadline, inspection incluse)
+
+### Financement
+- ⬜ CEE fiche opération BACS préparée (n° opération, prestataire, économies kWh estimées)
+- ⬜ Dossier MaPrimeRénov tertiaire préparé (si éligible)
+- ⬜ Demandes aides validées, engagements reçus (montants prévus)
+- ⬜ Budget net après aides confirmé (impact trésorerie)
+
+## PHASE 4 : DÉPLOIEMENT
+
+### Installation &amp; paramérage
+- ⬜ Matériel BACS livré site (capteurs, automates, supervision) – checklist de réception
+- ⬜ Installation électricien complétée (cabling, armoire, alimentations)
+- ⬜ Paramètres systèmes chargés (consignes chaud/froid, calendriers, saisonnalité)
+- ⬜ Connexions captor/actionneur testées (acquisition données fonctionnelle)
+- ⬜ Tests arrêt manuel + pilotage validés (sécurité &amp; contrôle)
+- ⬜ Archivage données activé (derniers 5 ans accessible, écriture en continu)
+
+### Commissioning &amp; tests
+- ⬜ Plan de test exécuté complet (activation chaque système, chaîne complète)
+- ⬜ Capteurs étalonnés (température, humidité, compteurs kWh alignés réalité)
+- ⬜ Algorithmes régulation testés (chaud &gt; T cible ?, froid &lt; T cible ?, arrêts manuels OK ?)
+- ⬜ Alarmes alertes testées (dérive détectée automatiquement ? notification exploitant ?)
+- ⬜ Rapports données générés &amp; consultables (derniers 7 jours accessible propriétaire)
+- ⬜ Tous tests VALIDÉS avant go-live (rapport test signé)
+
+### Formation exploitant
+- ⬜ Formation 4h réalisée (pilotage, consultation données, alertes, maintenance basique)
+- ⬜ Manuels exploitant en français remis &amp; expliqués (accès hyperviseur, rapports, paramètres)
+- ⬜ Support vendor contact confirmé (n° tél, email, SLA réponse 24h)
+- ⬜ Attente exploitant documentée (usage quotidien, fréquence suivi, escalade problèmes)
+
+### Mise en production
+- ⬜ Go-live date fixée (coordonné avec deadline conformité si 01/01/2025)
+- ⬜ Support intensive 4 semaines (Intégrateur dispo, ajustements fin-tuning)
+- ⬜ Monitoring perf post-install (données réelles vs paramétrages prévus)
+- ⬜ Ajustements consignes si nécessaire (confort utilisateurs, surconso détectée → rectification)
+
+## PHASE 5 : INSPECTIONS OBLIGATOIRES
+
+### Première inspection (obligatoire avant 01/01/2025 si BACS déjà installé)
+- ⬜ Inspecteur certifié sélectionné (interne/externe, accrédité NF, AFNOR, ou équivalent)
+- ⬜ Inspection planifiée &amp; site accessible (2-6h selon complexité)
+- ⬜ Examen fonctionnel BACS complet (architecture, plans, équipements)
+- ⬜ Vérification bon fonctionnement (capteurs, actionneurs, data archivage, alertes)
+- ⬜ Paramètres vs usage bâtiment validés (T consignes OK ?, saisonnalité ?, occupancy ?)
+- ⬜ Étalonnage capteurs vérifié (température, humidité, compteurs kWh = acceptable)
+
+### Rapport inspection
+- ⬜ Rapport signé inspecteur reçu dans 1 mois post-visite
+- ⬜ Rapport contient : exécutif, détails techniques, recommandations, plan d&#x27;action
+- ⬜ Copie archivée propriétaire (10 ans minimum, préservation digitale)
+- ⬜ Recommandations triées priorité (rapides &lt; rapide moyen &lt; long terme)
+
+### Plan d&#x27;action recommandations
+- ⬜ Recommandations rapides (&lt;3 mois) identifiées &amp; exécutées (ex : recalibrage T)
+- ⬜ Recommandations moyen terme (3-12 mois) planifiées (ex : remplacement capteur)
+- ⬜ Recommandations long terme (&gt;12 mois) documentées pour futur (ex : remplacement BACS)
+
+### Inspections récurrentes
+- ⬜ Prochaine inspection planifiée (5 ans max après rapport précédent, ou 2 ans si renouvellement système)
+- ⬜ Rappel calendrier dans agenda PM
+
+## PHASE 6 : MAINTIEN &amp; CONFORMITÉ CONTINU
+
+### Exploitation quotidienne
+- ⬜ Exploitant consulte dashboards 1x/semaine minimum (dérives détectées rapidement)
+- ⬜ Alertes reçues traitées (ex : compteur kWh suspect → vérif capteur)
+- ⬜ Paramètres ajustés saisonnalité (printemps/été/automne/hiver)
+- ⬜ Maintenance préventive planifiée (filtrages, nettoyages, étalonnages périodiques)
+
+### Documentation &amp; archivage
+- ⬜ Tous rapports, contrats, recommandations archivés 10 ans (conformité légale)
+- ⬜ Historiques données BACS conservées 5 ans (exigence légale, accès propriétaire)
+- ⬜ Changements système documentés (remplacement équipement, modifications paramétrages)
+
+### Amélioration continue
+- ⬜ Bilan annuel énergie vs objectifs (économies réelles vs prévisions)
+- ⬜ Recommandations mises en œuvre évaluées (gain mesurable ?)
+- ⬜ Nouvelles optimisations identifiées (ex : occupancy sensors pour éclairage)
+- ⬜ Investissements futurs justifiés sur base données BACS (TRI moyen terme)
+
+### Conformité légale
+- ⬜ Attestation conformité BACS conservée (preuve autorités si audit)
+- ⬜ Rapports inspection archivés (preuve décret BACS respecté)
+- ⬜ Dossier exemption TRI (si applicable) archivé 10 ans (preuve dérogation valide)
+- ⬜ Registre BACS maintenance / changements tenu à jour
+
+---
+
+✅ **CONFORMITÉ DÉCRET BACS CONFIRMÉE** (Date : [_______] Signataire : [_______])</code></pre></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-814a-b0aa-c1e64009aed4"/></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-8195-b851-e11c1e012be4" class="">FAQ : 10 CAS RÉELS TERRAIN</h2></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81cc-99c0-e2c5b773b1e7" class="">Q1. « Mon immeuble de bureaux a 250 kW chaud + 300 kW froid. Suis-je concerné ? »</h3></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8157-a6b6-c1e6f39f1d5f" class=""><strong>R1.</strong> Oui, OBLIGATION immédiate. Max(250 chaud, 300 froid) = <strong>300 kW &gt; 290 kW</strong> → Deadline <strong>01/01/2025</strong>. Si pas BACS aujourd’hui = <strong>non-conforme risque pénalité</strong>. Lancer audit TRI rapide (exemption si TRI &gt; 10 ans) ou devis BACS urgent (délai install 4-8 semaines).</p></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81c9-9191-de7383bb2eff" class="">Q2. « On va renouveler notre chaudière 100 kW. Avons-nous obligation BACS ? »</h3></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81ce-8c1a-d9563145981c" class=""><strong>R2.</strong> <strong>Oui, obligation déclenchée au renouvellement</strong> (depuis 09/04/2023). Seuil s’applique = <strong>70 kW</strong> (vs 290 ancien). Si chaudière neuve &gt; 70 kW → BACS obligatoire <strong>lors du renouvellement</strong> (pas délai 2027/2030). À programmer dans contrat remplacement équipement.</p></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-8192-bb5a-f29d744191cd" class="">Q3. « Multi-occupation : locataire A proprio chaudière, locataire B proprio clim. Qui doit BACS ? »</h3></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81ec-9603-e2e5d0dbb607" class=""><strong>R3.</strong> <strong>Propriétaire équipement responsable</strong>. Locataire A = BACS chauffage (si P &gt; seuil) ; Locataire B = BACS clim (si P &gt; seuil). Si puissance combinée (A+B) dépasse seuil = Hyperviseur/supervision commune possible, mais responsabilité reste auprès de chaque proprio équip. Contrat de bail doit clarifier (“propriétaire fourni BACS” vs “locataire installe”).</p></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-818b-a0e9-ea3717a2e9ae" class="">Q4. « Site existant 150 kW sans renouvellement depuis 2010. Deadline ? »</h3></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8159-aed0-c56e827bf5fd" class=""><strong>R4.</strong> Seuil 150 kW &gt; 70 kW → Deadline <strong>01/01/2030</strong> (report november 2025). <strong>Sauf renouvellement</strong> : Si vous remplacez équip post-09/04/2023 → obligation immédiate renouvellement (seuil 70 kW). Stratégie : Attendre 2030 OU devancer renouvellement équip + BACS (opportunité financement).</p></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-8100-aa0b-ee400af849b9" class="">Q5. « Audit TRI : gain énergétique estimé 8% (pas 15% défaut). Ça change l’exemption ? »</h3></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81c6-b4a3-d1731e4617a9" class=""><strong>R5.</strong> <strong>Oui, impacte TRI drastiquement</strong>. Si 8% réel &lt; 15% défaut → TRI montant plus haut → risque dépassement seuil 10 ans. Exemple : S=50k€, C=0,20€/kWh, Conso=300 MWh → Gain 15% = 45 MWh = 9k€ → TRI = 5,5 ans (OK). Gain 8% = 24 MWh = 4,8k€ → TRI = 10,4 ans (EXEMPTION échouée). <strong>Audit spécialisé justification obligatoire</strong> si écart 15%.</p></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-817d-bb3f-ecd7b882723f" class="">Q6. « Multi-sites géographie : 10 bureaux à 50 kW chacun. Un BACS centralisé OK ? »</h3></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-815d-93d9-d5179f44d308" class=""><strong>R6.</strong> <strong>Oui, hyperviseur centralisant sites individuels conforme décret</strong>. Chaque site &lt; 70 kW donc aucun n’obligatoire individuellement, <strong>MAIS</strong> si architecture décide centraliser → BACS hyperviseur est du “moyen”. Avantage : optimisation globale, données consolidées. Condition : chaque site garder autonomie locale (arrêt manuel, paramètres spécifiques possibles).</p></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81ff-b641-efa06fc3fa38" class="">Q7. « Inspection prévue janvier 2025. Intégrateur pas livré à temps. Que faire ? »</h3></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81fe-9b83-c0cc1936e6cc" class=""><strong>R7.</strong> <strong>Non-conformité risquée</strong>. Deadline inspection = <strong>01/01/2025</strong> (si BACS existant). Si pas encore installé janvier → Site “pas conforme” légalement, même si travaux en cours. Solution : (1) Report date inspection formalité (accord inspecteur) ; (2) Mise en place système provisoire conforme minimal (capteurs de base) avant jan 2025 ; (3) Inspection complète février → Rapport en retard mais site ” en voie de conformité “. Risque : pénalité administrative si delay &gt; 3 mois post-deadline.</p></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81ba-afde-f2cec34a4a55" class="">Q8. « Classé patrimoine : impossible installer capteurs = TRI infini. Exemption ? »</h3></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8180-9ba0-c3a9f8e934df" class=""><strong>R8.</strong> <strong>Peut être exemption MAIS documentation stricte</strong>. Cas : si capteurs installation <strong>techniquement impossible</strong> (contrainte patrimoniale avérée + documents preuve) <strong>OU</strong> TRI &gt; 10 ans calculé. Preuves attendues : (1) Avis architecte des bâtiments de France (ABF) refusant capteurs ; (2) Audit TRI complet. Risque : audit découvre capteurs possibles ailleurs → refus exemption + obligation BACS alternatif.</p></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81e1-8025-e719ee00066b" class="">Q9. « Bâtiment occupé 3 mois/an (vacances). Consommation base bonne ? »</h3></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-810f-a5fc-e3c7ad765484" class=""><strong>R9.</strong> <strong>Non, récalculer base sur occupancy réelle</strong>. Règle : “Si bâtiment vide &gt; 6 mois année = utiliser seulement années occupées pour moyenne conso”. Exemple : 2023 vide 8 mois → 2023 ignorée. 2024 occupé 12 mois, 2025 occupé 12 mois → Moyenne = (2024+2025)/2. Conso de base “anormale” (basse vacance) → faux gain énergétique → TRI surestime → exemption possible échoue. Audit doit documenter occupancy exacte.</p></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81b3-ba25-cba3485cf73c" class="">Q10. « Exploitant refuse BACS : “compliqué et inutile”. Comment convaincre ? »</h3></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8115-a870-efb6bbf57273" class=""><strong>R10.</strong> <strong>C’est obligatoire, pas optionnel</strong> (&gt;290 kW seulement). Points de vente exploitant : (1) <strong>Économies réelles</strong> : 15-30% énergie mesurable = économie facture visible (ROI 5-8 ans) ; (2) <strong>Alertes immédiates</strong> : détecte dérives avant surcoûts exponentiels (ex : climatisation bloquée jour = 2k€ surcoûts weekend vs 20€ alerte détection rapide) ; (3) <strong>Confort occupants</strong> : pilotage température fines, ventilation optimisée = productivité ; (4) <strong>Conformité légale</strong> : obligation décret = risque pénalité 300€/jour retard. Proposer démo sur petit système pour preuve gain avant déploiement global.</p></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-8126-8d5e-dc7d8e3e7895"/></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-81a2-9db3-d2f5f1c35ee9" class="">OPPORTUNITÉS PRODUIT PROMEOS 2.0</h2></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81ca-8ad3-ea327e35c9ca" class="">8 FEATURES BACS-READY (PLATFORM)</h3></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81ab-9a8a-c32043090033" class="">1. <strong>Score de Conformité BACS Continu</strong></h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-818d-b79a-f9822903982a" class="bulleted-list"><li style="list-style-type:disc">Dashboard “Conformité Décret” : % complétude obligations (audit rapide, TRI justifié, BACS installé, inspection à jour, documentation archivée)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8187-8775-c16331e23649" class="bulleted-list"><li style="list-style-type:disc">KPI rouge/orange/vert par site : conforme / en cours / non-conforme</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81b5-ac9d-ec2b6152ba2f" class="bulleted-list"><li style="list-style-type:disc">Alerte calendrier : “Inspection due dans 6 mois”, “Deadline renouvellement approche”, “TRI exemption expire”</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-818b-b704-c958c0398689" class="bulleted-list"><li style="list-style-type:disc"><strong>Cas d’usage</strong> : PM tertiaire gère 50 sites → vision 360° conformité en 1 clic</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-8166-b824-cdad3122dd35" class="">2. <strong>Calcul TRI Automatisé</strong></h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8121-a34d-fc52dd970a08" class="bulleted-list"><li style="list-style-type:disc">Interface saisie : Consommations 2 ans + tarifs énergie + devis BACS → Calcul TRI instantané</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8120-bf13-eb3d4dadb228" class="bulleted-list"><li style="list-style-type:disc">Sensibilité analyse : “Si gain 15% → TRI = X ans ; si gain 12% → TRI = Y ans” (montre seuil critique)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8170-97d5-f0dbfbd2a44a" class="bulleted-list"><li style="list-style-type:disc">Recommandation : “BACS obligatoire” vs “Exemption possible (TRI &gt; 10 ans)” + lien dossier TRI à archiver</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8154-a7d0-f308473ca39b" class="bulleted-list"><li style="list-style-type:disc"><strong>Cas d’usage</strong> : Directeur immobilier évalue 30 sites rapidement, identifie 5 exemptions légitimes</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-813f-bd74-c1f3740e527c" class="">3. <strong>Alertes Prédictives Dérives</strong></h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81c7-8f3f-db6a5d36ee94" class="bulleted-list"><li style="list-style-type:disc">Connexion données BACS propriétaire (via API standardisée) : récupération consommations temps réel</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8155-9f9d-f57b966bfdc1" class="bulleted-list"><li style="list-style-type:disc">Détection anomalies : conso +10% vs normal → alerte exploitant (cause probable : surchauffage, équip bloqué, sous-compteur faux)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-819b-8049-ebf23bbe8527" class="bulleted-list"><li style="list-style-type:disc">Prédiction : “À ce rythme, surconsommation de 50k€ cette année” → anticipation action</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81cb-abc1-e32133d71be3" class="bulleted-list"><li style="list-style-type:disc"><strong>Cas d’usage</strong> : Exploitant identifie fuite thermique semaine 2 vs découvrir facture année trop tard</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81bb-aa45-c02eb287b826" class="">4. <strong>Registre d’Inspections BACS</strong></h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81f2-b6b3-e3cebbf4cad7" class="bulleted-list"><li style="list-style-type:disc">Base de données inspections (date, inspecteur, site, rapports digitalisés)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81b9-9b0d-c57b7f60a8fd" class="bulleted-list"><li style="list-style-type:disc">Génération alertes “Inspection due dans 2 mois” (5 ans max depuis dernière)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81f2-b65a-ec791f90e960" class="bulleted-list"><li style="list-style-type:disc">Suivi recommandations inspection (priorité, statut réalisé/en cours/report, date clôture)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-818f-acce-f5d27dc982e6" class="bulleted-list"><li style="list-style-type:disc">Archive 10 ans (conforme exigence légale conservation rapports)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81ad-921d-ed1ab39f1616" class="bulleted-list"><li style="list-style-type:disc"><strong>Cas d’usage</strong> : Portfolio manager vérifie 100 sites ont tous inspecté &lt; 5 ans</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81c3-bebc-e3e37c4a6797" class="">5. <strong>Proof of Compliance Auto-Export</strong></h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8146-9b76-f154866a2d79" class="bulleted-list"><li style="list-style-type:disc">Dossier “Attestation BACS” généré PDF :<div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8160-8276-fda50436f83f" class="bulleted-list"><li style="list-style-type:circle">Audit conformité site (puissance, date deadline, status)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8112-8083-dc3270bc97ae" class="bulleted-list"><li style="list-style-type:circle">Dernier rapport inspection (date + URL doc)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8158-ae36-fd4c524055a9" class="bulleted-list"><li style="list-style-type:circle">Exemption TRI (si applicable) + calcul justificatif</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8177-b6dd-d042f3da93bc" class="bulleted-list"><li style="list-style-type:circle">Contrat BACS signé + facture install</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81ee-a12b-c46ae94e4525" class="bulleted-list"><li style="list-style-type:circle">Documentation 10 ans archivée (checklist)</li></ul></div></li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81c3-a39b-e2aa9cce53c6" class="bulleted-list"><li style="list-style-type:disc">Une page résumé → “Conforme Y/N” signée PM (proof audit)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8172-a30e-cce76cfa9e68" class="bulleted-list"><li style="list-style-type:disc"><strong>Cas d’usage</strong> : Audit externe/autorités → Dossier complet fourni 5 minutes</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-8155-979a-ef39e39ea628" class="">6. <strong>Équipement Registry &amp; Lifecycle</strong></h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-819c-8f15-c937e66ddc0b" class="bulleted-list"><li style="list-style-type:disc">Inventaire centralisé systèmes techniques (chauffage, clim, ventilation, ECS, éclairage, électricité)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-818b-a24b-d839ae39ca69" class="bulleted-list"><li style="list-style-type:disc">Fiche par équipement : puissance, date install, âge, contrat maintenance, prochaine révision</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8139-9f2f-d30b20a78c71" class="bulleted-list"><li style="list-style-type:disc">Alertes renouvellement : “Chaudière 25 ans → changement conseil dans 3 ans → BACS déclenché si fait”</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8105-9ed6-c0b99cffd39f" class="bulleted-list"><li style="list-style-type:disc">Planification financière : “Budget renouvellement équip 2026-2028 + budget BACS associé”</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8162-8d10-c0418cc1b685" class="bulleted-list"><li style="list-style-type:disc"><strong>Cas d’usage</strong> : Directeur CapEx anticipe coûts renouvellement + BACS bundlé</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81bf-9ed4-f20fa2b90399" class="">7. <strong>KPI Énergie &amp; Performance BACS</strong></h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81e7-8a3f-f24b379280e8" class="bulleted-list"><li style="list-style-type:disc">Dashboard mensuel : conso (kWh), coûts (€), gain vs baseline, nombre heures inconfort, taux exploitation BACS</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-812b-bff8-cae7daf0d6f0" class="bulleted-list"><li style="list-style-type:disc">Tendance annuelle : économies réalisées post-BACS vs avant (kWh saved × tarif moyen)</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-813e-80cf-fcaa15202733" class="bulleted-list"><li style="list-style-type:disc">Benchmarking intra-groupe : “Notre site = top 20% effi énergétique vs autres sites classe similaire”</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8124-b061-d39e86446be7" class="bulleted-list"><li style="list-style-type:disc">ROI tracking : “BACS a coûté 40k€ en 2023 ; économies réalisées 2024 = 8k€ ; ROI année 4 attendu”</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81a5-9461-e814a9d01104" class="bulleted-list"><li style="list-style-type:disc"><strong>Cas d’usage</strong> : Diriger générale rapporte à CSR “économie énergétique BACS = 250 tCO2 / 5 ans”</li></ul></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-81b0-b24e-da6eaf6ef4cf" class="">8. <strong>Matrice Décisionnel Rapport/Exemption</strong></h3></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81fb-a5b3-fb4d279bf341" class="bulleted-list"><li style="list-style-type:disc">Interface guidée : saisir Putile + type bâtiment (neuf/existant) + renouvellement ? → Recommandation</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81cb-890a-c724c41c9344" class="bulleted-list"><li style="list-style-type:disc">Matrice visuelle : “290-70 kW existant sans renouvellement = deadline 2030 (pas urgent)”</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81a0-b223-df4259cd91d1" class="bulleted-list"><li style="list-style-type:disc">Liens documentations : si BACS obligatoire → lien CdC; si exemption possible → lien formulaire TRI</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-81bf-9403-cea95daee042" class="bulleted-list"><li style="list-style-type:disc">Simulation budget : saisir coûts → automatique TRI calculé → statut décision</li></ul></div><div style="display:contents" dir="auto"><ul id="2d86971c-72e7-8151-85c1-cded8b6ca5a9" class="bulleted-list"><li style="list-style-type:disc"><strong>Cas d’usage</strong> : PME immobilier petite équipe → outil guide conformité sans BET externe</li></ul></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-81fb-b4bd-c57e78cd6418"/></div><div style="display:contents" dir="auto"><h3 id="2d86971c-72e7-8124-9e63-fd19703a9fe5" class="">5 KPI MINIMUM (TABLEAU BORD)</h3></div><div style="display:contents" dir="ltr"><table id="2d86971c-72e7-816d-bb42-eebcbe766b25" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81ef-8a87-da5666a617bc"><th id="@KAm" class="simple-table-header-color simple-table-header">KPI</th><th id="pKr&lt;" class="simple-table-header-color simple-table-header">Formule</th><th id="H&lt;=\" class="simple-table-header-color simple-table-header">Fréquence</th><th id="kT[f" class="simple-table-header-color simple-table-header">Target</th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-810d-8ca4-def32b95bb60"><td id="@KAm" class=""><strong>% Sites Conformes BACS</strong></td><td id="pKr&lt;" class="">(Conformes / Total sites assujettis) × 100</td><td id="H&lt;=\" class="">Mensuel</td><td id="kT[f" class="">100% fin 2027 (&gt;290 kW), 100% fin 2030 (&gt;70 kW)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8126-ad27-cf16c2516a0e"><td id="@KAm" class=""><strong>Moyenne TRI Portefeuille (ans)</strong></td><td id="pKr&lt;" class="">(Σ TRI sites calculés) / N sites</td><td id="H&lt;=\" class="">Semestriel</td><td id="kT[f" class="">&lt; 8 ans (meilleur ROI)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8105-a4ba-dbbb51a13f25"><td id="@KAm" class=""><strong>Économies énergétiques annuelles (kWh)</strong></td><td id="pKr&lt;" class="">Σ (Conso pré-BACS - Conso post-BACS) × sites</td><td id="H&lt;=\" class="">Annuel</td><td id="kT[f" class="">+15% gain baseline</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-8108-b639-c46a6000bbf3"><td id="@KAm" class=""><strong>Taux Exploitation BACS</strong></td><td id="pKr&lt;" class="">(Alertes détectées &amp; traitées / Alertes générées) × 100</td><td id="H&lt;=\" class="">Mensuel</td><td id="kT[f" class="">&gt; 80% (exploitant réactif)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2d86971c-72e7-81f5-a1ee-e6ab45459120"><td id="@KAm" class=""><strong>Jours en Retard Conformité</strong></td><td id="pKr&lt;" class="">MAX(0, date_réelle - date_deadline) en jours</td><td id="H&lt;=\" class="">Temps réel</td><td id="kT[f" class="">0 jours (zero penalty risk)</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-816a-bacc-ecf8c0f26bba"/></div><div style="display:contents" dir="auto"><h2 id="2d86971c-72e7-81c1-8029-d44416b743cb" class="">CONCLUSION EXÉCUTIVE</h2></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8162-bf14-edb5ad6a9038" class="">Le <strong>décret BACS</strong> est réglementairement stable (décrets 2020-887, 2023-259, 2025-1343 + arrêté 07/04/2023). Report seuil 70 kW à 2030 apporte <strong>légèrement plus de flexibilité</strong>, mais deadline &gt;290 kW reste <strong>01/01/2025 critique</strong> (non-conformité actuellement = <strong>hors-la-loi</strong>).</p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81db-b057-c8733d56268a" class=""><strong>Pour PROMEOS</strong>, trois leviers d’action :<br/>1. <strong>Conformité immédiate</strong> (2025) : Audit sites &gt;290 kW, TRI justifications, BACS urgent si obligation<br/>2. <strong>Opportunité économique</strong> (2025-2030) : BACS ROI 5-8 ans, cumul CEE/MaPrimeRénov, économies 15-30%<br/>3. <strong>Plateforme produit</strong> : Conformité scoring, TRI calc, inspections registre = valeur SaaS immense marché tertiaire français (50k+ sites concernés, 16% seulement équipés 2025)</p></div><div style="display:contents" dir="auto"><hr id="2d86971c-72e7-811b-9100-c7b7decd2c9d"/></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-81d3-9398-f416d6572649" class=""><strong>Document production-ready Notion &amp; audit</strong></p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8140-ada8-f5928739892e" class=""><strong>Tous liens Légifrance officiels &amp; sources validées</strong></p></div><div style="display:contents" dir="auto"><p id="2d86971c-72e7-8195-b3a5-fd6e51fa9917" class=""><strong>À jour décret n°2025-1343 (décembre 2025)</strong></p></div><div style="display:contents" dir="ltr"><figure id="2ec6971c-72e7-8049-a99b-dca759d46b3a" class="link-to-page"><a href="D%C3%A9cret%20BACS%20%E2%80%94%20seuils,%20dates,%20exemptions%20TRI_%E2%80%9CSynth%202ec6971c72e78049a99bdca759d46b3a.html">Décret BACS — seuils, dates, exemptions TRI_“Synth</a></figure></div></div></article><span class="sans" style="font-size:14px;padding-top:2em"></span></body></html>

@@ -8,9 +8,11 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Optional, Dict, Any
 
+import re
+
 from ..domain import (
     Invoice, InvoiceComponent, EnergyType, InvoiceStatus,
-    ShadowLevel, ComponentType,
+    ShadowLevel, ComponentType, BillingConcept, ConceptAllocation,
 )
 
 
@@ -30,6 +32,92 @@ def _parse_component_type(val: str) -> ComponentType:
         return ComponentType(val)
     except ValueError:
         return ComponentType.AUTRE
+
+
+# ========================================
+# Concept Allocation: ComponentType -> BillingConcept
+# ========================================
+
+_COMPONENT_CONCEPT_MAP: Dict[ComponentType, str] = {
+    # Fourniture (energie)
+    ComponentType.CONSO_HP: BillingConcept.FOURNITURE.value,
+    ComponentType.CONSO_HC: BillingConcept.FOURNITURE.value,
+    ComponentType.CONSO_BASE: BillingConcept.FOURNITURE.value,
+    ComponentType.CONSO_POINTE: BillingConcept.FOURNITURE.value,
+    ComponentType.CONSO_HPH: BillingConcept.FOURNITURE.value,
+    ComponentType.CONSO_HCH: BillingConcept.FOURNITURE.value,
+    ComponentType.CONSO_HPE: BillingConcept.FOURNITURE.value,
+    ComponentType.CONSO_HCE: BillingConcept.FOURNITURE.value,
+    ComponentType.TERME_VARIABLE: BillingConcept.FOURNITURE.value,
+    # Acheminement (reseau)
+    ComponentType.TURPE_FIXE: BillingConcept.ACHEMINEMENT.value,
+    ComponentType.TURPE_PUISSANCE: BillingConcept.ACHEMINEMENT.value,
+    ComponentType.TURPE_ENERGIE: BillingConcept.ACHEMINEMENT.value,
+    # Abonnement
+    ComponentType.ABONNEMENT: BillingConcept.ABONNEMENT.value,
+    ComponentType.TERME_FIXE: BillingConcept.ABONNEMENT.value,
+    # Taxes & contributions
+    ComponentType.CTA: BillingConcept.TAXES_CONTRIBUTIONS.value,
+    ComponentType.ACCISE: BillingConcept.TAXES_CONTRIBUTIONS.value,
+    ComponentType.CEE: BillingConcept.TAXES_CONTRIBUTIONS.value,
+    # TVA
+    ComponentType.TVA_REDUITE: BillingConcept.TVA.value,
+    ComponentType.TVA_NORMALE: BillingConcept.TVA.value,
+    # Capacite / depassement
+    ComponentType.DEPASSEMENT_PUISSANCE: BillingConcept.CAPACITE.value,
+    ComponentType.REACTIVE: BillingConcept.CAPACITE.value,
+    # Ajustement
+    ComponentType.PRORATA: BillingConcept.AJUSTEMENT.value,
+    ComponentType.REGULARISATION: BillingConcept.AJUSTEMENT.value,
+    ComponentType.REMISE: BillingConcept.AJUSTEMENT.value,
+    # Penalite
+    ComponentType.PENALITE: BillingConcept.PENALITE.value,
+}
+
+# Regex fallback rules for label-based allocation (used when component_type is AUTRE)
+_LABEL_CONCEPT_RULES: list = [
+    (re.compile(r"abonnement|prime\s+fixe|souscri", re.IGNORECASE), BillingConcept.ABONNEMENT.value, 0.85),
+    (re.compile(r"consommation|energie|kwh|heure|hp\b|hc\b|base|pointe", re.IGNORECASE), BillingConcept.FOURNITURE.value, 0.80),
+    (re.compile(r"turpe|acheminement|soutirage|gestion|atrd|reseau", re.IGNORECASE), BillingConcept.ACHEMINEMENT.value, 0.85),
+    (re.compile(r"accise|cspe|ticfe|ticgn|taxe|cta|contribution", re.IGNORECASE), BillingConcept.TAXES_CONTRIBUTIONS.value, 0.85),
+    (re.compile(r"tva", re.IGNORECASE), BillingConcept.TVA.value, 0.90),
+    (re.compile(r"depassement|reactive|capacit", re.IGNORECASE), BillingConcept.CAPACITE.value, 0.80),
+    (re.compile(r"regularis|prorata|ajust|remise|avoir", re.IGNORECASE), BillingConcept.AJUSTEMENT.value, 0.75),
+    (re.compile(r"penalite|indemnit|retard", re.IGNORECASE), BillingConcept.PENALITE.value, 0.80),
+    (re.compile(r"cee|certificat|economie", re.IGNORECASE), BillingConcept.TAXES_CONTRIBUTIONS.value, 0.70),
+]
+
+
+def allocate_concept(comp: InvoiceComponent) -> ConceptAllocation:
+    """
+    Allocate a billing concept to a component.
+    Strategy: component_type mapping first (confidence=1.0),
+    then regex on label as fallback (confidence 0.70-0.90).
+    """
+    # 1. Direct mapping from component_type
+    if comp.component_type in _COMPONENT_CONCEPT_MAP:
+        return ConceptAllocation(
+            concept_id=_COMPONENT_CONCEPT_MAP[comp.component_type],
+            confidence=1.0,
+            matched_rules=[f"type:{comp.component_type.value}"],
+        )
+
+    # 2. Regex fallback on label
+    label = comp.label or ""
+    for pattern, concept_id, confidence in _LABEL_CONCEPT_RULES:
+        if pattern.search(label):
+            return ConceptAllocation(
+                concept_id=concept_id,
+                confidence=confidence,
+                matched_rules=[f"label_regex:{pattern.pattern[:40]}"],
+            )
+
+    # 3. Unmatched → autre
+    return ConceptAllocation(
+        concept_id=BillingConcept.AUTRE.value,
+        confidence=0.5,
+        matched_rules=["fallback:unmatched"],
+    )
 
 
 def _compute_input_hash(raw: str) -> str:
@@ -72,6 +160,7 @@ def _build_invoice(data: Dict[str, Any], raw_json: str, source_file: Optional[st
             period_end=_parse_date(comp_data.get("period_end")),
             metadata={k: v for k, v in comp_data.items() if k.startswith("_")},
         )
+        comp.allocation = allocate_concept(comp)
         components.append(comp)
 
     invoice = Invoice(

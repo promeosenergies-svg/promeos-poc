@@ -1,0 +1,32 @@
+id: DT_SYNTHESE_9
+type: knowledge
+domain: reglementaire
+title: 'Scénario 1 : Méthode relative (baisse %)'
+summary: "- Applicable si : Bâtiment ancien, performance faible/moyenne \n- Calcul\
+  \ : 40% de réduction vs année référence \n- Avantage : Moins exigeant pour bâtiments\
+  \ très performants (comparaison régressive) \n- E..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Applicable si : Bâtiment ancien, performance faible/moyenne \n- Calcul\
+  \ : 40% de réduction vs année référence \n- Avantage : Moins exigeant pour bâtiments\
+  \ très performants (comparaison régressive) \n- Exemple : Bâtiment 2000 | Conso\
+  \ 2015 (ref) : 200 kWh/m²/an | Cible 2030 : 120 kWh/m²/an (-40%)"
+logic: null
+sources:
+- doc_id: DT_SYNTHESE
+  label: Decret Tertiaire - Synthese PROMEOS
+  section: 'Scénario 1 : Méthode relative (baisse %)'
+  anchor: '#scnario-1-mthode-relative-baisse-'
+  excerpt_short: "- Applicable si : Bâtiment ancien, performance faible/moyenne \n\
+    - Calcul : 40% de réduction vs année ..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,69 @@
+id: ACC_FRANCE_21
+type: knowledge
+domain: usages
+title: 'Scénario C : Entreprise Tertiaire 100 kWc / Multi-sites 3 points INVESTISSEMENT
+  (CAPEX)'
+summary: '├─ Installation PV (3 sites × 33 kWc) : €90,000
+
+  ├─ Onduleurs + box données décentralisé : €9,000
+
+  ├─ Raccordement (3 sites) : €9,000
+
+  ├─ SaaS settlement (estimation) : €2,000
+
+  └─ Total : €110,000
+
+
+  ÉCONOM...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: '├─ Installation PV (3 sites × 33 kWc) : €90,000
+
+  ├─ Onduleurs + box données décentralisé : €9,000
+
+  ├─ Raccordement (3 sites) : €9,000
+
+  ├─ SaaS settlement (estimation) : €2,000
+
+  └─ Total : €110,000
+
+
+  ÉCONOMIES ANNUELLES vs. MARCHÉ SPOT (année 1)
+
+  ├─ Consommation 300 MWh/an (mix 40% jour, 60% nuit)
+
+  ├─ Production autoconsommable (60% sync.) : 61.2 MWh @ €0.17/kWh vs marché €0.55/MWh
+
+  ├─ Économie par MWh : €0.38/kWh × 61.2 MWh = **€23,256/an**
+
+  ├─ OpEx ACC (low-touch SaaS) : €2,500
+
+  ├─ Flex services (réduction prix négatifs) : +€2,000–5,000 (bonus si pilotage)
+
+  └─ **NET BENEFIT YEAR 1 : €22,500–25,500**
+
+
+  PAYBACK : 110,000 / 23,500 = **4.7 ans** ✅ (attractive)'
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: 'Scénario C : Entreprise Tertiaire 100 kWc / Multi-sites 3 points INVESTISSEMENT
+    (CAPEX)'
+  anchor: '#scnario-c-entreprise-tertiaire-100-kwc-multi-sites-3-points-investissement-capex'
+  excerpt_short: '├─ Installation PV (3 sites × 33 kWc) : €90,000
+
+    ├─ Onduleurs + box données décentralisé : €9,000
+
+    ├─ ...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

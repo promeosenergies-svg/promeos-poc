@@ -1,0 +1,39 @@
+id: LEVIERS_MARCHE_2025_36
+type: knowledge
+domain: acc
+title: 'Catégorie 3 : Fournisseurs & Intermédiaires Énergie Acteur Positionnement
+  Modèle ACC Différenciation Limites Urban Solar Fournisseur vert local Intermédiaire
+  (PMO externalisée) Marque réputée, accompagnement Perte autonomie PMO, captivité
+  Ilek Marketplace producteurs–consommateurs Pair-à-pair (pas ACC collectif) Peer-to-peer,
+  flexibilité Pas ACC multi-membres, micro EDF Obligation d’Achat (OA) Rachat surplus
+  PV Non (vs ACC local) Tarifs assurés 20 ans Pas partage local, peu attractive pour
+  ACC'
+summary: 'Verdict : Modèles captifs ou pair-à-pair ; pas ACC clé en main + compliance.'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: 'Verdict : Modèles captifs ou pair-à-pair ; pas ACC clé en main + compliance.'
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: 'Catégorie 3 : Fournisseurs & Intermédiaires Énergie Acteur Positionnement
+    Modèle ACC Différenciation Limites Urban Solar Fournisseur vert local Intermédiaire
+    (PMO externalisée) Marque réputée, accompagnement Perte autonomie PMO, captivité
+    Ilek Marketplace producteurs–consommateurs Pair-à-pair (pas ACC collectif) Peer-to-peer,
+    flexibilité Pas ACC multi-membres, micro EDF Obligation d’Achat (OA) Rachat surplus
+    PV Non (vs ACC local) Tarifs assurés 20 ans Pas partage local, peu attractive
+    pour ACC'
+  anchor: '#catgorie-3-fournisseurs-intermdiaires-nergie-acteur-positionnement-modle-acc-diffrenciation-limites-urban-solar-fournisseur-vert-local-intermdiaire-pmo-externalise-marque-rpute-accompagnement-perte-autonomie-pmo-captivit-ilek-marketplace-producteursconsommateurs-pair--pair-pas-acc-collectif-peer-to-peer-flexibilit-pas-acc-multi-membres-micro-edf-obligation-dachat-oa-rachat-surplus-pv-non-vs-acc-local-tarifs-assurs-20-ans-pas-partage-local-peu-attractive-pour-acc'
+  excerpt_short: 'Verdict : Modèles captifs ou pair-à-pair ; pas ACC clé en main +
+    compliance....'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

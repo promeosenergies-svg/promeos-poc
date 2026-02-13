@@ -1,18 +1,38 @@
 /**
- * PROMEOS - Conformite (/conformite) V3
- * Score global + obligations + proof status + audit trail + mock upload
+ * PROMEOS - Conformite (/conformite) V9
+ * OPS-grade: real API data, workflow actions (ack/resolve/false_positive).
+ * Replaces mock obligations with live ComplianceFinding data.
  */
-import { useState } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   ShieldCheck, AlertTriangle, CheckCircle, Clock, FileText,
   ChevronDown, ChevronUp, Plus, Upload, User, Calendar,
+  BookOpen, ExternalLink, Zap, RotateCcw, RefreshCw,
+  UserCheck, CheckCircle2, XCircle,
 } from 'lucide-react';
 import { Card, CardBody, Badge, Button, EmptyState, TrustBadge } from '../ui';
-import Modal from '../ui/Modal';
 import CreateActionModal from '../components/CreateActionModal';
-import { mockObligations, getObligationScore } from '../mocks/obligations';
 import { useScope } from '../contexts/ScopeContext';
 import { track } from '../services/tracker';
+import {
+  applyKB,
+  getComplianceSummary,
+  getComplianceSites,
+  patchComplianceFinding,
+  recomputeComplianceRules,
+} from '../services/api';
+
+const REG_LABELS = {
+  decret_tertiaire_operat: 'Decret Tertiaire',
+  bacs: 'BACS (GTB/GTC)',
+  aper: 'Loi APER (ENR)',
+};
+
+const REG_DESCRIPTIONS = {
+  decret_tertiaire_operat: 'Reduire la consommation energetique des batiments tertiaires > 1000 m2',
+  bacs: "Systemes d'automatisation et de controle des batiments (GTB/GTC)",
+  aper: "Installation d'energies renouvelables sur parkings > 1500 m2",
+};
 
 const SEVERITY_BADGE = {
   critical: 'crit', high: 'warn', medium: 'info', low: 'neutral',
@@ -24,19 +44,23 @@ const STATUT_CONFIG = {
   conforme: { label: 'Conforme', color: 'text-green-700', bg: 'bg-green-50', border: 'border-green-200', icon: CheckCircle },
 };
 
-const PROOF_CONFIG = {
-  missing: { label: 'Manquante', color: 'bg-red-50 text-red-700', icon: AlertTriangle },
-  in_progress: { label: 'En cours', color: 'bg-amber-50 text-amber-700', icon: Clock },
-  ok: { label: 'OK', color: 'bg-green-50 text-green-700', icon: CheckCircle },
+const WORKFLOW_CONFIG = {
+  open: { label: 'A traiter', color: 'bg-red-50 text-red-700' },
+  ack: { label: 'En cours', color: 'bg-amber-50 text-amber-700' },
+  resolved: { label: 'Resolu', color: 'bg-green-50 text-green-700' },
+  false_positive: { label: 'Faux positif', color: 'bg-gray-100 text-gray-500' },
 };
 
-function ProofBadge({ status }) {
-  const cfg = PROOF_CONFIG[status] || PROOF_CONFIG.missing;
-  const Icon = cfg.icon;
+function isOverdue(obligation) {
+  if (!obligation.echeance || obligation.statut === 'conforme') return false;
+  return new Date(obligation.echeance) < new Date();
+}
+
+function WorkflowBadge({ status }) {
+  const cfg = WORKFLOW_CONFIG[status] || WORKFLOW_CONFIG.open;
   return (
     <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${cfg.color}`}>
-      <Icon size={12} />
-      Preuve: {cfg.label}
+      {cfg.label}
     </span>
   );
 }
@@ -56,35 +80,289 @@ function ScoreGauge({ pct }) {
           <div className={`h-full ${fill} rounded-full transition-all`} style={{ width: `${pct}%` }} />
         </div>
         <p className="text-xs text-gray-500 mt-1">Score de conformite global</p>
+        <p className="text-xs text-gray-400 mt-0.5">Score = sites conformes / sites evalues (pondere par criticite)</p>
       </div>
     </div>
   );
 }
 
-function AuditTrail({ obligation }) {
+const KB_SEVERITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
+
+function KBObligationsSection({ scopedSites }) {
+  const [kbResult, setKbResult] = useState(null);
+  const [kbLoading, setKbLoading] = useState(true);
+  const [kbError, setKbError] = useState(false);
+  const [expandedKb, setExpandedKb] = useState(null);
+
+  useEffect(() => {
+    const totalSurface = scopedSites.reduce((s, site) => s + (site.surface_m2 || 0), 0);
+    const maxSurface = Math.max(...scopedSites.map(s => s.surface_m2 || 0), 0);
+    const estHvacKw = Math.round(maxSurface * 0.1);
+    const largeSites = scopedSites.filter(s => (s.surface_m2 || 0) >= 2000);
+    const estParkingM2 = largeSites.length > 0 ? Math.round(largeSites[0].surface_m2 * 0.6) : 0;
+
+    const context = {
+      site_context: {
+        surface_m2: maxSurface,
+        hvac_kw: estHvacKw,
+        building_type: 'bureau',
+        parking_area_m2: estParkingM2,
+        tertiaire_area_m2: totalSurface,
+        nb_sites: scopedSites.length,
+      },
+      domain: 'reglementaire',
+      allow_drafts: false,
+    };
+
+    setKbLoading(true);
+    applyKB(context)
+      .then((data) => { setKbResult(data); setKbError(false); })
+      .catch(() => { setKbError(true); })
+      .finally(() => setKbLoading(false));
+  }, [scopedSites]);
+
+  if (kbLoading) {
+    return (
+      <Card>
+        <CardBody className="text-center py-6">
+          <BookOpen size={24} className="text-blue-300 mx-auto mb-2 animate-pulse" />
+          <p className="text-sm text-gray-400">Analyse reglementaire KB en cours...</p>
+        </CardBody>
+      </Card>
+    );
+  }
+
+  if (kbError || !kbResult) return null;
+
+  const items = kbResult.applicable_items || [];
+  const missing = kbResult.missing_fields || [];
+  const suggestions = kbResult.suggestions || [];
+
+  if (items.length === 0 && missing.length === 0) return null;
+
   return (
-    <div className="flex items-center gap-4 text-xs text-gray-400 pt-2 border-t border-gray-100 mt-3">
-      <span className="flex items-center gap-1"><User size={11} /> {obligation.created_by || 'Systeme'}</span>
-      <span className="flex items-center gap-1"><Calendar size={11} /> Cree le {obligation.created_at || '-'}</span>
-      {obligation.updated_at && obligation.updated_at !== obligation.created_at && (
-        <span className="flex items-center gap-1"><Clock size={11} /> MAJ {obligation.updated_at}</span>
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <BookOpen size={16} className="text-blue-600" />
+        <h3 className="text-sm font-semibold text-gray-700">
+          Obligations detectees par la KB ({items.length})
+        </h3>
+        <Badge status="info">Intelligence KB</Badge>
+      </div>
+
+      {items
+        .sort((a, b) => (KB_SEVERITY_ORDER[a.severity] ?? 9) - (KB_SEVERITY_ORDER[b.severity] ?? 9))
+        .map((item) => (
+        <Card key={item.id} className="border-l-4 border-l-blue-400">
+          <CardBody className="py-3">
+            <div
+              className="flex items-start gap-3 cursor-pointer"
+              onClick={() => setExpandedKb(expandedKb === item.id ? null : item.id)}
+            >
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <Badge status={SEVERITY_BADGE[item.severity] || 'neutral'}>{item.severity}</Badge>
+                  {item.confidence && (
+                    <Badge status={item.confidence === 'high' ? 'ok' : 'neutral'}>{item.confidence}</Badge>
+                  )}
+                  {item.domain && (
+                    <span className="text-xs font-medium px-2 py-0.5 rounded bg-red-50 text-red-700">{item.domain}</span>
+                  )}
+                </div>
+                <h4 className="text-sm font-semibold text-gray-900 leading-tight">{item.title}</h4>
+                {expandedKb !== item.id && item.summary && (
+                  <p className="text-xs text-gray-500 mt-1 line-clamp-2">{item.summary}</p>
+                )}
+                {item.why && expandedKb !== item.id && (
+                  <p className="text-xs text-blue-600 mt-1">
+                    <Zap size={11} className="inline mr-1" />
+                    {item.why}
+                  </p>
+                )}
+              </div>
+              <button className="p-1 text-gray-400 hover:text-gray-600 shrink-0">
+                {expandedKb === item.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </button>
+            </div>
+
+            {expandedKb === item.id && (
+              <div className="mt-3 pt-3 border-t border-gray-100 space-y-3">
+                {item.why && (
+                  <div className="p-3 bg-blue-50 rounded-lg">
+                    <p className="text-xs font-semibold text-blue-600 uppercase mb-1">Pourquoi applicable</p>
+                    <p className="text-sm text-gray-700">{item.why}</p>
+                  </div>
+                )}
+                {item.content_md && (
+                  <div className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed max-h-48 overflow-y-auto bg-gray-50 rounded-lg p-4">
+                    {item.content_md}
+                  </div>
+                )}
+                {item.logic?.then?.outputs && (
+                  <div className="p-3 bg-amber-50 rounded-lg">
+                    <p className="text-xs font-semibold text-amber-700 uppercase mb-1">Actions / Obligations</p>
+                    {item.logic.then.outputs.map((output, i) => (
+                      <div key={i} className="flex items-center gap-2 text-xs text-amber-800 mt-1">
+                        <span className={`inline-block w-2 h-2 rounded-full ${
+                          output.severity === 'critical' ? 'bg-red-500' :
+                          output.severity === 'high' ? 'bg-orange-500' : 'bg-blue-500'
+                        }`} />
+                        <span className="font-medium">{output.label}</span>
+                        {output.deadline && (
+                          <span className="text-amber-600 flex items-center gap-1">
+                            <Clock size={11} /> {output.deadline}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {item.sources && item.sources.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 mb-1">Sources reglementaires</p>
+                    {item.sources.map((src, i) => (
+                      <div key={i} className="flex items-center gap-2 text-xs text-gray-600">
+                        <ExternalLink size={12} />
+                        <span>{src.label}{src.section ? ` - ${src.section}` : ''}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {item.tags && (
+                  <div className="flex flex-wrap gap-1">
+                    {Object.entries(item.tags).map(([cat, values]) =>
+                      Array.isArray(values) && values.map((v) => (
+                        <span key={`${cat}-${v}`} className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">
+                          {cat}:{v}
+                        </span>
+                      ))
+                    )}
+                  </div>
+                )}
+                <div className="flex items-center gap-4 text-xs text-gray-400">
+                  <span>KB ID: {item.id}</span>
+                  {item.updated_at && <span>MAJ: {item.updated_at}</span>}
+                </div>
+              </div>
+            )}
+          </CardBody>
+        </Card>
+      ))}
+
+      {missing.length > 0 && (
+        <Card className="border-l-4 border-l-amber-300">
+          <CardBody className="py-3">
+            <div className="flex items-center gap-2 mb-2">
+              <AlertTriangle size={14} className="text-amber-500" />
+              <p className="text-xs font-semibold text-amber-700">Donnees manquantes pour une analyse complete</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {missing.map((field) => (
+                <span key={field} className="px-2 py-1 bg-amber-50 text-amber-700 rounded text-xs font-medium">{field}</span>
+              ))}
+            </div>
+            {suggestions.length > 0 && (
+              <p className="text-xs text-gray-500 mt-2">{suggestions.join(' ')}</p>
+            )}
+          </CardBody>
+        </Card>
       )}
+
+      <TrustBadge source="PROMEOS KB" period="Analyse reglementaire automatique" confidence="high" />
     </div>
   );
 }
 
-function ObligationCard({ obligation, onCreateAction, onUploadProof, proofFiles }) {
+/**
+ * Transform API sitesData (from /compliance/sites) into obligation-like objects
+ * grouped by regulation, for display in ObligationCard.
+ */
+function sitesToObligations(sitesData, summary) {
+  const byReg = {};
+
+  for (const site of sitesData) {
+    for (const f of site.findings) {
+      const reg = f.regulation;
+      if (!byReg[reg]) {
+        byReg[reg] = {
+          id: reg,
+          regulation: REG_LABELS[reg] || reg,
+          code: reg,
+          description: REG_DESCRIPTIONS[reg] || reg,
+          severity: 'low',
+          statut: 'conforme',
+          echeance: null,
+          sites_concernes: 0,
+          sites_conformes: 0,
+          findings: [],
+          _site_ids_all: new Set(),
+          _site_ids_ok: new Set(),
+        };
+      }
+      const obl = byReg[reg];
+      obl.findings.push({ ...f, site_nom: site.site_nom, site_id: site.site_id });
+      obl._site_ids_all.add(site.site_id);
+
+      // Track worst severity
+      const sevOrder = { critical: 4, high: 3, medium: 2, low: 1 };
+      if (f.severity && (sevOrder[f.severity] || 0) > (sevOrder[obl.severity] || 0)) {
+        obl.severity = f.severity;
+      }
+
+      // Track worst status
+      if (f.status === 'NOK') {
+        obl.statut = 'non_conforme';
+      } else if (f.status === 'UNKNOWN' && obl.statut === 'conforme') {
+        obl.statut = 'a_risque';
+      }
+
+      // Track closest deadline
+      if (f.deadline) {
+        if (!obl.echeance || f.deadline < obl.echeance) {
+          obl.echeance = f.deadline;
+        }
+      }
+
+      // Track OK sites
+      if (f.status === 'OK') {
+        obl._site_ids_ok.add(site.site_id);
+      }
+    }
+  }
+
+  return Object.values(byReg).map(obl => ({
+    ...obl,
+    sites_concernes: obl._site_ids_all.size,
+    sites_conformes: obl._site_ids_ok.size,
+    proof_status: obl.statut === 'conforme' ? 'ok' : obl.statut === 'a_risque' ? 'in_progress' : 'missing',
+    pourquoi: `${obl._site_ids_all.size} site(s) concerne(s) par ${obl.regulation}`,
+    quoi_faire: obl.findings.filter(f => f.actions?.length).flatMap(f => f.actions).filter((v, i, a) => a.indexOf(v) === i).join('. ') || 'Evaluer la conformite',
+    preuve: 'Attestation ou rapport de conformite',
+    impact_eur: 0,
+  }));
+}
+
+function ObligationCard({ obligation, onCreateAction, onWorkflowAction, onUploadProof, proofFiles }) {
   const [expanded, setExpanded] = useState(false);
   const cfg = STATUT_CONFIG[obligation.statut] || STATUT_CONFIG.a_risque;
   const Icon = cfg.icon;
+  const overdue = isOverdue(obligation);
   const pctConforme = obligation.sites_concernes > 0
     ? Math.round(obligation.sites_conformes / obligation.sites_concernes * 100)
     : 100;
   const files = proofFiles[obligation.id] || [];
 
   return (
-    <Card className={`border-l-4 ${cfg.border}`}>
+    <Card className={`border-l-4 ${cfg.border} ${overdue ? 'ring-1 ring-red-200' : ''}`}>
       <CardBody>
+        {/* Overdue banner */}
+        {overdue && (
+          <div className="flex items-center gap-2 mb-2 px-3 py-1.5 bg-red-50 rounded-lg">
+            <AlertTriangle size={14} className="text-red-600" />
+            <span className="text-xs font-semibold text-red-700">En retard — echeance depassee ({obligation.echeance})</span>
+          </div>
+        )}
+
         {/* Header row */}
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -96,7 +374,7 @@ function ObligationCard({ obligation, onCreateAction, onUploadProof, proofFiles 
                 <h3 className="text-sm font-bold text-gray-900">{obligation.regulation}</h3>
                 <Badge status={SEVERITY_BADGE[obligation.severity] || 'neutral'}>{obligation.severity}</Badge>
                 <span className={`text-xs font-medium px-2 py-0.5 rounded ${cfg.bg} ${cfg.color}`}>{cfg.label}</span>
-                <ProofBadge status={obligation.proof_status} />
+                {overdue && <Badge status="crit">En retard</Badge>}
               </div>
               <p className="text-sm text-gray-600 mt-1">{obligation.description}</p>
             </div>
@@ -112,23 +390,19 @@ function ObligationCard({ obligation, onCreateAction, onUploadProof, proofFiles 
         {/* Stats row */}
         <div className="flex items-center gap-6 mt-3 text-sm">
           <div>
-            <span className="text-gray-500">Sites concernes: </span>
+            <span className="text-gray-500">Sites concernes : </span>
             <span className="font-medium text-gray-800">{obligation.sites_concernes}</span>
           </div>
           <div>
-            <span className="text-gray-500">Conformes: </span>
+            <span className="text-gray-500">Conformes : </span>
             <span className="font-medium text-green-700">{obligation.sites_conformes}/{obligation.sites_concernes}</span>
             <span className="text-gray-400 ml-1">({pctConforme}%)</span>
           </div>
-          <div className="flex items-center gap-1">
-            <Clock size={14} className="text-gray-400" />
-            <span className="text-gray-500">Echeance: </span>
-            <span className="font-medium text-gray-800">{obligation.echeance}</span>
-          </div>
-          {obligation.impact_eur > 0 && (
-            <div>
-              <span className="text-gray-500">Risque: </span>
-              <span className="font-bold text-red-600">{obligation.impact_eur.toLocaleString()} EUR</span>
+          {obligation.echeance && (
+            <div className="flex items-center gap-1">
+              <Clock size={14} className={overdue ? 'text-red-500' : 'text-gray-400'} />
+              <span className="text-gray-500">Echeance : </span>
+              <span className={`font-medium ${overdue ? 'text-red-600' : 'text-gray-800'}`}>{obligation.echeance}</span>
             </div>
           )}
         </div>
@@ -139,6 +413,15 @@ function ObligationCard({ obligation, onCreateAction, onUploadProof, proofFiles 
             <div className="h-full bg-green-500 rounded-full transition-all" style={{ width: `${pctConforme}%` }} />
           </div>
         </div>
+
+        {/* CTA always visible for non-conforme */}
+        {obligation.statut !== 'conforme' && !expanded && (
+          <div className="mt-3 flex items-center gap-2">
+            <Button onClick={() => onCreateAction(obligation)} size="sm" variant="secondary">
+              <Plus size={14} /> Creer action
+            </Button>
+          </div>
+        )}
 
         {/* Expanded detail */}
         {expanded && (
@@ -153,22 +436,52 @@ function ObligationCard({ obligation, onCreateAction, onUploadProof, proofFiles 
                 <p className="text-sm text-gray-700">{obligation.quoi_faire}</p>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Echeance</p>
-                <p className="text-sm text-gray-700 flex items-center gap-1"><Clock size={14} /> {obligation.echeance}</p>
+
+            {/* Per-finding detail with workflow */}
+            {obligation.findings && obligation.findings.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Findings par site ({obligation.findings.length})</p>
+                <div className="space-y-1.5">
+                  {obligation.findings.filter(f => f.status === 'NOK' || f.status === 'UNKNOWN').map((f) => (
+                    <div key={f.id} className="flex items-center gap-3 p-2 rounded bg-gray-50 text-sm">
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${f.status === 'NOK' ? 'bg-red-500' : 'bg-amber-500'}`} />
+                      <span className="text-gray-700 font-medium truncate flex-1">{f.site_nom}</span>
+                      <span className="text-xs text-gray-400 font-mono">{f.rule_id}</span>
+                      <WorkflowBadge status={f.insight_status} />
+                      {f.insight_status === 'open' && (
+                        <button
+                          onClick={() => onWorkflowAction(f.id, 'ack')}
+                          className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
+                        >
+                          <UserCheck size={12} /> Prendre en charge
+                        </button>
+                      )}
+                      {f.insight_status === 'ack' && (
+                        <button
+                          onClick={() => onWorkflowAction(f.id, 'resolved')}
+                          className="text-xs text-green-600 hover:text-green-800 font-medium flex items-center gap-1"
+                        >
+                          <CheckCircle2 size={12} /> Resolu
+                        </button>
+                      )}
+                      {(f.insight_status === 'open' || f.insight_status === 'ack') && (
+                        <button
+                          onClick={() => onWorkflowAction(f.id, 'false_positive')}
+                          className="text-xs text-gray-400 hover:text-gray-600 font-medium flex items-center gap-1"
+                        >
+                          <XCircle size={12} /> FP
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Preuve attendue</p>
-                <p className="text-sm text-gray-700 flex items-center gap-1"><FileText size={14} /> {obligation.preuve}</p>
-              </div>
-            </div>
+            )}
 
             {/* Proof upload section */}
             <div className="p-3 bg-indigo-50/50 rounded-lg">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-xs font-semibold text-indigo-600 uppercase">Joindre preuve</p>
-                <ProofBadge status={obligation.proof_status} />
               </div>
               {files.length > 0 && (
                 <div className="space-y-1 mb-2">
@@ -188,12 +501,9 @@ function ObligationCard({ obligation, onCreateAction, onUploadProof, proofFiles 
               </label>
             </div>
 
-            {/* Audit trail */}
-            <AuditTrail obligation={obligation} />
-
             {obligation.statut !== 'conforme' && (
               <Button onClick={() => onCreateAction(obligation)} size="sm">
-                <Plus size={14} /> Creer une action conformite
+                <Plus size={14} /> Creer action conformite
               </Button>
             )}
           </div>
@@ -208,7 +518,80 @@ export default function ConformitePage() {
   const [showCreate, setShowCreate] = useState(false);
   const [prefill, setPrefill] = useState(null);
   const [proofFiles, setProofFiles] = useState({});
-  const score = getObligationScore();
+  const [statusFilter, setStatusFilter] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [recomputing, setRecomputing] = useState(false);
+  const [summary, setSummary] = useState(null);
+  const [sitesData, setSitesData] = useState([]);
+
+  const loadData = useCallback(() => {
+    setLoading(true);
+    Promise.all([
+      getComplianceSummary(),
+      getComplianceSites(),
+    ]).then(([s, st]) => {
+      setSummary(s);
+      setSitesData(st);
+    }).catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  const obligations = useMemo(() => {
+    if (!sitesData.length || !summary) return [];
+    return sitesToObligations(sitesData, summary);
+  }, [sitesData, summary]);
+
+  const score = useMemo(() => {
+    if (!summary) return { pct: 0, total: 0, non_conformes: 0, a_risque: 0, conformes: 0, total_impact_eur: 0 };
+    return {
+      pct: summary.pct_ok || 0,
+      total: obligations.length,
+      non_conformes: summary.sites_nok || 0,
+      a_risque: summary.sites_unknown || 0,
+      conformes: summary.sites_ok || 0,
+      total_impact_eur: 0,
+    };
+  }, [summary, obligations]);
+
+  const sortedObligations = useMemo(() => {
+    let list = [...obligations];
+    if (statusFilter) {
+      list = list.filter(o => o.statut === statusFilter);
+    }
+    list.sort((a, b) => {
+      const aOver = isOverdue(a) ? 0 : 1;
+      const bOver = isOverdue(b) ? 0 : 1;
+      if (aOver !== bOver) return aOver - bOver;
+      const order = { non_conforme: 0, a_risque: 1, conforme: 2 };
+      return (order[a.statut] ?? 9) - (order[b.statut] ?? 9);
+    });
+    return list;
+  }, [obligations, statusFilter]);
+
+  const handleRecompute = async () => {
+    setRecomputing(true);
+    try {
+      await recomputeComplianceRules();
+      loadData();
+      track('conformite_recompute');
+    } catch {
+      // silent
+    } finally {
+      setRecomputing(false);
+    }
+  };
+
+  const handleWorkflowAction = async (findingId, newStatus) => {
+    try {
+      await patchComplianceFinding(findingId, { status: newStatus });
+      loadData();
+      track('conformite_workflow', { finding_id: findingId, status: newStatus });
+    } catch {
+      // silent
+    }
+  };
 
   function handleCreateFromObligation(obligation) {
     setPrefill({
@@ -216,6 +599,9 @@ export default function ConformitePage() {
       type: 'conformite',
       priorite: obligation.severity === 'critical' ? 'critical' : obligation.severity === 'high' ? 'high' : 'medium',
       description: obligation.quoi_faire,
+      obligation_code: obligation.code,
+      impact_eur: obligation.impact_eur,
+      site: `${obligation.sites_concernes} sites concernes`,
     });
     setShowCreate(true);
     track('conformite_create_action', { regulation: obligation.code });
@@ -234,17 +620,43 @@ export default function ConformitePage() {
     track('proof_upload', { obligation_id: obligationId, file: file.name });
   }
 
+  const overdueCount = obligations.filter(isOverdue).length;
+
+  if (loading) {
+    return (
+      <div className="px-6 py-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-gray-200 rounded w-1/3" />
+          <div className="grid grid-cols-4 gap-4">
+            {[1,2,3,4].map(i => <div key={i} className="h-24 bg-gray-200 rounded-lg" />)}
+          </div>
+          <div className="h-40 bg-gray-200 rounded-lg" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="px-6 py-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Conformite Reglementaire</h2>
+          <h2 className="text-xl font-bold text-gray-900">Conformité réglementaire</h2>
           <p className="text-sm text-gray-500 mt-0.5">{org.nom} &middot; {scopedSites.length} sites dans le perimetre</p>
         </div>
-        <Button onClick={() => { setPrefill(null); setShowCreate(true); }}>
-          <Plus size={16} /> Creer action conformite
-        </Button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleRecompute}
+            disabled={recomputing}
+            className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition disabled:opacity-50"
+          >
+            <RefreshCw size={14} className={recomputing ? 'animate-spin' : ''} />
+            {recomputing ? 'Evaluation...' : 'Re-evaluer'}
+          </button>
+          <Button onClick={() => { setPrefill(null); setShowCreate(true); }}>
+            <Plus size={16} /> Creer action conformite
+          </Button>
+        </div>
       </div>
 
       {/* Score + summary */}
@@ -252,73 +664,92 @@ export default function ConformitePage() {
         <Card className="col-span-2">
           <CardBody>
             <ScoreGauge pct={score.pct} />
-            <TrustBadge source="RegOps" period="30 derniers jours" confidence="high" className="mt-2" />
+            <TrustBadge source="RegOps" period={`perimetre : ${scopedSites.length} sites`} confidence="medium" className="mt-2" />
           </CardBody>
         </Card>
-        <Card>
+        <Card
+          className={`cursor-pointer transition hover:shadow-md ${statusFilter === 'non_conforme' ? 'ring-2 ring-red-400' : ''}`}
+          onClick={() => setStatusFilter(statusFilter === 'non_conforme' ? null : 'non_conforme')}
+        >
           <CardBody className="bg-red-50">
             <div className="flex items-center gap-2 mb-1">
               <AlertTriangle size={16} className="text-red-600" />
               <p className="text-xs text-gray-500 font-medium">Non conformes</p>
             </div>
             <p className="text-2xl font-bold text-red-700">{score.non_conformes}</p>
-            <p className="text-xs text-gray-500 mt-1">obligations</p>
+            <p className="text-xs text-gray-500 mt-1">sites</p>
           </CardBody>
         </Card>
-        <Card>
+        <Card
+          className={`cursor-pointer transition hover:shadow-md ${statusFilter === 'a_risque' ? 'ring-2 ring-amber-400' : ''}`}
+          onClick={() => setStatusFilter(statusFilter === 'a_risque' ? null : 'a_risque')}
+        >
           <CardBody className="bg-amber-50">
             <div className="flex items-center gap-2 mb-1">
               <Clock size={16} className="text-amber-600" />
-              <p className="text-xs text-gray-500 font-medium">A risque</p>
+              <p className="text-xs text-gray-500 font-medium">A evaluer</p>
             </div>
             <p className="text-2xl font-bold text-amber-700">{score.a_risque}</p>
-            <p className="text-xs text-gray-500 mt-1">obligations</p>
+            <p className="text-xs text-gray-500 mt-1">sites</p>
           </CardBody>
         </Card>
       </div>
 
-      {/* Impact financier */}
-      {score.total_impact_eur > 0 && (
-        <Card className="border-l-4 border-l-red-400">
-          <CardBody className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Risque financier total lie a la non-conformite</p>
-              <p className="text-2xl font-bold text-red-600 mt-1">{score.total_impact_eur.toLocaleString()} EUR</p>
-            </div>
-            <ShieldCheck size={32} className="text-red-200" />
-          </CardBody>
-        </Card>
+      {/* Active filter indicator */}
+      {statusFilter && (
+        <div className="flex items-center gap-2">
+          <Badge status={statusFilter === 'non_conforme' ? 'crit' : 'warn'}>
+            Filtre : {statusFilter === 'non_conforme' ? 'Non conformes' : 'A risque'}
+          </Badge>
+          <button
+            onClick={() => setStatusFilter(null)}
+            className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition"
+          >
+            <RotateCcw size={12} /> Reinitialiser
+          </button>
+        </div>
+      )}
+
+      {/* Overdue alert */}
+      {overdueCount > 0 && !statusFilter && (
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-red-50 border border-red-200 rounded-lg">
+          <AlertTriangle size={16} className="text-red-600" />
+          <span className="text-sm font-medium text-red-700">
+            {overdueCount} obligation(s) en retard — echeance(s) depassee(s)
+          </span>
+        </div>
       )}
 
       {/* Obligations list */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-700 mb-3">{score.total} obligations reglementaires</h3>
-        {mockObligations.length === 0 ? (
+        <h3 className="text-sm font-semibold text-gray-700 mb-3">
+          {statusFilter ? sortedObligations.length : score.total} reglementations evaluees
+        </h3>
+        {sortedObligations.length === 0 ? (
           <EmptyState
             icon={ShieldCheck}
             title="Aucune obligation detectee"
-            text="Ajoutez des sites a votre patrimoine pour detecter les obligations reglementaires applicables."
+            text="Cliquez Re-evaluer pour lancer l'evaluation, ou ajoutez des sites a votre patrimoine."
             ctaLabel="Aller au patrimoine"
           />
         ) : (
           <div className="space-y-3">
-            {mockObligations
-              .sort((a, b) => {
-                const order = { non_conforme: 0, a_risque: 1, conforme: 2 };
-                return (order[a.statut] ?? 9) - (order[b.statut] ?? 9);
-              })
-              .map((o) => (
-                <ObligationCard
-                  key={o.id}
-                  obligation={o}
-                  onCreateAction={handleCreateFromObligation}
-                  onUploadProof={handleUploadProof}
-                  proofFiles={proofFiles}
-                />
-              ))}
+            {sortedObligations.map((o) => (
+              <ObligationCard
+                key={o.id}
+                obligation={o}
+                onCreateAction={handleCreateFromObligation}
+                onWorkflowAction={handleWorkflowAction}
+                onUploadProof={handleUploadProof}
+                proofFiles={proofFiles}
+              />
+            ))}
           </div>
         )}
       </div>
+
+      {/* KB Obligations (from knowledge base apply engine) */}
+      <KBObligationsSection scopedSites={scopedSites} />
 
       {/* Create Action Modal */}
       <CreateActionModal

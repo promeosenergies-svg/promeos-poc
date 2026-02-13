@@ -1,0 +1,51 @@
+id: STOCKAGE_ACC_23
+type: rule
+domain: usages
+title: 'Synthèse Exécutive :'
+summary: "Stockage batterie pour ACC pertinent SI ET SEULEMENT SI : \n- Surplus PV\
+  \ > 30% consommation (sinon TAc amélioration marginal < 10%) \n- Budget CAPEX ≥\
+  \ 30 k€ (seuil minimum rentabilité) \n- Gouvernance AC..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Stockage batterie pour ACC pertinent SI ET SEULEMENT SI : \n- Surplus\
+  \ PV > 30% consommation (sinon TAc amélioration marginal < 10%) \n- Budget CAPEX\
+  \ ≥ 30 k€ (seuil minimum rentabilité) \n- Gouvernance ACC clarifiée (propriété batterie,\
+  \ clé répartition définie) \n- ROI projection < 10 ans (breakeven 4–8 ans typique\
+  \ si paramètres OK) \n- Objectif explicite (TAc/TAp%, autonomie h, résilience, indépendance)\
+  \ \n\nSinon → NO-GO batterie (augmenter PV, optimiser conso, ACC simple sans stockage).\
+  \ \n\nRecommandation par Profil ACC : Profil Décision Batterie Recommandée Timeline\
+  \ Budget Total Petit tertiaire (20–40 kWc) ⚠️ MARGINAL (si surplus > 30%) 6–12 kWh,\
+  \ 12 kW 4 mois 15–20 k€ Multi-sites tertiaire (80–200 kWc) ✅ OUI (profile souvent\
+  \ désynchro) 20–40 kWh, 25–40 kW 6–8 mois 50–80 k€ IRVE + solaire ✅ OUI PRIORITAIRE\
+  \ (peak shaving crucial) 30–50 kWh, 40–60 kW 6 mois 70–120 k€ Industrie 24/7 (résilience)\
+  \ ✅ OUI PRIORITAIRE 50–100 kWh, 50–100 kW 8–12 mois 100–150 k€ Ferme/agriculture\
+  \ ⚠️ DÉBAT (si contrainte GRD forte, OUI) 15–25 kWh si limitation injection 4–6\
+  \ mois 25–40 k€ Microgrid isolé ✅ OUI OBLIGATOIRE (autonomie) 100–500 kWh (saisonnier)\
+  \ 12–18 mois 150–500+ k€ \n\nRoadmap France 2025–2030 : \n- 2025 (Fin ARENH) : Volatilité\
+  \ prix accentuée → Window opportunity stockage (ROI attractive) \n- Août 2026 (TURPE\
+  \ 7) : Tarifs injection-soutirage localisés → incitation forte batteries injection\
+  \ smarte \n- 2026+ (mFRR obligation) : Génération > 10 MW doit balancer → VPP agrégation\
+  \ devient standard \n- 2027–2028 : Batterie cost curve -15–20% additional, > 80%\
+  \ LFP (sodium emergent) \n- 2030–2035 (Fit-for-55) : Batteries 1–5 MWh community-scale\
+  \ dominant business model \n\nRésilience vs Économie : Batterie → coûteux court-terme\
+  \ (CAPEX), mais sécurise prix électricité 8–12 ans (hedge inflation, TURPE evol.,\
+  \ volatilité acheteur)."
+logic: null
+sources:
+- doc_id: STOCKAGE_ACC
+  label: Stockage et Autoconsommation Collective
+  section: 'Synthèse Exécutive :'
+  anchor: '#synthse-excutive-'
+  excerpt_short: "Stockage batterie pour ACC pertinent SI ET SEULEMENT SI : \n- Surplus\
+    \ PV > 30% consommation (sinon TA..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

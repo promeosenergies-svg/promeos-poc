@@ -1,0 +1,33 @@
+id: BACS_COMPLET_15
+type: rule
+domain: usages
+title: 5️⃣ RECOMMANDATIONS & AMÉLIORATIONS
+summary: "- Rapport inspection : Fournir tous 5 ans document avec recommandations\
+  \ réglages, remplacement équip., solutions alternatives \n- Formation : Documenter\
+  \ bon usage système pour exploitant/gestionnaire \n..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Rapport inspection : Fournir tous 5 ans document avec recommandations\
+  \ réglages, remplacement équip., solutions alternatives \n- Formation : Documenter\
+  \ bon usage système pour exploitant/gestionnaire \n- Opportunités : Évaluer intérêt\
+  \ remplacement système (obsolescence, sur-consomé, etc.) \n- Exemple : Inspection\
+  \ détecte thermostat décalé -2°C → recommande recalibrage (gain -5% chaud)"
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: 5️⃣ RECOMMANDATIONS & AMÉLIORATIONS
+  anchor: '#5-recommandations-amliorations'
+  excerpt_short: '- Rapport inspection : Fournir tous 5 ans document avec recommandations
+    réglages, remplacement équip...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

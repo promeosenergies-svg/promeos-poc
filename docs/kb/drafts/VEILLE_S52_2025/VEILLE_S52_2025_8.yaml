@@ -1,0 +1,32 @@
+id: VEILLE_S52_2025_8
+type: knowledge
+domain: acc
+title: Backlog Impacté
+summary: "MUST : Conformité Data Act + Module Clé de Répartition ACC + API Portail\
+  \ NEBEF Enedis \n\nSHOULD : Tableau de bord Bill Intelligence + Vérificateur BACS\
+  \ Readiness + Traçabilité Carbone \n\nCOULD : Interfa..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "MUST : Conformité Data Act + Module Clé de Répartition ACC + API Portail\
+  \ NEBEF Enedis \n\nSHOULD : Tableau de bord Bill Intelligence + Vérificateur BACS\
+  \ Readiness + Traçabilité Carbone \n\nCOULD : Interface Micro Agrégation + Intégration\
+  \ Pennylane + ML Prévision Flex"
+logic: null
+sources:
+- doc_id: VEILLE_S52_2025
+  label: Semaine 52 2025 - Veille Marche Energie PROMEOS
+  section: Backlog Impacté
+  anchor: '#backlog-impact'
+  excerpt_short: "MUST : Conformité Data Act + Module Clé de Répartition ACC + API\
+    \ Portail NEBEF Enedis \n\nSHOULD : Tab..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

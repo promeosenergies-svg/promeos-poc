@@ -1,0 +1,39 @@
+id: BACS_SEUILS_6
+type: rule
+domain: usages
+title: 5. EXIGENCES FONCTIONNELLES DU BACS
+summary: 'Le BACS doit remplir les 5 fonctions obligatoires : Fonction Description
+  Suivi & Enregistrement Mesure continue (pas horaire), par zone, de la production
+  et consommation énergétique des systèmes CVC. ...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Le BACS doit remplir les 5 fonctions obligatoires : Fonction Description\
+  \ Suivi & Enregistrement Mesure continue (pas horaire), par zone, de la production\
+  \ et consommation énergétique des systèmes CVC. Archivage mensuel 5 ans minimum.\
+  \ Référence & Détection Situe l’efficacité vs. valeurs de référence ; détecte pertes\
+  \ d’efficacité ; informe l’exploitant des possibilités d’amélioration. Ajustement\
+  \ Ajuste automatiquement les systèmes techniques en conséquence des données. Interopérabilité\
+  \ Communication avec divers systèmes (CVC, clairage, etc.) via protocoles standards.\
+  \ Pilotage Manuel-Automatique Régulation autonome optimisée + possibilité de reprise\
+  \ manuelle. \n\nClasse de performance : Le BACS doit atteindre classe C minimum\
+  \ selon NF EN ISO 52120-1:2022 (norme définie par arrêté du 7 avril 2023). Seules\
+  \ les classes A, B, C sont considérées conformes. 5 6"
+logic: null
+sources:
+- doc_id: BACS_SEUILS
+  label: Decret BACS - Seuils, dates, exemptions
+  section: 5. EXIGENCES FONCTIONNELLES DU BACS
+  anchor: '#5-exigences-fonctionnelles-du-bacs'
+  excerpt_short: 'Le BACS doit remplir les 5 fonctions obligatoires : Fonction Description
+    Suivi & Enregistrement Mesu...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

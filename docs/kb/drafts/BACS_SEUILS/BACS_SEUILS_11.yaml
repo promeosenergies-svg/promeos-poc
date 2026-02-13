@@ -1,0 +1,32 @@
+id: BACS_SEUILS_11
+type: rule
+domain: reglementaire
+title: Obligation lors de remplacement d’équipement
+summary: Depuis le 09/04/2023, dès qu’un système de chauffage ou climatisation est
+  remplacé ou installé dans un bâtiment assujetti, une régulation conforme au décret
+  BACS doit être mise en place , même avant l...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: Depuis le 09/04/2023, dès qu’un système de chauffage ou climatisation
+  est remplacé ou installé dans un bâtiment assujetti, une régulation conforme au
+  décret BACS doit être mise en place , même avant les échéances globales 2025 ou
+  2027.
+logic: null
+sources:
+- doc_id: BACS_SEUILS
+  label: Decret BACS - Seuils, dates, exemptions
+  section: Obligation lors de remplacement d’équipement
+  anchor: '#obligation-lors-de-remplacement-dquipement'
+  excerpt_short: Depuis le 09/04/2023, dès qu’un système de chauffage ou climatisation
+    est remplacé ou installé dans ...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

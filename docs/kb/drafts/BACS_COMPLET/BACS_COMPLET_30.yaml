@@ -1,0 +1,42 @@
+id: BACS_COMPLET_30
+type: knowledge
+domain: reglementaire
+title: Identification site
+summary: '- ⬜ Nom bâtiment & adresse précis
+
+  - ⬜ Propriétaire équipements identifié (bailleurs, locataires, mixed)
+
+  - ⬜ Nature activité tertiaire confirmée (bureaux / commerces / santé / éducation
+  / etc)
+
+  - ⬜ Date...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: '- ⬜ Nom bâtiment & adresse précis
+
+  - ⬜ Propriétaire équipements identifié (bailleurs, locataires, mixed)
+
+  - ⬜ Nature activité tertiaire confirmée (bureaux / commerces / santé / éducation
+  / etc)
+
+  - ⬜ Date permis de construire récupérée (ou date construction existant)'
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Identification site
+  anchor: '#identification-site'
+  excerpt_short: '- ⬜ Nom bâtiment & adresse précis
+
+    - ⬜ Propriétaire équipements identifié (bailleurs, locataires, mix...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

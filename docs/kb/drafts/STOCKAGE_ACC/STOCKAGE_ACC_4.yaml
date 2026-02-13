@@ -1,0 +1,67 @@
+id: STOCKAGE_ACC_4
+type: rule
+domain: acc
+title: B.1 Comparatif Technologique Multi-Critères Technologie CAPEX (€/kWh) Rendement
+  (%) Durée idéale Cycles Cycle de Vie (ans) Avantages Limites Applicabilité ACC B2B
+  Li-ion LFP 100–150 93–96 2–4 h 5000–8000 12–15 Densité, sûr, baisse prix rapide
+  Coût initial, thermique ✅ RÉFÉRENCE 2025 Li-ion NMC 120–180 91–94 1–2 h 3000–5000
+  10–12 Ancien, connu, intégration Perte rapide, moins sûr, coûteux ⚠️ Transition
+  LFP Sodium-ion 150–200 90–92 2–4 h 4000–6000 10–12 Abondant, recyclable, sûr Coût
+  30–40% + cher, moins dense ⛔ Niches industrielles Flow (Vanadium) 180–250 75–80
+  4–8 h+ 12000+ 20+ Long terme, décorrelé kWh, gestion chauffage Volumineux, coût
+  initial, maintenance ⛔ Grands systèmes (MWh) Plomb (traditionnel) 60–80 85–90 0.5–2
+  h 800–1500 5–7 Pas cher, recyclable Lourd, toxique, obsolète ❌ À ÉVITER Supercapacitors
+  1000–5000 95 Secondes-minutes 1 000 000+ 10–20 Ultra-puissance, durée infinie Très
+  cher €/kW, mini-capacité ⛔ Lissage pics nanosecondes Stockage thermique (ballons
+  glace, TES) 20–50 80–95 Heures-jours ∞ 20+ Couplage CVC/génie climatique, bas coût
+  Bâtiment-dépendant, peu flexible ⚠️ Niche tertiaire GTB Hydrogène vert 500–2000
+  25–40 Heures-jours 1000+ 15–20 Saisonnalité, industrie, multi-usages Perte énergétique,
+  CAPEX très élevé, immaturité ⛔ Horizon 2030+ Batterie automobile V2G/V2B 100–150
+  (partagée) 92–96 1–4 h 5000+ (dégradation lente) 8–10 dans bâtiment Vecteur autre
+  (mobilité), flexibilité, résilience Temps recharge limité, batterie vieillissante
+  ⚠️ Cas IRVE + ACC
+summary: 'Conclusion techno : LFP Li-ion = standard 2025 pour ACC B2B, coût juste
+  en-dessous du seuil de rentabilité 1000 €/kWh systèmes, amélioration rapide (-10%/an
+  LCOE).'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: 'Conclusion techno : LFP Li-ion = standard 2025 pour ACC B2B, coût juste
+  en-dessous du seuil de rentabilité 1000 €/kWh systèmes, amélioration rapide (-10%/an
+  LCOE).'
+logic: null
+sources:
+- doc_id: STOCKAGE_ACC
+  label: Stockage et Autoconsommation Collective
+  section: B.1 Comparatif Technologique Multi-Critères Technologie CAPEX (€/kWh) Rendement
+    (%) Durée idéale Cycles Cycle de Vie (ans) Avantages Limites Applicabilité ACC
+    B2B Li-ion LFP 100–150 93–96 2–4 h 5000–8000 12–15 Densité, sûr, baisse prix rapide
+    Coût initial, thermique ✅ RÉFÉRENCE 2025 Li-ion NMC 120–180 91–94 1–2 h 3000–5000
+    10–12 Ancien, connu, intégration Perte rapide, moins sûr, coûteux ⚠️ Transition
+    LFP Sodium-ion 150–200 90–92 2–4 h 4000–6000 10–12 Abondant, recyclable, sûr Coût
+    30–40% + cher, moins dense ⛔ Niches industrielles Flow (Vanadium) 180–250 75–80
+    4–8 h+ 12000+ 20+ Long terme, décorrelé kWh, gestion chauffage Volumineux, coût
+    initial, maintenance ⛔ Grands systèmes (MWh) Plomb (traditionnel) 60–80 85–90
+    0.5–2 h 800–1500 5–7 Pas cher, recyclable Lourd, toxique, obsolète ❌ À ÉVITER
+    Supercapacitors 1000–5000 95 Secondes-minutes 1 000 000+ 10–20 Ultra-puissance,
+    durée infinie Très cher €/kW, mini-capacité ⛔ Lissage pics nanosecondes Stockage
+    thermique (ballons glace, TES) 20–50 80–95 Heures-jours ∞ 20+ Couplage CVC/génie
+    climatique, bas coût Bâtiment-dépendant, peu flexible ⚠️ Niche tertiaire GTB Hydrogène
+    vert 500–2000 25–40 Heures-jours 1000+ 15–20 Saisonnalité, industrie, multi-usages
+    Perte énergétique, CAPEX très élevé, immaturité ⛔ Horizon 2030+ Batterie automobile
+    V2G/V2B 100–150 (partagée) 92–96 1–4 h 5000+ (dégradation lente) 8–10 dans bâtiment
+    Vecteur autre (mobilité), flexibilité, résilience Temps recharge limité, batterie
+    vieillissante ⚠️ Cas IRVE + ACC
+  anchor: '#b1-comparatif-technologique-multi-critres-technologie-capex-kwh-rendement-dure-idale-cycles-cycle-de-vie-ans-avantages-limites-applicabilit-acc-b2b-li-ion-lfp-100150-9396-24-h-50008000-1215-densit-sr-baisse-prix-rapide-cot-initial-thermique-rfrence-2025-li-ion-nmc-120180-9194-12-h-30005000-1012-ancien-connu-intgration-perte-rapide-moins-sr-coteux-transition-lfp-sodium-ion-150200-9092-24-h-40006000-1012-abondant-recyclable-sr-cot-3040-cher-moins-dense-niches-industrielles-flow-vanadium-180250-7580-48-h-12000-20-long-terme-dcorrel-kwh-gestion-chauffage-volumineux-cot-initial-maintenance-grands-systmes-mwh-plomb-traditionnel-6080-8590-052-h-8001500-57-pas-cher-recyclable-lourd-toxique-obsolte-viter-supercapacitors-10005000-95-secondes-minutes-1-000-000-1020-ultra-puissance-dure-infinie-trs-cher-kw-mini-capacit-lissage-pics-nanosecondes-stockage-thermique-ballons-glace-tes-2050-8095-heures-jours-20-couplage-cvcgnie-climatique-bas-cot-btiment-dpendant-peu-flexible-niche-tertiaire-gtb-hydrogne-vert-5002000-2540-heures-jours-1000-1520-saisonnalit-industrie-multi-usages-perte-nergtique-capex-trs-lev-immaturit-horizon-2030-batterie-automobile-v2gv2b-100150-partage-9296-14-h-5000-dgradation-lente-810-dans-btiment-vecteur-autre-mobilit-flexibilit-rsilience-temps-recharge-limit-batterie-vieillissante-cas-irve-acc'
+  excerpt_short: 'Conclusion techno : LFP Li-ion = standard 2025 pour ACC B2B, coût
+    juste en-dessous du seuil de renta...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

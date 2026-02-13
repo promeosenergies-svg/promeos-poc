@@ -1,0 +1,91 @@
+id: ACC_FRANCE_20
+type: knowledge
+domain: acc
+title: 'Scénario B : ZAC Activités 200 kWc / 12 entreprises INVESTISSEMENT (CAPEX)'
+summary: '├─ Installation PV (200 kWc) : €180,000
+
+  ├─ Onduleurs + monitoring avancé (temps réel) : €18,000
+
+  ├─ Raccordement HTA Enedis : €12,000
+
+  ├─ PMO (SAS dédiée, légal/gouvernance) : €5,000
+
+  ├─ Plateforme gesti...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: '├─ Installation PV (200 kWc) : €180,000
+
+  ├─ Onduleurs + monitoring avancé (temps réel) : €18,000
+
+  ├─ Raccordement HTA Enedis : €12,000
+
+  ├─ PMO (SAS dédiée, légal/gouvernance) : €5,000
+
+  ├─ Plateforme gestion clés (estimation) : €3,000
+
+  └─ Total CAPEX : €218,000
+
+
+  REVENUS ANNUELS (année 1)
+
+  ├─ Production brute : 200 × 0.85 × 1,100h = 187 MWh/an
+
+  ├─ Taux autocons. estimé (petits tertiaires) : 60%
+
+  ├─ TAc = 187 × 60% = 112.2 MWh @ €0.165/kWh : €18,513
+
+  ├─ Surplus vendu (marché) : 74.8 MWh @ €55/MWh : €4,114
+
+  ├─ Subvention CRE (appel d''offres, si admis) : €12,000–20,000
+
+  └─ TOTAL REVENUS (année 1) : **€34,627 + aides**
+
+
+  COÛTS OPÉRATIONNELS ANNUELS
+
+  ├─ Assurance : €600
+
+  ├─ Maintenance : €1,200
+
+  ├─ PMO gestion (sans SaaS) : €4,000–6,000
+
+  ├─ Gestion courbes/clés répartition (15h/mois manuel) : €2,400
+
+  ├─ Plateforme/APIs (estimation) : €500
+
+  └─ Total OpEx : **€8,700–10,200**
+
+
+  RÉSULTAT NET ANNUEL (année 2–3, sans aides répétées)
+
+  └─ €18,513 (TAc) + €4,114 (surplus) – €9,500 (OpEx) = **€13,127/an**
+
+
+  PAYBACK (avec aides première année)
+
+  └─ (€218,000 – €18,000 aides) / €13,127 = **15.2 ans**
+
+  └─ **Limite rentabilité économique** → nécessite contrats durée 15+ ans ou nouveau
+  modèle flex/services'
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: 'Scénario B : ZAC Activités 200 kWc / 12 entreprises INVESTISSEMENT (CAPEX)'
+  anchor: '#scnario-b-zac-activits-200-kwc-12-entreprises-investissement-capex'
+  excerpt_short: '├─ Installation PV (200 kWc) : €180,000
+
+    ├─ Onduleurs + monitoring avancé (temps réel) : €18,000
+
+    ├─ R...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

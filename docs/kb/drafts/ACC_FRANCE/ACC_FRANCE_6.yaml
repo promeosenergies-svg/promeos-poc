@@ -1,0 +1,39 @@
+id: ACC_FRANCE_6
+type: knowledge
+domain: usages
+title: '3. Clés de Répartition : Mécanique Opérationnelle Clé 26 27 28'
+summary: 'Enedis propose 4 modalités (choisies par PMO, modifiables mensuellement
+  sur préavis 4j) : Clé Fonctionnement Complexité Équité Cas d’usage Statique % fixes
+  prédéfinis (ex: consomm. 25%, 35%, 40%) Bass...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Enedis propose 4 modalités (choisies par PMO, modifiables mensuellement\
+  \ sur préavis 4j) : Clé Fonctionnement Complexité Équité Cas d’usage Statique %\
+  \ fixes prédéfinis (ex: consomm. 25%, 35%, 40%) Basse Moyenne (inflexible) Petit\
+  \ collectif stable Dynamique par défaut Enedis calcule TAc prorata consommation\
+  \ réelle P30 Moyenne Haute Standard ACC Dynamique Simple PMO calcule % selon ses\
+  \ critères (ex: priorité charges communes) Haute Flexible Bailleurs sociaux Dynamique\
+  \ Full PMO optimise 15-min à 15-min selon production/conso temps réel Très haute\
+  \ Maximum ZAC multi-usages, tertiaire \n\nIrritant majeur identifié : 29 30 31 \n\
+  - PMO doit changer clés manuellement chaque mois → lourdeur admin \n- Feedback terrain\
+  \ : 15–30h/mois pour PMO small-medium \n- Solution SaaS PROMEOS : calcul auto +\
+  \ simulation + envoi Enedis 1-click"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: '3. Clés de Répartition : Mécanique Opérationnelle Clé 26 27 28'
+  anchor: '#3-cls-de-rpartition-mcanique-oprationnelle-cl-26-27-28'
+  excerpt_short: 'Enedis propose 4 modalités (choisies par PMO, modifiables mensuellement
+    sur préavis 4j) : Clé Foncti...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

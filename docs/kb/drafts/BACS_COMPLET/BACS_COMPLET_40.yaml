@@ -1,0 +1,43 @@
+id: BACS_COMPLET_40
+type: rule
+domain: usages
+title: Formation exploitant
+summary: '- ⬜ Formation 4h réalisée (pilotage, consultation données, alertes, maintenance
+  basique)
+
+  - ⬜ Manuels exploitant en français remis & expliqués (accès hyperviseur, rapports,
+  paramètres)
+
+  - ⬜ Support vend...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: '- ⬜ Formation 4h réalisée (pilotage, consultation données, alertes, maintenance
+  basique)
+
+  - ⬜ Manuels exploitant en français remis & expliqués (accès hyperviseur, rapports,
+  paramètres)
+
+  - ⬜ Support vendor contact confirmé (n° tél, email, SLA réponse 24h)
+
+  - ⬜ Attente exploitant documentée (usage quotidien, fréquence suivi, escalade problèmes)'
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Formation exploitant
+  anchor: '#formation-exploitant'
+  excerpt_short: '- ⬜ Formation 4h réalisée (pilotage, consultation données, alertes,
+    maintenance basique)
+
+    - ⬜ Manuels...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,29 @@
+id: STRATEGIE_NEBCO_14
+type: knowledge
+domain: reglementaire
+title: E) Réputation
+summary: "- Risque : Surestimation gains → client déception → brand damage \n- Mitigation\
+  \ : Estimates conservateurs (italicize volatilité) ; 3e-party audit crédibilité"
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Risque : Surestimation gains → client déception → brand damage \n-\
+  \ Mitigation : Estimates conservateurs (italicize volatilité) ; 3e-party audit crédibilité"
+logic: null
+sources:
+- doc_id: STRATEGIE_NEBCO
+  label: Analyse strategique NEBCO
+  section: E) Réputation
+  anchor: '#e-rputation'
+  excerpt_short: "- Risque : Surestimation gains → client déception → brand damage\
+    \ \n- Mitigation : Estimates conservat..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

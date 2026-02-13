@@ -1,0 +1,43 @@
+id: LEVIERS_MARCHE_2025_53
+type: knowledge
+domain: usages
+title: K.5 – KPI Dashboard PMO (Suivi Opérationnel)
+summary: ┌────────────────────────────────────────────────────────┐ │ PROMEOS PMO
+  Dashboard – Opération ACC [Nom] │ ├────────────────────────────────────────────────────────┤
+  │ 📊 ÉNERGIE LOCAL │ │ ├─ Productio...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: '┌────────────────────────────────────────────────────────┐ │ PROMEOS
+  PMO Dashboard – Opération ACC [Nom] │ ├────────────────────────────────────────────────────────┤
+  │ 📊 ÉNERGIE LOCAL │ │ ├─ Production j [kwh] : 480 kWh │ │ ├─ Consommation j [kwh]
+  : 350 kWh │ │ ├─ Autoconso % : 72% (très bon!) │ │ ├─ Surplus injecté : 130 kWh
+  (pour vente/stockage) │ │ │ │ 💰 FINANCE │ │ ├─ Factures mois [N] : 12 (tous sent)
+  │ │ ├─ Encaissements : 10/12 (83%) │ │ ├─ Retards : 1 participant (relance auto
+  en cours) │ │ ├─ Cash position : €2,450 (trésorerie PMO) │ │ │ │ 👥 PARTICIPANTS
+  │ │ ├─ Actifs : 15/15 │ │ ├─ Documents signés : 15/15 (100%) │ │ ├─ Mandats SEPA
+  : 12/15 (80%, 3 en cours) │ │ │ │ 📋 CONFORMITÉ │ │ ├─ Convention Enedis : ✓ signée
+  (05-mar-2025) │ │ ├─ Statut opération : ✓ Live │ │ ├─ Données Enedis : ✓ à jour
+  (02-jan 14:30) │ │ ├─ Audit trail : ✓ 100% documenté │ │ │ │ ⚠️ ALERTES │ │ ├─ Participant
+  X en retard 35j (relance email sent) │ │ ├─ Demande sortie participant Y (processus
+  en cours) │ │ ├─ Pas de données Linky 2 heures (check Enedis) │ │ │ │ [📥 Import
+  Enedis] [💾 Backup] [📤 Export] [⚙️ Config] │ └────────────────────────────────────────────────────────┘
+  —'
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: K.5 – KPI Dashboard PMO (Suivi Opérationnel)
+  anchor: '#k5-kpi-dashboard-pmo-suivi-oprationnel'
+  excerpt_short: ┌────────────────────────────────────────────────────────┐ │ PROMEOS
+    PMO Dashboard – Opération ACC [...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

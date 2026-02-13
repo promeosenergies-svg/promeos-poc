@@ -1,0 +1,42 @@
+id: LOI_APER_9
+type: rule
+domain: acc
+title: 'PHASE 1 : DIAGNOSTIC FONCIER & RÉGLEMENTAIRE (Semaines 1-4)'
+summary: "1.1 Identification sites concernés \n- Liste patrimoine immobilier (adresses,\
+  \ secteur, type bâtiment) \n- Plans cadastraux + surfaces parkings (m²) ; distinguer\
+  \ : couvert vs découvert, intérieur vs exté..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "1.1 Identification sites concernés \n- Liste patrimoine immobilier (adresses,\
+  \ secteur, type bâtiment) \n- Plans cadastraux + surfaces parkings (m²) ; distinguer\
+  \ : couvert vs découvert, intérieur vs extérieur \n- Emprise sol bâtiments (tertiaire,\
+  \ industriel, administratif, autre) \n- Terrains agricoles / naturels (potentiel\
+  \ agrivoltaïsme ?) \n- Croisement ZAENR (portail national) = sites en zone accélération\
+  \ ? \n\n1.2 Détermination statut réglementaire Type Obligation Délai Seuil Priority\
+  \ Parkings Ombrières 50% 2026 / 2028 >1 500 m² URGENCE 2026 Toitures PV/Vegetal\
+  \ 30%+ 2025-2027 escalade >500 m² 2028 pour existants Agrivo Contrib. agr. durable\
+  \ Permis post-9/5/2024 Terres agr. Faible priorité (peu propriétaires agr.) ZAENR\
+  \ Proc. accélérée N/A (prise compte auto.) Implantation zone +3 mois délai mais\
+  \ pas obligation \n\n1.3 Compilation diagnostic réglementaire \n- Tableau sites\
+  \ > seuils = X parkings assujettis + Y bâtiments assujettis \n- Roadmap calendrier\
+  \ : Parkings >10k m² (2026) ; Parkings <10k m² (2028) ; Toitures 2028 \n- Statut\
+  \ ZAENR pour chaque site (oui/non ; impact délai si oui)"
+logic: null
+sources:
+- doc_id: LOI_APER
+  label: Loi APER - Acceleration Production Energies Renouvelables
+  section: 'PHASE 1 : DIAGNOSTIC FONCIER & RÉGLEMENTAIRE (Semaines 1-4)'
+  anchor: '#phase-1-diagnostic-foncier-rglementaire-semaines-1-4'
+  excerpt_short: "1.1 Identification sites concernés \n- Liste patrimoine immobilier\
+    \ (adresses, secteur, type bâtiment)..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

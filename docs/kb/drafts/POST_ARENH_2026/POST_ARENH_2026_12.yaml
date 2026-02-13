@@ -1,0 +1,44 @@
+id: POST_ARENH_2026_12
+type: rule
+domain: acc
+title: Principes et Méthodologie
+summary: La détermination précise des revenus d’EDF issus de son parc nucléaire historique
+  passe par la mise en place d’une comptabilité appropriée définie par le décret n°2025-909.
+  Cette comptabilité doit iso...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "La détermination précise des revenus d’EDF issus de son parc nucléaire\
+  \ historique passe par la mise en place d’une comptabilité appropriée définie par\
+  \ le décret n°2025-909. Cette comptabilité doit isoler, au sein du périmètre d’EDF,\
+  \ les revenus tirés uniquement de la vente d’électricité nucléaire du parc historique.\
+  \ 27 \n\nSelon la méthodologie publiée par la CRE le 24 septembre 2025, les revenus\
+  \ annuels du parc nucléaire historique sont estimés comme la somme de quatre composantes\
+  \ : 28 \n- Revenus sécurisés : Transactions déjà conclues à la date de l’estimation\
+  \ (marchés à terme, contrats fermes). \n- Revenus des contrats de long terme : Accords\
+  \ pluriannuels signés (ex. CAPN), valorisés selon leurs conditions. \n- Revenus\
+  \ prévisionnels : Estimation des ventes futures (production non couverte), basée\
+  \ sur des scénarios probabilistes de prix. \n- Valeur de flexibilité : Capacité\
+  \ du parc à moduler sa production en temps réel pour tirer parti des pics de prix.\
+  \ \n\nLa CRE publie ces estimations à des échéances précises : 29 \n- M-12 (douze\
+  \ mois avant l’année civile de livraison) \n- M-6 (six mois avant) \n- M-3, M-2,\
+  \ M-1 (trois, deux, un mois avant) \n\nCes publications offrent une trajectoire\
+  \ de visibilité croissante aux acteurs du marché."
+logic: null
+sources:
+- doc_id: POST_ARENH_2026
+  label: Post-ARENH 2026
+  section: Principes et Méthodologie
+  anchor: '#principes-et-mthodologie'
+  excerpt_short: La détermination précise des revenus d’EDF issus de son parc nucléaire
+    historique passe par la mise ...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

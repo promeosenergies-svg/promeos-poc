@@ -1,0 +1,33 @@
+id: DT_OPERAT_2026_15
+type: rule
+domain: usages
+title: Fonctionnalités minimales de la GTB
+summary: "- Suivi en continu et enregistrement des consommations (pas < horaire) \n\
+  - Pilotage automatique des consignes chauffage/clim selon occupationGTB \n- Détection\
+  \ des pertes d’efficacité et alertes aux expl..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Suivi en continu et enregistrement des consommations (pas < horaire)\
+  \ \n- Pilotage automatique des consignes chauffage/clim selon occupationGTB \n-\
+  \ Détection des pertes d’efficacité et alertes aux exploitants \n- Interoprabilité\
+  \ avec équipements multiples (chauffage, clim, ventilation, éclairage) \n- Classe\
+  \ de performance ≥ B selon norme NF EN ISO 52120-1:2022 33 34"
+logic: null
+sources:
+- doc_id: DT_OPERAT_2026
+  label: Decret Tertiaire / OPERAT - Obligations 2026
+  section: Fonctionnalités minimales de la GTB
+  anchor: '#fonctionnalits-minimales-de-la-gtb'
+  excerpt_short: "- Suivi en continu et enregistrement des consommations (pas < horaire)\
+    \ \n- Pilotage automatique des c..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

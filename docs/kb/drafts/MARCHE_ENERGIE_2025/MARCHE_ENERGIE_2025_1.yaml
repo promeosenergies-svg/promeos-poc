@@ -1,0 +1,39 @@
+id: MARCHE_ENERGIE_2025_1
+type: rule
+domain: acc
+title: A. Prix de l’Électricité France
+summary: 'Trajectoire positive 2025 : Fin de la crise énergétique 2022-2023. Métrique
+  Valeur Variation Tarif réglementé Février 2025 20,16 cts€ TTC/kWh -15% vs jan 2025
+  Tarif réglementé Août 2025 19,52 cts€ TTC...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Trajectoire positive 2025 : Fin de la crise énergétique 2022-2023. Métrique\
+  \ Valeur Variation Tarif réglementé Février 2025 20,16 cts€ TTC/kWh -15% vs jan\
+  \ 2025 Tarif réglementé Août 2025 19,52 cts€ TTC/kWh -3% vs fév 2025 Baisse annuelle\
+  \ kWh -22,4% vs février 2024 (0,2516€) Facture mensuelle ménage 84,68€ (355 kWh/mois)\
+  \ -16,8% vs fév 2024 Marché gros (CAL26) 55-59 €/MWh Baisse gaz + charbon \n\nStructure\
+  \ tarifaire post-février 2025 : \n- Composante kWh : baisse 20% HT (marchés gros\
+  \ bas) \n- Composante abonnement : hausse 9% (TVA 5,5%→20% en août, TURPE +5%) \n\
+  - Net pour gros consommateurs : économies réelles (volume > effets fixes) \n\nImplication\
+  \ PROMEOS : Baisse 15-20% factures électricité 2025 vs 2024 libère trésorerie. Opportunité\
+  \ investir rénovation décret tertiaire immédiatement (amortissement accéléré via\
+  \ baisse opéex)."
+logic: null
+sources:
+- doc_id: MARCHE_ENERGIE_2025
+  label: Analyse marche energie France-Europe 2025
+  section: A. Prix de l’Électricité France
+  anchor: '#a-prix-de-llectricit-france'
+  excerpt_short: 'Trajectoire positive 2025 : Fin de la crise énergétique 2022-2023.
+    Métrique Valeur Variation Tarif r...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

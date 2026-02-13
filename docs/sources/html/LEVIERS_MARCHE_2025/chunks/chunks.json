@@ -1,0 +1,497 @@
+[
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_0",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "Autoconsommation Collective en France – État 2025, Leviers de Marché & Plan de Simplification (2026–2030)",
+    "anchor": "#autoconsommation-collective-en-france-tat-2025-leviers-de-march-plan-de-simplification-20262030",
+    "text": "Dossier Stratégique & Feuille de Route PROMEOS",
+    "word_count": 7,
+    "chunk_index": 0
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_1",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "Executive Summary",
+    "anchor": "#executive-summary",
+    "text": "L’autoconsommation collective (ACC) en France connaît une croissance historique : 1 111 opérations actives et 161 MW en juin 2025, soit +144% en un an . Le cadre réglementaire s’assouplit (arrêté 21 février 2025 : seuils portés à 5–10 MW, périmètre géographique étendu, délais administratifs réduits), créant une fenêtre d’opportunité stratégique pour PROMEOS de se positionner comme “micro-fournisseur local augmenté”. 1 \n\nSituation clé : \n- Marché: 1 700 producteurs, 10 600+ consommateurs, puissance moyenne 145 kVA/opération 2 \n- Secteurs dominants : collectivités, bailleurs sociaux, parcs d’activités, particuliers (AMEP) \n- Freins opérationnels majeurs : montage PMO lourd (12–24 mois), manque d’automatisation (Excel + ressaisies), facturation manuelle, communication Enedis complexe \n- Leviers: APIs Enedis DataConnect/ACC, standardisation juridique, clés de répartition dynamiques, pilotage temps réel \n\nPROMEOS doit combiner trois briques (Data & Conformité, ACC Starter, ACC Ops) pour devenir l’unique plateforme intégrant réglementation multi-énergie + gestion ACC clé-en-main + cockpit d’exploitation automatisé . Gain attendu : réduction temps montage ACC de 12–24 mois à 3–6 mois , scaling de 10 → 100+ opérations sans effort supplémentaire.",
+    "word_count": 173,
+    "chunk_index": 1
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_2",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "A.1 – Définition et Rôles",
+    "anchor": "#a1-dfinition-et-rles",
+    "text": "ACC (Autoconsommation Collective) : Opération où au moins deux entités juridiques distinctes partagent l’électricité produite localement par un ou plusieurs producteurs, sans transiter par le réseau public. Les consommateurs reçoivent l’électricité localement valorisée, réduisant leur facture de fournisseur pour cette part. 3 \n\nACC Étendue : Variante pour projets patrimoniaux (collectivités, bailleurs sociaux, organismes publics) avec seuils augmentés. \n\nRôles clés : \n- PMO (Personne Morale Organisatrice) : Structure juridique (association, SAS, SARL, etc.) qui regroupe participants et gère l’opération. Rôles : signature convention Enedis, gestion clés de répartition, facturation, conformité \n- Producteur(s) : Propriétaire(s) installation PV (ou autres EnR), raccordée au réseau public \n- Consommateur(s) : Entités (particuliers, entreprises, collectivités) participant au partage \n- GRD (Enedis) : Mesure production/conso 24h/24, calcule allocation officielle, met à disposition données \n- Fournisseur(s) de complément : Fournit électricité au-delà du partage local, collecte TURPE spécifique \n- Agrégateur/RE (Responsable d’Équilibre) : Gère équilibre pour producteur si > certains seuils",
+    "word_count": 153,
+    "chunk_index": 2
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_3",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "Obligations Contractuelles Enedis Élément Obligation Modalités Convention Enedis Signature avant démarrage opération Modèle Enedis pré-rempli, 3–6 semaines de traitement Clés de répartition Statique, dynamique ou “par défaut” Modifiables avec préavis 15 jours ouvrés ; par défaut = au prorata consommations Compteurs communicants Obligatoires pour tous participants Linky générant données 30–60 min Déclaration API Transmission PMO + produits + consommateurs via guichet Enedis Depuis 2025 : automatisation accélérée, délai 3 mois max Données temps réel Courbes de charge 15 min (API Data Connect) Enedis transmet via portail SGE ou API tiers Sortie participant Possibilité entrée/sortie avec préavis 30j Formalités simplifiées si pas contrat de long terme",
+    "anchor": "#obligations-contractuelles-enedis-lment-obligation-modalits-convention-enedis-signature-avant-dmarrage-opration-modle-enedis-pr-rempli-36-semaines-de-traitement-cls-de-rpartition-statique-dynamique-ou-par-dfaut-modifiables-avec-pravis-15-jours-ouvrs-par-dfaut-au-prorata-consommations-compteurs-communicants-obligatoires-pour-tous-participants-linky-gnrant-donnes-3060-min-dclaration-api-transmission-pmo-produits-consommateurs-via-guichet-enedis-depuis-2025-automatisation-acclre-dlai-3-mois-max-donnes-temps-rel-courbes-de-charge-15-min-api-data-connect-enedis-transmet-via-portail-sge-ou-api-tiers-sortie-participant-possibilit-entresortie-avec-pravis-30j-formalits-simplifies-si-pas-contrat-de-long-terme",
+    "text": "Actualisation 2025: Décret du 21 février 2025 a supprimé obligation convention PMO-consommateurs pour ACC < 100 kW (simplification clé pour petits projets).",
+    "word_count": 22,
+    "chunk_index": 3
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_4",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "Cas Rentables (2025)",
+    "anchor": "#cas-rentables-2025",
+    "text": "1) Collectivités + écoles/équipements publics \n- Profil : 5–20 bâtiments publics, puissance 200–500 kWc \n- Économie : 15–30% réduction facture électricité locale \n- Drivers : obligation décret Tertiaire (-40% 2030), aide région, maturité PMO \n- Exemple : Mairie + 5 écoles, 300 kWc PV, 15 participants = ~50 kWh/j partagé \n- TRI typique : 6–8 ans ; NPV+ après subventions ; sensible aux prix marché \n\n2) Bailleurs sociaux + copropriétés résidentielles \n- Profil : Copro > 200 logements, PV toiture + parking, 150–600 kWc \n- Économie : 8–15% réduction charges communes, copropriétaires satisfaits \n- Drivers : obligation solarisation parkings (loi APER 2023), économies visibles, engagement RSE \n- Exemple : 300 logts, 400 kWc toiture + 200 kWc parking = 150 kWh/j local \n- TRI typique : 8–12 ans (ROI construction); motivation de copropriété > financière \n\n3) Zones d’activités / PME mutualisées \n- Profil : Parc de 5–50 PME, puissance 500 kWc–3 MW \n- Économie : 10–25% réduction coûts énergie (usage complémentaire bureau/atelier) \n- Drivers : prix marché volatil post-ARENH (fin 2025), réduction prix négatifs, sécurisation tarif 15–20 ans \n- Exemple : 20 PME 50 kWh/j usage moyen, 800 kWc PV partagé = 60% autoconso \n- TRI typique : 5–7 ans (profils entreprises sensibles ROI court)",
+    "word_count": 205,
+    "chunk_index": 4
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_5",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "Cas Difficiles (Freins majeurs)",
+    "anchor": "#cas-difficiles-freins-majeurs",
+    "text": "1) Petit résidentiel (< 5 unités, < 100 kWc) \n- Obstacle : Coûts juridiques/administratifs (PMO, contrats) > bénéfice annuel (~€200–500/participant) \n- Mitigation : AMEP (Association pour Mutualisation Énergie Proximité) ; modèle don surplus ; automatisation complète \n- Statut 2025 : Croissance AMEP (15+ actives, 30 en projet), mais scalabilité limitée sans plateforme SaaS \n\n2) Projets dispersés géographiquement (> 2 km, pas dérogation 20 km) \n- Obstacle : Rayon 2 km = ~40 000 m² cercle ; zones rurales/périurbaines < dense \n- Mitigation : Arrêté 21/02/2025 : dérogation 20 km pour zones rurales, cas spécifiques \n- Statut 2025 : Dérogation applicable mais dossier lourd, CRE contrôle strict \n\n3) Intermittence sévère (PV seul, pas complémentarité charge) \n- Obstacle : Taux autoconso bas (~30%) si pic production ≠ pic demande \n- Mitigation : Stockage (batteries 50–100 kWh), pilotage charge (bornes VE, chauffage), flexibilité \n- Statut 2025 : Techniquement possible mais CAPEX +€80–150k ; ROI 12–15 ans",
+    "word_count": 153,
+    "chunk_index": 5
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_6",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "Scénario : Collectivité 400 kWc, 15 participants, 20 ans",
+    "anchor": "#scnario-collectivit-400-kwc-15-participants-20-ans",
+    "text": "CAPEX (Investissement PV) \n- Installation PV 400 kWc : €300–350/kWc = €120–140k TTC \n- Moins aide État/région (30–50%) = €60–98k net \n- PMO (structure juridique + constitution docs) : €2–5k \n- Total CAPEX initial : €62–103k \n\nOPEX annuel (Gestion PMO) \n- Frais administratifs (Enedis, comptable, assurance) : €3–8k/an \n- Suivi clés, facturation manuelle (si pas automata) : €2–4k/an \n- Maintenance PV : ~€5k/an (0.4% puissance) \n- Total OPEX sans automation : €10–17k/an \n\nAvec PROMEOS ACC Ops (Automation) \n- Abonnement SaaS : €200–500/mois (~€3–6k/an) \n- Support/onboarding : €1–2k/an \n- Total OPEX automation : €4–8k/an (net gain vs manual : €2–9k/an) \n\nRevenus (Économies Participants) \n- Partage local typique : 60–75% production autoconsommée = 240–300 kWh/j \n- Tarif PPE 2025 moyen (complément) : ~€70–90/MWh (post-AOS) \n- Tarif ACC interne : 15–20% moins cher = ~€60–75/MWh \n- Gain par kWh : €10–20/MWh = €2.4–6k/an (pour 240 kWh/j) \n- Total économie porteurs : €40–90k sur 20 ans (avant amortissement PV) \n\nTRI / NPV (avec subventions 40–50%) \n- TRI brut : 8–12% (très bon pour infrastructure locale) \n- Payback : 7–10 ans (acceptable collectivités) \n- NPV 8% taux d’actualisation : €30–60k positif",
+    "word_count": 186,
+    "chunk_index": 6
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_7",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "Scénario 1 : PRUDENT (Croissance 50% annuelle)",
+    "anchor": "#scnario-1-prudent-croissance-50-annuelle",
+    "text": "Hypothèses : \n- Réglementation inchangée, automatisation lente (Excel + paperasse persistent) \n- Seuils puissance 5 MW max (pas extension 10 MW généralisée) \n- Pas d’intégration massive data Enedis \n- Adoption par collectivités seulement (60% marché) \n\nProjections 2030: \n- Opérations : ~5 000 (vs 1 100 en 2025) \n- Puissance : ~750 MW (vs 161 MW 2025) \n- Participants : ~50 000 (vs 10 600 en 2025) \n- Coûts PMO : rester hauts (18–24 mois de montage moyen) \n- Taux churn participants : 15–20%/an (friction administrative)",
+    "word_count": 85,
+    "chunk_index": 7
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_8",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "Scénario 2 : CENTRAL (Croissance 100% annuelle jusqu’2027, 60% après)",
+    "anchor": "#scnario-2-central-croissance-100-annuelle-jusqu2027-60-aprs",
+    "text": "Hypothèses : \n- Accélération simplification réglementaire (automatisation API Enedis, templates juridiques) \n- Arrêté 21/02/2025 pleinement implémenté + 10 MW collectivités standardisé \n- Émergence 3–4 plateformes SaaS dominantes (EnoPower, EDF Communitiz, PROMEOS, …) \n- Adoption diversifiée : collectivités 40%, bailleurs 25%, PME 20%, particuliers (AMEP) 15% \n- PV raccordé France : 50+ GW (vs 24 GW fin 2024) \n\nProjections 2030: \n- Opérations : ~12 000 (vs 1 100 en 2025) \n- Puissance : ~1 800 MW (vs 161 MW 2025) \n- Participants : ~120 000 (vs 10 600 en 2025) \n- Coûts PMO : réduire à 3–6 mois avec automation \n- Taux churn : 5–10%/an (confiance + UX améliorée)",
+    "word_count": 108,
+    "chunk_index": 8
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_9",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "Scénario 3 : ACCÉLÉRÉ (Croissance 150% annuelle)",
+    "anchor": "#scnario-3-acclr-croissance-150-annuelle",
+    "text": "Hypothèses : \n- Réforme majeure : suppression licence fournisseur pour PMO < 5 MW (demande SER/Enerplan) \n- Directive UE energy sharing transposée (Allemagne modèle) \n- Clés de répartition dynamiques pilotées IA standard (accroît attractivité + 5–10% autoconso supplémentaire) \n- Stockage distribué (batteries, IRVE) intégré opérations (25% opérations + stockage 2030) \n- PV raccordé + autoconso collective = modèle dominant tertiaire/résidentiel \n- Électrification chauffage (PAC) + VE crée profils demande favorables ACC (lissage demande) \n\nProjections 2030: \n- Opérations : ~25 000 (vs 1 100 en 2025) \n- Puissance : ~3 500–4 000 MW (vs 161 MW 2025) \n- Participants : ~250 000 (vs 10 600 en 2025) \n- % PV France en ACC : 40–50% (vs ~6% 2025) \n- Modèle économique stabilisé (prix marché spot + primes flexibilité)",
+    "word_count": 127,
+    "chunk_index": 9
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_10",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "1. Automatisation API Enedis (DataConnect + ACC)",
+    "anchor": "#1-automatisation-api-enedis-dataconnect-acc",
+    "text": "- Action : Intégration native PROMEOS avec courbes de charge 15 min (Data Connect) + déclaration opération (API ACC) \n- Gain : Zéro ressaisie données, facturation générée automatiquement \n- Impact time-to-market : –3 mois montage, settlement fiabilisé",
+    "word_count": 37,
+    "chunk_index": 10
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_11",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "2. Template juridique standardisé PMO (par type : association, SAS, SEM)",
+    "anchor": "#2-template-juridique-standardis-pmo-par-type-association-sas-sem",
+    "text": "- Action : Banque de modèles pré-remplis Enedis + statuts + contrats (gérés par avocats, intégrés PROMEOS) \n- Gain : Montage juridique < 1 mois vs 2–4 mois aujourd’hui \n- Impact : Scalabilité 10x (1 avocat peut valider 50 opérations/an vs 5 aujourd’hui)",
+    "word_count": 43,
+    "chunk_index": 11
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_12",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "3. Clés de répartition dynamiques (IA prédictive)",
+    "anchor": "#3-cls-de-rpartition-dynamiques-ia-prdictive",
+    "text": "- Action : Moteur IA qui ajuste clés basé sur prévisions météo + historique (non-linéaire, ex: 60% toit/40% partic dynamique) \n- Gain : +5–15% autoconsommation vs clés statiques, meilleure rentabilité pour tous \n- Impact : Attractivité produit +30%, réduction prix négatifs producteur",
+    "word_count": 42,
+    "chunk_index": 12
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_13",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "4. Shadow Billing automatisé + SEPA",
+    "anchor": "#4-shadow-billing-automatis-sepa",
+    "text": "- Action : Facturation internalisée PMO (PROMEOS génère factures internes + mandats SEPA prélèvement direct) \n- Gain : Zéro factures manuelles, recouvrement trésorerie 95%+ vs 70% manuellement \n- Impact : OPEX PMO –€5–8k/an, satisfaction participant +40%",
+    "word_count": 36,
+    "chunk_index": 13
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_14",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "5. Intégration ERP/GTB clients (API connecteurs)",
+    "anchor": "#5-intgration-erpgtb-clients-api-connecteurs",
+    "text": "- Action : Connecteurs natifs comptabilité (Sage, SAP, Excel) + GTB (pour données consommation) \n- Gain : Zéro saisie en double en comptabilité, données temps réel pour optimisation \n- Impact : Onboarding client simplifiée, churn risque réduit 30%",
+    "word_count": 38,
+    "chunk_index": 14
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_15",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "6. Conformité multi-réglementation natif (Décret Tertiaire, BACS, APER, accise)",
+    "anchor": "#6-conformit-multi-rglementation-natif-dcret-tertiaire-bacs-aper-accise",
+    "text": "- Action : Module “Compliance ACC” intégré PROMEOS : suivi obligation, alertes automatiques, preuve générée \n- Gain : Sécurité légale PMO, audit trail complet \n- Impact : Réduction litiges 50%, confiance bailleurs/collectivités +40%",
+    "word_count": 33,
+    "chunk_index": 15
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_16",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "7. Simplification onboarding participant (KYC express + e-signature)",
+    "anchor": "#7-simplification-onboarding-participant-kyc-express-e-signature",
+    "text": "- Action : Flow digital < 5 min : KYC, mandats paiement, statuts, signature e (Universign, Docusign) \n- Gain : Entrée/sortie participant < 48h vs 2–3 semaines \n- Impact : Dynamique opération fluide, retenues réduits, scalabilité participants ×3",
+    "word_count": 38,
+    "chunk_index": 16
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_17",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "8. Agrégation multi-ACC pour PMO portfolio (reporting centralisé)",
+    "anchor": "#8-agrgation-multi-acc-pour-pmo-portfolio-reporting-centralis",
+    "text": "- Action : Cockpit group pour PMO gérant 5–50 opérations ACC : KPIs consolidated, gestion clés batch, reporting unique \n- Gain : Mutualisation expertise, gestion coûts OPEX < €2k/an par opération \n- Impact : Business model PMO-as-a-service viable (revenus €1–3k/opération/an)",
+    "word_count": 40,
+    "chunk_index": 17
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_18",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "9. Standardisation données comptables (export module OPERAT + BACS)",
+    "anchor": "#9-standardisation-donnes-comptables-export-module-operat-bacs",
+    "text": "- Action : Export CSV/XML prêt audit, compatible OPERAT (décret Tertiaire), BACS (conformité GTB) \n- Gain : Audit annuel < 1 jour, zéro reformatage données \n- Impact : Coûts comptable –30%, conformité garantie",
+    "word_count": 33,
+    "chunk_index": 18
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_19",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "10. Marché de data/flex (API exposée partenaires : agrégateurs, VPP, DR)",
+    "anchor": "#10-march-de-dataflex-api-expose-partenaires-agrgateurs-vpp-dr",
+    "text": "- Action : PROMEOS expose API flex : surplus production disponible, capacité effacement (bornes EV, chaufage) → agrégateurs can consommer \n- Gain : Valorisation additionnel €500–2000/an par opération, réduction prix négatifs producteur \n- Impact : Revenue stream additionnel pour PMO (partage), attractivité producteur +25%",
+    "word_count": 44,
+    "chunk_index": 19
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_20",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "F.2 – Checkpoints Clés Accélération (PMO/PROMEOS)",
+    "anchor": "#f2-checkpoints-cls-acclration-pmopromeos",
+    "text": "Semaine 0–1 : Diagnostic ACC (5 min simulator → TRI, économies prévisionnelles) \n- PDL input → calcul profil complémentarité → scoring faisabilité \n- Output : “Accessible ACC ?” + recommandations structure \n\nSemaine 1–2 : Montage PMO (wizard 30 min) \n- Choix statut (algo suggestion), remplissage données \n- Auto-génération : statuts, contrats, mandats, formulaires URSSAF/cadastre \n\nSemaine 2–3 : Recrutement participants (flow digital) \n- PROMEOS envoie mail unique par participant, lien inscription portal \n- KYC express (ID, IBAN), consentement, e-signature documents \n- Tracking taux signature real-time (target > 80% sem 2) \n\nSemaine 3–4 : Validation données + Enedis (checker smart) \n- PROMEOS valide PDL Enedis (API query), détecte doublons, qualité données \n- Auto-génération convention Enedis + clés initiales \n- Submit API Enedis (guichet) → tracking statut SGE \n\nSemaine 4–6 : Négociation fournisseur (batch RFQ) \n- PROMEOS connecte 2–3 fournisseurs complément, RFQ auto \n- Comparative tarif, conditions → PMO choisit \n- Contrat pré-signé en EDI \n\nSemaine 6–8 : Validation Enedis + tests opération \n- Enedis finalise convention (cible 3 sem max, PROMEOS escalade si +) \n- Go-live : test shadow billing 1–2 cycles, puis démarrage officiel \n\nSemaine 8–10 : Go-live & onboarding participants \n- Participants reçoivent 1ère facture ACC \n- Support PROMEOS (chat, wiki intégré) pour questions",
+    "word_count": 204,
+    "chunk_index": 20
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_21",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "F.3 – Modèle Economique PROMEOS pour Montage Rapide",
+    "anchor": "#f3-modle-economique-promeos-pour-montage-rapide",
+    "text": "Pricing Modules : Module Modèle Exemple Prix Use Case ACC Starter (montage) Setup fee one-time €300–800 / opération PMO nouvelle, <100 kW ACC Ops (expl. 3 ans) SaaS /mois €150–400/mois Suivi temps réel, facturation Data & Compliance (multi-régl) SaaS modular €500–2000/mois (portfolio multi-sites) Collectivités, bailleurs, tertiaire Flex Broker (API agg) %revenue 5–10% surplus vendu Pour PROMEOS monetizing flex \n\nExemple revenu PROMEOS : 100 opérations ACC montées 2025 (scénario central) \n- Starter fee : 100 × €500 = €50k one-time \n- Ops SaaS annuel : 100 × €250/mois × 12 = €300k/an (année 1–3 post-go-live) \n- Data module (20% portfolios): 20 × €1000/mois × 12 = €240k/an \n- Total revenu année 1 (post-ramp) : ~€290k (base 100 ops)",
+    "word_count": 117,
+    "chunk_index": 21
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_22",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "G.1 – Positionnement “Micro-fournisseur Local Augmenté”",
+    "anchor": "#g1-positionnement-micro-fournisseur-local-augment",
+    "text": "Vision : PROMEOS = unique plateforme qui combine fournisseur local digital (ACC ops) + conformité multi-énergie (tertiaire) + orchestrateur flexibilité . \n\nTrois Packages Progressifs :",
+    "word_count": 25,
+    "chunk_index": 22
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_23",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "Package 1 : ACC Starter (Incubation, 3–6 mois déploiement)",
+    "anchor": "#package-1-acc-starter-incubation-36-mois-dploiement",
+    "text": "- Clients : PMO + collectivités/bailleurs pour 1ère ACC \n- Features MVP : \n- Wizard configuration ACC (participants, clés, docs) \n- Auto-génération convention Enedis + contrats \n- API submit Enedis (guichet) \n- Portal participants (consultation simple) \n- Tarif : €300–600 setup + €100/mois portal \n- Success metrics : Temps montage < 6 sem, 100% dossier accepté Enedis",
+    "word_count": 57,
+    "chunk_index": 23
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_24",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "Package 2 : ACC Ops (Exploitation courante, 3+ ans)",
+    "anchor": "#package-2-acc-ops-exploitation-courante-3-ans",
+    "text": "- Clients : PMO opérant ACC, particuliers consommateurs/producteurs \n- Features MVP : \n- API Enedis Data Connect (courbes 15 min) \n- Calcul répartition automatisé (clés statique/dynamique) \n- Shadow billing (factures + export SEPA) \n- Dashboard participants (production, conso, économies) \n- Journal transactions + alertes \n- Tarif : €150–400/mois (PMO manager), €0 (participants consumers) \n- Success metrics : Taux autoconso ≥ 60%, impayés < 5%, NPS > 7/10",
+    "word_count": 67,
+    "chunk_index": 24
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_25",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "Package 3 : Data & Conformité (Réglementation B2B, toutes organisations)",
+    "anchor": "#package-3-data-conformit-rglementation-b2b-toutes-organisations",
+    "text": "- Clients : Collectivités, bailleurs, tertiaire multi-sites (avec/sans ACC) \n- Features MVP : \n- Import Enedis + GTB (données conso multi-site) \n- Dashboard conformité Décret Tertiaire (-40% 2030), BACS, APER \n- Alerts automatiques (dérive, échéances) \n- Rapports OPERAT, CO₂, émissions \n- Recommandations sobriété/investissement (PV, acc, stockage) \n- Tarif : €400–2000/mois (échelle nombre sites + energy) \n- Success metrics : % conformité 100%, audit time –50%, recos adoption > 30%",
+    "word_count": 69,
+    "chunk_index": 25
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_26",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "MVP (T0–T3 2025, ~10–12 sem dev)",
+    "anchor": "#mvp-t0t3-2025-1012-sem-dev",
+    "text": "Modules : \n- PMO Workspace (gestion gouvernance) \n- Inscription PMO, profil, documents (statuts, convention Enedis) \n- Liste participants + rôles (producteur/consommateur/trésorier) \n- Gestion clés de répartition (statique par défaut, éditable) \n- Data & Monitoring (import + KPI) \n- Intégration CSV Enedis (courbes export manuel → automation API T1 2026) \n- Calcul ratios : TAc (taux autoconsommation), TAp (taux autoproduction) \n- Graphs temps réel (prod/conso/surplus) + alertes anomalies \n- Settlement & Billing (ventilation + facturation) \n- Calcul mensuel parts énergétiques (clés × courbes) \n- Génération factures internes (PDF exportés) \n- Suivi paiements manuels (checklist + email relance simple) \n- Participant Portal (vue consommateur/producteur) \n- Login simple, affichage conso locale + économies \n- PDF facture téléchargeable \n- FAQ intégré \n\nTech Stack (Recommandation): \n- Frontend : React/Vue.js (PWA, responsive mobile) \n- Backend : Node.js/Python FastAPI (API-first) \n- Data : PostgreSQL (données transactionnelles) + TimescaleDB (séries temporelles) \n- Auth : OAuth2 (Keycloak), e-sign (Universign API) \n- Infra : K8s managed (GCP/AWS/OVH French)",
+    "word_count": 158,
+    "chunk_index": 26
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_27",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "V1 (T3–T4 2025, +10 sem dev)",
+    "anchor": "#v1-t3t4-2025-10-sem-dev",
+    "text": "Ajouts clés : \n- API Enedis Data Connect (branchement officiel, pas CSV manuel) \n- API ACC Enedis (déclaration + suivi statut opération) \n- Clés de répartition dynamiques (v1.0 : règles simples météo) \n- SEPA intégration (mandats SDD, prélèvements) \n- Module Data & Conformité beta (Décret Tertiaire lite)",
+    "word_count": 47,
+    "chunk_index": 27
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_28",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "V2 (2026, +20 sem dev)",
+    "anchor": "#v2-2026-20-sem-dev",
+    "text": "Intelligence & Scalabilité : \n- Clés dynamiques IA avancées (prédiction demande + flexibilité) \n- Intégration GTB (capteurs température, équipements) \n- Orchestrateur flexibilité (pilotage IRVE, batteries, chaufage) \n- Agrégation multi-ACC (pour PMO portfolio) \n- Marketplace flex (vente surplus à agrégateurs VPP)",
+    "word_count": 40,
+    "chunk_index": 28
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_29",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "Roadmap Temporelle ```",
+    "anchor": "#roadmap-temporelle-",
+    "text": "T0 (Jan–Mar 2025) – MVP Core Foundation \n├─ Sprint 1–3 : Auth, PMO workspace, data model \n├─ Sprint 4–6 : Participant portal, settlement calc \n└─ Sprint 7–9 : Test UAT, go-live beta (10 opérations pilotes) \n\nT1 (Apr–Jun 2025) – API Enedis + Compliance Lite \n├─ Integration Enedis Data Connect (courbes temps réel) \n├─ API ACC Enedis (déclaration automatisée) \n├─ Décret Tertiaire monitoring (bêta) \n└─ First 20 paying customers \n\nT2 (Jul–Sep 2025) – Clés dynamiques + SEPA \n├─ Moteur clés dynamiques v1.0 (règles MBA) \n├─ SEPA mandate + prélèvements auto \n├─ Data & Conformité v1.0 (full module) \n└─ 50+ opérations actives \n\nT3 (Oct–Dec 2025) – Scaling + Intelligence \n├─ Agrégation multi-ACC (portfolio PMO) \n├─ Clés dynamiques IA (prédiction ML) \n├─ Intégration GTB (capteurs IoT) \n└─ 100+ opérations, 10+ bailleurs/collectivités engagées #### **Backlog Priorisé (MoSCoW + RICE)**\n\n| User Story | Module | MoSCoW | RICE Score | Statut T0 |\n|-----------|--------|--------|-----------|-----------|\n| En tant que PMO, je crée opération ACC en 15 min avec wizard | ACC Starter | **M** | 95 | Sprint 1–2 |\n| En tant que participant, je vois ma facture + économies | Portal | **M** | 90 | Sprint 3–4 |\n| En tant que PMO, j'automatise la facturation SEPA | Billing | **M** | 85 | Sprint 4–6 |\n| En tant qu'admin, j'importe courbes Enedis automatiquement | Data & Mon | **M** | 80 | Sprint 6–9 (API T1) |\n| En tant que PMO, j'optimise clés de répartition avec IA | Settlement | **S** | 75 | T1 2026 |\n| En tant qu'energy manager, je piloter multi-sites + ACC | Compliance | **S** | 70 | T1 2025 beta |\n| En tant qu'agrégateur, j'accède aux surplus via API | Flex Broker | **C** | 55 | T2 2026 |\n| En tant que client data, j'exporte compliance rapports | Data & Mon | **C** | 50 | T2 2025 |",
+    "word_count": 320,
+    "chunk_index": 29
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_30",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "**Problem**",
+    "anchor": "#problem",
+    "text": "- 12–24 mois pour monter opération ACC (flou statut PMO, docs customs, Enedis communication lent)\n- Exploitation manuelle 80% (Excel, facturation, clés statiques, impayés)\n- Conformité multi-énergie (Tertiaire, BACS, APER, accise) = nébuleuse, risque audit\n- Aucune solution intègre \"montage + opération + conformité\" de A à Z",
+    "word_count": 48,
+    "chunk_index": 30
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_31",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "**Users & Jobs-to-be-Done**",
+    "anchor": "#users-jobs-to-be-done",
+    "text": "| User | Job-to-be-Done |\n|------|---|\n| **PMO (rôle structure)** | Créer opération légalement, gérer participants, encaisser paiements, rester conforme |\n| **Collectivité/baillet responsable** | Déployer ACC énergie local rapidement, sécuriser budget électricité 5–20 ans |\n| **Participant consommateur** | Acheter électricité locale moins chère, voir impact économie, payer facilement |\n| **Participant producteur** | Vendre production localement sans marché spot volatilité, maximiser valorisation |\n| **Energy manager multi-sites** | Piloter conformité tertiaire, intégrer ACC, tracker KPI énergies, auditer facilement |",
+    "word_count": 81,
+    "chunk_index": 31
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_32",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "**Features Clés (MVP)**",
+    "anchor": "#features-cls-mvp",
+    "text": "1. **Wizard ACC** (5 features)\n - Choix statut PMO smart (algo suggère basé secteur)\n - Remplissage données participants (PDL, puissance, coordonnées)\n - Configuration clé répartition (statique par défaut, explication dynamique)\n - Auto-génération docs juridiques (statuts, contrats, mandats)\n - Submit API Enedis + tracking dossier\n\n2. **Portal Participants** (3 features)\n - Vue personnalisée (conso/prod locale, économies, facture)\n - E-signature documents (onboarding < 5 min)\n - Paiement SEPA (opt-in prélèvement)\n\n3. **Settlement Automatisé** (4 features)\n - Calcul répartition mensuel (clés × courbes Enedis)\n - Facturation interne (PDF, export comptable)\n - Alerts impayés + escalade (SMS, email)\n - Dashboard PMO (KPI, journal transactions)\n\n4. **Data & Conformité** (4 features)\n - Import Enedis multi-sites (API Data Connect)\n - Conformité Décret Tertiaire (tracker objectives, alerts)\n - Conformité BACS (status GTB, checkpoints)\n - Export rapports (OPERAT, CO₂, audit)",
+    "word_count": 132,
+    "chunk_index": 32
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_33",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "**Data Model (Schéma Simplifié)**",
+    "anchor": "#data-model-schma-simplifi",
+    "text": "```sql\n-- PMO\nTable PMO (id, name, type[association|SAS|SARL|SEM], siren, iban, status[created|validated|live])\n\n-- Opération ACC\nTable Operation_ACC (id, pmo_id, name, start_date, puissance_kWc, radius_km, status[montage|live|inactive])\n\n-- Participants (producteurs + consommateurs)\nTable Participant (id, operation_id, type[producer|consumer], pdl, siret, iban, role[member|trésorier|ref])\n\n-- Courbes Enedis (import 15 min)\nTable MeasurementCurve (participant_id, timestamp, kWh_produced, kWh_consumed)\n\n-- Clés de répartition\nTable Allocation_Rule (operation_id, participant_producer_id, participant_consumer_id, ratio[0–100], effective_date)\n\n-- Factures internes\nTable Invoice_Internal (id, pmo_id, consumer_id, month, kwh_local, tarif, total_eur, status[draft|sent|paid], due_date)\n\n-- Paiements SEPA\nTable Payment_SEPA (id, invoice_id, mandate_id, status[pending|collected|failed], collected_date)",
+    "word_count": 84,
+    "chunk_index": 33
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_34",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "Catégorie 1 : EMS Généralistes (Energy Management Systems) Acteur Positionnement Offre ACC Offre Compliance Limites Différenciation Advizeo (Hager) Dashboard énergie multi-sites Non (aucune) Décret Tertiaire baseline Pas ACC, pas settlement Puissance analyse prédictive Deepki SaaS data énergie buildings Non Tertiaire + BACS Pas ACC, support basique Intelligence données immobilier Datanumia Intelligence énergétique Non Monitoring coûts Pas ACC, pas settlement Billing énergétique mais pas ACC WeSmart Plateforme locale ENR Partiel (ACC consultation) Non ACC limité, pas automatisation UI attrayante, modèle éducatif",
+    "anchor": "#catgorie-1-ems-gnralistes-energy-management-systems-acteur-positionnement-offre-acc-offre-compliance-limites-diffrenciation-advizeo-hager-dashboard-nergie-multi-sites-non-aucune-dcret-tertiaire-baseline-pas-acc-pas-settlement-puissance-analyse-prdictive-deepki-saas-data-nergie-buildings-non-tertiaire-bacs-pas-acc-support-basique-intelligence-donnes-immobilier-datanumia-intelligence-nergtique-non-monitoring-cots-pas-acc-pas-settlement-billing-nergtique-mais-pas-acc-wesmart-plateforme-locale-enr-partiel-acc-consultation-non-acc-limit-pas-automatisation-ui-attrayante-modle-ducatif",
+    "text": "Verdict : Aucun EMS n’offre ACC opérationnelle + facturation ; marché blanc à PROMEOS.",
+    "word_count": 14,
+    "chunk_index": 34
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_35",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "Catégorie 2 : Plateformes ACC Spécialisées Acteur Positionnement Opérations gérées Segmentation Modèle Limites Différenciation Enogrid/EnoPower Leader ACC opération 200+ opérations Multi-secteur SaaS (€) + services Pas compliance tertiaire, clés statiques Scalabilité opérations, UX EDF – Communitiz Fournisseur + ACC 50–100 opérations Collectivités surtout SaaS captif EDF Verrouillage EDF, pas agnostique Assistance déploiement, crédibilité Enercoop – Elocoop Coopérative citoyenne 30–50 opérations Coopératives/citoyens Modèle équitable Petite taille, peu scaling Mission éthique, gouvernance Sunchain (blockchain) Blockchain ACC <20 opérations Tech-forward Experimental Adoption faible, coûts élevés Transparence blockchain HubWatt Facturation ACC + monitoring 100+ opérations Multi-secteur SaaS + support Pas compliance multi-réglementaire, pas montage ACC Facturation robuste, intégration compta",
+    "anchor": "#catgorie-2-plateformes-acc-spcialises-acteur-positionnement-oprations-gres-segmentation-modle-limites-diffrenciation-enogridenopower-leader-acc-opration-200-oprations-multi-secteur-saas-services-pas-compliance-tertiaire-cls-statiques-scalabilit-oprations-ux-edf-communitiz-fournisseur-acc-50100-oprations-collectivits-surtout-saas-captif-edf-verrouillage-edf-pas-agnostique-assistance-dploiement-crdibilit-enercoop-elocoop-cooprative-citoyenne-3050-oprations-cooprativescitoyens-modle-quitable-petite-taille-peu-scaling-mission-thique-gouvernance-sunchain-blockchain-blockchain-acc-20-oprations-tech-forward-experimental-adoption-faible-cots-levs-transparence-blockchain-hubwatt-facturation-acc-monitoring-100-oprations-multi-secteur-saas-support-pas-compliance-multi-rglementaire-pas-montage-acc-facturation-robuste-intgration-compta",
+    "text": "Verdict : Enogrid/EnoPower = leader ACC, mais pas compliance tertiaire (Data & Conformité). Ouverture pour PROMEOS « double compétence ».",
+    "word_count": 20,
+    "chunk_index": 35
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_36",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "Catégorie 3 : Fournisseurs & Intermédiaires Énergie Acteur Positionnement Modèle ACC Différenciation Limites Urban Solar Fournisseur vert local Intermédiaire (PMO externalisée) Marque réputée, accompagnement Perte autonomie PMO, captivité Ilek Marketplace producteurs–consommateurs Pair-à-pair (pas ACC collectif) Peer-to-peer, flexibilité Pas ACC multi-membres, micro EDF Obligation d’Achat (OA) Rachat surplus PV Non (vs ACC local) Tarifs assurés 20 ans Pas partage local, peu attractive pour ACC",
+    "anchor": "#catgorie-3-fournisseurs-intermdiaires-nergie-acteur-positionnement-modle-acc-diffrenciation-limites-urban-solar-fournisseur-vert-local-intermdiaire-pmo-externalise-marque-rpute-accompagnement-perte-autonomie-pmo-captivit-ilek-marketplace-producteursconsommateurs-pair--pair-pas-acc-collectif-peer-to-peer-flexibilit-pas-acc-multi-membres-micro-edf-obligation-dachat-oa-rachat-surplus-pv-non-vs-acc-local-tarifs-assurs-20-ans-pas-partage-local-peu-attractive-pour-acc",
+    "text": "Verdict : Modèles captifs ou pair-à-pair ; pas ACC clé en main + compliance.",
+    "word_count": 14,
+    "chunk_index": 36
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_37",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "H.2 – Matrice Positionnement PROMEOS Compliance & Réglementation (X-axis)",
+    "anchor": "#h2-matrice-positionnement-promeos-compliance-rglementation-x-axis",
+    "text": "Faible ←────────────────────────────────→ Fort\n\n ╔════════════════════════════════════════════════════════╗\n ║ ║\n Fort ║ ║\n ║ ╔─────────────────────────────────────╗ ║\n ║ │ PROMEOS │ ║\n ║ │ (Data & Compliance + ACC + Ops) │ ║\n ║ │ Holistique, Automatisé, Intelligent ║\n ║ ╚─────────────────────────────────────╝ ║\n ACC ║ ║\n Ops ║ ╔─────────────────────┐ ║\n Gestion ║ │ Enogrid/EnoPower │ ║\n ║ │ Spécialisé ACC │ Advizeo/Deepki ║\n ║ │ mais pas compliance │ (EMS compliance) ║\n ║ └─────────────────────┘ ║\n ║ ║\n Faible║ ║\n ╚════════════════════════════════════════════════════════╝\n Faible Fort \n\nPROMEOS = unique en cadran supérieur droit (compliance fort + ACC ops fort)",
+    "word_count": 89,
+    "chunk_index": 37
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_38",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "1) “Compliance-Driven Energy Communities”",
+    "anchor": "#1-compliance-driven-energy-communities",
+    "text": "- What : PROMEOS is 1st platform integrating natively regulatory compliance (Décret Tertiaire, BACS, APER, accise) into ACC operation \n- Why it matters : Clients manage energy compliance + local sharing in same portal → risk mitigation + time savings (separate tools cost 2x, time 3x) \n- Competitor gap : Enogrid/Communitiz = zero compliance; Deepki/Advizeo = zero ACC → PROMEOS fills gap",
+    "word_count": 62,
+    "chunk_index": 38
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_39",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "2) “End-to-End Automation”",
+    "anchor": "#2-end-to-end-automation",
+    "text": "- What : PROMEOS automates entire lifecycle : legal setup (wizard) → Enedis API integration (zero manual data entry) → monthly billing (SEPA direct) → compliance reporting (PDF one-click) \n- Why it matters : Reduce ACC project cycle from 12–24 mo to 3–6 mo; scale 10 → 100+ operations without linear cost increase \n- Competitor gap : Most solutions still manual (Excel, email, phone); PROMEOS = factory for ACC, competitors are artisans",
+    "word_count": 72,
+    "chunk_index": 39
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_40",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "3) “Local Value Maximization via AI”",
+    "anchor": "#3-local-value-maximization-via-ai",
+    "text": "- What : Dynamic allocation keys + flex orchestration (IRVE, heat, storage) powered by ML → maximize autoconsumption % + minimize negative pricing exposure \n- Why it matters : Producer confidence +, consumer savings +, project ROI ×1.5–2.0 vs static keys \n- Competitor gap : No competitor offers this; future-proof differentiator (becomes essential as % renewables → 50%+)",
+    "word_count": 58,
+    "chunk_index": 40
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_41",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "Q1 : 10 Leviers Concrets Accélération ACC 2025",
+    "anchor": "#q1-10-leviers-concrets-acclration-acc-2025",
+    "text": "- Automatisation API Enedis (DataConnect + ACC) : –3 mois montage, zéro ressaisie \n- Template PMO standardisé : montage juridique < 1 mois vs 2–4 mois \n- Clés dynamiques IA : +5–15% autoconso, attractivité +30% \n- Shadow billing + SEPA auto : OPEX PMO –€5–8k/an, recouvrement 95%+ \n- Intégration ERP/GTB : zéro double-saisie, optimisation data temps réel \n- Conformité multi-réglementation native : audit trail complet, risque litige –50% \n- Onboarding participant digital : KYC express < 5 min, churn –30% \n- Agrégation multi-ACC : gestion coûts OPEX < €2k/opération/an \n- Standardisation données comptables : audit < 1 jour vs 3–5 jours \n- Marché flex/data : revenue additionnelle €500–2000/opération/an pour PMO",
+    "word_count": 110,
+    "chunk_index": 41
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_42",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "Q2 : 10 Irritants Opérationnels Majeurs (avec solutions)",
+    "anchor": "#q2-10-irritants-oprationnels-majeurs-avec-solutions",
+    "text": "- Montage PMO lourd → Template + algo sélection structure → –6 sem \n- Inscription participants tardive → Flow digital e-sig → –2 sem \n- Enedis revérifications données → Validation API préalable → –3 sem \n- Changement fournisseur chaos → Notification batch API → –48h risque \n- Clé statique sous-optimal → IA dynamique monthly → +15–20% autoconso \n- Facturation Excel cauchemar → Shadow billing auto → –15 jours clôture \n- Impayés trop fréquents → SEPA escalade smart → trésorerie +95% \n- Entrée/sortie participant lent → Automation contrats → churn –30% \n- Audit annuel panique → Vault numérique crypto + trail → –3 jours audit \n- Enedis lent & bureaucratique → API proxy smart batch → –50% délai Enedis",
+    "word_count": 118,
+    "chunk_index": 42
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_43",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "Q3 : Design Process + Produit → 12–24 mois → 3–6 mois",
+    "anchor": "#q3-design-process-produit-1224-mois-36-mois",
+    "text": "Phases optimisées (10–20 sem vs 30–54 sem) : \n- Diagnostic auto (1–2 sem vs 4–8) : simulator 5 min \n- Montage PMO (2–4 sem vs 8–12) : template SaaS wizard \n- Recrutement (2–4 sem vs 6–12) : portal auto-invite + e-sig \n- Fournisseur (1 sem vs 2–4) : connecteur RFQ batch \n- Dossier Enedis (1 sem vs 4–8) : checker API + auto-generation \n- Validation Enedis (2–3 sem vs 4–6) : suivi SGE real-time + escalade \n- Tests & démarrage (1 sem vs 2–4) : shadow testing 1 cycle \n\nCheckpoints clés : Simulator diagnosis S0, PMO wizard S1–2, participant signup S2–3, Enedis submit S4, fournisseur locked S5, go-live S8–10.",
+    "word_count": 109,
+    "chunk_index": 43
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_44",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "Q4 : Modèle Économique PROMEOS",
+    "anchor": "#q4-modle-conomique-promeos",
+    "text": "Trois flux revenus : Stream Tarif Volume 2025 Volume 2030 Central Revenu 2030 ACC Starter (setup) €300–600 / opération 100 opérations 1 000 opérations €300–600k/an ACC Ops (SaaS expl) €150–400/mois PMO 100 ops × 12 mo 1 000 ops × 12 mo €1.8–4.8M/an Data & Compliance €400–2000/mois portfolio 20 clients (multi-site) 200 clients €960M–4.8M/an Flex Broker (API%) 5–10% surplus revenue €0 (beta 2026) €500k/an avg portfolio €5–50M/an (if 1000 ops) \n\nBlended ARPU (Annual Revenue Per User) : \n- Micro-PMO (< 100 kW) : €600/year \n- SME-PMO (100 kW–1 MW) : €2000–5000/year \n- Portfolio (multi-site) : €5000–20k/year \n\nPath to profitability : \n- Year 0 (2025) : –€500k (dev + go-to-market) \n- Year 1 (2026) : break-even (100 opérations × avg €3k) \n- Year 2+ (2027+) : €2–5M net profit (200–300 opérations, scale compliance)",
+    "word_count": 132,
+    "chunk_index": 44
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_45",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "Q5 : Évolutions 2026–2030 Changeant la Donne & Préparation Évolution Impact ACC Probabilité Réaction PROMEOS Suppression licence fournisseur PMO < 5 MW +300% AMEP, scalabilité particuliers 30–40% Advoc policy, legal brief, product ready Obligation ACC tertiaire renforcée Doublement opérations collectivités 40% Intégration Décret Tertiaire native Directive UE energy sharing Cross-border ACC pilots, mutualisation 10% Monitor EU lawmaking Baisse batterie ($/kWh → 80–100) 25% opérations + stockage 50–60% Intégration batterie dans Ops v2 IA dynamique standard industrie +5–15% autoconso, attractivité x2 70–80% Clés IA en MVP T1 2026 Saturation réseau local (DER) Effacement production obligatoire 30–40% Flex orchestration capability v2 Crise tarif énergie >€150/MWh Frénésie ACC (3x valeur) 30–50% Pricing model flexible, marketing",
+    "anchor": "#q5-volutions-20262030-changeant-la-donne-prparation-volution-impact-acc-probabilit-raction-promeos-suppression-licence-fournisseur-pmo-5-mw-300-amep-scalabilit-particuliers-3040-advoc-policy-legal-brief-product-ready-obligation-acc-tertiaire-renforce-doublement-oprations-collectivits-40-intgration-dcret-tertiaire-native-directive-ue-energy-sharing-cross-border-acc-pilots-mutualisation-10-monitor-eu-lawmaking-baisse-batterie-kwh-80100-25-oprations-stockage-5060-intgration-batterie-dans-ops-v2-ia-dynamique-standard-industrie-515-autoconso-attractivit-x2-7080-cls-ia-en-mvp-t1-2026-saturation-rseau-local-der-effacement-production-obligatoire-3040-flex-orchestration-capability-v2-crise-tarif-nergie-150mwh-frnsie-acc-3x-valeur-3050-pricing-model-flexible-marketing",
+    "text": "Préparation PROMEOS (2025–2026) : \n- Intégrer clés IA dès MVP (vs concurrent attente v2–v3) \n- Préparer module batterie + IRVE (pour cas 50% opérations 2028+) \n- Plaider simplification réglementaire (FNCCR, Enerplan, SER) \n- Investir en R&D flex orchestration (orchestrateur local demand-response) \n- Monitorer directive UE, legal watch",
+    "word_count": 47,
+    "chunk_index": 45
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_46",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "J.1 – Roadmap 90 j / 180 j / 12 mois (T0 2025 → T3 2025)",
+    "anchor": "#j1-roadmap-90-j-180-j-12-mois-t0-2025-t3-2025",
+    "text": "T0 : 90 jours (Jan–Mar 2025) – Fondation MVP \n- ✓ Auth & user management (SSO compatible) \n- ✓ PMO workspace (gestion profil, docs storage) \n- ✓ Participant portal (inscription, portal consultation) \n- ✓ Settlement calc (import CSV Enedis → répartition) \n- ✓ Billing draft (génération factures PDF) \n- ✓ Beta launch 5–10 opérations pilots (collectivités amies) \n\nT0–T1 : 180 jours (Jan–Jun 2025) – API Enedis + Compliance Lite \n- ✓ API Enedis Data Connect (branchement courbes 15 min) \n- ✓ API ACC Enedis (déclaration opération + suivi statut) \n- ✓ Décret Tertiaire monitoring (tableau bord baseline) \n- ✓ SEPA mandate + prélèvement auto (premiers clients paying) \n- ✓ First 20 paying customers (Starter + Ops) \n\nT0–T3 : 12 mois (Jan–Dec 2025) – Scale + Intelligence \n- ✓ Clés dynamiques v1.0 (règles ML simples basées météo + historique) \n- ✓ Data & Conformité v1.0 (full Décret Tertiaire, BACS alert, APER tracker) \n- ✓ Agrégation multi-ACC (portfolio PMO) \n- ✓ 100+ opérations actives, 1000+ participants \n- ✓ 10+ bailleurs/collectivités engagés (Data & Compliance)",
+    "word_count": 172,
+    "chunk_index": 46
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_47",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "MVP Core (Sprint 1–9, Jan–Mar 2025)",
+    "anchor": "#mvp-core-sprint-19-janmar-2025",
+    "text": "Sprint 1–2 : Auth & PMO Workspace US-001 [M] En tant que PMO, je m'inscris et crée mon profil\n Acceptance Criteria:\n - Inscription email + password (ou SSO)\n - Remplissage infos PMO (SIREN, type structure, adresse)\n - Upload statuts + documents constitutifs\n - Validation email\n - Redirection vers PMO dashboard\n\nUS-002 [M] En tant que PMO, je gère liste participants\n AC:\n - Ajouter participant (one-by-one ou CSV import)\n - Éditer coordonnées participant\n - Supprimer participant (soft delete)\n - Exporter liste PDF (pour validation Enedis)\n - Suivre statut signature/KYC (% completeness) \n\nSprint 3–4 : Participant Portal US-003 [M] En tant que participant, je m'inscris à opération ACC\n AC:\n - Lien unique reçu par email (génération code)\n - Form inscription simple (PDL, IBAN, coordonnées)\n - Consent documents (checkbox statuts, convention Enedis, contrat membre)\n - E-signature Universign (via API)\n - Confirmation + accès portal participant\n\nUS-004 [M] En tant que participant, je consulte mes données\n AC:\n - Dashboard synthétique : % énergie locale consommée ce mois-ci\n - Estimé économie (€) vs facture normale\n - Facture PDF téléchargeable (détail allocation)\n - Graph historique 3 derniers mois\n - FAQ contextel embedded \n\nSprint 4–6 : Settlement & Billing US-005 [M] En tant que PMO, j'importe courbes Enedis\n AC:\n - Upload CSV Enedis (format Export Data, 30 min ou 60 min pas)\n - Parse & validation colonne (timestamp, PDL, kWh)\n - Storage BD TimescaleDB\n - Alert si PDL missing ou format invalide\n - (T1 2026 : API Data Connect automated)\n\nUS-006 [M] En tant que système, je calcule répartition mensuelle\n AC:\n - Récupère courbes import + clé répartition (statique default)\n - Calcul pour chaque consommateur : somme kWh alloués période\n - Valide : total kWh alloués ≤ production + imports (conservation énergie)\n - Stocke résultat allocation table\n - Génère report CSV \"allocation_[mois].csv\"\n\nUS-007 [M] En tant que PMO, je génère factures\n AC:\n - Lance \"Générer factures [mois]\"\n - Système récupère allocations + tarif convenu\n - Calcul montant HT par participant : kWh × tarif\n - Ajout TVA 20% (si PMO non-exonérée)\n - Génération PDF facture (template standard)\n - Envoi email participant + storage (vault)\n - Mark status \"sent\" (suivi)\n\nUS-008 [M] En tant que PMO, je suivi paiements\n AC:\n - Dashboard \"Paiements\" listant toutes factures + statut (draft/sent/paid/overdue)\n - Marquer facture comme payée (checkbox manual)\n - Envoyer relance email participant (templated)\n - Export list overdue (list participants relance)\n - KPI : % paid factures, days overdue \n\nSprint 7–9 : Wizard ACC + Go-Live US-009 [M] En tant que PMO, je crée opération ACC via wizard\n AC:\n - Step 1 : Infos opération (nom, type PMO, secteur)\n - Step 2 : Ajouter producteurs (PDL, puissance kWc, iban)\n - Step 3 : Ajouter consommateurs (PDL, type [particulier|entreprise|public], usage MW-h estimé)\n - Step 4 : Configurer clé répartition (default pro-rata ou manual % par participant)\n - Step 5 : Sélectionner fournisseur complément (list hardcoded T0, connecteur T1)\n - Step 6 : Review & générer docs (convention Enedis pré-complétée, statuts, contrat)\n - Step 7 : Submit dossier (validation avant)\n - Output : status \"submitted to Enedis\", tracking ID, expected validation 3–6 sem\n\nUS-010 [M] En tant que PMO, j'envoie invitations participants\n AC:\n - Dans portal, bouton \"Invite participants\"\n - Système génère email unique par participant (avec link + code)\n - Participant reçoit email → click link → signup flow US-003\n - PMO voit statut signature (% of list)\n - Email reminder auto après 1 sem si unsigned",
+    "word_count": 566,
+    "chunk_index": 47
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_48",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "T1 Phase Extend (Sprint 10–15, Apr–Jun 2025) US-011 [S] En tant que PMO, j'intègre courbes Enedis via API (Data Connect)",
+    "anchor": "#t1-phase-extend-sprint-1015-aprjun-2025-us-011-s-en-tant-que-pmo-jintgre-courbes-enedis-via-api-data-connect",
+    "text": "AC:\n - Authentification Enedis (OAuth2 client cred)\n - Subscription à endpoints \"participants\" (prod + conso)\n - Récupe courbes 15 min auto (scheduled daily 2 AM)\n - Stockage BD + alert si fetch fail\n - Dashboard : \"Données Enedis à jour : [timestamp]\"\n\nUS-012 [S] En tant que PMO, je déclare opération via API Enedis\n AC:\n - Submit dossier opération ACC (US-009) lance API call\n - Body : PMO data, participants list, clés, convention\n - Récep response Enedis : request ID + status \"en attente validation\"\n - Polling status quotidien (via API)\n - Alert PMO si status change (ex: \"validée\" ou \"demande info supplémentaire\")\n\nUS-013 [S] En tant que PMO, je mets en place SEPA\n AC:\n - Section \"Paiements SEPA\" dans PMO workspace\n - Générer mandats SDD (texte standard + code mandat)\n - Participant signe mandat (e-sig, ou print+post)\n - Mandat stocké encrypted vault\n - Test prélèvement € (crédit sample, reversible)\n - Prélèvements auto chaque mois (batch, post-facturation)\n - Dashboard \"Prélèvements\" : list mandates, % collectés, failures + retry logic\n\nUS-014 [S] En tant que energy manager, je suivi conformité Décret Tertiaire (bêta)\n AC:\n - Import site tertiaire (surface m², année référence, type [bureaux|école|etc])\n - Baseline : 2010–2019 conso (upload historique ou estimation)\n - Trajectory compute : (conso 2025 climate-corrigée) vs (baseline × (100–40)%)\n - Dashboard : % atteinte objectif 2030\n - Alert si risque dépassement\n - Export report (simple pour T0)\n - (T1 : intégration full OPERAT API)",
+    "word_count": 238,
+    "chunk_index": 48
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_49",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "K.1 – Textes Réglementaires Clés (Referencing)",
+    "anchor": "#k1-textes-rglementaires-cls-referencing",
+    "text": "- Code de l’énergie (Articles L315-1 à L315-3, R315-1 à R341-7) : définitions ACC, cadre PMO, clés répartition, modalités Enedis \n- Décret n°2016-711 (Autoconsommation individuelle & collective) : régime juridique \n- Arrêté 21 février 2025 (Journal Officiel 5 mars 2025) : seuils 5–10 MW, périmètre 20 km dérogation \n- Décret n°2024-1023 (13 novembre 2024) : modalités traitement Enedis pre-deployment \n- Loi APER 2023 (Accélération Production ENR) : obligation solarisation parkings, frameworks \n- Directive UE 2019/944 (Electricity Market Directive) : background energy sharing concept",
+    "word_count": 83,
+    "chunk_index": 49
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_50",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "K.2 – Guides Enedis (2025)",
+    "anchor": "#k2-guides-enedis-2025",
+    "text": "- Note externe Enedis-OPE-CF_06E (Modalités traitement demandes ACC – phase amont) \n- Note externe Enedis-OPE-CF_07E (Modalités mise en œuvre opération ACC – phase opérationnelle) \n- Modèle Convention Enedis PMO-GRD (standard template) \n- Data Connect – Modèle Contrat (accès données) \n- Guide Pédagogique ACC (Enedis + EDF)",
+    "word_count": 46,
+    "chunk_index": 50
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_51",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "K.3 – Ressources Marché & Secteur",
+    "anchor": "#k3-ressources-march-secteur",
+    "text": "- Enerplan / SER : baromètre ACC annuel, positionnement réglementaire \n- FNCCR : appuis collectivités, montage ACC, bases données \n- ADEME : aides financières, guides économie, plateforme OPERAT \n- RTE : bilans électriques, prévisions consommation 2030, scenarios mix \n- CRE : tarifs achat, appels d’offres, décisions régulatoires \n- PV Magazine / Les Échos : actualité secteur, analyses marché",
+    "word_count": 58,
+    "chunk_index": 51
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_52",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "K.4 – Templates Documents (Intégrés PROMEOS MVP)",
+    "anchor": "#k4-templates-documents-intgrs-promeos-mvp",
+    "text": "- Statuts PMO (association SAS SARL SEM) – 3 variantes \n- Convention Enedis PMO – pré-complétée template \n- Contrat interne participant – droits/devoirs \n- Mandat SEPA – format standard CBI \n- Facture interne ACC – format compliant TVA \n- Rapport clés répartition – audit trail",
+    "word_count": 45,
+    "chunk_index": 52
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_53",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "K.5 – KPI Dashboard PMO (Suivi Opérationnel)",
+    "anchor": "#k5-kpi-dashboard-pmo-suivi-oprationnel",
+    "text": "┌────────────────────────────────────────────────────────┐ │ PROMEOS PMO Dashboard – Opération ACC [Nom] │ ├────────────────────────────────────────────────────────┤ │ 📊 ÉNERGIE LOCAL │ │ ├─ Production j [kwh] : 480 kWh │ │ ├─ Consommation j [kwh] : 350 kWh │ │ ├─ Autoconso % : 72% (très bon!) │ │ ├─ Surplus injecté : 130 kWh (pour vente/stockage) │ │ │ │ 💰 FINANCE │ │ ├─ Factures mois [N] : 12 (tous sent) │ │ ├─ Encaissements : 10/12 (83%) │ │ ├─ Retards : 1 participant (relance auto en cours) │ │ ├─ Cash position : €2,450 (trésorerie PMO) │ │ │ │ 👥 PARTICIPANTS │ │ ├─ Actifs : 15/15 │ │ ├─ Documents signés : 15/15 (100%) │ │ ├─ Mandats SEPA : 12/15 (80%, 3 en cours) │ │ │ │ 📋 CONFORMITÉ │ │ ├─ Convention Enedis : ✓ signée (05-mar-2025) │ │ ├─ Statut opération : ✓ Live │ │ ├─ Données Enedis : ✓ à jour (02-jan 14:30) │ │ ├─ Audit trail : ✓ 100% documenté │ │ │ │ ⚠️ ALERTES │ │ ├─ Participant X en retard 35j (relance email sent) │ │ ├─ Demande sortie participant Y (processus en cours) │ │ ├─ Pas de données Linky 2 heures (check Enedis) │ │ │ │ [📥 Import Enedis] [💾 Backup] [📤 Export] [⚙️ Config] │ └────────────────────────────────────────────────────────┘ —",
+    "word_count": 223,
+    "chunk_index": 53
+  },
+  {
+    "chunk_id": "LEVIERS_MARCHE_2025_chunk_54",
+    "doc_id": "LEVIERS_MARCHE_2025",
+    "section_path": "Executive Summary (Synthèse finale)",
+    "anchor": "#executive-summary-synthse-finale",
+    "text": "PROMEOS , en intégrant trois briques modulaires (Data & Conformité, ACC Starter, ACC Ops) , devient l’unique plateforme holistique adressant le marché ACC en explosion (+144% opérations/an, 161 MW 2025). \n\nDéfis résolus : \n- Montage ACC lourd (12–24 mois) → 3–6 mois via automation API + templates \n- Exploitation manuelle (80% Excel) → 100% digital shadow billing + SEPA \n- Conformité fragmentée (multi-réglementations) → cockpit unique Tertiaire + BACS + APER + accise \n- Clés statiques sous-optimales → IA dynamique +5–15% autoconso \n\nAvantage compétitif : \n- Enogrid/EnoPower = leader ACC pur ; absent sur compliance tertiaire \n- Deepki/Advizeo = leaders compliance ; absent sur ACC opération \n- PROMEOS seul combine les deux → valeur client 3–5× supérieure \n\nScénario Central 2030 : \n- 1 200 opérations gérées, 120 000+ participants, 1 800 MW \n- Revenu PROMEOS : €2–5M net profit (SaaS scaling + flex monetization) \n- Impact marché : standardisation juridique/opérationnelle, scaling collectivités/bailleurs, démocratisation AMEP (particuliers) \n\nProchaines étapes (T0 2025) : \n1. Valider MVP 10–12 sem (User Testing + Beta 5–10 opérations) \n2. Finaliser roadmap API Enedis (Q1 2025 négociations) \n3. Securiser 3–5 « anchor customers » (collectivité/bailleur pour pilots) \n4. Levée seed financing (€800k–1.2M) pour dev scale + go-to-market \n\nDates sources utilisées : 5 décembre 2024 – 30 décembre 2025 (données Enedis, Enogrid, TECSOL, EDF OA, CRE, Enedis guides 2025, arrêtés législatifs jusqu’à février 2025). \n\n10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 \n\n⁂ \n- https://enogrid.com/croissance-record-de-lautoconsommation-collective-en-2025/ ↩︎ \n- https://enogrid.com/croissance-record-de-lautoconsommation-collective-en-2025/ ↩︎ \n- https://www.enedis.fr/media/2069/download ↩︎ \n- https://enogrid.com/croissance-record-de-lautoconsommation-collective-en-2025/ ↩︎ \n- https://enogrid.com/autoconsommation-collective-decembre-2024/ ↩︎ \n- https://enogrid.com/autoconsommation-collective-decembre-2024/ ↩︎ \n- https://enogrid.com/croissance-record-de-lautoconsommation-collective-en-2025/ ↩︎ \n- https://enogrid.com/croissance-record-de-lautoconsommation-collective-en-2025/ ↩︎ \n- https://www.pv-magazine.fr/2025/01/13/autoconsommation-collective-le-nombre-doperations-actives-double-en-un-an-seulement-et-atteint-74-mw/ ↩︎ \n- https://ppl-ai-file-upload.s3.amazonaws.com/connectors/google_drive/1lBtWOWrphJWbg7S_YtjW94q35HXVfor6/cbc5a5fe-89e0-4089-98f3-eb3b0cc6e142/Plan-de-MVP-et-Offre-PROMEOS-Micro-fournisseur-local-augmente.pdf ↩︎ \n- https://ppl-ai-file-upload.s3.amazonaws.com/connectors/google_drive/1j_N_5fswFsyr83tshdBCH85xHdY68HGp/4276431a-acfd-4bdc-8015-f93377a7e353/Les-Echos-Stockage-delectricite.pdf ↩︎ \n- https://ppl-ai-file-upload.s3.amazonaws.com/connectors/google_drive/14_hZ7KEgKXrb9EZvlEuCnWr1vMqP3m4s/5e0a1929-0cec-4cd7-95a6-261f3b12ab09/Les-Echos-Marche-de-lelectricite-la-bataille-est-relancee.pdf ↩︎ \n- https://ppl-ai-file-upload.s3.amazonaws.com/connectors/google_drive/1Ht6JkKn-jF2zcrUZjjNl1tbBjARaZoKr/77b504f5-56db-4bac-8e92-53c0055d3c59/Les-Echos-Le-marche-des-data-centers.pdf ↩︎ \n- https://ppl-ai-file-upload.s3.amazonaws.com/connectors/google_drive/1XCfazetekY-wv6g9o1ZOFNuZv7ny67Ed/f65e719d-c4d3-4af2-851d-d6afd6cf26d6/Les-Echos-Le-nouvel-age-dor-du-marche-du-photovoltaique.pdf ↩︎ \n- https://terresolaire.com/Blog/rentabilite-photovoltaique/tarif-cre-photovoltaique-2025/ ↩︎ \n- https://www.edf.fr/sites/default/files/contrib/entreprise/cgv-tarifs-reglementes/2020/enedis-for-cf_02e_annexe_1bis.pdf ↩︎ \n- https://wesmart.com/es/blog/autoconsommation-collective-france-2025 ↩︎ \n- https://zendure.fr/blogs/news/evolution-prix-rachat-edf-photovoltaique-guide-2026 ↩︎ \n- https://www.enedis.fr/media/2127/download ↩︎ \n- https://www.cre.fr/actualites/toute-lactualite/la-cre-publie-les-nouveaux-tarifs-et-primes-relatifs-aux-installations-photovoltaiques-implantees-sur-batiment-hangar-ou-ombriere-dune-puissance-crete-installee-inferieure-ou-egale-a-500-kw.html ↩︎ \n- https://www.enedis.fr/media/1924/download ↩︎ \n- https://www.gossement-avocats.com/blog/autoconsommation-collective-publication-de-larrete-du-21-fevrier-2025-modifiant-les-criteres-dune-operation-dautoconsommation-collective-etendue-et-prevoyant-une-nouvelle/ ↩︎ \n- https://www.cre.fr/actualites/toute-lactualite/la-cre-publie-les-nouveaux-tarifs-et-primes-pour-les-installations-photovoltaiques-implantees-sur-batiment-hangar-ou-ombriere-dune-puissance-crete-installee-inferieure-ou-egale-a-500-kwc.html ↩︎ \n- https://www.enedis.fr/acceder-aux-donnees-fournies-par-enedis ↩︎ \n- https://www.idex.fr/le-blog/la-fin-du-s21-opportunite-ou-menace-pour-vos-projets-solaires ↩︎ \n- https://help-center.meteocontrol.com/en/vcom-cloud/latest/vcom-enedis-api-1 ↩︎ \n- https://www.journal-photovoltaique.org/les-actus/seuils-de-puissance-augmentes-pour-lautoconsommation-collective/ ↩︎ \n- https://www.les-energies-renouvelables.eu/conseils/photovoltaique/tarif-rachat-electricite-photovoltaique/ ↩︎ \n- https://rencontres-france-hydro-electricite.fr/wp-content/uploads/2024/06/Sunflow-ACC-FHE-.pdf ↩︎ \n- https://www.apem-energie.fr/%F0%9F%9A%A8-nouvelle-evolution-pour-lautoconsommation-collective-en-france-%F0%9F%9A%A8/ ↩︎ \n- https://www.cre.fr/actualites/toute-lactualite/la-cre-procede-a-des-evolutions-techniques-sur-la-methode-de-fixation-des-tarifs-reglementes-de-vente-delectricite-en-vue-du-prochain-mouvement-fevrier-2026-1.html ↩︎ \n- https://blog-gestion-de-projet.com/capex-opex-projet/ ↩︎ \n- https://www.oecd.org/content/dam/oecd/fr/publications/reports/2009/01/overcoming-barriers-to-administrative-simplification-strategies_g1gha83f/9789264060630-fr.pdf ↩︎ \n- https://www.enedis.fr/media/2070/download ↩︎ \n- https://www.softyflow.io/guide-capex-opex/ ↩︎ \n- https://coherence-energies.fr/services/etude-mise-en-place-et-suivi-doperation-dautoconsommation-collective-acc/ ↩︎ \n- https://www.enedis.fr/media/1886/download ↩︎ \n- https://www.cost-house.com/post/c-est-quoi-opex-capex-p-l-cashout ↩︎ \n- https://hubwatt.fr/autoconsommation-collective-tout-savoir-sur-la-reglementation-actuelle/ ↩︎ \n- https://www.enedis.fr/media/4770/download ↩︎ \n- https://www.youtube.com/watch?v=rVXj8xJgrWk ↩︎ \n- https://enogrid.com/faq-autoconsommation-collective/ ↩︎ \n- https://www.enedis.fr/media/1881/download ↩︎ \n- https://adherents.energie-partagee.org/wp-content/uploads/2024/02/guide-acc-citoyenne-fevrier-2024-1.pdf ↩︎ \n- https://www.chemins-publics.org/articles/simplification-et-reforme-administrative-de-lambition-consensuelle-a-une-rupture-dans-lapproche-et-les-methodes ↩︎ \n- https://www.urbanisme-puca.gouv.fr/IMG/pdf/rapport_final_vf.pdf ↩︎ \n- https://www.enedis.fr/sites/default/files/documents/pdf/autoconsommation-collective-guide-pedagogique.pdf ↩︎ \n- https://www.enedis.fr/comment-monter-un-projet-dautoconsommation-collective ↩︎ \n- https://adherents.energie-partagee.org/wp-content/uploads/2023/11/note-acc-information.pdf ↩︎ \n- Analyse-experte-Obligations-reglementaires-module-Data-Conformite-multi-energie-France-B2B.pdf ↩︎ \n- https://solairepv.fr/wp-content/uploads/SolairePVEnFranceV3.1.pdf ↩︎ \n- https://www.fnccr.asso.fr/article/dernier-appel-a-projets-destine-a-toutes-les-collectivites-francaises/ ↩︎ \n- https://hubwatt.fr/vente-delectricite-en-autoconsommation-collective/ ↩︎ \n- https://actu.xpair.com/actualites/le-photovoltaique-va-representer-80-de-la-croissance-mondiale-des-capacites-enr-d-ici-a-2030 ↩︎ \n- https://enogrid.com/la-reglementation-sur-lautoconsommation-collective-evolue-en-2025/ ↩︎ \n- https://www.afg.asso.fr/app/uploads/2025/09/PS-facturation-e_SLIDES.pdf ↩︎ \n- https://www.mordorintelligence.com/fr/industry-reports/solar-photovoltaic-market ↩︎ \n- https://www.fnccr.asso.fr/article/projet-dextension-du-perimetre-de-lautoconsommation-collective/ ↩︎ \n- https://data.megalis.bretagne.bzh/OpenData/213500069/Deliberation/2025/790602/54cf47b4dbd49e2f216c6af796f2f7b33dc87f69131d2d028532d0f88815c43a.pdf ↩︎ \n- https://www.les-energies-renouvelables.eu/conseils/photovoltaique/les-chiffres-essentiels-du-photovoltaique/ ↩︎ \n- TECSOL-Formation-PV-ACC-06-2025.pdf ↩︎ \n- https://www.fnccr.asso.fr ↩︎ \n- https://www.edf-oa.fr/sites/oa/files/2025-08/autoconsommation-collective-guide-pedagogique_vdef.pdf ↩︎ \n- https://www.france-renouvelables.fr/wp-content/uploads/2025/10/OBSERVATOIRE_systeme_EnR_2025_VF.pdf ↩︎ \n- https://programme-cee-actee.fr/wp-content/uploads/2025/10/Guide_solarisation-V2.pdf ↩︎ \n- https://entreprises-collectivites.engie.fr/wp-content/uploads/2024/08/Autoconsommation-collective-Comprendre-sa-facture.pdf ↩︎ \n- https://www.civisol.fr/blog/188/perspectives-marche-solaire-europeen.html ↩︎ \n- https://www.auvergnerhonealpes-ee.fr/api/fileadmin/mediatheque_Cdr/Documents/Commande_publique_durable/Synthese_webinaire_achats_durables_electricite_renouvelable_21nov25.pdf ↩︎ \n- https://ressources.opentalent.fr/space/FAQ/2492227/Sp+cial+collectivit+s+territoriales ↩︎ \n- https://www.lechodusolaire.fr/photovoltaique-quel-avenir-en-france/ ↩︎ \n- https://www.seine-et-marne.gouv.fr/contenu/telechargement/66557/548706/file/Table%20ronde%20n%C2%B02_4_Gwennyn%20Yardin_SDESM.pdf``` ↩︎ \n- Plan-de-MVP-et-Offre-PROMEOS-Micro-fournisseur-local-augmente.pdf ↩︎ \n- https://ppl-ai-file-upload.s3.amazonaws.com/connectors/google_drive/1UJOz5hSHG5r50Rr-ct61Dg8G61b5miJL/66b57442-5ab5-46ba-9e32-fb56c7d97afb/Brique-1-Data-Conformite-_-Un-Systeme-Expert-Proactif-Pas-un-Cockpit-Passif.pdf ↩︎ \n- https://ppl-ai-file-upload.s3.amazonaws.com/connectors/google_drive/1-dt7B1rcORxQA26oRLWkRxrv7l-5pdtP/ad0cab5c-e0b7-43ae-b29b-085ed048de9d/Reglementations-energetiques-_-donnees-a-surveiller-et-formules-de-calcul.pdf ↩︎",
+    "word_count": 513,
+    "chunk_index": 54
+  }
+]

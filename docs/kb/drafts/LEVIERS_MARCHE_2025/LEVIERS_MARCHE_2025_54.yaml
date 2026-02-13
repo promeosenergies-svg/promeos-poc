@@ -1,0 +1,113 @@
+id: LEVIERS_MARCHE_2025_54
+type: rule
+domain: usages
+title: Executive Summary (Synthèse finale)
+summary: PROMEOS , en intégrant trois briques modulaires (Data & Conformité, ACC Starter,
+  ACC Ops) , devient l’unique plateforme holistique adressant le marché ACC en explosion
+  (+144% opérations/an, 161 MW 202...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "PROMEOS , en intégrant trois briques modulaires (Data & Conformité, ACC\
+  \ Starter, ACC Ops) , devient l’unique plateforme holistique adressant le marché\
+  \ ACC en explosion (+144% opérations/an, 161 MW 2025). \n\nDéfis résolus : \n- Montage\
+  \ ACC lourd (12–24 mois) → 3–6 mois via automation API + templates \n- Exploitation\
+  \ manuelle (80% Excel) → 100% digital shadow billing + SEPA \n- Conformité fragmentée\
+  \ (multi-réglementations) → cockpit unique Tertiaire + BACS + APER + accise \n-\
+  \ Clés statiques sous-optimales → IA dynamique +5–15% autoconso \n\nAvantage compétitif\
+  \ : \n- Enogrid/EnoPower = leader ACC pur ; absent sur compliance tertiaire \n-\
+  \ Deepki/Advizeo = leaders compliance ; absent sur ACC opération \n- PROMEOS seul\
+  \ combine les deux → valeur client 3–5× supérieure \n\nScénario Central 2030 : \n\
+  - 1 200 opérations gérées, 120 000+ participants, 1 800 MW \n- Revenu PROMEOS :\
+  \ €2–5M net profit (SaaS scaling + flex monetization) \n- Impact marché : standardisation\
+  \ juridique/opérationnelle, scaling collectivités/bailleurs, démocratisation AMEP\
+  \ (particuliers) \n\nProchaines étapes (T0 2025) : \n1. Valider MVP 10–12 sem (User\
+  \ Testing + Beta 5–10 opérations) \n2. Finaliser roadmap API Enedis (Q1 2025 négociations)\
+  \ \n3. Securiser 3–5 « anchor customers » (collectivité/bailleur pour pilots) \n\
+  4. Levée seed financing (€800k–1.2M) pour dev scale + go-to-market \n\nDates sources\
+  \ utilisées : 5 décembre 2024 – 30 décembre 2025 (données Enedis, Enogrid, TECSOL,\
+  \ EDF OA, CRE, Enedis guides 2025, arrêtés législatifs jusqu’à février 2025). \n\
+  \n10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35\
+  \ 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61\
+  \ 62 63 64 65 66 67 68 69 70 71 72 73 74 \n\n⁂ \n- https://enogrid.com/croissance-record-de-lautoconsommation-collective-en-2025/\
+  \ ↩︎ \n- https://enogrid.com/croissance-record-de-lautoconsommation-collective-en-2025/\
+  \ ↩︎ \n- https://www.enedis.fr/media/2069/download ↩︎ \n- https://enogrid.com/croissance-record-de-lautoconsommation-collective-en-2025/\
+  \ ↩︎ \n- https://enogrid.com/autoconsommation-collective-decembre-2024/ ↩︎ \n- https://enogrid.com/autoconsommation-collective-decembre-2024/\
+  \ ↩︎ \n- https://enogrid.com/croissance-record-de-lautoconsommation-collective-en-2025/\
+  \ ↩︎ \n- https://enogrid.com/croissance-record-de-lautoconsommation-collective-en-2025/\
+  \ ↩︎ \n- https://www.pv-magazine.fr/2025/01/13/autoconsommation-collective-le-nombre-doperations-actives-double-en-un-an-seulement-et-atteint-74-mw/\
+  \ ↩︎ \n- https://ppl-ai-file-upload.s3.amazonaws.com/connectors/google_drive/1lBtWOWrphJWbg7S_YtjW94q35HXVfor6/cbc5a5fe-89e0-4089-98f3-eb3b0cc6e142/Plan-de-MVP-et-Offre-PROMEOS-Micro-fournisseur-local-augmente.pdf\
+  \ ↩︎ \n- https://ppl-ai-file-upload.s3.amazonaws.com/connectors/google_drive/1j_N_5fswFsyr83tshdBCH85xHdY68HGp/4276431a-acfd-4bdc-8015-f93377a7e353/Les-Echos-Stockage-delectricite.pdf\
+  \ ↩︎ \n- https://ppl-ai-file-upload.s3.amazonaws.com/connectors/google_drive/14_hZ7KEgKXrb9EZvlEuCnWr1vMqP3m4s/5e0a1929-0cec-4cd7-95a6-261f3b12ab09/Les-Echos-Marche-de-lelectricite-la-bataille-est-relancee.pdf\
+  \ ↩︎ \n- https://ppl-ai-file-upload.s3.amazonaws.com/connectors/google_drive/1Ht6JkKn-jF2zcrUZjjNl1tbBjARaZoKr/77b504f5-56db-4bac-8e92-53c0055d3c59/Les-Echos-Le-marche-des-data-centers.pdf\
+  \ ↩︎ \n- https://ppl-ai-file-upload.s3.amazonaws.com/connectors/google_drive/1XCfazetekY-wv6g9o1ZOFNuZv7ny67Ed/f65e719d-c4d3-4af2-851d-d6afd6cf26d6/Les-Echos-Le-nouvel-age-dor-du-marche-du-photovoltaique.pdf\
+  \ ↩︎ \n- https://terresolaire.com/Blog/rentabilite-photovoltaique/tarif-cre-photovoltaique-2025/\
+  \ ↩︎ \n- https://www.edf.fr/sites/default/files/contrib/entreprise/cgv-tarifs-reglementes/2020/enedis-for-cf_02e_annexe_1bis.pdf\
+  \ ↩︎ \n- https://wesmart.com/es/blog/autoconsommation-collective-france-2025 ↩︎\
+  \ \n- https://zendure.fr/blogs/news/evolution-prix-rachat-edf-photovoltaique-guide-2026\
+  \ ↩︎ \n- https://www.enedis.fr/media/2127/download ↩︎ \n- https://www.cre.fr/actualites/toute-lactualite/la-cre-publie-les-nouveaux-tarifs-et-primes-relatifs-aux-installations-photovoltaiques-implantees-sur-batiment-hangar-ou-ombriere-dune-puissance-crete-installee-inferieure-ou-egale-a-500-kw.html\
+  \ ↩︎ \n- https://www.enedis.fr/media/1924/download ↩︎ \n- https://www.gossement-avocats.com/blog/autoconsommation-collective-publication-de-larrete-du-21-fevrier-2025-modifiant-les-criteres-dune-operation-dautoconsommation-collective-etendue-et-prevoyant-une-nouvelle/\
+  \ ↩︎ \n- https://www.cre.fr/actualites/toute-lactualite/la-cre-publie-les-nouveaux-tarifs-et-primes-pour-les-installations-photovoltaiques-implantees-sur-batiment-hangar-ou-ombriere-dune-puissance-crete-installee-inferieure-ou-egale-a-500-kwc.html\
+  \ ↩︎ \n- https://www.enedis.fr/acceder-aux-donnees-fournies-par-enedis ↩︎ \n- https://www.idex.fr/le-blog/la-fin-du-s21-opportunite-ou-menace-pour-vos-projets-solaires\
+  \ ↩︎ \n- https://help-center.meteocontrol.com/en/vcom-cloud/latest/vcom-enedis-api-1\
+  \ ↩︎ \n- https://www.journal-photovoltaique.org/les-actus/seuils-de-puissance-augmentes-pour-lautoconsommation-collective/\
+  \ ↩︎ \n- https://www.les-energies-renouvelables.eu/conseils/photovoltaique/tarif-rachat-electricite-photovoltaique/\
+  \ ↩︎ \n- https://rencontres-france-hydro-electricite.fr/wp-content/uploads/2024/06/Sunflow-ACC-FHE-.pdf\
+  \ ↩︎ \n- https://www.apem-energie.fr/%F0%9F%9A%A8-nouvelle-evolution-pour-lautoconsommation-collective-en-france-%F0%9F%9A%A8/\
+  \ ↩︎ \n- https://www.cre.fr/actualites/toute-lactualite/la-cre-procede-a-des-evolutions-techniques-sur-la-methode-de-fixation-des-tarifs-reglementes-de-vente-delectricite-en-vue-du-prochain-mouvement-fevrier-2026-1.html\
+  \ ↩︎ \n- https://blog-gestion-de-projet.com/capex-opex-projet/ ↩︎ \n- https://www.oecd.org/content/dam/oecd/fr/publications/reports/2009/01/overcoming-barriers-to-administrative-simplification-strategies_g1gha83f/9789264060630-fr.pdf\
+  \ ↩︎ \n- https://www.enedis.fr/media/2070/download ↩︎ \n- https://www.softyflow.io/guide-capex-opex/\
+  \ ↩︎ \n- https://coherence-energies.fr/services/etude-mise-en-place-et-suivi-doperation-dautoconsommation-collective-acc/\
+  \ ↩︎ \n- https://www.enedis.fr/media/1886/download ↩︎ \n- https://www.cost-house.com/post/c-est-quoi-opex-capex-p-l-cashout\
+  \ ↩︎ \n- https://hubwatt.fr/autoconsommation-collective-tout-savoir-sur-la-reglementation-actuelle/\
+  \ ↩︎ \n- https://www.enedis.fr/media/4770/download ↩︎ \n- https://www.youtube.com/watch?v=rVXj8xJgrWk\
+  \ ↩︎ \n- https://enogrid.com/faq-autoconsommation-collective/ ↩︎ \n- https://www.enedis.fr/media/1881/download\
+  \ ↩︎ \n- https://adherents.energie-partagee.org/wp-content/uploads/2024/02/guide-acc-citoyenne-fevrier-2024-1.pdf\
+  \ ↩︎ \n- https://www.chemins-publics.org/articles/simplification-et-reforme-administrative-de-lambition-consensuelle-a-une-rupture-dans-lapproche-et-les-methodes\
+  \ ↩︎ \n- https://www.urbanisme-puca.gouv.fr/IMG/pdf/rapport_final_vf.pdf ↩︎ \n-\
+  \ https://www.enedis.fr/sites/default/files/documents/pdf/autoconsommation-collective-guide-pedagogique.pdf\
+  \ ↩︎ \n- https://www.enedis.fr/comment-monter-un-projet-dautoconsommation-collective\
+  \ ↩︎ \n- https://adherents.energie-partagee.org/wp-content/uploads/2023/11/note-acc-information.pdf\
+  \ ↩︎ \n- Analyse-experte-Obligations-reglementaires-module-Data-Conformite-multi-energie-France-B2B.pdf\
+  \ ↩︎ \n- https://solairepv.fr/wp-content/uploads/SolairePVEnFranceV3.1.pdf ↩︎ \n\
+  - https://www.fnccr.asso.fr/article/dernier-appel-a-projets-destine-a-toutes-les-collectivites-francaises/\
+  \ ↩︎ \n- https://hubwatt.fr/vente-delectricite-en-autoconsommation-collective/ ↩︎\
+  \ \n- https://actu.xpair.com/actualites/le-photovoltaique-va-representer-80-de-la-croissance-mondiale-des-capacites-enr-d-ici-a-2030\
+  \ ↩︎ \n- https://enogrid.com/la-reglementation-sur-lautoconsommation-collective-evolue-en-2025/\
+  \ ↩︎ \n- https://www.afg.asso.fr/app/uploads/2025/09/PS-facturation-e_SLIDES.pdf\
+  \ ↩︎ \n- https://www.mordorintelligence.com/fr/industry-reports/solar-photovoltaic-market\
+  \ ↩︎ \n- https://www.fnccr.asso.fr/article/projet-dextension-du-perimetre-de-lautoconsommation-collective/\
+  \ ↩︎ \n- https://data.megalis.bretagne.bzh/OpenData/213500069/Deliberation/2025/790602/54cf47b4dbd49e2f216c6af796f2f7b33dc87f69131d2d028532d0f88815c43a.pdf\
+  \ ↩︎ \n- https://www.les-energies-renouvelables.eu/conseils/photovoltaique/les-chiffres-essentiels-du-photovoltaique/\
+  \ ↩︎ \n- TECSOL-Formation-PV-ACC-06-2025.pdf ↩︎ \n- https://www.fnccr.asso.fr ↩︎\
+  \ \n- https://www.edf-oa.fr/sites/oa/files/2025-08/autoconsommation-collective-guide-pedagogique_vdef.pdf\
+  \ ↩︎ \n- https://www.france-renouvelables.fr/wp-content/uploads/2025/10/OBSERVATOIRE_systeme_EnR_2025_VF.pdf\
+  \ ↩︎ \n- https://programme-cee-actee.fr/wp-content/uploads/2025/10/Guide_solarisation-V2.pdf\
+  \ ↩︎ \n- https://entreprises-collectivites.engie.fr/wp-content/uploads/2024/08/Autoconsommation-collective-Comprendre-sa-facture.pdf\
+  \ ↩︎ \n- https://www.civisol.fr/blog/188/perspectives-marche-solaire-europeen.html\
+  \ ↩︎ \n- https://www.auvergnerhonealpes-ee.fr/api/fileadmin/mediatheque_Cdr/Documents/Commande_publique_durable/Synthese_webinaire_achats_durables_electricite_renouvelable_21nov25.pdf\
+  \ ↩︎ \n- https://ressources.opentalent.fr/space/FAQ/2492227/Sp+cial+collectivit+s+territoriales\
+  \ ↩︎ \n- https://www.lechodusolaire.fr/photovoltaique-quel-avenir-en-france/ ↩︎\
+  \ \n- https://www.seine-et-marne.gouv.fr/contenu/telechargement/66557/548706/file/Table%20ronde%20n%C2%B02_4_Gwennyn%20Yardin_SDESM.pdf```\
+  \ ↩︎ \n- Plan-de-MVP-et-Offre-PROMEOS-Micro-fournisseur-local-augmente.pdf ↩︎ \n\
+  - https://ppl-ai-file-upload.s3.amazonaws.com/connectors/google_drive/1UJOz5hSHG5r50Rr-ct61Dg8G61b5miJL/66b57442-5ab5-46ba-9e32-fb56c7d97afb/Brique-1-Data-Conformite-_-Un-Systeme-Expert-Proactif-Pas-un-Cockpit-Passif.pdf\
+  \ ↩︎ \n- https://ppl-ai-file-upload.s3.amazonaws.com/connectors/google_drive/1-dt7B1rcORxQA26oRLWkRxrv7l-5pdtP/ad0cab5c-e0b7-43ae-b29b-085ed048de9d/Reglementations-energetiques-_-donnees-a-surveiller-et-formules-de-calcul.pdf\
+  \ ↩︎"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: Executive Summary (Synthèse finale)
+  anchor: '#executive-summary-synthse-finale'
+  excerpt_short: PROMEOS , en intégrant trois briques modulaires (Data & Conformité,
+    ACC Starter, ACC Ops) , devient ...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

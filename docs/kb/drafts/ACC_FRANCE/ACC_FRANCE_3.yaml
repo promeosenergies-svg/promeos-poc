@@ -1,0 +1,34 @@
+id: ACC_FRANCE_3
+type: knowledge
+domain: acc
+title: Gestionnaire Réseau Distribution (Enedis, ELD) 18 19 20
+summary: "Responsabilités opérationnelles : \n- Relever courbes conso/production (P30\
+  \ = 30 min.) \n- Calculer TAc (part autoconsommée) / TAp (part alloconsommée) mensuellement\
+  \ \n- Transmettre données à fournisseur..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Responsabilités opérationnelles : \n- Relever courbes conso/production\
+  \ (P30 = 30 min.) \n- Calculer TAc (part autoconsommée) / TAp (part alloconsommée)\
+  \ mensuellement \n- Transmettre données à fournisseur de complément & producteur\
+  \ \n- Notifier changements clés répartition à PMO (4j ouvrés) \n- Assurer conformité\
+  \ technique/réglementaire \n\nContrat ACC obligatoire avec chaque opération : durée\
+  \ usuelle 3–5 ans, renouvelable."
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: Gestionnaire Réseau Distribution (Enedis, ELD) 18 19 20
+  anchor: '#gestionnaire-rseau-distribution-enedis-eld-18-19-20'
+  excerpt_short: "Responsabilités opérationnelles : \n- Relever courbes conso/production\
+    \ (P30 = 30 min.) \n- Calculer TA..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

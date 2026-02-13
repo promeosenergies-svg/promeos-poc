@@ -1,0 +1,34 @@
+id: ACC_FRANCE_54
+type: knowledge
+domain: acc
+title: 'Immédiat (Q4 2025–Q1 2026) :'
+summary: "- Valider hypothèses PMO : interview 20–30 PMO (bailleurs, collectivités,\
+  \ ZAC) → coût réel gestion, painpoints prioritaires \n- Sécuriser partnerships :\
+  \ \n- Enedis : accord DataHub API access (productio..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Valider hypothèses PMO : interview 20–30 PMO (bailleurs, collectivités,\
+  \ ZAC) → coût réel gestion, painpoints prioritaires \n- Sécuriser partnerships :\
+  \ \n- Enedis : accord DataHub API access (production + PMO test accounts) \n- FNCCR\
+  \ : co-marketing pre-launch \n- DocuSign : intégration e-sig (priority partnership)\
+  \ \n- Définir MVP 1.0 scope : templates + registre + clés + facturation. Lancer\
+  \ développement Q1 2026"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: 'Immédiat (Q4 2025–Q1 2026) :'
+  anchor: '#immdiat-q4-2025q1-2026-'
+  excerpt_short: '- Valider hypothèses PMO : interview 20–30 PMO (bailleurs, collectivités,
+    ZAC) → coût réel gestion, ...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

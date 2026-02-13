@@ -1,0 +1,35 @@
+id: BACS_COMPLET_52
+type: rule
+domain: reglementaire
+title: 'Q3. « Multi-occupation : locataire A proprio chaudière, locataire B proprio
+  clim. Qui doit BACS ? »'
+summary: R3. Propriétaire équipement responsable . Locataire A = BACS chauffage (si
+  P > seuil) ; Locataire B = BACS clim (si P > seuil). Si puissance combinée (A+B)
+  dépasse seuil = Hyperviseur/supervision comm...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: R3. Propriétaire équipement responsable . Locataire A = BACS chauffage
+  (si P > seuil) ; Locataire B = BACS clim (si P > seuil). Si puissance combinée (A+B)
+  dépasse seuil = Hyperviseur/supervision commune possible, mais responsabilité reste
+  auprès de chaque proprio équip. Contrat de bail doit clarifier (“propriétaire fourni
+  BACS” vs “locataire installe”).
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: 'Q3. « Multi-occupation : locataire A proprio chaudière, locataire B proprio
+    clim. Qui doit BACS ? »'
+  anchor: '#q3-multi-occupation-locataire-a-proprio-chaudire-locataire-b-proprio-clim-qui-doit-bacs-'
+  excerpt_short: R3. Propriétaire équipement responsable . Locataire A = BACS chauffage
+    (si P > seuil) ; Locataire B ...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

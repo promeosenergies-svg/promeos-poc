@@ -1,0 +1,45 @@
+id: BACS_COMPLET_39
+type: rule
+domain: acc
+title: Commissioning & tests
+summary: '- ⬜ Plan de test exécuté complet (activation chaque système, chaîne complète)
+
+  - ⬜ Capteurs étalonnés (température, humidité, compteurs kWh alignés réalité)
+
+  - ⬜ Algorithmes régulation testés (chaud > T...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: '- ⬜ Plan de test exécuté complet (activation chaque système, chaîne complète)
+
+  - ⬜ Capteurs étalonnés (température, humidité, compteurs kWh alignés réalité)
+
+  - ⬜ Algorithmes régulation testés (chaud > T cible ?, froid < T cible ?, arrêts
+  manuels OK ?)
+
+  - ⬜ Alarmes alertes testées (dérive détectée automatiquement ? notification exploitant
+  ?)
+
+  - ⬜ Rapports données générés & consultables (derniers 7 jours accessible propriétaire)
+
+  - ⬜ Tous tests VALIDÉS avant go-live (rapport test signé)'
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Commissioning & tests
+  anchor: '#commissioning-tests'
+  excerpt_short: '- ⬜ Plan de test exécuté complet (activation chaque système, chaîne
+    complète)
+
+    - ⬜ Capteurs étalonnés...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

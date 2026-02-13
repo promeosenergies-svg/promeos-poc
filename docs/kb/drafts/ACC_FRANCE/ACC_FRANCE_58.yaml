@@ -1,0 +1,203 @@
+id: ACC_FRANCE_58
+type: rule
+domain: usages
+title: 4. Success Criteria (12m Horizon)
+summary: "Product : >90% of new ACC opérations using PROMEOS for clés + settlement\
+  \ \nMarket : Capture 30–40% of new PMO market (2,000 opérations = 1,500–2,000 PMOs)\
+  \ by end 2027 \nEconomic : ARR €1–2M, path to pro..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Product : >90% of new ACC opérations using PROMEOS for clés + settlement\
+  \ \nMarket : Capture 30–40% of new PMO market (2,000 opérations = 1,500–2,000 PMOs)\
+  \ by end 2027 \nEconomic : ARR €1–2M, path to profitability, CAC payback <12 months\
+  \ \nStrategic : become synonymous with « ACC enabler » — referenced in FNCCR, CRE,\
+  \ government policy \n\nReport compiled: December 30, 2025 | Data freshness: August\
+  \ 2025 (latest regulatory); June 2025 (market data) | Next update: Q2 2026 \n110\
+  \ 111 112 113 114 115 116 117 118 119 120 121 122 123 124 125 126 127 128 129 130\
+  \ 131 132 133 134 135 136 137 138 139 140 141 142 143 144 145 146 147 148 149 150\
+  \ 151 152 153 154 155 156 157 158 159 160 161 162 163 164 165 166 167 168 169 170\
+  \ 171 172 173 174 175 176 177 178 179 180 181 182 183 184 185 186 187 188 189 190\
+  \ 191 192 193 194 195 196 \n\n⁂ \n- https://enogrid.com/europe-autoconsommation-collective-2025/\
+  \ ↩︎ \n- https://www.edf.fr/collectivites/decryptages/accompagner-votre-transition-durable/autoconsommation-collective-quelle-application-pour-les-collectivites\
+  \ ↩︎ \n- https://www.legifrance.gouv.fr/codes/id/LEGISCTA000032939883 ↩︎ \n- https://www.cre.fr/fileadmin/Documents/Deliberations/2024/241218_2024-231_Projet_Arrete_Autoconso_Collective.pdf\
+  \ ↩︎ \n- https://www.hellio.com/actualites/conseils/autoconsommation-collective\
+  \ ↩︎ \n- https://enogrid.com/europe-autoconsommation-collective-2025/ ↩︎ \n- https://www.gossement-avocats.com/blog/autoconsommation-collective-publication-de-larrete-du-21-fevrier-2025-modifiant-les-criteres-dune-operation-dautoconsommation-collective-etendue-et-prevoyant-une-nouvelle/\
+  \ ↩︎ \n- https://www.journal-photovoltaique.org/les-actus/seuils-de-puissance-augmentes-pour-lautoconsommation-collective/\
+  \ ↩︎ \n- https://www.enerplan.asso.fr/medias/publication/Jour2_Presentations.pdf\
+  \ ↩︎ \n- https://www.cre.fr/fileadmin/Documents/Deliberations/2024/241218_2024-231_Projet_Arrete_Autoconso_Collective.pdf\
+  \ ↩︎ \n- https://www.ville-de-saint-pierre-les-elbeuf.fr/wp-content/uploads/2025/07/2025-03-15-annexe.pdf\
+  \ ↩︎ \n- https://www.enedis.fr/sites/default/files/documents/pdf/autoconsommation-collective-guide-pedagogique.pdf\
+  \ ↩︎ \n- https://vendee-transitions.fr/habiter/autoconsommation-collective-guide-complet/\
+  \ ↩︎ \n- https://wesmart.com/es/blog/autoconsommation-collective-france-2025 ↩︎\
+  \ \n- https://enogrid.com/guide-de-lautoconsommation-collective-pour-les-bailleurs-sociaux/\
+  \ ↩︎ \n- https://hubwatt.fr/vente-delectricite-en-autoconsommation-collective/ ↩︎\
+  \ \n- https://wesmart.com/es/blog/autoconsommation-collective-france-2025 ↩︎ \n\
+  - https://www.enedis.fr/sites/default/files/documents/pdf/autoconsommation-collective-guide-pedagogique.pdf\
+  \ ↩︎ \n- https://vendee-transitions.fr/habiter/autoconsommation-collective-guide-complet/\
+  \ ↩︎ \n- https://www.ville-de-saint-pierre-les-elbeuf.fr/wp-content/uploads/2025/07/2025-03-15-annexe.pdf\
+  \ ↩︎ \n- https://www.enedis.fr/sites/default/files/documents/pdf/autoconsommation-collective-guide-pedagogique.pdf\
+  \ ↩︎ \n- https://hubwatt.fr/vente-delectricite-en-autoconsommation-collective/ ↩︎\
+  \ \n- https://www.sdec-energie.fr/sites/sdec.createurdimage.fr/files/2021-05-06_-enedis_autoconsommation_collective.pdf\
+  \ ↩︎ \n- https://hubwatt.fr/vente-delectricite-en-autoconsommation-collective/ ↩︎\
+  \ \n- https://www.enedis.fr/sites/default/files/documents/pdf/autoconsommation-collective-guide-pedagogique.pdf\
+  \ ↩︎ \n- https://enogrid.com/les-cles-de-repartition-en-autoconsommation-collective/\
+  \ ↩︎ \n- https://www.ville-de-saint-pierre-les-elbeuf.fr/wp-content/uploads/2025/07/2025-03-15-annexe.pdf\
+  \ ↩︎ \n- https://wesmart.com/es/blog/autoconsommation-collective-france-2025 ↩︎\
+  \ \n- https://www.ecologie.gouv.fr/sites/default/files/documents/Lab2051_Autoconsommation_collective_Incubation.pdf\
+  \ ↩︎ \n- https://animergy.com/sans-obligation-achat-valoriser-production-pv/ ↩︎\
+  \ \n- https://hubwatt.fr/vente-delectricite-en-autoconsommation-collective/ ↩︎ \n\
+  - https://www.ville-de-saint-pierre-les-elbeuf.fr/wp-content/uploads/2025/07/2025-03-15-annexe.pdf\
+  \ ↩︎ \n- https://www.enedis.fr/media/1881/download ↩︎ \n- https://www.enedis.fr/sites/default/files/documents/pdf/autoconsommation-collective-guide-pedagogique.pdf\
+  \ ↩︎ \n- https://www.enedis.fr/sites/default/files/documents/pdf/autoconsommation-collective-guide-pedagogique.pdf\
+  \ ↩︎ \n- https://www.ecologie.gouv.fr/sites/default/files/documents/Lab2051_Autoconsommation_collective_Incubation.pdf\
+  \ ↩︎ \n- https://www.enedis.fr/sites/default/files/documents/pdf/autoconsommation-collective-guide-pedagogique.pdf\
+  \ ↩︎ \n- https://enogrid.com/europe-autoconsommation-collective-2025/ ↩︎ \n- https://www.cre.fr/fileadmin/Documents/Deliberations/2024/241218_2024-231_Projet_Arrete_Autoconso_Collective.pdf\
+  \ ↩︎ \n- https://www.enedis.fr/sites/default/files/documents/pdf/autoconsommation-collective-guide-pedagogique.pdf\
+  \ ↩︎ \n- https://www.enedis.fr/sites/default/files/documents/pdf/autoconsommation-collective-guide-pedagogique.pdf\
+  \ ↩︎ \n- https://www.ecologie.gouv.fr/sites/default/files/documents/Lab2051_Autoconsommation_collective_Incubation.pdf\
+  \ ↩︎ \n- https://librairie.ademe.fr/energies/7854-autoconsommation-collective-photovoltaique-guide-pratique-a-l-attention-des-collectivites-territoriales.html\
+  \ ↩︎ \n- https://enogrid.com/turpe-7/ ↩︎ \n- https://www.enedis.fr/presse/facturation-pour-la-releve-des-compteurs-ce-quil-faut-savoir\
+  \ ↩︎ \n- https://www.les-energies-renouvelables.eu/conseils/autoconsommation/autoconsommation-collective-energie-panneau-solaire-photovoltaique/\
+  \ ↩︎ \n- https://wesmart.com/es/blog/autoconsommation-collective-france-2025 ↩︎\
+  \ \n- https://www.energystream-wavestone.com/2025/06/ems-outil-cle-pour-la-performance-energetique-des-batiments-panorama-du-marche-francais/\
+  \ ↩︎ \n- https://solaire-info.fr/wp-content/uploads/2024/09/Livreblancautoconsommation_collective.pdf\
+  \ ↩︎ \n- https://enogrid.com/europe-autoconsommation-collective-2025/ ↩︎ \n- https://www.pv-magazine.fr/2025/01/20/dossier-autoconsommation-le-collectif-monte-en-puissance/\
+  \ ↩︎ \n- https://observatoire.enedis.fr/autoconsommation ↩︎ \n- https://wesmart.com/es/blog/autoconsommation-collective-france-2025\
+  \ ↩︎ \n- https://www.myelectricity.fr/guide-autoconsommation-collective-photovoltaique/\
+  \ ↩︎ \n- https://www.pv-magazine.fr/2025/01/20/dossier-autoconsommation-le-collectif-monte-en-puissance/\
+  \ ↩︎ \n- https://wesmart.com/es/blog/autoconsommation-collective-france-2025 ↩︎\
+  \ \n- https://enogrid.com/guide-de-lautoconsommation-collective-pour-les-bailleurs-sociaux/\
+  \ ↩︎ \n- https://atee.fr/system/files/2025-04/ATEE_BFC_Conf%C3%A9rence_PV_Autoconsommation_collective%20-%2013.03%202.pdf\
+  \ ↩︎ \n- https://enogrid.com/guide-de-lautoconsommation-collective-pour-les-bailleurs-sociaux/\
+  \ ↩︎ \n- https://atee.fr/system/files/2025-04/ATEE_BFC_Conf%C3%A9rence_PV_Autoconsommation_collective%20-%2013.03%202.pdf\
+  \ ↩︎ \n- https://solaire-info.fr/wp-content/uploads/2024/09/Livreblancautoconsommation_collective.pdf\
+  \ ↩︎ \n- https://enogrid.com/guide-de-lautoconsommation-collective-pour-les-bailleurs-sociaux/\
+  \ ↩︎ \n- https://atee.fr/system/files/2025-04/ATEE_BFC_Conf%C3%A9rence_PV_Autoconsommation_collective%20-%2013.03%202.pdf\
+  \ ↩︎ \n- https://solaire-info.fr/wp-content/uploads/2024/09/Livreblancautoconsommation_collective.pdf\
+  \ ↩︎ \n- https://www.idex.fr/le-blog/autoconsommation-collective-une-solution-solaire-pour-les-entreprises\
+  \ ↩︎ \n- https://atee.fr/system/files/2025-04/ATEE_BFC_Conf%C3%A9rence_PV_Autoconsommation_collective%20-%2013.03%202.pdf\
+  \ ↩︎ \n- https://wesmart.com/es/blog/autoconsommation-collective-france-2025 ↩︎\
+  \ \n- https://atee.fr/system/files/2025-04/ATEE_BFC_Conf%C3%A9rence_PV_Autoconsommation_collective%20-%2013.03%202.pdf\
+  \ ↩︎ \n- https://www.enedis.fr/sites/default/files/documents/pdf/autoconsommation-collective-guide-pedagogique.pdf\
+  \ ↩︎ \n- https://animergy.com/sans-obligation-achat-valoriser-production-pv/ ↩︎\
+  \ \n- https://hubwatt.fr/vente-delectricite-en-autoconsommation-collective/ ↩︎ \n\
+  - https://wesmart.com/es/blog/autoconsommation-collective-france-2025 ↩︎ \n- https://www.ecologie.gouv.fr/sites/default/files/documents/Lab2051_Autoconsommation_collective_Incubation.pdf\
+  \ ↩︎ \n- https://solaire-info.fr/wp-content/uploads/2024/09/Livreblancautoconsommation_collective.pdf\
+  \ ↩︎ \n- https://enogrid.com/europe-autoconsommation-collective-2025/ ↩︎ \n- https://www.cre.fr/fileadmin/Documents/Deliberations/2024/241218_2024-231_Projet_Arrete_Autoconso_Collective.pdf\
+  \ ↩︎ \n- https://www.ecologie.gouv.fr/sites/default/files/documents/Lab2051_Autoconsommation_collective_Incubation.pdf\
+  \ ↩︎ \n- https://enogrid.com/turpe-7/ ↩︎ \n- https://solaire-info.fr/wp-content/uploads/2024/09/Livreblancautoconsommation_collective.pdf\
+  \ ↩︎ \n- https://www.twobirds.com/fr/insights/2025/france/nouvelles-règles-sur-les-prix-négatifs-de-l’électricité\
+  \ ↩︎ \n- https://www.les-energies-renouvelables.eu/conseils/photovoltaique/les-chiffres-essentiels-du-photovoltaique/\
+  \ ↩︎ \n- https://wesmart.com/es/blog/autoconsommation-collective-france-2025 ↩︎\
+  \ \n- https://hubwatt.fr/vente-delectricite-en-autoconsommation-collective/ ↩︎ \n\
+  - https://www.lechodusolaire.fr/enogrid-et-bohr-energie-sallient-pour-accompagner-les-producteurs-delectricite-vers-lautoconsommation-collective/\
+  \ ↩︎ \n- https://www.innovation24.news/2025/01/21/enogrid-lautoconsommation-collective-pour-tous-partout-en-france/\
+  \ ↩︎ \n- https://enogrid.com/enopower/ ↩︎ \n- https://enogrid.com ↩︎ \n- https://www.wattselse.com/entreprises/enogrid\
+  \ ↩︎ \n- https://enogrid.com/europe-autoconsommation-collective-2025/ ↩︎ \n- https://www.cre.fr/fileadmin/Documents/Deliberations/2024/241218_2024-231_Projet_Arrete_Autoconso_Collective.pdf\
+  \ ↩︎ \n- https://www.gossement-avocats.com/blog/autoconsommation-collective-publication-de-larrete-du-21-fevrier-2025-modifiant-les-criteres-dune-operation-dautoconsommation-collective-etendue-et-prevoyant-une-nouvelle/\
+  \ ↩︎ \n- https://www.ecologie.gouv.fr/sites/default/files/documents/220803-Plan-mise-en-oeuvre-autorites-francaises.pdf\
+  \ ↩︎ \n- https://solaire-info.fr/wp-content/uploads/2024/09/Livreblancautoconsommation_collective.pdf\
+  \ ↩︎ \n- https://www.twobirds.com/fr/insights/2025/france/nouvelles-règles-sur-les-prix-négatifs-de-l’électricité\
+  \ ↩︎ \n- https://www.legifrance.gouv.fr/codes/id/LEGISCTA000032939883 ↩︎ \n- https://www.cre.fr/fileadmin/Documents/Deliberations/2024/241218_2024-231_Projet_Arrete_Autoconso_Collective.pdf\
+  \ ↩︎ \n- https://www.enedis.fr/media/1881/download ↩︎ \n- https://librairie.ademe.fr/energies/7854-autoconsommation-collective-photovoltaique-guide-pratique-a-l-attention-des-collectivites-territoriales.html\
+  \ ↩︎ \n- https://enogrid.com/guide-de-lautoconsommation-collective-pour-les-bailleurs-sociaux/\
+  \ ↩︎ \n- https://solaire-info.fr/wp-content/uploads/2024/09/Livreblancautoconsommation_collective.pdf\
+  \ ↩︎ \n- https://enogrid.com/europe-autoconsommation-collective-2025/ ↩︎ \n- https://observatoire.enedis.fr/autoconsommation\
+  \ ↩︎ \n- https://www.enedis.fr/acceder-aux-donnees-fournies-par-enedis ↩︎ \n- https://www.ess-france.org/sites/default/files/Energie_Energie%20Partag%C3%A9e_France.pdf\
+  \ ↩︎ \n- https://energie-partagee.org/wp-content/uploads/2025/05/rapport-dactivite-2024.pdf\
+  \ ↩︎ \n- https://www.fnccr.asso.fr ↩︎ \n- https://uniprice-consulting.com/les-4-modeles-de-tarification-saas-trouver-le-bon-equilibre-pour-votre-croissance/\
+  \ ↩︎ \n- https://stripe.com/fr/guides/atlas/business-of-saas ↩︎ \n- https://poyesis.fr/blogs/guide-strategies-pricing-saas/\
+  \ ↩︎ \n- https://www.union-habitat.org/centre-de-ressources/energie-environnement/habitat-17-choisit-l-autoconsommation-collective-pour\
+  \ ↩︎ \n- https://www.greenunivers.com/2025/03/lautoconsommation-collective-delectricite-passe-a-5-mw-383304/\
+  \ ↩︎ \n- https://www.banque-france.fr/system/files/2023-05/822288_livre_diip_v2.pdf\
+  \ ↩︎ \n- https://www.senat.fr/rap/r19-007-1/r19-007-11.pdf ↩︎ \n- https://www.strategie-plan.gouv.fr/files/files/Publications/2016\
+  \ SP/2016-11-29 - Rapport La révolution numérique et logement/rapport-logement-vorms-11-2016_0.pdf\
+  \ ↩︎ \n- https://www.yele.fr/wp-content/uploads/Etude-Luciole-Yele-Consulting-FLEX.pdf\
+  \ ↩︎ \n- https://cler.org/partager-equitablement-les-benefices-des-projets-denergies-renouvelables-2/\
+  \ ↩︎ \n- https://www.bnains.org/archives/communiques/Worldline/20180321_Document_de_reference_2017_Worldline.pdf\
+  \ ↩︎ \n- https://www.technavio.com/report/energy-management-systems-market-analysis\
+  \ ↩︎ \n- https://energie-partagee.org/prise-de-valeur-placement-energie-partagee-2024/\
+  \ ↩︎ \n- https://investors.worldline.com/content/dam/investors-worldline-com/assets/documents/general-meeting/2020/worldline-document-d-enregistrement-universel-2019.pdf\
+  \ ↩︎ \n- https://www.gminsights.com/fr/industry-analysis/energy-management-system-ems-market\
+  \ ↩︎ \n- https://www.energie-solidaire.org/quand-les-dividendes-deviennent-solidaires/\
+  \ ↩︎ \n- https://www.efeo.fr/uploads/docs/Rapport annuel 2014-2015.pdf ↩︎ \n- https://www.cre.fr/fileadmin/Documents/Rapports_et_etudes/2025/CRE_RA2024-en.pdf\
+  \ ↩︎ \n- https://energie-partagee.org/assemblee-generale-epa-2024/ ↩︎ \n- https://www.sieml.fr/wp-content/uploads/2017/06/fascicule_rapports_CoSy_Sieml_25AVRIL.pdf\
+  \ ↩︎ \n- https://www.nrjx.tech/blog/en-quoi-un-logiciel-ems-permet-doptimiser-ses-processus-industriels\
+  \ ↩︎ \n- https://www.consultations-publiques.developpement-durable.gouv.fr/IMG/pdf/02__projet_de_ppe_3.pdf\
+  \ ↩︎ \n- https://solairepv.fr/wp-content/uploads/SolairePVEnFranceV3.1.pdf ↩︎ \n\
+  - https://www.france-renouvelables.fr/wp-content/uploads/2024/10/Observatoire-Systeme-Electrique-Renouvelables-2024_Maj.pdf\
+  \ ↩︎ \n- https://www.optima-energie.fr/blog/actualites/prix-electricite-evolution/\
+  \ ↩︎ \n- https://www.rte-france.com/donnees-publications/etudes-prospectives/futurs-energetique-2050\
+  \ ↩︎ \n- https://www.zuora.com/fr/guides/saas-pricing-models/ ↩︎ \n- https://www.lechodusolaire.fr/les-enr-domineraient-le-mix-energetique-en-france-dici-2027-selon-globaldata/\
+  \ ↩︎ \n- https://www.connaissancedesenergies.org/questions-et-reponses-energies/ou-le-solaire-photovoltaique-est-il-le-plus-developpe-en-france-metropolitaine\
+  \ ↩︎ \n- https://cpl.thalesgroup.com/fr/software-monetization/saas-pricing-models-examples\
+  \ ↩︎ \n- https://condorito.fr/saas-modele-economique/ ↩︎ \n- https://www.france-renouvelables.fr/wp-content/uploads/2025/10/OBSERVATOIRE_systeme_EnR_2025_VF.pdf\
+  \ ↩︎ \n- https://rte-futursenergetiques2050.com/scenarios/m1 ↩︎ \n- https://www.placedesenergies.com/professionnels/actualites/tendances-de-l-energie-08-07-2025\
+  \ ↩︎ \n- https://openenergytracker.org/fr/docs/france/renewables/ ↩︎ \n- https://www.custup.com/tarification-abonnement-saas/\
+  \ ↩︎ \n- https://www.regie-energis.com/distribution/wp-content/uploads/2022/12/Modele-de-convention-relative-a-la-mise-en-oeuvre-dune-operation-dautoconsommation-collective.pdf\
+  \ ↩︎ \n- https://observatoire-electricite.fr/systeme-electrique/article/le-developpement-de-l-autoconsommation\
+  \ ↩︎ \n- https://rouen.fr/sites/default/files/cm/2023-10-09/7-47ann1.pdf ↩︎ \n-\
+  \ https://www.gossement-avocats.com/blog/autoconsommation-collective-publication-de-l-arrete-permettant-des-operations-d-autoconsommation-collective-dans-un-rayon-de-20-km/\
+  \ ↩︎ \n- https://www.cre.fr/electricite/autoconsommation.html ↩︎ \n- https://enotea.fr/autoconsommation-collective/\
+  \ ↩︎ \n- https://www.statistiques.developpement-durable.gouv.fr/edition-numerique/chiffres-cles-energies-renouvelables/fr/14-solaire-photovoltaique-\
+  \ ↩︎ \n- https://www.cre.fr/fileadmin/Documents/Deliberations/import/180215-027_AUTOCONSOMMATION.pdf\
+  \ ↩︎ \n- https://www.auvergnerhonealpes-ee.fr/fileadmin/mediatheque_Cdr/Documents/ENR/Energie_photovoltaique/Photovoltaique-Autoconsommation-collective-synthese-012363.pdf\
+  \ ↩︎ \n- https://observatoire.enedis.fr/article/lautoconsommation-collective-dans-les-starting-blocks\
+  \ ↩︎ \n- https://www.urbanisme-puca.gouv.fr/IMG/pdf/rapport_final_vf.pdf ↩︎ \n-\
+  \ https://www.enedis.fr/combien-coute-et-rapporte-lautoconsommation-collective ↩︎\
+  \ \n- https://observatoire-electricite.fr/systeme-electrique/article/les-dispositifs-de-soutien-publics-a-l-autoconsommation\
+  \ ↩︎ \n- https://adherents.energie-partagee.org/wp-content/uploads/2024/02/guide-acc-citoyenne-fevrier-2024-1.pdf\
+  \ ↩︎ \n- https://sonergy.fr/autoconsommation-collective-energie-partagee-locale/\
+  \ ↩︎ \n- https://www.citepa.org/consommation-denergie-la-part-des-enr-a-progresse-de-13-points-en-france-depuis-2005-mais-reste-insuffisante-au-regard-des-objectifs-europeens/\
+  \ ↩︎ \n- https://www.tresor.economie.gouv.fr/Articles/f6e70afa-7b97-4eaa-8ce3-892a4be60211/files/10caa42b-c3c8-44ca-8a6e-9847f4f55b34\
+  \ ↩︎ \n- https://concertation-strategie-energie-climat.gouv.fr/sites/default/files/2024-11/241104_Projet%20de%20Programmation%20pluriannuelle%20de%20l’%C3%A9nergie%203%20VFF.pdf\
+  \ ↩︎ \n- https://www.rexecode.fr/conjoncture-previsions/veille-documentaire/document-de-la-semaine/la-banque-de-france-abaisse-ses-perspectives-de-croissance-2025-2027\
+  \ ↩︎ \n- https://energie-partagee.org/wp-content/uploads/2024/09/eurobserver-etat-energies-renouvelables-2023.pdf\
+  \ ↩︎ \n- https://www.daf-mag.fr/reglementation-1243/fiscalite-2115/croissance-en-france-bruxelles-revoit-ses-previsions-a-la-baisse-23286\
+  \ ↩︎ \n- https://www.papernest.com/demarches-energie/decrypter/mix-energetique-comparaison/\
+  \ ↩︎ \n- https://contrepoints.org/previsions-de-croissance-2026-la-france-est-3e-sur-le-podium-des-plus-mauvais-eleves-europeens/\
+  \ ↩︎ \n- https://www.statistiques.developpement-durable.gouv.fr/les-energies-renouvelables-en-france-en-2024-dans-le-cadre-du-suivi-de-la-directive-ue-20182001\
+  \ ↩︎ \n- https://www.banque-france.fr/fr/publications-et-statistiques/publications/projections-macroeconomiques-intermediaires-septembre-2025\
+  \ ↩︎ \n- https://enogrid.prezly.com ↩︎ \n- https://www.notre-environnement.gouv.fr/actualites/breves/article/l-energie-en-france-et-dans-le-monde-deux-bouquets-bien-differents\
+  \ ↩︎ \n- https://www.assemblee-nationale.fr/dyn/dyn/contenu/visualisation/1087987/file/PAP2026_BG_Investir_France_2030_AV.pdf\
+  \ ↩︎ \n- https://www.lechodusolaire.fr/enogrid-deploie-une-suite-logicielle-complete-pour-lautoconsommation-collective/\
+  \ ↩︎ \n- https://ec.europa.eu/eurostat/web/interactive-publications/energy-2025\
+  \ ↩︎ \n- https://www.miedepain.asso.fr/wp-content/uploads/2012/09/MANUEL_VF-_maquette-web.pdf\
+  \ ↩︎ \n- https://doc.vayandata.com/documentation-active/51.2.0.5/enedis ↩︎ \n- https://programme-cee-actee.fr/wp-content/uploads/2024/02/CDC-AAP-AMO-CPE-VF_2024_14_03-1-1.pdf\
+  \ ↩︎ \n- https://www.edf.fr/collectivites/faq/facture/gerer-votre-facture/comment-automatiser-le-traitement-de-vos-donnees-de-facturation\
+  \ ↩︎ \n- https://programme-cee-actee.fr ↩︎ \n- https://www.centre-val-de-loire.ars.sante.fr/media/1633/download\
+  \ ↩︎ \n- https://www.fnccr.asso.fr/article/guide-fnccr-cot-cop-pour-les-projets-enr-thermiques-des-territoires/\
+  \ ↩︎ \n- https://www.enerplan.asso.fr/dl-fichier-actualite?media=41896 ↩︎ \n- https://www.deepki.com/fr/blog/compteurs-linky-exploiter-donnees/\
+  \ ↩︎ \n- https://www.ville-thonon.fr/service-public/particuliers?xml=F71 ↩︎ \n-\
+  \ https://community.gladysassistant.com/t/integration-enedis-linky/7470 ↩︎ \n- https://www.facebook.com/FimecoWalterFrance/posts/-exclure-un-membre-dune-association-attention-à-bien-respecter-ses-droits-un-rap/1508715047100238/\
+  \ ↩︎ \n- https://www.strategie-plan.gouv.fr/files/2025-02/HE_Broschure_FR_act.pdf\
+  \ ↩︎ \n- https://priips.predica.com/credit-agricole/PS_LU1900068914.pdf ↩︎ \n- https://github.com/consometers/data-connect\
+  \ ↩︎ \n- https://www.ccomptes.fr/sites/default/files/2024-03/20240312-RPA-2024-ENPA-gestion-trait-de-cote.pdf\
+  \ ↩︎ \n- https://www.pv-magazine.fr/2025/03/10/lautoconsommation-collective-etendue-a-5-mwc/\
+  \ ↩︎ \n- https://www.lechodusolaire.fr/autoconsommation-collective-un-bond-en-avant-avec-le-seuil-porte-a-5-mw/\
+  \ ↩︎ \n- https://www.budget.gouv.fr/documentation/file-download/21111 ↩︎ \n- https://www.seban-associes.avocat.fr/modification-des-criteres-de-lautoconsommation-collective-etendue/\
+  \ ↩︎ \n- https://www.sde35.fr/sites/default/files/2024-07/SDE35-RA-2023.pdf ↩︎ \n\
+  - https://www.hlm.coop/actualites/24/18892 ↩︎ \n- https://www.apem-energie.fr/\U0001F6A8\
+  -nouvelle-evolution-pour-lautoconsommation-collective-en-france-\U0001F6A8/ ↩︎ \n\
+  - https://journals.openedition.org/metropoles/11977 ↩︎ État 2025, Leviers de Marché\
+  \ & Plan de Simplification (2026–2030) Stockage & Autoconsommation Collective Arrêté\
+  \ 21 février 2025 — ACC (5MW_10MW, rayon, mod"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: 4. Success Criteria (12m Horizon)
+  anchor: '#4-success-criteria-12m-horizon'
+  excerpt_short: "Product : >90% of new ACC opérations using PROMEOS for clés + settlement\
+    \ \nMarket : Capture 30–40% of..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -62,6 +62,12 @@ class Site(Base, TimestampMixin):
     annual_kwh_total = Column(Float, nullable=True, comment="Consommation annuelle totale (kWh)")
     last_energy_update_at = Column(DateTime, nullable=True, comment="Derniere MAJ donnees energie")
 
+    # Data lineage
+    data_source = Column(String(20), nullable=True, comment="csv, manual, demo, api")
+    data_source_ref = Column(String(200), nullable=True, comment="Batch ID or filename")
+    imported_at = Column(DateTime, nullable=True, comment="Date d'import")
+    imported_by = Column(Integer, nullable=True, comment="User ID de l'importateur")
+
     # Relations avec les autres tables
     compteurs = relationship(
         "Compteur",

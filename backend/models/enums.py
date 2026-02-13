@@ -215,3 +215,171 @@ class BillingInvoiceStatus(str, enum.Enum):
     AUDITED = "audited"
     ANOMALY = "anomaly"
     ARCHIVED = "archived"
+
+
+class InsightStatus(str, enum.Enum):
+    """Statut workflow d'un insight de facturation (ops)."""
+    OPEN = "open"
+    ACK = "ack"
+    RESOLVED = "resolved"
+    FALSE_POSITIVE = "false_positive"
+
+
+# ========================================
+# Enums Achat Energie
+# ========================================
+
+class PurchaseStrategy(str, enum.Enum):
+    """Strategie d'achat energie."""
+    FIXE = "fixe"
+    INDEXE = "indexe"
+    SPOT = "spot"
+
+
+class PurchaseRecoStatus(str, enum.Enum):
+    """Statut de la recommandation d'achat."""
+    DRAFT = "draft"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+
+
+# ========================================
+# Enums Action Hub (Sprint 10)
+# ========================================
+
+class ActionSourceType(str, enum.Enum):
+    """Source brique generatrice de l'action."""
+    COMPLIANCE = "compliance"
+    CONSUMPTION = "consumption"
+    BILLING = "billing"
+    PURCHASE = "purchase"
+
+
+class ActionStatus(str, enum.Enum):
+    """Statut workflow d'une action du hub."""
+    OPEN = "open"
+    IN_PROGRESS = "in_progress"
+    DONE = "done"
+    BLOCKED = "blocked"
+    FALSE_POSITIVE = "false_positive"
+
+
+# ========================================
+# Enums Notifications (Sprint 10.2)
+# ========================================
+
+class NotificationSeverity(str, enum.Enum):
+    """Severite d'un evenement notification."""
+    INFO = "info"
+    WARN = "warn"
+    CRITICAL = "critical"
+
+
+class NotificationStatus(str, enum.Enum):
+    """Statut lifecycle d'une notification."""
+    NEW = "new"
+    READ = "read"
+    DISMISSED = "dismissed"
+
+
+class NotificationSourceType(str, enum.Enum):
+    """Source brique generatrice de la notification."""
+    COMPLIANCE = "compliance"
+    BILLING = "billing"
+    PURCHASE = "purchase"
+    CONSUMPTION = "consumption"
+    ACTION_HUB = "action_hub"
+
+
+# ========================================
+# Enums IAM (Users / Roles / Scopes)
+# ========================================
+
+class UserRole(str, enum.Enum):
+    """11 roles metier PROMEOS."""
+    DG_OWNER = "dg_owner"
+    DSI_ADMIN = "dsi_admin"
+    DAF = "daf"
+    ACHETEUR = "acheteur"
+    RESP_CONFORMITE = "resp_conformite"
+    ENERGY_MANAGER = "energy_manager"
+    RESP_IMMOBILIER = "resp_immobilier"
+    RESP_SITE = "resp_site"
+    PRESTATAIRE = "prestataire"
+    AUDITEUR = "auditeur"
+    PMO_ACC = "pmo_acc"
+
+
+class ScopeLevel(str, enum.Enum):
+    """Niveau de scope hierarchique."""
+    ORG = "org"
+    ENTITE = "entite"
+    SITE = "site"
+
+
+class PermissionAction(str, enum.Enum):
+    """Actions granulaires."""
+    VIEW = "view"
+    EDIT = "edit"
+    ADMIN = "admin"
+    EXPORT = "export"
+    SYNC = "sync"
+    APPROVE = "approve"
+
+
+# ========================================
+# Enums Patrimoine / Staging (DIAMANT)
+# ========================================
+
+class StagingStatus(str, enum.Enum):
+    """Statut d'un batch d'import staging."""
+    DRAFT = "draft"
+    VALIDATED = "validated"
+    APPLIED = "applied"
+    ABANDONED = "abandoned"
+
+
+class ImportSourceType(str, enum.Enum):
+    """Source d'un import patrimoine."""
+    EXCEL = "excel"
+    CSV = "csv"
+    INVOICE = "invoice"
+    MANUAL = "manual"
+    DEMO = "demo"
+    API = "api"
+
+
+class QualityRuleSeverity(str, enum.Enum):
+    """Severite d'un finding de qualite."""
+    BLOCKING = "blocking"
+    WARNING = "warning"
+    INFO = "info"
+
+
+# ========================================
+# Enums Smart Intake (DIAMANT)
+# ========================================
+
+class IntakeSessionStatus(str, enum.Enum):
+    """Statut lifecycle d'une session d'intake."""
+    DRAFT = "draft"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    ABANDONED = "abandoned"
+
+
+class IntakeMode(str, enum.Enum):
+    """Mode d'une session d'intake."""
+    WIZARD = "wizard"
+    CHAT = "chat"
+    BULK = "bulk"
+    DEMO = "demo"
+
+
+class IntakeSource(str, enum.Enum):
+    """Source d'une reponse intake."""
+    USER = "user"
+    IMPORT = "import"
+    SYSTEM = "system"
+    SYSTEM_DEMO = "system_demo"
+    AI_PREFILL = "ai_prefill"

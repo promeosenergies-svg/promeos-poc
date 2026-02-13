@@ -1,0 +1,33 @@
+id: BACS_COMPLET_63
+type: knowledge
+domain: usages
+title: 4. Registre d’Inspections BACS
+summary: "- Base de données inspections (date, inspecteur, site, rapports digitalisés)\
+  \ \n- Génération alertes “Inspection due dans 2 mois” (5 ans max depuis dernière)\
+  \ \n- Suivi recommandations inspection (priorit..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Base de données inspections (date, inspecteur, site, rapports digitalisés)\
+  \ \n- Génération alertes “Inspection due dans 2 mois” (5 ans max depuis dernière)\
+  \ \n- Suivi recommandations inspection (priorité, statut réalisé/en cours/report,\
+  \ date clôture) \n- Archive 10 ans (conforme exigence légale conservation rapports)\
+  \ \n- Cas d’usage : Portfolio manager vérifie 100 sites ont tous inspecté < 5 ans"
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: 4. Registre d’Inspections BACS
+  anchor: '#4-registre-dinspections-bacs'
+  excerpt_short: "- Base de données inspections (date, inspecteur, site, rapports\
+    \ digitalisés) \n- Génération alertes “..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

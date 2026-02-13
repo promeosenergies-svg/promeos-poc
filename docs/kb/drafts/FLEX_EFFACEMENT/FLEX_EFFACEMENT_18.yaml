@@ -1,0 +1,37 @@
+id: FLEX_EFFACEMENT_18
+type: knowledge
+domain: reglementaire
+title: 3.4 Mesure & Vérification
+summary: "Disponibilité Effective : Contrôle par RTE post-livraison basée données\
+  \ GRT (courbe charge télérelevée). Périmètre = jours “PP2” signalés par CRE (ex.\
+  \ 45 jours + critère température extrême). \n\nCoeffi..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Disponibilité Effective : Contrôle par RTE post-livraison basée données\
+  \ GRT (courbe charge télérelevée). Périmètre = jours “PP2” signalés par CRE (ex.\
+  \ 45 jours + critère température extrême). \n\nCoefficients Filières : Paramètres\
+  \ techniques reflètent contribution fiabilité chaque technologie (ex. éolien offshore\
+  \ coefficient >production réelle pour sécurité) [artifact:]. Utilisés dimensionnement\
+  \ enchères, pas changements post-enchère sauf révision annuelle. \n\nTransparence\
+  \ : CRE approuve méthodologies (R. 316-3) ; RTE publie barèmes, paramètres via site\
+  \ services/data. Publications par scénario prospectif (3 courbes min. recommandées\
+  \ par CRE)."
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: 3.4 Mesure & Vérification
+  anchor: '#34-mesure-vrification'
+  excerpt_short: 'Disponibilité Effective : Contrôle par RTE post-livraison basée
+    données GRT (courbe charge télérelev...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

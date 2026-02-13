@@ -2,22 +2,28 @@
 PROMEOS - Dashboard "2 minutes"
 GET /api/dashboard/2min - Vue synthetique en 3 blocs pour un prospect
 """
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from database import get_db
+from middleware.auth import get_optional_auth, AuthContext
 from models import (
     Organisation, Site, Obligation, Compteur, ComplianceFinding,
     ConsumptionInsight, StatutConformite, TypeObligation,
     EnergyInvoice, BillingInsight, BillingInvoiceStatus,
+    PurchaseScenarioResult, PurchaseRecoStatus,
+    ActionItem, ActionStatus,
+    NotificationEvent, NotificationStatus, NotificationSeverity,
 )
 
 router = APIRouter(prefix="/api/dashboard", tags=["Dashboard 2min"])
 
 
 @router.get("/2min")
-def get_dashboard_2min(db: Session = Depends(get_db)):
+def get_dashboard_2min(db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
     """
     Retourne un JSON minimal pour le cockpit "2 minutes":
     - conformite_status: etat global conformite
@@ -26,7 +32,10 @@ def get_dashboard_2min(db: Session = Depends(get_db)):
     - organisation: nom + type
     - completude: % de remplissage du patrimoine
     """
-    org = db.query(Organisation).first()
+    if auth:
+        org = db.query(Organisation).filter(Organisation.id == auth.org_id).first()
+    else:
+        org = db.query(Organisation).first()
     if not org:
         return {
             "has_data": False,
@@ -104,6 +113,11 @@ def get_dashboard_2min(db: Session = Depends(get_db)):
             "nok": len(nok_findings),
             "unknown": len(unknown_findings),
             "ok": sum(1 for f in findings if f.status == "OK"),
+            "workflow": {
+                "open": sum(1 for f in findings if getattr(f, 'insight_status', None) and f.insight_status.value == "open"),
+                "ack": sum(1 for f in findings if getattr(f, 'insight_status', None) and f.insight_status.value == "ack"),
+                "resolved": sum(1 for f in findings if getattr(f, 'insight_status', None) and f.insight_status.value == "resolved"),
+            },
         }
         # Override action_1 from findings if more specific
         if nok_findings:
@@ -163,6 +177,9 @@ def get_dashboard_2min(db: Session = Depends(get_db)):
             "total_obligations": len(obligations),
         },
         "billing": _billing_summary(db),
+        "achat": _purchase_summary(db),
+        "action_hub": _action_hub_summary(db, org.id),
+        "alerts": _notifications_summary(db, org.id),
     }
 
 
@@ -231,6 +248,75 @@ def _empty_completude() -> dict:
     }
 
 
+def _purchase_summary(db: Session) -> dict:
+    """Achat energie summary for dashboard 2min. V1.1: +gain_potentiel_eur, +prochain_renouvellement."""
+    from datetime import date as _date
+    from models import EnergyContract
+
+    total_results = db.query(PurchaseScenarioResult).count()
+    if total_results == 0:
+        return None
+
+    recommended = (
+        db.query(PurchaseScenarioResult)
+        .filter(PurchaseScenarioResult.is_recommended == True)
+        .first()
+    )
+
+    base = {
+        "total_scenarios": total_results,
+        "recommendation": None,
+    }
+
+    if recommended:
+        base["recommendation"] = {
+            "strategy": recommended.strategy.value if recommended.strategy else None,
+            "price_eur_per_kwh": recommended.price_eur_per_kwh,
+            "total_annual_eur": recommended.total_annual_eur,
+            "risk_score": recommended.risk_score,
+            "savings_vs_current_pct": recommended.savings_vs_current_pct,
+            "reco_status": recommended.reco_status.value if recommended.reco_status else None,
+        }
+
+    # V1.1: gain_potentiel_eur
+    draft_recos = (
+        db.query(PurchaseScenarioResult)
+        .filter(
+            PurchaseScenarioResult.is_recommended == True,
+            PurchaseScenarioResult.reco_status == PurchaseRecoStatus.DRAFT,
+        )
+        .all()
+    )
+    gain = sum(
+        abs(r.savings_vs_current_pct or 0) / 100 * r.total_annual_eur
+        for r in draft_recos
+        if r.savings_vs_current_pct and r.savings_vs_current_pct > 0
+    )
+    base["gain_potentiel_eur"] = round(gain, 2)
+
+    # V1.1: prochain_renouvellement
+    today = _date.today()
+    next_contract = (
+        db.query(EnergyContract)
+        .filter(EnergyContract.end_date.isnot(None), EnergyContract.end_date >= today)
+        .order_by(EnergyContract.end_date.asc())
+        .first()
+    )
+    if next_contract:
+        site = db.query(Site).filter(Site.id == next_contract.site_id).first()
+        base["prochain_renouvellement"] = {
+            "end_date": next_contract.end_date.isoformat(),
+            "site_id": next_contract.site_id,
+            "site_nom": site.nom if site else None,
+            "supplier_name": next_contract.supplier_name,
+            "days_remaining": (next_contract.end_date - today).days,
+        }
+    else:
+        base["prochain_renouvellement"] = None
+
+    return base
+
+
 def _billing_summary(db: Session) -> dict:
     """Billing intelligence summary for dashboard 2min."""
     total_invoices = db.query(EnergyInvoice).count()
@@ -244,4 +330,86 @@ def _billing_summary(db: Session) -> dict:
         "total_eur": round(total_eur, 2),
         "anomalies_count": anomalies_count,
         "total_loss_eur": round(total_loss, 2),
+    }
+
+
+def _action_hub_summary(db: Session, org_id: int) -> dict:
+    """Action Hub summary for dashboard 2min. Returns None if no actions exist."""
+    items = db.query(ActionItem).filter(ActionItem.org_id == org_id).all()
+    if not items:
+        return None
+
+    action_stats = {
+        "open": sum(1 for a in items if a.status == ActionStatus.OPEN),
+        "in_progress": sum(1 for a in items if a.status == ActionStatus.IN_PROGRESS),
+        "done": sum(1 for a in items if a.status == ActionStatus.DONE),
+        "total": len(items),
+    }
+
+    # Top action: open, by priority ASC then due_date ASC NULLS LAST
+    open_actions = [a for a in items if a.status in (ActionStatus.OPEN, ActionStatus.IN_PROGRESS)]
+    open_actions.sort(key=lambda a: (a.priority or 5, str(a.due_date or "9999-12-31")))
+
+    top_action = None
+    if open_actions:
+        a = open_actions[0]
+        top_action = {
+            "id": a.id,
+            "texte": a.title,
+            "priorite": a.severity or "high",
+            "nb_sites_concernes": 1,
+            "source": "action_hub",
+        }
+
+    total_gain = sum(a.estimated_gain_eur or 0 for a in items if a.status != ActionStatus.DONE)
+
+    return {
+        "action_stats": action_stats,
+        "top_action": top_action,
+        "total_gain_eur": round(total_gain, 2),
+    }
+
+
+def _notifications_summary(db: Session, org_id: int) -> dict:
+    """Notifications summary for dashboard 2min. Returns None if no events exist."""
+    events = (
+        db.query(NotificationEvent)
+        .filter(NotificationEvent.org_id == org_id)
+        .all()
+    )
+    if not events:
+        return None
+
+    new_critical = sum(
+        1 for e in events
+        if e.status == NotificationStatus.NEW and e.severity == NotificationSeverity.CRITICAL
+    )
+    new_warn = sum(
+        1 for e in events
+        if e.status == NotificationStatus.NEW and e.severity == NotificationSeverity.WARN
+    )
+    new_total = sum(1 for e in events if e.status == NotificationStatus.NEW)
+
+    # Top alert: NEW + CRITICAL first, then WARN, ordered by created_at desc
+    new_events = [e for e in events if e.status == NotificationStatus.NEW]
+    sev_order = {NotificationSeverity.CRITICAL: 0, NotificationSeverity.WARN: 1, NotificationSeverity.INFO: 2}
+    new_events.sort(key=lambda e: (sev_order.get(e.severity, 9), -(e.id or 0)))
+
+    top_alert = None
+    if new_events:
+        e = new_events[0]
+        top_alert = {
+            "id": e.id,
+            "title": e.title,
+            "severity": e.severity.value if e.severity else "info",
+            "deeplink_path": e.deeplink_path,
+            "source_type": e.source_type.value if e.source_type else None,
+        }
+
+    return {
+        "new_critical": new_critical,
+        "new_warn": new_warn,
+        "new_total": new_total,
+        "total": len(events),
+        "top_alert": top_alert,
     }

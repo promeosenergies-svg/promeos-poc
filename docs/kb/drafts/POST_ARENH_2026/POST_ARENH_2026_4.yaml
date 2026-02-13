@@ -1,0 +1,41 @@
+id: POST_ARENH_2026_4
+type: rule
+domain: usages
+title: Estimation et Fixation
+summary: "Le tarif unitaire de minoration (TU), lorsqu’il s’applique, est calculé\
+  \ selon la formule : 15 \n\nTU = (Montant à redistribuer) / (Consommation éligible\
+  \ estimée) \n\nLe montant à redistribuer comprend la ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Le tarif unitaire de minoration (TU), lorsqu’il s’applique, est calculé\
+  \ selon la formule : 15 \n\nTU = (Montant à redistribuer) / (Consommation éligible\
+  \ estimée) \n\nLe montant à redistribuer comprend la taxe estimée sur les revenus\
+  \ d’EDF au-delà des seuils définis, augmentée des éventuelles régularisations d’années\
+  \ antérieures. Le calcul intègre un principe de prudence : la CRE utilise le premier\
+  \ quartile des scénarios de revenus simulés pour les estimations à court terme (M-3\
+  \ à M-1), afin d’éviter des régularisations négatives ultérieures qui imposeraient\
+  \ aux consommateurs de rembourser une partie des versements reçus. 16 \n\nLa proposition\
+  \ de tarif unitaire doit être transmise par la CRE au gouvernement au plus tard\
+  \ le 30 novembre de l’année précédant l’application (article R.337-5 du décret),\
+  \ permettant une visibilité suffisante aux consommateurs et fournisseurs. Les ministres\
+  \ disposent ensuite d’un délai minimum d’un mois avant le début de la période d’application\
+  \ pour fixer le tarif par arrêté conjoint. 17"
+logic: null
+sources:
+- doc_id: POST_ARENH_2026
+  label: Post-ARENH 2026
+  section: Estimation et Fixation
+  anchor: '#estimation-et-fixation'
+  excerpt_short: "Le tarif unitaire de minoration (TU), lorsqu’il s’applique, est\
+    \ calculé selon la formule : 15 \n\nTU =..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

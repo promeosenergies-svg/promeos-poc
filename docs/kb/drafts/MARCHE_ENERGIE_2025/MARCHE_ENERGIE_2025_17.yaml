@@ -1,0 +1,36 @@
+id: MARCHE_ENERGIE_2025_17
+type: rule
+domain: facturation
+title: 'Phase 1 : Immediate (Janvier-Février 2026)'
+summary: "Gouvernance énergétique \n- Désigner responsable unique « transition post-ARENH\
+  \ » (reporting mensuel) \n- Audit interne contrats existants + chronogramme expirations\
+  \ \n\nPortefeuille contracting \n- Lancer..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Gouvernance énergétique \n- Désigner responsable unique « transition\
+  \ post-ARENH » (reporting mensuel) \n- Audit interne contrats existants + chronogramme\
+  \ expirations \n\nPortefeuille contracting \n- Lancer appel offres fournisseurs\
+  \ pour 3-5 ans (moyen terme) : cible prix 70€/MWh (électricité) \n- Identifier 5-10\
+  \ sites PPA pilotes : combiner avec rénovation (baisse volume post-réno = meilleur\
+  \ PPA terms) \n\nPréparation décret tertiaire \n- Commencer audit énergétique sites\
+  \ critiques (top 20%) \n- Budgéter rénovation phases 1-2 (optimisation + équipements)\
+  \ pour 2026-2028"
+logic: null
+sources:
+- doc_id: MARCHE_ENERGIE_2025
+  label: Analyse marche energie France-Europe 2025
+  section: 'Phase 1 : Immediate (Janvier-Février 2026)'
+  anchor: '#phase-1-immediate-janvier-fvrier-2026'
+  excerpt_short: "Gouvernance énergétique \n- Désigner responsable unique « transition\
+    \ post-ARENH » (reporting mensuel)..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

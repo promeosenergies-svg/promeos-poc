@@ -1,0 +1,49 @@
+id: ACC_FRANCE_39
+type: knowledge
+domain: acc
+title: 1. Paysage Concurrentiel Actuel
+summary: 'Acteurs clés 2025 : 84 85 86 87 88 Joueur Produit Core Type Couverture Avantages
+  Limits Enogrid (lead market) EnoLab (étude) + EnoPower (gestion) + MonEnergie Collective
+  (portal) SaaS + Services 370+ ...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Acteurs clés 2025 : 84 85 86 87 88 Joueur Produit Core Type Couverture\
+  \ Avantages Limits Enogrid (lead market) EnoLab (étude) + EnoPower (gestion) + MonEnergie\
+  \ Collective (portal) SaaS + Services 370+ projets, 23 MW gérés Full suite (study→exec),\
+  \ strong brand Plateforme legacy (onboarding toujours ~3m), pas de settlement financier\
+  \ HubWatt Plateforme ACC (registre, clés, facturation) SaaS ~100+ projets estimé\
+  \ Facturation élégante, UX clean Petit market share, peu de visibilité, API Enedis\
+  \ intégration non-public EnoPower (Enogrid) Software gestion opérationnelle ACC\
+  \ SaaS 20+ MWc en produção Intégration Enedis native, interface simple Coûteux (€500–1k/mth\
+  \ estimé), pas d’onboarding, pas d’arbitrage prix Fournisseurs classiques (EDF,\
+  \ Enercoop, Ekwateur) Settlement + facturation (ACC = overlay) Aggrégat Partial\
+  \ (seulement clients propres) Couverture réseau, force commercial Pas d’outil PMO\
+  \ dédié, facturation 2-tiers complexe, pas de flex Bohr Énergie (Animergy partner)\
+  \ Agrégateur + arbitrage prix (“mandataire PMO”) Service 50+ projets en pipeline\
+  \ Flex + prix arbitrage, lève VC récente Modèle 2-sided (producteur + PMO), pas\
+  \ de SaaS PMO propre, few regions Plateformes européennes (Austria: Wenet, Slovenia:\
+  \ …very few) Full energy communities OS SaaS <10 deployments outside HQ Tech mature,\
+  \ RED III aligned Régulières non-transposables à France (régime collecte différent)\
+  \ \n\nObservation clé : marché très fragmenté = 5–10 SaaS minor + services ad-hoc.\
+  \ Aucun leader consolidé avec full stack (study + gestion + settlement + flex).\
+  \ Enogrid = closest, mais plateforme legacy (EnoLab = outil études, EnoPower = gestion\
+  \ basique)."
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: 1. Paysage Concurrentiel Actuel
+  anchor: '#1-paysage-concurrentiel-actuel'
+  excerpt_short: 'Acteurs clés 2025 : 84 85 86 87 88 Joueur Produit Core Type Couverture
+    Avantages Limits Enogrid (lea...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

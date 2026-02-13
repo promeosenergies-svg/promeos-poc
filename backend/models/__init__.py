@@ -11,7 +11,13 @@ from .enums import (
     ParkingType, OperatStatus, EnergyVector, SourceType,
     JobType, JobStatus, RegStatus, Severity, Confidence,
     InsightType, RegulationType, Typologie,
-    BillingEnergyType, InvoiceLineType, BillingInvoiceStatus,
+    BillingEnergyType, InvoiceLineType, BillingInvoiceStatus, InsightStatus,
+    PurchaseStrategy, PurchaseRecoStatus,
+    ActionSourceType, ActionStatus,
+    NotificationSeverity, NotificationStatus, NotificationSourceType,
+    UserRole, ScopeLevel, PermissionAction,
+    StagingStatus, ImportSourceType, QualityRuleSeverity,
+    IntakeSessionStatus, IntakeMode, IntakeSource,
 )
 
 # Hierarchie organisation
@@ -32,6 +38,7 @@ from .alerte import Alerte
 # Conformite
 from .conformite import Obligation
 from .evidence import Evidence
+from .compliance_run_batch import ComplianceRunBatch
 from .compliance_finding import ComplianceFinding
 
 # Consumption diagnostics
@@ -58,7 +65,31 @@ from .kb_models import (
 # Bill Intelligence (persisted)
 from .billing_models import (
     EnergyContract, EnergyInvoice, EnergyInvoiceLine, BillingInsight,
+    BillingImportBatch, ConceptAllocation,
 )
+
+# Achat Energie
+from .purchase_models import (
+    PurchaseAssumptionSet, PurchasePreference, PurchaseScenarioResult,
+)
+
+# Action Hub (Sprint 10)
+from .action_item import ActionItem, ActionSyncBatch
+
+# Notifications (Sprint 10.2)
+from .notification import NotificationEvent, NotificationBatch, NotificationPreference
+
+# IAM (Users / Roles / Scopes)
+from .iam import User, UserOrgRole, UserScope, AuditLog
+
+# Patrimoine / Staging (DIAMANT)
+from .patrimoine import (
+    OrgEntiteLink, PortfolioEntiteLink,
+    StagingBatch, StagingSite, StagingCompteur, QualityFinding,
+)
+
+# Smart Intake (DIAMANT)
+from .intake import IntakeSession, IntakeAnswer, IntakeFieldOverride
 
 # Energy (Consumption & Analytics)
 from .energy_models import (
@@ -73,7 +104,7 @@ __all__ = [
     "Organisation", "EntiteJuridique", "Portefeuille",
     "Site", "Batiment", "Usage",
     "Compteur", "Consommation", "Alerte",
-    "Obligation", "Evidence", "ComplianceFinding", "ConsumptionInsight",
+    "Obligation", "Evidence", "ComplianceRunBatch", "ComplianceFinding", "ConsumptionInsight",
     "SiteOperatingSchedule", "SiteTariffProfile",
     "SegmentationProfile",
     "DataPoint", "RegAssessment", "JobOutbox", "AiInsight", "RegSourceEvent",
@@ -84,6 +115,7 @@ __all__ = [
     "MonitoringSnapshot", "MonitoringAlert",
     # Bill Intelligence models
     "EnergyContract", "EnergyInvoice", "EnergyInvoiceLine", "BillingInsight",
+    "BillingImportBatch", "ConceptAllocation",
     # Enums
     "TypeSite", "TypeCompteur", "SeveriteAlerte", "TypeUsage",
     "StatutConformite", "TypeObligation", "TypeEvidence", "StatutEvidence",
@@ -93,5 +125,23 @@ __all__ = [
     "KBConfidence", "KBStatus", "EnergyVectorModel", "FrequencyType",
     "ImportStatus", "AnomalySeverity", "RecommendationStatus",
     "AlertStatus", "AlertSeverity",
-    "BillingEnergyType", "InvoiceLineType", "BillingInvoiceStatus",
+    "BillingEnergyType", "InvoiceLineType", "BillingInvoiceStatus", "InsightStatus",
+    # Achat Energie models
+    "PurchaseAssumptionSet", "PurchasePreference", "PurchaseScenarioResult",
+    "PurchaseStrategy", "PurchaseRecoStatus",
+    # Action Hub (Sprint 10)
+    "ActionItem", "ActionSyncBatch", "ActionSourceType", "ActionStatus",
+    # Notifications (Sprint 10.2)
+    "NotificationEvent", "NotificationBatch", "NotificationPreference",
+    "NotificationSeverity", "NotificationStatus", "NotificationSourceType",
+    # IAM (Users / Roles / Scopes)
+    "User", "UserOrgRole", "UserScope", "AuditLog",
+    "UserRole", "ScopeLevel", "PermissionAction",
+    # Patrimoine / Staging (DIAMANT)
+    "OrgEntiteLink", "PortfolioEntiteLink",
+    "StagingBatch", "StagingSite", "StagingCompteur", "QualityFinding",
+    "StagingStatus", "ImportSourceType", "QualityRuleSeverity",
+    # Smart Intake (DIAMANT)
+    "IntakeSession", "IntakeAnswer", "IntakeFieldOverride",
+    "IntakeSessionStatus", "IntakeMode", "IntakeSource",
 ]

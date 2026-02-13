@@ -1,0 +1,39 @@
+id: FLEX_EFFACEMENT_9
+type: rule
+domain: usages
+title: 2.1 Comment ça marche
+summary: "Réserves = puissance disponible RTE pour régler fréquence (production/consommation)\
+  \ en temps réel. Quatre types succes­sifs (urgence croissante) : 6 \n- FCR (Réserve\
+  \ Primaire) : Régulation automatique,..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Réserves = puissance disponible RTE pour régler fréquence (production/consommation)\
+  \ en temps réel. Quatre types succes­sifs (urgence croissante) : 6 \n- FCR (Réserve\
+  \ Primaire) : Régulation automatique, continu, harmonisée Europe (ENTSO-E). Activation\
+  \ = déviation fréquence ±0.2 Hz. Durée 30 sec. \n- aFRR (Réserve Secondaire) : Régulation\
+  \ auto-RTE, français, 15–90 sec après primaire. Appels d’offres nationaux. \n- mFRR\
+  \ (Réserve Rapide tertiaire) : Manuelle, <13 min, adjudication appel d’offres périodique/journalière\
+  \ RTE. \n- RR-RC (Réserve Rapide/Complémentaire) : Manuel, <30 min, AOP trimestriel/journalier\
+  \ (2025 : nouveaux volumes, nouvelle procédure) [artifact:]. \n\nActeur d’Ajustement\
+  \ (AA) = fournisseur réserves via Mécanisme d’Ajustement (MA) . Offres “hausse/baisse”\
+  \ (modulation puissance). Obligation participation EnR >10 MW depuis 01/01/2026.\
+  \ 7"
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: 2.1 Comment ça marche
+  anchor: '#21-comment-a-marche'
+  excerpt_short: Réserves = puissance disponible RTE pour régler fréquence (production/consommation)
+    en temps réel. Q...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

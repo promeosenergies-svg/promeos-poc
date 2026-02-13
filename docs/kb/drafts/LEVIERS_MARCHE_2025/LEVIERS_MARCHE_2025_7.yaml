@@ -1,0 +1,35 @@
+id: LEVIERS_MARCHE_2025_7
+type: rule
+domain: reglementaire
+title: 'Scénario 1 : PRUDENT (Croissance 50% annuelle)'
+summary: "Hypothèses : \n- Réglementation inchangée, automatisation lente (Excel +\
+  \ paperasse persistent) \n- Seuils puissance 5 MW max (pas extension 10 MW généralisée)\
+  \ \n- Pas d’intégration massive data Enedis \n-..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Hypothèses : \n- Réglementation inchangée, automatisation lente (Excel\
+  \ + paperasse persistent) \n- Seuils puissance 5 MW max (pas extension 10 MW généralisée)\
+  \ \n- Pas d’intégration massive data Enedis \n- Adoption par collectivités seulement\
+  \ (60% marché) \n\nProjections 2030: \n- Opérations : ~5 000 (vs 1 100 en 2025)\
+  \ \n- Puissance : ~750 MW (vs 161 MW 2025) \n- Participants : ~50 000 (vs 10 600\
+  \ en 2025) \n- Coûts PMO : rester hauts (18–24 mois de montage moyen) \n- Taux churn\
+  \ participants : 15–20%/an (friction administrative)"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: 'Scénario 1 : PRUDENT (Croissance 50% annuelle)'
+  anchor: '#scnario-1-prudent-croissance-50-annuelle'
+  excerpt_short: "Hypothèses : \n- Réglementation inchangée, automatisation lente\
+    \ (Excel + paperasse persistent) \n- Seu..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

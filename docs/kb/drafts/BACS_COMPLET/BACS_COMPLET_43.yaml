@@ -1,0 +1,38 @@
+id: BACS_COMPLET_43
+type: knowledge
+domain: reglementaire
+title: Rapport inspection
+summary: '- ⬜ Rapport signé inspecteur reçu dans 1 mois post-visite
+
+  - ⬜ Rapport contient : exécutif, détails techniques, recommandations, plan d''action
+
+  - ⬜ Copie archivée propriétaire (10 ans minimum, préservat...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: '- ⬜ Rapport signé inspecteur reçu dans 1 mois post-visite
+
+  - ⬜ Rapport contient : exécutif, détails techniques, recommandations, plan d''action
+
+  - ⬜ Copie archivée propriétaire (10 ans minimum, préservation digitale)
+
+  - ⬜ Recommandations triées priorité (rapides < rapide moyen < long terme)'
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Rapport inspection
+  anchor: '#rapport-inspection'
+  excerpt_short: '- ⬜ Rapport signé inspecteur reçu dans 1 mois post-visite
+
+    - ⬜ Rapport contient : exécutif, détails t...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

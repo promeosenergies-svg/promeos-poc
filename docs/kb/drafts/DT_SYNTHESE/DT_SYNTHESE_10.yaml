@@ -1,0 +1,34 @@
+id: DT_SYNTHESE_10
+type: rule
+domain: reglementaire
+title: 'Scénario 2 : Méthode absolue (seuils fixes)'
+summary: "- Applicable si : Bâtiment neuf ou très performant \n- Calcul : Atteindre\
+  \ seuil en kWh/m²/an défini par catégorie/région \n- Avantage : Benchmark transparent\
+  \ vs meilleurs du marché \n- Exigence : Plus st..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Applicable si : Bâtiment neuf ou très performant \n- Calcul : Atteindre\
+  \ seuil en kWh/m²/an défini par catégorie/région \n- Avantage : Benchmark transparent\
+  \ vs meilleurs du marché \n- Exigence : Plus stricte pour immeubles modernes \n\
+  - Exemple : Bureau Île-de-France | Seuil 2030 : ~90 kWh/m²/an (VAL VI) \n\nRecommandation\
+  \ PROMEOS : Analyser mixte approche pour chaque actif (choisir la plus favorable\
+  \ pour assujetti)."
+logic: null
+sources:
+- doc_id: DT_SYNTHESE
+  label: Decret Tertiaire - Synthese PROMEOS
+  section: 'Scénario 2 : Méthode absolue (seuils fixes)'
+  anchor: '#scnario-2-mthode-absolue-seuils-fixes'
+  excerpt_short: "- Applicable si : Bâtiment neuf ou très performant \n- Calcul :\
+    \ Atteindre seuil en kWh/m²/an défini p..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

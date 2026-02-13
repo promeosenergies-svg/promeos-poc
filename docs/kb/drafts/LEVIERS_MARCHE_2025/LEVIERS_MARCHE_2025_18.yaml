@@ -1,0 +1,31 @@
+id: LEVIERS_MARCHE_2025_18
+type: rule
+domain: reglementaire
+title: 9. Standardisation données comptables (export module OPERAT + BACS)
+summary: "- Action : Export CSV/XML prêt audit, compatible OPERAT (décret Tertiaire),\
+  \ BACS (conformité GTB) \n- Gain : Audit annuel < 1 jour, zéro reformatage données\
+  \ \n- Impact : Coûts comptable –30%, conformité..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Action : Export CSV/XML prêt audit, compatible OPERAT (décret Tertiaire),\
+  \ BACS (conformité GTB) \n- Gain : Audit annuel < 1 jour, zéro reformatage données\
+  \ \n- Impact : Coûts comptable –30%, conformité garantie"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: 9. Standardisation données comptables (export module OPERAT + BACS)
+  anchor: '#9-standardisation-donnes-comptables-export-module-operat-bacs'
+  excerpt_short: "- Action : Export CSV/XML prêt audit, compatible OPERAT (décret\
+    \ Tertiaire), BACS (conformité GTB) \n-..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

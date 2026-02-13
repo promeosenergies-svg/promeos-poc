@@ -1,0 +1,46 @@
+id: LEVIERS_MARCHE_2025_20
+type: knowledge
+domain: usages
+title: F.2 – Checkpoints Clés Accélération (PMO/PROMEOS)
+summary: "Semaine 0–1 : Diagnostic ACC (5 min simulator → TRI, économies prévisionnelles)\
+  \ \n- PDL input → calcul profil complémentarité → scoring faisabilité \n- Output\
+  \ : “Accessible ACC ?” + recommandations stru..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Semaine 0–1 : Diagnostic ACC (5 min simulator → TRI, économies prévisionnelles)\
+  \ \n- PDL input → calcul profil complémentarité → scoring faisabilité \n- Output\
+  \ : “Accessible ACC ?” + recommandations structure \n\nSemaine 1–2 : Montage PMO\
+  \ (wizard 30 min) \n- Choix statut (algo suggestion), remplissage données \n- Auto-génération\
+  \ : statuts, contrats, mandats, formulaires URSSAF/cadastre \n\nSemaine 2–3 : Recrutement\
+  \ participants (flow digital) \n- PROMEOS envoie mail unique par participant, lien\
+  \ inscription portal \n- KYC express (ID, IBAN), consentement, e-signature documents\
+  \ \n- Tracking taux signature real-time (target > 80% sem 2) \n\nSemaine 3–4 : Validation\
+  \ données + Enedis (checker smart) \n- PROMEOS valide PDL Enedis (API query), détecte\
+  \ doublons, qualité données \n- Auto-génération convention Enedis + clés initiales\
+  \ \n- Submit API Enedis (guichet) → tracking statut SGE \n\nSemaine 4–6 : Négociation\
+  \ fournisseur (batch RFQ) \n- PROMEOS connecte 2–3 fournisseurs complément, RFQ\
+  \ auto \n- Comparative tarif, conditions → PMO choisit \n- Contrat pré-signé en\
+  \ EDI \n\nSemaine 6–8 : Validation Enedis + tests opération \n- Enedis finalise\
+  \ convention (cible 3 sem max, PROMEOS escalade si +) \n- Go-live : test shadow\
+  \ billing 1–2 cycles, puis démarrage officiel \n\nSemaine 8–10 : Go-live & onboarding\
+  \ participants \n- Participants reçoivent 1ère facture ACC \n- Support PROMEOS (chat,\
+  \ wiki intégré) pour questions"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: F.2 – Checkpoints Clés Accélération (PMO/PROMEOS)
+  anchor: '#f2-checkpoints-cls-acclration-pmopromeos'
+  excerpt_short: "Semaine 0–1 : Diagnostic ACC (5 min simulator → TRI, économies prévisionnelles)\
+    \ \n- PDL input → calcu..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

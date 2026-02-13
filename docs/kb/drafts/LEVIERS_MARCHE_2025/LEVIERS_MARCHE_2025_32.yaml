@@ -1,0 +1,41 @@
+id: LEVIERS_MARCHE_2025_32
+type: rule
+domain: acc
+title: '**Features Clés (MVP)**'
+summary: "1. **Wizard ACC** (5 features)\n - Choix statut PMO smart (algo suggère\
+  \ basé secteur)\n - Remplissage données participants (PDL, puissance, coordonnées)\n\
+  \ - Configuration clé répartition (statique par dé..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "1. **Wizard ACC** (5 features)\n - Choix statut PMO smart (algo suggère\
+  \ basé secteur)\n - Remplissage données participants (PDL, puissance, coordonnées)\n\
+  \ - Configuration clé répartition (statique par défaut, explication dynamique)\n\
+  \ - Auto-génération docs juridiques (statuts, contrats, mandats)\n - Submit API\
+  \ Enedis + tracking dossier\n\n2. **Portal Participants** (3 features)\n - Vue personnalisée\
+  \ (conso/prod locale, économies, facture)\n - E-signature documents (onboarding\
+  \ < 5 min)\n - Paiement SEPA (opt-in prélèvement)\n\n3. **Settlement Automatisé**\
+  \ (4 features)\n - Calcul répartition mensuel (clés × courbes Enedis)\n - Facturation\
+  \ interne (PDF, export comptable)\n - Alerts impayés + escalade (SMS, email)\n -\
+  \ Dashboard PMO (KPI, journal transactions)\n\n4. **Data & Conformité** (4 features)\n\
+  \ - Import Enedis multi-sites (API Data Connect)\n - Conformité Décret Tertiaire\
+  \ (tracker objectives, alerts)\n - Conformité BACS (status GTB, checkpoints)\n -\
+  \ Export rapports (OPERAT, CO₂, audit)"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: '**Features Clés (MVP)**'
+  anchor: '#features-cls-mvp'
+  excerpt_short: "1. **Wizard ACC** (5 features)\n - Choix statut PMO smart (algo\
+    \ suggère basé secteur)\n - Remplissage ..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,34 @@
+id: BACS_COMPLET_60
+type: rule
+domain: usages
+title: 1. Score de Conformité BACS Continu
+summary: "- Dashboard “Conformité Décret” : % complétude obligations (audit rapide,\
+  \ TRI justifié, BACS installé, inspection à jour, documentation archivée) \n- KPI\
+  \ rouge/orange/vert par site : conforme / en cour..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Dashboard “Conformité Décret” : % complétude obligations (audit rapide,\
+  \ TRI justifié, BACS installé, inspection à jour, documentation archivée) \n- KPI\
+  \ rouge/orange/vert par site : conforme / en cours / non-conforme \n- Alerte calendrier\
+  \ : “Inspection due dans 6 mois”, “Deadline renouvellement approche”, “TRI exemption\
+  \ expire” \n- Cas d’usage : PM tertiaire gère 50 sites → vision 360° conformité\
+  \ en 1 clic"
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: 1. Score de Conformité BACS Continu
+  anchor: '#1-score-de-conformit-bacs-continu'
+  excerpt_short: '- Dashboard “Conformité Décret” : % complétude obligations (audit
+    rapide, TRI justifié, BACS install...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

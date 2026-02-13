@@ -1,0 +1,46 @@
+id: FLEX_EFFACEMENT_19
+type: rule
+domain: facturation
+title: 3.5 Rémunération & Coûts
+summary: "Montant : Rémunération = engagement capacité × prix enchère + ajustements\
+  \ pluriannuel. \n\nEnchères AL-4 (principal) : Volumes nouveaux capacités ; PPI\
+  \ n’applique (ou limité pour existants). Durée contr..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Montant : Rémunération = engagement capacité × prix enchère + ajustements\
+  \ pluriannuel. \n\nEnchères AL-4 (principal) : Volumes nouveaux capacités ; PPI\
+  \ n’applique (ou limité pour existants). Durée contrats = 1–15 ans selon filière\
+  \ (pluriannuel reducible si investissements). \n\nEnchères AL-1 (ajustement) : Volume\
+  \ réservé flexibilités décarbonées (stockage/effacement). Deux prix clairs : enchère\
+  \ principale + enchère “flexibilités” (réserves prix différencié pour inciter).\
+  \ \n\nPrix : Enchères EPEX-like (descending clock ou pay-as-clear). Prix marginal\
+  \ appliqué tous retenue. Transfrontalières : capacités UE-soutenues intégrées normativement.\
+  \ \n\nPaiement : Post-livraison M+3 initial, régularisation définitive M+18 . Acomptes\
+  \ taxe possibles (financement contributeurs). \n\nPénalités Écarts [Article R. 316-33][artifact:]\
+  \ : \n- Modulation écart individuel OU collectif ; durée contrat. \n- Écart “très\
+  \ faible” (ex. <2%) : pas pénalité ou mineure. \n- Écart “signif.” (ex. >10%) :\
+  \ pénalité croissante, ex. à jour-pointe critique pénalité 10× prix marginal. \n\
+  - Incitations : Dépôt offres “défaillance” hautes (dissuasion), mais si obligation\
+  \ système trop stricte CRE amortit. \n\nRevenues Bruts (Scénario 50 MW existant\
+  \ AL-1) : \n- Prix marginal enchère : ~€35/MW/jour. \n- 50 MW × €35 × 365 j = €639k/an\
+  \ . \n- Moins pénalités écarts si indisponibilité (-5–20%), coûts opération (~10%)\
+  \ = €450–550k net/an ."
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: 3.5 Rémunération & Coûts
+  anchor: '#35-rmunration-cots'
+  excerpt_short: "Montant : Rémunération = engagement capacité × prix enchère + ajustements\
+    \ pluriannuel. \n\nEnchères AL..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,36 @@
+id: ACC_FRANCE_14
+type: knowledge
+domain: acc
+title: 1. Chiffres Clés & Dynamique 2021–2025
+summary: 'Trajectoire observée : 50 51 52 53 54 Période Opérations actives Puissance
+  (MWc) Compteurs Croissance YoY 2021-Q4 77 ~2.4 N/A – 2022-Q4 ~140 ~6.5 ~1,500 +82%
+  ops 2023-Q4 ~300 ~15 ~4,500 +114% ops 2024...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Trajectoire observée : 50 51 52 53 54 Période Opérations actives Puissance\
+  \ (MWc) Compteurs Croissance YoY 2021-Q4 77 ~2.4 N/A – 2022-Q4 ~140 ~6.5 ~1,500\
+  \ +82% ops 2023-Q4 ~300 ~15 ~4,500 +114% ops 2024-Q2 ~500 ~50 ~7,000 (trending)\
+  \ 2024-Q4 698 73.6 8,342 + 233% ops (3 ans) 2025-Q2 ~900+ ~110 ~12,000 +40% ops\
+  \ (à l’année) \n\nObservations : \n- Croissance exponentielle pré-2025 : règle de\
+  \ 70 → doublement ~2.5 ans \n- Accélération visuelle 2024–2025 : arrêté février\
+  \ a déclenché > 200 projets nouveaux en pipeline pré-automne 2025 \n- Ratio PRM/operation\
+  \ : moy. ~11–14 compteurs/projet (bailleurs sociaux : 50–200; ZAC : 20–50)"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: 1. Chiffres Clés & Dynamique 2021–2025
+  anchor: '#1-chiffres-cls-dynamique-20212025'
+  excerpt_short: 'Trajectoire observée : 50 51 52 53 54 Période Opérations actives
+    Puissance (MWc) Compteurs Croissanc...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

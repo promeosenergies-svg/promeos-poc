@@ -1,0 +1,33 @@
+id: ACC_FRANCE_9
+type: knowledge
+domain: reglementaire
+title: 'Pistes de simplification 2026–2030 (données SER/ADEME/CRE): 42 43'
+summary: "- Standardisation modèle convention : un template unique Enedis + guide\
+  \ PMO \n- API DataHub/DataConnect : transmission auto. clés et données \n- Exemption\
+  \ reporting manuel : auto-reporting via plateform..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Standardisation modèle convention : un template unique Enedis + guide\
+  \ PMO \n- API DataHub/DataConnect : transmission auto. clés et données \n- Exemption\
+  \ reporting manuel : auto-reporting via plateforme SaaS \n- E-signature template\
+  \ : consentement RGPD pré-rempli \n- Responsabilité partagée clarifiée : fiche «\
+  \ qui fait quoi » 1 page"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: 'Pistes de simplification 2026–2030 (données SER/ADEME/CRE): 42 43'
+  anchor: '#pistes-de-simplification-20262030-donnes-serademecre-42-43'
+  excerpt_short: "- Standardisation modèle convention : un template unique Enedis\
+    \ + guide PMO \n- API DataHub/DataConne..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

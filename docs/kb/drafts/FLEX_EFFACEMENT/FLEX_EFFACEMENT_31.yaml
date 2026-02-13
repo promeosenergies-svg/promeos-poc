@@ -1,0 +1,29 @@
+id: FLEX_EFFACEMENT_31
+type: knowledge
+domain: facturation
+title: 5.3 Rémunération
+summary: 'Économies autonomes (kWh consommé/stocké à prix <coût moyen) : −€50 à −€300/MWh
+  en pics négatifs (récurrents automne/printemps >30% temps 2024).'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: 'Économies autonomes (kWh consommé/stocké à prix <coût moyen) : −€50 à
+  −€300/MWh en pics négatifs (récurrents automne/printemps >30% temps 2024).'
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: 5.3 Rémunération
+  anchor: '#53-rmunration'
+  excerpt_short: 'Économies autonomes (kWh consommé/stocké à prix <coût moyen) : −€50
+    à −€300/MWh en pics négatifs (ré...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

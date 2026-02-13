@@ -1,20 +1,46 @@
 /**
- * PROMEOS - Actions & Plan (/actions) V3
- * Quick views + SLA + bulk actions + tags + priority P1-P3 + premium table
+ * PROMEOS - Actions & Plan (/actions) V3.1
+ * Default sort (overdue > P1 > due), sticky bulk bar with assign/status,
+ * owner "Non assigne", trust footer scoped, FR copy fixes.
  */
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Plus, Download, Printer, Clock, ListChecks,
+  Plus, Download, Printer, Clock, ListChecks, RefreshCw,
   MessageSquare, Paperclip, AlertTriangle, BadgeEuro, ShieldCheck,
-  Tag, Users, ArrowUpDown,
+  Tag, Users, ArrowUpDown, UserPlus, FileText,
 } from 'lucide-react';
 import { Card, CardBody, Badge, Button, Select, Pagination, EmptyState, Tabs, TrustBadge } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td, ThCheckbox, TdCheckbox } from '../ui';
 import Modal from '../ui/Modal';
 import CreateActionModal from '../components/CreateActionModal';
-import { mockActions } from '../mocks/actions';
+import { getActionsList, syncActions, patchAction, exportActionsCSV, downloadAuditPDF } from '../services/api';
+import { useScope } from '../contexts/ScopeContext';
 import { track } from '../services/tracker';
+
+/* Backend → frontend field mappers */
+const SOURCE_MAP = { compliance: 'conformite', consumption: 'conso', billing: 'facture', purchase: 'maintenance' };
+const STATUS_TO_FE = { open: 'backlog', in_progress: 'in_progress', done: 'done', blocked: 'planned', false_positive: 'done' };
+const STATUS_TO_BE = { backlog: 'open', in_progress: 'in_progress', done: 'done', planned: 'blocked' };
+const PRIO_TO_FE = { 1: 'critical', 2: 'high', 3: 'medium', 4: 'low', 5: 'low' };
+
+function mapBackendAction(a) {
+  return {
+    id: a.id,
+    titre: a.title,
+    type: SOURCE_MAP[a.source_type] || a.source_type,
+    site_id: a.site_id,
+    site_nom: `Site ${a.site_id || '?'}`,
+    impact_eur: a.estimated_gain_eur || 0,
+    effort: a.severity || 'medium',
+    statut: STATUS_TO_FE[a.status] || 'backlog',
+    priorite: PRIO_TO_FE[a.priority] || 'medium',
+    owner: a.owner,
+    due_date: a.due_date,
+    created_at: null,
+    _backend: a,
+  };
+}
 
 const TYPE_BADGE = {
   conformite: { status: 'crit', label: 'Conformite' },
@@ -31,16 +57,18 @@ const PRIORITY_LABEL = {
   critical: 'P1', high: 'P2', medium: 'P3', low: 'P4',
 };
 
+const PRIORITY_RANK = { critical: 4, high: 3, medium: 2, low: 1 };
+
 const STATUT_LABELS = {
-  backlog: 'Backlog', planned: 'Planifie', in_progress: 'En cours', done: 'Termine',
+  backlog: 'Backlog', planned: 'Planifiee', in_progress: 'En cours', done: 'Terminee',
 };
 
 const STATUT_TABS = [
   { id: '', label: 'Toutes' },
   { id: 'backlog', label: 'Backlog' },
-  { id: 'planned', label: 'Planifie' },
+  { id: 'planned', label: 'Planifiee' },
   { id: 'in_progress', label: 'En cours' },
-  { id: 'done', label: 'Termine' },
+  { id: 'done', label: 'Terminee' },
 ];
 
 const TYPE_OPTIONS = [
@@ -50,6 +78,15 @@ const TYPE_OPTIONS = [
   { value: 'facture', label: 'Facture' },
   { value: 'maintenance', label: 'Maintenance' },
 ];
+
+const BULK_STATUS_OPTIONS = [
+  { value: 'backlog', label: 'Backlog' },
+  { value: 'planned', label: 'Planifiee' },
+  { value: 'in_progress', label: 'En cours' },
+  { value: 'done', label: 'Terminee' },
+];
+
+const OWNER_OPTIONS = ['J. Dupont', 'M. Martin', 'S. Bernard', 'A. Leroy', 'C. Moreau'];
 
 const QUICK_VIEWS = [
   { id: 'overdue', label: 'En retard', icon: AlertTriangle, color: 'text-red-600' },
@@ -62,19 +99,77 @@ function isOverdue(action) {
   return new Date(action.due_date) < new Date();
 }
 
+/** Default sort: overdue first, then P1->P4, then earliest due_date */
+function defaultSort(a, b) {
+  const aOver = isOverdue(a) ? 0 : 1;
+  const bOver = isOverdue(b) ? 0 : 1;
+  if (aOver !== bOver) return aOver - bOver;
+  const pa = PRIORITY_RANK[a.priorite] || 0;
+  const pb = PRIORITY_RANK[b.priorite] || 0;
+  if (pa !== pb) return pb - pa;
+  return (a.due_date || '9999').localeCompare(b.due_date || '9999');
+}
+
 export default function ActionsPage() {
   const navigate = useNavigate();
-  const [actions, setActions] = useState(mockActions);
+  const { scopedSites } = useScope();
+  const [actions, setActions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
   const [filterStatut, setFilterStatut] = useState('');
   const [filterType, setFilterType] = useState('');
   const [quickView, setQuickView] = useState('');
   const [page, setPage] = useState(1);
   const [showCreate, setShowCreate] = useState(false);
+  const [createPrefill, setCreatePrefill] = useState(null);
   const [detailAction, setDetailAction] = useState(null);
   const [selected, setSelected] = useState(new Set());
   const [sortCol, setSortCol] = useState('');
   const [sortDir, setSortDir] = useState('');
+  const [showAssign, setShowAssign] = useState(false);
+  const [showBulkStatus, setShowBulkStatus] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
   const pageSize = 15;
+
+  const fetchActions = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await getActionsList();
+      setActions(data.map(mapBackendAction));
+    } catch {
+      /* fallback: keep current state */
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchActions(); }, [fetchActions]);
+
+  async function handleSync() {
+    setSyncing(true);
+    try {
+      await syncActions();
+      await fetchActions();
+      track('action_hub_sync', {});
+    } catch { /* noop */ }
+    setSyncing(false);
+  }
+
+  async function handleDownloadPDF() {
+    setPdfLoading(true);
+    try {
+      const resp = await downloadAuditPDF();
+      const blob = new Blob([resp.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const el = document.createElement('a');
+      el.href = url;
+      el.download = 'audit_promeos.pdf';
+      el.click();
+      URL.revokeObjectURL(url);
+      track('download_audit_pdf', {});
+    } catch { /* noop */ }
+    setPdfLoading(false);
+  }
 
   const filtered = useMemo(() => {
     let result = [...actions];
@@ -92,17 +187,13 @@ export default function ActionsPage() {
       result.sort((a, b) => {
         let va = a[sortCol], vb = b[sortCol];
         if (sortCol === 'priorite') {
-          const rank = { critical: 4, high: 3, medium: 2, low: 1 };
-          va = rank[va] || 0; vb = rank[vb] || 0;
+          va = PRIORITY_RANK[va] || 0; vb = PRIORITY_RANK[vb] || 0;
         }
         if (typeof va === 'number') return sortDir === 'asc' ? va - vb : vb - va;
         return sortDir === 'asc' ? String(va || '').localeCompare(String(vb || '')) : String(vb || '').localeCompare(String(va || ''));
       });
     } else {
-      result.sort((a, b) => {
-        const prio = { critical: 4, high: 3, medium: 2, low: 1 };
-        return (prio[b.priorite] || 0) - (prio[a.priorite] || 0);
-      });
+      result.sort(defaultSort);
     }
     return result;
   }, [actions, filterStatut, filterType, quickView, sortCol, sortDir]);
@@ -141,31 +232,66 @@ export default function ActionsPage() {
     else setSelected(new Set(pageData.map(a => a.id)));
   }
 
-  function bulkChangeStatus(newStatus) {
+  async function bulkChangeStatus(newStatus) {
+    const beStatus = STATUS_TO_BE[newStatus] || newStatus;
+    const ids = [...selected];
+    await Promise.all(ids.map(id => patchAction(id, { status: beStatus }).catch(() => {})));
     setActions(prev => prev.map(a => selected.has(a.id) ? { ...a, statut: newStatus } : a));
     track('bulk_status_change', { count: selected.size, status: newStatus });
     setSelected(new Set());
+    setShowBulkStatus(false);
   }
 
-  function exportPlan30j() {
-    const next30 = actions
-      .filter(a => a.statut !== 'done' && a.due_date)
-      .filter(a => { const d = new Date(a.due_date); const now = new Date(); const diff = (d - now) / 86400000; return diff >= 0 && diff <= 30; })
-      .sort((a, b) => a.due_date.localeCompare(b.due_date));
+  async function bulkAssign(owner) {
+    const ids = [...selected];
+    await Promise.all(ids.map(id => patchAction(id, { owner }).catch(() => {})));
+    setActions(prev => prev.map(a => selected.has(a.id) ? { ...a, owner } : a));
+    track('bulk_assign', { count: selected.size, owner });
+    setSelected(new Set());
+    setShowAssign(false);
+  }
 
-    const header = 'titre,type,site,priorite,echeance,impact_eur,owner,statut';
-    const csv = [header, ...next30.map(a => `"${a.titre}",${a.type},${a.site_nom},${a.priorite},${a.due_date},${a.impact_eur},${a.owner},${a.statut}`)].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const el = document.createElement('a'); el.href = url; el.download = 'plan-30-jours.csv'; el.click();
-    URL.revokeObjectURL(url);
-    track('export_csv', { type: 'plan_30j', rows: next30.length });
+  function handleBulkCreate() {
+    const rows = actions.filter(a => selected.has(a.id));
+    const types = [...new Set(rows.map(r => r.type))];
+    const sites = [...new Set(rows.map(r => r.site_nom))];
+    setCreatePrefill({
+      titre: rows.length === 1 ? rows[0].titre : `Action groupee (${rows.length} items)`,
+      type: types.length === 1 ? types[0] : 'conformite',
+      site: sites.length === 1 ? sites[0] : sites.slice(0, 3).join(', '),
+      description: rows.map(r => `- ${r.titre}`).join('\n'),
+    });
+    setShowCreate(true);
+  }
+
+  async function exportPlan30j() {
+    try {
+      const resp = await exportActionsCSV();
+      const blob = new Blob([resp.data], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const el = document.createElement('a'); el.href = url; el.download = 'actions_promeos.csv'; el.click();
+      URL.revokeObjectURL(url);
+      track('export_csv', { type: 'plan_backend' });
+    } catch {
+      /* fallback client-side */
+      const next30 = actions
+        .filter(a => a.statut !== 'done' && a.due_date)
+        .filter(a => { const d = new Date(a.due_date); const now = new Date(); const diff = (d - now) / 86400000; return diff >= 0 && diff <= 30; })
+        .sort((a, b) => a.due_date.localeCompare(b.due_date));
+      const header = 'titre,type,site,priorite,echeance,impact_eur,owner,statut';
+      const csv = [header, ...next30.map(a => `"${a.titre}",${a.type},${a.site_nom},${a.priorite},${a.due_date},${a.impact_eur},${a.owner || 'Non assigne'},${a.statut}`)].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const el = document.createElement('a'); el.href = url; el.download = 'plan-30-jours.csv'; el.click();
+      URL.revokeObjectURL(url);
+      track('export_csv', { type: 'plan_30j', rows: next30.length });
+    }
   }
 
   function exportSelected() {
     const rows = actions.filter(a => selected.has(a.id));
     const header = 'titre,type,site,priorite,echeance,impact_eur,owner,statut';
-    const csv = [header, ...rows.map(a => `"${a.titre}",${a.type},${a.site_nom},${a.priorite},${a.due_date},${a.impact_eur},${a.owner},${a.statut}`)].join('\n');
+    const csv = [header, ...rows.map(a => `"${a.titre}",${a.type},${a.site_nom},${a.priorite},${a.due_date},${a.impact_eur},${a.owner || 'Non assigne'},${a.statut}`)].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const el = document.createElement('a'); el.href = url; el.download = 'actions-export.csv'; el.click();
@@ -173,20 +299,30 @@ export default function ActionsPage() {
     track('export_csv', { type: 'selected', rows: rows.length });
   }
 
+  const hasUnassigned = [...selected].some(id => { const a = actions.find(x => x.id === id); return a && !a.owner; });
+
   return (
     <div className="px-6 py-6 space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Actions</h2>
+          <h2 className="text-xl font-bold text-gray-900">Plan d'actions</h2>
           <p className="text-sm text-gray-500 mt-0.5">
             {stats.total} actions &middot; {stats.total_impact.toLocaleString()} EUR d'impact total
             {stats.overdue > 0 && <span className="text-red-600 ml-2 font-medium">&middot; {stats.overdue} en retard</span>}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="secondary" size="sm" onClick={exportPlan30j}><Printer size={16} /> Plan 30 jours</Button>
-          <Button onClick={() => setShowCreate(true)}><Plus size={16} /> Creer action</Button>
+          <Button variant="secondary" size="sm" onClick={handleSync} disabled={syncing}>
+            <RefreshCw size={16} className={syncing ? 'animate-spin' : ''} /> {syncing ? 'Sync...' : 'Synchroniser'}
+          </Button>
+          <Button variant="secondary" size="sm" onClick={handleDownloadPDF} disabled={pdfLoading} title="Rapport d'audit PDF complet">
+            <FileText size={16} className={pdfLoading ? 'animate-pulse' : ''} /> {pdfLoading ? 'PDF...' : 'Rapport PDF'}
+          </Button>
+          <Button variant="secondary" size="sm" onClick={exportPlan30j} title="Priorites P1-P2, echeances, owners, export">
+            <Printer size={16} /> Export CSV
+          </Button>
+          <Button onClick={() => { setCreatePrefill(null); setShowCreate(true); }}><Plus size={16} /> Creer action</Button>
         </div>
       </div>
 
@@ -213,9 +349,9 @@ export default function ActionsPage() {
       <div className="grid grid-cols-5 gap-3">
         {[
           { label: 'Backlog', value: stats.backlog, color: 'text-gray-700', bg: 'bg-gray-50' },
-          { label: 'Planifie', value: stats.planned, color: 'text-blue-700', bg: 'bg-blue-50' },
+          { label: 'Planifiee', value: stats.planned, color: 'text-blue-700', bg: 'bg-blue-50' },
           { label: 'En cours', value: stats.in_progress, color: 'text-amber-700', bg: 'bg-amber-50' },
-          { label: 'Termine', value: stats.done, color: 'text-green-700', bg: 'bg-green-50' },
+          { label: 'Terminee', value: stats.done, color: 'text-green-700', bg: 'bg-green-50' },
           { label: 'En retard', value: stats.overdue, color: 'text-red-700', bg: 'bg-red-50' },
         ].map(c => (
           <Card key={c.label}>
@@ -234,27 +370,6 @@ export default function ActionsPage() {
           <Select options={TYPE_OPTIONS} value={filterType} onChange={(e) => { setFilterType(e.target.value); setPage(1); }} />
         </div>
       </div>
-
-      {/* Bulk actions bar */}
-      {selected.size > 0 && (
-        <div className="flex items-center gap-3 px-4 py-2.5 bg-blue-50 border border-blue-200 rounded-lg text-sm">
-          <span className="font-medium text-blue-700">{selected.size} action(s) selectionnee(s)</span>
-          <div className="flex-1" />
-          <Button size="sm" variant="secondary" onClick={() => bulkChangeStatus('planned')}>
-            <ArrowUpDown size={14} /> Planifier
-          </Button>
-          <Button size="sm" variant="secondary" onClick={() => bulkChangeStatus('in_progress')}>
-            <Clock size={14} /> En cours
-          </Button>
-          <Button size="sm" variant="secondary" onClick={() => bulkChangeStatus('done')}>
-            Terminer
-          </Button>
-          <Button size="sm" variant="secondary" onClick={exportSelected}>
-            <Download size={14} /> Exporter
-          </Button>
-          <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>Deselectionner</Button>
-        </div>
-      )}
 
       {/* Table */}
       {total === 0 ? (
@@ -293,16 +408,19 @@ export default function ActionsPage() {
                     <Td><Badge status={typeBadge.status}>{typeBadge.label}</Badge></Td>
                     <Td className="text-sm">{a.site_nom}</Td>
                     <Td>
-                      <span className="flex items-center gap-1">
-                        <Badge status={PRIORITY_BADGE[a.priorite] || 'neutral'}>{PRIORITY_LABEL[a.priorite] || a.priorite}</Badge>
-                      </span>
+                      <Badge status={PRIORITY_BADGE[a.priorite] || 'neutral'}>{PRIORITY_LABEL[a.priorite] || a.priorite}</Badge>
                     </Td>
                     <Td className="text-right font-medium">{a.impact_eur.toLocaleString()} EUR</Td>
                     <Td className={`text-sm whitespace-nowrap ${overdue ? 'text-red-600 font-semibold' : ''}`}>
                       {a.due_date}
-                      {overdue && <span className="ml-1 text-xs bg-red-50 text-red-600 px-1.5 py-0.5 rounded">SLA</span>}
+                      {overdue && <span className="ml-1 text-xs bg-red-50 text-red-600 px-1.5 py-0.5 rounded">En retard</span>}
                     </Td>
-                    <Td className="text-sm">{a.owner || '-'}</Td>
+                    <Td className="text-sm">
+                      {a.owner
+                        ? a.owner
+                        : <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-400 rounded">Non assigne</span>
+                      }
+                    </Td>
                     <Td><span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">{STATUT_LABELS[a.statut]}</span></Td>
                   </Tr>
                 );
@@ -310,14 +428,77 @@ export default function ActionsPage() {
             </Tbody>
           </Table>
           <div className="flex items-center justify-between px-4 py-2 border-t border-gray-100">
-            <TrustBadge source="PROMEOS" period="mise a jour manuelle" confidence="medium" />
+            <TrustBadge
+              source="PROMEOS"
+              period={`perimetre : ${scopedSites.length} sites`}
+              confidence="medium"
+            />
             <Pagination page={page} pageSize={pageSize} total={total} onChange={setPage} />
           </div>
         </Card>
       )}
 
+      {/* Sticky bulk bar */}
+      {selected.size > 0 && (
+        <div className="sticky bottom-4 z-30 flex items-center gap-3 px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl shadow-lg text-sm">
+          <span className="font-semibold text-blue-700">{selected.size} selectionnee(s)</span>
+          <div className="flex-1" />
+          <Button size="sm" variant="secondary" onClick={() => setShowAssign(true)}>
+            <UserPlus size={14} /> Assigner{hasUnassigned ? ' *' : ''}
+          </Button>
+          <Button size="sm" variant="secondary" onClick={() => setShowBulkStatus(true)}>
+            <ArrowUpDown size={14} /> Changer statut
+          </Button>
+          <Button size="sm" variant="secondary" onClick={handleBulkCreate}>
+            <Plus size={14} /> Creer action
+          </Button>
+          <Button size="sm" variant="secondary" onClick={exportSelected}>
+            <Download size={14} /> Exporter
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>Deselectionner</Button>
+        </div>
+      )}
+
       {/* Create Modal */}
-      <CreateActionModal open={showCreate} onClose={() => setShowCreate(false)} onSave={handleSaveAction} />
+      <CreateActionModal
+        open={showCreate}
+        onClose={() => { setShowCreate(false); setCreatePrefill(null); }}
+        onSave={handleSaveAction}
+        prefill={createPrefill}
+      />
+
+      {/* Assign Modal */}
+      <Modal open={showAssign} onClose={() => setShowAssign(false)} title="Assigner un responsable">
+        <div className="space-y-2">
+          <p className="text-sm text-gray-600">{selected.size} action(s) selectionnee(s)</p>
+          {OWNER_OPTIONS.map(owner => (
+            <button
+              key={owner}
+              onClick={() => bulkAssign(owner)}
+              className="w-full text-left px-4 py-2.5 rounded-lg hover:bg-blue-50 text-sm font-medium text-gray-700 transition"
+            >
+              <Users size={14} className="inline mr-2 text-gray-400" />
+              {owner}
+            </button>
+          ))}
+        </div>
+      </Modal>
+
+      {/* Bulk Status Modal */}
+      <Modal open={showBulkStatus} onClose={() => setShowBulkStatus(false)} title="Changer le statut">
+        <div className="space-y-2">
+          <p className="text-sm text-gray-600">{selected.size} action(s) selectionnee(s)</p>
+          {BULK_STATUS_OPTIONS.map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => bulkChangeStatus(opt.value)}
+              className="w-full text-left px-4 py-2.5 rounded-lg hover:bg-blue-50 text-sm font-medium text-gray-700 transition"
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </Modal>
 
       {/* Detail Modal */}
       <Modal open={!!detailAction} onClose={() => setDetailAction(null)} title={detailAction?.titre || 'Detail'} wide>
@@ -338,14 +519,22 @@ export default function ActionsPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs text-gray-500">Echeance (SLA)</p>
+                <p className="text-xs text-gray-500">Echeance</p>
                 <p className={`text-sm flex items-center gap-1 ${isOverdue(detailAction) ? 'text-red-600 font-semibold' : ''}`}>
                   <Clock size={14} /> {detailAction.due_date}
-                  {isOverdue(detailAction) && <span className="text-xs bg-red-50 text-red-600 px-1.5 py-0.5 rounded ml-1">EN RETARD</span>}
+                  {isOverdue(detailAction) && <span className="text-xs bg-red-50 text-red-600 px-1.5 py-0.5 rounded ml-1">En retard</span>}
                 </p>
               </div>
               <div><p className="text-xs text-gray-500">Responsable</p><p className="text-sm">{detailAction.owner || 'Non assigne'}</p></div>
             </div>
+
+            {/* Obligation link */}
+            {detailAction.obligation_code && (
+              <div className="p-3 bg-blue-50 rounded-lg text-sm">
+                <p className="text-xs font-semibold text-blue-600 uppercase mb-1">Obligation liee</p>
+                <p className="text-blue-800">{detailAction.obligation_code}</p>
+              </div>
+            )}
 
             {/* Tags */}
             <div className="flex items-center gap-2">

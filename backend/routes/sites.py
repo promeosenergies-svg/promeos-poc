@@ -7,6 +7,8 @@ from database import get_db
 from models import Site, Compteur, Alerte, Consommation, Obligation, Evidence, Batiment, StatutConformite, StatutEvidence, TypeObligation
 from routes.schemas import SiteResponse, SiteListResponse, SiteStats, SiteComplianceResponse, BatimentResponse
 from services.compliance_engine import compute_action_recommandee, _ACTION_TEMPLATES
+from middleware.auth import get_optional_auth, AuthContext
+from services.iam_scope import check_site_access, apply_scope_filter
 from pydantic import BaseModel
 from typing import List, Optional
 from sqlalchemy import func
@@ -73,13 +75,18 @@ def get_sites(
     limit: int = 100,
     ville: Optional[str] = None,
     type: Optional[str] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """
     Liste tous les sites PROMEOS avec pagination et filtres
     """
     query = db.query(Site)
-    
+
+    # Scope filtering
+    if auth and auth.site_ids is not None:
+        query = query.filter(Site.id.in_(auth.site_ids))
+
     # Filtres
     if ville:
         query = query.filter(Site.ville.ilike(f"%{ville}%"))
@@ -95,10 +102,11 @@ def get_sites(
     }
 
 @router.get("/{site_id}", response_model=SiteResponse)
-def get_site(site_id: int, db: Session = Depends(get_db)):
+def get_site(site_id: int, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
     """
     Récupère les détails d'un site spécifique
     """
+    check_site_access(auth, site_id)
     site = db.query(Site).filter(Site.id == site_id).first()
     
     if not site:
@@ -107,15 +115,16 @@ def get_site(site_id: int, db: Session = Depends(get_db)):
     return site
 
 @router.get("/{site_id}/stats", response_model=SiteStats)
-def get_site_stats(site_id: int, db: Session = Depends(get_db)):
+def get_site_stats(site_id: int, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
     """
     Statistiques d'un site
     """
+    check_site_access(auth, site_id)
     site = db.query(Site).filter(Site.id == site_id).first()
-    
+
     if not site:
         raise HTTPException(status_code=404, detail="Site non trouvé")
-    
+
     # Nombre de compteurs
     nb_compteurs = db.query(Compteur).filter(Compteur.site_id == site_id).count()
     
@@ -145,10 +154,11 @@ def get_site_stats(site_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/{site_id}/compliance", response_model=SiteComplianceResponse)
-def get_site_compliance(site_id: int, db: Session = Depends(get_db)):
+def get_site_compliance(site_id: int, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
     """
     Conformité détaillée d'un site : obligations, evidences, explications et actions.
     """
+    check_site_access(auth, site_id)
     site = db.query(Site).filter(Site.id == site_id).first()
     if not site:
         raise HTTPException(status_code=404, detail="Site non trouvé")
@@ -214,10 +224,11 @@ def get_site_compliance(site_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/{site_id}/guardrails")
-def get_site_guardrails(site_id: int, db: Session = Depends(get_db)):
+def get_site_guardrails(site_id: int, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
     """
     Regles de validation (guardrails) pour un site.
     """
+    check_site_access(auth, site_id)
     from services.guardrails import validate_site
     site = db.query(Site).filter(Site.id == site_id).first()
     if not site:

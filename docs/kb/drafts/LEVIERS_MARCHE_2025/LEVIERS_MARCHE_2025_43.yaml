@@ -1,0 +1,36 @@
+id: LEVIERS_MARCHE_2025_43
+type: knowledge
+domain: reglementaire
+title: 'Q3 : Design Process + Produit → 12–24 mois → 3–6 mois'
+summary: "Phases optimisées (10–20 sem vs 30–54 sem) : \n- Diagnostic auto (1–2 sem\
+  \ vs 4–8) : simulator 5 min \n- Montage PMO (2–4 sem vs 8–12) : template SaaS wizard\
+  \ \n- Recrutement (2–4 sem vs 6–12) : portal aut..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Phases optimisées (10–20 sem vs 30–54 sem) : \n- Diagnostic auto (1–2\
+  \ sem vs 4–8) : simulator 5 min \n- Montage PMO (2–4 sem vs 8–12) : template SaaS\
+  \ wizard \n- Recrutement (2–4 sem vs 6–12) : portal auto-invite + e-sig \n- Fournisseur\
+  \ (1 sem vs 2–4) : connecteur RFQ batch \n- Dossier Enedis (1 sem vs 4–8) : checker\
+  \ API + auto-generation \n- Validation Enedis (2–3 sem vs 4–6) : suivi SGE real-time\
+  \ + escalade \n- Tests & démarrage (1 sem vs 2–4) : shadow testing 1 cycle \n\n\
+  Checkpoints clés : Simulator diagnosis S0, PMO wizard S1–2, participant signup S2–3,\
+  \ Enedis submit S4, fournisseur locked S5, go-live S8–10."
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: 'Q3 : Design Process + Produit → 12–24 mois → 3–6 mois'
+  anchor: '#q3-design-process-produit-1224-mois-36-mois'
+  excerpt_short: "Phases optimisées (10–20 sem vs 30–54 sem) : \n- Diagnostic auto\
+    \ (1–2 sem vs 4–8) : simulator 5 min \n..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

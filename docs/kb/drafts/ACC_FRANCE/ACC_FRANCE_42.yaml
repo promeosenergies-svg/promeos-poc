@@ -1,0 +1,33 @@
+id: ACC_FRANCE_42
+type: knowledge
+domain: acc
+title: 'Blanc 3 : Flex/arbitrage implicite < 1 MW'
+summary: "- Gap : Bohr/Animergy = agrégateurs (service boutique, >5 projets min).\
+  \ <5 projets = pas attractive. Petit ACC orphelin sur prix négatifs \n- PROMEOS\
+  \ opportunité : low-touch “flex dashboard” (prix spot..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Gap : Bohr/Animergy = agrégateurs (service boutique, >5 projets min).\
+  \ <5 projets = pas attractive. Petit ACC orphelin sur prix négatifs \n- PROMEOS\
+  \ opportunité : low-touch “flex dashboard” (prix spot alerts + reco) dans module\
+  \ Optim. Auto-connect IRVE/EMS para pilotage semi-auto \n- Win : 10–20 petits ACC\
+  \ + flex = collectively “big” aggregation, avec PROMEOS comme platform"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: 'Blanc 3 : Flex/arbitrage implicite < 1 MW'
+  anchor: '#blanc-3-flexarbitrage-implicite-1-mw'
+  excerpt_short: '- Gap : Bohr/Animergy = agrégateurs (service boutique, >5 projets
+    min). <5 projets = pas attractive....'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

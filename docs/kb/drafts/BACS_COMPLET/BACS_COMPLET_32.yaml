@@ -1,0 +1,43 @@
+id: BACS_COMPLET_32
+type: rule
+domain: reglementaire
+title: Assujettissement & calendrier
+summary: '- ⬜ Seuil > 290 kW → Deadline 01/01/2025 (URGENCE 2025)
+
+  - ⬜ Seuil > 70 kW + bâtiment neuf post-08/04/2024 → OBLIGATION BACS (néo pas exemption
+  TRI)
+
+  - ⬜ Seuil > 70 kW + existant renouvellement post-09/...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: '- ⬜ Seuil > 290 kW → Deadline 01/01/2025 (URGENCE 2025)
+
+  - ⬜ Seuil > 70 kW + bâtiment neuf post-08/04/2024 → OBLIGATION BACS (néo pas exemption
+  TRI)
+
+  - ⬜ Seuil > 70 kW + existant renouvellement post-09/04/2023 → OBLIGATION BACS au
+  renouvellement
+
+  - ⬜ Seuil > 70 kW + existant sans renouvellement → Deadline 01/01/2030 (report)
+
+  - ⬜ Responsable obligé identifié (propriétaire équip ou locataire ?)'
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: Assujettissement & calendrier
+  anchor: '#assujettissement-calendrier'
+  excerpt_short: '- ⬜ Seuil > 290 kW → Deadline 01/01/2025 (URGENCE 2025)
+
+    - ⬜ Seuil > 70 kW + bâtiment neuf post-08/04...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

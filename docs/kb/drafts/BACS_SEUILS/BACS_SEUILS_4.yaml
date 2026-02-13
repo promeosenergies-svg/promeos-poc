@@ -1,0 +1,29 @@
+id: BACS_SEUILS_4
+type: rule
+domain: reglementaire
+title: Modification du seuil en 2023
+summary: Le Décret n° 2023-259 a relevé le seuil d’exemption de 6 ans à 10 ans . Décret
+  initial (2020) Décret modifié (2023) TRI < 6 ans TRI < 10 ans
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: Le Décret n° 2023-259 a relevé le seuil d’exemption de 6 ans à 10 ans
+  . Décret initial (2020) Décret modifié (2023) TRI < 6 ans TRI < 10 ans
+logic: null
+sources:
+- doc_id: BACS_SEUILS
+  label: Decret BACS - Seuils, dates, exemptions
+  section: Modification du seuil en 2023
+  anchor: '#modification-du-seuil-en-2023'
+  excerpt_short: Le Décret n° 2023-259 a relevé le seuil d’exemption de 6 ans à 10
+    ans . Décret initial (2020) Décret...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

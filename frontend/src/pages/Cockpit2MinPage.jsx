@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Shield, AlertTriangle, Zap, ArrowRight, RefreshCw,
-  CheckCircle, XCircle, Clock, Plus,
+  CheckCircle, XCircle, Clock, Plus, ShoppingCart,
 } from 'lucide-react';
 import { getDashboard2min } from '../services/api';
 
@@ -122,6 +122,23 @@ function Cockpit2MinPage({ onUpgradeClick }) {
               <span className="font-medium text-red-600">{conf?.non_conformes}</span>
             </div>
           </div>
+          {/* V9: Workflow stats */}
+          {data.findings_summary?.workflow && (
+            <div className="flex gap-3 mt-3 pt-3 border-t border-gray-200 text-xs text-gray-500">
+              <span className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                {data.findings_summary.workflow.open} a traiter
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                {data.findings_summary.workflow.ack} en cours
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                {data.findings_summary.workflow.resolved} resolus
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Block 2: Pertes estimees */}
@@ -185,6 +202,58 @@ function Cockpit2MinPage({ onUpgradeClick }) {
           </Link>
         </div>
       </div>
+
+      {/* Achat Energie bloc (if data available) */}
+      {data.achat && data.achat.recommendation && (
+        <div className="rounded-xl border-2 border-indigo-200 bg-indigo-50 p-5 mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <ShoppingCart size={22} className="text-indigo-600" />
+            <h2 className="font-semibold text-gray-800">Achat Energie</h2>
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">
+                Strategie recommandee: <span className="font-semibold text-indigo-700 capitalize">{data.achat.recommendation.strategy}</span>
+              </p>
+              <p className="text-2xl font-bold text-indigo-700 mt-1">
+                {data.achat.recommendation.price_eur_per_kwh?.toFixed(4)} EUR/kWh
+              </p>
+              <div className="flex gap-4 mt-2 text-xs text-gray-500">
+                <span>Cout annuel: {Math.round(data.achat.recommendation.total_annual_eur).toLocaleString()} EUR</span>
+                {data.achat.recommendation.savings_vs_current_pct > 0 && (
+                  <span className="text-green-600 font-medium">
+                    -{data.achat.recommendation.savings_vs_current_pct}% vs actuel
+                  </span>
+                )}
+                <span>Risque: {data.achat.recommendation.risk_score}/100</span>
+              </div>
+            </div>
+            <Link to="/achat-energie"
+              className="inline-flex items-center gap-1 text-sm text-indigo-600 hover:text-indigo-800 font-medium shrink-0">
+              Voir les scenarios <ArrowRight size={14} />
+            </Link>
+          </div>
+          {/* V1.1: Gain potentiel + Prochain renouvellement */}
+          {(data.achat.gain_potentiel_eur > 0 || data.achat.prochain_renouvellement) && (
+            <div className="flex flex-wrap gap-4 mt-3 pt-3 border-t border-indigo-200 text-xs text-gray-600">
+              {data.achat.gain_potentiel_eur > 0 && (
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-green-500" />
+                  Gain potentiel: <span className="font-semibold text-green-700">{Math.round(data.achat.gain_potentiel_eur).toLocaleString()} EUR</span>
+                </span>
+              )}
+              {data.achat.prochain_renouvellement && (
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-orange-500" />
+                  Prochain renouvellement: <span className="font-semibold text-orange-700">
+                    {data.achat.prochain_renouvellement.site_nom} — {data.achat.prochain_renouvellement.end_date} ({data.achat.prochain_renouvellement.days_remaining}j)
+                  </span>
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Completude bar */}
       <CompletudeBadge completude={data.completude} />

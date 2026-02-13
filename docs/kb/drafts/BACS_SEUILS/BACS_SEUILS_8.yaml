@@ -1,0 +1,35 @@
+id: BACS_SEUILS_8
+type: rule
+domain: usages
+title: Contenu obligatoire de l’inspection 8
+summary: "- Examen documentaire — Vérification de l’analyse fonctionnelle du système.\
+  \ \n- Vérification sur site — Bon fonctionnement du BACS et des systèmes reliés.\
+  \ \n- Paramétrage — Évaluation du respect des exi..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Examen documentaire — Vérification de l’analyse fonctionnelle du système.\
+  \ \n- Vérification sur site — Bon fonctionnement du BACS et des systèmes reliés.\
+  \ \n- Paramétrage — Évaluation du respect des exigences de l’article R.175-3 et\
+  \ pertinence des réglages par rapport à l’usage du bâtiment. \n- Recommandations\
+  \ — Portant sur : \n- Bon usage du système en place \n- Améliorations possibles\
+  \ de l’installation globale \n- Intérêt éventuel du remplacement \n- Autres solutions\
+  \ envisageables"
+logic: null
+sources:
+- doc_id: BACS_SEUILS
+  label: Decret BACS - Seuils, dates, exemptions
+  section: Contenu obligatoire de l’inspection 8
+  anchor: '#contenu-obligatoire-de-linspection-8'
+  excerpt_short: "- Examen documentaire — Vérification de l’analyse fonctionnelle\
+    \ du système. \n- Vérification sur site..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

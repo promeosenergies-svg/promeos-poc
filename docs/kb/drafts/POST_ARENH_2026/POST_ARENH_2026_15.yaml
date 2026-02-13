@@ -1,0 +1,32 @@
+id: POST_ARENH_2026_15
+type: rule
+domain: reglementaire
+title: État de Déploiement
+summary: Dès l’automne 2024, cinq CAPN avaient été signés, représentant plus de 10
+  TWh annuels. Environ 20 autres étaient en phase de négociation. Le déploiement s’effectuera
+  progressivement au cours du premie...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: Dès l’automne 2024, cinq CAPN avaient été signés, représentant plus de
+  10 TWh annuels. Environ 20 autres étaient en phase de négociation. Le déploiement
+  s’effectuera progressivement au cours du premier semestre 2025, avec mise en application
+  officielle au 1er janvier 2026. 34
+logic: null
+sources:
+- doc_id: POST_ARENH_2026
+  label: Post-ARENH 2026
+  section: État de Déploiement
+  anchor: '#tat-de-dploiement'
+  excerpt_short: Dès l’automne 2024, cinq CAPN avaient été signés, représentant plus
+    de 10 TWh annuels. Environ 20 au...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

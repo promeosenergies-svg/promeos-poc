@@ -1,0 +1,35 @@
+id: POST_ARENH_2026_23
+type: knowledge
+domain: facturation
+title: Complexité Opérationnelle
+summary: "Le système de guichets de compensation, de régularisations, et de révisions\
+  \ (notamment rétroactives) introduit une complexité administrative importante :\
+  \ \n- Les fournisseurs doivent maintenir des proc..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Le système de guichets de compensation, de régularisations, et de révisions\
+  \ (notamment rétroactives) introduit une complexité administrative importante :\
+  \ \n- Les fournisseurs doivent maintenir des procédures de déclaration mensuelle\
+  \ et annuelles; \n- Les régularisations rétroactives, bien que limitées, demandent\
+  \ aux fournisseurs de facturer rétroactivement des montants à leurs clients; \n\
+  - La période d’application non-annuelle (avril-octobre) crée des frictions lors\
+  \ de changements de fournisseurs."
+logic: null
+sources:
+- doc_id: POST_ARENH_2026
+  label: Post-ARENH 2026
+  section: Complexité Opérationnelle
+  anchor: '#complexit-oprationnelle'
+  excerpt_short: Le système de guichets de compensation, de régularisations, et de
+    révisions (notamment rétroactives)...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

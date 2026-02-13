@@ -1,0 +1,33 @@
+id: FLEX_EFFACEMENT_14
+type: knowledge
+domain: reglementaire
+title: 2.7 Stacking & Cumul
+summary: "✅ Possible simultanément : \n- FCR + aFRR : Oui (réglages indépendants,\
+  \ offres parallèles). \n- aFRR + mFRR : Oui (activations séquentielles : primaire\
+  \ > secondaire > tertiaires). \n- mFRR + MA (ajusteme..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "✅ Possible simultanément : \n- FCR + aFRR : Oui (réglages indépendants,\
+  \ offres parallèles). \n- aFRR + mFRR : Oui (activations séquentielles : primaire\
+  \ > secondaire > tertiaires). \n- mFRR + MA (ajustement) : Oui (préséance réserves\
+  \ contractées > offres MA). \n- Réserves + NEBEF : Oui si non-conflits horaires\
+  \ (coordination déclaration)."
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: 2.7 Stacking & Cumul
+  anchor: '#27-stacking-cumul'
+  excerpt_short: "✅ Possible simultanément : \n- FCR + aFRR : Oui (réglages indépendants,\
+    \ offres parallèles). \n- aFRR +..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

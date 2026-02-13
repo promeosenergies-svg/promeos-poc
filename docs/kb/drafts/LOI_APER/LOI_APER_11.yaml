@@ -1,0 +1,40 @@
+id: LOI_APER_11
+type: rule
+domain: acc
+title: 'PHASE 3 : ÉTUDES DÉTAILLÉES & AUTORISATIONS (Semaines 8-20)'
+summary: "3.1 Urbanisme & Foncier \n- Demande permis construire / déclaration préalable\
+  \ (délai : 2 mois instruction) \n- Avis architecte des bâtiments de France (si patrimoine)\
+  \ \n- Accord propriétaire/usufruitier ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "3.1 Urbanisme & Foncier \n- Demande permis construire / déclaration préalable\
+  \ (délai : 2 mois instruction) \n- Avis architecte des bâtiments de France (si patrimoine)\
+  \ \n- Accord propriétaire/usufruitier (si location) \n- Convention servitude (si\
+  \ ombrières affectent tiers) \n\n3.2 Schéma raccordement réseau \n- Demande auprès\
+  \ GRD (Enedis ou ELD) \n- Étude faisabilité raccordement \n- Devis infrastructure\
+  \ (frais de raccordement ; délai) \n- Signature convention raccordement GRD \n\n\
+  3.3 Contrôles & Certifications \n- Étude d’impact environnemental (si >1MW ou zone\
+  \ sensible) \n- Attestation conformité sécurité électrique (Consuel) \n- Déclaration\
+  \ ICPE (si >250kW ; installation classée) \n\n3.4 Contrats & Financement \n- Contrats\
+  \ producteur-consommateurs (si ACC) \n- Contrat achat surplus (obligation d’achat\
+  \ ou PPA) \n- Contrat tiers-financement (si locationoff ombrières) \n- Montage financement\
+  \ (crédit, subventions ADEME/région, CEE)"
+logic: null
+sources:
+- doc_id: LOI_APER
+  label: Loi APER - Acceleration Production Energies Renouvelables
+  section: 'PHASE 3 : ÉTUDES DÉTAILLÉES & AUTORISATIONS (Semaines 8-20)'
+  anchor: '#phase-3-tudes-dtailles-autorisations-semaines-8-20'
+  excerpt_short: "3.1 Urbanisme & Foncier \n- Demande permis construire / déclaration\
+    \ préalable (délai : 2 mois instruc..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

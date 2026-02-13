@@ -1,0 +1,31 @@
+id: STRATEGIE_NEBCO_18
+type: knowledge
+domain: reglementaire
+title: Partenaires Must-Have
+summary: "- OE opérateur (Energy Pool, Enerdigit) : Contractualisation RTE, M&V cert.,\
+  \ risk bearing \n- Advizeo cockpit : EMS/BMS monitoring, data integration \n- Installateur\
+  \ IoT (si needed) : Pose sous-compteur..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- OE opérateur (Energy Pool, Enerdigit) : Contractualisation RTE, M&V\
+  \ cert., risk bearing \n- Advizeo cockpit : EMS/BMS monitoring, data integration\
+  \ \n- Installateur IoT (si needed) : Pose sous-compteurs"
+logic: null
+sources:
+- doc_id: STRATEGIE_NEBCO
+  label: Analyse strategique NEBCO
+  section: Partenaires Must-Have
+  anchor: '#partenaires-must-have'
+  excerpt_short: "- OE opérateur (Energy Pool, Enerdigit) : Contractualisation RTE,\
+    \ M&V cert., risk bearing \n- Advizeo..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

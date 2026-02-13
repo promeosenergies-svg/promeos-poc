@@ -1,0 +1,714 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><title>Post-ARENH 2026</title><style>
+/* cspell:disable-file */
+/* webkit printing magic: print all background colors */
+html {
+	-webkit-print-color-adjust: exact;
+}
+* {
+	box-sizing: border-box;
+	-webkit-print-color-adjust: exact;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+}
+@media only screen {
+	body {
+		margin: 2em auto;
+		max-width: 900px;
+		color: rgb(55, 53, 47);
+	}
+}
+
+body {
+	line-height: 1.5;
+	white-space: pre-wrap;
+}
+
+a,
+a.visited {
+	color: inherit;
+	text-decoration: underline;
+}
+
+.pdf-relative-link-path {
+	font-size: 80%;
+	color: #444;
+}
+
+h1,
+h2,
+h3 {
+	letter-spacing: -0.01em;
+	line-height: 1.2;
+	font-weight: 600;
+	margin-bottom: 0;
+}
+
+/* Override strong tags inside headings to maintain consistent weight */
+h1 strong,
+h2 strong,
+h3 strong {
+	font-weight: 600;
+}
+
+.page-title {
+	font-size: 2.5rem;
+	font-weight: 700;
+	margin-top: 0;
+	margin-bottom: 0.75em;
+}
+
+h1 {
+	font-size: 1.875rem;
+	margin-top: 1.875rem;
+}
+
+h2 {
+	font-size: 1.5rem;
+	margin-top: 1.5rem;
+}
+
+h3 {
+	font-size: 1.25rem;
+	margin-top: 1.25rem;
+}
+
+.source {
+	border: 1px solid #ddd;
+	border-radius: 3px;
+	padding: 1.5em;
+	word-break: break-all;
+}
+
+.callout {
+	border-radius: 10px;
+	padding: 1rem;
+}
+
+figure {
+	margin: 1.25em 0;
+	page-break-inside: avoid;
+}
+
+figcaption {
+	opacity: 0.5;
+	font-size: 85%;
+	margin-top: 0.5em;
+}
+
+mark {
+	background-color: transparent;
+}
+
+.indented {
+	padding-left: 1.5em;
+}
+
+hr {
+	background: transparent;
+	display: block;
+	width: 100%;
+	height: 1px;
+	visibility: visible;
+	border: none;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.09);
+}
+
+img {
+	max-width: 100%;
+}
+
+@media only print {
+	img {
+		max-height: 100vh;
+		object-fit: contain;
+	}
+}
+
+@page {
+	margin: 1in;
+}
+
+.collection-content {
+	font-size: 0.875rem;
+}
+
+.collection-content td {
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.column-list {
+	display: flex;
+	justify-content: space-between;
+}
+
+.column {
+	padding: 0 1em;
+}
+
+.column:first-child {
+	padding-left: 0;
+}
+
+.column:last-child {
+	padding-right: 0;
+}
+
+.table_of_contents-item {
+	display: block;
+	font-size: 0.875rem;
+	line-height: 1.3;
+	padding: 0.125rem;
+}
+
+.table_of_contents-indent-1 {
+	margin-left: 1.5rem;
+}
+
+.table_of_contents-indent-2 {
+	margin-left: 3rem;
+}
+
+.table_of_contents-indent-3 {
+	margin-left: 4.5rem;
+}
+
+.table_of_contents-link {
+	text-decoration: none;
+	opacity: 0.7;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.18);
+}
+
+table,
+th,
+td {
+	border: 1px solid rgba(55, 53, 47, 0.09);
+	border-collapse: collapse;
+}
+
+table {
+	border-left: none;
+	border-right: none;
+}
+
+th,
+td {
+	font-weight: normal;
+	padding: 0.25em 0.5em;
+	line-height: 1.5;
+	min-height: 1.5em;
+	text-align: left;
+}
+
+th {
+	color: rgba(55, 53, 47, 0.6);
+}
+
+ol,
+ul {
+	margin: 0;
+	margin-block-start: 0.6em;
+	margin-block-end: 0.6em;
+}
+
+li > ol:first-child,
+li > ul:first-child {
+	margin-block-start: 0.6em;
+}
+
+ul > li {
+	list-style: disc;
+}
+
+ul.to-do-list {
+	padding-inline-start: 0;
+}
+
+ul.to-do-list > li {
+	list-style: none;
+}
+
+.to-do-children-checked {
+	text-decoration: line-through;
+	opacity: 0.375;
+}
+
+ul.toggle > li {
+	list-style: none;
+}
+
+ul {
+	padding-inline-start: 1.7em;
+}
+
+ul > li {
+	padding-left: 0.1em;
+}
+
+ol {
+	padding-inline-start: 1.6em;
+}
+
+ol > li {
+	padding-left: 0.2em;
+}
+
+.mono ol {
+	padding-inline-start: 2em;
+}
+
+.mono ol > li {
+	text-indent: -0.4em;
+}
+
+.toggle {
+	padding-inline-start: 0em;
+	list-style-type: none;
+}
+
+/* Indent toggle children */
+.toggle > li > details {
+	padding-left: 1.7em;
+}
+
+.toggle > li > details > summary {
+	margin-left: -1.1em;
+}
+
+.selected-value {
+	display: inline-block;
+	padding: 0 0.5em;
+	background: rgba(206, 205, 202, 0.5);
+	border-radius: 3px;
+	margin-right: 0.5em;
+	margin-top: 0.3em;
+	margin-bottom: 0.3em;
+	white-space: nowrap;
+}
+
+.collection-title {
+	display: inline-block;
+	margin-right: 1em;
+}
+
+.page-description {
+	margin-bottom: 2em;
+}
+
+.simple-table {
+	margin-top: 1em;
+	font-size: 0.875rem;
+	empty-cells: show;
+}
+.simple-table td {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table th {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table-header-color {
+	background: rgb(247, 246, 243);
+	color: black;
+}
+.simple-table-header {
+	font-weight: 500;
+}
+
+time {
+	opacity: 0.5;
+}
+
+.icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	max-width: 1.2em;
+	max-height: 1.2em;
+	text-decoration: none;
+	vertical-align: text-bottom;
+	margin-right: 0.5em;
+}
+
+img.icon {
+	border-radius: 3px;
+}
+
+.callout img.notion-static-icon {
+	width: 1em;
+	height: 1em;
+}
+
+.callout p {
+	margin: 0;
+}
+
+.callout h1,
+.callout h2,
+.callout h3 {
+	margin: 0 0 0.6rem;
+}
+
+.user-icon {
+	width: 1.5em;
+	height: 1.5em;
+	border-radius: 100%;
+	margin-right: 0.5rem;
+}
+
+.user-icon-inner {
+	font-size: 0.8em;
+}
+
+.text-icon {
+	border: 1px solid #000;
+	text-align: center;
+}
+
+.page-cover-image {
+	display: block;
+	object-fit: cover;
+	width: 100%;
+	max-height: 30vh;
+}
+
+.page-header-icon {
+	font-size: 3rem;
+	margin-bottom: 1rem;
+}
+
+.page-header-icon-with-cover {
+	margin-top: -0.72em;
+	margin-left: 0.07em;
+}
+
+.page-header-icon img {
+	border-radius: 3px;
+}
+
+.link-to-page {
+	margin: 1em 0;
+	padding: 0;
+	border: none;
+	font-weight: 500;
+}
+
+p > .user {
+	opacity: 0.5;
+}
+
+td > .user,
+td > time {
+	white-space: nowrap;
+}
+
+input[type="checkbox"] {
+	transform: scale(1.5);
+	margin-right: 0.6em;
+	vertical-align: middle;
+}
+
+p {
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+}
+
+.image {
+	border: none;
+	margin: 1.5em 0;
+	padding: 0;
+	border-radius: 0;
+	text-align: center;
+}
+
+.code,
+code {
+	background: rgba(135, 131, 120, 0.15);
+	border-radius: 3px;
+	padding: 0.2em 0.4em;
+	border-radius: 3px;
+	font-size: 85%;
+	tab-size: 2;
+}
+
+code {
+	color: #eb5757;
+}
+
+.code {
+	padding: 1.5em 1em;
+}
+
+.code-wrap {
+	white-space: pre-wrap;
+	word-break: break-all;
+}
+
+.code > code {
+	background: none;
+	padding: 0;
+	font-size: 100%;
+	color: inherit;
+}
+
+blockquote {
+	font-size: 1em;
+	margin: 1em 0;
+	padding-left: 1em;
+	border-left: 3px solid rgb(55, 53, 47);
+}
+
+blockquote.quote-large {
+	font-size: 1.25em;
+}
+
+.bookmark {
+	text-decoration: none;
+	max-height: 8em;
+	padding: 0;
+	display: flex;
+	width: 100%;
+	align-items: stretch;
+}
+
+.bookmark-title {
+	font-size: 0.85em;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	height: 1.75em;
+	white-space: nowrap;
+}
+
+.bookmark-text {
+	display: flex;
+	flex-direction: column;
+}
+
+.bookmark-info {
+	flex: 4 1 180px;
+	padding: 12px 14px 14px;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+}
+
+.bookmark-image {
+	width: 33%;
+	flex: 1 1 180px;
+	display: block;
+	position: relative;
+	object-fit: cover;
+	border-radius: 1px;
+}
+
+.bookmark-description {
+	color: rgba(55, 53, 47, 0.6);
+	font-size: 0.75em;
+	overflow: hidden;
+	max-height: 4.5em;
+	word-break: break-word;
+}
+
+.bookmark-href {
+	font-size: 0.75em;
+	margin-top: 0.25em;
+}
+
+.sans { font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"; }
+.code { font-family: "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace; }
+.serif { font-family: Lyon-Text, Georgia, ui-serif, serif; }
+.mono { font-family: iawriter-mono, Nitti, Menlo, Courier, monospace; }
+.pdf .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK JP'; }
+.pdf:lang(zh-CN) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK SC'; }
+.pdf:lang(zh-TW) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK TC'; }
+.pdf:lang(ko-KR) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK KR'; }
+.pdf .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.pdf .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK JP'; }
+.pdf:lang(zh-CN) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK SC'; }
+.pdf:lang(zh-TW) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK TC'; }
+.pdf:lang(ko-KR) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK KR'; }
+.pdf .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.highlight-default {
+	color: rgba(44, 44, 43, 1);
+}
+.highlight-gray {
+	color: rgba(125, 122, 117, 1);
+	fill: rgba(125, 122, 117, 1);
+}
+.highlight-brown {
+	color: rgba(159, 118, 90, 1);
+	fill: rgba(159, 118, 90, 1);
+}
+.highlight-orange {
+	color: rgba(210, 123, 45, 1);
+	fill: rgba(210, 123, 45, 1);
+}
+.highlight-yellow {
+	color: rgba(203, 148, 52, 1);
+	fill: rgba(203, 148, 52, 1);
+}
+.highlight-teal {
+	color: rgba(80, 148, 110, 1);
+	fill: rgba(80, 148, 110, 1);
+}
+.highlight-blue {
+	color: rgba(56, 125, 201, 1);
+	fill: rgba(56, 125, 201, 1);
+}
+.highlight-purple {
+	color: rgba(154, 107, 180, 1);
+	fill: rgba(154, 107, 180, 1);
+}
+.highlight-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.highlight-red {
+	color: rgba(207, 81, 72, 1);
+	fill: rgba(207, 81, 72, 1);
+}
+.highlight-default_background {
+	color: rgba(44, 44, 43, 1);
+}
+.highlight-gray_background {
+	background: rgba(42, 28, 0, 0.07);
+}
+.highlight-brown_background {
+	background: rgba(139, 46, 0, 0.086);
+}
+.highlight-orange_background {
+	background: rgba(224, 101, 1, 0.129);
+}
+.highlight-yellow_background {
+	background: rgba(211, 168, 0, 0.137);
+}
+.highlight-teal_background {
+	background: rgba(0, 100, 45, 0.09);
+}
+.highlight-blue_background {
+	background: rgba(0, 124, 215, 0.094);
+}
+.highlight-purple_background {
+	background: rgba(102, 0, 178, 0.078);
+}
+.highlight-pink_background {
+	background: rgba(197, 0, 93, 0.086);
+}
+.highlight-red_background {
+	background: rgba(223, 22, 0, 0.094);
+}
+.block-color-default {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray {
+	color: rgba(125, 122, 117, 1);
+	fill: rgba(125, 122, 117, 1);
+}
+.block-color-brown {
+	color: rgba(159, 118, 90, 1);
+	fill: rgba(159, 118, 90, 1);
+}
+.block-color-orange {
+	color: rgba(210, 123, 45, 1);
+	fill: rgba(210, 123, 45, 1);
+}
+.block-color-yellow {
+	color: rgba(203, 148, 52, 1);
+	fill: rgba(203, 148, 52, 1);
+}
+.block-color-teal {
+	color: rgba(80, 148, 110, 1);
+	fill: rgba(80, 148, 110, 1);
+}
+.block-color-blue {
+	color: rgba(56, 125, 201, 1);
+	fill: rgba(56, 125, 201, 1);
+}
+.block-color-purple {
+	color: rgba(154, 107, 180, 1);
+	fill: rgba(154, 107, 180, 1);
+}
+.block-color-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.block-color-red {
+	color: rgba(207, 81, 72, 1);
+	fill: rgba(207, 81, 72, 1);
+}
+.block-color-default_background {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray_background {
+	background: rgba(240, 239, 237, 1);
+}
+.block-color-brown_background {
+	background: rgba(245, 237, 233, 1);
+}
+.block-color-orange_background {
+	background: rgba(251, 235, 222, 1);
+}
+.block-color-yellow_background {
+	background: rgba(249, 243, 220, 1);
+}
+.block-color-teal_background {
+	background: rgba(232, 241, 236, 1);
+}
+.block-color-blue_background {
+	background: rgba(229, 242, 252, 1);
+}
+.block-color-purple_background {
+	background: rgba(243, 235, 249, 1);
+}
+.block-color-pink_background {
+	background: rgba(250, 233, 241, 1);
+}
+.block-color-red_background {
+	background: rgba(252, 233, 231, 1);
+}
+.select-value-color-default { background-color: rgba(42, 28, 0, 0.07); }
+.select-value-color-gray { background-color: rgba(28, 19, 1, 0.11); }
+.select-value-color-brown { background-color: rgba(127, 51, 0, 0.156); }
+.select-value-color-orange { background-color: rgba(196, 88, 0, 0.203); }
+.select-value-color-yellow { background-color: rgba(209, 156, 0, 0.282); }
+.select-value-color-green { background-color: rgba(0, 96, 38, 0.156); }
+.select-value-color-blue { background-color: rgba(0, 118, 217, 0.203); }
+.select-value-color-purple { background-color: rgba(92, 0, 163, 0.141); }
+.select-value-color-pink { background-color: rgba(183, 0, 78, 0.152); }
+.select-value-color-red { background-color: rgba(206, 24, 0, 0.164); }
+
+.checkbox {
+	display: inline-flex;
+	vertical-align: text-bottom;
+	width: 16;
+	height: 16;
+	background-size: 16px;
+	margin-left: 2px;
+	margin-right: 5px;
+}
+
+.checkbox-on {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20width%3D%2216%22%20height%3D%2216%22%20fill%3D%22%2358A9D7%22%2F%3E%0A%3Cpath%20d%3D%22M6.71429%2012.2852L14%204.9995L12.7143%203.71436L6.71429%209.71378L3.28571%206.2831L2%207.57092L6.71429%2012.2852Z%22%20fill%3D%22white%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+
+.checkbox-off {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20x%3D%220.75%22%20y%3D%220.75%22%20width%3D%2214.5%22%20height%3D%2214.5%22%20fill%3D%22white%22%20stroke%3D%22%2336352F%22%20stroke-width%3D%221.5%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+	
+</style></head><body><article id="2ec6971c-72e7-80a0-9c1a-f0803d6b96aa" class="page sans"><header><div class="page-header-icon undefined"><span class="icon">6️⃣</span></div><h1 class="page-title" dir="auto">Post-ARENH 2026</h1><p class="page-description" dir="auto"></p></header><div class="page-body"><div style="display:contents" dir="auto"><h1 id="2ec6971c-72e7-81e7-8e88-cff4b18d1fcf" class="">Post-ARENH 2026 — cadre &amp; mécanismes</h1></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8105-828d-e603349091f1" class="">
+</p></div><div style="display:contents" dir="auto"><h1 id="2ec6971c-72e7-81ce-bd76-daf458dabd13" class="">Cadre Post-ARENH 2026 — Mécanismes, Seuils et Impacts B2B</h1></div><div style="display:contents" dir="auto"><h2 id="2ec6971c-72e7-8122-8d99-ea3a00ee996d" class="">Contexte Réglementaire et Dates Clés</h2></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81ca-8fd7-cadac4507841" class="">L’Accès Régulé à l’Électricité Nucléaire Historique (ARENH), instauré par la loi NOME de 2010, prend fin définitivement le <strong>31 décembre 2025</strong>. Ce régime, qui garantissait depuis quinze ans aux fournisseurs et aux consommateurs français un accès à la production nucléaire d’EDF à un prix fixe de 42 €/MWh (plafonné à 100 TWh annuels), est remplacé à compter du <strong>1er janvier 2026</strong> par un nouvel écosystème réglementaire basé sur deux mécanismes : le Versement Nucléaire Universel (VNU) et, pour les industriels électro-intensifs, les Contrats d’Allocation de Production Nucléaire (CAPN).<a href="about:blank#fn1">1</a></p></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81f2-a2ea-d9d29c565592" class="">Le cadre législatif du post-ARENH s’appuie sur la <strong>Loi de Finances pour 2025 (n°2025-127 du 14 février 2025), article 17</strong>, lequel introduit les articles L.337-3 à L.337-3-6 du Code de l’énergie. Ce texte a été complété par trois décrets d’application publiés en septembre 2025 : le décret n°2025-909 (comptabilité appropriée) et le décret n°2025-910 (principes méthodologiques), puis par un décret de mise en œuvre final visé par la délibération CRE n°2025-268 du 16 décembre 2025.<a href="about:blank#fn2">2</a><a href="about:blank#fn3">3</a><a href="about:blank#fn4">4</a></p></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-813d-895c-e3e8ac7f853b"/></div><div style="display:contents" dir="auto"><h2 id="2ec6971c-72e7-81f0-9705-c903373871ca" class="">Le Versement Nucléaire Universel (VNU) : Architecture et Fonctionnement</h2></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-81d5-b23e-c4ad9dd4bb61" class="">Principes Directeurs</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81fa-b11e-e56a15c91dd1" class="">Le VNU repose sur un partage asymétrique des revenus d’EDF issus du parc nucléaire historique. Contrairement à l’ARENH, qui accordait un tarif administré à une fraction délimitée des consommateurs, le VNU fonctionne selon une logique ex-post : EDF vend intégralement sa production nucléaire au prix du marché de gros, puis l’État prélève une part des revenus excédentaires selon des seuils progressifs et les redistribue à l’ensemble des consommateurs finals, indépendamment de leur fournisseur.<a href="about:blank#fn5">5</a><a href="about:blank#fn6">6</a></p></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-81a8-9e5d-c5866968da4f" class="">Seuils de Taxation et Mécanisme de Prélèvement</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8160-a45b-c7610d398a9f" class="">La structure du VNU s’articule autour de deux seuils de taxation, fixés par arrêté ministériel en application de la loi de finances 2025. Ces seuils sont déterminés en fonction du <strong>coût complet de production du parc nucléaire historique</strong> (incluant Flamanville 3), évalué par la Commission de Régulation de l’Énergie (CRE).<a href="about:blank#fn7">7</a></p></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8154-8174-d5a2a6ed0506" class="">Dans son évaluation du 30 septembre 2025, la CRE a fixé ce coût complet à <strong>60,3 €/MWh</strong> (ou 61,5 €courants/MWh) pour la période 2026-2028. Sur cette base, les seuils de déclenchement des prélèvements ont été arrêtés comme suit :<a href="about:blank#fn8">8</a><a href="about:blank#fn9">9</a><a href="about:blank#fn10">10</a></p></div><div style="display:contents" dir="ltr"><table id="2ec6971c-72e7-81b3-94bc-f0bbe8f199bb" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-8142-ab83-d4d503772e8a"><th id="{axY" class="simple-table-header-color simple-table-header"><strong>Palier de prix du MWh</strong></th><th id="LTd]" class="simple-table-header-color simple-table-header"><strong>Part EDF</strong></th><th id="lpl~" class="simple-table-header-color simple-table-header"><strong>Prélèvement État</strong></th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-8156-93ea-fff70a416228"><td id="{axY" class="">&lt; 78 €/MWh</td><td id="LTd]" class="">100%</td><td id="lpl~" class="">0%</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-8147-9cb3-df155d460085"><td id="{axY" class="">78 € à 110 €/MWh</td><td id="LTd]" class="">50%</td><td id="lpl~" class="">50%</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81d3-a05a-f0b5efb2c109"><td id="{axY" class="">&gt; 110 €/MWh</td><td id="LTd]" class="">10%</td><td id="lpl~" class="">90%</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81a4-8559-d1fc52c78e9d" class="">Le premier seuil (78 €/MWh) correspond au coût complet majoré d’environ 18 €/MWh, le second seuil (110 €/MWh) au coût complet majoré d’environ 50 €/MWh. Ces marges, comprises dans des fourchettes légales (respectivement [5-25] €/MWh et [35-55] €/MWh), offrent à EDF une rémunération cohérente de son parc tout en limitant l’accumulation de rentes exceptionnelles.<a href="about:blank#fn11">11</a></p></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-8165-a0fc-cd5738c50831" class="">Revenus Estimés et Premières Simulations</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8122-abe6-d05b832b798f" class="">La question centrale pour 2026 est celle de l’activation effective du mécanisme. En octobre 2025, la CRE a estimé les revenus annuels d’EDF issus de son parc nucléaire historique à <strong>66,08 €/MWh</strong> (23,7 milliards d’euros pour 360 TWh produits). Ce montant, situé entre le coût complet (60,3 €/MWh) et le premier seuil de taxation (78 €/MWh), signifie qu’<strong>aucun prélèvement ne serait déclenché en 2026</strong> en l’absence d’une hausse significative des prix de marché. Par conséquent, aucune minoration de factures ne s’appliquera pour l’année 2026 si cette prévision se confirme.<a href="about:blank#fn12">12</a><a href="about:blank#fn13">13</a></p></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81bd-a81d-f9705d7a19ab" class="">Pour 2027, la CRE a livré en janvier 2026 une estimation prudente de <strong>60,94 €/MWh</strong> (21,94 milliards d’euros pour 360 TWh), également inférieure au seuil de 78 €/MWh. L’activation du VNU dépendra donc, dans un horizon de deux années, d’une envolée des prix de marché de gros de l’électricité, événement moins probable dans un contexte de baisse structurelle des coûts des énergies renouvelables.<a href="about:blank#fn14">14</a></p></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-81fb-85a5-f4f14b5de385"/></div><div style="display:contents" dir="auto"><h2 id="2ec6971c-72e7-8182-ba22-ec290e6d3a07" class="">Modalités de Calcul et d’Application du Tarif Unitaire de Minoration</h2></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-810f-9e1b-cbbd194922fb" class="">Estimation et Fixation</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-817e-b6f4-fb22ffc5e074" class="">Le <strong>tarif unitaire de minoration</strong> (TU), lorsqu’il s’applique, est calculé selon la formule :<a href="about:blank#fn15">15</a></p></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8199-a2d5-e34fe5b02e30" class=""><strong>TU = (Montant à redistribuer) / (Consommation éligible estimée)</strong></p></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81ff-8149-cbe4d87043be" class="">Le montant à redistribuer comprend la taxe estimée sur les revenus d’EDF au-delà des seuils définis, augmentée des éventuelles régularisations d’années antérieures. Le calcul intègre un <strong>principe de prudence</strong> : la CRE utilise le premier quartile des scénarios de revenus simulés pour les estimations à court terme (M-3 à M-1), afin d’éviter des régularisations négatives ultérieures qui imposeraient aux consommateurs de rembourser une partie des versements reçus.<a href="about:blank#fn16">16</a></p></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81be-9aa3-f104aead3d73" class="">La proposition de tarif unitaire doit être transmise par la CRE au gouvernement <strong>au plus tard le 30 novembre de l’année précédant l’application</strong> (article R.337-5 du décret), permettant une visibilité suffisante aux consommateurs et fournisseurs. Les ministres disposent ensuite d’un délai minimum d’un mois avant le début de la période d’application pour fixer le tarif par arrêté conjoint.<a href="about:blank#fn17">17</a></p></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-8115-91cb-cbcce76b6700" class="">Seuil d’Activation et Report</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81b3-8177-de150ebe74f5" class="">Un mécanisme de seuil minimal protège le système contre les coûts administratifs des micropaiements. Si le tarif unitaire proposé par la CRE est <strong>inférieur ou égal à 1 €/MWh</strong>, aucune minoration n’est appliquée et le montant correspondant est reporté à l’année civile suivante. Cette clause de prudence évite une fragmentation administrative excessive et favorise l’accumulation de montants redistributifs lors de périodes de prix effectivement élevés.<a href="about:blank#fn18">18</a></p></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-81e6-beab-e8f87dc9f17b" class="">Période d’Application par Défaut</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-812c-bc0e-ffc57627cbe3" class="">Un aspect controversé du cadre post-ARENH concerne la <strong>période d’application par défaut</strong>, fixée aux <strong>mois d’avril à octobre</strong> (jours complets) par le décret. Ce choix, bien que justifié par le souci de moduler les signaux tarifaires (inciter à la sobriété hivernale), présente plusieurs inconvénients :<a href="about:blank#fn19">19</a></p></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81e5-b080-eace7065534f" class="numbered-list" start="1"><li><strong>Effet redistributif inéquitable</strong> : Les consommateurs à profil thermosensible (chauffage électrique hivernal) bénéficient moins de la minoration que les consommateurs à profil « en bandeau » (industries, data centers).</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81ff-8c66-de3758cb4ea1" class="numbered-list" start="2"><li><strong>Complexité de lisibilité</strong> : Pour les clients finals, les variations mensuelles de grilles tarifaires TTC deviennent difficiles à appréhender, notamment lors de changements de fournisseur.</li></ol></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81ad-ae06-e60c8ddd692f" class="">La CRE a émis des réserves explicites sur ce choix, soulignant que l’impact redistributif limité ne justifie pas la complexité opérationnelle induite.<a href="about:blank#fn20">20</a></p></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-81ee-8ef7-c802a6dea958" class="">Révisions et Modifications du Tarif Unitaire</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8150-8a85-eba6090052a4" class="">Le cadre prévoir trois modalités de révision du tarif unitaire :<a href="about:blank#fn21">21</a></p></div><div style="display:contents" dir="ltr"><table id="2ec6971c-72e7-8177-b5c6-d2b45254b48e" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81f8-a310-e00e8199de4c"><th id="_]bf" class="simple-table-header-color simple-table-header"><strong>Événement</strong></th><th id="y{p?" class="simple-table-header-color simple-table-header"><strong>Conditions</strong></th><th id="yMt[" class="simple-table-header-color simple-table-header"><strong>Calendrier</strong></th><th id="dt|P" class="simple-table-header-color simple-table-header"><strong>Organe Décideur</strong></th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81df-980c-c84d982b5efe"><td id="_]bf" class=""><strong>Révision en cours de période</strong></td><td id="y{p?" class="">Écarts significatifs détectés sur revenus/consommations</td><td id="yMt[" class="">CRE informe sous 2 sem.; arrêté dans 10 j.o.</td><td id="dt|P" class="">Ministres (énergie/économie)</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-8148-b555-cfcef39bdfb5"><td id="_]bf" class=""><strong>Modification rétroactive</strong></td><td id="y{p?" class="">(Montants à compenser &gt; redistribution) ET (minoration N+1 insuffisante)</td><td id="yMt[" class="">Jusqu’à 11 mois après fin période</td><td id="dt|P" class="">Ministres sur demande</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81ff-bd0c-d82eb36f263f"><td id="_]bf" class=""><strong>Consolidation ex-post</strong></td><td id="y{p?" class="">Fin année civile</td><td id="yMt[" class="">Révision sur revenus constatés d’EDF</td><td id="dt|P" class="">CRE, via comptabilité appropriée</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8109-b17d-f1e323025d6d" class="">Ces révisions permettent d’ajuster le mécanisme aux réalités observées, mais elles introduisent également une instabilité potentielle pour les factures des consommateurs et obligent les fournisseurs à gérer une trésorerie soumise à des régularisations ultérieures.</p></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-811c-8f36-fb642ee00f8a"/></div><div style="display:contents" dir="auto"><h2 id="2ec6971c-72e7-811b-a421-c6c9179ecce2" class="">Application sur les Factures des Consommateurs</h2></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-81f9-95ca-e80814c26261" class="">Calcul et Mention Obligatoire</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-817b-a3df-e2d903d4fe06" class="">La minoration est appliquée de manière automatique et identique quel que soit le fournisseur d’électricité choisi par le consommateur final. Son montant pour chaque client est défini par :<a href="about:blank#fn22">22</a></p></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8105-b712-cad2af98dab1" class=""><strong>Minoration = Tarif Unitaire × Quantités fournies pendant la période d’application</strong></p></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-817b-90ae-d7fa057cd178" class="">Cette minoration doit figurer par une <strong>mention expresse distincte</strong> sur la facture, conformément à l’article L.337-3-4 du Code de l’énergie. Les modalités précises de cette mention seront détaillées par arrêté ultérieur.<a href="about:blank#fn23">23</a></p></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-8129-afb4-c74d2593386e" class="">Modalités de Facturation Selon le Type de Client</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81e5-95bd-e2d8aba2c4c6" class="">La loi prévient une complication opérationnelle en fonction du mode de facturation :<a href="about:blank#fn24">24</a></p></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8187-bed6-e7b02c28e3a0" class="bulleted-list"><li style="list-style-type:disc"><strong>Clients avec facturation mensuelle réelle</strong> : La minoration s’applique sur la facture du mois écoulé, permettant au consommateur de percevoir effectivement la réduction quelques jours après la fin du mois.</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8149-808b-e55f3b23b974" class="bulleted-list"><li style="list-style-type:disc"><strong>Clients avec paiement lissé</strong> : Seule la facture annuelle de régularisation est obligatoirement minorée. Les fournisseurs disposent de marges pour lisser la minoration sur l’ensemble de l’année, mais cette discrétion crée des variations difficiles à comparer lors de changements de fournisseur.</li></ul></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81b8-bcda-cfc10506848c" class="">Ce mécanisme deux vitesses risque de susciter des incompréhensions, en particulier chez les consommateurs résidentiels non avertis.</p></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-8164-b99d-c343a10d08b1"/></div><div style="display:contents" dir="auto"><h2 id="2ec6971c-72e7-8104-8b4f-d704090a683b" class="">Système de Compensation pour les Fournisseurs</h2></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-817c-84fc-e05c0c11f2e5" class="">Guichets d’Acomptes et Calendrier</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81a8-9b3e-e6da80f0abd8" class="">Les fournisseurs ne supportent pas la perte de recettes due à la minoration. La CRE met en place un système de compensation piloté par <strong>guichets d’acomptes en cours de période</strong> et un <strong>guichet de compensation finale</strong>.<a href="about:blank#fn25">25</a></p></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81c9-9b07-c938578e7ff8" class="">Pour chaque guichet d’acompte, le calendrier est strictement encadré :<a href="about:blank#fn26">26</a></p></div><div style="display:contents" dir="ltr"><table id="2ec6971c-72e7-8172-92c7-d0b403bbaf28" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-8166-a1d8-f64f3634c48b"><th id="Pq;f" class="simple-table-header-color simple-table-header"><strong>Étape</strong></th><th id="y[{Q" class="simple-table-header-color simple-table-header"><strong>Délai maximal</strong></th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-8114-b712-ecdcf9b8c10a"><td id="Pq;f" class="">Fournisseurs déclarent consommations (avec justificatifs)</td><td id="y[{Q" class="">J+6 après fin dernier mois couvert</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81b2-a89d-f951654e947b"><td id="Pq;f" class="">CRE publie consommation totale</td><td id="y[{Q" class="">J+11</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-814e-ab22-ce7989f929d5"><td id="Pq;f" class="">CRE notifie montants aux ministres</td><td id="y[{Q" class="">J+20</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-8169-a989-e628e7803d14"><td id="Pq;f" class="">Ministres instruisent comptable public</td><td id="y[{Q" class="">J+21 ouvré</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81ae-8b18-f775933e5d8f"><td id="Pq;f" class="">Versement aux fournisseurs</td><td id="y[{Q" class="">J+26 ouvrés (≈ 30 jours)</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-819e-b796-d67dc0b9dfec" class="">La CRE détermine la fréquence minimale des guichets (au moins deux par période d’application) en fonction du coût de trésorerie supporté par les fournisseurs. Plus le tarif unitaire est élevé, plus les guichets sont fréquents.</p></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-8147-88f8-fb028cb55465" class="">Guichet de Compensation Finale</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81ce-b859-e23c0821bec2" class="">Après chaque année d’application, un guichet de compensation finale ouvre en avril de l’année suivante. Sur la base des consommations consolidées ex-post remontées par RTE et les gestionnaires de réseaux, la CRE régularise les acomptes versés. Les fournisseurs peuvent être amenés à rembourser des excédents ou recevoir des régularisations positives.</p></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-81c6-92a8-d0eb1173d879"/></div><div style="display:contents" dir="auto"><h2 id="2ec6971c-72e7-81cc-bfcf-f4be45b5e8fb" class="">Cadre de Comptabilisation : Comptabilité Appropriée d’EDF</h2></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-815e-b630-e42d7f695245" class="">Principes et Méthodologie</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8191-ad60-c769edb2e771" class="">La détermination précise des revenus d’EDF issus de son parc nucléaire historique passe par la mise en place d’une <strong>comptabilité appropriée</strong> définie par le décret n°2025-909. Cette comptabilité doit isoler, au sein du périmètre d’EDF, les revenus tirés uniquement de la vente d’électricité nucléaire du parc historique.<a href="about:blank#fn27">27</a></p></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-819e-be09-cdb338ae381a" class="">Selon la méthodologie publiée par la CRE le 24 septembre 2025, les revenus annuels du parc nucléaire historique sont estimés comme la somme de quatre composantes :<a href="about:blank#fn28">28</a></p></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81d3-a838-e962fc5b97f6" class="numbered-list" start="1"><li><strong>Revenus sécurisés</strong> : Transactions déjà conclues à la date de l’estimation (marchés à terme, contrats fermes).</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-819a-a702-e2e5088fdc76" class="numbered-list" start="2"><li><strong>Revenus des contrats de long terme</strong> : Accords pluriannuels signés (ex. CAPN), valorisés selon leurs conditions.</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81aa-8352-e8cc6107ce7e" class="numbered-list" start="3"><li><strong>Revenus prévisionnels</strong> : Estimation des ventes futures (production non couverte), basée sur des scénarios probabilistes de prix.</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81cd-a0b3-d4f728096835" class="numbered-list" start="4"><li><strong>Valeur de flexibilité</strong> : Capacité du parc à moduler sa production en temps réel pour tirer parti des pics de prix.</li></ol></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81f4-a550-d1c914d40c98" class="">La CRE publie ces estimations à des échéances précises :<a href="about:blank#fn29">29</a></p></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8163-9707-fe1d0f49af2d" class="bulleted-list"><li style="list-style-type:disc"><strong>M-12</strong> (douze mois avant l’année civile de livraison)</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-816f-84c7-d46d9feac147" class="bulleted-list"><li style="list-style-type:disc"><strong>M-6</strong> (six mois avant)</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81fe-a0f2-e7fa14f25414" class="bulleted-list"><li style="list-style-type:disc"><strong>M-3, M-2, M-1</strong> (trois, deux, un mois avant)</li></ul></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8122-8909-e993dffb3104" class="">Ces publications offrent une trajectoire de visibilité croissante aux acteurs du marché.</p></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-812b-9f76-d252f1292167" class="">Coûts Complets et Révision Triennale</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8146-b55d-db53c3bf4235" class="">Le coût complet de production du parc nucléaire historique, établi à 60,3 €/MWh pour 2026-2028, est révisable tous les trois ans. Cette révision tient compte de l’évolution des charges d’exploitation, des investissements de maintenance, et des coûts de décommissionnement.<a href="about:blank#fn30">30</a></p></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-81d9-9f63-eb137136b4d4"/></div><div style="display:contents" dir="auto"><h2 id="2ec6971c-72e7-8107-98c0-d4311be773ab" class="">Contrats d’Allocation de Production Nucléaire (CAPN) : Complément pour Industriels</h2></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-815a-a489-d07cd7cc4aaa" class="">Cible et Caractéristiques</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81ca-ba20-e524be0ce2ef" class="">Les CAPN constituent un dispositif complémentaire du VNU, destiné spécifiquement aux <strong>industriels électro-intensifs</strong> et fournisseurs présentant une capacité physique d’enlèvement d’électricité en France. Entrés en force le 1er janvier 2026, ces contrats visent environ une <strong>centaine d’industriels</strong> consommant au moins 7 GWh par an.<a href="about:blank#fn31">31</a></p></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8184-b9dc-cf0c2ac4e545" class="">Caractéristiques clés :<a href="about:blank#fn32">32</a><a href="about:blank#fn33">33</a></p></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8151-a7ca-d2bc28b4a9b0" class="bulleted-list"><li style="list-style-type:disc"><strong>Durée</strong> : 10 à 15 ans (bien plus longue que l’ARENH annuel).</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81d3-8859-d03b77beee5e" class="bulleted-list"><li style="list-style-type:disc"><strong>Volume initial</strong> : 1 800 MW de capacité allouée, soit environ 10 TWh annuels.</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81bd-9964-c9be1d7bee7d" class="bulleted-list"><li style="list-style-type:disc"><strong>Mécanisme prix</strong> : Prix variable indexé sur les coûts d’exploitation et de combustible, complété par une contribution initiale fixée par enchère.</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-813f-846b-ea047df608ae" class="bulleted-list"><li style="list-style-type:disc"><strong>Responsabilité</strong> : Partage des risques industriels entre EDF et partenaires (arrêts de réacteurs, variation de performance).</li></ul></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-8167-9446-e91e64290795" class="">État de Déploiement</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8165-a182-fbb6fcc121d6" class="">Dès l’automne 2024, cinq CAPN avaient été signés, représentant plus de 10 TWh annuels. Environ 20 autres étaient en phase de négociation. Le déploiement s’effectuera progressivement au cours du premier semestre 2025, avec mise en application officielle au 1er janvier 2026.<a href="about:blank#fn34">34</a></p></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-8141-a477-eb9adfa63384" class="">Limites et Enjeux</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8123-a238-c0f3fa9342fc" class="">Le volume alloué via CAPN (10 TWh) couvre seulement <strong>50 à 70% des besoins</strong> des industriels électro-intensifs, contraignant ces derniers à se couvrir pour le reste via le marché de gros, beaucoup plus volatile. Cette couverture partielle limite la sécurisation tarifaire et expose les industriels à la volatilité.<a href="about:blank#fn35">35</a></p></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-81b8-baa0-f06b9beea72a"/></div><div style="display:contents" dir="auto"><h2 id="2ec6971c-72e7-81a8-af4f-c673a6de8cc8" class="">Impacts B2B et Professionnels</h2></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-819d-af20-d4bfdb73aeb4" class="">Rupture des Régimes d’Approvisionnement</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81a5-9c29-fb438353cc40" class="">La fin de l’ARENH marque une rupture structurelle pour les <strong>250 000+ sites professionnels</strong> qui bénéficiaient indirectement du dispositif via leurs fournisseurs. Jusqu’à fin 2025, les fournisseurs alternatifs pouvaient accéder à environ 25% de la production nucléaire d’EDF à 42 €/MWh (avec plafond de 100 TWh/an). À partir de 2026, cette protection disparaît :<a href="about:blank#fn36">36</a><a href="about:blank#fn37">37</a></p></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-816b-9445-ed64c3a3ef59" class="numbered-list" start="1"><li><strong>Fin des contrats indexés ARENH</strong> : Les offres tarifaires proposées par les fournisseurs ne pourront plus s’appuyer sur ce tarif administré.</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8182-b918-d2de2db5a4ce" class="numbered-list" start="2"><li><strong>Exposition intégrale au marché de gros</strong> : Les fournisseurs doivent anticiper leurs besoins de couverture selon les prix de marché à terme (60-70 €/MWh observés début 2025 pour 2026-2028).<a href="about:blank#fn38">38</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81da-860b-dd3de324c891" class="numbered-list" start="3"><li><strong>Complexité contractuelle accrue</strong> : Les clauses incluront de nouveaux paramètres (seuils VNU, profils de consommation, périodes d’application) difficilement comparables entre fournisseurs.</li></ol></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-81a2-9707-fb70fb69771b" class="">Secteurs les Plus Exposés</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81ed-ba1a-f34fb81f7198" class="">Les impacts sectoriels varient :<a href="about:blank#fn39">39</a><a href="about:blank#fn40">40</a></p></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8132-ada3-d8a587cc27f9" class="bulleted-list"><li style="list-style-type:disc"><strong>Industries électro-intensives</strong> (métallurgie, chimie, plasturgie) : Accès restreint aux CAPN (volume insuffisant) ; besoin de couvertures supplémentaires onéreuses.</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-811a-8802-fdca6d67b0b8" class="bulleted-list"><li style="list-style-type:disc"><strong>Data centers et logistiques</strong> : Exposition élevée à la volatilité spot, avec peu d’outils de mitigation autres que les contrats long terme (illiquides et rares).</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8166-bd22-e901594a29dc" class="bulleted-list"><li style="list-style-type:disc"><strong>Établissements publics et collectivités</strong> : Contraintes par les procédures d’appel d’offres ; capacité limitée à négocier des contrats fins ou à utiliser des couvertures financières.</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8117-be4b-f8300621ca83" class="bulleted-list"><li style="list-style-type:disc"><strong>PME et ETI</strong> : Moindre pouvoir de négociation que les grands comptes ; accès restreint aux CAPN (critères d’éligibilité élevés).</li></ul></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-8124-af29-e72bec26cfe2" class="">Stratégies d’Adaptation Recommandées</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81aa-b4d6-efef9efe5eb0" class="">Les professionnels doivent anticiper :<a href="about:blank#fn41">41</a></p></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81a4-882a-f44f7d12b5a0" class="numbered-list" start="1"><li><strong>Étallonnage des risques tarifaires</strong> : Diversifier les sources d’approvisionnement (fournisseurs multiples, périodes de renégociation étalées).</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8171-b70e-f6b5797bd64a" class="numbered-list" start="2"><li><strong>Évaluation des contrats long terme</strong> : Analyser les opportunités de couverture à 3-5 ans, bien que les prix fermes soient moins attrayants qu’avant.</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-811f-963d-e60d355bedcb" class="numbered-list" start="3"><li><strong>Intégration de la flexibilité énergétique</strong> : Investir en efficacité énergétique, autocommsommation, stockage, pour réduire l’exposition au marché.</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81f6-afc6-d236955754dc" class="numbered-list" start="4"><li><strong>Participation aux appels d’offres de capacité</strong> : Envisager une demande d’ARENH ou de CAPN si les critères d’éligibilité sont remplis.</li></ol></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-8109-8104-d61301dd2508"/></div><div style="display:contents" dir="auto"><h2 id="2ec6971c-72e7-8126-95f1-fce8d327c821" class="">Rôle Central de la CRE et Surveillance des Marchés</h2></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-8189-b470-c43bc8b97175" class="">Missions Étendues</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-810d-b3f4-f647fd6bbe7b" class="">La Commission de Régulation de l’Énergie assume un rôle sans précédent dans la surveillance du post-ARENH :<a href="about:blank#fn42">42</a></p></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-816d-9495-c5a090e919bb" class="numbered-list" start="1"><li><strong>Évaluation des coûts complets</strong> : Publication du coût complet du parc nucléaire historique (révisable triennalement).</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-818b-8741-dd0fe3f08f05" class="numbered-list" start="2"><li><strong>Calcul des revenus estimés</strong> : Publication mensuelle des estimations de revenus d’EDF à différentes échéances (M-12 à M-1).</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8112-8627-ca3e349836fe" class="numbered-list" start="3"><li><strong>Proposition du tarif unitaire</strong> : Transmission au gouvernement des estimations du VNU avant le 30 novembre de chaque année.</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81bd-88e2-e0f1934af40e" class="numbered-list" start="4"><li><strong>Surveillance de la liquidité des marchés</strong> : Assurance que les marchés de gros offrent des volumes et des échéances suffisantes pour que les fournisseurs se couvrent adéquatement (notamment à n+4 et n+5).</li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-815d-9bac-de5a780a0831" class="numbered-list" start="5"><li><strong>Gestion opérationnelle des guichets de compensation</strong> : Calendrier, contrôles de cohérence, régularisations.</li></ol></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-81d5-869e-ccf758ccab81" class="">Améliorations de la Liquidité Attendues</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-818c-b917-e078729af709" class="">Dès le premier trimestre 2025, la CRE observait une amélioration significative de la liquidité des marchés à terme français, avec des volumes et des offres suffisants jusqu’à l’échéance n+3. Cependant, la liquidité demeure limitée à plus long terme (n+4, n+5), posant des risques de couverture pour les clients professionnels recherchant des contrats pluriannuels fermes.<a href="about:blank#fn43">43</a></p></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-814f-81ae-c31ca23ddcfb"/></div><div style="display:contents" dir="auto"><h2 id="2ec6971c-72e7-8143-9c9d-e1dc5fc92a8b" class="">Points de Vigilance et Incertitudes</h2></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-8105-bda5-fa660294b251" class="">Horizons d’Activation du VNU</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-818f-bb9b-caab1df0ca4e" class="">Les estimations actuelles (66 €/MWh pour 2026, 61 €/MWh pour 2027) placent les revenus d’EDF en-dessous du seuil d’activation du VNU (78 €/MWh). <strong>Aucune redistribution n’est donc attendue sur les deux premières années</strong>, sauf en cas de choc externe majeur (crise géopolitique, sécheresse sévère, défaillances massives de production renouvelable européenne).</p></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-815a-a8b4-cecf95a8caec" class="">Cette absence de redistribution fragilise le soutien politique au dispositif et laisse les consommateurs sans protection contre la volatilité du marché en 2026-2027.</p></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-8130-9534-d3ffaec7b5f8" class="">Complexité Opérationnelle</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81aa-91e4-e99e9b058c12" class="">Le système de guichets de compensation, de régularisations, et de révisions (notamment rétroactives) introduit une <strong>complexité administrative importante</strong> :</p></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8153-acdd-c58687158636" class="bulleted-list"><li style="list-style-type:disc">Les fournisseurs doivent maintenir des procédures de déclaration mensuelle et annuelles;</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-81db-9115-eaaa6859c616" class="bulleted-list"><li style="list-style-type:disc">Les régularisations rétroactives, bien que limitées, demandent aux fournisseurs de facturer rétroactivement des montants à leurs clients;</li></ul></div><div style="display:contents" dir="auto"><ul id="2ec6971c-72e7-8191-a9ef-f4f362ec26cd" class="bulleted-list"><li style="list-style-type:disc">La période d’application non-annuelle (avril-octobre) crée des frictions lors de changements de fournisseurs.</li></ul></div><div style="display:contents" dir="auto"><h3 id="2ec6971c-72e7-8158-94d6-de84747b5399" class="">Respect du Droit Européen</h3></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8150-85d8-f4cc03548c22" class="">Le dispositif post-ARENH doit respecter les règles de concurrence européennes et les plafonds sur les aides d’État. La Commission européenne a notamment validé la fin de l’ARENH au 31 décembre 2025 comme compatible avec ses directives, mais le VNU, de par sa nature de redistribution ex-post basée sur les revenus d’EDF, reste sujet à une surveillance étroite.</p></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-8116-88b4-ce02b0d72a11"/></div><div style="display:contents" dir="auto"><h2 id="2ec6971c-72e7-81e3-a439-f73aafa1fef0" class="">Calendrier Récapitulatif des Dates Clés</h2></div><div style="display:contents" dir="ltr"><table id="2ec6971c-72e7-81a8-9282-d9066fd91df8" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-8106-8f34-d0e22ee95247"><th id="qMgG" class="simple-table-header-color simple-table-header"><strong>Date</strong></th><th id="SpE}" class="simple-table-header-color simple-table-header"><strong>Événement</strong></th><th id="{X&lt;W" class="simple-table-header-color simple-table-header"><strong>Texte/Référence</strong></th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81df-badb-eafe20861a37"><td id="qMgG" class="">31 décembre 2025</td><td id="SpE}" class="">Fin définitive de l’ARENH</td><td id="{X&lt;W" class="">Loi NOME 2010</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81c0-b9b9-e0bf8619b3c2"><td id="qMgG" class="">1er janvier 2026</td><td id="SpE}" class="">Entrée en vigueur du VNU et des CAPN</td><td id="{X&lt;W" class="">Loi de Finances 2025, article 17</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81c8-b5ec-e3156e5eb9ae"><td id="qMgG" class="">30 novembre 2025</td><td id="SpE}" class="">Proposition CRE tarif unitaire 2026 (au plus tard)</td><td id="{X&lt;W" class="">Décret n°2025-910</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-814b-8e3a-ca455ada3389"><td id="qMgG" class="">Fin novembre 2026</td><td id="SpE}" class="">Proposition CRE tarif unitaire 2027</td><td id="{X&lt;W" class="">Calendrier réglementaire</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-8184-858b-c72f97e9ee64"><td id="qMgG" class="">M-12, M-6, M-3, M-2, M-1</td><td id="SpE}" class="">Publications estimations revenus nucléaires</td><td id="{X&lt;W" class="">Décret n°2025-909</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-81d8-87ba-f637bcce9367"><td id="qMgG" class="">Annuel (fin année civile)</td><td id="SpE}" class="">Guichet compensation finale fournisseurs</td><td id="{X&lt;W" class="">Décret VNU</td></tr></div><div style="display:contents" dir="ltr"><tr id="2ec6971c-72e7-818c-a0ed-e1a9a12ddfcf"><td id="qMgG" class="">Triennal (prochaine : 2029)</td><td id="SpE}" class="">Révision coûts complets nucléaire</td><td id="{X&lt;W" class="">Décret n°2025-910</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-8193-ac1e-e3a7765d7d30"/></div><div style="display:contents" dir="auto"><h2 id="2ec6971c-72e7-8108-97ed-db53035f1c60" class="">Conclusion</h2></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-817d-8732-ef4940bddf0c" class="">Le cadre post-ARENH applicable au 1er janvier 2026 repose sur une architecture réglementaire novatrice : le Versement Nucléaire Universel redistribue les revenus excédentaires d’EDF selon des seuils progressifs, tandis que les Contrats d’Allocation de Production Nucléaire sécurisent partiellement l’approvisionnement des industriels électro-intensifs. Ce dispositif rompt avec la logique de tarif administré uniforme pour adopter une logique de marché régulée, fondée sur la transparence des coûts complets et une surveillance étroite par la CRE.</p></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8163-8d42-c15de2e949d5" class="">Pour le court terme (2026-2027), l’absence d’activation du VNU du fait des revenus estimés en-dessous des seuils de taxation signifie une <strong>exposition accrue des consommateurs professionnels à la volatilité du marché</strong>. Les 250 000+ sites professionnels devront s’adapter via des stratégies d’achat renouvelées, une couverture long terme où possible, et une diversification des sources de fourniture. La complexité opérationnelle du système (guichets de compensation, régularisations, révisions) exige également une vigilance accrue de la part des fournisseurs et des gestionnaires d’énergie.</p></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-8120-a801-e5a961181fcc"/></div><div style="display:contents" dir="auto"><h2 id="2ec6971c-72e7-81c7-8852-c4547e92ae1a" class="">Références et Citations</h2></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-8104-8a93-c9cfd35de77d" class="">Web:21, Web:27 — CRE, communiqué 30 avril 2025 et source CRE post-ARENH<a href="about:blank#fn44">44</a><br/>Web:60, Web:65 — EDF et Légifrance, Loi de Finances 2025 article 17 et articles L.337-3 à L.337-3-6 Code énergie<a href="about:blank#fn45">45</a><br/>Web:37 — Seban Associés, analyse décrets n°2025-909 et 2025-910<a href="about:blank#fn46">46</a><br/>Web:41 — CRE, Délibération n°2025-268 du 16 décembre 2025<a href="about:blank#fn47">47</a><br/>Web:24, Web:29, Web:30 — CLER et sources agrégées sur VNU et fin ARENH<a href="about:blank#fn48">48</a><br/>Web:36, Web:39 — Opera Énergie et Place des Énergies, seuils VNU<a href="about:blank#fn49">49</a><br/>Web:60 — EDF Entreprises, seuils de taxation VNU<a href="about:blank#fn50">50</a><br/>Web:8, Web:39 — Optima Énergie et Place des Énergies, mécanisme VNU et seuils<a href="about:blank#fn51">51</a><br/>Web:52 — Enerdigit, estimation revenus 2026 CRE 66 €/MWh<a href="about:blank#fn52">52</a><br/>Web:30 — Connaissances des Énergies, impacts fin ARENH consommateurs<a href="about:blank#fn53">53</a><br/>Web:55, Web:61, Web:63, Web:64 — Selectra, Opera Énergie, CRE, estimation 2027 à 60,94 €/MWh<a href="about:blank#fn54">54</a><br/>Web:37, Web:27 — CRE et sources sur comptabilité appropriée décret 2025-909<a href="about:blank#fn55">55</a><br/>Web:63, Web:61 — CRE délibération et Opera Énergie sur méthodologie revenus nucléaires<a href="about:blank#fn56">56</a><br/>Web:38, Web:43, Web:47 — Capitole Énergie, Opera Énergie, sources CAPN<a href="about:blank#fn57">57</a><br/>Web:45 — Paca Énergies, caractéristiques CAPN<a href="about:blank#fn58">58</a><br/>Web:56 — Alliance des Énergies, impacts fin ARENH PME/collectivités<a href="about:blank#fn59">59</a><br/>Web:53 — Terre Solaire, implications fournisseurs alternatifs post-ARENH<a href="about:blank#fn60">60</a><br/>Web:50, Web:58 — Leyton et Place des Énergies, impacts sectoriels<a href="about:blank#fn61">61</a><br/>Web:27 — CRE communiqué 30 avril 2025 sur rôle CRE post-ARENH<a href="about:blank#fn62">62</a><a href="about:blank#fn63">63</a><a href="about:blank#fn64">64</a><a href="about:blank#fn65">65</a><a href="about:blank#fn66">66</a><a href="about:blank#fn67">67</a><a href="about:blank#fn68">68</a><a href="about:blank#fn69">69</a><a href="about:blank#fn70">70</a><a href="about:blank#fn71">71</a><a href="about:blank#fn72">72</a><a href="about:blank#fn73">73</a><a href="about:blank#fn74">74</a><a href="about:blank#fn75">75</a><a href="about:blank#fn76">76</a><a href="about:blank#fn77">77</a><a href="about:blank#fn78">78</a><a href="about:blank#fn79">79</a><a href="about:blank#fn80">80</a><a href="about:blank#fn81">81</a><a href="about:blank#fn82">82</a><a href="about:blank#fn83">83</a><a href="about:blank#fn84">84</a><a href="about:blank#fn85">85</a><a href="about:blank#fn86">86</a><a href="about:blank#fn87">87</a><a href="about:blank#fn88">88</a><a href="about:blank#fn89">89</a><a href="about:blank#fn90">90</a><a href="about:blank#fn91">91</a><a href="about:blank#fn92">92</a><a href="about:blank#fn93">93</a><a href="about:blank#fn94">94</a><a href="about:blank#fn95">95</a><a href="about:blank#fn96">96</a><a href="about:blank#fn97">97</a><a href="about:blank#fn98">98</a><a href="about:blank#fn99">99</a><a href="about:blank#fn100">100</a><a href="about:blank#fn101">101</a><a href="about:blank#fn102">102</a><a href="about:blank#fn103">103</a><a href="about:blank#fn104">104</a><a href="about:blank#fn105">105</a><a href="about:blank#fn106">106</a><a href="about:blank#fn107">107</a><a href="about:blank#fn108">108</a><a href="about:blank#fn109">109</a></p></div><div style="display:contents" dir="auto"><p id="2ec6971c-72e7-81a7-b3ee-dbca4a56223a" class="">⁂</p></div><div style="display:contents" dir="auto"><hr id="2ec6971c-72e7-8198-8e7f-ee94e93a7c66"/></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-818b-b9b9-ff6c2a278732" class="numbered-list" start="1"><li>Guide Utilisation Archelios Pro.pptx<a href="about:blank#fnref1">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8177-aae2-e8811ab44ea3" class="numbered-list" start="2"><li>Profil_Conso.csv<a href="about:blank#fnref2">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81ee-8ad1-c87c7cf6bfd3" class="numbered-list" start="3"><li>Guide Archelios Pro et Etudes de cas.docx<a href="about:blank#fnref3">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81b9-897a-e541b2c8678c" class="numbered-list" start="4"><li>Présentation advizeo V2025.pdf<a href="about:blank#fnref4">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81e6-b332-c41353b52ab4" class="numbered-list" start="5"><li>Devis-ENDESA ENERGIA-ENOGRID-2025-03-1423.pdf<a href="about:blank#fnref5">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81d3-b415-fb7385afbfad" class="numbered-list" start="6"><li>Guide Utilisation Archelios Pro.pptx<a href="about:blank#fnref6">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-814f-9970-d0016ea0d9b4" class="numbered-list" start="7"><li>Plaquette EnoPower.pdf<a href="about:blank#fnref7">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8159-8bde-d3f89820915d" class="numbered-list" start="8"><li>Présentation advizeo V2025.pdf<a href="about:blank#fnref8">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-813c-bdda-fcbcf0eeebc1" class="numbered-list" start="9"><li>Présentation Enogrid.pdf<a href="about:blank#fnref9">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-811f-9db0-edbe998dcae2" class="numbered-list" start="10"><li>Plaquette EnoPower.pdf<a href="about:blank#fnref10">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-819b-888d-f6c7c98e033f" class="numbered-list" start="11"><li>Plaquette EnoLab.pdf<a href="about:blank#fnref11">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81bb-9d66-ea561fe3610d" class="numbered-list" start="12"><li>Note ACC ENOGRID.docx<a href="about:blank#fnref12">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8120-8b68-e69b52c04953" class="numbered-list" start="13"><li>Présentation advizeo V2025 (002).pdf<a href="about:blank#fnref13">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-811d-8ff8-c74a68a414ab" class="numbered-list" start="14"><li>advizeo - Schéma économique Partenaires.pdf<a href="about:blank#fnref14">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8129-9ead-f39e0ad5235a" class="numbered-list" start="15"><li>Présentation advizeo V2025.pdf<a href="about:blank#fnref15">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-818a-ac34-e8609f156493" class="numbered-list" start="16"><li>Présentation advizeo V2025.pdf<a href="about:blank#fnref16">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8181-8a9e-ff62fc59c178" class="numbered-list" start="17"><li>Présentation advizeo V2025.pdf<a href="about:blank#fnref17">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8149-91b6-ef979c34386d" class="numbered-list" start="18"><li>Présentation advizeo V2025.pdf<a href="about:blank#fnref18">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81a0-80e6-f3f230f94dcf" class="numbered-list" start="19"><li>Présentation advizeo V2025.pdf<a href="about:blank#fnref19">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81f1-8836-cb9a73bfa707" class="numbered-list" start="20"><li>Présentation advizeo V2025.pdf<a href="about:blank#fnref20">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8110-a4fd-dbef355685bd" class="numbered-list" start="21"><li>Présentation advizeo V2025.pdf<a href="about:blank#fnref21">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81fa-a1a4-fc47d8ff5bfb" class="numbered-list" start="22"><li>Présentation advizeo V2025.pdf<a href="about:blank#fnref22">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81e4-a93d-e6bdf3875c97" class="numbered-list" start="23"><li>Présentation advizeo V2025.pdf<a href="about:blank#fnref23">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8110-9fe5-c072af681675" class="numbered-list" start="24"><li>Présentation advizeo V2025.pdf<a href="about:blank#fnref24">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81cd-9eca-c6b706e46445" class="numbered-list" start="25"><li>Présentation advizeo V2025.pdf<a href="about:blank#fnref25">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81d0-98dc-d644b32a2f9b" class="numbered-list" start="26"><li>Présentation advizeo V2025.pdf<a href="about:blank#fnref26">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8121-a852-fd27332f2d1d" class="numbered-list" start="27"><li>Energy management avec advizeo.pdf<a href="about:blank#fnref27">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8193-bb7e-fd8feb26eb45" class="numbered-list" start="28"><li>Présentation advizeo cockpit.pdf<a href="about:blank#fnref28">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-814b-9e94-fad7d88d8298" class="numbered-list" start="29"><li>Energy management avec advizeo.pdf<a href="about:blank#fnref29">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81aa-a365-d3d930e522a5" class="numbered-list" start="30"><li>Présentation advizeo V2025.pdf<a href="about:blank#fnref30">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8133-a2e2-c2933c86fac1" class="numbered-list" start="31"><li>Advizeo.docx<a href="about:blank#fnref31">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8153-bd6c-f1e10ea2d189" class="numbered-list" start="32"><li>Présentation Tilt.pdf<a href="about:blank#fnref32">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81e6-80de-d77001092776" class="numbered-list" start="33"><li>Advizeo.docx<a href="about:blank#fnref33">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81fd-876f-f98326b2edad" class="numbered-list" start="34"><li>Advizeo.docx<a href="about:blank#fnref34">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-813d-93b0-c452a472f94f" class="numbered-list" start="35"><li>Advizeo.docx<a href="about:blank#fnref35">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8113-8e07-f327598b9893" class="numbered-list" start="36"><li>Tilt X Endesa I Intégration technique v2.docx.pdf<a href="about:blank#fnref36">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81ee-9e28-f0c5823a7fc9" class="numbered-list" start="37"><li>Tilt X Endesa I Kick-off 0307 (1).docx<a href="about:blank#fnref37">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8187-a720-d5e3ca42d9c9" class="numbered-list" start="38"><li>Plaquette EnoLab.pdf<a href="about:blank#fnref38">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8120-be93-dfa13653358f" class="numbered-list" start="39"><li>Tilt X Endesa I Intégration technique.docx<a href="about:blank#fnref39">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8137-aaa5-c5869736b19a" class="numbered-list" start="40"><li>Tilt X Endesa I Intégration technique v2.docx.pdf<a href="about:blank#fnref40">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8171-ad24-ee5546e89754" class="numbered-list" start="41"><li>Tilt X Endesa I Intégration technique v2.docx.pdf<a href="about:blank#fnref41">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81e8-8563-c55279a4e084" class="numbered-list" start="42"><li>Flux projet TILT - version finale.docx<a href="about:blank#fnref42">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8117-aa2e-ca279c93ee29" class="numbered-list" start="43"><li>Plaquette EnoLab.pdf<a href="about:blank#fnref43">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81d8-a87a-eac592352aa2" class="numbered-list" start="44"><li>Guide Utilisation Archelios Pro.pptx<a href="about:blank#fnref44">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8149-9ef5-f30dba494019" class="numbered-list" start="45"><li>Profil_Conso.csv<a href="about:blank#fnref45">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-819f-ae4e-f3c78c605c17" class="numbered-list" start="46"><li>Guide Archelios Pro et Etudes de cas.docx<a href="about:blank#fnref46">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8102-b20c-f855a299fc2c" class="numbered-list" start="47"><li>Présentation advizeo V2025.pdf<a href="about:blank#fnref47">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81b0-8d47-d7892c04b27d" class="numbered-list" start="48"><li>Devis-ENDESA ENERGIA-ENOGRID-2025-03-1423.pdf<a href="about:blank#fnref48">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81b1-b925-ef676cc8b8c1" class="numbered-list" start="49"><li>Plaquette EnoPower.pdf<a href="about:blank#fnref49">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81d0-b93c-c607f2035a1c" class="numbered-list" start="50"><li>Présentation Enogrid.pdf<a href="about:blank#fnref50">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-815a-a903-e12ba0c6e012" class="numbered-list" start="51"><li>Plaquette EnoLab.pdf<a href="about:blank#fnref51">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8145-ac19-f1da7e591b69" class="numbered-list" start="52"><li>Note ACC ENOGRID.docx<a href="about:blank#fnref52">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81d3-a23c-eed4a06c9e5d" class="numbered-list" start="53"><li>Présentation advizeo V2025 (002).pdf<a href="about:blank#fnref53">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81c2-8c3e-fb7b960ade25" class="numbered-list" start="54"><li>advizeo - Schéma économique Partenaires.pdf<a href="about:blank#fnref54">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-814e-bc4e-e463c4b464e7" class="numbered-list" start="55"><li>Energy management avec advizeo.pdf<a href="about:blank#fnref55">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81a2-9537-fb0a76680037" class="numbered-list" start="56"><li>Présentation advizeo cockpit.pdf<a href="about:blank#fnref56">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81e4-bf9c-eefd7f29c137" class="numbered-list" start="57"><li>Advizeo.docx<a href="about:blank#fnref57">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81fc-baec-c6cc6b142b13" class="numbered-list" start="58"><li>Présentation Tilt.pdf<a href="about:blank#fnref58">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81e2-864b-c1bb0ba2fba8" class="numbered-list" start="59"><li>Tilt X Endesa I Intégration technique v2.docx.pdf<a href="about:blank#fnref59">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8110-bd04-ee1b98c9be41" class="numbered-list" start="60"><li>Tilt X Endesa I Kick-off 0307 (1).docx<a href="about:blank#fnref60">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-810e-a4c3-eb0a1bddcfba" class="numbered-list" start="61"><li>Tilt X Endesa I Intégration technique.docx<a href="about:blank#fnref61">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8167-91ea-c855a1ef96e6" class="numbered-list" start="62"><li>Flux projet TILT - version finale.docx<a href="about:blank#fnref62">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-814c-bfd8-d3b518a5de93" class="numbered-list" start="63"><li>Tilt Energy X Endesa I Proposition commerciale.pdf<a href="about:blank#fnref63">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8123-9787-da06ed7a2335" class="numbered-list" start="64"><li>https://www.cre.fr/actualites/toute-lactualite/la-commission-de-regulation-de-lenergie-publie-son-evaluation-des-couts-complets-de-production-de-lelectricite-au-moyen-des-centrales-electronucleaires-historiques-pour-la-periode-2026-2028.html<a href="about:blank#fnref64">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81c1-b8cb-e572ab215065" class="numbered-list" start="65"><li>https://www.optima-energie.fr/blog/actualites/fin-arenh/<a href="about:blank#fnref65">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81c8-943f-fc7b59c8c11d" class="numbered-list" start="66"><li>https://labellenergie.fr/fin-de-larenh-nouveau-mecanisme-du-vnu-quel-avenir-pour-lelectricite-en-france/<a href="about:blank#fnref66">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81fc-b589-eefe926d7977" class="numbered-list" start="67"><li>https://cler.org/fin-arenh/<a href="about:blank#fnref67">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-814c-b8e2-caf7a8b711a8" class="numbered-list" start="68"><li>https://www.endesa.fr/blog/comprendre-lenergie/remplacement-de-l-arenh<a href="about:blank#fnref68">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8187-9ca1-cd66e6f2b61c" class="numbered-list" start="69"><li>https://www.sirenergies.com/article/professionnels-comment-anticiper-la-fin-de-larenh<a href="about:blank#fnref69">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-813a-9d29-e4142d11ed2b" class="numbered-list" start="70"><li>https://www.cre.fr/fileadmin/Documents/Communiques_de_presse/2025/250430_CP_CRE_POST-ARENH.pdf<a href="about:blank#fnref70">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81c5-8470-e24b49709695" class="numbered-list" start="71"><li>https://opera-energie.com/arenh-2026/<a href="about:blank#fnref71">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8165-9d2f-c25e7c82ddcf" class="numbered-list" start="72"><li>https://entreprises-collectivites.engie.fr/actualites/versement-nucleaire-universel-vnu-electricite/<a href="about:blank#fnref72">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8190-bdc1-f04814da06dd" class="numbered-list" start="73"><li>https://www.connaissancedesenergies.org/tribune-actualite-energies/fin-de-larenh-des-consommateurs-exposes-la-volatilite-des-prix-de-marche<a href="about:blank#fnref73">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8108-bd85-c53ea5179819" class="numbered-list" start="74"><li>https://www.jp-plus.fr/ressources/fin-arenh/<a href="about:blank#fnref74">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8114-b351-ead41a147145" class="numbered-list" start="75"><li>https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT000023983208/LEGISCTA000031748859/<a href="about:blank#fnref75">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8111-94a0-fc205a629829" class="numbered-list" start="76"><li>https://achetonsgroupe.org/les-infos-groupees/fin-de-larenh-quels-impacts-sur-les-tarifs-de-lelectricite/<a href="about:blank#fnref76">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-815c-9a20-c6d4d29c008e" class="numbered-list" start="77"><li>https://www.idex.fr/le-blog/fin-arenh-vnu-guide-entreprises-2026<a href="about:blank#fnref77">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8166-9d6d-e10787b32cdb" class="numbered-list" start="78"><li>https://www.geg.fr/blog/decryptage/versement-nucleaire-universel-vs-arenh-tout-savoir-sur-ce-qui-change-en-2026/<a href="about:blank#fnref78">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-817e-83d9-f9e800bbd26d" class="numbered-list" start="79"><li>https://opera-energie.com/versement-nucleaire-universel-vnu/<a href="about:blank#fnref79">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8163-a47b-db49d1fb68d7" class="numbered-list" start="80"><li>https://www.seban-associes.avocat.fr/publication-de-lun-des-decrets-dapplication-des-dispositions-relatives-au-versement-nucleaire-universel/<a href="about:blank#fnref80">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8147-ba9b-f937c7c8038b" class="numbered-list" start="81"><li>https://capitole-energie.com/2025/04/16/contrat-dallocation-de-production-nucleaire-capn/<a href="about:blank#fnref81">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8154-b67a-f52ce632a40b" class="numbered-list" start="82"><li>https://www.placedesenergies.com/professionnels/actualites/nucleaire-quelle-influence-sur-les-factures-2025-2030<a href="about:blank#fnref82">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8129-8c32-e92a05588bb6" class="numbered-list" start="83"><li>https://www.cre.fr/electricite/marche-de-detail-de-lelectricite/vnu-estimation-des-revenus-nucleaires-dedf.html<a href="about:blank#fnref83">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81f7-925a-e9ed34f627e9" class="numbered-list" start="84"><li>https://www.cre.fr/fileadmin/Documents/Deliberations/2025/251216_2025-268_Decret_VNU.pdf<a href="about:blank#fnref84">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81cc-b007-ec5b09d723af" class="numbered-list" start="85"><li>https://www.cre.fr/actualites/toute-lactualite/la-cre-publie-son-avis-sur-le-projet-de-decret-relatif-aux-parametres-de-la-comptabilite-appropriee-des-revenus-nucleaires-dedf-dans-le-cadre-du-nouveau-dispositif-de-versement-nucleaire-universel.html<a href="about:blank#fnref85">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-813f-af9d-ecd297589b5c" class="numbered-list" start="86"><li>https://capitole-energie.com/2025/07/03/post-arenh-mecanisme-vnu-capn/<a href="about:blank#fnref86">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8101-ab9f-e014e148d32b" class="numbered-list" start="87"><li>https://www.sfen.org/rgn/vnu-quatre-questions-pour-comprendre-le-mecanisme-qui-remplace-larenh/<a href="about:blank#fnref87">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8105-8194-f54e66a4cadb" class="numbered-list" start="88"><li>https://pacaenergies.com/apres-larenh-decryptage-des-mecanismes-vnu-et-capn/<a href="about:blank#fnref88">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81fd-9b2a-d296b0c9d064" class="numbered-list" start="89"><li>https://www.dune-energie.fr/ressource/versement-nucleaire-universel-vnu-tout-comprendre-sur-le-nouveau-systeme-qui-remplacera-larenh<a href="about:blank#fnref89">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8177-9d7f-c9d39ef64198" class="numbered-list" start="90"><li>https://opera-energie.com/capn/<a href="about:blank#fnref90">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8174-bc93-c00e90605d19" class="numbered-list" start="91"><li>https://www.dune-energie.fr/ressource/ecretemement-arenh-definition-impact<a href="about:blank#fnref91">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81da-a311-d56c6c5ce210" class="numbered-list" start="92"><li>https://www.enoptea.fr/articles/comment-les-contrats-pour-difference-cfd-garantissent-des-prix-stables-pour-les-producteurs-denergie/<a href="about:blank#fnref92">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8159-b245-c1ccbb603814" class="numbered-list" start="93"><li>https://leyton.com/fr/insights/articles/fin-arenh-2026-impacts-achat-energie-professionnels/<a href="about:blank#fnref93">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81ff-849e-e48637ac6ed4" class="numbered-list" start="94"><li>https://www.optima-energie.fr/blog/energies/le-contrat-pour-difference-le-futur-de-la-regulation-de-lelectricite/<a href="about:blank#fnref94">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-813b-841b-c7ddc7405b07" class="numbered-list" start="95"><li>https://enerdigit.fr/apres-l-arenh-place-au-versement-nucleaire-universel-des-2026/<a href="about:blank#fnref95">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81f5-827d-d227c664d189" class="numbered-list" start="96"><li>https://terresolaire.com/Blog/autoconsommation-photovoltaique/fin-de-larenh-consequences-sur-les-factures-delectricite/<a href="about:blank#fnref96">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-811d-829a-c96ab4e05492" class="numbered-list" start="97"><li>https://opera-energie.com/contrat-pour-difference-cfd/<a href="about:blank#fnref97">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8168-afad-da2614af147d" class="numbered-list" start="98"><li>https://selectra.info/energie/actualites/marche/cre-projection-revenus-nucleaires-2027-vnu<a href="about:blank#fnref98">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-816d-8899-c70237f7f4c0" class="numbered-list" start="99"><li>https://alliancedesenergies.fr/guide/fin-arenh-impact-entreprises/<a href="about:blank#fnref99">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81af-836a-d97de2798c20" class="numbered-list" start="100"><li>https://www.atoo-energie.com/blog/infos-energie/reforme-marche-europeen-electricite-contrats-pour-difference/<a href="about:blank#fnref100">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8126-a381-dc6e244212b9" class="numbered-list" start="101"><li>https://www.placedesenergies.com/professionnels/actualites/fin-de-l-arenh-en-decembre-2025-quelles-consequences-pour-les-prix-de-l-electricite<a href="about:blank#fnref101">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8130-bf12-d83607ba7fe1" class="numbered-list" start="102"><li>https://www.placedesenergies.com/professionnels/actualites/remplacement-de-l-arenh-pas-de-contrat-pour-difference-cfd-pour-le-nucleaire<a href="about:blank#fnref102">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8114-bced-d90a1f3002fb" class="numbered-list" start="103"><li>https://www.edf.fr/entreprises/decryptages/normes-et-reglementations/de-l-arenh-au-versement-nucleaire-universel-les-cles-pour-tout-comprendre<a href="about:blank#fnref103">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-810e-99f8-d3414f80c632" class="numbered-list" start="104"><li>https://opera-energie.com/media/nucleaire-cre-livre-premiere-estimation-revenus-edf-pour-2027/<a href="about:blank#fnref104">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81fb-8ede-de7e14c4db52" class="numbered-list" start="105"><li>https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000051168007<a href="about:blank#fnref105">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81a3-b6dd-e5038d5ff7dc" class="numbered-list" start="106"><li>https://www.cre.fr/actualites/toute-lactualite/la-cre-communique-sa-premiere-estimation-des-revenus-annuels-du-parc-nucleaire-dedf-pour-2027.html<a href="about:blank#fnref106">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-81d2-bb1f-f0e8593c9ca4" class="numbered-list" start="107"><li>https://www.cre.fr/fileadmin/Documents/Communiques_de_presse/2026/260113_CP_estimation_revenus_nucleaire_2027.pdf<a href="about:blank#fnref107">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8158-9a4d-e15f6f719882" class="numbered-list" start="108"><li>https://www.legifrance.gouv.fr/codes/id/LEGISCTA000051213805<a href="about:blank#fnref108">↩︎</a></li></ol></div><div style="display:contents" dir="auto"><ol type="1" id="2ec6971c-72e7-8186-b703-e49a2b629e34" class="numbered-list" start="109"><li>https://www.cre.fr/documents/deliberations/calcul-des-revenus-annuels-du-parc-nucleaire-constates-et-projetes-a-partir-de-la-comptabilite-appropriee.html<a href="about:blank#fnref109">↩︎</a></li></ol></div></div></article><span class="sans" style="font-size:14px;padding-top:2em"></span></body></html>

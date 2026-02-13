@@ -1,0 +1,34 @@
+id: FLEX_EFFACEMENT_20
+type: rule
+domain: facturation
+title: 3.6 Contraintes & Pénalités
+summary: "Sanction primaire : Retrait certification (ex. 6 mois carence) si indisponibilité\
+  \ structurelle. \n\nMarché Secondaire : Titulaires peuvent céder engagements jusqu’à\
+  \ 7 jours post-livraison (R. 316-31).[a..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Sanction primaire : Retrait certification (ex. 6 mois carence) si indisponibilité\
+  \ structurelle. \n\nMarché Secondaire : Titulaires peuvent céder engagements jusqu’à\
+  \ 7 jours post-livraison (R. 316-31).[artifact:] Permet ajustement si réalité disponibilité\
+  \ diverge. \n\nContributions Transfrontalières : Procédure explicite approfondie\
+  \ (UE voisins) rémunère capacités transfrontalières, pas simple régulation interconnexion\
+  \ (impacts prix français potentiels)."
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: 3.6 Contraintes & Pénalités
+  anchor: '#36-contraintes-pnalits'
+  excerpt_short: "Sanction primaire : Retrait certification (ex. 6 mois carence) si\
+    \ indisponibilité structurelle. \n\nMa..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

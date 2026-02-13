@@ -1,0 +1,47 @@
+id: MARCHE_ENERGIE_2025_9
+type: rule
+domain: usages
+title: A. Opportunités
+summary: "1. Repositionnement offres post-ARENH \n- Clients actuels ARENH doivent\
+  \ renouveler contrats fin 2025 = fenêtre fidélisation agressive \n- Proposition\
+  \ valeur : courtage transition (explique VNU, CAPN, al..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "1. Repositionnement offres post-ARENH \n- Clients actuels ARENH doivent\
+  \ renouveler contrats fin 2025 = fenêtre fidélisation agressive \n- Proposition\
+  \ valeur : courtage transition (explique VNU, CAPN, alternatives), accompagnement\
+  \ renegotiation \n\n2. Hybridation portefeuilles clients \n- Fournisseur peut proposer\
+  \ portefeuille diversifié : court terme (spot hedge, volatilité) + moyen (3-5 ans\
+  \ fixes) + long terme (PPA) \n- Limite concentration risque pour client, sécurise\
+  \ revenus fournisseur \n\n3. PPA comme arme commerciale \n- Croissance rapide :\
+  \ 1,2 GW contractualisées début 2025 (600 MW en 2024) \n- Prix attractifs : 65-85€/MWh\
+  \ sur 10-15 ans (vs 55€/MWh spot aujourd’hui, risque pics 360€/MWh) \n- Durée longue\
+  \ : 15-25 ans standard = visibilité décennies , atout concurrentiel immense \n-\
+  \ Clientèle : grandes entreprises (Bouygues, industriels), collectivités, PME conscientes\
+  \ risques \n\n4. Décret tertiaire comme levier vente \n- Clients immobilier tertiaire\
+  \ doivent réduire -40% consommation 2030 = rénovent équipements \n- Rénovation =\
+  \ réduction consommation 20-30% = opportunité renégocier fourniture à baisse \n\
+  - Fournisseur peut proposer : audit énergétique + recommandations rénovation + contrat\
+  \ post-rénovation (baisse volume consommé) \n\n5. Décret BACS (Building Automation\
+  \ Control Systems) \n- Obligation GTB/GTC installations >290 kW = nouveaux clients\
+  \ automation energie \n- Fournisseur peut intégrer monitoring → propose optimisation\
+  \ opéex = valeur ajoutée"
+logic: null
+sources:
+- doc_id: MARCHE_ENERGIE_2025
+  label: Analyse marche energie France-Europe 2025
+  section: A. Opportunités
+  anchor: '#a-opportunits'
+  excerpt_short: "1. Repositionnement offres post-ARENH \n- Clients actuels ARENH\
+    \ doivent renouveler contrats fin 2025 ..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

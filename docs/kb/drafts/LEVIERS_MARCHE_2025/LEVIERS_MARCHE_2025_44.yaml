@@ -1,0 +1,38 @@
+id: LEVIERS_MARCHE_2025_44
+type: knowledge
+domain: acc
+title: 'Q4 : Modèle Économique PROMEOS'
+summary: 'Trois flux revenus : Stream Tarif Volume 2025 Volume 2030 Central Revenu
+  2030 ACC Starter (setup) €300–600 / opération 100 opérations 1 000 opérations €300–600k/an
+  ACC Ops (SaaS expl) €150–400/mois PM...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Trois flux revenus : Stream Tarif Volume 2025 Volume 2030 Central Revenu\
+  \ 2030 ACC Starter (setup) €300–600 / opération 100 opérations 1 000 opérations\
+  \ €300–600k/an ACC Ops (SaaS expl) €150–400/mois PMO 100 ops × 12 mo 1 000 ops ×\
+  \ 12 mo €1.8–4.8M/an Data & Compliance €400–2000/mois portfolio 20 clients (multi-site)\
+  \ 200 clients €960M–4.8M/an Flex Broker (API%) 5–10% surplus revenue €0 (beta 2026)\
+  \ €500k/an avg portfolio €5–50M/an (if 1000 ops) \n\nBlended ARPU (Annual Revenue\
+  \ Per User) : \n- Micro-PMO (< 100 kW) : €600/year \n- SME-PMO (100 kW–1 MW) : €2000–5000/year\
+  \ \n- Portfolio (multi-site) : €5000–20k/year \n\nPath to profitability : \n- Year\
+  \ 0 (2025) : –€500k (dev + go-to-market) \n- Year 1 (2026) : break-even (100 opérations\
+  \ × avg €3k) \n- Year 2+ (2027+) : €2–5M net profit (200–300 opérations, scale compliance)"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: 'Q4 : Modèle Économique PROMEOS'
+  anchor: '#q4-modle-conomique-promeos'
+  excerpt_short: 'Trois flux revenus : Stream Tarif Volume 2025 Volume 2030 Central
+    Revenu 2030 ACC Starter (setup) €3...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,32 @@
+id: FLEX_EFFACEMENT_21
+type: knowledge
+domain: reglementaire
+title: 3.7 Stacking & Cumul
+summary: "⚠️ Limité (double-comptage) : \n- ❌ Double-certification interdite : Une\
+  \ capacité ≠ 1× certificat multimécanisme. \n- ⚠️ Effacement + Capacité : Possible\
+  \ si géométries différentes (ex. cert. 5 MW capaci..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "⚠️ Limité (double-comptage) : \n- ❌ Double-certification interdite :\
+  \ Une capacité ≠ 1× certificat multimécanisme. \n- ⚠️ Effacement + Capacité : Possible\
+  \ si géométries différentes (ex. cert. 5 MW capacité = 1-2 MW réserve, reste arbitrage).\
+  \ \n- ✅ Capacité + MA : Oui (engagement capacité jour-pointe, MA hors engagement)."
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: 3.7 Stacking & Cumul
+  anchor: '#37-stacking-cumul'
+  excerpt_short: "⚠️ Limité (double-comptage) : \n- ❌ Double-certification interdite\
+    \ : Une capacité ≠ 1× certificat mul..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

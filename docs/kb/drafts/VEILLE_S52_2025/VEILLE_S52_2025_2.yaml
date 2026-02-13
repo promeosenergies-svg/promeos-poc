@@ -1,0 +1,34 @@
+id: VEILLE_S52_2025_2
+type: knowledge
+domain: acc
+title: 3 Tendances / Signaux Faibles
+summary: "- Data Act appliqué depuis le 12 sept. 2025 — Accès et réutilisation des\
+  \ données industrielles obligatoires. Interopérabilité cloud-agnostic en janv. 2027.\
+  \ \n- TURPE 7 influence les batteries — Tarifs ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Data Act appliqué depuis le 12 sept. 2025 — Accès et réutilisation\
+  \ des données industrielles obligatoires. Interopérabilité cloud-agnostic en janv.\
+  \ 2027. \n- TURPE 7 influence les batteries — Tarifs optionnels pour l'injection\
+  \ dans les zones EnR (+1,7 % TRI). Incitation à l'agrégation locale et au stockage\
+  \ décentralisé. \n- Standard Flex Ready (mai 2025) — Interopérabilité BACS + EMS.\
+  \ Momentum pour l'orchestration intégrée des bâtiments."
+logic: null
+sources:
+- doc_id: VEILLE_S52_2025
+  label: Semaine 52 2025 - Veille Marche Energie PROMEOS
+  section: 3 Tendances / Signaux Faibles
+  anchor: '#3-tendances-signaux-faibles'
+  excerpt_short: '- Data Act appliqué depuis le 12 sept. 2025 — Accès et réutilisation
+    des données industrielles oblig...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

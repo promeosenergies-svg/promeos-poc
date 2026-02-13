@@ -1,0 +1,52 @@
+id: BACS_COMPLET_28
+type: knowledge
+domain: reglementaire
+title: 'Phase 2 : SPÉCIFICATIONS & APPELS OFFRES (Semaines 3-5) Étape Livrables Responsable
+  Outils Risques Cahier des charges BACS Spécifications techniques (architecte BACS),
+  zones fonctionnelles, systèmes à intégrer, niveaux d’automatisation BE + Propriétaire
+  Template CdC (+ guide RT-RE BACS) Spécifications incomplètes → débordement scope
+  Appel d’offres Envoi 3-5 intégrateurs BACS (classement, délais, prix) Responsable
+  appels RFQ standardisé, calendrier respect Réponses tardives, délais install impossibles
+  Aides financières identification Dossier CEE (fiche opération BACS), MaPrimeRénov
+  tertiaire, Éco-PTZ si applicable Responsable financement Portails CEE/MaPrimeRénov,
+  simulation Aides refusées = surcoût initial impact Sélection prestataire Contrat
+  intégrateur signé (clauses conformité, délai, inspection incluse) Responsable contrat
+  Contrat type GTB, clauses BACS Non-livraison conforme, débordement délai Planification
+  détaillée Gantt 8-10 semaines (install, param., test, commissioning, 1ère insp.)
+  Intégrateur + PM MS Project/Trello, jalons clairs Dérives calendrier = dépassement
+  deadline'
+summary: 'GO : Contrat signé, aides activées, démarrage imminent'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: 'GO : Contrat signé, aides activées, démarrage imminent'
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: 'Phase 2 : SPÉCIFICATIONS & APPELS OFFRES (Semaines 3-5) Étape Livrables
+    Responsable Outils Risques Cahier des charges BACS Spécifications techniques (architecte
+    BACS), zones fonctionnelles, systèmes à intégrer, niveaux d’automatisation BE
+    + Propriétaire Template CdC (+ guide RT-RE BACS) Spécifications incomplètes →
+    débordement scope Appel d’offres Envoi 3-5 intégrateurs BACS (classement, délais,
+    prix) Responsable appels RFQ standardisé, calendrier respect Réponses tardives,
+    délais install impossibles Aides financières identification Dossier CEE (fiche
+    opération BACS), MaPrimeRénov tertiaire, Éco-PTZ si applicable Responsable financement
+    Portails CEE/MaPrimeRénov, simulation Aides refusées = surcoût initial impact
+    Sélection prestataire Contrat intégrateur signé (clauses conformité, délai, inspection
+    incluse) Responsable contrat Contrat type GTB, clauses BACS Non-livraison conforme,
+    débordement délai Planification détaillée Gantt 8-10 semaines (install, param.,
+    test, commissioning, 1ère insp.) Intégrateur + PM MS Project/Trello, jalons clairs
+    Dérives calendrier = dépassement deadline'
+  anchor: '#phase-2-spcifications-appels-offres-semaines-3-5-tape-livrables-responsable-outils-risques-cahier-des-charges-bacs-spcifications-techniques-architecte-bacs-zones-fonctionnelles-systmes-intgrer-niveaux-dautomatisation-be-propritaire-template-cdc-guide-rt-re-bacs-spcifications-incompltes-dbordement-scope-appel-doffres-envoi-3-5-intgrateurs-bacs-classement-dlais-prix-responsable-appels-rfq-standardis-calendrier-respect-rponses-tardives-dlais-install-impossibles-aides-financires-identification-dossier-cee-fiche-opration-bacs-maprimernov-tertiaire-co-ptz-si-applicable-responsable-financement-portails-ceemaprimernov-simulation-aides-refuses-surcot-initial-impact-slection-prestataire-contrat-intgrateur-sign-clauses-conformit-dlai-inspection-incluse-responsable-contrat-contrat-type-gtb-clauses-bacs-non-livraison-conforme-dbordement-dlai-planification-dtaille-gantt-8-10-semaines-install-param-test-commissioning-1re-insp-intgrateur-pm-ms-projecttrello-jalons-clairs-drives-calendrier-dpassement-deadline'
+  excerpt_short: 'GO : Contrat signé, aides activées, démarrage imminent...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

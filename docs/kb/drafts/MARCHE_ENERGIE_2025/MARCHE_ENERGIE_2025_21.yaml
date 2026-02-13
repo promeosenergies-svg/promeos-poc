@@ -1,0 +1,31 @@
+id: MARCHE_ENERGIE_2025_21
+type: knowledge
+domain: usages
+title: 'Section 1 : Benchmark Énergétique'
+summary: "- Tableau contrats énergie (site, échéance, prix, volume) \n- Calcul ROI\
+  \ rénovation par site (coûts vs économies énergétiques) \n- Suivi consommations\
+  \ (tendances, comparaisons année/année)"
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Tableau contrats énergie (site, échéance, prix, volume) \n- Calcul\
+  \ ROI rénovation par site (coûts vs économies énergétiques) \n- Suivi consommations\
+  \ (tendances, comparaisons année/année)"
+logic: null
+sources:
+- doc_id: MARCHE_ENERGIE_2025
+  label: Analyse marche energie France-Europe 2025
+  section: 'Section 1 : Benchmark Énergétique'
+  anchor: '#section-1-benchmark-nergtique'
+  excerpt_short: "- Tableau contrats énergie (site, échéance, prix, volume) \n- Calcul\
+    \ ROI rénovation par site (coûts v..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,42 @@
+id: ACC_FRANCE_46
+type: knowledge
+domain: acc
+title: 2. 90-Day MVP 1.0 (Q1 2026)
+summary: "Goal : Validate problem (PMO onboarding friction), build landed product\
+  \ (Starter), acquire first 50–100 PMOs \n\nScope : \n- ✅ PMO templates (statuts,\
+  \ conventions, RGPD docs) — downloadable, e-signable v..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Goal : Validate problem (PMO onboarding friction), build landed product\
+  \ (Starter), acquire first 50–100 PMOs \n\nScope : \n- ✅ PMO templates (statuts,\
+  \ conventions, RGPD docs) — downloadable, e-signable via DocuSign \n- ✅ Participant\
+  \ registry (spreadsheet export, basic dashboard, contact directory) \n- ✅ Clés calculator\
+  \ (upload P30 CSV, calc statique, notify Enedis template auto) \n- ✅ Facture template\
+  \ (doc generator, bulk email, PDF archive) \n- ✅ Website + onboarding flow (Webflow\
+  \ or simple React SPA) \n\nTech Stack : \n- Frontend : Next.js (Vercel deploy) \n\
+  - Backend : Node.js Express + PostgreSQL (Railway or DigitalOcean) \n- Integration\
+  \ : Docusign API, SendGrid (email), manual CSV input (no API yet) \n- Cost : ~€3–5k/mth\
+  \ infra + ~200h dev \n\nGo-to-Market : \n- B2B2C : partner 2–3 major bailleurs (Habitat\
+  \ HF, RIVP) for pilot \n- Webinar + case study (FNCCR amplify) \n- Pricing : €100–200/mth\
+  \ starter, €500 setup (recoup dev in 1–2 customers) \n\nSuccess Criteria : \n- 50–100\
+  \ PMOs onboarded (10–20 live ACC operations) \n- 80% report “onboarding time -30%\
+  \ vs before” \n- NPS 30+ \n- Churn <5% MoM (new product, expected)"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: 2. 90-Day MVP 1.0 (Q1 2026)
+  anchor: '#2-90-day-mvp-10-q1-2026'
+  excerpt_short: 'Goal : Validate problem (PMO onboarding friction), build landed
+    product (Starter), acquire first 50–...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

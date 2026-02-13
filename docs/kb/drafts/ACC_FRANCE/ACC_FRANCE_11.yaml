@@ -1,0 +1,31 @@
+id: ACC_FRANCE_11
+type: knowledge
+domain: acc
+title: Arrêté Accise (1er mars 2025) 46 47
+summary: "- Installations ≤ 1 MWc : exonération accise à 0 €/MWh (vs 30–40 €/MWh avant)\
+  \ \n- ≥ 1 MWc : tarif normal applicable \n- Impact : redynamise petit/moyen collectif,\
+  \ zones rurales"
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Installations ≤ 1 MWc : exonération accise à 0 €/MWh (vs 30–40 €/MWh\
+  \ avant) \n- ≥ 1 MWc : tarif normal applicable \n- Impact : redynamise petit/moyen\
+  \ collectif, zones rurales"
+logic: null
+sources:
+- doc_id: ACC_FRANCE
+  label: Autoconsommation Collective en France
+  section: Arrêté Accise (1er mars 2025) 46 47
+  anchor: '#arrt-accise-1er-mars-2025-46-47'
+  excerpt_short: "- Installations ≤ 1 MWc : exonération accise à 0 €/MWh (vs 30–40\
+    \ €/MWh avant) \n- ≥ 1 MWc : tarif nor..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

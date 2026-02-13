@@ -1,0 +1,31 @@
+id: FLEX_EFFACEMENT_27
+type: knowledge
+domain: facturation
+title: 4.5 Rémunération
+summary: 'Variable large : €0–300/MWh selon tension système, prix marginal. Demande
+  + = prix bas/négatif (consommateurs doivent absorber excédent). Demande − = prix
+  haut (production manque).'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: 'Variable large : €0–300/MWh selon tension système, prix marginal. Demande
+  + = prix bas/négatif (consommateurs doivent absorber excédent). Demande − = prix
+  haut (production manque).'
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: 4.5 Rémunération
+  anchor: '#45-rmunration'
+  excerpt_short: 'Variable large : €0–300/MWh selon tension système, prix marginal.
+    Demande + = prix bas/négatif (cons...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

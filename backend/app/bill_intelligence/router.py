@@ -106,6 +106,7 @@ def audit_invoice_endpoint(invoice_id: str):
             "shadow": report.shadow,
             "explain_log": report.explain_log,
             "engine_version": report.engine_version,
+            "concept_allocations": report.concept_allocations,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Audit error: {str(e)[:200]}")

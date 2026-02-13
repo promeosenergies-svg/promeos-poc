@@ -1,0 +1,46 @@
+id: FLEX_EFFACEMENT_4
+type: rule
+domain: usages
+title: 1.4 Mesure & Vérification (Baseline + Chroniques)
+summary: "Baseline (Courbe Référence) : Établie par RTE selon méthode choisie par\
+  \ OE (Article 7.2 NEBEF 3.5) : 3 \n- Rectangle à double référence corrigée (défaut)\
+  \ : Moyenne conso J-7 à J-2 (10j glissants), +/− ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Baseline (Courbe Référence) : Établie par RTE selon méthode choisie par\
+  \ OE (Article 7.2 NEBEF 3.5) : 3 \n- Rectangle à double référence corrigée (défaut)\
+  \ : Moyenne conso J-7 à J-2 (10j glissants), +/− corrections (météo, production\
+  \ PV). Durée 2h profilés, 5h télérelevés. \n- Rectangle algébrique site-à-site :\
+  \ Pour >3000 sites profilés, 6h durée. \n- Prévision consommation : Modèle ML (telerelevés\
+  \ homologués), validation mensuelle, 7j max. \n- Historique consommation : Moyenne\
+  \ 10j ou médiane 4 sem. (télérelevés), 7j max, variantes. \n\nAjustements : EDA\
+  \ cojointe (90% overlap), neutralisation réglage fréquence (post-NF4), EIF (offre\
+  \ fourniture indissociable = non pénalisée). \n\nMesure (Courbe Consommation) :\
+  \ \n- Télérelevés : GRD fournit données Linky 10 min (RPT) ou 30 min (RPD <36 kVA),\
+  \ pas 15 min harmonisé (01/01/2025 obligatoire). \n- Profilés : GRD si possible\
+  \ ; sinon Agrégateur Qualifié mesure en interne (norme NF EN 62053, traçabilité).\
+  \ \n- Sous-mesure (expérimental) : Sites qualifiés transmettent 30 min ; limites\
+  \ strictes (100 sites/OE, 5000 profilés, 100 MW total). \n\nVérification : \n- RTE\
+  \ : Élabore chroniques réalisées (Énergie effacée kWh). Contestation 30j post-transmission\
+  \ (par OE ou Fournisseur). \n- Homologations (Prévision/Historique) : Qualité mensuelle\
+  \ (écart <10% sauf dérive). Retrait si >3/11 mois défaillants. \n- Transmission\
+  \ : GRD → RTE (S+1) ; Télérelevé → M+1 (Profilés validés)."
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: 1.4 Mesure & Vérification (Baseline + Chroniques)
+  anchor: '#14-mesure-vrification-baseline-chroniques'
+  excerpt_short: 'Baseline (Courbe Référence) : Établie par RTE selon méthode choisie
+    par OE (Article 7.2 NEBEF 3.5) :...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

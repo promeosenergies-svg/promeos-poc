@@ -1,0 +1,36 @@
+id: FLEX_EFFACEMENT_13
+type: rule
+domain: reglementaire
+title: 2.6 Contraintes & Pénalités
+summary: "Performance [Article 4.L Règles Services Système] : \n- Défaillance réglage\
+  \ = écart >5% puissance engagée >60 j → Mise en Conformité. \n- Indisponibilité\
+  \ >60 j → Notification CRE, risque retrait certifi..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Performance [Article 4.L Règles Services Système] : \n- Défaillance réglage\
+  \ = écart >5% puissance engagée >60 j → Mise en Conformité. \n- Indisponibilité\
+  \ >60 j → Notification CRE, risque retrait certification. \n- Pénalité indemnité\
+  \ : Bilan Réserve négatif appliqué collectif (tous RR manquants). \n\nObligation\
+  \ EnR >10 MW (depuis 01/01/2026) : 9 \n- Dépôt offres obligatoires hausse/baisse\
+  \ MA (chaque jour). \n- Non-respect = amendes CRE (~€10k–100k/jour selon violations).\
+  \ \n\nCoûts : Télécommande RTE (capteurs, liaison données dédiée) ~€50–100k install.\
+  \ + €10–20k/an maintenance."
+logic: null
+sources:
+- doc_id: FLEX_EFFACEMENT
+  label: Flexibilite et Effacement en France 2025-2026
+  section: 2.6 Contraintes & Pénalités
+  anchor: '#26-contraintes-pnalits'
+  excerpt_short: "Performance [Article 4.L Règles Services Système] : \n- Défaillance\
+    \ réglage = écart >5% puissance eng..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

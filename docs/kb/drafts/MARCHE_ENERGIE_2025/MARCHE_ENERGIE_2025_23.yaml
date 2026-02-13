@@ -1,0 +1,29 @@
+id: MARCHE_ENERGIE_2025_23
+type: knowledge
+domain: reglementaire
+title: 'Section 3 : Décret Tertiaire 2030'
+summary: "- Audit énergétique sites (kWh/m² actuel, cible 2030, gap) \n- Budget rénovations\
+  \ phases 1-2-3 \n- Dossiers déclaration OPERAT + modulation (si applicable)"
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Audit énergétique sites (kWh/m² actuel, cible 2030, gap) \n- Budget\
+  \ rénovations phases 1-2-3 \n- Dossiers déclaration OPERAT + modulation (si applicable)"
+logic: null
+sources:
+- doc_id: MARCHE_ENERGIE_2025
+  label: Analyse marche energie France-Europe 2025
+  section: 'Section 3 : Décret Tertiaire 2030'
+  anchor: '#section-3-dcret-tertiaire-2030'
+  excerpt_short: "- Audit énergétique sites (kWh/m² actuel, cible 2030, gap) \n- Budget\
+    \ rénovations phases 1-2-3 \n- Dos..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

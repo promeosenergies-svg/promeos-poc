@@ -23,7 +23,7 @@
 | 11 | **Enrichir KB 12 -> 40 items** | 7 | 7 | 6 | 29.4 | 40 items valides, couverture 5 segments x 4 reglementations | TODO |
 | 12 | **Connecteur Enedis sandbox** | 8 | 5 | 5 | 20 | OAuth flow, 1 releve importe en sandbox | TODO |
 | 13 | **Shadow billing L2** | 7 | 7 | 5 | 24.5 | Optimisation tarifaire (meilleure option HP/HC vs Base) | TODO |
-| 14 | **Notifications email** | 6 | 8 | 7 | 33.6 | Email sur alerte CRITICAL, template HTML | TODO |
+| 14 | **Notifications V2: email/webhook/digest** | 6 | 8 | 7 | 33.6 | Email sur alerte CRITICAL, webhook, digest periodique, SLA/escalation | TODO |
 | 15 | **Export PDF rapport site** | 7 | 8 | 6 | 33.6 | PDF telechargeab avec conformite + conso + alertes | TODO |
 | 16 | **PostgreSQL migration** | 9 | 7 | 4 | 25.2 | Meme 603 tests green sur Postgres, script migration | TODO |
 | 17 | **Audit logging** | 6 | 8 | 7 | 33.6 | Table AuditLog, middleware, qui/quoi/quand | TODO |
@@ -49,6 +49,9 @@
 | C7 | Onboarding B2B (wizard + API + NAF + CSV) | 85 | 2026-02-11 | - |
 | C8 | Diagnostic Conso V1.1 (horaires, tarif, stats robustes, actions) | 72 | 2026-02-11 | - |
 | C9 | Bill Intelligence V2 (models persistes, CSV import, shadow simplifie, 10 regles anomalies, frontend) | 72 | 2026-02-11 | - |
+| C10 | Action Hub V1 (unified actions, sync 4 briques, export CSV, frontend) | 72 | 2026-02-11 | - |
+| C11 | Audit Report PDF V1 (reportlab, 4 pages, 16 tests) | 56 | 2026-02-11 | - |
+| C12 | Notifications & Alert Center V1 (5 briques, in-app, badges, 22 tests) | 48 | 2026-02-11 | - |
 
 ---
 

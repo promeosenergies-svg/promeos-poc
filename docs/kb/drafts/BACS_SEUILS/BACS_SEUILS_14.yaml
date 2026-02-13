@@ -1,0 +1,34 @@
+id: BACS_SEUILS_14
+type: rule
+domain: reglementaire
+title: 10. TAUX DE COUVERTURE DE L’OBLIGATION
+summary: À titre informatif, le seuil de 70 kW (en vigueur depuis 2023 pour le neuf,
+  2027 pour l’existant) couvre approximativement 2 500 m² de bureaux thermiquement
+  régulés , ce qui signifie que la quasi-tota...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "À titre informatif, le seuil de 70 kW (en vigueur depuis 2023 pour le\
+  \ neuf, 2027 pour l’existant) couvre approximativement 2 500 m² de bureaux thermiquement\
+  \ régulés , ce qui signifie que la quasi-totalité des bâtiments tertiaires > 1 000\
+  \ m² seront concernés. \n\nSelon les analyses, environ 920 000 bâtiments tertiaires\
+  \ en France sont potentiellement assujettis au décret Tertiaire et par extension\
+  \ au décret BACS. 9"
+logic: null
+sources:
+- doc_id: BACS_SEUILS
+  label: Decret BACS - Seuils, dates, exemptions
+  section: 10. TAUX DE COUVERTURE DE L’OBLIGATION
+  anchor: '#10-taux-de-couverture-de-lobligation'
+  excerpt_short: À titre informatif, le seuil de 70 kW (en vigueur depuis 2023 pour
+    le neuf, 2027 pour l’existant) co...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

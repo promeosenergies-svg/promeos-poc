@@ -1,0 +1,57 @@
+id: STOCKAGE_ACC_16
+type: knowledge
+domain: acc
+title: G.2 Business Models Leaders Observés (Europe)
+summary: 'Modèle 1 : « Battery + VPP Aggregator » (Allemagne, Statkraft 10 GW) Statkraft
+  agrège 1000+ producteurs (solaire, éolien) + batteries décentralisées
+
+  Centralise dispatch via logiciel VPP propriétaire
+
+  R...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Modèle 1 : « Battery + VPP Aggregator » (Allemagne, Statkraft 10 GW)\
+  \ Statkraft agrège 1000+ producteurs (solaire, éolien) + batteries décentralisées\n\
+  Centralise dispatch via logiciel VPP propriétaire\nRevenue stacking : marchés (spot+intraday+balancing)\
+  \ + services ancillaire\nScalabilité massive, CAPEX propriétaire élevé, donc VPP\
+  \ as a Service SaaS \n\n✅ Applicable France : Agregio (concurrent), ENRG (startup),\
+  \ Sunwatts (agrégateur) \n\nModèle 2 : « Cooperative Energy Community + Batterie\
+  \ Commune » (Pays-Bas ZuidtrAnt) Coopérative locale 500 habitants finance batterie\
+  \ collective 50 kWh (20 k€)\nGère ACC, facturation, gouvernance démocratique (AGM\
+  \ annuelles)\nRevenu = TAc amélioration + vente surplus grid (contrat PPA local)\n\
+  Modèle quasi sans-profit (coop), réinvestis bénéfice achat PV supplémentaire \n\n\
+  ✅ Applicable France : mutuelles, collectivités (Couzeix, St-Léger), bailleurs sociaux\
+  \ \n\nModèle 3 : « Battery-as-a-Service SaaS + Dynamic Pricing » (Espagne, Ilek)\
+  \ Ilek = \"fournisseur vert local\" agit intermédiaire\nProduit conso local = producteur\
+  \ PV + Ilek gère facturation\nBatterie financer par Ilek, coûts variables repercutés\
+  \ consommateurs\nTransparence prix 100 %, flexibilité participante (smart charging)\
+  \ \n\n✅ Applicable France : modèle Effy, Engie Solutions (BaaS commercial) \n\n\
+  Modèle 4 : « Microgrids Isolés + Batterie Autonomie » (Île Eigg Écosse, Tenerife)\
+  \ Microgrid 100 habitants, batterie 200 kWh autonomie, pas connexion réseau (îles)\n\
+  Résilience/indépendance critère #1, rentabilité secondaire\nGestion algorithme temps-réel\
+  \ (écrêtage conso si batterie faible) \n\n⚠️ Marginal France (réseau ubiquitaire),\
+  \ sauf cas exceptionnel \n\nModèle 5 : « Industrial Park IRECs + Flexibilité Partagée\
+  \ » (Allemagne Energize) 3–10 PME industrielle voisines mutualisent batterie grande\
+  \ (500 kWh)\n+ pilotage flexible charges (compresseurs, refroidissement)\nRevenue\
+  \ = TAc + peak shaving fort (industries pic puissance énorme)\nGouvernance : ESCo\
+  \ tiers gérant batterie + contrats individuels \n\n✅ Applicable France : ZAE (zones\
+  \ artisanales), clusters industriels"
+logic: null
+sources:
+- doc_id: STOCKAGE_ACC
+  label: Stockage et Autoconsommation Collective
+  section: G.2 Business Models Leaders Observés (Europe)
+  anchor: '#g2-business-models-leaders-observs-europe'
+  excerpt_short: 'Modèle 1 : « Battery + VPP Aggregator » (Allemagne, Statkraft 10
+    GW) Statkraft agrège 1000+ producte...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,36 @@
+id: DT_SYNTHESE_3
+type: rule
+domain: reglementaire
+title: A. Publication complète des valeurs absolues (Arrêté VI - 6 septembre 2025)
+summary: Après cinq arrêtés précédents, le sixième arrêté finalise le cadre. Pour
+  la première fois, 100% des catégories d’activité ont leurs seuils 2030 définis.
+  Catégories nouvellement couverte Pertinence pou...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Après cinq arrêtés précédents, le sixième arrêté finalise le cadre. Pour\
+  \ la première fois, 100% des catégories d’activité ont leurs seuils 2030 définis.\
+  \ Catégories nouvellement couverte Pertinence pour PROMEOS 14 sous-catégories commerces\
+  \ Si centres commerciaux Cinémas Si équipements loisirs Services funéraires Faible\
+  \ probabilité Banques Si locaux financiers Administration & Bureaux (all branches)\
+  \ ✓ PRIORITAIRE DROM (régions outre-mer) Si implantations OM \n\nImpact pour PROMEOS\
+  \ : Fin de l’incertitude. Tous vos bâtiments ont désormais des cibles mesurables\
+  \ et comparables au marché."
+logic: null
+sources:
+- doc_id: DT_SYNTHESE
+  label: Decret Tertiaire - Synthese PROMEOS
+  section: A. Publication complète des valeurs absolues (Arrêté VI - 6 septembre 2025)
+  anchor: '#a-publication-complte-des-valeurs-absolues-arrt-vi---6-septembre-2025'
+  excerpt_short: Après cinq arrêtés précédents, le sixième arrêté finalise le cadre.
+    Pour la première fois, 100% des ...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

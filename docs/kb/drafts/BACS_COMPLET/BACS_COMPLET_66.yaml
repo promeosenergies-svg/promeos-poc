@@ -1,0 +1,35 @@
+id: BACS_COMPLET_66
+type: rule
+domain: usages
+title: 7. KPI Énergie & Performance BACS
+summary: "- Dashboard mensuel : conso (kWh), coûts (€), gain vs baseline, nombre heures\
+  \ inconfort, taux exploitation BACS \n- Tendance annuelle : économies réalisées\
+  \ post-BACS vs avant (kWh saved × tarif moyen) ..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Dashboard mensuel : conso (kWh), coûts (€), gain vs baseline, nombre\
+  \ heures inconfort, taux exploitation BACS \n- Tendance annuelle : économies réalisées\
+  \ post-BACS vs avant (kWh saved × tarif moyen) \n- Benchmarking intra-groupe : “Notre\
+  \ site = top 20% effi énergétique vs autres sites classe similaire” \n- ROI tracking\
+  \ : “BACS a coûté 40k€ en 2023 ; économies réalisées 2024 = 8k€ ; ROI année 4 attendu”\
+  \ \n- Cas d’usage : Diriger générale rapporte à CSR “économie énergétique BACS =\
+  \ 250 tCO2 / 5 ans”"
+logic: null
+sources:
+- doc_id: BACS_COMPLET
+  label: Decret BACS - Synthese PROMEOS complete
+  section: 7. KPI Énergie & Performance BACS
+  anchor: '#7-kpi-nergie-performance-bacs'
+  excerpt_short: '- Dashboard mensuel : conso (kWh), coûts (€), gain vs baseline,
+    nombre heures inconfort, taux exploi...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,164 @@
+[
+  {
+    "chunk_id": "BACS_SEUILS_chunk_0",
+    "doc_id": "BACS_SEUILS",
+    "section_path": "Décret BACS — seuils, dates, exemptions TRI",
+    "anchor": "#dcret-bacs-seuils-dates-exemptions-tri",
+    "text": "“Synthèse officielle décret BACS : seuils 290 kW/70 kW, dates applicables, exemptions TRI, inspections, citer Legifrance.” \n\nExcellent! Now I have all the official information from Legifrance. Let me compile this into a comprehensive synthesis document.",
+    "word_count": 35,
+    "chunk_index": 0
+  },
+  {
+    "chunk_id": "BACS_SEUILS_chunk_1",
+    "doc_id": "BACS_SEUILS",
+    "section_path": "1. CONTEXTE RÉGLEMENTAIRE OFFICIEL",
+    "anchor": "#1-contexte-rglementaire-officiel",
+    "text": "Le Décret n° 2020-887 du 20 juillet 2020 (Legifrance) transposant la Directive UE 2018/844 crée l’obligation d’installer des Systèmes d’Automatisation et de Contrôle des Bâtiments (BACS) dans les bâtiments tertiaires. Ce texte a été modifié par le Décret n° 2023-259 du 7 avril 2023 , qui introduit un seuil de puissance abaissé et des inspections périodiques obligatoires. \n\nRéférences légales : \n- Décret n° 2020-887 du 20 juillet 2020 — Legifrance 1 \n- Décret n° 2023-259 du 7 avril 2023 — Legifrance \n- Code de la Construction et de l’Habitation, articles R.175-1 à R.175-6 \n- Arrêté du 7 avril 2023 (Legifrance) — Modalités de calcul du TRI et inspections",
+    "word_count": 108,
+    "chunk_index": 1
+  },
+  {
+    "chunk_id": "BACS_SEUILS_chunk_2",
+    "doc_id": "BACS_SEUILS",
+    "section_path": "2. CHAMP D’APPLICATION",
+    "anchor": "#2-champ-dapplication",
+    "text": "Bâtiments concernés : \n- Bâtiments tertiaires non résidentiels (activités marchandes ou non marchandes) \n- Bâtiments du secteur primaire ou secondaire hébergeant des activités tertiaires \n- Équipés d’un système de chauffage OU de climatisation, combiné ou non avec ventilation \n- Critère : Puissance nominale utile des systèmes techniques",
+    "word_count": 47,
+    "chunk_index": 2
+  },
+  {
+    "chunk_id": "BACS_SEUILS_chunk_3",
+    "doc_id": "BACS_SEUILS",
+    "section_path": "3. SEUILS RÉGLEMENTAIRES ET ÉCHÉANCES Puissance CVC Bâtiments existants Bâtiments neufs Mise en conformité requise ≥ 290 kW Obligation depuis 22/07/2020 Obligation depuis 21/07/2021 2 1er janvier 2025 70–290 kW Obligation depuis 09/04/2023 Obligation depuis 08/04/2024 1er janvier 2027",
+    "anchor": "#3-seuils-rglementaires-et-chances-puissance-cvc-btiments-existants-btiments-neufs-mise-en-conformit-requise-290-kw-obligation-depuis-22072020-obligation-depuis-21072021-2-1er-janvier-2025-70290-kw-obligation-depuis-09042023-obligation-depuis-08042024-1er-janvier-2027",
+    "text": "Interprétation : \n- Les bâtiments existants dont la puissance CVC dépasse 290 kW doivent être équipés avant le 1er janvier 2025 . \n- Les bâtiments existants de 70–290 kW doivent être conformes avant le 1er janvier 2027 . \n- Pour les bâtiments neufs , l’obligation s’applique dès le dépôt du permis de construire après les dates susmentionnées (21/07/2021 pour ≥290 kW ; 08/04/2024 pour ≥70 kW).",
+    "word_count": 66,
+    "chunk_index": 3
+  },
+  {
+    "chunk_id": "BACS_SEUILS_chunk_4",
+    "doc_id": "BACS_SEUILS",
+    "section_path": "Modification du seuil en 2023",
+    "anchor": "#modification-du-seuil-en-2023",
+    "text": "Le Décret n° 2023-259 a relevé le seuil d’exemption de 6 ans à 10 ans . Décret initial (2020) Décret modifié (2023) TRI < 6 ans TRI < 10 ans",
+    "word_count": 30,
+    "chunk_index": 4
+  },
+  {
+    "chunk_id": "BACS_SEUILS_chunk_5",
+    "doc_id": "BACS_SEUILS",
+    "section_path": "Conditions d’exemption 3",
+    "anchor": "#conditions-dexemption-3",
+    "text": "Un bâtiment peut être exempté de l’obligation BACS si le propriétaire démontre que l’installation n’est pas réalisable avec un TRI inférieur à 10 ans , déduction faite des aides financières publiques . \n\nFormule officielle de calcul du TRI (Annexe 1, Arrêté du 7 avril 2023) : TRI = S / (Σ énergie Génergie × Cénergie) \n\nOù : \n- S = Coût d’installation du BACS (€) \n- Génergie = Gain énergétique annuel par type d’énergie (kWh) \n- Cénergie = Coût unitaire de l’énergie économisée (€/kWh) \n- TRI = Arrondi au chiffre supérieur, exprimé en années \n\nRègle décisoire : Lorsque TRI > 10 ans , l’absence de rentabilité est avérée et l’exemption est justifiée. 4 \n\nApplication pratique : \n- Les aides CEE (Certificats d’Économies d’Énergie), subventions publiques doivent être déduites du coût S. \n- L’étude justificative doit suivre rigoureusement cette méthodologie. \n- Le dossier doit être conservé pendant 10 ans à titre de preuve.",
+    "word_count": 152,
+    "chunk_index": 5
+  },
+  {
+    "chunk_id": "BACS_SEUILS_chunk_6",
+    "doc_id": "BACS_SEUILS",
+    "section_path": "5. EXIGENCES FONCTIONNELLES DU BACS",
+    "anchor": "#5-exigences-fonctionnelles-du-bacs",
+    "text": "Le BACS doit remplir les 5 fonctions obligatoires : Fonction Description Suivi & Enregistrement Mesure continue (pas horaire), par zone, de la production et consommation énergétique des systèmes CVC. Archivage mensuel 5 ans minimum. Référence & Détection Situe l’efficacité vs. valeurs de référence ; détecte pertes d’efficacité ; informe l’exploitant des possibilités d’amélioration. Ajustement Ajuste automatiquement les systèmes techniques en conséquence des données. Interopérabilité Communication avec divers systèmes (CVC, clairage, etc.) via protocoles standards. Pilotage Manuel-Automatique Régulation autonome optimisée + possibilité de reprise manuelle. \n\nClasse de performance : Le BACS doit atteindre classe C minimum selon NF EN ISO 52120-1:2022 (norme définie par arrêté du 7 avril 2023). Seules les classes A, B, C sont considérées conformes. 5 6",
+    "word_count": 119,
+    "chunk_index": 6
+  },
+  {
+    "chunk_id": "BACS_SEUILS_chunk_7",
+    "doc_id": "BACS_SEUILS",
+    "section_path": "6. INSPECTIONS PÉRIODIQUES OBLIGATOIRES",
+    "anchor": "#6-inspections-priodiques-obligatoires",
+    "text": "Le Décret n° 2023-259 (article R.175-5) introduit une obligation d’inspection régulière , supprimant l’exemption antérieure relative à l’entretien. 7",
+    "word_count": 19,
+    "chunk_index": 7
+  },
+  {
+    "chunk_id": "BACS_SEUILS_chunk_8",
+    "doc_id": "BACS_SEUILS",
+    "section_path": "Contenu obligatoire de l’inspection 8",
+    "anchor": "#contenu-obligatoire-de-linspection-8",
+    "text": "- Examen documentaire — Vérification de l’analyse fonctionnelle du système. \n- Vérification sur site — Bon fonctionnement du BACS et des systèmes reliés. \n- Paramétrage — Évaluation du respect des exigences de l’article R.175-3 et pertinence des réglages par rapport à l’usage du bâtiment. \n- Recommandations — Portant sur : \n- Bon usage du système en place \n- Améliorations possibles de l’installation globale \n- Intérêt éventuel du remplacement \n- Autres solutions envisageables",
+    "word_count": 72,
+    "chunk_index": 8
+  },
+  {
+    "chunk_id": "BACS_SEUILS_chunk_9",
+    "doc_id": "BACS_SEUILS",
+    "section_path": "Responsabilités & Délais de remise",
+    "anchor": "#responsabilits-dlais-de-remise",
+    "text": "- Charge : Propriétaire du BACS \n- Professionnel requis : Prestataire externe ou personnel interne compétent \n- Délai de remise du rapport : 1 mois après inspection au propriétaire \n- Conservation : Rapport conservé 10 ans minimum",
+    "word_count": 37,
+    "chunk_index": 9
+  },
+  {
+    "chunk_id": "BACS_SEUILS_chunk_10",
+    "doc_id": "BACS_SEUILS",
+    "section_path": "Bâtiments existants",
+    "anchor": "#btiments-existants",
+    "text": "Sont reliés au BACS tous les systèmes techniques pour lesquels la connexion est réalisable avec un TRI < 10 ans (déduction faite des aides).",
+    "word_count": 24,
+    "chunk_index": 10
+  },
+  {
+    "chunk_id": "BACS_SEUILS_chunk_11",
+    "doc_id": "BACS_SEUILS",
+    "section_path": "Obligation lors de remplacement d’équipement",
+    "anchor": "#obligation-lors-de-remplacement-dquipement",
+    "text": "Depuis le 09/04/2023, dès qu’un système de chauffage ou climatisation est remplacé ou installé dans un bâtiment assujetti, une régulation conforme au décret BACS doit être mise en place , même avant les échéances globales 2025 ou 2027.",
+    "word_count": 38,
+    "chunk_index": 11
+  },
+  {
+    "chunk_id": "BACS_SEUILS_chunk_12",
+    "doc_id": "BACS_SEUILS",
+    "section_path": "8. MODALITÉS DE CONFORMITÉ & PREUVES REQUISES",
+    "anchor": "#8-modalits-de-conformit-preuves-requises",
+    "text": "Pas de déclaration centralisée (contrairement au décret Tertiaire/OPERAT) \n\nPreuves à conserver : \n- Attestation d’installation/mise en service fournie par l’intégrateur \n- Spécifications techniques du BACS (classe de performance atteinte, fonctions mises en œuvre) \n- Rapports d’inspection périodique (tous les 2–5 ans) \n- Étude de TRI justificative (si exemption revendiquée) \n- Documentation du paramétrage et consignes écrites au gestionnaire \n\nVérification administrative : Contrôle possible par : \n- Agents de la DREAL (Direction Régionale de l’Environnement, de l’Aménagement et du Logement) \n- Agents assermentés \n- Inspections liées aux permis d’exploiter (ERP), audits énergétiques, audits ISO 50001",
+    "word_count": 94,
+    "chunk_index": 12
+  },
+  {
+    "chunk_id": "BACS_SEUILS_chunk_13",
+    "doc_id": "BACS_SEUILS",
+    "section_path": "9. SANCTIONS & MISE EN CONFORMITÉ",
+    "anchor": "#9-sanctions-mise-en-conformit",
+    "text": "Absence de régime d’amende forfaitaire explicite , contrairement au décret Tertiaire, mais : \n- Manquement au code de la construction → Articles R.131-38 à R.131-41 \n- Mise en demeure préfectorale possible en cas de non-conformité constatée \n- Astreintes administratives et amendes administratives sur la base du Code de l’énergie \n- Responsabilité civile du propriétaire en cas d’incident lié à l’absence de GTB conforme \n\nNon-respect des inspections : Peut exposer à des mises en demeure de conformité et à des contrôles externes renforcés.",
+    "word_count": 82,
+    "chunk_index": 13
+  },
+  {
+    "chunk_id": "BACS_SEUILS_chunk_14",
+    "doc_id": "BACS_SEUILS",
+    "section_path": "10. TAUX DE COUVERTURE DE L’OBLIGATION",
+    "anchor": "#10-taux-de-couverture-de-lobligation",
+    "text": "À titre informatif, le seuil de 70 kW (en vigueur depuis 2023 pour le neuf, 2027 pour l’existant) couvre approximativement 2 500 m² de bureaux thermiquement régulés , ce qui signifie que la quasi-totalité des bâtiments tertiaires > 1 000 m² seront concernés. \n\nSelon les analyses, environ 920 000 bâtiments tertiaires en France sont potentiellement assujettis au décret Tertiaire et par extension au décret BACS. 9",
+    "word_count": 66,
+    "chunk_index": 14
+  },
+  {
+    "chunk_id": "BACS_SEUILS_chunk_15",
+    "doc_id": "BACS_SEUILS",
+    "section_path": "11. INTÉGRATION AVEC AUTRES OBLIGATIONS",
+    "anchor": "#11-intgration-avec-autres-obligations",
+    "text": "Le décret BACS est complémentaire du : \n- Décret Tertiaire (Éco-Énergie Tertiaire) — Réduction des consommations -40% d’ici 2030 \n- Loi APER (2023) — Solarisation des parkings > 1 500 m² à 50% d’ici 2026–2028 \n- Directives ISO 50001 — Management de l’énergie \n\nLe BACS constitue l’outil d’optimisation concrète permettant d’atteindre les objectifs de réduction du Tertiaire.",
+    "word_count": 57,
+    "chunk_index": 15
+  },
+  {
+    "chunk_id": "BACS_SEUILS_chunk_16",
+    "doc_id": "BACS_SEUILS",
+    "section_path": "12. RÉFÉRENCES OFFICIELLES",
+    "anchor": "#12-rfrences-officielles",
+    "text": "- Legifrance — Décret n° 2020-887 du 20 juillet 2020 \nhttps://www.legifrance.gouv.fr/jorf/id/JORFTEXT000042128488/ \n- Legifrance — Décret n° 2023-259 du 7 avril 2023 \nEntrée en vigueur : 9 avril 2023 \n- Legifrance — Arrêté du 7 avril 2023 relatif aux systèmes d’automatisation et de contrôle des bâtiments tertiaires \nAnnexe 1 : Modalités de calcul du TRI \nhttps://www.legifrance.gouv.fr/loda/article_lc/LEGIARTI000047426532 \n- Code de la Construction et de l’Habitation , articles R.175-1 à R.175-6 \nhttps://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT000006074096/LEGISCTA000043819533/ \n- Guide officiel du Décret BACS (Ministère de la Transition écologique) \nhttps://rt-re-batiment.developpement-durable.gouv.fr/presentation-et-guide-du-decret-bacs-a712.html",
+    "word_count": 81,
+    "chunk_index": 16
+  },
+  {
+    "chunk_id": "BACS_SEUILS_chunk_17",
+    "doc_id": "BACS_SEUILS",
+    "section_path": "SYNTHÈSE EXÉCUTIVE Aspect Détail Obligation principale Installation d’un BACS (GTB classe C min.) pour tous bâtiments tertiaires ≥ 70 kW Seuils clés 290 kW (échéance 01/01/2025) ; 70 kW (échéance 01/01/2027) Exemption TRI > 10 ans (déduction aides) — Justification exigée, conservée 10 ans Inspections Tous les 2 ans (post-installation) puis tous les 5 ans ; rapport obligatoire 1 mois ; conservation 10 ans Pas de plateforme déclarative Contrairement au Tertiaire (OPERAT) — Conformité via dossiers / preuves conservés Fonction clé Suivi horaire énergie, détection pertes efficacité, ajustement automatique, pilotage manuel Responsabilité Propriétaire des systèmes CVC ; formation exploitant obligatoire",
+    "anchor": "#synthse-excutive-aspect-dtail-obligation-principale-installation-dun-bacs-gtb-classe-c-min-pour-tous-btiments-tertiaires-70-kw-seuils-cls-290-kw-chance-01012025-70-kw-chance-01012027-exemption-tri-10-ans-dduction-aides-justification-exige-conserve-10-ans-inspections-tous-les-2-ans-post-installation-puis-tous-les-5-ans-rapport-obligatoire-1-mois-conservation-10-ans-pas-de-plateforme-dclarative-contrairement-au-tertiaire-operat-conformit-via-dossiers-preuves-conservs-fonction-cl-suivi-horaire-nergie-dtection-pertes-efficacit-ajustement-automatique-pilotage-manuel-responsabilit-propritaire-des-systmes-cvc-formation-exploitant-obligatoire",
+    "text": "10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 \n\n⁂ \n- https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000042128488?init=true&page=1&query=2020-887&searchField=ALL&tab_selection=all ↩︎ \n- https://www.dekra-industrial.fr/news/decrets-bacs- ↩︎ \n- https://www.legifrance.gouv.fr/loda/article_lc/LEGIARTI000047426532 ↩︎ \n- https://www.legifrance.gouv.fr/loda/article_lc/LEGIARTI000047426532 ↩︎ \n- https://www.e-nergys.com/reglementation/decret-bacs/ ↩︎ \n- https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000047422562 ↩︎ \n- https://www.ffie.fr/actualites-et-evenements/actualites/detail/actualite/evolution-de-la-reglementation-relative-aux-bacs ↩︎ \n- https://france.apave.com/Actualites/News/Ameliorer-performance-energetique-des-batiments-tertiaires-impacts-Decret-BACS ↩︎ \n- Reglementations-energetiques-_-donnees-a-surveiller-et-formules-de-calcul.pdf ↩︎ \n- Profil_Conso.csv ↩︎ \n- Guide Archelios Pro et Etudes de cas.docx ↩︎ \n- Présentation advizeo V2025.pdf ↩︎ \n- Devis-ENDESA ENERGIA-ENOGRID-2025-03-1423.pdf ↩︎ \n- Plaquette EnoPower.pdf ↩︎ \n- Présentation Enogrid.pdf ↩︎ \n- Plaquette EnoLab.pdf ↩︎ \n- Note ACC ENOGRID.docx ↩︎ \n- Présentation advizeo V2025 (002).pdf ↩︎ \n- advizeo - Schéma économique Partenaires.pdf ↩︎ \n- Energy management avec advizeo.pdf ↩︎ \n- Présentation advizeo cockpit.pdf ↩︎ \n- Advizeo.docx ↩︎ \n- Présentation Tilt.pdf ↩︎ \n- Tilt X Endesa I Intégration technique v2.docx.pdf ↩︎ \n- Tilt X Endesa I Kick-off 0307 (1).docx ↩︎ \n- Tilt X Endesa I Intégration technique.docx ↩︎ \n- Flux projet TILT - version finale.docx ↩︎ \n- Tilt Energy X Endesa I Proposition commerciale.pdf ↩︎ \n- PROMEOS-Simulateur-ACC-Conformite-v0.md ↩︎ \n- Analyse-experte-Obligations-reglementaires-module-Data-Conformite-multi-energie-France-B2B.pdf ↩︎ \n- MVP-PROMEOS.xlsx ↩︎ \n- https://www.calculcee.fr/article/decret-bacs-gtb/ ↩︎ \n- https://www.hellio.com/actualites/reglementation/decret-bacs ↩︎ \n- https://www.terao.fr/decret-bacs-obligations-gtb-batiments-tertiaires/ ↩︎ \n- https://www.novabuild.fr/wp-content/uploads/2024/02/2024-02-FICHE-TECHNIQUE-decryptage-decret-BACS.pdf ↩︎ \n- https://www.gac-res.com/blog/decret-bacs-parc-immobilier/ ↩︎ \n- https://decret-bacs.fr ↩︎ \n- https://www.nrgys.fr/2023/03/20/batiments-tertiaires-decret-bacs/ ↩︎ \n- https://programme-cee-actee.fr/wp-content/uploads/2023/11/Webinaire-ACTEE_Decret-BACS_17_10_2023-1.pdf ↩︎ \n- https://solutions.acciona-energia.fr/blog/decret-bacs-obligation-dequiper-les-batiments-tertiaires-de-systemes-dautomatisation-et-de-controle/ ↩︎ \n- https://www.echoline.fr/blog/decret-bacs-performance-energetique-tertiaire ↩︎ \n- https://cegibat.grdf.fr/reglementation/energetique/decret-bacs-obligations-batiments-tertiaires ↩︎ \n- https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000042128488/ ↩︎ \n- https://www.ec35.bzh/voy_content/uploads/2022/09/MAJ-FAQ-09-2022-.pdf ↩︎ \n- https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000041991293 ↩︎ \n- https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000041996366 ↩︎ \n- https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000047439578 ↩︎ \n- https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT000006074096/LEGISCTA000043819533/ ↩︎ \n- https://www.legifrance.gouv.fr/loda/id/JORFTEXT000042138295/ ↩︎ \n- https://rt-re-batiment.developpement-durable.gouv.fr/presentation-et-guide-du-decret-bacs-a712.html ↩︎ \n- https://www.advizeo.io/smart-buildings/faq-bacs-dans-quels-cas-de-figures-le-decret-nest-pas-applicable/ ↩︎ \n- Guide Utilisation Archelios Pro.pptx ↩︎",
+    "word_count": 258,
+    "chunk_index": 17
+  }
+]

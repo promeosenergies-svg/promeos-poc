@@ -1,0 +1,32 @@
+id: LEVIERS_MARCHE_2025_14
+type: knowledge
+domain: usages
+title: 5. Intégration ERP/GTB clients (API connecteurs)
+summary: "- Action : Connecteurs natifs comptabilité (Sage, SAP, Excel) + GTB (pour\
+  \ données consommation) \n- Gain : Zéro saisie en double en comptabilité, données\
+  \ temps réel pour optimisation \n- Impact : Onboar..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "- Action : Connecteurs natifs comptabilité (Sage, SAP, Excel) + GTB (pour\
+  \ données consommation) \n- Gain : Zéro saisie en double en comptabilité, données\
+  \ temps réel pour optimisation \n- Impact : Onboarding client simplifiée, churn\
+  \ risque réduit 30%"
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: 5. Intégration ERP/GTB clients (API connecteurs)
+  anchor: '#5-intgration-erpgtb-clients-api-connecteurs'
+  excerpt_short: "- Action : Connecteurs natifs comptabilité (Sage, SAP, Excel) +\
+    \ GTB (pour données consommation) \n- G..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

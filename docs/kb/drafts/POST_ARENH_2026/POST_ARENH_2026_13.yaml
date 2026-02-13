@@ -1,0 +1,32 @@
+id: POST_ARENH_2026_13
+type: rule
+domain: reglementaire
+title: Coûts Complets et Révision Triennale
+summary: Le coût complet de production du parc nucléaire historique, établi à 60,3
+  €/MWh pour 2026-2028, est révisable tous les trois ans. Cette révision tient compte
+  de l’évolution des charges d’exploitation,...
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: Le coût complet de production du parc nucléaire historique, établi à 60,3
+  €/MWh pour 2026-2028, est révisable tous les trois ans. Cette révision tient compte
+  de l’évolution des charges d’exploitation, des investissements de maintenance, et
+  des coûts de décommissionnement. 30
+logic: null
+sources:
+- doc_id: POST_ARENH_2026
+  label: Post-ARENH 2026
+  section: Coûts Complets et Révision Triennale
+  anchor: '#cots-complets-et-rvision-triennale'
+  excerpt_short: Le coût complet de production du parc nucléaire historique, établi
+    à 60,3 €/MWh pour 2026-2028, est ...
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

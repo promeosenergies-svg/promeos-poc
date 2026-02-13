@@ -1,0 +1,41 @@
+id: LEVIERS_MARCHE_2025_30
+type: rule
+domain: acc
+title: '**Problem**'
+summary: '- 12–24 mois pour monter opération ACC (flou statut PMO, docs customs, Enedis
+  communication lent)
+
+  - Exploitation manuelle 80% (Excel, facturation, clés statiques, impayés)
+
+  - Conformité multi-énergie (...'
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: '- 12–24 mois pour monter opération ACC (flou statut PMO, docs customs,
+  Enedis communication lent)
+
+  - Exploitation manuelle 80% (Excel, facturation, clés statiques, impayés)
+
+  - Conformité multi-énergie (Tertiaire, BACS, APER, accise) = nébuleuse, risque audit
+
+  - Aucune solution intègre "montage + opération + conformité" de A à Z'
+logic: null
+sources:
+- doc_id: LEVIERS_MARCHE_2025
+  label: Etat 2025, Leviers de Marche et Plan de Simplification
+  section: '**Problem**'
+  anchor: '#problem'
+  excerpt_short: '- 12–24 mois pour monter opération ACC (flou statut PMO, docs customs,
+    Enedis communication lent)
+
+    - ...'
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.

@@ -1,0 +1,33 @@
+id: BACS_SEUILS_2
+type: knowledge
+domain: reglementaire
+title: 2. CHAMP D’APPLICATION
+summary: "Bâtiments concernés : \n- Bâtiments tertiaires non résidentiels (activités\
+  \ marchandes ou non marchandes) \n- Bâtiments du secteur primaire ou secondaire\
+  \ hébergeant des activités tertiaires \n- Équipés d’..."
+tags:
+  energy:
+  - multi
+  segment: []
+  asset: []
+  reg: []
+  granularity: []
+scope: null
+content_md: "Bâtiments concernés : \n- Bâtiments tertiaires non résidentiels (activités\
+  \ marchandes ou non marchandes) \n- Bâtiments du secteur primaire ou secondaire\
+  \ hébergeant des activités tertiaires \n- Équipés d’un système de chauffage OU de\
+  \ climatisation, combiné ou non avec ventilation \n- Critère : Puissance nominale\
+  \ utile des systèmes techniques"
+logic: null
+sources:
+- doc_id: BACS_SEUILS
+  label: Decret BACS - Seuils, dates, exemptions
+  section: 2. CHAMP D’APPLICATION
+  anchor: '#2-champ-dapplication'
+  excerpt_short: "Bâtiments concernés : \n- Bâtiments tertiaires non résidentiels\
+    \ (activités marchandes ou non marchand..."
+updated_at: '2026-02-11'
+confidence: low
+status: draft
+priority: 3
+notes: Auto-generated draft from HTML ingestion. Requires human review and upgrade.
