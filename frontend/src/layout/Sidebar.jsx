@@ -6,7 +6,7 @@ import {
   BarChart3, Import, Users, Receipt, BookOpen, ShoppingCart,
   Search, Link2, Eye, Bell, Lock,
 } from 'lucide-react';
-import { getNotificationsSummary } from '../services/api';
+import { getNotificationsSummary, getMonitoringAlerts } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
 // Map nav routes to permission modules for view filtering
@@ -47,7 +47,7 @@ const NAV_ANALYSE = [
   { to: '/diagnostic-conso', icon: Search,       label: 'Diagnostic' },
   { to: '/bill-intel',       icon: Receipt,      label: 'Facturation' },
   { to: '/achat-energie',    icon: ShoppingCart,  label: 'Achats énergie' },
-  { to: '/monitoring',       icon: Activity,     label: 'Performance' },
+  { to: '/monitoring',       icon: Activity,     label: 'Performance', badgeKey: 'monitoring' },
 ];
 
 const NAV_ADMIN = [
@@ -107,15 +107,19 @@ function SectionLabel({ label }) {
 
 export default function Sidebar() {
   const [alertBadge, setAlertBadge] = useState(0);
+  const [monitoringBadge, setMonitoringBadge] = useState(0);
   const { isAuthenticated, hasPermission } = useAuth();
 
   useEffect(() => {
     getNotificationsSummary()
       .then((s) => setAlertBadge(s.new_critical + s.new_warn))
       .catch(() => {});
+    getMonitoringAlerts(null, 'open', 200)
+      .then((alerts) => setMonitoringBadge(Array.isArray(alerts) ? alerts.length : 0))
+      .catch(() => {});
   }, []);
 
-  const badges = { alerts: alertBadge };
+  const badges = { alerts: alertBadge, monitoring: monitoringBadge };
 
   // Filter items based on user permissions
   const filterItems = (items) => {
