@@ -47,13 +47,13 @@ export default function Drawer({ open, onClose, title, children, side = 'right',
 
   return (
     <div className="fixed inset-0 z-50 flex" role="dialog" aria-modal="true" aria-label={title}>
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/40 animate-[fadeIn_0.2s_ease-out]" onClick={onClose} />
       <div
         ref={ref}
         tabIndex={-1}
         onKeyDown={handleKeyDown}
         className={`absolute ${sideClass} top-0 h-full ${widthClass} bg-white shadow-xl border-l border-gray-200
-          flex flex-col focus:outline-none ${className}`}
+          flex flex-col focus:outline-none animate-[slideInRight_0.25s_ease-out] ${className}`}
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
           <h2 className="text-lg font-semibold text-gray-900">{title}</h2>

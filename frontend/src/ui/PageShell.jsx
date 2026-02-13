@@ -5,7 +5,7 @@
  */
 export default function PageShell({ icon: Icon, title, subtitle, actions, children, className = '' }) {
   return (
-    <div className={`px-6 py-6 space-y-6 ${className}`}>
+    <div className={`px-6 py-6 space-y-6 animate-[slideInUp_0.3s_ease-out] ${className}`}>
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
           {Icon && <Icon size={26} className="text-blue-600 shrink-0" />}
