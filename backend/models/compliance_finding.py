@@ -86,6 +86,12 @@ class ComplianceFinding(Base, TimestampMixin):
         comment="Batch d'evaluation parent",
     )
 
+    # Audit fields (inputs/params/evidence used for this finding)
+    inputs_json = Column(Text, nullable=True, default="{}", comment="JSON: input data used")
+    params_json = Column(Text, nullable=True, default="{}", comment="JSON: thresholds/params applied")
+    evidence_json = Column(Text, nullable=True, default="{}", comment="JSON: evidence references")
+    engine_version = Column(String(64), nullable=True, comment="Config version hash")
+
     # Relations
     site = relationship("Site", backref="compliance_findings")
     run_batch = relationship("ComplianceRunBatch", backref="findings")

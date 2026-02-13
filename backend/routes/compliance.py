@@ -318,3 +318,41 @@ def list_batches(
         }
         for b in batches
     ]
+
+
+@router.get("/findings/{finding_id}")
+def get_finding_detail(finding_id: int, db: Session = Depends(get_db)):
+    """
+    GET /api/compliance/findings/{finding_id}
+
+    Detailed finding with audit fields (inputs, params, evidence, engine_version).
+    """
+    f = db.query(ComplianceFinding).filter(ComplianceFinding.id == finding_id).first()
+    if not f:
+        raise HTTPException(status_code=404, detail="Finding not found")
+
+    site = db.query(Site).filter(Site.id == f.site_id).first()
+    actions = json.loads(f.recommended_actions_json) if f.recommended_actions_json else []
+
+    return {
+        "id": f.id,
+        "site_id": f.site_id,
+        "site_nom": site.nom if site else "?",
+        "regulation": f.regulation,
+        "rule_id": f.rule_id,
+        "status": f.status,
+        "severity": f.severity,
+        "deadline": f.deadline.isoformat() if f.deadline else None,
+        "evidence": f.evidence,
+        "actions": actions,
+        "insight_status": f.insight_status.value if f.insight_status else "open",
+        "owner": f.owner,
+        "notes": f.notes,
+        "run_batch_id": f.run_batch_id,
+        "inputs": json.loads(f.inputs_json) if f.inputs_json else {},
+        "params": json.loads(f.params_json) if f.params_json else {},
+        "evidence_refs": json.loads(f.evidence_json) if f.evidence_json else {},
+        "engine_version": f.engine_version,
+        "created_at": f.created_at.isoformat() if hasattr(f, "created_at") and f.created_at else None,
+        "updated_at": f.updated_at.isoformat() if hasattr(f, "updated_at") and f.updated_at else None,
+    }

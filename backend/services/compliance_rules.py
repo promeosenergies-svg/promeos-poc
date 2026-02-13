@@ -310,6 +310,16 @@ def _eval_aper(ctx: dict) -> List[dict]:
 _SEVERITY_ORDER = {"critical": 4, "high": 3, "medium": 2, "low": 1}
 
 
+def _compute_engine_version() -> str:
+    """Compute deterministic version hash from rule pack configs."""
+    import hashlib
+    combined = ""
+    for fname in ["decret_tertiaire_operat_v1.yaml", "decret_bacs_v1.yaml", "loi_aper_v1.yaml"]:
+        pack = _load_pack(fname)
+        combined += json.dumps(pack, sort_keys=True, default=str)
+    return hashlib.sha256(combined.encode()).hexdigest()[:16]
+
+
 def evaluate_site(db: Session, site_id: int, run_batch_id: int = None) -> List[ComplianceFinding]:
     """Evaluate all rules for a site and persist ComplianceFinding rows.
 
@@ -320,6 +330,7 @@ def evaluate_site(db: Session, site_id: int, run_batch_id: int = None) -> List[C
         return []
 
     ctx = _get_site_context(db, site)
+    engine_version = _compute_engine_version()
 
     # Run all 3 packs
     raw_findings = []
@@ -330,6 +341,12 @@ def evaluate_site(db: Session, site_id: int, run_batch_id: int = None) -> List[C
     # Delete existing findings for this site (replace strategy)
     db.query(ComplianceFinding).filter(ComplianceFinding.site_id == site_id).delete()
     db.flush()  # Flush delete before re-insert to avoid identity map conflicts
+
+    # Build inputs_json from context (site data used for evaluation)
+    inputs_snapshot = json.dumps({
+        k: str(v) if v is not None and not isinstance(v, (int, float, bool)) else v
+        for k, v in ctx.items()
+    }, default=str)
 
     # Persist new findings
     result = []
@@ -342,6 +359,9 @@ def evaluate_site(db: Session, site_id: int, run_batch_id: int = None) -> List[C
             else:
                 deadline = f["deadline"]
 
+        # Build per-finding params (thresholds used by this rule)
+        params = f.get("params", {})
+
         cf = ComplianceFinding(
             site_id=site_id,
             regulation=f["regulation"],
@@ -353,6 +373,10 @@ def evaluate_site(db: Session, site_id: int, run_batch_id: int = None) -> List[C
             recommended_actions_json=json.dumps(actions, ensure_ascii=False) if actions else None,
             insight_status=InsightStatus.OPEN,
             run_batch_id=run_batch_id,
+            inputs_json=inputs_snapshot,
+            params_json=json.dumps(params, default=str) if params else "{}",
+            evidence_json="{}",
+            engine_version=engine_version,
         )
         db.add(cf)
         result.append(cf)
