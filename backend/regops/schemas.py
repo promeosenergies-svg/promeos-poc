@@ -44,3 +44,5 @@ class SiteSummary:
     actions: list[Action] = field(default_factory=list)
     missing_data: list[str] = field(default_factory=list)
     deterministic_version: str = ""
+    confidence_score: float = 0.0
+    scoring_profile_id: str = ""

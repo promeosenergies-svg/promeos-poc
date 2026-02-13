@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from database import get_db
 from regops.engine import evaluate_site, persist_assessment
+from regops.scoring import compute_regops_score, load_scoring_profile
 from models import RegAssessment, Site
 
 router = APIRouter(prefix="/api/regops", tags=["RegOps"])
@@ -92,6 +93,77 @@ def recompute_assessments(
         return {"recomputed": len(summaries)}
     else:
         raise HTTPException(status_code=400, detail="Invalid scope or missing site_id")
+
+
+@router.get("/score_explain")
+def get_score_explain(
+    scope_type: str = Query("site"),
+    scope_id: int = Query(...),
+    db: Session = Depends(get_db),
+):
+    """Score explain: detailed breakdown of compliance score computation."""
+    if scope_type != "site":
+        raise HTTPException(status_code=400, detail="Only scope_type=site supported")
+
+    try:
+        summary = evaluate_site(db, scope_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    # Recompute with full penalties for detailed breakdown
+    total_required = 7  # tertiaire(3) + bacs(1) + aper(3)
+    missing_count = len(summary.missing_data)
+    dq_coverage = max(0.0, ((total_required - missing_count) / max(1, total_required)) * 100.0)
+
+    score_result = compute_regops_score(summary.findings, dq_coverage)
+    profile = load_scoring_profile()
+
+    # how_to_improve: top 5 penalties by amount
+    how_to_improve = []
+    sorted_penalties = sorted(score_result.penalties, key=lambda p: p.amount, reverse=True)
+    for p in sorted_penalties[:5]:
+        how_to_improve.append({
+            "action": f"Resolve {p.rule_id}",
+            "potential_gain": round(p.amount, 2),
+            "regulation": p.regulation,
+        })
+
+    return {
+        "scope": {"type": scope_type, "id": scope_id},
+        "score": score_result.score,
+        "confidence_score": score_result.confidence_score,
+        "scoring_profile": {
+            "id": profile.get("id"),
+            "version": profile.get("version"),
+            "regulation_weights": profile.get("regulation_weights", {}),
+        },
+        "penalties": [
+            {
+                "regulation": p.regulation,
+                "rule_id": p.rule_id,
+                "severity": p.severity,
+                "amount": p.amount,
+                "reason": p.reason,
+                "evidence_refs": p.evidence_refs,
+            }
+            for p in score_result.penalties
+        ],
+        "suppressed_penalties": [
+            {
+                "regulation": p.regulation,
+                "rule_id": p.rule_id,
+                "severity": p.severity,
+                "suppressed_by": p.suppressed_by,
+            }
+            for p in score_result.suppressed_penalties
+        ],
+        "dq_summary": {
+            "coverage_pct": round(dq_coverage, 1),
+            "missing_critical": summary.missing_data,
+            "missing_optional": [],
+        },
+        "how_to_improve": how_to_improve,
+    }
 
 
 @router.get("/dashboard")

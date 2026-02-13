@@ -13,6 +13,7 @@ from models import Site, Batiment, Obligation, Evidence, RegAssessment, RegStatu
 from .schemas import Finding, Action, SiteSummary
 from .completeness import check_required_inputs
 from .versioning import compute_deterministic_version, compute_data_version
+from .scoring import compute_regops_score
 from .rules import tertiaire_operat, bacs, aper, cee_p6
 
 
@@ -89,54 +90,19 @@ def evaluate_site(db: Session, site_id: int) -> SiteSummary:
         if status_severity.get(f.status, 0) > status_severity.get(worst_status, 0):
             worst_status = f.status
 
-    # Compute compliance score (0-100)
+    # Compute compliance score via scoring module (hardened: dedup + clamp + profile)
     scoring = regs.get("scoring", {})
     severity_weights = scoring.get("severity_weights", {})
     confidence_weights = scoring.get("confidence_weights", {})
 
-    total_weight = 0.0
-    weighted_sum = 0.0
+    total_required = sum(
+        len(regs.get(r, {}).get("required_inputs", []))
+        for r in ["tertiaire_operat", "bacs", "aper"]
+    )
+    dq_coverage = ((total_required - len(missing_data)) / max(1, total_required)) * 100.0
 
-    for f in all_findings:
-        if f.status in ["OUT_OF_SCOPE", "COMPLIANT"]:
-            continue
-
-        sev_weight = severity_weights.get(f.severity.lower(), 10)
-        conf_weight = confidence_weights.get(f.confidence.lower(), 1.0)
-        urgency_weight = 1.0
-
-        if f.legal_deadline:
-            days_to_deadline = (f.legal_deadline - date.today()).days
-            urgency_days = scoring.get("urgency_weights_days", {})
-            if days_to_deadline <= 0:
-                urgency_weight = urgency_days.get(0, 100)
-            elif days_to_deadline <= 90:
-                urgency_weight = urgency_days.get(90, 80)
-            elif days_to_deadline <= 180:
-                urgency_weight = urgency_days.get(180, 60)
-            elif days_to_deadline <= 365:
-                urgency_weight = urgency_days.get(365, 40)
-            else:
-                urgency_weight = urgency_days.get(730, 20)
-
-        finding_weight = sev_weight * conf_weight * (urgency_weight / 100)
-        total_weight += finding_weight
-
-        # Score contribution: lower is better
-        if f.status == "NON_COMPLIANT":
-            weighted_sum += finding_weight  # Full penalty
-        elif f.status == "AT_RISK":
-            weighted_sum += finding_weight * 0.5  # Half penalty
-        elif f.status == "UNKNOWN":
-            weighted_sum += finding_weight * 0.7  # 70% penalty
-
-    # Normalize to 0-100 (100 = perfect, 0 = worst)
-    if total_weight > 0:
-        raw_score = max(0, 100 - (weighted_sum / total_weight * 100))
-    else:
-        raw_score = 100.0
-
-    compliance_score = round(raw_score, 1)
+    score_result = compute_regops_score(all_findings, dq_coverage)
+    compliance_score = score_result.score
 
     # Next deadline
     deadlines = [f.legal_deadline for f in all_findings if f.legal_deadline]
@@ -176,11 +142,13 @@ def evaluate_site(db: Session, site_id: int) -> SiteSummary:
         site_id=site_id,
         global_status=worst_status,
         compliance_score=compliance_score,
+        confidence_score=score_result.confidence_score,
         next_deadline=next_deadline,
         findings=all_findings,
         actions=actions,
         missing_data=missing_data,
-        deterministic_version=deterministic_version
+        deterministic_version=deterministic_version,
+        scoring_profile_id=score_result.profile_id,
     )
 
 
