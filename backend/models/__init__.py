@@ -96,6 +96,9 @@ from .intake import IntakeSession, IntakeAnswer, IntakeFieldOverride
 # BACS Expert (Decret n°2020-887)
 from .bacs_models import BacsAsset, BacsCvcSystem, BacsAssessment, BacsInspection
 
+# EMS Consumption Explorer
+from .ems_models import EmsWeatherCache, EmsSavedView
+
 # Energy (Consumption & Analytics)
 from .energy_models import (
     Meter, MeterReading, DataImportJob, UsageProfile, Anomaly, Recommendation,
@@ -154,4 +157,6 @@ __all__ = [
     # BACS Expert (Decret n°2020-887)
     "BacsAsset", "BacsCvcSystem", "BacsAssessment", "BacsInspection",
     "CvcSystemType", "CvcArchitecture", "BacsTriggerReason", "InspectionStatus",
+    # EMS Consumption Explorer
+    "EmsWeatherCache", "EmsSavedView",
 ]

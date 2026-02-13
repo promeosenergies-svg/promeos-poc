@@ -32,6 +32,7 @@ from .admin_users import router as admin_users_router
 from .patrimoine import router as patrimoine_router
 from .intake import router as intake_router
 from .bacs import router as bacs_router
+from .ems import router as ems_router
 
 __all__ = [
     "sites_router",
@@ -65,4 +66,5 @@ __all__ = [
     "patrimoine_router",
     "intake_router",
     "bacs_router",
+    "ems_router",
 ]
