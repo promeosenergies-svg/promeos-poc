@@ -1,10 +1,11 @@
 """
 PROMEOS Routes - Connectors endpoints
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from database import get_db
 from connectors.registry import list_connectors, get_connector
+from connectors.contracts import validate_mapping
 
 router = APIRouter(prefix="/api/connectors", tags=["Connectors"])
 
@@ -46,3 +47,47 @@ def sync_connector(
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/validate")
+def validate_connector_mapping(
+    connector: str = Query(...),
+    scope_type: str = Query("site"),
+    scope_id: int = Query(1),
+    db: Session = Depends(get_db),
+):
+    """Validate connector output against contract specs."""
+    conn = get_connector(connector)
+    if not conn:
+        raise HTTPException(status_code=404, detail=f"Connector '{connector}' not found")
+
+    # Try to get sample records
+    try:
+        records = conn.sync(db, scope_type, scope_id)
+        # Convert datapoints to dicts if they are objects
+        sample = []
+        for r in records[:3]:
+            if isinstance(r, dict):
+                sample.append(r)
+            elif hasattr(r, "__dict__"):
+                sample.append({
+                    "metric": getattr(r, "metric", None),
+                    "value": getattr(r, "value", None),
+                    "unit": getattr(r, "unit", None),
+                    "ts_start": str(getattr(r, "ts_start", "")),
+                })
+            else:
+                sample.append({"raw": str(r)})
+    except Exception:
+        sample = []
+
+    report = validate_mapping(scope_type, sample, connector_name=connector)
+
+    return {
+        "connector": connector,
+        "mapped_fields": report.mapped_fields,
+        "missing_fields": report.missing_fields,
+        "warnings": report.warnings,
+        "valid": report.valid,
+        "sample_count": len(sample),
+    }
