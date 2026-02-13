@@ -216,6 +216,19 @@ def delete_cvc_system(system_id: int, db: Session = Depends(get_db)):
     return {"deleted": system_id}
 
 
+# ── Ops monitoring ──
+
+@router.get("/site/{site_id}/ops")
+def get_bacs_ops(site_id: int, db: Session = Depends(get_db)):
+    """BACS operational monitoring panel: KPIs, consumption links, heatmap."""
+    site = db.query(Site).filter(Site.id == site_id).first()
+    if not site:
+        raise HTTPException(status_code=404, detail="Site not found")
+
+    from services.bacs_ops_monitor import get_bacs_ops_panel
+    return get_bacs_ops_panel(db, site_id)
+
+
 # ── Seed demo ──
 
 @router.post("/seed_demo")
