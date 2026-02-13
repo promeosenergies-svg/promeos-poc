@@ -6,6 +6,8 @@ from sqlalchemy.orm import Session
 from database import get_db
 from regops.engine import evaluate_site, persist_assessment
 from regops.scoring import compute_regops_score, load_scoring_profile
+from regops.data_quality import compute_data_quality
+from regops.data_quality_specs import DATA_QUALITY_SPECS
 from models import RegAssessment, Site
 
 router = APIRouter(prefix="/api/regops", tags=["RegOps"])
@@ -164,6 +166,35 @@ def get_score_explain(
         },
         "how_to_improve": how_to_improve,
     }
+
+
+@router.get("/data_quality")
+def get_data_quality(
+    scope_type: str = Query("site"),
+    scope_id: int = Query(...),
+    db: Session = Depends(get_db),
+):
+    """Data quality gate: coverage, confidence, missing fields per regulation."""
+    if scope_type != "site":
+        raise HTTPException(status_code=400, detail="Only scope_type=site supported")
+
+    report = compute_data_quality(db, scope_id)
+
+    return {
+        "scope": {"type": scope_type, "id": scope_id},
+        "coverage_pct": report.coverage_pct,
+        "confidence_score": report.confidence_score,
+        "gate_status": report.gate_status,
+        "missing_critical": report.missing_critical,
+        "missing_optional": report.missing_optional,
+        "per_regulation": report.per_regulation,
+    }
+
+
+@router.get("/data_quality/specs")
+def get_data_quality_specs():
+    """Return data quality field specs per regulation (for UI)."""
+    return DATA_QUALITY_SPECS
 
 
 @router.get("/dashboard")
