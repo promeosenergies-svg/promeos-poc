@@ -439,4 +439,16 @@ export const completeIntake = (siteId) => api.post(`/intake/${siteId}/complete`)
 export const getIntakeSession = (sessionId) => api.get(`/intake/session/${sessionId}`).then(r => r.data);
 export const purgeIntakeDemo = () => api.delete('/intake/demo/purge').then(r => r.data);
 
+// ========================================
+// MONITORING (Electric Performance)
+// ========================================
+
+export const getMonitoringKpis = (siteId) => api.get('/monitoring/kpis', { params: { site_id: siteId } }).then(r => r.data);
+export const runMonitoring = (siteId, days = 90) => api.post('/monitoring/run', { site_id: siteId, days }).then(r => r.data);
+export const getMonitoringSnapshots = (siteId, limit = 10) => api.get('/monitoring/snapshots', { params: { site_id: siteId, limit } }).then(r => r.data);
+export const getMonitoringAlerts = (siteId, status = null, limit = 50) => api.get('/monitoring/alerts', { params: { site_id: siteId, status, limit } }).then(r => r.data);
+export const ackMonitoringAlert = (id) => api.post(`/monitoring/alerts/${id}/ack`, { acknowledged_by: 'user' }).then(r => r.data);
+export const resolveMonitoringAlert = (id, note = null) => api.post(`/monitoring/alerts/${id}/resolve`, { resolved_by: 'user', resolution_note: note }).then(r => r.data);
+export const generateMonitoringDemo = (siteId, days = 90) => api.post('/monitoring/demo/generate', { site_id: siteId, days }).then(r => r.data);
+
 export default api;

@@ -2,17 +2,22 @@
 PROMEOS - Routes API Monitoring (Electric Consumption Mastery)
 6 endpoints for KPIs, analysis, snapshots, alerts lifecycle.
 """
+import math
+import random
+from datetime import datetime, timedelta
+from typing import Optional, List
+
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
+
 from database import get_db
 from middleware.auth import get_optional_auth, AuthContext
 from models import (
     Site, Meter, MeterReading, MonitoringSnapshot, MonitoringAlert,
-    AlertStatus, AlertSeverity
+    AlertStatus, AlertSeverity, FrequencyType
 )
-from typing import Optional, List
-from pydantic import BaseModel
-from datetime import datetime, timedelta
+from models.energy_models import EnergyVector
 
 router = APIRouter(prefix="/api/monitoring", tags=["Monitoring"])
 
@@ -230,3 +235,92 @@ def resolve_alert(
     db.commit()
 
     return {"status": "resolved", "alert_id": alert_id}
+
+
+# --- 7. POST /api/monitoring/demo/generate ---
+
+class MonitoringDemoRequest(BaseModel):
+    site_id: int
+    days: int = 90
+
+
+@router.post("/demo/generate")
+def generate_monitoring_demo(request: MonitoringDemoRequest, db: Session = Depends(get_db)):
+    """Generate monitoring demo data (office pattern + anomalies) for a site."""
+    site = db.query(Site).filter_by(id=request.site_id).first()
+    if not site:
+        raise HTTPException(status_code=404, detail=f"Site {request.site_id} not found")
+
+    meter_id_str = f"PRM-MON-{request.site_id:03d}"
+    meter = db.query(Meter).filter_by(meter_id=meter_id_str).first()
+    if not meter:
+        meter = Meter(
+            meter_id=meter_id_str,
+            name=f"Compteur Monitoring {site.nom or site.id}",
+            site_id=site.id,
+            energy_vector=EnergyVector.ELECTRICITY,
+            subscribed_power_kva=80.0,
+            tariff_type="C5",
+        )
+        db.add(meter)
+        db.commit()
+        db.refresh(meter)
+    else:
+        db.query(MeterReading).filter_by(meter_id=meter.id).delete()
+        db.commit()
+
+    now = datetime.utcnow()
+    start = now - timedelta(days=request.days)
+    readings = []
+    random.seed(42 + request.site_id)
+
+    for day_offset in range(request.days):
+        dt = start + timedelta(days=day_offset)
+        is_weekend = dt.weekday() >= 5
+
+        for hour in range(24):
+            ts = dt.replace(hour=hour, minute=0, second=0, microsecond=0)
+
+            # Office pattern
+            if is_weekend:
+                base_kwh = 5.0
+            elif 8 <= hour <= 18:
+                base_kwh = 35.0
+            elif hour == 7 or 19 <= hour <= 20:
+                base_kwh = 18.0
+            else:
+                base_kwh = 6.0
+
+            seasonal = 1.0 + 0.15 * math.cos(2 * math.pi * (dt.month - 1) / 12.0)
+            value = base_kwh * seasonal
+
+            # Anomaly 1: high night base (days 30-44)
+            if 30 <= day_offset <= 44 and (hour < 7 or hour > 19) and not is_weekend:
+                value *= 2.5
+
+            # Anomaly 2: weekend spike (days 35-36)
+            if day_offset in [35, 36] and is_weekend:
+                value = 40.0
+
+            value *= random.uniform(0.90, 1.10)
+            value = max(0.1, round(value, 2))
+
+            readings.append(MeterReading(
+                meter_id=meter.id,
+                timestamp=ts,
+                frequency=FrequencyType.HOURLY,
+                value_kwh=value,
+                is_estimated=False,
+            ))
+
+    db.bulk_save_objects(readings)
+    db.commit()
+
+    return {
+        "status": "ok",
+        "site_id": request.site_id,
+        "meter_id": meter.id,
+        "meter_ref": meter_id_str,
+        "readings_generated": len(readings),
+        "period": f"{start.date()} - {now.date()}",
+    }
