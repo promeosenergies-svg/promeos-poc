@@ -10,12 +10,14 @@ import {
   MessageSquare, Paperclip, AlertTriangle, BadgeEuro, ShieldCheck,
   Tag, Users, ArrowUpDown, UserPlus, FileText,
 } from 'lucide-react';
-import { Card, CardBody, Badge, Button, Select, Pagination, EmptyState, Tabs, TrustBadge } from '../ui';
+import { Card, CardBody, Badge, Button, Select, Pagination, EmptyState, Tabs, TrustBadge, PageShell, FilterBar } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td, ThCheckbox, TdCheckbox } from '../ui';
+import { useToast } from '../ui/ToastProvider';
 import Modal from '../ui/Modal';
 import CreateActionModal from '../components/CreateActionModal';
 import { getActionsList, syncActions, patchAction, exportActionsCSV, downloadAuditPDF } from '../services/api';
 import { useScope } from '../contexts/ScopeContext';
+import { useExpertMode } from '../contexts/ExpertModeContext';
 import { track } from '../services/tracker';
 
 /* Backend → frontend field mappers */
@@ -113,6 +115,8 @@ function defaultSort(a, b) {
 export default function ActionsPage() {
   const navigate = useNavigate();
   const { scopedSites } = useScope();
+  const { isExpert } = useExpertMode();
+  const { toast } = useToast();
   const [actions, setActions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -302,29 +306,27 @@ export default function ActionsPage() {
   const hasUnassigned = [...selected].some(id => { const a = actions.find(x => x.id === id); return a && !a.owner; });
 
   return (
-    <div className="px-6 py-6 space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">Plan d'actions</h2>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {stats.total} actions &middot; {stats.total_impact.toLocaleString()} EUR d'impact total
-            {stats.overdue > 0 && <span className="text-red-600 ml-2 font-medium">&middot; {stats.overdue} en retard</span>}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
+    <PageShell
+      icon={ListChecks}
+      title="Plan d'actions"
+      subtitle={`${stats.total} actions · ${stats.total_impact.toLocaleString()} EUR d'impact total${stats.overdue > 0 ? ` · ${stats.overdue} en retard` : ''}`}
+      actions={
+        <>
           <Button variant="secondary" size="sm" onClick={handleSync} disabled={syncing}>
             <RefreshCw size={16} className={syncing ? 'animate-spin' : ''} /> {syncing ? 'Sync...' : 'Synchroniser'}
           </Button>
-          <Button variant="secondary" size="sm" onClick={handleDownloadPDF} disabled={pdfLoading} title="Rapport d'audit PDF complet">
-            <FileText size={16} className={pdfLoading ? 'animate-pulse' : ''} /> {pdfLoading ? 'PDF...' : 'Rapport PDF'}
-          </Button>
-          <Button variant="secondary" size="sm" onClick={exportPlan30j} title="Priorites P1-P2, echeances, owners, export">
+          {isExpert && (
+            <Button variant="secondary" size="sm" onClick={handleDownloadPDF} disabled={pdfLoading} title="Rapport d'audit PDF complet">
+              <FileText size={16} className={pdfLoading ? 'animate-pulse' : ''} /> {pdfLoading ? 'PDF...' : 'Rapport PDF'}
+            </Button>
+          )}
+          <Button variant="secondary" size="sm" onClick={exportPlan30j} title="Export CSV">
             <Printer size={16} /> Export CSV
           </Button>
           <Button onClick={() => { setCreatePrefill(null); setShowCreate(true); }}><Plus size={16} /> Creer action</Button>
-        </div>
-      </div>
+        </>
+      }
+    >
 
       {/* Quick views */}
       <div className="flex items-center gap-2">
@@ -567,6 +569,6 @@ export default function ActionsPage() {
           </div>
         )}
       </Modal>
-    </div>
+    </PageShell>
   );
 }

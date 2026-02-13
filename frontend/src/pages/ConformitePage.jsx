@@ -10,9 +10,11 @@ import {
   BookOpen, ExternalLink, Zap, RotateCcw, RefreshCw,
   UserCheck, CheckCircle2, XCircle, X, Eye,
 } from 'lucide-react';
-import { Card, CardBody, Badge, Button, EmptyState, TrustBadge } from '../ui';
+import { Card, CardBody, Badge, Button, EmptyState, TrustBadge, PageShell, Progress, Drawer } from '../ui';
+import { useToast } from '../ui/ToastProvider';
 import CreateActionModal from '../components/CreateActionModal';
 import { useScope } from '../contexts/ScopeContext';
+import { useExpertMode } from '../contexts/ExpertModeContext';
 import { track } from '../services/tracker';
 import {
   applyKB,
@@ -726,6 +728,8 @@ function DataQualityGate({ siteId }) {
 
 export default function ConformitePage() {
   const { org, scopedSites } = useScope();
+  const { isExpert } = useExpertMode();
+  const { toast } = useToast();
   const [showCreate, setShowCreate] = useState(false);
   const [prefill, setPrefill] = useState(null);
   const [proofFiles, setProofFiles] = useState({});
@@ -836,40 +840,34 @@ export default function ConformitePage() {
 
   if (loading) {
     return (
-      <div className="px-6 py-6">
+      <PageShell icon={ShieldCheck} title="Conformite reglementaire" subtitle="Chargement...">
         <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/3" />
           <div className="grid grid-cols-4 gap-4">
             {[1,2,3,4].map(i => <div key={i} className="h-24 bg-gray-200 rounded-lg" />)}
           </div>
           <div className="h-40 bg-gray-200 rounded-lg" />
         </div>
-      </div>
+      </PageShell>
     );
   }
 
   return (
-    <div className="px-6 py-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">Conformité réglementaire</h2>
-          <p className="text-sm text-gray-500 mt-0.5">{org.nom} &middot; {scopedSites.length} sites dans le perimetre</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleRecompute}
-            disabled={recomputing}
-            className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition disabled:opacity-50"
-          >
+    <PageShell
+      icon={ShieldCheck}
+      title="Conformite reglementaire"
+      subtitle={`${org.nom} · ${scopedSites.length} sites dans le perimetre`}
+      actions={
+        <>
+          <Button variant="secondary" size="sm" onClick={handleRecompute} disabled={recomputing}>
             <RefreshCw size={14} className={recomputing ? 'animate-spin' : ''} />
             {recomputing ? 'Evaluation...' : 'Re-evaluer'}
-          </button>
+          </Button>
           <Button onClick={() => { setPrefill(null); setShowCreate(true); }}>
             <Plus size={16} /> Creer action conformite
           </Button>
-        </div>
-      </div>
+        </>
+      }
+    >
 
       {/* Score + summary */}
       <div className="grid grid-cols-4 gap-4">
@@ -980,6 +978,6 @@ export default function ConformitePage() {
         findingId={auditFindingId}
         onClose={() => setAuditFindingId(null)}
       />
-    </div>
+    </PageShell>
   );
 }

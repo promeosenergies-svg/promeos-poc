@@ -8,9 +8,10 @@ import {
   Building2, Search, RotateCcw, BookmarkPlus, Download, Star,
   Plus, ChevronDown, Rows3, Rows4, Upload,
 } from 'lucide-react';
-import { Card, Badge, Button, Select, Pagination, EmptyState, TrustBadge } from '../ui';
+import { Card, Badge, Button, Select, Pagination, EmptyState, TrustBadge, PageShell } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td, ThCheckbox, TdCheckbox } from '../ui';
 import { useScope } from '../contexts/ScopeContext';
+import { useExpertMode } from '../contexts/ExpertModeContext';
 import CreateActionModal from '../components/CreateActionModal';
 import PatrimoineWizard from '../components/PatrimoineWizard';
 import { track } from '../services/tracker';
@@ -46,6 +47,7 @@ function persistViews(v) { localStorage.setItem(VIEWS_KEY, JSON.stringify(v)); }
 export default function Patrimoine() {
   const navigate = useNavigate();
   const { scopedSites } = useScope();
+  const { isExpert } = useExpertMode();
   const [search, setSearch] = useState('');
   const [filterUsage, setFilterUsage] = useState('');
   const [filterStatut, setFilterStatut] = useState('');
@@ -160,18 +162,17 @@ export default function Patrimoine() {
   const hasFilters = search || filterUsage || filterStatut;
 
   return (
-    <div className="px-6 py-6 space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">Patrimoine</h2>
-          <p className="text-sm text-gray-500 mt-0.5">{scopedSites.length} sites dans le scope</p>
-        </div>
-        <div className="flex items-center gap-2">
+    <PageShell
+      icon={Building2}
+      title="Patrimoine"
+      subtitle={`${scopedSites.length} sites dans le scope`}
+      actions={
+        <>
           <Button variant="secondary" size="sm" onClick={() => setShowWizard(true)}><Upload size={14} className="mr-1" />Importer patrimoine</Button>
           <Button onClick={() => setShowActionModal(true)}><Plus size={16} /> Creer action</Button>
-        </div>
-      </div>
+        </>
+      }
+    >
 
       {/* Filters + Saved Views */}
       <Card className="p-4">
@@ -245,6 +246,7 @@ export default function Patrimoine() {
                 <Th>Conformite</Th>
                 <Th sortable sorted={sortCol === 'risque_eur' ? sortDir : ''} onSort={() => handleSort('risque_eur')} className="text-right">Risque EUR</Th>
                 <Th sortable sorted={sortCol === 'surface_m2' ? sortDir : ''} onSort={() => handleSort('surface_m2')} className="text-right">Surface</Th>
+                {isExpert && <Th sortable sorted={sortCol === 'conso_kwh_an' ? sortDir : ''} onSort={() => handleSort('conso_kwh_an')} className="text-right">Conso kWh/an</Th>}
                 <Th sortable sorted={sortCol === 'anomalies_count' ? sortDir : ''} onSort={() => handleSort('anomalies_count')} className="text-right">Anomalies</Th>
               </tr>
             </Thead>
@@ -268,6 +270,11 @@ export default function Patrimoine() {
                     <Td><Badge status={badge.status}>{badge.label}</Badge></Td>
                     <Td className="text-right font-medium text-red-600">{site.risque_eur > 0 ? `${site.risque_eur.toLocaleString()} EUR` : '-'}</Td>
                     <Td className="text-right">{site.surface_m2.toLocaleString()} m2</Td>
+                    {isExpert && (
+                      <Td className="text-right text-gray-600">
+                        {site.conso_kwh_an > 0 ? site.conso_kwh_an.toLocaleString() : '-'}
+                      </Td>
+                    )}
                     <Td className="text-right">
                       {site.anomalies_count > 0 ? <span className={`font-medium ${site.anomalies_count > 4 ? 'text-red-600' : 'text-amber-600'}`}>{site.anomalies_count}</span> : <span className="text-gray-400">0</span>}
                     </Td>
@@ -285,6 +292,6 @@ export default function Patrimoine() {
 
       <CreateActionModal open={showActionModal} onClose={() => setShowActionModal(false)} onSave={() => {}} />
       {showWizard && <PatrimoineWizard onClose={() => setShowWizard(false)} />}
-    </div>
+    </PageShell>
   );
 }
