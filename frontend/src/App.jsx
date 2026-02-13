@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { DemoProvider } from './contexts/DemoContext';
 import { ScopeProvider } from './contexts/ScopeContext';
 import { AuthProvider } from './contexts/AuthContext';
+import { ExpertModeProvider } from './contexts/ExpertModeContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import RequireAuth from './components/RequireAuth';
 import UpgradeWizard from './components/UpgradeWizard';
@@ -51,6 +52,7 @@ function App() {
     <AuthProvider>
       <DemoProvider>
         <ScopeProvider>
+          <ExpertModeProvider>
           <ErrorBoundary>
             <Router>
               <Routes>
@@ -124,6 +126,7 @@ function App() {
               )}
             </Router>
           </ErrorBoundary>
+          </ExpertModeProvider>
         </ScopeProvider>
       </DemoProvider>
     </AuthProvider>
