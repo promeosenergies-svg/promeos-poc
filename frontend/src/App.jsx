@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { DemoProvider } from './contexts/DemoContext';
 import { ScopeProvider } from './contexts/ScopeContext';
@@ -8,42 +8,56 @@ import ErrorBoundary from './components/ErrorBoundary';
 import RequireAuth from './components/RequireAuth';
 import UpgradeWizard from './components/UpgradeWizard';
 import AppShell from './layout/AppShell';
+import { SkeletonCard } from './ui/Skeleton';
 
-// Pages — V1 + V2
-import CommandCenter from './pages/CommandCenter';
-import Patrimoine from './pages/Patrimoine';
-import Site360 from './pages/Site360';
-import ActionsPage from './pages/ActionsPage';
-import ConformitePage from './pages/ConformitePage';
-import NotFound from './pages/NotFound';
+// Lazy-loaded pages — code-split per route
+const CommandCenter = lazy(() => import('./pages/CommandCenter'));
+const Patrimoine = lazy(() => import('./pages/Patrimoine'));
+const Site360 = lazy(() => import('./pages/Site360'));
+const ActionsPage = lazy(() => import('./pages/ActionsPage'));
+const ConformitePage = lazy(() => import('./pages/ConformitePage'));
+const NotFound = lazy(() => import('./pages/NotFound'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Cockpit = lazy(() => import('./pages/Cockpit'));
+const SiteDetail = lazy(() => import('./pages/SiteDetail'));
+const ActionPlan = lazy(() => import('./pages/ActionPlan'));
+const RegOps = lazy(() => import('./pages/RegOps'));
+const ConnectorsPage = lazy(() => import('./pages/ConnectorsPage'));
+const WatchersPage = lazy(() => import('./pages/WatchersPage'));
+const ConsommationsUsages = lazy(() => import('./pages/ConsommationsUsages'));
+const MonitoringPage = lazy(() => import('./pages/MonitoringPage'));
+const StatusPage = lazy(() => import('./pages/StatusPage'));
+const ImportPage = lazy(() => import('./pages/ImportPage'));
+const Cockpit2MinPage = lazy(() => import('./pages/Cockpit2MinPage'));
+const SegmentationPage = lazy(() => import('./pages/SegmentationPage'));
+const CompliancePage = lazy(() => import('./pages/CompliancePage'));
+const ConsumptionDiagPage = lazy(() => import('./pages/ConsumptionDiagPage'));
+const BillIntelPage = lazy(() => import('./pages/BillIntelPage'));
+const KBExplorerPage = lazy(() => import('./pages/KBExplorerPage'));
+const PurchasePage = lazy(() => import('./pages/PurchasePage'));
+const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const AdminUsersPage = lazy(() => import('./pages/AdminUsersPage'));
+const AdminRolesPage = lazy(() => import('./pages/AdminRolesPage'));
+const AdminAssignmentsPage = lazy(() => import('./pages/AdminAssignmentsPage'));
+const AdminAuditLogPage = lazy(() => import('./pages/AdminAuditLogPage'));
 
-// Pages — existing (kept as-is)
-import Dashboard from './pages/Dashboard';
-import Cockpit from './pages/Cockpit';
-import SiteDetail from './pages/SiteDetail';
-import ActionPlan from './pages/ActionPlan';
-import RegOps from './pages/RegOps';
-import ConnectorsPage from './pages/ConnectorsPage';
-import WatchersPage from './pages/WatchersPage';
-import ConsommationsUsages from './pages/ConsommationsUsages';
-import MonitoringPage from './pages/MonitoringPage';
-import StatusPage from './pages/StatusPage';
-import ImportPage from './pages/ImportPage';
-import Cockpit2MinPage from './pages/Cockpit2MinPage';
-import SegmentationPage from './pages/SegmentationPage';
-import CompliancePage from './pages/CompliancePage';
-import ConsumptionDiagPage from './pages/ConsumptionDiagPage';
-import BillIntelPage from './pages/BillIntelPage';
-import KBExplorerPage from './pages/KBExplorerPage';
-import PurchasePage from './pages/PurchasePage';
-import NotificationsPage from './pages/NotificationsPage';
-
-// IAM pages
-import LoginPage from './pages/LoginPage';
-import AdminUsersPage from './pages/AdminUsersPage';
-import AdminRolesPage from './pages/AdminRolesPage';
-import AdminAssignmentsPage from './pages/AdminAssignmentsPage';
-import AdminAuditLogPage from './pages/AdminAuditLogPage';
+function PageSuspense({ children }) {
+  return (
+    <Suspense fallback={
+      <div className="px-6 py-6 space-y-6">
+        <div className="h-8 bg-gray-200 rounded w-1/3 animate-pulse" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+      </div>
+    }>
+      {children}
+    </Suspense>
+  );
+}
 
 function App() {
   const [showUpgradeWizard, setShowUpgradeWizard] = useState(false);
@@ -57,43 +71,43 @@ function App() {
             <Router>
               <Routes>
                 {/* Public: Login page */}
-                <Route path="/login" element={<LoginPage />} />
+                <Route path="/login" element={<PageSuspense><LoginPage /></PageSuspense>} />
 
                 {/* Protected: AppShell layout wraps all routes */}
                 <Route element={<RequireAuth><AppShell /></RequireAuth>}>
                   {/* V1 + V2 pages */}
-                  <Route path="/" element={<CommandCenter />} />
-                  <Route path="/patrimoine" element={<Patrimoine />} />
-                  <Route path="/sites/:id" element={<Site360 />} />
-                  <Route path="/actions" element={<ActionsPage />} />
-                  <Route path="/conformite" element={<ConformitePage />} />
+                  <Route path="/" element={<PageSuspense><CommandCenter /></PageSuspense>} />
+                  <Route path="/patrimoine" element={<PageSuspense><Patrimoine /></PageSuspense>} />
+                  <Route path="/sites/:id" element={<PageSuspense><Site360 /></PageSuspense>} />
+                  <Route path="/actions" element={<PageSuspense><ActionsPage /></PageSuspense>} />
+                  <Route path="/conformite" element={<PageSuspense><ConformitePage /></PageSuspense>} />
 
-                  {/* Existing pages (unchanged) */}
-                  <Route path="/dashboard-legacy" element={<Dashboard onUpgradeClick={() => setShowUpgradeWizard(true)} />} />
-                  <Route path="/cockpit-2min" element={<Cockpit2MinPage onUpgradeClick={() => setShowUpgradeWizard(true)} />} />
-                  <Route path="/cockpit" element={<Cockpit />} />
-                  <Route path="/sites-legacy/:id" element={<SiteDetail />} />
-                  <Route path="/action-plan" element={<ActionPlan />} />
-                  <Route path="/regops/:id" element={<RegOps />} />
-                  <Route path="/consommations" element={<ConsommationsUsages />} />
-                  <Route path="/connectors" element={<ConnectorsPage />} />
-                  <Route path="/watchers" element={<WatchersPage />} />
-                  <Route path="/monitoring" element={<MonitoringPage />} />
-                  <Route path="/compliance" element={<CompliancePage />} />
-                  <Route path="/diagnostic-conso" element={<ConsumptionDiagPage />} />
-                  <Route path="/bill-intel" element={<BillIntelPage />} />
-                  <Route path="/achat-energie" element={<PurchasePage />} />
-                  <Route path="/kb" element={<KBExplorerPage />} />
-                  <Route path="/segmentation" element={<SegmentationPage />} />
-                  <Route path="/import" element={<ImportPage />} />
-                  <Route path="/notifications" element={<NotificationsPage />} />
-                  <Route path="/status" element={<StatusPage />} />
+                  {/* Existing pages */}
+                  <Route path="/dashboard-legacy" element={<PageSuspense><Dashboard onUpgradeClick={() => setShowUpgradeWizard(true)} /></PageSuspense>} />
+                  <Route path="/cockpit-2min" element={<PageSuspense><Cockpit2MinPage onUpgradeClick={() => setShowUpgradeWizard(true)} /></PageSuspense>} />
+                  <Route path="/cockpit" element={<PageSuspense><Cockpit /></PageSuspense>} />
+                  <Route path="/sites-legacy/:id" element={<PageSuspense><SiteDetail /></PageSuspense>} />
+                  <Route path="/action-plan" element={<PageSuspense><ActionPlan /></PageSuspense>} />
+                  <Route path="/regops/:id" element={<PageSuspense><RegOps /></PageSuspense>} />
+                  <Route path="/consommations" element={<PageSuspense><ConsommationsUsages /></PageSuspense>} />
+                  <Route path="/connectors" element={<PageSuspense><ConnectorsPage /></PageSuspense>} />
+                  <Route path="/watchers" element={<PageSuspense><WatchersPage /></PageSuspense>} />
+                  <Route path="/monitoring" element={<PageSuspense><MonitoringPage /></PageSuspense>} />
+                  <Route path="/compliance" element={<PageSuspense><CompliancePage /></PageSuspense>} />
+                  <Route path="/diagnostic-conso" element={<PageSuspense><ConsumptionDiagPage /></PageSuspense>} />
+                  <Route path="/bill-intel" element={<PageSuspense><BillIntelPage /></PageSuspense>} />
+                  <Route path="/achat-energie" element={<PageSuspense><PurchasePage /></PageSuspense>} />
+                  <Route path="/kb" element={<PageSuspense><KBExplorerPage /></PageSuspense>} />
+                  <Route path="/segmentation" element={<PageSuspense><SegmentationPage /></PageSuspense>} />
+                  <Route path="/import" element={<PageSuspense><ImportPage /></PageSuspense>} />
+                  <Route path="/notifications" element={<PageSuspense><NotificationsPage /></PageSuspense>} />
+                  <Route path="/status" element={<PageSuspense><StatusPage /></PageSuspense>} />
 
                   {/* IAM pages */}
-                  <Route path="/admin/users" element={<AdminUsersPage />} />
-                  <Route path="/admin/roles" element={<AdminRolesPage />} />
-                  <Route path="/admin/assignments" element={<AdminAssignmentsPage />} />
-                  <Route path="/admin/audit" element={<AdminAuditLogPage />} />
+                  <Route path="/admin/users" element={<PageSuspense><AdminUsersPage /></PageSuspense>} />
+                  <Route path="/admin/roles" element={<PageSuspense><AdminRolesPage /></PageSuspense>} />
+                  <Route path="/admin/assignments" element={<PageSuspense><AdminAssignmentsPage /></PageSuspense>} />
+                  <Route path="/admin/audit" element={<PageSuspense><AdminAuditLogPage /></PageSuspense>} />
 
                   {/* URL aliases (redirect to canonical routes) */}
                   <Route path="/plan-action" element={<Navigate to="/actions" replace />} />
@@ -116,7 +130,7 @@ function App() {
                   <Route path="/alertes" element={<Navigate to="/notifications" replace />} />
 
                   {/* Catch-all */}
-                  <Route path="*" element={<NotFound />} />
+                  <Route path="*" element={<PageSuspense><NotFound /></PageSuspense>} />
                 </Route>
               </Routes>
 
