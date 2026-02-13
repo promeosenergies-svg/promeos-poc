@@ -266,6 +266,7 @@ export const getComplianceRules = () => api.get('/compliance/rules').then(r => r
 export const getComplianceFindings = (params = {}) => api.get('/compliance/findings', { params }).then(r => r.data);
 export const patchComplianceFinding = (id, data) => api.patch(`/compliance/findings/${id}`, data).then(r => r.data);
 export const getComplianceBatches = (orgId = null) => api.get('/compliance/batches', { params: { org_id: orgId } }).then(r => r.data);
+export const getFindingDetail = (findingId) => api.get(`/compliance/findings/${findingId}`).then(r => r.data);
 
 // ========================================
 // CONSUMPTION DIAGNOSTIC

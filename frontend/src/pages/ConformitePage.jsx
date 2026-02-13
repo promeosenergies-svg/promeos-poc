@@ -8,7 +8,7 @@ import {
   ShieldCheck, AlertTriangle, CheckCircle, Clock, FileText,
   ChevronDown, ChevronUp, Plus, Upload, User, Calendar,
   BookOpen, ExternalLink, Zap, RotateCcw, RefreshCw,
-  UserCheck, CheckCircle2, XCircle,
+  UserCheck, CheckCircle2, XCircle, X, Eye,
 } from 'lucide-react';
 import { Card, CardBody, Badge, Button, EmptyState, TrustBadge } from '../ui';
 import CreateActionModal from '../components/CreateActionModal';
@@ -21,6 +21,7 @@ import {
   patchComplianceFinding,
   recomputeComplianceRules,
   getDataQuality,
+  getFindingDetail,
 } from '../services/api';
 
 const REG_LABELS = {
@@ -343,7 +344,7 @@ function sitesToObligations(sitesData, summary) {
   }));
 }
 
-function ObligationCard({ obligation, onCreateAction, onWorkflowAction, onUploadProof, proofFiles }) {
+function ObligationCard({ obligation, onCreateAction, onWorkflowAction, onUploadProof, proofFiles, onAuditFinding }) {
   const [expanded, setExpanded] = useState(false);
   const cfg = STATUT_CONFIG[obligation.statut] || STATUT_CONFIG.a_risque;
   const Icon = cfg.icon;
@@ -448,6 +449,13 @@ function ObligationCard({ obligation, onCreateAction, onWorkflowAction, onUpload
                       <span className={`w-2 h-2 rounded-full shrink-0 ${f.status === 'NOK' ? 'bg-red-500' : 'bg-amber-500'}`} />
                       <span className="text-gray-700 font-medium truncate flex-1">{f.site_nom}</span>
                       <span className="text-xs text-gray-400 font-mono">{f.rule_id}</span>
+                      <button
+                        onClick={() => onAuditFinding(f.id)}
+                        className="text-xs text-indigo-500 hover:text-indigo-700 font-medium flex items-center gap-1"
+                        title="Voir audit"
+                      >
+                        <Eye size={12} /> Audit
+                      </button>
                       <WorkflowBadge status={f.insight_status} />
                       {f.insight_status === 'open' && (
                         <button
@@ -511,6 +519,117 @@ function ObligationCard({ obligation, onCreateAction, onWorkflowAction, onUpload
         )}
       </CardBody>
     </Card>
+  );
+}
+
+function FindingAuditDrawer({ findingId, onClose }) {
+  const [detail, setDetail] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!findingId) return;
+    setLoading(true);
+    getFindingDetail(findingId)
+      .then(setDetail)
+      .catch(() => setDetail(null))
+      .finally(() => setLoading(false));
+  }, [findingId]);
+
+  if (!findingId) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end">
+      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
+      <div className="relative w-full max-w-lg bg-white shadow-xl overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+          <h3 className="text-lg font-bold text-gray-900">Audit Finding</h3>
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
+            <X size={20} className="text-gray-500" />
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="p-6 text-center text-gray-400">Chargement...</div>
+        ) : !detail ? (
+          <div className="p-6 text-center text-gray-400">Finding introuvable</div>
+        ) : (
+          <div className="p-6 space-y-5">
+            {/* Identity */}
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Identite</p>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div><span className="text-gray-500">Rule ID:</span> <span className="font-mono font-medium">{detail.rule_id}</span></div>
+                <div><span className="text-gray-500">Regulation:</span> <span className="font-medium">{detail.regulation}</span></div>
+                <div><span className="text-gray-500">Status:</span> <span className="font-medium">{detail.status}</span></div>
+                <div><span className="text-gray-500">Severity:</span> <span className="font-medium">{detail.severity}</span></div>
+                <div><span className="text-gray-500">Site:</span> <span className="font-medium">{detail.site_nom}</span></div>
+                {detail.deadline && <div><span className="text-gray-500">Echeance:</span> <span className="font-medium">{detail.deadline}</span></div>}
+              </div>
+            </div>
+
+            {/* Inputs */}
+            {detail.inputs && Object.keys(detail.inputs).length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Inputs utilises</p>
+                <div className="bg-gray-50 rounded-lg p-3 space-y-1">
+                  {Object.entries(detail.inputs).map(([k, v]) => (
+                    <div key={k} className="flex justify-between text-sm">
+                      <span className="text-gray-600 font-mono">{k}</span>
+                      <span className="text-gray-900 font-medium">{v === null ? '-' : String(v)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Params */}
+            {detail.params && Object.keys(detail.params).length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Parametres / seuils</p>
+                <div className="bg-blue-50 rounded-lg p-3 space-y-1">
+                  {Object.entries(detail.params).map(([k, v]) => (
+                    <div key={k} className="flex justify-between text-sm">
+                      <span className="text-blue-600 font-mono">{k}</span>
+                      <span className="text-gray-900 font-medium">{String(v)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Evidence */}
+            {detail.evidence_refs && Object.keys(detail.evidence_refs).length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Evidence / references</p>
+                <div className="bg-green-50 rounded-lg p-3 text-sm text-gray-700">
+                  <pre className="whitespace-pre-wrap">{JSON.stringify(detail.evidence_refs, null, 2)}</pre>
+                </div>
+              </div>
+            )}
+
+            {/* Evidence text */}
+            {detail.evidence && (
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Explication</p>
+                <p className="text-sm text-gray-700 bg-gray-50 rounded-lg p-3">{detail.evidence}</p>
+              </div>
+            )}
+
+            {/* Metadata */}
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Metadata</p>
+              <div className="text-xs text-gray-400 space-y-1">
+                {detail.engine_version && <div>Engine version: <span className="font-mono">{detail.engine_version}</span></div>}
+                {detail.created_at && <div>Computed at: {new Date(detail.created_at).toLocaleString('fr-FR')}</div>}
+                {detail.updated_at && <div>Updated at: {new Date(detail.updated_at).toLocaleString('fr-FR')}</div>}
+                <div>Workflow: {detail.insight_status}</div>
+                {detail.owner && <div>Owner: {detail.owner}</div>}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -615,6 +734,7 @@ export default function ConformitePage() {
   const [recomputing, setRecomputing] = useState(false);
   const [summary, setSummary] = useState(null);
   const [sitesData, setSitesData] = useState([]);
+  const [auditFindingId, setAuditFindingId] = useState(null);
 
   const loadData = useCallback(() => {
     setLoading(true);
@@ -837,6 +957,7 @@ export default function ConformitePage() {
                 onWorkflowAction={handleWorkflowAction}
                 onUploadProof={handleUploadProof}
                 proofFiles={proofFiles}
+                onAuditFinding={setAuditFindingId}
               />
             ))}
           </div>
@@ -852,6 +973,12 @@ export default function ConformitePage() {
         onClose={() => { setShowCreate(false); setPrefill(null); }}
         onSave={handleSaveAction}
         prefill={prefill}
+      />
+
+      {/* Finding Audit Drawer */}
+      <FindingAuditDrawer
+        findingId={auditFindingId}
+        onClose={() => setAuditFindingId(null)}
       />
     </div>
   );
