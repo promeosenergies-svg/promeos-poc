@@ -60,6 +60,24 @@ def get_monitoring_kpis(
     if not snapshot:
         raise HTTPException(status_code=404, detail="No monitoring snapshot found. Run analysis first.")
 
+    # Compute climate analysis on-the-fly
+    climate_data = {}
+    try:
+        from services.ems.weather_service import get_weather
+        from services.electric_monitoring import ClimateEngine
+        weather = get_weather(db, site_id, snapshot.period_start.date(), snapshot.period_end.date())
+        meter_obj = db.query(Meter).filter_by(id=snapshot.meter_id).first() if snapshot.meter_id else None
+        if meter_obj and weather:
+            readings_orm = db.query(MeterReading).filter(
+                MeterReading.meter_id == meter_obj.id,
+                MeterReading.timestamp >= snapshot.period_start,
+                MeterReading.timestamp <= snapshot.period_end,
+            ).order_by(MeterReading.timestamp).all()
+            readings = [{"timestamp": r.timestamp, "value_kwh": r.value_kwh} for r in readings_orm]
+            climate_data = ClimateEngine().compute(readings, weather)
+    except Exception:
+        pass
+
     return {
         "snapshot_id": snapshot.id,
         "site_id": snapshot.site_id,
@@ -70,6 +88,7 @@ def get_monitoring_kpis(
         "risk_power_score": snapshot.risk_power_score,
         "data_quality_details": snapshot.data_quality_details_json or {},
         "risk_power_details": snapshot.risk_power_details_json or {},
+        "climate": climate_data,
         "engine_version": snapshot.engine_version,
         "created_at": snapshot.created_at.isoformat(),
     }
@@ -242,14 +261,29 @@ def resolve_alert(
 class MonitoringDemoRequest(BaseModel):
     site_id: int
     days: int = 90
+    profile: str = "office"
+
+
+USAGE_PROFILES = {
+    "office":    {"peak": 35, "shoulder": 18, "night": 6, "weekend": 5,
+                  "peak_h": (8, 18), "heat_coeff": 1.5, "cool_coeff": 0.8},
+    "hotel":     {"peak": 25, "shoulder": 20, "night": 15, "weekend": 22,
+                  "peak_h": (7, 22), "heat_coeff": 2.0, "cool_coeff": 1.2},
+    "retail":    {"peak": 40, "shoulder": 15, "night": 4, "weekend": 38,
+                  "peak_h": (9, 20), "heat_coeff": 1.0, "cool_coeff": 1.5},
+    "warehouse": {"peak": 20, "shoulder": 15, "night": 12, "weekend": 10,
+                  "peak_h": (6, 20), "heat_coeff": 0.5, "cool_coeff": 0.3},
+}
 
 
 @router.post("/demo/generate")
 def generate_monitoring_demo(request: MonitoringDemoRequest, db: Session = Depends(get_db)):
-    """Generate monitoring demo data (office pattern + anomalies) for a site."""
+    """Generate monitoring demo data (profiled pattern + weather correlation + anomalies)."""
     site = db.query(Site).filter_by(id=request.site_id).first()
     if not site:
         raise HTTPException(status_code=404, detail=f"Site {request.site_id} not found")
+
+    profile = USAGE_PROFILES.get(request.profile, USAGE_PROFILES["office"])
 
     meter_id_str = f"PRM-MON-{request.site_id:03d}"
     meter = db.query(Meter).filter_by(meter_id=meter_id_str).first()
@@ -271,36 +305,65 @@ def generate_monitoring_demo(request: MonitoringDemoRequest, db: Session = Depen
 
     now = datetime.utcnow()
     start = now - timedelta(days=request.days)
+
+    # Pre-generate weather data so consumption can be correlated
+    try:
+        from services.ems.weather_service import get_weather
+        weather_days = get_weather(db, request.site_id, start.date(), now.date())
+    except Exception:
+        weather_days = []
+
+    # Build temperature lookup {date_str: temp_avg}
+    temp_lookup = {}
+    for w in weather_days:
+        temp_lookup[str(w.get("date", ""))[:10]] = w.get("temp_avg_c", 12.0)
+
     readings = []
     random.seed(42 + request.site_id)
+    peak_start, peak_end = profile["peak_h"]
 
     for day_offset in range(request.days):
         dt = start + timedelta(days=day_offset)
         is_weekend = dt.weekday() >= 5
+        day_key = dt.date().isoformat()
+        temp = temp_lookup.get(day_key, 12.0)
 
         for hour in range(24):
             ts = dt.replace(hour=hour, minute=0, second=0, microsecond=0)
 
-            # Office pattern
+            # Base pattern from profile
             if is_weekend:
-                base_kwh = 5.0
-            elif 8 <= hour <= 18:
-                base_kwh = 35.0
-            elif hour == 7 or 19 <= hour <= 20:
-                base_kwh = 18.0
+                base_kwh = profile["weekend"]
+            elif peak_start <= hour <= peak_end:
+                base_kwh = profile["peak"]
+            elif hour == peak_start - 1 or peak_end < hour <= peak_end + 2:
+                base_kwh = profile["shoulder"]
             else:
-                base_kwh = 6.0
+                base_kwh = profile["night"]
 
+            # Temperature sensitivity
+            base_kwh += profile["heat_coeff"] * max(0, 15 - temp)
+            base_kwh += profile["cool_coeff"] * max(0, temp - 22)
+
+            # Seasonal variation
             seasonal = 1.0 + 0.15 * math.cos(2 * math.pi * (dt.month - 1) / 12.0)
             value = base_kwh * seasonal
 
             # Anomaly 1: high night base (days 30-44)
-            if 30 <= day_offset <= 44 and (hour < 7 or hour > 19) and not is_weekend:
+            if 30 <= day_offset <= 44 and (hour < peak_start or hour > peak_end) and not is_weekend:
                 value *= 2.5
 
             # Anomaly 2: weekend spike (days 35-36)
             if day_offset in [35, 36] and is_weekend:
                 value = 40.0
+
+            # Anomaly 3: sudden ramp (day 55 14:00)
+            if day_offset == 55 and hour == 14:
+                value = profile["peak"] * 3.0
+
+            # Anomaly 4: flat curve segment (days 70-73)
+            if 70 <= day_offset <= 73:
+                value = 15.0
 
             value *= random.uniform(0.90, 1.10)
             value = max(0.1, round(value, 2))
@@ -321,6 +384,8 @@ def generate_monitoring_demo(request: MonitoringDemoRequest, db: Session = Depen
         "site_id": request.site_id,
         "meter_id": meter.id,
         "meter_ref": meter_id_str,
+        "profile": request.profile,
         "readings_generated": len(readings),
+        "weather_days": len(weather_days),
         "period": f"{start.date()} - {now.date()}",
     }
