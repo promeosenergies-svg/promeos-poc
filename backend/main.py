@@ -25,6 +25,7 @@ from routes import (
     intake_router,
     bacs_router,
     ems_router,
+    dev_tools_router,
 )
 
 # Import KB router
@@ -84,6 +85,7 @@ app.include_router(patrimoine_router)  # Patrimoine DIAMANT (staging, quality ga
 app.include_router(intake_router)  # Smart Intake DIAMANT (questions, answers, before/after)
 app.include_router(bacs_router)  # BACS Expert (Decret n°2020-887)
 app.include_router(ems_router)  # EMS Consumption Explorer
+app.include_router(dev_tools_router)  # Dev Tools (reset_db)
 
 # Run safe schema migrations (idempotent, no drop)
 from database import engine as _engine, run_migrations as _run_migrations

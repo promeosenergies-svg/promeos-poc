@@ -3,12 +3,17 @@ PROMEOS - Compliance Rules Evaluator
 Charge les packs YAML et produit des ComplianceFinding persistants.
 """
 import json
+import logging
 import os
+import uuid
 from datetime import date
 from typing import List, Optional
 
 import yaml
+from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.orm import Session
+
+logger = logging.getLogger(__name__)
 
 from models import (
     Site, Batiment, Obligation, Evidence, ComplianceFinding, Organisation,
@@ -573,7 +578,7 @@ def get_sites_findings(db: Session, org_id: int, regulation: str = None,
             sites_map[f.site_id] = {
                 "site_id": f.site_id,
                 "site_nom": site.nom if site else "?",
-                "site_type": site.type.value if site else "?",
+                "site_type": site.type.value if site and site.type else "?",
                 "findings": [],
             }
         actions = json.loads(f.recommended_actions_json) if f.recommended_actions_json else []
@@ -597,8 +602,11 @@ def get_sites_findings(db: Session, org_id: int, regulation: str = None,
 
 _EMPTY_MESSAGES = {
     "NO_SITES": "Aucun site dans le perimetre selectionne.",
+    "NO_SITES_IN_SCOPE": "Aucun site dans le perimetre selectionne.",
     "NO_EVALUATION": "L'evaluation n'a pas encore ete lancee. Cliquez Re-evaluer.",
+    "NOT_EVALUATED_YET": "L'evaluation n'a pas encore ete lancee. Cliquez Re-evaluer.",
     "ALL_COMPLIANT": "Tous les sites sont conformes.",
+    "DATA_BLOCKED": "Erreur d'acces aux donnees de conformite.",
 }
 
 
@@ -612,11 +620,32 @@ def get_compliance_bundle(
     severity: str = None,
 ) -> dict:
     """Single-request bundle for Conformite cockpit. org_id REQUIRED."""
-    summary = get_summary(db, org_id, entity_id=entity_id, site_id=site_id)
-    sites = get_sites_findings(
-        db, org_id, regulation, status, severity,
-        entity_id=entity_id, site_id=site_id,
-    )
+    trace_id = str(uuid.uuid4())[:12]
+    try:
+        summary = get_summary(db, org_id, entity_id=entity_id, site_id=site_id)
+        sites = get_sites_findings(
+            db, org_id, regulation, status, severity,
+            entity_id=entity_id, site_id=site_id,
+        )
+    except (OperationalError, ProgrammingError) as exc:
+        msg = str(exc)
+        logger.error("bundle trace_id=%s DB error: %s", trace_id, msg)
+        is_schema = "no such column" in msg or "no such table" in msg
+        code = "DB_SCHEMA_MISMATCH" if is_schema else "DATA_BLOCKED"
+        return {
+            "scope": {"org_id": org_id, "entity_id": entity_id,
+                      "site_id": site_id, "site_count": 0},
+            "summary": {"total_sites": 0, "sites_ok": 0, "sites_nok": 0,
+                         "sites_unknown": 0, "pct_ok": 0,
+                         "findings_by_regulation": {}, "top_actions": []},
+            "sites": [],
+            "empty_reason_code": code,
+            "empty_reason_message": _EMPTY_MESSAGES.get(code, msg),
+            "error_code": code,
+            "hint": "run_reset_db" if is_schema else None,
+            "trace_id": trace_id,
+        }
+
     code = summary.get("empty_reason")
     return {
         "scope": {
@@ -629,4 +658,5 @@ def get_compliance_bundle(
         "sites": sites,
         "empty_reason_code": code,
         "empty_reason_message": _EMPTY_MESSAGES.get(code),
+        "trace_id": trace_id,
     }
