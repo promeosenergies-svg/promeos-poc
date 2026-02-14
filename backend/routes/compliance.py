@@ -84,47 +84,53 @@ def recompute_compliance(
 @router.get("/summary")
 def compliance_summary(
     org_id: Optional[int] = Query(None),
+    entity_id: Optional[int] = Query(None),
+    site_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
 ):
     """
-    GET /api/compliance/summary?org_id=
+    GET /api/compliance/summary?org_id=&entity_id=&site_id=
 
-    Aggregate compliance findings for an organisation.
-    If org_id is not provided, uses the first organisation.
+    Aggregate compliance findings with scope filtering.
+    Scope priority: site_id > entity_id > org_id.
     """
-    if org_id is None:
+    if org_id is None and entity_id is None and site_id is None:
         org = db.query(Organisation).first()
         if not org:
             return {
                 "total_sites": 0, "sites_ok": 0, "sites_nok": 0,
                 "sites_unknown": 0, "pct_ok": 0,
                 "findings_by_regulation": {}, "top_actions": [],
+                "empty_reason": "NO_SITES",
             }
         org_id = org.id
 
-    return get_summary(db, org_id)
+    return get_summary(db, org_id or 0, entity_id=entity_id, site_id=site_id)
 
 
 @router.get("/sites")
 def compliance_sites(
     org_id: Optional[int] = Query(None),
+    entity_id: Optional[int] = Query(None),
+    site_id: Optional[int] = Query(None),
     regulation: Optional[str] = Query(None),
     status: Optional[str] = Query(None),
     severity: Optional[str] = Query(None),
     db: Session = Depends(get_db),
 ):
     """
-    GET /api/compliance/sites?org_id=&regulation=&status=&severity=
+    GET /api/compliance/sites?org_id=&entity_id=&site_id=&regulation=&status=&severity=
 
-    Per-site findings list with filters.
+    Per-site findings list with scope filtering.
     """
-    if org_id is None:
+    if org_id is None and entity_id is None and site_id is None:
         org = db.query(Organisation).first()
         if not org:
             return []
         org_id = org.id
 
-    return get_sites_findings(db, org_id, regulation, status, severity)
+    return get_sites_findings(db, org_id or 0, regulation, status, severity,
+                              entity_id=entity_id, site_id=site_id)
 
 
 @router.post("/recompute-rules")

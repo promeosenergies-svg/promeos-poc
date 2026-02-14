@@ -440,27 +440,35 @@ def evaluate_organisation(db: Session, org_id: int) -> dict:
     }
 
 
-def get_summary(db: Session, org_id: int) -> dict:
-    """Aggregate compliance findings for an org into a summary."""
-    site_ids = [
-        row[0] for row in
-        db.query(Site.id)
-        .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
-        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
-        .filter(EntiteJuridique.organisation_id == org_id)
-        .all()
-    ]
+def _resolve_site_ids(db: Session, org_id: int, entity_id: int = None, site_id: int = None) -> list:
+    """Resolve site IDs from scope filters (site > entity > org)."""
+    if site_id:
+        return [site_id]
+    q = db.query(Site.id).join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+    if entity_id:
+        q = q.filter(Portefeuille.entite_juridique_id == entity_id)
+    else:
+        q = q.join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+        q = q.filter(EntiteJuridique.organisation_id == org_id)
+    return [row[0] for row in q.all()]
+
+
+def get_summary(db: Session, org_id: int, entity_id: int = None, site_id: int = None) -> dict:
+    """Aggregate compliance findings for an org/entity/site into a summary."""
+    site_ids = _resolve_site_ids(db, org_id, entity_id, site_id)
+
+    _empty = {
+        "total_sites": 0,
+        "sites_ok": 0,
+        "sites_nok": 0,
+        "sites_unknown": 0,
+        "pct_ok": 0,
+        "findings_by_regulation": {},
+        "top_actions": [],
+    }
 
     if not site_ids:
-        return {
-            "total_sites": 0,
-            "sites_ok": 0,
-            "sites_nok": 0,
-            "sites_unknown": 0,
-            "pct_ok": 0,
-            "findings_by_regulation": {},
-            "top_actions": [],
-        }
+        return {**_empty, "empty_reason": "NO_SITES"}
 
     all_findings = (
         db.query(ComplianceFinding)
@@ -519,7 +527,7 @@ def get_summary(db: Session, org_id: int) -> dict:
         if len(top_actions) >= 5:
             break
 
-    return {
+    result = {
         "total_sites": len(site_ids),
         "sites_ok": sites_ok,
         "sites_nok": sites_nok,
@@ -529,18 +537,20 @@ def get_summary(db: Session, org_id: int) -> dict:
         "top_actions": top_actions,
     }
 
+    # Empty reason codes
+    if not all_findings:
+        result["empty_reason"] = "NO_EVALUATION"
+    elif sites_nok == 0 and sites_unknown == 0:
+        result["empty_reason"] = "ALL_COMPLIANT"
+
+    return result
+
 
 def get_sites_findings(db: Session, org_id: int, regulation: str = None,
-                       status: str = None, severity: str = None) -> List[dict]:
+                       status: str = None, severity: str = None,
+                       entity_id: int = None, site_id: int = None) -> List[dict]:
     """Return per-site findings list with filters."""
-    site_ids = [
-        row[0] for row in
-        db.query(Site.id)
-        .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
-        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
-        .filter(EntiteJuridique.organisation_id == org_id)
-        .all()
-    ]
+    site_ids = _resolve_site_ids(db, org_id, entity_id, site_id)
 
     if not site_ids:
         return []
