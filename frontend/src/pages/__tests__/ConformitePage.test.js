@@ -174,3 +174,40 @@ describe('parseBundleError', () => {
     expect(parseBundleError(bundle)).toBeNull();
   });
 });
+
+/* ---------- sitesToObligations with 3 regulations ---------- */
+describe('sitesToObligations — 3 regulations', () => {
+  const makeSite = (id, nom, findings) => ({
+    site_id: id, site_nom: nom, findings,
+  });
+  const makeFinding = (reg, status, severity = 'medium', extra = {}) => ({
+    regulation: reg, rule_id: `${reg}_RULE`, status, severity,
+    evidence: 'test', ...extra,
+  });
+
+  it('groups 3 regulations into 3 obligations', () => {
+    const sites = [
+      makeSite(1, 'Hyper 1', [
+        makeFinding('bacs', 'NOK', 'critical'),
+        makeFinding('decret_tertiaire_operat', 'OK'),
+        makeFinding('aper', 'UNKNOWN', 'high'),
+      ]),
+      makeSite(2, 'Hyper 2', [
+        makeFinding('bacs', 'OK'),
+        makeFinding('decret_tertiaire_operat', 'NOK', 'high'),
+        makeFinding('aper', 'OK'),
+      ]),
+    ];
+    const obligations = sitesToObligations(sites);
+    const codes = obligations.map(o => o.code);
+    expect(codes).toContain('bacs');
+    expect(codes).toContain('decret_tertiaire_operat');
+    expect(codes).toContain('aper');
+    expect(obligations).toHaveLength(3);
+  });
+
+  it('shows dash score when no evaluated sites (empty bundle)', () => {
+    const obligations = sitesToObligations([]);
+    expect(obligations).toHaveLength(0);
+  });
+});
