@@ -18,6 +18,7 @@ from models import (
     StagingStatus, ImportSourceType, QualityRuleSeverity,
     Site, Compteur, TypeCompteur, EnergyVector,
     ActivationLog, ActivationLogStatus,
+    DeliveryPoint, DeliveryPointEnergyType,
     not_deleted,
 )
 from services.onboarding_service import create_site_from_data, provision_site
@@ -487,6 +488,11 @@ _TYPE_COMPTEUR_MAP = {
     "eau": (TypeCompteur.EAU, None),
 }
 
+_ENERGY_TYPE_MAP = {
+    "electricite": DeliveryPointEnergyType.ELEC,
+    "gaz": DeliveryPointEnergyType.GAZ,
+}
+
 
 def _pre_activation_checks(db: Session, batch_id: int):
     """Pre-activation safety checks. Raises ValueError on any failure."""
@@ -557,10 +563,44 @@ def _compute_activation_hash(db: Session, batch_id: int) -> str:
     return hashlib.sha256(content.encode()).hexdigest()
 
 
+def _find_or_create_delivery_point(db, site_id, meter_id, type_compteur, batch, batch_id, now):
+    """Find existing active DeliveryPoint or create a new one.
+
+    Returns (delivery_point, created: bool).
+    """
+    if not meter_id or not meter_id.strip():
+        return None, False
+
+    code = meter_id.strip()
+
+    # Check for existing active DP with same code on this site
+    existing = not_deleted(db.query(DeliveryPoint), DeliveryPoint).filter(
+        DeliveryPoint.code == code,
+        DeliveryPoint.site_id == site_id,
+    ).first()
+    if existing:
+        return existing, False
+
+    energy_type = _ENERGY_TYPE_MAP.get(type_compteur)
+    dp = DeliveryPoint(
+        code=code,
+        energy_type=energy_type,
+        site_id=site_id,
+        data_source=batch.source_type.value if batch.source_type else "import",
+        data_source_ref=f"batch:{batch_id}",
+        imported_at=now,
+        imported_by=batch.user_id,
+    )
+    db.add(dp)
+    db.flush()
+    return dp, True
+
+
 def _do_activate(db: Session, batch, batch_id: int, portefeuille_id: int, now) -> dict:
     """Core activation logic: create real entities from staging.
 
     Must be called within a SAVEPOINT (begin_nested) for atomicity.
+    Creates Site + DeliveryPoint + Compteur for each staging row.
     """
     staging_sites = db.query(StagingSite).filter(
         StagingSite.batch_id == batch_id,
@@ -569,6 +609,7 @@ def _do_activate(db: Session, batch, batch_id: int, portefeuille_id: int, now) -
 
     sites_created = 0
     compteurs_created = 0
+    delivery_points_created = 0
     total_batiments = 0
     total_obligations = 0
 
@@ -609,6 +650,13 @@ def _do_activate(db: Session, batch, batch_id: int, portefeuille_id: int, now) -
             if sc.target_compteur_id:
                 continue
 
+            # Find or create DeliveryPoint for this meter_id
+            dp, dp_created = _find_or_create_delivery_point(
+                db, site.id, sc.meter_id, sc.type_compteur, batch, batch_id, now,
+            )
+            if dp_created:
+                delivery_points_created += 1
+
             tc_info = _TYPE_COMPTEUR_MAP.get(sc.type_compteur, (TypeCompteur.ELECTRICITE, EnergyVector.ELECTRICITY))
             compteur = Compteur(
                 site_id=site.id,
@@ -618,6 +666,7 @@ def _do_activate(db: Session, batch, batch_id: int, portefeuille_id: int, now) -
                 energy_vector=tc_info[1],
                 puissance_souscrite_kw=sc.puissance_kw,
                 actif=True,
+                delivery_point_id=dp.id if dp else None,
                 data_source=batch.source_type.value if batch.source_type else "import",
                 data_source_ref=f"batch:{batch_id}",
             )
@@ -629,6 +678,7 @@ def _do_activate(db: Session, batch, batch_id: int, portefeuille_id: int, now) -
     batch.stats_json = json.dumps({
         "sites_created": sites_created,
         "compteurs_created": compteurs_created,
+        "delivery_points_created": delivery_points_created,
         "batiments": total_batiments,
         "obligations": total_obligations,
         "activated_at": now.isoformat(),
@@ -639,6 +689,7 @@ def _do_activate(db: Session, batch, batch_id: int, portefeuille_id: int, now) -
     return {
         "sites_created": sites_created,
         "compteurs_created": compteurs_created,
+        "delivery_points_created": delivery_points_created,
         "batiments": total_batiments,
         "obligations": total_obligations,
     }
