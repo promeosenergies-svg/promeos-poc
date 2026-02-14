@@ -1,16 +1,19 @@
 /**
- * PROMEOS - Conformite (/conformite) V9
- * OPS-grade: real API data, workflow actions (ack/resolve/false_positive).
- * Replaces mock obligations with live ComplianceFinding data.
+ * PROMEOS - Conformite (/conformite) V10
+ * Cockpit RegOps: 4 tabs (Obligations, Donnees & Qualite, Plan d'execution, Preuves & Rapports).
+ * Scope filtering (org/entity/site), empty state reason codes, workflow actions.
  */
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   ShieldCheck, AlertTriangle, CheckCircle, Clock, FileText,
-  ChevronDown, ChevronUp, Plus, Upload, User, Calendar,
+  ChevronDown, ChevronUp, Plus, Upload, Building,
   BookOpen, ExternalLink, Zap, RotateCcw, RefreshCw,
-  UserCheck, CheckCircle2, XCircle, X, Eye,
+  UserCheck, CheckCircle2, XCircle, X, Eye, Search,
+  ClipboardList, Database, FolderOpen,
 } from 'lucide-react';
 import { Card, CardBody, Badge, Button, EmptyState, TrustBadge, PageShell, Progress, Drawer } from '../ui';
+import Tabs from '../ui/Tabs';
 import { useToast } from '../ui/ToastProvider';
 import CreateActionModal from '../components/CreateActionModal';
 import { useScope } from '../contexts/ScopeContext';
@@ -24,6 +27,7 @@ import {
   recomputeComplianceRules,
   getDataQuality,
   getFindingDetail,
+  getIntakeQuestions,
 } from '../services/api';
 
 const REG_LABELS = {
@@ -55,7 +59,20 @@ const WORKFLOW_CONFIG = {
   false_positive: { label: 'Faux positif', color: 'bg-gray-100 text-gray-500' },
 };
 
-function isOverdue(obligation) {
+const COCKPIT_TABS = [
+  { id: 'obligations', label: 'Obligations' },
+  { id: 'donnees', label: 'Donnees & Qualite' },
+  { id: 'execution', label: "Plan d'execution" },
+  { id: 'preuves', label: 'Preuves & Rapports' },
+];
+
+const EMPTY_REASONS = {
+  NO_SITES: { Icon: Building, title: 'Aucun site dans le perimetre', text: 'Ajoutez des sites via le patrimoine pour demarrer.', ctaLabel: 'Aller au patrimoine', ctaPath: '/patrimoine' },
+  NO_EVALUATION: { Icon: RefreshCw, title: 'Evaluation non lancee', text: 'Cliquez "Re-evaluer" pour lancer la premiere analyse.' },
+  ALL_COMPLIANT: { Icon: CheckCircle, title: 'Tout est conforme', text: 'Aucune non-conformite detectee. Felicitations !' },
+};
+
+export function isOverdue(obligation) {
   if (!obligation.echeance || obligation.statut === 'conforme') return false;
   return new Date(obligation.echeance) < new Date();
 }
@@ -93,6 +110,7 @@ function ScoreGauge({ pct }) {
 const KB_SEVERITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
 
 function KBObligationsSection({ scopedSites }) {
+  const { toast } = useToast();
   const [kbResult, setKbResult] = useState(null);
   const [kbLoading, setKbLoading] = useState(true);
   const [kbError, setKbError] = useState(false);
@@ -121,7 +139,7 @@ function KBObligationsSection({ scopedSites }) {
     setKbLoading(true);
     applyKB(context)
       .then((data) => { setKbResult(data); setKbError(false); })
-      .catch(() => { setKbError(true); })
+      .catch(() => { setKbError(true); toast('Erreur lors de l\'analyse KB', 'error'); })
       .finally(() => setKbLoading(false));
   }, [scopedSites]);
 
@@ -281,7 +299,8 @@ function KBObligationsSection({ scopedSites }) {
  * Transform API sitesData (from /compliance/sites) into obligation-like objects
  * grouped by regulation, for display in ObligationCard.
  */
-function sitesToObligations(sitesData, summary) {
+export function sitesToObligations(sitesData, summary) {
+  if (!sitesData || !sitesData.length) return [];
   const byReg = {};
 
   for (const site of sitesData) {
@@ -445,15 +464,15 @@ function ObligationCard({ obligation, onCreateAction, onWorkflowAction, onUpload
             {obligation.findings && obligation.findings.length > 0 && (
               <div>
                 <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Findings par site ({obligation.findings.length})</p>
-                <div className="space-y-1.5">
+                <div className="rounded-lg border border-gray-200 divide-y divide-gray-100">
                   {obligation.findings.filter(f => f.status === 'NOK' || f.status === 'UNKNOWN').map((f) => (
-                    <div key={f.id} className="flex items-center gap-3 p-2 rounded bg-gray-50 text-sm">
+                    <div key={f.id} className="flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-gray-50 transition-colors">
                       <span className={`w-2 h-2 rounded-full shrink-0 ${f.status === 'NOK' ? 'bg-red-500' : 'bg-amber-500'}`} />
                       <span className="text-gray-700 font-medium truncate flex-1">{f.site_nom}</span>
-                      <span className="text-xs text-gray-400 font-mono">{f.rule_id}</span>
+                      <span className="text-xs text-gray-400 font-mono hidden sm:inline">{f.rule_id}</span>
                       <button
                         onClick={() => onAuditFinding(f.id)}
-                        className="text-xs text-indigo-500 hover:text-indigo-700 font-medium flex items-center gap-1"
+                        className="text-xs text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50 font-medium flex items-center gap-1 px-2 py-1 rounded transition-colors"
                         title="Voir audit"
                       >
                         <Eye size={12} /> Audit
@@ -462,7 +481,7 @@ function ObligationCard({ obligation, onCreateAction, onWorkflowAction, onUpload
                       {f.insight_status === 'open' && (
                         <button
                           onClick={() => onWorkflowAction(f.id, 'ack')}
-                          className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
+                          className="text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50 font-medium flex items-center gap-1 px-2 py-1 rounded transition-colors"
                         >
                           <UserCheck size={12} /> Prendre en charge
                         </button>
@@ -470,7 +489,7 @@ function ObligationCard({ obligation, onCreateAction, onWorkflowAction, onUpload
                       {f.insight_status === 'ack' && (
                         <button
                           onClick={() => onWorkflowAction(f.id, 'resolved')}
-                          className="text-xs text-green-600 hover:text-green-800 font-medium flex items-center gap-1"
+                          className="text-xs text-green-600 hover:text-green-800 hover:bg-green-50 font-medium flex items-center gap-1 px-2 py-1 rounded transition-colors"
                         >
                           <CheckCircle2 size={12} /> Resolu
                         </button>
@@ -478,7 +497,7 @@ function ObligationCard({ obligation, onCreateAction, onWorkflowAction, onUpload
                       {(f.insight_status === 'open' || f.insight_status === 'ack') && (
                         <button
                           onClick={() => onWorkflowAction(f.id, 'false_positive')}
-                          className="text-xs text-gray-400 hover:text-gray-600 font-medium flex items-center gap-1"
+                          className="text-xs text-gray-400 hover:text-gray-600 hover:bg-gray-100 font-medium flex items-center gap-1 px-2 py-1 rounded transition-colors"
                         >
                           <XCircle size={12} /> FP
                         </button>
@@ -537,105 +556,94 @@ function FindingAuditDrawer({ findingId, onClose }) {
       .finally(() => setLoading(false));
   }, [findingId]);
 
-  if (!findingId) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex justify-end">
-      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
-      <div className="relative w-full max-w-lg bg-white shadow-xl overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-          <h3 className="text-lg font-bold text-gray-900">Audit Finding</h3>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
-            <X size={20} className="text-gray-500" />
-          </button>
-        </div>
-
-        {loading ? (
-          <div className="p-6 text-center text-gray-400">Chargement...</div>
-        ) : !detail ? (
-          <div className="p-6 text-center text-gray-400">Finding introuvable</div>
-        ) : (
-          <div className="p-6 space-y-5">
-            {/* Identity */}
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Identite</p>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div><span className="text-gray-500">Rule ID:</span> <span className="font-mono font-medium">{detail.rule_id}</span></div>
-                <div><span className="text-gray-500">Regulation:</span> <span className="font-medium">{detail.regulation}</span></div>
-                <div><span className="text-gray-500">Status:</span> <span className="font-medium">{detail.status}</span></div>
-                <div><span className="text-gray-500">Severity:</span> <span className="font-medium">{detail.severity}</span></div>
-                <div><span className="text-gray-500">Site:</span> <span className="font-medium">{detail.site_nom}</span></div>
-                {detail.deadline && <div><span className="text-gray-500">Echeance:</span> <span className="font-medium">{detail.deadline}</span></div>}
-              </div>
-            </div>
-
-            {/* Inputs */}
-            {detail.inputs && Object.keys(detail.inputs).length > 0 && (
-              <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Inputs utilises</p>
-                <div className="bg-gray-50 rounded-lg p-3 space-y-1">
-                  {Object.entries(detail.inputs).map(([k, v]) => (
-                    <div key={k} className="flex justify-between text-sm">
-                      <span className="text-gray-600 font-mono">{k}</span>
-                      <span className="text-gray-900 font-medium">{v === null ? '-' : String(v)}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Params */}
-            {detail.params && Object.keys(detail.params).length > 0 && (
-              <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Parametres / seuils</p>
-                <div className="bg-blue-50 rounded-lg p-3 space-y-1">
-                  {Object.entries(detail.params).map(([k, v]) => (
-                    <div key={k} className="flex justify-between text-sm">
-                      <span className="text-blue-600 font-mono">{k}</span>
-                      <span className="text-gray-900 font-medium">{String(v)}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Evidence */}
-            {detail.evidence_refs && Object.keys(detail.evidence_refs).length > 0 && (
-              <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Evidence / references</p>
-                <div className="bg-green-50 rounded-lg p-3 text-sm text-gray-700">
-                  <pre className="whitespace-pre-wrap">{JSON.stringify(detail.evidence_refs, null, 2)}</pre>
-                </div>
-              </div>
-            )}
-
-            {/* Evidence text */}
-            {detail.evidence && (
-              <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Explication</p>
-                <p className="text-sm text-gray-700 bg-gray-50 rounded-lg p-3">{detail.evidence}</p>
-              </div>
-            )}
-
-            {/* Metadata */}
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Metadata</p>
-              <div className="text-xs text-gray-400 space-y-1">
-                {detail.engine_version && <div>Engine version: <span className="font-mono">{detail.engine_version}</span></div>}
-                {detail.created_at && <div>Computed at: {new Date(detail.created_at).toLocaleString('fr-FR')}</div>}
-                {detail.updated_at && <div>Updated at: {new Date(detail.updated_at).toLocaleString('fr-FR')}</div>}
-                <div>Workflow: {detail.insight_status}</div>
-                {detail.owner && <div>Owner: {detail.owner}</div>}
-              </div>
+    <Drawer open={!!findingId} onClose={onClose} title="Audit Finding" wide>
+      {loading ? (
+        <div className="py-12 text-center text-gray-400">Chargement...</div>
+      ) : !detail ? (
+        <div className="py-12 text-center text-gray-400">Finding introuvable</div>
+      ) : (
+        <div className="space-y-5">
+          {/* Identity */}
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Identite</p>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div><span className="text-gray-500">Rule ID:</span> <span className="font-mono font-medium">{detail.rule_id}</span></div>
+              <div><span className="text-gray-500">Regulation:</span> <span className="font-medium">{detail.regulation}</span></div>
+              <div><span className="text-gray-500">Status:</span> <span className="font-medium">{detail.status}</span></div>
+              <div><span className="text-gray-500">Severity:</span> <span className="font-medium">{detail.severity}</span></div>
+              <div><span className="text-gray-500">Site:</span> <span className="font-medium">{detail.site_nom}</span></div>
+              {detail.deadline && <div><span className="text-gray-500">Echeance:</span> <span className="font-medium">{detail.deadline}</span></div>}
             </div>
           </div>
-        )}
-      </div>
-    </div>
+
+          {/* Inputs */}
+          {detail.inputs && Object.keys(detail.inputs).length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Inputs utilises</p>
+              <div className="bg-gray-50 rounded-lg p-3 space-y-1">
+                {Object.entries(detail.inputs).map(([k, v]) => (
+                  <div key={k} className="flex justify-between text-sm">
+                    <span className="text-gray-600 font-mono">{k}</span>
+                    <span className="text-gray-900 font-medium">{v === null ? '-' : String(v)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Params */}
+          {detail.params && Object.keys(detail.params).length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Parametres / seuils</p>
+              <div className="bg-blue-50 rounded-lg p-3 space-y-1">
+                {Object.entries(detail.params).map(([k, v]) => (
+                  <div key={k} className="flex justify-between text-sm">
+                    <span className="text-blue-600 font-mono">{k}</span>
+                    <span className="text-gray-900 font-medium">{String(v)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Evidence */}
+          {detail.evidence_refs && Object.keys(detail.evidence_refs).length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Evidence / references</p>
+              <div className="bg-green-50 rounded-lg p-3 text-sm text-gray-700">
+                <pre className="whitespace-pre-wrap">{JSON.stringify(detail.evidence_refs, null, 2)}</pre>
+              </div>
+            </div>
+          )}
+
+          {/* Evidence text */}
+          {detail.evidence && (
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Explication</p>
+              <p className="text-sm text-gray-700 bg-gray-50 rounded-lg p-3">{detail.evidence}</p>
+            </div>
+          )}
+
+          {/* Metadata */}
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Metadata</p>
+            <div className="text-xs text-gray-400 space-y-1">
+              {detail.engine_version && <div>Engine version: <span className="font-mono">{detail.engine_version}</span></div>}
+              {detail.created_at && <div>Computed at: {new Date(detail.created_at).toLocaleString('fr-FR')}</div>}
+              {detail.updated_at && <div>Updated at: {new Date(detail.updated_at).toLocaleString('fr-FR')}</div>}
+              <div>Workflow: {detail.insight_status}</div>
+              {detail.owner && <div>Owner: {detail.owner}</div>}
+            </div>
+          </div>
+        </div>
+      )}
+    </Drawer>
   );
 }
 
-function DataQualityGate({ siteId }) {
+function DataQualityGate({ siteId, siteName }) {
+  const { toast } = useToast();
   const [dq, setDq] = useState(null);
   const [expanded, setExpanded] = useState(false);
 
@@ -643,7 +651,7 @@ function DataQualityGate({ siteId }) {
     if (!siteId) return;
     getDataQuality('site', siteId)
       .then(setDq)
-      .catch(() => {});
+      .catch(() => { toast('Impossible de charger la qualite des donnees', 'error'); });
   }, [siteId]);
 
   if (!dq) return null;
@@ -663,7 +671,9 @@ function DataQualityGate({ siteId }) {
             <ShieldCheck size={18} className={sc.text} />
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-gray-900">Qualite des donnees</span>
+                <span className="text-sm font-semibold text-gray-900">
+                  {siteName ? `${siteName} — Qualite` : 'Qualite des donnees'}
+                </span>
                 <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${sc.badge}`}>{dq.gate_status}</span>
               </div>
               <p className="text-xs text-gray-500 mt-0.5">
@@ -726,33 +736,133 @@ function DataQualityGate({ siteId }) {
   );
 }
 
+function ActionRow({ finding, onWorkflowAction, onCreateAction, onAuditFinding }) {
+  return (
+    <div className="flex items-center gap-3 px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+      <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${finding.status === 'NOK' ? 'bg-red-500' : 'bg-amber-500'}`} />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-gray-900 truncate">{finding.site_nom} — {REG_LABELS[finding.regulation] || finding.regulation}</p>
+        <p className="text-xs text-gray-500 truncate">{finding.rule_id}: {finding.evidence || 'Non conforme'}</p>
+      </div>
+      <WorkflowBadge status={finding.insight_status} />
+      <button
+        onClick={() => onAuditFinding(finding.id)}
+        className="text-xs text-indigo-500 hover:text-indigo-700 font-medium flex items-center gap-1 px-2 py-1 rounded hover:bg-indigo-50 transition-colors"
+      >
+        <Eye size={12} /> Audit
+      </button>
+      {finding.insight_status === 'open' && (
+        <button
+          onClick={() => onWorkflowAction(finding.id, 'ack')}
+          className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 px-2 py-1 rounded hover:bg-blue-50 transition-colors"
+        >
+          <UserCheck size={12} /> Prendre en charge
+        </button>
+      )}
+      {finding.insight_status === 'ack' && (
+        <button
+          onClick={() => onWorkflowAction(finding.id, 'resolved')}
+          className="text-xs text-green-600 hover:text-green-800 font-medium flex items-center gap-1 px-2 py-1 rounded hover:bg-green-50 transition-colors"
+        >
+          <CheckCircle2 size={12} /> Resolu
+        </button>
+      )}
+      {finding.status === 'NOK' && (
+        <Button size="sm" variant="secondary" onClick={() => onCreateAction(finding)}>
+          <Plus size={12} /> Action
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function ProofSection({ obligation, files, onUpload }) {
+  const cfg = STATUT_CONFIG[obligation.statut] || STATUT_CONFIG.a_risque;
+
+  return (
+    <Card className={`border-l-4 ${cfg.border}`}>
+      <CardBody>
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h4 className="text-sm font-semibold text-gray-900">{obligation.regulation}</h4>
+            <p className="text-xs text-gray-500">{obligation.sites_concernes} site(s) concerne(s)</p>
+          </div>
+          <Badge status={obligation.statut === 'conforme' ? 'ok' : obligation.statut === 'non_conforme' ? 'crit' : 'warn'}>
+            {cfg.label}
+          </Badge>
+        </div>
+        {files.length > 0 && (
+          <div className="space-y-1 mb-3">
+            {files.map((f, i) => (
+              <div key={i} className="flex items-center gap-2 text-sm text-gray-700 bg-gray-50 px-3 py-2 rounded">
+                <FileText size={14} className="text-indigo-500 shrink-0" />
+                <span className="truncate flex-1">{f.name}</span>
+                <span className="text-xs text-gray-400 whitespace-nowrap">{f.date}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        {files.length === 0 && (
+          <p className="text-xs text-gray-400 mb-3">Aucune preuve jointe pour cette obligation.</p>
+        )}
+        <label className="inline-flex items-center gap-2 cursor-pointer text-sm text-indigo-600 hover:text-indigo-800 transition font-medium">
+          <Upload size={14} />
+          Ajouter un fichier
+          <input type="file" className="sr-only" onChange={(e) => { if (e.target.files[0]) onUpload(obligation.id, e.target.files[0]); e.target.value = ''; }} />
+        </label>
+      </CardBody>
+    </Card>
+  );
+}
+
 export default function ConformitePage() {
   const { org, scopedSites } = useScope();
   const { isExpert } = useExpertMode();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [showCreate, setShowCreate] = useState(false);
   const [prefill, setPrefill] = useState(null);
   const [proofFiles, setProofFiles] = useState({});
   const [statusFilter, setStatusFilter] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [recomputing, setRecomputing] = useState(false);
   const [summary, setSummary] = useState(null);
   const [sitesData, setSitesData] = useState([]);
   const [auditFindingId, setAuditFindingId] = useState(null);
+  const [activeTab, setActiveTab] = useState('obligations');
+  const [intakeQuestions, setIntakeQuestions] = useState([]);
+  const [emptyReason, setEmptyReason] = useState(null);
 
   const loadData = useCallback(() => {
     setLoading(true);
+    const scopeParams = {};
+    if (scopedSites.length === 1) {
+      scopeParams.site_id = scopedSites[0].id;
+    }
     Promise.all([
-      getComplianceSummary(),
-      getComplianceSites(),
+      getComplianceSummary(scopeParams),
+      getComplianceSites(scopeParams),
     ]).then(([s, st]) => {
       setSummary(s);
       setSitesData(st);
-    }).catch(() => {})
+      if (scopedSites.length === 0) setEmptyReason('NO_SITES');
+      else if (s?.empty_reason) setEmptyReason(s.empty_reason);
+      else setEmptyReason(null);
+    }).catch(() => { toast('Erreur lors du chargement des donnees de conformite', 'error'); })
       .finally(() => setLoading(false));
-  }, []);
+  }, [scopedSites]);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  // Load intake questions for Donnees tab
+  useEffect(() => {
+    if (scopedSites.length > 0) {
+      getIntakeQuestions(scopedSites[0].id)
+        .then(data => setIntakeQuestions(data.questions || []))
+        .catch(() => setIntakeQuestions([]));
+    }
+  }, [scopedSites]);
 
   const obligations = useMemo(() => {
     if (!sitesData.length || !summary) return [];
@@ -776,6 +886,14 @@ export default function ConformitePage() {
     if (statusFilter) {
       list = list.filter(o => o.statut === statusFilter);
     }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(o =>
+        o.regulation.toLowerCase().includes(q) ||
+        o.description.toLowerCase().includes(q) ||
+        o.code.toLowerCase().includes(q)
+      );
+    }
     list.sort((a, b) => {
       const aOver = isOverdue(a) ? 0 : 1;
       const bOver = isOverdue(b) ? 0 : 1;
@@ -784,7 +902,13 @@ export default function ConformitePage() {
       return (order[a.statut] ?? 9) - (order[b.statut] ?? 9);
     });
     return list;
-  }, [obligations, statusFilter]);
+  }, [obligations, statusFilter, searchQuery]);
+
+  const actionableFindings = useMemo(() => {
+    return obligations.flatMap(o => o.findings)
+      .filter(f => f.status === 'NOK' || f.status === 'UNKNOWN')
+      .filter(f => f.insight_status !== 'resolved' && f.insight_status !== 'false_positive');
+  }, [obligations]);
 
   const handleRecompute = async () => {
     setRecomputing(true);
@@ -793,7 +917,7 @@ export default function ConformitePage() {
       loadData();
       track('conformite_recompute');
     } catch {
-      // silent
+      toast('Erreur lors de la re-evaluation des regles', 'error');
     } finally {
       setRecomputing(false);
     }
@@ -805,7 +929,7 @@ export default function ConformitePage() {
       loadData();
       track('conformite_workflow', { finding_id: findingId, status: newStatus });
     } catch {
-      // silent
+      toast('Erreur lors de la mise a jour du workflow', 'error');
     }
   };
 
@@ -821,6 +945,19 @@ export default function ConformitePage() {
     });
     setShowCreate(true);
     track('conformite_create_action', { regulation: obligation.code });
+  }
+
+  function handleCreateFromFinding(finding) {
+    setPrefill({
+      titre: `Mise en conformite ${REG_LABELS[finding.regulation] || finding.regulation} — ${finding.site_nom}`,
+      type: 'conformite',
+      priorite: finding.severity === 'critical' ? 'critical' : finding.severity === 'high' ? 'high' : 'medium',
+      description: finding.evidence || `Non conforme: ${finding.rule_id}`,
+      obligation_code: finding.regulation,
+      site: finding.site_nom,
+    });
+    setShowCreate(true);
+    track('conformite_create_action_finding', { rule_id: finding.rule_id });
   }
 
   function handleSaveAction(action) {
@@ -869,101 +1006,266 @@ export default function ConformitePage() {
       }
     >
 
-      {/* Score + summary */}
-      <div className="grid grid-cols-4 gap-4">
-        <Card className="col-span-2">
-          <CardBody>
-            <ScoreGauge pct={score.pct} />
-            <TrustBadge source="RegOps" period={`perimetre : ${scopedSites.length} sites`} confidence="medium" className="mt-2" />
-          </CardBody>
-        </Card>
-        <Card
-          className={`cursor-pointer transition hover:shadow-md ${statusFilter === 'non_conforme' ? 'ring-2 ring-red-400' : ''}`}
-          onClick={() => setStatusFilter(statusFilter === 'non_conforme' ? null : 'non_conforme')}
-        >
-          <CardBody className="bg-red-50">
-            <div className="flex items-center gap-2 mb-1">
-              <AlertTriangle size={16} className="text-red-600" />
-              <p className="text-xs text-gray-500 font-medium">Non conformes</p>
-            </div>
-            <p className="text-2xl font-bold text-red-700">{score.non_conformes}</p>
-            <p className="text-xs text-gray-500 mt-1">sites</p>
-          </CardBody>
-        </Card>
-        <Card
-          className={`cursor-pointer transition hover:shadow-md ${statusFilter === 'a_risque' ? 'ring-2 ring-amber-400' : ''}`}
-          onClick={() => setStatusFilter(statusFilter === 'a_risque' ? null : 'a_risque')}
-        >
-          <CardBody className="bg-amber-50">
-            <div className="flex items-center gap-2 mb-1">
-              <Clock size={16} className="text-amber-600" />
-              <p className="text-xs text-gray-500 font-medium">A evaluer</p>
-            </div>
-            <p className="text-2xl font-bold text-amber-700">{score.a_risque}</p>
-            <p className="text-xs text-gray-500 mt-1">sites</p>
-          </CardBody>
-        </Card>
-      </div>
+      {/* Cockpit Tabs */}
+      <Tabs tabs={COCKPIT_TABS} active={activeTab} onChange={(tab) => { setActiveTab(tab); track('conformite_tab', { tab }); }} />
 
-      {/* Data Quality Gate */}
-      {scopedSites.length > 0 && <DataQualityGate siteId={scopedSites[0]?.id} />}
-
-      {/* Active filter indicator */}
-      {statusFilter && (
-        <div className="flex items-center gap-2">
-          <Badge status={statusFilter === 'non_conforme' ? 'crit' : 'warn'}>
-            Filtre : {statusFilter === 'non_conforme' ? 'Non conformes' : 'A risque'}
-          </Badge>
-          <button
-            onClick={() => setStatusFilter(null)}
-            className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition"
-          >
-            <RotateCcw size={12} /> Reinitialiser
-          </button>
-        </div>
-      )}
-
-      {/* Overdue alert */}
-      {overdueCount > 0 && !statusFilter && (
-        <div className="flex items-center gap-2 px-4 py-2.5 bg-red-50 border border-red-200 rounded-lg">
-          <AlertTriangle size={16} className="text-red-600" />
-          <span className="text-sm font-medium text-red-700">
-            {overdueCount} obligation(s) en retard — echeance(s) depassee(s)
-          </span>
-        </div>
-      )}
-
-      {/* Obligations list */}
-      <div>
-        <h3 className="text-sm font-semibold text-gray-700 mb-3">
-          {statusFilter ? sortedObligations.length : score.total} reglementations evaluees
-        </h3>
-        {sortedObligations.length === 0 ? (
-          <EmptyState
-            icon={ShieldCheck}
-            title="Aucune obligation detectee"
-            text="Cliquez Re-evaluer pour lancer l'evaluation, ou ajoutez des sites a votre patrimoine."
-            ctaLabel="Aller au patrimoine"
-          />
-        ) : (
-          <div className="space-y-3">
-            {sortedObligations.map((o) => (
-              <ObligationCard
-                key={o.id}
-                obligation={o}
-                onCreateAction={handleCreateFromObligation}
-                onWorkflowAction={handleWorkflowAction}
-                onUploadProof={handleUploadProof}
-                proofFiles={proofFiles}
-                onAuditFinding={setAuditFindingId}
-              />
-            ))}
+      {/* ======================== Tab: Obligations ======================== */}
+      {activeTab === 'obligations' && (
+        <>
+          {/* Score + summary */}
+          <div className="grid grid-cols-4 gap-4">
+            <Card className="col-span-2">
+              <CardBody>
+                <ScoreGauge pct={score.pct} />
+                <TrustBadge source="RegOps" period={`perimetre : ${scopedSites.length} sites`} confidence="medium" className="mt-2" />
+              </CardBody>
+            </Card>
+            <Card
+              className={`cursor-pointer transition hover:shadow-md ${statusFilter === 'non_conforme' ? 'ring-2 ring-red-400' : ''}`}
+              onClick={() => setStatusFilter(statusFilter === 'non_conforme' ? null : 'non_conforme')}
+            >
+              <CardBody className="bg-red-50">
+                <div className="flex items-center gap-2 mb-1">
+                  <AlertTriangle size={16} className="text-red-600" />
+                  <p className="text-xs text-gray-500 font-medium">Non conformes</p>
+                </div>
+                <p className="text-2xl font-bold text-red-700">{score.non_conformes}</p>
+                <p className="text-xs text-gray-500 mt-1">sites</p>
+              </CardBody>
+            </Card>
+            <Card
+              className={`cursor-pointer transition hover:shadow-md ${statusFilter === 'a_risque' ? 'ring-2 ring-amber-400' : ''}`}
+              onClick={() => setStatusFilter(statusFilter === 'a_risque' ? null : 'a_risque')}
+            >
+              <CardBody className="bg-amber-50">
+                <div className="flex items-center gap-2 mb-1">
+                  <Clock size={16} className="text-amber-600" />
+                  <p className="text-xs text-gray-500 font-medium">A evaluer</p>
+                </div>
+                <p className="text-2xl font-bold text-amber-700">{score.a_risque}</p>
+                <p className="text-xs text-gray-500 mt-1">sites</p>
+              </CardBody>
+            </Card>
           </div>
-        )}
-      </div>
 
-      {/* KB Obligations (from knowledge base apply engine) */}
-      <KBObligationsSection scopedSites={scopedSites} />
+          {/* Active filter indicator */}
+          {statusFilter && (
+            <div className="flex items-center gap-2">
+              <Badge status={statusFilter === 'non_conforme' ? 'crit' : 'warn'}>
+                Filtre : {statusFilter === 'non_conforme' ? 'Non conformes' : 'A risque'}
+              </Badge>
+              <button
+                onClick={() => setStatusFilter(null)}
+                className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition"
+              >
+                <RotateCcw size={12} /> Reinitialiser
+              </button>
+            </div>
+          )}
+
+          {/* Overdue alert */}
+          {overdueCount > 0 && !statusFilter && (
+            <div className="flex items-center gap-2 px-4 py-2.5 bg-red-50 border border-red-200 rounded-lg">
+              <AlertTriangle size={16} className="text-red-600" />
+              <span className="text-sm font-medium text-red-700">
+                {overdueCount} obligation(s) en retard — echeance(s) depassee(s)
+              </span>
+            </div>
+          )}
+
+          {/* Obligations list */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-gray-700">
+                {statusFilter || searchQuery.trim() ? sortedObligations.length : score.total} Obligations reglementaires
+              </h3>
+              <div className="relative w-64">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Rechercher une obligation..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+            {emptyReason && EMPTY_REASONS[emptyReason] ? (
+              <EmptyState
+                icon={EMPTY_REASONS[emptyReason].Icon || ShieldCheck}
+                title={EMPTY_REASONS[emptyReason].title}
+                text={EMPTY_REASONS[emptyReason].text}
+                ctaLabel={EMPTY_REASONS[emptyReason].ctaLabel}
+                onCta={EMPTY_REASONS[emptyReason].ctaPath ? () => navigate(EMPTY_REASONS[emptyReason].ctaPath) : undefined}
+              />
+            ) : sortedObligations.length === 0 ? (
+              <EmptyState
+                icon={ShieldCheck}
+                title="Aucune obligation detectee"
+                text="Cliquez Re-evaluer pour lancer l'evaluation, ou ajoutez des sites a votre patrimoine."
+                ctaLabel="Aller au patrimoine"
+              />
+            ) : (
+              <div className="space-y-3">
+                {sortedObligations.map((o) => (
+                  <ObligationCard
+                    key={o.id}
+                    obligation={o}
+                    onCreateAction={handleCreateFromObligation}
+                    onWorkflowAction={handleWorkflowAction}
+                    onUploadProof={handleUploadProof}
+                    proofFiles={proofFiles}
+                    onAuditFinding={setAuditFindingId}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* KB Obligations (from knowledge base apply engine) */}
+          <KBObligationsSection scopedSites={scopedSites} />
+        </>
+      )}
+
+      {/* ======================== Tab: Donnees & Qualite ======================== */}
+      {activeTab === 'donnees' && (
+        <div className="space-y-4">
+          {scopedSites.length === 0 ? (
+            <EmptyState icon={Database} title="Aucun site dans le perimetre" text="Ajoutez des sites pour analyser la qualite des donnees." />
+          ) : (
+            <>
+              <div className="flex items-center gap-2 mb-2">
+                <Database size={16} className="text-blue-600" />
+                <h3 className="text-sm font-semibold text-gray-700">Qualite des donnees par site ({scopedSites.length})</h3>
+              </div>
+              {scopedSites.map(site => (
+                <DataQualityGate key={site.id} siteId={site.id} siteName={site.nom} />
+              ))}
+
+              {/* Smart Intake questions */}
+              {intakeQuestions.length > 0 && (
+                <Card>
+                  <CardBody>
+                    <div className="flex items-center gap-2 mb-3">
+                      <ClipboardList size={16} className="text-indigo-600" />
+                      <h3 className="text-sm font-semibold text-gray-700">Questions en attente ({intakeQuestions.length})</h3>
+                    </div>
+                    <div className="space-y-2">
+                      {intakeQuestions.slice(0, 5).map((q, i) => (
+                        <div key={i} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                          <span className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${
+                            q.severity === 'critical' ? 'bg-red-500' : q.severity === 'high' ? 'bg-orange-500' : 'bg-blue-500'
+                          }`} />
+                          <div className="flex-1">
+                            <p className="text-sm text-gray-800">{q.question}</p>
+                            {q.help && <p className="text-xs text-gray-500 mt-0.5">{q.help}</p>}
+                            <div className="flex items-center gap-2 mt-1">
+                              {q.regulations?.map(r => (
+                                <span key={r} className="text-xs px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded">{REG_LABELS[r] || r}</span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {intakeQuestions.length > 5 && (
+                      <p className="text-xs text-gray-400 mt-2">+ {intakeQuestions.length - 5} autres questions</p>
+                    )}
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="mt-3"
+                      onClick={() => { navigate(`/intake/${scopedSites[0]?.id}`); track('conformite_goto_intake'); }}
+                    >
+                      Completer le questionnaire
+                    </Button>
+                  </CardBody>
+                </Card>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ======================== Tab: Plan d'execution ======================== */}
+      {activeTab === 'execution' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ClipboardList size={16} className="text-blue-600" />
+              <h3 className="text-sm font-semibold text-gray-700">
+                Actions a mener ({actionableFindings.length})
+              </h3>
+            </div>
+            {actionableFindings.length > 0 && (
+              <Button variant="secondary" size="sm" onClick={() => { setPrefill(null); setShowCreate(true); }}>
+                <Plus size={14} /> Nouvelle action
+              </Button>
+            )}
+          </div>
+
+          {actionableFindings.length === 0 ? (
+            <EmptyState
+              icon={CheckCircle}
+              title="Aucune action en attente"
+              text={emptyReason === 'ALL_COMPLIANT'
+                ? 'Toutes les obligations sont conformes. Aucune action requise.'
+                : 'Lancez une evaluation pour identifier les actions necessaires.'}
+            />
+          ) : (
+            <div className="space-y-2">
+              {actionableFindings.map(f => (
+                <ActionRow
+                  key={f.id}
+                  finding={f}
+                  onWorkflowAction={handleWorkflowAction}
+                  onCreateAction={handleCreateFromFinding}
+                  onAuditFinding={setAuditFindingId}
+                />
+              ))}
+            </div>
+          )}
+
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => { navigate('/plan-actions'); track('conformite_goto_plan_actions'); }}
+          >
+            <ExternalLink size={14} /> Voir le plan d'actions complet
+          </Button>
+        </div>
+      )}
+
+      {/* ======================== Tab: Preuves & Rapports ======================== */}
+      {activeTab === 'preuves' && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <FolderOpen size={16} className="text-indigo-600" />
+            <h3 className="text-sm font-semibold text-gray-700">Preuves par obligation ({obligations.length})</h3>
+          </div>
+
+          {obligations.length === 0 ? (
+            <EmptyState
+              icon={FolderOpen}
+              title="Aucune obligation"
+              text="Lancez une evaluation pour voir les obligations et joindre des preuves."
+            />
+          ) : (
+            <>
+              {obligations.map(o => (
+                <ProofSection
+                  key={o.id}
+                  obligation={o}
+                  files={proofFiles[o.id] || []}
+                  onUpload={handleUploadProof}
+                />
+              ))}
+            </>
+          )}
+
+          <TrustBadge source="Preuves locales" period="Upload client-side (non persiste)" confidence="low" />
+        </div>
+      )}
 
       {/* Create Action Modal */}
       <CreateActionModal
