@@ -3,7 +3,7 @@
  * Covers: sitesToObligations, isOverdue
  */
 import { describe, it, expect } from 'vitest';
-import { sitesToObligations, isOverdue } from '../ConformitePage';
+import { sitesToObligations, isOverdue, buildScopeParams } from '../ConformitePage';
 
 /* ---------- isOverdue ---------- */
 describe('isOverdue', () => {
@@ -114,5 +114,32 @@ describe('sitesToObligations', () => {
     const result = sitesToObligations(sites);
     expect(result[0].findings[0].site_id).toBe(7);
     expect(result[0].findings[0].site_nom).toBe('SiteX');
+  });
+});
+
+/* ---------- buildScopeParams ---------- */
+describe('buildScopeParams', () => {
+  it('always includes org_id', () => {
+    const params = buildScopeParams({ orgId: 2 }, [{ id: 10 }, { id: 20 }, { id: 30 }]);
+    expect(params.org_id).toBe(2);
+    expect(params.site_id).toBeUndefined();
+  });
+
+  it('includes site_id when exactly 1 site', () => {
+    const params = buildScopeParams({ orgId: 1 }, [{ id: 42 }]);
+    expect(params.org_id).toBe(1);
+    expect(params.site_id).toBe(42);
+  });
+
+  it('no site_id when 0 sites', () => {
+    const params = buildScopeParams({ orgId: 1 }, []);
+    expect(params.org_id).toBe(1);
+    expect(params.site_id).toBeUndefined();
+  });
+
+  it('no site_id when many sites', () => {
+    const params = buildScopeParams({ orgId: 3 }, [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }]);
+    expect(params.org_id).toBe(3);
+    expect(params.site_id).toBeUndefined();
   });
 });
