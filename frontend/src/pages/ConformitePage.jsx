@@ -28,6 +28,7 @@ import {
   getDataQuality,
   getFindingDetail,
   getIntakeQuestions,
+  resetDb,
 } from '../services/api';
 
 const REG_LABELS = {
@@ -82,6 +83,23 @@ export function buildScopeParams(scope, scopedSites) {
     params.site_id = scopedSites[0].id;
   }
   return params;
+}
+
+/**
+ * Parse a bundle response for error state.
+ * Returns null if the bundle is healthy, or an error object with message/error_code/trace_id/hint.
+ */
+export function parseBundleError(bundle) {
+  if (!bundle) return { message: 'Donnees de conformite indisponibles' };
+  if (bundle.error_code) {
+    return {
+      message: bundle.empty_reason_message || 'Donnees de conformite indisponibles',
+      error_code: bundle.error_code,
+      trace_id: bundle.trace_id,
+      hint: bundle.hint,
+    };
+  }
+  return null;
 }
 
 export function isOverdue(obligation) {
@@ -881,6 +899,8 @@ export default function ConformitePage() {
 
     getComplianceBundle(scopeParams)
       .then((bundle) => {
+        const err = parseBundleError(bundle);
+        if (err) { setError(err); return; }
         setSummary(bundle.summary);
         setSitesData(bundle.sites);
         if (scopedSites.length === 0) setEmptyReason('NO_SITES');
@@ -888,7 +908,7 @@ export default function ConformitePage() {
         else setEmptyReason(null);
       })
       .catch(() => {
-        setError('Donnees de conformite indisponibles');
+        setError(parseBundleError(null));
       })
       .finally(() => setLoading(false));
   }, [org.id, scopedSites]);
@@ -1029,11 +1049,30 @@ export default function ConformitePage() {
   }
 
   if (error) {
+    const handleResetDb = async () => {
+      try {
+        await resetDb();
+        setError(null);
+        loadData();
+      } catch {
+        setError({ message: 'Echec du reset de la base de donnees' });
+      }
+    };
+
     return (
       <PageShell icon={ShieldCheck} title="Conformite reglementaire"
                  subtitle={`${org.nom} · ${scopedSites.length} sites`}>
-        <ErrorState title="Erreur de chargement" message={error}
-                    onRetry={() => { setError(null); loadData(); }} />
+        <ErrorState
+          title="Erreur de chargement"
+          message={error.message || 'Donnees de conformite indisponibles'}
+          onRetry={() => { setError(null); loadData(); }}
+          debug={error.error_code ? { error_code: error.error_code, trace_id: error.trace_id, hint: error.hint } : null}
+          actions={error.hint === 'run_reset_db' ? (
+            <Button variant="secondary" onClick={handleResetDb}>
+              <RotateCcw size={14} /> Reset DB (dev)
+            </Button>
+          ) : null}
+        />
       </PageShell>
     );
   }
