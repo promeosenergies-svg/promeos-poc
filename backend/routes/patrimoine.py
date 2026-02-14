@@ -10,7 +10,10 @@ from typing import Optional
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import Organisation, Portefeuille, StagingBatch, ImportSourceType, StagingStatus
+from models import (
+    Organisation, Portefeuille, StagingBatch, ImportSourceType, StagingStatus,
+    Site, DeliveryPoint, not_deleted,
+)
 from services.patrimoine_service import (
     create_staging_batch, import_csv_to_staging, import_invoices_to_staging,
     get_staging_summary, run_quality_gate, apply_fix, activate_batch,
@@ -193,6 +196,35 @@ def staging_activate(batch_id: int, body: ActivateRequest, db: Session = Depends
         raise HTTPException(status_code=400, detail=str(e))
     db.commit()
     return result
+
+
+# ========================================
+# Delivery Points
+# ========================================
+
+@router.get("/sites/{site_id}/delivery-points")
+def site_delivery_points(site_id: int, db: Session = Depends(get_db)):
+    """List active delivery points (PRM/PCE) for a site."""
+    site = db.query(Site).get(site_id)
+    if not site:
+        raise HTTPException(status_code=404, detail=f"Site {site_id} not found")
+
+    dps = not_deleted(db.query(DeliveryPoint), DeliveryPoint).filter(
+        DeliveryPoint.site_id == site_id,
+    ).all()
+
+    return [
+        {
+            "id": dp.id,
+            "code": dp.code,
+            "energy_type": dp.energy_type.value if dp.energy_type else None,
+            "status": dp.status.value if dp.status else None,
+            "compteurs_count": len(dp.compteurs) if dp.compteurs else 0,
+            "data_source": dp.data_source,
+            "created_at": dp.created_at.isoformat() if dp.created_at else None,
+        }
+        for dp in dps
+    ]
 
 
 # ========================================
