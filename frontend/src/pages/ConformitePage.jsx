@@ -19,10 +19,10 @@ import CreateActionModal from '../components/CreateActionModal';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { track } from '../services/tracker';
+import ErrorState from '../ui/ErrorState';
 import {
   applyKB,
-  getComplianceSummary,
-  getComplianceSites,
+  getComplianceBundle,
   patchComplianceFinding,
   recomputeComplianceRules,
   getDataQuality,
@@ -72,6 +72,18 @@ const EMPTY_REASONS = {
   ALL_COMPLIANT: { Icon: CheckCircle, title: 'Tout est conforme', text: 'Aucune non-conformite detectee. Felicitations !' },
 };
 
+/**
+ * Build API scope params from ScopeContext.
+ * Always includes org_id. Adds site_id only when exactly 1 site is scoped.
+ */
+export function buildScopeParams(scope, scopedSites) {
+  const params = { org_id: scope.orgId };
+  if (scopedSites.length === 1) {
+    params.site_id = scopedSites[0].id;
+  }
+  return params;
+}
+
 export function isOverdue(obligation) {
   if (!obligation.echeance || obligation.statut === 'conforme') return false;
   return new Date(obligation.echeance) < new Date();
@@ -86,7 +98,22 @@ function WorkflowBadge({ status }) {
   );
 }
 
-function ScoreGauge({ pct }) {
+function ScoreGauge({ pct, isEmpty }) {
+  if (isEmpty) {
+    return (
+      <div className="flex items-center gap-4">
+        <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center">
+          <span className="text-2xl font-bold text-gray-400">&mdash;</span>
+        </div>
+        <div className="flex-1">
+          <div className="h-3 bg-gray-200 rounded-full" />
+          <p className="text-xs text-gray-500 mt-1">Score de conformite global</p>
+          <p className="text-xs text-gray-400 mt-0.5">Aucune evaluation disponible</p>
+        </div>
+      </div>
+    );
+  }
+
   const color = pct >= 80 ? 'text-green-600' : pct >= 50 ? 'text-amber-600' : 'text-red-600';
   const bg = pct >= 80 ? 'bg-green-100' : pct >= 50 ? 'bg-amber-100' : 'bg-red-100';
   const fill = pct >= 80 ? 'bg-green-500' : pct >= 50 ? 'bg-amber-500' : 'bg-red-500';
@@ -110,7 +137,6 @@ function ScoreGauge({ pct }) {
 const KB_SEVERITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
 
 function KBObligationsSection({ scopedSites }) {
-  const { toast } = useToast();
   const [kbResult, setKbResult] = useState(null);
   const [kbLoading, setKbLoading] = useState(true);
   const [kbError, setKbError] = useState(false);
@@ -139,7 +165,7 @@ function KBObligationsSection({ scopedSites }) {
     setKbLoading(true);
     applyKB(context)
       .then((data) => { setKbResult(data); setKbError(false); })
-      .catch(() => { setKbError(true); toast('Erreur lors de l\'analyse KB', 'error'); })
+      .catch(() => { setKbError(true); })
       .finally(() => setKbLoading(false));
   }, [scopedSites]);
 
@@ -643,16 +669,29 @@ function FindingAuditDrawer({ findingId, onClose }) {
 }
 
 function DataQualityGate({ siteId, siteName }) {
-  const { toast } = useToast();
   const [dq, setDq] = useState(null);
   const [expanded, setExpanded] = useState(false);
+  const [dqError, setDqError] = useState(false);
 
   useEffect(() => {
     if (!siteId) return;
     getDataQuality('site', siteId)
-      .then(setDq)
-      .catch(() => { toast('Impossible de charger la qualite des donnees', 'error'); });
+      .then((data) => { setDq(data); setDqError(false); })
+      .catch(() => { setDqError(true); });
   }, [siteId]);
+
+  if (dqError) {
+    return (
+      <Card className="border-l-4 border-gray-200">
+        <CardBody className="bg-gray-50 py-3">
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <AlertTriangle size={14} className="text-gray-400" />
+            <span>{siteName || 'Site'} — Qualite indisponible</span>
+          </div>
+        </CardBody>
+      </Card>
+    );
+  }
 
   if (!dq) return null;
 
@@ -833,25 +872,26 @@ export default function ConformitePage() {
   const [activeTab, setActiveTab] = useState('obligations');
   const [intakeQuestions, setIntakeQuestions] = useState([]);
   const [emptyReason, setEmptyReason] = useState(null);
+  const [error, setError] = useState(null);
 
   const loadData = useCallback(() => {
     setLoading(true);
-    const scopeParams = {};
-    if (scopedSites.length === 1) {
-      scopeParams.site_id = scopedSites[0].id;
-    }
-    Promise.all([
-      getComplianceSummary(scopeParams),
-      getComplianceSites(scopeParams),
-    ]).then(([s, st]) => {
-      setSummary(s);
-      setSitesData(st);
-      if (scopedSites.length === 0) setEmptyReason('NO_SITES');
-      else if (s?.empty_reason) setEmptyReason(s.empty_reason);
-      else setEmptyReason(null);
-    }).catch(() => { toast('Erreur lors du chargement des donnees de conformite', 'error'); })
+    setError(null);
+    const scopeParams = buildScopeParams({ orgId: org.id }, scopedSites);
+
+    getComplianceBundle(scopeParams)
+      .then((bundle) => {
+        setSummary(bundle.summary);
+        setSitesData(bundle.sites);
+        if (scopedSites.length === 0) setEmptyReason('NO_SITES');
+        else if (bundle.empty_reason_code) setEmptyReason(bundle.empty_reason_code);
+        else setEmptyReason(null);
+      })
+      .catch(() => {
+        setError('Donnees de conformite indisponibles');
+      })
       .finally(() => setLoading(false));
-  }, [scopedSites]);
+  }, [org.id, scopedSites]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -913,11 +953,11 @@ export default function ConformitePage() {
   const handleRecompute = async () => {
     setRecomputing(true);
     try {
-      await recomputeComplianceRules();
+      await recomputeComplianceRules(org.id);
       loadData();
       track('conformite_recompute');
     } catch {
-      toast('Erreur lors de la re-evaluation des regles', 'error');
+      setError('Erreur lors de la re-evaluation des regles');
     } finally {
       setRecomputing(false);
     }
@@ -988,6 +1028,16 @@ export default function ConformitePage() {
     );
   }
 
+  if (error) {
+    return (
+      <PageShell icon={ShieldCheck} title="Conformite reglementaire"
+                 subtitle={`${org.nom} · ${scopedSites.length} sites`}>
+        <ErrorState title="Erreur de chargement" message={error}
+                    onRetry={() => { setError(null); loadData(); }} />
+      </PageShell>
+    );
+  }
+
   return (
     <PageShell
       icon={ShieldCheck}
@@ -1016,7 +1066,7 @@ export default function ConformitePage() {
           <div className="grid grid-cols-4 gap-4">
             <Card className="col-span-2">
               <CardBody>
-                <ScoreGauge pct={score.pct} />
+                <ScoreGauge pct={score.pct} isEmpty={!!emptyReason && emptyReason !== 'ALL_COMPLIANT'} />
                 <TrustBadge source="RegOps" period={`perimetre : ${scopedSites.length} sites`} confidence="medium" className="mt-2" />
               </CardBody>
             </Card>
