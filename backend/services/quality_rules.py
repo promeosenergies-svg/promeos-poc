@@ -1,6 +1,6 @@
 """
 PROMEOS - Quality Rules Engine (DIAMANT)
-6 deterministic rules for staging data quality gate.
+11 deterministic rules for staging data quality gate.
 """
 from difflib import SequenceMatcher
 from typing import List
@@ -10,6 +10,9 @@ from sqlalchemy.orm import Session
 from models import (
     StagingSite, StagingCompteur, Site, Compteur, EntiteJuridique,
     QualityFinding, QualityRuleSeverity, not_deleted,
+)
+from services.validation_helpers import (
+    is_valid_siren, is_valid_siret, is_valid_meter_id, is_valid_postal_code,
 )
 
 
@@ -301,6 +304,126 @@ def check_missing_entity(db: Session, batch_id: int) -> List[dict]:
 
 
 # ========================================
+# Format validation rules
+# ========================================
+
+def check_valid_siren(db: Session, batch_id: int) -> List[dict]:
+    """Rule: valid_siren_format — SIREN portion of SIRET must be 9 valid digits + Luhn."""
+    findings = []
+    sites = db.query(StagingSite).filter(
+        StagingSite.batch_id == batch_id,
+        StagingSite.skip.is_(False),
+        StagingSite.siret.isnot(None),
+    ).all()
+
+    for ss in sites:
+        siret_val = ss.siret.strip() if ss.siret else ""
+        if not siret_val:
+            continue
+        siren_part = siret_val[:9]
+        if not is_valid_siren(siren_part):
+            findings.append({
+                "rule_id": "valid_siren_format",
+                "severity": QualityRuleSeverity.BLOCKING,
+                "staging_site_id": ss.id,
+                "evidence_json": (
+                    f'{{"field": "siret", "siren_extracted": "{siren_part}", '
+                    f'"site_name": "{ss.nom}", "reason": "invalid_siren"}}'
+                ),
+                "suggested_action": "fix_siret",
+            })
+    return findings
+
+
+def check_valid_siret(db: Session, batch_id: int) -> List[dict]:
+    """Rule: valid_siret_format — SIRET must be exactly 14 valid digits + Luhn."""
+    findings = []
+    sites = db.query(StagingSite).filter(
+        StagingSite.batch_id == batch_id,
+        StagingSite.skip.is_(False),
+        StagingSite.siret.isnot(None),
+    ).all()
+
+    for ss in sites:
+        siret_val = ss.siret.strip() if ss.siret else ""
+        if not siret_val:
+            continue
+        if not is_valid_siret(siret_val):
+            findings.append({
+                "rule_id": "valid_siret_format",
+                "severity": QualityRuleSeverity.BLOCKING,
+                "staging_site_id": ss.id,
+                "evidence_json": (
+                    f'{{"field": "siret", "value": "{siret_val}", '
+                    f'"site_name": "{ss.nom}", "reason": "invalid_siret"}}'
+                ),
+                "suggested_action": "fix_siret",
+            })
+    return findings
+
+
+def check_valid_meter_format(db: Session, batch_id: int) -> List[dict]:
+    """Rule: valid_meter_format — meter_id (PRM/PCE) must be exactly 14 digits."""
+    findings = []
+    compteurs = db.query(StagingCompteur).filter(
+        StagingCompteur.batch_id == batch_id,
+        StagingCompteur.skip.is_(False),
+        StagingCompteur.meter_id.isnot(None),
+    ).all()
+
+    for sc in compteurs:
+        mid = sc.meter_id.strip() if sc.meter_id else ""
+        if not mid:
+            continue
+        if not is_valid_meter_id(mid):
+            findings.append({
+                "rule_id": "valid_meter_format",
+                "severity": QualityRuleSeverity.BLOCKING,
+                "staging_compteur_id": sc.id,
+                "evidence_json": (
+                    f'{{"field": "meter_id", "value": "{mid}", '
+                    f'"reason": "expected_14_digits"}}'
+                ),
+                "suggested_action": "fix_meter_id",
+            })
+    return findings
+
+
+def check_valid_postal_code(db: Session, batch_id: int) -> List[dict]:
+    """Rule: valid_postal_code — code_postal must be a valid 5-digit French postal code."""
+    findings = []
+    sites = db.query(StagingSite).filter(
+        StagingSite.batch_id == batch_id,
+        StagingSite.skip.is_(False),
+        StagingSite.code_postal.isnot(None),
+    ).all()
+
+    for ss in sites:
+        cp = ss.code_postal.strip() if ss.code_postal else ""
+        if not cp:
+            continue
+        if not is_valid_postal_code(cp):
+            findings.append({
+                "rule_id": "valid_postal_code",
+                "severity": QualityRuleSeverity.WARNING,
+                "staging_site_id": ss.id,
+                "evidence_json": (
+                    f'{{"field": "code_postal", "value": "{cp}", '
+                    f'"site_name": "{ss.nom}", "reason": "invalid_postal_code"}}'
+                ),
+                "suggested_action": "fix_address",
+            })
+    return findings
+
+
+def check_valid_dates(db: Session, batch_id: int) -> List[dict]:
+    """Rule: valid_date_format — no string date fields in current staging schema.
+    Reserved for future use when date-string fields are added to staging models.
+    """
+    return []
+
+
+# ========================================
 # Rules registry
 # ========================================
 
@@ -340,6 +463,36 @@ QUALITY_RULES = [
         "label": "Entite juridique non identifiee",
         "severity": "info",
         "check": check_missing_entity,
+    },
+    {
+        "id": "valid_siren_format",
+        "label": "Format SIREN invalide (9 chiffres + Luhn)",
+        "severity": "blocking",
+        "check": check_valid_siren,
+    },
+    {
+        "id": "valid_siret_format",
+        "label": "Format SIRET invalide (14 chiffres + Luhn)",
+        "severity": "blocking",
+        "check": check_valid_siret,
+    },
+    {
+        "id": "valid_meter_format",
+        "label": "Format PRM/PCE invalide (14 chiffres)",
+        "severity": "blocking",
+        "check": check_valid_meter_format,
+    },
+    {
+        "id": "valid_postal_code",
+        "label": "Code postal invalide (5 chiffres, dept valide)",
+        "severity": "warning",
+        "check": check_valid_postal_code,
+    },
+    {
+        "id": "valid_date_format",
+        "label": "Format date invalide",
+        "severity": "warning",
+        "check": check_valid_dates,
     },
 ]
 

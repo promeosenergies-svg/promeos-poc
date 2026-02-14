@@ -304,7 +304,7 @@ class TestActivationRollbackOnDuplicate:
         """Activation succeeds when meter_id is globally unique."""
         org, ej, pf = _create_org(db_session)
 
-        batch, ss = _create_batch_with_meter(db_session, org.id, meter_id="PRM-UNIQUE-999")
+        batch, ss = _create_batch_with_meter(db_session, org.id, meter_id="99999999999999")
 
         # Run quality gate — no critical findings expected
         results = run_quality_gate(db_session, batch.id)
@@ -316,6 +316,6 @@ class TestActivationRollbackOnDuplicate:
         assert result["compteurs_created"] >= 1
 
         # Verify compteur was created with correct meter_id
-        cpt = db_session.query(Compteur).filter(Compteur.meter_id == "PRM-UNIQUE-999").first()
+        cpt = db_session.query(Compteur).filter(Compteur.meter_id == "99999999999999").first()
         assert cpt is not None
         assert cpt.actif is True
