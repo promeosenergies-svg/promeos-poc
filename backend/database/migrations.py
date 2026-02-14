@@ -1,6 +1,6 @@
 """
 PROMEOS - Safe schema migrations (no Alembic).
-Adds missing columns to existing tables without dropping anything.
+Adds missing columns/tables to existing schema without dropping anything.
 SQLite supports ALTER TABLE ADD COLUMN for nullable columns.
 """
 import logging
@@ -29,6 +29,10 @@ def run_migrations(engine):
     """Run all pending safe migrations. Idempotent — skips existing columns."""
     _add_soft_delete_columns(engine)
     _add_unique_meter_id_index(engine)
+    _create_delivery_points_table(engine)
+    _add_compteur_delivery_point_fk(engine)
+    _backfill_delivery_points(engine)
+    _add_unique_delivery_point_code_index(engine)
 
 
 def _add_soft_delete_columns(engine):
@@ -95,6 +99,187 @@ def _add_unique_meter_id_index(engine):
                 f'CREATE UNIQUE INDEX IF NOT EXISTS "{idx_name}" '
                 f'ON "compteurs" ("meter_id") '
                 f'WHERE "meter_id" IS NOT NULL AND "deleted_at" IS NULL'
+            ))
+            logger.info("migration: created unique partial index %s", idx_name)
+        except Exception as e:
+            logger.warning("migration: could not create index %s: %s", idx_name, e)
+
+
+# ========================================
+# DeliveryPoint migrations
+# ========================================
+
+def _create_delivery_points_table(engine):
+    """Create delivery_points table if it does not exist."""
+    insp = inspect(engine)
+    if insp.has_table("delivery_points"):
+        logger.debug("migration: delivery_points table already exists — skipping")
+        return
+
+    with engine.begin() as conn:
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS "delivery_points" (
+                "id" INTEGER PRIMARY KEY,
+                "code" VARCHAR(14) NOT NULL,
+                "energy_type" VARCHAR(10),
+                "site_id" INTEGER NOT NULL REFERENCES "sites"("id"),
+                "status" VARCHAR(10) NOT NULL DEFAULT 'active',
+                "data_source" VARCHAR(20),
+                "data_source_ref" VARCHAR(200),
+                "imported_at" DATETIME,
+                "imported_by" INTEGER,
+                "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                "updated_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                "deleted_at" DATETIME,
+                "deleted_by" VARCHAR(200),
+                "delete_reason" VARCHAR(500)
+            )
+        """))
+        conn.execute(text(
+            'CREATE INDEX IF NOT EXISTS "ix_delivery_points_code" ON "delivery_points" ("code")'
+        ))
+        conn.execute(text(
+            'CREATE INDEX IF NOT EXISTS "ix_delivery_points_site_id" ON "delivery_points" ("site_id")'
+        ))
+        conn.execute(text(
+            'CREATE INDEX IF NOT EXISTS "ix_delivery_points_deleted_at" ON "delivery_points" ("deleted_at")'
+        ))
+    logger.info("migration: created delivery_points table with indexes")
+
+
+def _add_compteur_delivery_point_fk(engine):
+    """Add delivery_point_id column to compteurs if missing."""
+    insp = inspect(engine)
+    if not insp.has_table("compteurs"):
+        return
+
+    existing_cols = {c["name"] for c in insp.get_columns("compteurs")}
+    if "delivery_point_id" in existing_cols:
+        logger.debug("migration: compteurs.delivery_point_id already exists — skipping")
+        return
+
+    with engine.begin() as conn:
+        conn.execute(text(
+            'ALTER TABLE "compteurs" ADD COLUMN "delivery_point_id" INTEGER '
+            'REFERENCES "delivery_points"("id")'
+        ))
+        conn.execute(text(
+            'CREATE INDEX IF NOT EXISTS "ix_compteurs_delivery_point_id" '
+            'ON "compteurs" ("delivery_point_id")'
+        ))
+    logger.info("migration: added compteurs.delivery_point_id + index")
+
+
+def _backfill_delivery_points(engine):
+    """Backfill delivery_points from existing compteurs.meter_id.
+
+    Strategy:
+    - Only process active (non-deleted) compteurs with meter_id
+    - Deduplicate: if N compteurs share the same meter_id on the same site,
+      create 1 DeliveryPoint and link all N compteurs
+    - If N compteurs share meter_id across different sites, create 1 DP
+      per site (meter_id can be on different sites in edge cases)
+    - Skip compteurs already linked (delivery_point_id IS NOT NULL)
+    - Idempotent: re-running creates no duplicates
+    """
+    insp = inspect(engine)
+    if not insp.has_table("compteurs") or not insp.has_table("delivery_points"):
+        return
+
+    with engine.begin() as conn:
+        # Find active compteurs with meter_id that are not yet linked
+        rows = conn.execute(text("""
+            SELECT c.id, c.meter_id, c.site_id, c.type, c.data_source, c.data_source_ref
+            FROM compteurs c
+            WHERE c.meter_id IS NOT NULL
+              AND c.meter_id != ''
+              AND c.deleted_at IS NULL
+              AND c.delivery_point_id IS NULL
+            ORDER BY c.site_id, c.meter_id
+        """)).fetchall()
+
+        if not rows:
+            logger.debug("migration: backfill — no unlinked compteurs with meter_id")
+            return
+
+        created = 0
+        linked = 0
+
+        for row in rows:
+            cpt_id, meter_id, site_id, cpt_type, data_source, data_source_ref = row
+
+            # Check if a DeliveryPoint already exists for this code + site (active)
+            existing = conn.execute(text("""
+                SELECT id FROM delivery_points
+                WHERE code = :code AND site_id = :site_id AND deleted_at IS NULL
+                LIMIT 1
+            """), {"code": meter_id, "site_id": site_id}).fetchone()
+
+            if existing:
+                dp_id = existing[0]
+            else:
+                # Auto-detect energy_type from compteur type
+                energy_type = _guess_energy_type(cpt_type)
+                conn.execute(text("""
+                    INSERT INTO delivery_points (code, energy_type, site_id, status,
+                        data_source, data_source_ref, created_at, updated_at)
+                    VALUES (:code, :energy_type, :site_id, 'active',
+                        :data_source, :data_source_ref, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                """), {
+                    "code": meter_id,
+                    "energy_type": energy_type,
+                    "site_id": site_id,
+                    "data_source": data_source or "backfill",
+                    "data_source_ref": data_source_ref or "migration_backfill",
+                })
+                dp_id = conn.execute(text("SELECT last_insert_rowid()")).scalar()
+                created += 1
+
+            # Link compteur to delivery_point
+            conn.execute(text("""
+                UPDATE compteurs SET delivery_point_id = :dp_id WHERE id = :cpt_id
+            """), {"dp_id": dp_id, "cpt_id": cpt_id})
+            linked += 1
+
+        logger.info(
+            "migration: backfill — created %d delivery_points, linked %d compteurs",
+            created, linked,
+        )
+
+
+def _guess_energy_type(compteur_type):
+    """Guess DeliveryPoint energy_type from compteur type string."""
+    if not compteur_type:
+        return None
+    t = compteur_type.lower() if isinstance(compteur_type, str) else str(compteur_type).lower()
+    if "gaz" in t:
+        return "gaz"
+    if "elec" in t:
+        return "elec"
+    return None
+
+
+def _add_unique_delivery_point_code_index(engine):
+    """Add unique partial index on delivery_points.code WHERE deleted_at IS NULL.
+
+    Ensures a PRM/PCE code can only exist once among active delivery points.
+    """
+    idx_name = "uq_delivery_point_code_active"
+    insp = inspect(engine)
+
+    if not insp.has_table("delivery_points"):
+        return
+
+    existing_indexes = {idx["name"] for idx in insp.get_indexes("delivery_points") if idx.get("name")}
+    if idx_name in existing_indexes:
+        return
+
+    with engine.begin() as conn:
+        try:
+            conn.execute(text(
+                f'CREATE UNIQUE INDEX IF NOT EXISTS "{idx_name}" '
+                f'ON "delivery_points" ("code") '
+                f'WHERE "code" IS NOT NULL AND "deleted_at" IS NULL'
             ))
             logger.info("migration: created unique partial index %s", idx_name)
         except Exception as e:
