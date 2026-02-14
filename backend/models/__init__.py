@@ -1,7 +1,7 @@
 """
 PROMEOS - Models
 """
-from .base import Base, TimestampMixin
+from .base import Base, TimestampMixin, SoftDeleteMixin, not_deleted
 
 # Enums (tous centralises)
 from .enums import (
@@ -97,7 +97,7 @@ from .intake import IntakeSession, IntakeAnswer, IntakeFieldOverride
 from .bacs_models import BacsAsset, BacsCvcSystem, BacsAssessment, BacsInspection
 
 # EMS Consumption Explorer
-from .ems_models import EmsWeatherCache, EmsSavedView
+from .ems_models import EmsWeatherCache, EmsSavedView, EmsCollection
 
 # Energy (Consumption & Analytics)
 from .energy_models import (
@@ -108,7 +108,7 @@ from .energy_models import (
 )
 
 __all__ = [
-    "Base", "TimestampMixin",
+    "Base", "TimestampMixin", "SoftDeleteMixin", "not_deleted",
     "Organisation", "EntiteJuridique", "Portefeuille",
     "Site", "Batiment", "Usage",
     "Compteur", "Consommation", "Alerte",
@@ -158,5 +158,5 @@ __all__ = [
     "BacsAsset", "BacsCvcSystem", "BacsAssessment", "BacsInspection",
     "CvcSystemType", "CvcArchitecture", "BacsTriggerReason", "InspectionStatus",
     # EMS Consumption Explorer
-    "EmsWeatherCache", "EmsSavedView",
+    "EmsWeatherCache", "EmsSavedView", "EmsCollection",
 ]

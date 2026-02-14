@@ -4,10 +4,10 @@ SIREN/SIRET - qui signe les contrats / qui paye
 """
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
-from .base import Base, TimestampMixin
+from .base import Base, TimestampMixin, SoftDeleteMixin
 
 
-class EntiteJuridique(Base, TimestampMixin):
+class EntiteJuridique(Base, TimestampMixin, SoftDeleteMixin):
     __tablename__ = "entites_juridiques"
 
     id = Column(Integer, primary_key=True, index=True)

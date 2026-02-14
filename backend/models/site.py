@@ -4,11 +4,11 @@ Coeur du domaine : site de consommation énergétique
 """
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, Enum, Boolean, DateTime
 from sqlalchemy.orm import relationship
-from .base import Base, TimestampMixin
+from .base import Base, TimestampMixin, SoftDeleteMixin
 from .enums import TypeSite, StatutConformite, ParkingType, OperatStatus
 
 
-class Site(Base, TimestampMixin):
+class Site(Base, TimestampMixin, SoftDeleteMixin):
     """
     Site de consommation énergétique
     Exemples : Carrefour Paris 15e, Usine Renault Lyon, Bureau EDF Marseille

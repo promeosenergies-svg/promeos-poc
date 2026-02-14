@@ -4,10 +4,10 @@ Niveau groupe/client COMEX (ex: "Groupe Casino", "Ville de Lyon")
 """
 from sqlalchemy import Column, Integer, String, Boolean
 from sqlalchemy.orm import relationship
-from .base import Base, TimestampMixin
+from .base import Base, TimestampMixin, SoftDeleteMixin
 
 
-class Organisation(Base, TimestampMixin):
+class Organisation(Base, TimestampMixin, SoftDeleteMixin):
     __tablename__ = "organisations"
 
     id = Column(Integer, primary_key=True, index=True)

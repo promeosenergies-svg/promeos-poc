@@ -4,11 +4,11 @@ Equipements de mesure énergétique (électricité, gaz, eau)
 """
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, Enum, Boolean
 from sqlalchemy.orm import relationship
-from .base import Base, TimestampMixin
+from .base import Base, TimestampMixin, SoftDeleteMixin
 from .enums import TypeCompteur, EnergyVector
 
 
-class Compteur(Base, TimestampMixin):
+class Compteur(Base, TimestampMixin, SoftDeleteMixin):
     """
     Compteur d'énergie (électricité, gaz, eau)
     Un site peut avoir plusieurs compteurs

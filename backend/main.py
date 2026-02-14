@@ -85,6 +85,10 @@ app.include_router(intake_router)  # Smart Intake DIAMANT (questions, answers, b
 app.include_router(bacs_router)  # BACS Expert (Decret n°2020-887)
 app.include_router(ems_router)  # EMS Consumption Explorer
 
+# Run safe schema migrations (idempotent, no drop)
+from database import engine as _engine, run_migrations as _run_migrations
+_run_migrations(_engine)
+
 # Route racine
 @app.get("/")
 def root():

@@ -4,10 +4,10 @@ Regroupement décisionnel (ex: "Retail IDF", "Région Sud")
 """
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
-from .base import Base, TimestampMixin
+from .base import Base, TimestampMixin, SoftDeleteMixin
 
 
-class Portefeuille(Base, TimestampMixin):
+class Portefeuille(Base, TimestampMixin, SoftDeleteMixin):
     __tablename__ = "portefeuilles"
 
     id = Column(Integer, primary_key=True, index=True)
