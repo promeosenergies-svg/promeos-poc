@@ -1,14 +1,15 @@
 /**
- * PROMEOS - PatrimoineWizard (DIAMANT VNext)
+ * PROMEOS - PatrimoineWizard V2 (WOW Polish)
  * 6-step staging pipeline: mode → upload → preview → corrections → validation → result.
+ * Close confirmation, premium DnD, sticky preview table, clickable steps.
  */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   X, ChevronRight, ChevronLeft, Check, Upload, Download,
   FileSpreadsheet, AlertTriangle, ShieldCheck, Zap, Search,
   Building2, Play, XCircle,
   SkipForward, RefreshCw, CheckCircle2, Sparkles,
-  ExternalLink, FileText,
+  ExternalLink, FileText, File, Trash2,
 } from 'lucide-react';
 import {
   stagingImport, stagingSummary, stagingRows,
@@ -28,10 +29,10 @@ const STEPS = [
 ];
 
 const MODES = [
-  { value: 'express', icon: Zap, title: 'Express', desc: 'Upload CSV, validation rapide, activation directe.', time: '2 min' },
-  { value: 'import', icon: FileSpreadsheet, title: 'Import complet', desc: 'CSV/Excel avec quality gate et corrections.', time: '5 min' },
-  { value: 'assiste', icon: ShieldCheck, title: 'Assiste', desc: 'Import depuis factures + enrichissement IA.', time: '10 min' },
-  { value: 'demo', icon: Play, title: 'Demo', desc: 'Charger le dataset demo (Collectivite Azur).', time: '10 sec' },
+  { value: 'express', icon: Zap, title: 'Express', desc: 'Upload CSV, validation rapide, activation directe.', time: '2 min', color: 'text-amber-600 bg-amber-100' },
+  { value: 'import', icon: FileSpreadsheet, title: 'Import complet', desc: 'CSV/Excel avec quality gate et corrections.', time: '5 min', color: 'text-indigo-600 bg-indigo-100' },
+  { value: 'assiste', icon: ShieldCheck, title: 'Assiste', desc: 'Import depuis factures + enrichissement IA.', time: '10 min', color: 'text-green-600 bg-green-100' },
+  { value: 'demo', icon: Play, title: 'Demo', desc: 'Charger le dataset demo (Collectivite Azur).', time: '10 sec', color: 'text-purple-600 bg-purple-100' },
 ];
 
 const SEV = {
@@ -40,6 +41,12 @@ const SEV = {
   warning: { bg: 'bg-amber-50', border: 'border-amber-200', badge: 'bg-amber-100 text-amber-700', label: 'Avertissement' },
   info: { bg: 'bg-blue-50', border: 'border-blue-200', badge: 'bg-blue-100 text-blue-700', label: 'Info' },
 };
+
+function formatBytes(bytes) {
+  if (bytes < 1024) return `${bytes} o`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
+}
 
 const PatrimoineWizard = ({ onClose }) => {
   const [step, setStep] = useState(0);
@@ -57,6 +64,10 @@ const PatrimoineWizard = ({ onClose }) => {
   const [activationResult, setActivationResult] = useState(null);
   const [portefeuilleId, setPortefeuilleId] = useState('');
   const [demoResult, setDemoResult] = useState(null);
+  const [dragOver, setDragOver] = useState(false);
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+
+  const isDirty = file !== null || batchId !== null;
 
   const readPreview = (f) => {
     const reader = new FileReader();
@@ -72,10 +83,27 @@ const PatrimoineWizard = ({ onClose }) => {
     setFile(f); setError(null); readPreview(f);
   };
 
-  const handleDrop = (e) => {
+  const handleDrop = useCallback((e) => {
     e.preventDefault();
+    setDragOver(false);
     const f = e.dataTransfer.files?.[0];
     if (f) { setFile(f); setError(null); readPreview(f); }
+  }, []);
+
+  const handleDragOver = useCallback((e) => {
+    e.preventDefault();
+    setDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e) => {
+    e.preventDefault();
+    setDragOver(false);
+  }, []);
+
+  const removeFile = () => {
+    setFile(null);
+    setCsvPreview(null);
+    setError(null);
   };
 
   const doUpload = async () => {
@@ -161,12 +189,33 @@ const PatrimoineWizard = ({ onClose }) => {
     else onClose();
   };
 
+  const requestClose = () => {
+    if (isDirty && step > 0 && step < 5) {
+      setShowCloseConfirm(true);
+    } else {
+      handleClose();
+    }
+  };
+
   const canProceed = () => {
     if (step === 0) return !!mode;
     if (step === 1) return file !== null;
     if (step === 2) return summary !== null;
     if (step === 4) return summary?.can_activate !== false;
     return true;
+  };
+
+  const nextLabel = () => {
+    if (loading) return 'Chargement...';
+    if (step === 0 && mode === 'demo') return 'Charger la demo';
+    if (step === 1) return 'Uploader et analyser';
+    if (step === 2) return 'Lancer la validation';
+    if (step === 4) return 'Activer le patrimoine';
+    return 'Suivant';
+  };
+
+  const handleStepClick = (targetStep) => {
+    if (targetStep < step && step < 5) setStep(targetStep);
   };
 
   const unresolvedBlocking = findings.filter(
@@ -180,33 +229,51 @@ const PatrimoineWizard = ({ onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b">
+        <div className="flex items-center justify-between px-6 py-4 border-b shrink-0">
           <div className="flex items-center gap-2">
-            <Building2 size={22} className="text-indigo-600" />
-            <h2 className="text-lg font-bold text-gray-900">Importer patrimoine</h2>
-            {batchId && <span className="text-xs text-gray-400 ml-2">Batch #{batchId}</span>}
+            <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
+              <Building2 size={18} className="text-indigo-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">Importer patrimoine</h2>
+              {batchId && <span className="text-xs text-gray-400">Batch #{batchId}</span>}
+            </div>
           </div>
-          <button onClick={handleClose} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+          <button onClick={requestClose} className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition">
+            <X size={20} />
+          </button>
         </div>
 
-        {/* Step indicator */}
-        <div className="px-6 py-3 flex items-center gap-1">
+        {/* Step indicator — clickable for back navigation */}
+        <div className="px-6 py-3 flex items-center gap-1 border-b bg-gray-50/50 shrink-0">
           {STEPS.map((s, i) => (
             <React.Fragment key={s.key}>
-              <div className={`flex items-center gap-1 text-xs ${i <= step ? 'text-indigo-600 font-medium' : 'text-gray-400'}`}>
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                  i < step ? 'bg-indigo-600 text-white' : i === step ? 'bg-indigo-100 text-indigo-700 ring-2 ring-indigo-600' : 'bg-gray-100 text-gray-400'
-                }`}>{i < step ? <Check size={12} /> : i + 1}</div>
+              <button
+                onClick={() => handleStepClick(i)}
+                disabled={i >= step || step === 5}
+                className={`flex items-center gap-1.5 text-xs transition ${
+                  i < step ? 'text-indigo-600 font-medium cursor-pointer hover:text-indigo-800' :
+                  i === step ? 'text-indigo-600 font-medium' : 'text-gray-400 cursor-default'
+                }`}
+              >
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition ${
+                  i < step ? 'bg-indigo-600 text-white' :
+                  i === step ? 'bg-indigo-100 text-indigo-700 ring-2 ring-indigo-600' :
+                  'bg-gray-100 text-gray-400'
+                }`}>
+                  {i < step ? <Check size={12} /> : i + 1}
+                </div>
                 <span className="hidden lg:inline">{s.label}</span>
-              </div>
+              </button>
               {i < STEPS.length - 1 && <div className={`flex-1 h-0.5 ${i < step ? 'bg-indigo-600' : 'bg-gray-200'}`} />}
             </React.Fragment>
           ))}
         </div>
 
-        <div className="px-6 py-5 min-h-[380px]">
+        {/* Content — scrollable */}
+        <div className="px-6 py-5 min-h-[380px] overflow-y-auto flex-1">
 
           {/* Step 0: Mode */}
           {step === 0 && (
@@ -216,15 +283,20 @@ const PatrimoineWizard = ({ onClose }) => {
               <div className="grid grid-cols-2 gap-3">
                 {MODES.map(m => {
                   const Icon = m.icon;
+                  const active = mode === m.value;
                   return (
                     <button key={m.value} onClick={() => setMode(m.value)}
-                      className={`text-left p-4 border-2 rounded-xl transition ${mode === m.value ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-gray-300'}`}>
-                      <div className="flex items-center gap-2 mb-1">
-                        <Icon size={18} className={mode === m.value ? 'text-indigo-600' : 'text-gray-400'} />
-                        <span className={`font-medium text-sm ${mode === m.value ? 'text-indigo-700' : 'text-gray-700'}`}>{m.title}</span>
-                        <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">{m.time}</span>
+                      className={`text-left p-4 border-2 rounded-xl transition ${active ? 'border-indigo-500 bg-indigo-50/50' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50/50'}`}>
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${active ? 'bg-indigo-100' : 'bg-gray-100'}`}>
+                          <Icon size={18} className={active ? 'text-indigo-600' : 'text-gray-400'} />
+                        </div>
+                        <div className="flex-1">
+                          <span className={`font-medium text-sm ${active ? 'text-indigo-700' : 'text-gray-700'}`}>{m.title}</span>
+                        </div>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">{m.time}</span>
                       </div>
-                      <p className="text-xs text-gray-500">{m.desc}</p>
+                      <p className="text-xs text-gray-500 pl-12">{m.desc}</p>
                     </button>
                   );
                 })}
@@ -237,26 +309,63 @@ const PatrimoineWizard = ({ onClose }) => {
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-1">Importez votre fichier</h3>
               <p className="text-sm text-gray-500 mb-3">Format CSV ou Excel. Les noms de colonnes sont detectes automatiquement.</p>
-              <div className="flex items-center gap-2 mb-4 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
+              <div className="flex items-center gap-2 mb-4 p-3 bg-indigo-50 border border-indigo-200 rounded-xl">
                 <FileText size={16} className="text-indigo-600 shrink-0" />
                 <span className="text-sm text-indigo-700">Besoin du format ?</span>
                 <a href={`${API_BASE}/api/patrimoine/import/template?format=xlsx`} className="text-sm text-indigo-600 underline hover:text-indigo-800 flex items-center gap-1" download><Download size={12} /> Excel</a>
                 <span className="text-indigo-300">|</span>
                 <a href={`${API_BASE}/api/patrimoine/import/template?format=csv`} className="text-sm text-indigo-600 underline hover:text-indigo-800 flex items-center gap-1" download><Download size={12} /> CSV</a>
               </div>
-              <div onDragOver={e => e.preventDefault()} onDrop={handleDrop}
-                className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-indigo-400 transition">
-                <Upload size={32} className="mx-auto text-gray-400 mb-3" />
-                <p className="text-sm text-gray-600 mb-2">{file ? file.name : 'Glissez votre fichier ici ou cliquez'}</p>
-                <input type="file" accept=".csv,.xlsx,.xls,.txt" onChange={handleFileSelect}
-                  className="text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
-              </div>
+
+              {!file ? (
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  className={`border-2 border-dashed rounded-xl p-10 text-center transition-all ${
+                    dragOver
+                      ? 'border-indigo-500 bg-indigo-50 scale-[1.01]'
+                      : 'border-gray-300 hover:border-indigo-400 hover:bg-gray-50/50'
+                  }`}
+                >
+                  <div className={`w-14 h-14 rounded-2xl mx-auto mb-3 flex items-center justify-center transition ${
+                    dragOver ? 'bg-indigo-100' : 'bg-gray-100'
+                  }`}>
+                    <Upload size={24} className={dragOver ? 'text-indigo-600' : 'text-gray-400'} />
+                  </div>
+                  <p className="text-sm text-gray-600 mb-1">
+                    {dragOver ? 'Lachez pour importer' : 'Glissez votre fichier ici'}
+                  </p>
+                  <p className="text-xs text-gray-400 mb-3">CSV, XLSX — max 10 Mo</p>
+                  <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 cursor-pointer transition">
+                    <Search size={14} />
+                    Parcourir
+                    <input type="file" accept=".csv,.xlsx,.xls,.txt" onChange={handleFileSelect} className="hidden" />
+                  </label>
+                </div>
+              ) : (
+                <div className="border-2 border-indigo-200 bg-indigo-50/30 rounded-xl p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0">
+                      <File size={20} className="text-indigo-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
+                      <p className="text-xs text-gray-500">{formatBytes(file.size)}</p>
+                    </div>
+                    <button onClick={removeFile} className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition" title="Supprimer">
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {csvPreview && (
                 <div className="mt-4">
-                  <p className="text-xs font-medium text-gray-600 mb-1">Apercu ({file?.name})</p>
-                  <div className="bg-gray-50 rounded-lg border text-xs font-mono overflow-x-auto p-3 max-h-32">
+                  <p className="text-xs font-medium text-gray-600 mb-1.5">Apercu brut ({file?.name})</p>
+                  <div className="bg-gray-900 rounded-xl text-xs font-mono overflow-x-auto p-3 max-h-32">
                     {csvPreview.map((line, i) => (
-                      <div key={i} className={i === 0 ? 'font-bold text-indigo-700' : 'text-gray-600'}>{line}</div>
+                      <div key={i} className={i === 0 ? 'font-bold text-indigo-400' : 'text-gray-300'}>{line}</div>
                     ))}
                   </div>
                 </div>
@@ -277,39 +386,45 @@ const PatrimoineWizard = ({ onClose }) => {
                   color={summary.quality_score >= 80 ? 'green' : summary.quality_score >= 50 ? 'amber' : 'red'} />
               </div>
               {mappingInfo && Object.keys(mappingInfo.mapping || {}).length > 0 && (
-                <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-xs font-medium text-blue-700 mb-1">Colonnes detectees:</p>
+                <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-xl">
+                  <p className="text-xs font-medium text-blue-700 mb-1.5">Colonnes detectees automatiquement</p>
                   <div className="flex flex-wrap gap-1">
                     {Object.entries(mappingInfo.mapping).map(([raw, canonical]) => (
                       <span key={raw} className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">"{raw}" → {canonical}</span>
                     ))}
                   </div>
+                  {mappingInfo.encoding && (
+                    <p className="text-[10px] text-blue-500 mt-1.5">Encoding: {mappingInfo.encoding} · Delimiter: "{mappingInfo.delimiter === ';' ? 'point-virgule' : mappingInfo.delimiter === ',' ? 'virgule' : 'tab'}"</p>
+                  )}
                 </div>
               )}
               {previewRows?.rows?.length > 0 && (
-                <div className="border rounded-lg overflow-hidden">
-                  <div className="bg-gray-50 px-3 py-2 border-b">
-                    <span className="text-xs font-medium text-gray-600">{previewRows.total} site(s)</span>
+                <div className="border rounded-xl overflow-hidden">
+                  <div className="bg-gray-50 px-3 py-2 border-b flex items-center justify-between">
+                    <span className="text-xs font-medium text-gray-600">{previewRows.total} site(s) importes</span>
+                    {previewRows.total > 20 && <span className="text-[10px] text-gray-400">20 premiers affiches</span>}
                   </div>
-                  <div className="overflow-x-auto max-h-48">
+                  <div className="overflow-x-auto max-h-52">
                     <table className="w-full text-xs">
-                      <thead className="bg-gray-50 sticky top-0"><tr>
-                        {['#','Nom','Ville','CP','m²','Cpt','Err'].map(h => (
-                          <th key={h} className="px-2 py-1.5 text-left font-medium text-gray-500">{h}</th>
+                      <thead className="bg-gray-50 sticky top-0 z-10"><tr>
+                        {['#', 'Nom', 'Adresse', 'CP', 'Ville', 'm2', 'Usage', 'Compteurs', 'Erreurs'].map(h => (
+                          <th key={h} className="px-2 py-1.5 text-left font-medium text-gray-500 whitespace-nowrap">{h}</th>
                         ))}
                       </tr></thead>
                       <tbody className="divide-y divide-gray-100">
                         {previewRows.rows.map(r => (
-                          <tr key={r.id} className={r.skip ? 'opacity-40' : r.issues_count > 0 ? 'bg-red-50/50' : ''}>
-                            <td className="px-2 py-1 text-gray-400">{r.row_number}</td>
-                            <td className="px-2 py-1 font-medium text-gray-800 max-w-[160px] truncate">{r.nom}</td>
-                            <td className="px-2 py-1 text-gray-600">{r.ville || '-'}</td>
-                            <td className="px-2 py-1 text-gray-600">{r.code_postal || '-'}</td>
-                            <td className="px-2 py-1 text-gray-600">{r.surface_m2 || '-'}</td>
-                            <td className="px-2 py-1 text-gray-600">{r.compteurs?.length || 0}</td>
-                            <td className="px-2 py-1">{r.issues_count > 0
+                          <tr key={r.id} className={r.skip ? 'opacity-40' : r.issues_count > 0 ? 'bg-red-50/50' : 'hover:bg-gray-50'}>
+                            <td className="px-2 py-1.5 text-gray-400">{r.row_number}</td>
+                            <td className="px-2 py-1.5 font-medium text-gray-800 max-w-[140px] truncate">{r.nom}</td>
+                            <td className="px-2 py-1.5 text-gray-600 max-w-[120px] truncate">{r.adresse || '-'}</td>
+                            <td className="px-2 py-1.5 text-gray-600">{r.code_postal || '-'}</td>
+                            <td className="px-2 py-1.5 text-gray-600">{r.ville || '-'}</td>
+                            <td className="px-2 py-1.5 text-gray-600">{r.surface_m2 || '-'}</td>
+                            <td className="px-2 py-1.5 text-gray-600">{r.type || '-'}</td>
+                            <td className="px-2 py-1.5 text-gray-600">{r.compteurs?.length || 0}</td>
+                            <td className="px-2 py-1.5">{r.issues_count > 0
                               ? <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-100 text-red-700">{r.issues_count}</span>
-                              : <span className="text-green-500">✓</span>}</td>
+                              : <span className="text-green-500">&#10003;</span>}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -317,8 +432,8 @@ const PatrimoineWizard = ({ onClose }) => {
                   </div>
                 </div>
               )}
-              <div className="mt-3 bg-indigo-50 border border-indigo-200 rounded-lg p-3">
-                <p className="text-sm text-indigo-700">Cliquez "Lancer la validation" pour executer le quality gate.</p>
+              <div className="mt-3 bg-indigo-50 border border-indigo-200 rounded-xl p-3">
+                <p className="text-sm text-indigo-700">Cliquez "Lancer la validation" pour executer le quality gate sur ces donnees.</p>
               </div>
             </div>
           )}
@@ -334,8 +449,8 @@ const PatrimoineWizard = ({ onClose }) => {
                   </p>
                 </div>
                 <button onClick={doAutofix} disabled={loading}
-                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition">
-                  <Sparkles size={12} /> Auto-corriger
+                  className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-xl bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition">
+                  <Sparkles size={13} /> Auto-corriger
                 </button>
               </div>
               <div className="flex items-center gap-1 mb-3">
@@ -344,7 +459,7 @@ const PatrimoineWizard = ({ onClose }) => {
                   if (f !== 'all' && count === 0) return null;
                   return (
                     <button key={f} onClick={() => setIssueFilter(f)}
-                      className={`text-[10px] px-2 py-1 rounded-full transition ${issueFilter === f ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                      className={`text-[10px] px-2.5 py-1 rounded-full transition ${issueFilter === f ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
                       {f === 'all' ? 'Tous' : (SEV[f]?.label || f)} ({count})
                     </button>
                   );
@@ -356,7 +471,7 @@ const PatrimoineWizard = ({ onClose }) => {
                   let ev = {};
                   try { ev = JSON.parse(f.evidence || '{}'); } catch {}
                   return (
-                    <div key={f.id || i} className={`${sev.bg} ${sev.border} border rounded-lg p-3`}>
+                    <div key={f.id || i} className={`${sev.bg} ${sev.border} border rounded-xl p-3`}>
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-2">
                           <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${sev.badge}`}>{sev.label}</span>
@@ -370,9 +485,10 @@ const PatrimoineWizard = ({ onClose }) => {
                   );
                 })}
                 {filteredFindings.length === 0 && (
-                  <div className="text-center py-8 text-gray-400">
-                    <CheckCircle2 size={32} className="mx-auto mb-2" />
-                    <p className="text-sm">Aucun probleme detecte</p>
+                  <div className="text-center py-10 text-gray-400">
+                    <CheckCircle2 size={36} className="mx-auto mb-2 text-green-400" />
+                    <p className="text-sm font-medium text-gray-600">Aucun probleme detecte</p>
+                    <p className="text-xs text-gray-400 mt-1">Vous pouvez passer a la validation</p>
                   </div>
                 )}
               </div>
@@ -385,7 +501,7 @@ const PatrimoineWizard = ({ onClose }) => {
               <h3 className="text-lg font-semibold text-gray-900 mb-1">Plan d'execution</h3>
               <p className="text-sm text-gray-500 mb-4">Verifiez le resume avant activation.</p>
               {summary && (
-                <div className="bg-gray-50 border rounded-lg p-4 mb-4">
+                <div className="bg-gray-50 border rounded-xl p-4 mb-4">
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
                       <Row label="Sites a creer" value={summary.sites} vc="text-indigo-600 font-bold" />
@@ -400,7 +516,9 @@ const PatrimoineWizard = ({ onClose }) => {
                   </div>
                   <div className="mt-3 pt-3 border-t flex items-center justify-between">
                     <span className="text-sm text-gray-600">Pret pour activation</span>
-                    <span className={`text-sm font-bold ${summary.can_activate ? 'text-green-600' : 'text-red-600'}`}>{summary.can_activate ? '✓ Oui' : '✗ Non'}</span>
+                    <span className={`text-sm font-bold ${summary.can_activate ? 'text-green-600' : 'text-red-600'}`}>
+                      {summary.can_activate ? '✓ Oui' : '✗ Non'}
+                    </span>
                   </div>
                 </div>
               )}
@@ -411,7 +529,7 @@ const PatrimoineWizard = ({ onClose }) => {
                 <p className="text-xs text-gray-400 mt-1">Les sites seront crees dans ce portefeuille.</p>
               </div>
               {unresolvedBlocking.length > 0 && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2">
+                <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-2">
                   <AlertTriangle size={16} className="text-red-500 shrink-0 mt-0.5" />
                   <p className="text-sm text-red-700">{unresolvedBlocking.length} probleme(s) bloquant(s). Retournez a Corrections.</p>
                 </div>
@@ -422,12 +540,17 @@ const PatrimoineWizard = ({ onClose }) => {
           {/* Step 5: Result */}
           {step === 5 && (
             <div>
-              <div className="flex items-center gap-3 mb-4">
-                <CheckCircle2 size={28} className="text-green-500" />
-                <h3 className="text-xl font-bold text-gray-900">{demoResult ? 'Demo chargee !' : 'Patrimoine active !'}</h3>
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-12 h-12 rounded-2xl bg-green-100 flex items-center justify-center">
+                  <CheckCircle2 size={28} className="text-green-500" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">{demoResult ? 'Demo chargee !' : 'Patrimoine active !'}</h3>
+                  <p className="text-sm text-gray-500">Les entites ont ete creees avec succes.</p>
+                </div>
               </div>
               {activationResult && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-2 mb-4">
+                <div className="bg-green-50 border border-green-200 rounded-xl p-4 space-y-2 mb-4">
                   <Row label="Sites crees" value={activationResult.sites_created} />
                   <Row label="Compteurs crees" value={activationResult.compteurs_created} />
                   {activationResult.delivery_points_created > 0 && <Row label="Points de livraison" value={activationResult.delivery_points_created} />}
@@ -436,7 +559,7 @@ const PatrimoineWizard = ({ onClose }) => {
                 </div>
               )}
               {demoResult && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-2 mb-4">
+                <div className="bg-green-50 border border-green-200 rounded-xl p-4 space-y-2 mb-4">
                   <Row label="Statut" value={demoResult.status} />
                   <Row label="Organisation" value={demoResult.org_name || 'Collectivite Azur'} />
                   <Row label="Sites" value={demoResult.sites} />
@@ -447,12 +570,12 @@ const PatrimoineWizard = ({ onClose }) => {
               {batchId && activationResult && (
                 <div className="mb-4">
                   <a href={`${API_BASE}/api/patrimoine/staging/${batchId}/export/report.csv`}
-                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition" download>
+                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-xl hover:bg-indigo-100 transition" download>
                     <Download size={14} /> Telecharger le rapport CSV
                   </a>
                 </div>
               )}
-              <div className="bg-gray-50 border rounded-lg p-4">
+              <div className="bg-gray-50 border rounded-xl p-4">
                 <p className="text-sm font-medium text-gray-700 mb-3">Prochaines etapes</p>
                 <div className="space-y-2">
                   <NxStep icon={Zap} label="Connecter Enedis/GRDF" desc="Synchronisez vos consommations reelles" />
@@ -463,52 +586,92 @@ const PatrimoineWizard = ({ onClose }) => {
             </div>
           )}
 
+          {/* Error banner */}
           {error && (
-            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2">
               <AlertTriangle size={18} className="text-red-500 shrink-0 mt-0.5" />
-              <p className="text-sm text-red-700">{error}</p>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-red-800">Erreur</p>
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+              <button onClick={() => setError(null)} className="p-1 rounded hover:bg-red-100 text-red-400 hover:text-red-600">
+                <X size={14} />
+              </button>
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t bg-gray-50 rounded-b-2xl">
-          <button onClick={() => step > 0 && step < 5 ? setStep(step - 1) : handleClose()}
-            className="flex items-center gap-1 text-gray-600 hover:text-gray-800 text-sm">
+        <div className="flex items-center justify-between px-6 py-4 border-t bg-gray-50 rounded-b-2xl shrink-0">
+          <button onClick={() => step > 0 && step < 5 ? setStep(step - 1) : requestClose()}
+            className="flex items-center gap-1 text-gray-600 hover:text-gray-800 text-sm transition">
             <ChevronLeft size={16} /> {step > 0 && step < 5 ? 'Precedent' : 'Fermer'}
           </button>
           <div className="flex items-center gap-2">
             {step === 3 && (
-              <button onClick={doValidate} className="flex items-center gap-1 px-3 py-2 text-sm text-gray-500 hover:text-gray-700">
+              <button onClick={doValidate} className="flex items-center gap-1 px-3 py-2 text-sm text-gray-500 hover:text-gray-700 transition">
                 <RefreshCw size={14} /> Re-valider
               </button>
             )}
             {step < 5 && (
               <button onClick={handleNext} disabled={!canProceed() || loading}
-                className={`flex items-center gap-1 px-5 py-2 rounded-lg text-sm font-semibold transition ${
+                className={`flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-semibold transition ${
                   !canProceed() || loading ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : step === 4 ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700'
-                  : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                  : step === 4 ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-sm'
+                  : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm'
                 }`}>
-                {loading ? 'Chargement...' : step === 0 && mode === 'demo' ? 'Charger la demo' : step === 2 ? 'Lancer la validation' : step === 4 ? 'Activer le patrimoine' : 'Suivant'}
+                {nextLabel()}
                 {!loading && <ChevronRight size={16} />}
               </button>
             )}
             {step === 5 && (
-              <button onClick={handleClose} className="flex items-center gap-1 px-5 py-2 rounded-lg text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition">
+              <button onClick={handleClose} className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm transition">
                 Voir le patrimoine <ChevronRight size={16} />
               </button>
             )}
           </div>
         </div>
       </div>
+
+      {/* Close confirmation overlay */}
+      {showCloseConfirm && (
+        <div className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+                <AlertTriangle size={20} className="text-amber-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">Quitter l'import ?</h3>
+            </div>
+            <p className="text-sm text-gray-600 mb-5">
+              L'import est en cours. Si vous quittez, les donnees non activees seront perdues.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setShowCloseConfirm(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition">
+                Continuer l'import
+              </button>
+              <button onClick={() => { setShowCloseConfirm(false); onClose(); }}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition">
+                Quitter
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 function StatCard({ label, value, icon: Icon, color }) {
   const c = { indigo: 'bg-indigo-50 text-indigo-700', amber: 'bg-amber-50 text-amber-700', orange: 'bg-orange-50 text-orange-700', green: 'bg-green-50 text-green-700', red: 'bg-red-50 text-red-700' };
-  return (<div className={`${c[color] || c.indigo} rounded-lg p-3 text-center`}><Icon size={18} className="mx-auto mb-1" /><div className="text-xl font-bold">{value}</div><div className="text-[10px] uppercase tracking-wide">{label}</div></div>);
+  return (
+    <div className={`${c[color] || c.indigo} rounded-xl p-3 text-center`}>
+      <Icon size={18} className="mx-auto mb-1" />
+      <div className="text-xl font-bold">{value}</div>
+      <div className="text-[10px] uppercase tracking-wide">{label}</div>
+    </div>
+  );
 }
 
 function Row({ label, value, vc = '' }) {
@@ -517,8 +680,8 @@ function Row({ label, value, vc = '' }) {
 
 function NxStep({ icon: Icon, label, desc }) {
   return (
-    <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition cursor-pointer">
-      <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0"><Icon size={16} className="text-indigo-600" /></div>
+    <div className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 transition cursor-pointer">
+      <div className="w-9 h-9 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0"><Icon size={16} className="text-indigo-600" /></div>
       <div><p className="text-sm font-medium text-gray-800">{label}</p><p className="text-xs text-gray-500">{desc}</p></div>
       <ExternalLink size={14} className="ml-auto text-gray-300" />
     </div>
@@ -529,7 +692,7 @@ function FixBtn({ f, ev, onFix }) {
   const skipA = () => onFix(f, 'skip', { staging_site_id: f.staging_site_id, staging_compteur_id: f.staging_compteur_id });
   const skipS = () => onFix(f, 'skip', { staging_site_id: f.staging_site_id });
   const skipC = () => onFix(f, 'skip', { staging_compteur_id: f.staging_compteur_id });
-  const btn = (lbl, fn) => (<button onClick={fn} className="text-xs px-2 py-1 rounded bg-white border text-gray-600 hover:bg-gray-50 flex items-center gap-1"><SkipForward size={12} /> {lbl}</button>);
+  const btn = (lbl, fn) => (<button onClick={fn} className="text-xs px-2 py-1 rounded-lg bg-white border text-gray-600 hover:bg-gray-50 flex items-center gap-1 transition"><SkipForward size={12} /> {lbl}</button>);
   if (['skip','merge','remap'].includes(f.suggested_action)) return btn('Ignorer', f.staging_compteur_id ? skipC : skipA);
   if (['fix_siret','create_entite','fix_address'].includes(f.suggested_action)) return btn('Ignorer', skipS);
   if (f.suggested_action === 'fix_meter_id') return btn('Ignorer compteur', skipC);
