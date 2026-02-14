@@ -589,3 +589,44 @@ def get_sites_findings(db: Session, org_id: int, regulation: str = None,
         })
 
     return list(sites_map.values())
+
+
+# ---------------------------------------------------------------------------
+# Bundle (single-request for Conformite cockpit)
+# ---------------------------------------------------------------------------
+
+_EMPTY_MESSAGES = {
+    "NO_SITES": "Aucun site dans le perimetre selectionne.",
+    "NO_EVALUATION": "L'evaluation n'a pas encore ete lancee. Cliquez Re-evaluer.",
+    "ALL_COMPLIANT": "Tous les sites sont conformes.",
+}
+
+
+def get_compliance_bundle(
+    db: Session,
+    org_id: int,
+    entity_id: int = None,
+    site_id: int = None,
+    regulation: str = None,
+    status: str = None,
+    severity: str = None,
+) -> dict:
+    """Single-request bundle for Conformite cockpit. org_id REQUIRED."""
+    summary = get_summary(db, org_id, entity_id=entity_id, site_id=site_id)
+    sites = get_sites_findings(
+        db, org_id, regulation, status, severity,
+        entity_id=entity_id, site_id=site_id,
+    )
+    code = summary.get("empty_reason")
+    return {
+        "scope": {
+            "org_id": org_id,
+            "entity_id": entity_id,
+            "site_id": site_id,
+            "site_count": summary.get("total_sites", 0),
+        },
+        "summary": summary,
+        "sites": sites,
+        "empty_reason_code": code,
+        "empty_reason_message": _EMPTY_MESSAGES.get(code),
+    }

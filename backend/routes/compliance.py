@@ -25,6 +25,7 @@ from services.compliance_rules import (
     evaluate_organisation,
     get_summary,
     get_sites_findings,
+    get_compliance_bundle,
     load_all_packs,
 )
 from middleware.auth import get_optional_auth, AuthContext
@@ -131,6 +132,35 @@ def compliance_sites(
 
     return get_sites_findings(db, org_id or 0, regulation, status, severity,
                               entity_id=entity_id, site_id=site_id)
+
+
+@router.get("/bundle")
+def compliance_bundle(
+    org_id: Optional[int] = Query(None),
+    entity_id: Optional[int] = Query(None),
+    site_id: Optional[int] = Query(None),
+    regulation: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    severity: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+):
+    """
+    GET /api/compliance/bundle?org_id=&entity_id=&site_id=
+
+    Single-request bundle: summary + sites + empty_reason.
+    Frontend must pass org_id explicitly for correct scope.
+    """
+    if org_id is None:
+        org = db.query(Organisation).first()
+        if not org:
+            return get_compliance_bundle(db, 0)
+        org_id = org.id
+
+    return get_compliance_bundle(
+        db, org_id,
+        entity_id=entity_id, site_id=site_id,
+        regulation=regulation, status=status, severity=severity,
+    )
 
 
 @router.post("/recompute-rules")

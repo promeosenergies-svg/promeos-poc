@@ -263,6 +263,7 @@ export const getSegmentationProfile = () => api.get('/segmentation/profile').the
 
 export const getComplianceSummary = (params = {}) => api.get('/compliance/summary', { params }).then(r => r.data);
 export const getComplianceSites = (params = {}) => api.get('/compliance/sites', { params }).then(r => r.data);
+export const getComplianceBundle = (params = {}) => api.get('/compliance/bundle', { params }).then(r => r.data);
 export const recomputeComplianceRules = (orgId = null) => api.post('/compliance/recompute-rules', null, { params: { org_id: orgId } }).then(r => r.data);
 export const getComplianceRules = () => api.get('/compliance/rules').then(r => r.data);
 
