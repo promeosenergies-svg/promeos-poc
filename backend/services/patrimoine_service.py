@@ -58,7 +58,9 @@ def create_staging_batch(
 # ========================================
 
 _CSV_COLUMNS = ["nom", "adresse", "code_postal", "ville", "surface_m2", "type",
-                "naf_code", "siret", "numero_serie", "meter_id", "type_compteur", "puissance_kw"]
+                "naf_code", "siren", "siret", "energy_type",
+                "delivery_code", "numero_serie", "meter_id",
+                "type_compteur", "puissance_kw"]
 
 
 def import_csv_to_staging(db: Session, batch_id: int, file_content: bytes) -> dict:
@@ -97,6 +99,9 @@ def import_csv_to_staging(db: Session, batch_id: int, file_content: bytes) -> di
                 surface_raw = (row.get("surface_m2") or "").strip()
                 surface = float(surface_raw) if surface_raw else None
 
+                # SIRET: accept both "siret" and "siren" columns
+                siret_val = (row.get("siret") or "").strip() or None
+
                 ss = StagingSite(
                     batch_id=batch_id,
                     row_number=row_num,
@@ -106,7 +111,7 @@ def import_csv_to_staging(db: Session, batch_id: int, file_content: bytes) -> di
                     code_postal=(row.get("code_postal") or "").strip() or None,
                     ville=(row.get("ville") or "").strip() or None,
                     surface_m2=surface,
-                    siret=(row.get("siret") or "").strip() or None,
+                    siret=siret_val,
                     naf_code=(row.get("naf_code") or "").strip() or None,
                     source_type=batch.source_type.value if batch.source_type else None,
                     source_ref=batch.filename,
@@ -118,7 +123,18 @@ def import_csv_to_staging(db: Session, batch_id: int, file_content: bytes) -> di
 
             # Create staging compteur if meter data present
             numero_serie = (row.get("numero_serie") or "").strip()
-            meter_id = (row.get("meter_id") or "").strip()
+            # Support both "meter_id" and "delivery_code" columns
+            meter_id = (row.get("meter_id") or row.get("delivery_code") or "").strip()
+            type_compteur = (row.get("type_compteur") or "").strip() or None
+            # Infer type_compteur from energy_type if missing
+            energy_type = (row.get("energy_type") or "").strip()
+            if not type_compteur and energy_type:
+                et = energy_type.lower()
+                if any(k in et for k in ("elec", "prm", "pdl")):
+                    type_compteur = "electricite"
+                elif any(k in et for k in ("gaz", "gas", "pce")):
+                    type_compteur = "gaz"
+
             if numero_serie or meter_id:
                 puissance_raw = (row.get("puissance_kw") or "").strip()
                 puissance = float(puissance_raw) if puissance_raw else None
@@ -129,7 +145,7 @@ def import_csv_to_staging(db: Session, batch_id: int, file_content: bytes) -> di
                     row_number=row_num,
                     numero_serie=numero_serie or None,
                     meter_id=meter_id or None,
-                    type_compteur=(row.get("type_compteur") or "").strip() or None,
+                    type_compteur=type_compteur,
                     puissance_kw=puissance,
                 )
                 db.add(sc)

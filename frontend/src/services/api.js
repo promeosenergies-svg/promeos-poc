@@ -415,11 +415,17 @@ export const stagingImport = (file, mode = 'import') => {
 };
 export const stagingImportInvoices = (invoices) => api.post('/patrimoine/staging/import-invoices', { invoices }).then(r => r.data);
 export const stagingSummary = (batchId) => api.get(`/patrimoine/staging/${batchId}/summary`).then(r => r.data);
+export const stagingRows = (batchId, params = {}) => api.get(`/patrimoine/staging/${batchId}/rows`, { params }).then(r => r.data);
+export const stagingIssues = (batchId, params = {}) => api.get(`/patrimoine/staging/${batchId}/issues`, { params }).then(r => r.data);
 export const stagingValidate = (batchId) => api.post(`/patrimoine/staging/${batchId}/validate`).then(r => r.data);
 export const stagingFix = (batchId, fixType, params) => api.put(`/patrimoine/staging/${batchId}/fix`, { fix_type: fixType, params }).then(r => r.data);
+export const stagingFixBulk = (batchId, fixes) => api.put(`/patrimoine/staging/${batchId}/fix/bulk`, { fixes }).then(r => r.data);
+export const stagingAutofix = (batchId) => api.post(`/patrimoine/staging/${batchId}/autofix`).then(r => r.data);
 export const stagingActivate = (batchId, portefeuilleId) => api.post(`/patrimoine/staging/${batchId}/activate`, { portefeuille_id: portefeuilleId }).then(r => r.data);
+export const stagingResult = (batchId) => api.get(`/patrimoine/staging/${batchId}/result`).then(r => r.data);
 export const stagingAbandon = (batchId) => api.delete(`/patrimoine/staging/${batchId}`).then(r => r.data);
 export const loadPatrimoineDemo = () => api.post('/patrimoine/demo/load').then(r => r.data);
+export const getImportTemplateColumns = () => api.get('/patrimoine/import/template/columns').then(r => r.data);
 export const portfolioSync = (portfolioId, file, dryRun = true) => {
   const fd = new FormData();
   fd.append('file', file);
