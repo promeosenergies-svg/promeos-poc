@@ -230,3 +230,30 @@ class TestEndToEndPipeline:
         result = orch.run_standalone(readings, subscribed_power_kva=30)
         assert result["alert_count"] == len(result["alerts"])
         assert result["alert_count"] >= 3  # Multiple anomalies embedded
+
+
+class TestClimateIntegration:
+    def test_pipeline_with_weather(self):
+        orch = MonitoringOrchestrator()
+        readings = _make_office_readings(30)
+        start = datetime(2025, 1, 6)
+        weather = []
+        for d in range(30):
+            dt = start + timedelta(days=d)
+            temp = 5 + 10 * (d / 30)
+            weather.append({"date": dt.date().isoformat(), "temp_avg_c": round(temp, 1)})
+        result = orch.run_standalone(readings, weather_data=weather)
+        assert "climate" in result
+        assert result["climate"]["n_points"] > 0
+
+    def test_pipeline_without_weather(self):
+        orch = MonitoringOrchestrator()
+        readings = _make_office_readings(7)
+        result = orch.run_standalone(readings)
+        assert "climate" in result
+        assert result["climate"]["n_points"] <= 7
+
+    def test_climate_key_always_present(self):
+        orch = MonitoringOrchestrator()
+        result = orch.run_standalone([])
+        assert "climate" in result
