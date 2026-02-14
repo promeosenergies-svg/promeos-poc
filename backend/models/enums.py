@@ -365,6 +365,18 @@ class ActivationLogStatus(str, enum.Enum):
     ROLLED_BACK = "rolled_back"
 
 
+class DeliveryPointStatus(str, enum.Enum):
+    """Statut d'un point de livraison (PRM/PCE)."""
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+
+
+class DeliveryPointEnergyType(str, enum.Enum):
+    """Type d'energie du point de livraison."""
+    ELEC = "elec"
+    GAZ = "gaz"
+
+
 # ========================================
 # Enums Smart Intake (DIAMANT)
 # ========================================

@@ -17,6 +17,7 @@ from .enums import (
     NotificationSeverity, NotificationStatus, NotificationSourceType,
     UserRole, ScopeLevel, PermissionAction,
     StagingStatus, ImportSourceType, QualityRuleSeverity, ActivationLogStatus,
+    DeliveryPointStatus, DeliveryPointEnergyType,
     IntakeSessionStatus, IntakeMode, IntakeSource,
     WatcherEventStatus,
     CvcSystemType, CvcArchitecture, BacsTriggerReason, InspectionStatus,
@@ -88,7 +89,7 @@ from .iam import User, UserOrgRole, UserScope, AuditLog
 from .patrimoine import (
     OrgEntiteLink, PortfolioEntiteLink,
     StagingBatch, StagingSite, StagingCompteur, QualityFinding,
-    ActivationLog,
+    ActivationLog, DeliveryPoint,
 )
 
 # Smart Intake (DIAMANT)
@@ -150,6 +151,7 @@ __all__ = [
     "OrgEntiteLink", "PortfolioEntiteLink",
     "StagingBatch", "StagingSite", "StagingCompteur", "QualityFinding",
     "StagingStatus", "ImportSourceType", "QualityRuleSeverity",
+    "DeliveryPoint", "DeliveryPointStatus", "DeliveryPointEnergyType",
     # Smart Intake (DIAMANT)
     "IntakeSession", "IntakeAnswer", "IntakeFieldOverride",
     "IntakeSessionStatus", "IntakeMode", "IntakeSource",

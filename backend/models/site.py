@@ -93,6 +93,13 @@ class Site(Base, TimestampMixin, SoftDeleteMixin):
         cascade="all, delete-orphan",
     )
 
+    # Delivery Points (PRM/PCE)
+    delivery_points = relationship(
+        "DeliveryPoint",
+        back_populates="site",
+        cascade="all, delete-orphan",
+    )
+
     # Energy analytics
     meters = relationship(
         "Meter",
