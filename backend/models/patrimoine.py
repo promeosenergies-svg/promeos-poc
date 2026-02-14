@@ -9,7 +9,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 
 from .base import Base, TimestampMixin
-from .enums import StagingStatus, ImportSourceType, QualityRuleSeverity
+from .enums import StagingStatus, ImportSourceType, QualityRuleSeverity, ActivationLogStatus
 
 
 # ========================================
@@ -138,3 +138,23 @@ class QualityFinding(Base, TimestampMixin):
 
     # Relations
     batch = relationship("StagingBatch", back_populates="findings")
+
+
+# ========================================
+# Activation audit log
+# ========================================
+
+class ActivationLog(Base, TimestampMixin):
+    """Audit trail for batch activation attempts."""
+    __tablename__ = "activation_logs"
+
+    id = Column(Integer, primary_key=True)
+    batch_id = Column(Integer, ForeignKey("staging_batches.id"), nullable=False, index=True)
+    started_at = Column(DateTime, nullable=False)
+    completed_at = Column(DateTime, nullable=True)
+    status = Column(Enum(ActivationLogStatus), nullable=False)
+    error_message = Column(Text, nullable=True)
+    sites_created = Column(Integer, default=0)
+    compteurs_created = Column(Integer, default=0)
+    activation_hash = Column(String(64), nullable=True, index=True)
+    user_id = Column(Integer, nullable=True)

@@ -16,7 +16,7 @@ from .enums import (
     ActionSourceType, ActionStatus,
     NotificationSeverity, NotificationStatus, NotificationSourceType,
     UserRole, ScopeLevel, PermissionAction,
-    StagingStatus, ImportSourceType, QualityRuleSeverity,
+    StagingStatus, ImportSourceType, QualityRuleSeverity, ActivationLogStatus,
     IntakeSessionStatus, IntakeMode, IntakeSource,
     WatcherEventStatus,
     CvcSystemType, CvcArchitecture, BacsTriggerReason, InspectionStatus,
@@ -88,6 +88,7 @@ from .iam import User, UserOrgRole, UserScope, AuditLog
 from .patrimoine import (
     OrgEntiteLink, PortfolioEntiteLink,
     StagingBatch, StagingSite, StagingCompteur, QualityFinding,
+    ActivationLog,
 )
 
 # Smart Intake (DIAMANT)

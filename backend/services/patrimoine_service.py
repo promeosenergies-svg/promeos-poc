@@ -11,10 +11,13 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 
+from sqlalchemy.exc import SQLAlchemyError
+
 from models import (
     StagingBatch, StagingSite, StagingCompteur, QualityFinding,
     StagingStatus, ImportSourceType, QualityRuleSeverity,
     Site, Compteur, TypeCompteur, EnergyVector,
+    ActivationLog, ActivationLogStatus,
     not_deleted,
 )
 from services.onboarding_service import create_site_from_data, provision_site
@@ -485,21 +488,9 @@ _TYPE_COMPTEUR_MAP = {
 }
 
 
-def activate_batch(db: Session, batch_id: int, portefeuille_id: int) -> dict:
-    """Create real Site/Compteur/Batiment from validated staging.
-
-    Reuses onboarding_service.create_site_from_data + provision_site.
-    Returns: {sites_created, compteurs_created, batiments, obligations}
-    """
-    batch = db.query(StagingBatch).get(batch_id)
-    if not batch:
-        raise ValueError(f"Batch {batch_id} not found")
-
-    if batch.status == StagingStatus.APPLIED:
-        return {"sites_created": 0, "compteurs_created": 0, "batiments": 0, "obligations": 0,
-                "detail": "Batch already applied"}
-
-    # Check no unresolved blocking/critical findings
+def _pre_activation_checks(db: Session, batch_id: int):
+    """Pre-activation safety checks. Raises ValueError on any failure."""
+    # 1. No unresolved blocking/critical findings
     blocking = db.query(QualityFinding).filter(
         QualityFinding.batch_id == batch_id,
         QualityFinding.severity.in_([QualityRuleSeverity.BLOCKING, QualityRuleSeverity.CRITICAL]),
@@ -508,14 +499,14 @@ def activate_batch(db: Session, batch_id: int, portefeuille_id: int) -> dict:
     if blocking > 0:
         raise ValueError(f"{blocking} unresolved blocking/critical findings — run quality gate fixes first")
 
-    # Pre-activation safety: re-check meter_id uniqueness against live DB
-    staging_compteurs_all = db.query(StagingCompteur).filter(
+    # 2. meter_id uniqueness against live DB
+    staging_compteurs = db.query(StagingCompteur).filter(
         StagingCompteur.batch_id == batch_id,
         StagingCompteur.skip.is_(False),
         StagingCompteur.target_compteur_id.is_(None),
         StagingCompteur.meter_id.isnot(None),
     ).all()
-    staging_meter_ids = [sc.meter_id.strip() for sc in staging_compteurs_all if sc.meter_id and sc.meter_id.strip()]
+    staging_meter_ids = [sc.meter_id.strip() for sc in staging_compteurs if sc.meter_id and sc.meter_id.strip()]
     if staging_meter_ids:
         collisions = not_deleted(db.query(Compteur), Compteur).filter(
             Compteur.meter_id.in_(staging_meter_ids),
@@ -526,6 +517,51 @@ def activate_batch(db: Session, batch_id: int, portefeuille_id: int) -> dict:
                 f"Activation blocked: duplicate delivery point(s) in DB: {', '.join(collision_ids)}"
             )
 
+    # 3. numero_serie uniqueness against live DB
+    staging_series = db.query(StagingCompteur).filter(
+        StagingCompteur.batch_id == batch_id,
+        StagingCompteur.skip.is_(False),
+        StagingCompteur.target_compteur_id.is_(None),
+        StagingCompteur.numero_serie.isnot(None),
+    ).all()
+    serie_vals = [sc.numero_serie.strip() for sc in staging_series if sc.numero_serie and sc.numero_serie.strip()]
+    if serie_vals:
+        serie_collisions = not_deleted(db.query(Compteur), Compteur).filter(
+            Compteur.numero_serie.in_(serie_vals),
+        ).all()
+        if serie_collisions:
+            collision_ids = [f"{c.numero_serie} (compteur #{c.id})" for c in serie_collisions]
+            raise ValueError(
+                f"Activation blocked: duplicate numero_serie in DB: {', '.join(collision_ids)}"
+            )
+
+
+def _compute_activation_hash(db: Session, batch_id: int) -> str:
+    """Compute SHA-256 fingerprint of staging content for idempotence."""
+    sites = db.query(StagingSite).filter(
+        StagingSite.batch_id == batch_id,
+        StagingSite.skip.is_(False),
+    ).order_by(StagingSite.id).all()
+
+    compteurs = db.query(StagingCompteur).filter(
+        StagingCompteur.batch_id == batch_id,
+        StagingCompteur.skip.is_(False),
+    ).order_by(StagingCompteur.id).all()
+
+    content = json.dumps({
+        "batch_id": batch_id,
+        "sites": [{"id": s.id, "nom": s.nom, "cp": s.code_postal} for s in sites],
+        "compteurs": [{"id": c.id, "mid": c.meter_id, "ns": c.numero_serie} for c in compteurs],
+    }, sort_keys=True)
+
+    return hashlib.sha256(content.encode()).hexdigest()
+
+
+def _do_activate(db: Session, batch, batch_id: int, portefeuille_id: int, now) -> dict:
+    """Core activation logic: create real entities from staging.
+
+    Must be called within a SAVEPOINT (begin_nested) for atomicity.
+    """
     staging_sites = db.query(StagingSite).filter(
         StagingSite.batch_id == batch_id,
         StagingSite.skip.is_(False),
@@ -536,10 +572,7 @@ def activate_batch(db: Session, batch_id: int, portefeuille_id: int) -> dict:
     total_batiments = 0
     total_obligations = 0
 
-    now = datetime.utcnow()
-
     for ss in staging_sites:
-        # Use target_site_id if merging, otherwise create new
         if ss.target_site_id:
             site = db.query(Site).get(ss.target_site_id)
         else:
@@ -555,7 +588,6 @@ def activate_batch(db: Session, batch_id: int, portefeuille_id: int) -> dict:
                 ville=ss.ville,
                 surface_m2=ss.surface_m2,
             )
-            # Lineage
             site.data_source = batch.source_type.value if batch.source_type else "import"
             site.data_source_ref = f"batch:{batch_id}"
             site.imported_at = now
@@ -568,7 +600,6 @@ def activate_batch(db: Session, batch_id: int, portefeuille_id: int) -> dict:
             total_obligations += prov.get("obligations", 0)
             sites_created += 1
 
-        # Create compteurs for this staging site
         staging_compteurs = db.query(StagingCompteur).filter(
             StagingCompteur.staging_site_id == ss.id,
             StagingCompteur.skip.is_(False),
@@ -576,7 +607,7 @@ def activate_batch(db: Session, batch_id: int, portefeuille_id: int) -> dict:
 
         for sc in staging_compteurs:
             if sc.target_compteur_id:
-                continue  # Already merged with existing
+                continue
 
             tc_info = _TYPE_COMPTEUR_MAP.get(sc.type_compteur, (TypeCompteur.ELECTRICITE, EnergyVector.ELECTRICITY))
             compteur = Compteur(
@@ -593,7 +624,7 @@ def activate_batch(db: Session, batch_id: int, portefeuille_id: int) -> dict:
             db.add(compteur)
             compteurs_created += 1
 
-    # Mark batch as applied
+    # Mark batch as applied (inside savepoint — rolled back on failure)
     batch.status = StagingStatus.APPLIED
     batch.stats_json = json.dumps({
         "sites_created": sites_created,
@@ -611,6 +642,89 @@ def activate_batch(db: Session, batch_id: int, portefeuille_id: int) -> dict:
         "batiments": total_batiments,
         "obligations": total_obligations,
     }
+
+
+def activate_batch(db: Session, batch_id: int, portefeuille_id: int, user_id: int = None) -> dict:
+    """Create real Site/Compteur/Batiment from validated staging.
+
+    Atomic: wrapped in SAVEPOINT — any error rolls back ALL created entities.
+    Idempotent: returns cached result if batch already activated.
+    Audited: creates ActivationLog entry for every attempt.
+    """
+    batch = db.query(StagingBatch).get(batch_id)
+    if not batch:
+        raise ValueError(f"Batch {batch_id} not found")
+
+    # Idempotence: already applied → return cached result
+    if batch.status == StagingStatus.APPLIED:
+        existing_log = db.query(ActivationLog).filter(
+            ActivationLog.batch_id == batch_id,
+            ActivationLog.status == ActivationLogStatus.SUCCESS,
+        ).first()
+        if existing_log:
+            return {
+                "sites_created": existing_log.sites_created,
+                "compteurs_created": existing_log.compteurs_created,
+                "batiments": 0, "obligations": 0,
+                "detail": "Batch already applied (idempotent)",
+                "activation_log_id": existing_log.id,
+            }
+        return {"sites_created": 0, "compteurs_created": 0, "batiments": 0, "obligations": 0,
+                "detail": "Batch already applied"}
+
+    # Pre-activation safety checks (outside savepoint — fail fast)
+    _pre_activation_checks(db, batch_id)
+
+    # Idempotence: check activation_hash
+    activation_hash = _compute_activation_hash(db, batch_id)
+    existing_success = db.query(ActivationLog).filter(
+        ActivationLog.activation_hash == activation_hash,
+        ActivationLog.status == ActivationLogStatus.SUCCESS,
+    ).first()
+    if existing_success:
+        return {
+            "sites_created": existing_success.sites_created,
+            "compteurs_created": existing_success.compteurs_created,
+            "batiments": 0, "obligations": 0,
+            "detail": "Idempotent: same content already activated",
+            "activation_log_id": existing_success.id,
+        }
+
+    # Create activation log (STARTED) — persisted outside savepoint
+    now = datetime.utcnow()
+    log = ActivationLog(
+        batch_id=batch_id,
+        started_at=now,
+        status=ActivationLogStatus.STARTED,
+        activation_hash=activation_hash,
+        user_id=user_id,
+    )
+    db.add(log)
+    db.flush()
+
+    # Atomic activation within SAVEPOINT
+    try:
+        with db.begin_nested():
+            result = _do_activate(db, batch, batch_id, portefeuille_id, now)
+
+        # Savepoint committed — update log with success
+        log.status = ActivationLogStatus.SUCCESS
+        log.completed_at = datetime.utcnow()
+        log.sites_created = result["sites_created"]
+        log.compteurs_created = result["compteurs_created"]
+        db.flush()
+
+        result["activation_log_id"] = log.id
+        return result
+
+    except (SQLAlchemyError, ValueError, Exception) as e:
+        # Savepoint auto-rolled back — all created entities undone
+        log.status = ActivationLogStatus.FAILED
+        log.completed_at = datetime.utcnow()
+        log.error_message = str(e)[:2000]
+        db.flush()
+
+        raise ValueError(f"Activation failed (rolled back): {e}") from e
 
 
 # ========================================

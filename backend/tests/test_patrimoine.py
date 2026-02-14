@@ -216,10 +216,10 @@ class TestStagingPipeline:
         run_quality_gate(db_session, batch.id)
         activate_batch(db_session, batch.id, pf.id)
 
-        # Second activation should return 0
+        # Second activation — idempotent, returns cached ActivationLog result
         result = activate_batch(db_session, batch.id, pf.id)
-        assert result["sites_created"] == 0
-        assert result["detail"] == "Batch already applied"
+        assert "already applied" in result["detail"].lower()
+        assert "activation_log_id" in result
 
     def test_abandoned_batch(self, db_session):
         batch = create_staging_batch(

@@ -357,6 +357,14 @@ class QualityRuleSeverity(str, enum.Enum):
     INFO = "info"
 
 
+class ActivationLogStatus(str, enum.Enum):
+    """Statut d'une tentative d'activation batch."""
+    STARTED = "started"
+    SUCCESS = "success"
+    FAILED = "failed"
+    ROLLED_BACK = "rolled_back"
+
+
 # ========================================
 # Enums Smart Intake (DIAMANT)
 # ========================================
