@@ -27,6 +27,7 @@ let nextId = 0;
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
   const timers = useRef({});
+  const recentMessages = useRef(new Map());
 
   const removeToast = useCallback((id) => {
     clearTimeout(timers.current[id]);
@@ -35,6 +36,20 @@ export function ToastProvider({ children }) {
   }, []);
 
   const toast = useCallback((message, type = 'info') => {
+    // Dedup: skip if same message was shown in last 2 seconds
+    const now = Date.now();
+    const key = `${type}:${message}`;
+    if (recentMessages.current.has(key) && now - recentMessages.current.get(key) < 2000) {
+      return -1;
+    }
+    recentMessages.current.set(key, now);
+    // Cleanup old entries to prevent memory leak
+    if (recentMessages.current.size > 50) {
+      for (const [k, ts] of recentMessages.current) {
+        if (now - ts > 5000) recentMessages.current.delete(k);
+      }
+    }
+
     const id = ++nextId;
     setToasts((prev) => [...prev, { id, message, type }]);
     timers.current[id] = setTimeout(() => removeToast(id), 4000);
