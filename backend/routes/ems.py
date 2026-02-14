@@ -1,10 +1,11 @@
 """
 PROMEOS - EMS Consumption Explorer Routes
-Timeseries, weather, energy signature, saved views.
+Timeseries, weather, energy signature, saved views, collections, demo data.
 """
 from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import Optional
 from datetime import datetime
+import json
 
 from sqlalchemy.orm import Session
 from database import get_db
@@ -47,7 +48,7 @@ def get_timeseries(
     if granularity not in VALID_GRANULARITIES:
         raise HTTPException(400, f"Invalid granularity: {granularity}")
 
-    if mode not in ("aggregate", "stack", "split"):
+    if mode not in ("aggregate", "overlay", "stack", "split"):
         raise HTTPException(400, f"Invalid mode: {mode}")
 
     ok, suggested, estimated = validate_cap_points(dt_from, dt_to, granularity)
@@ -82,17 +83,26 @@ def suggest_timeseries_granularity(
 # -------------------------------------------------------------------
 @router.get("/weather")
 def get_weather_data(
-    site_id: int = Query(...),
+    site_id: Optional[int] = Query(None),
+    site_ids: Optional[str] = Query(None, description="Comma-separated site IDs for multi-site average"),
     date_from: str = Query(...),
     date_to: str = Query(...),
     db: Session = Depends(get_db),
 ):
-    from services.ems.weather_service import get_weather
+    from services.ems.weather_service import get_weather, get_weather_multi
     from datetime import date as date_cls
     df = date_cls.fromisoformat(date_from)
     dt = date_cls.fromisoformat(date_to)
-    data = get_weather(db, site_id, df, dt)
-    return {"site_id": site_id, "days": data}
+
+    if site_ids:
+        parsed_ids = [int(x) for x in site_ids.split(",") if x.strip()]
+        data = get_weather_multi(db, parsed_ids, df, dt)
+        return {"site_ids": parsed_ids, "days": data, "mode": "average"}
+    elif site_id:
+        data = get_weather(db, site_id, df, dt)
+        return {"site_id": site_id, "days": data}
+    else:
+        return {"days": [], "error": "Provide site_id or site_ids"}
 
 
 # -------------------------------------------------------------------
@@ -215,3 +225,283 @@ def delete_view(view_id: int, db: Session = Depends(get_db)):
     db.delete(view)
     db.flush()
     return {"deleted": True}
+
+
+# -------------------------------------------------------------------
+# Collections CRUD (Paniers de sites)
+# -------------------------------------------------------------------
+@router.get("/collections")
+def list_collections(db: Session = Depends(get_db)):
+    from models.ems_models import EmsCollection
+    cols = db.query(EmsCollection).order_by(EmsCollection.is_favorite.desc(), EmsCollection.id).all()
+    return [
+        {"id": c.id, "name": c.name, "scope_type": c.scope_type,
+         "site_ids": json.loads(c.site_ids_json), "is_favorite": bool(c.is_favorite)}
+        for c in cols
+    ]
+
+
+@router.post("/collections", status_code=201)
+def create_collection(
+    name: str = Query(...),
+    site_ids: str = Query(..., description="Comma-separated site IDs"),
+    scope_type: str = Query("custom"),
+    is_favorite: bool = Query(False),
+    db: Session = Depends(get_db),
+):
+    from models.ems_models import EmsCollection
+    parsed_ids = [int(x) for x in site_ids.split(",") if x.strip()]
+    col = EmsCollection(
+        name=name, scope_type=scope_type,
+        site_ids_json=json.dumps(parsed_ids),
+        is_favorite=1 if is_favorite else 0,
+    )
+    db.add(col)
+    db.flush()
+    return {"id": col.id, "name": col.name, "site_ids": parsed_ids}
+
+
+@router.put("/collections/{col_id}")
+def update_collection(
+    col_id: int,
+    name: Optional[str] = None,
+    site_ids: Optional[str] = None,
+    is_favorite: Optional[bool] = None,
+    db: Session = Depends(get_db),
+):
+    from models.ems_models import EmsCollection
+    col = db.query(EmsCollection).filter(EmsCollection.id == col_id).first()
+    if not col:
+        raise HTTPException(404, "Collection not found")
+    if name is not None:
+        col.name = name
+    if site_ids is not None:
+        col.site_ids_json = json.dumps([int(x) for x in site_ids.split(",") if x.strip()])
+    if is_favorite is not None:
+        col.is_favorite = 1 if is_favorite else 0
+    db.flush()
+    return {"id": col.id, "name": col.name}
+
+
+@router.delete("/collections/{col_id}")
+def delete_collection(col_id: int, db: Session = Depends(get_db)):
+    from models.ems_models import EmsCollection
+    col = db.query(EmsCollection).filter(EmsCollection.id == col_id).first()
+    if not col:
+        raise HTTPException(404, "Collection not found")
+    db.delete(col)
+    db.flush()
+    return {"deleted": True}
+
+
+# -------------------------------------------------------------------
+# Demo Data Generation (WAOUH B2B realistic)
+# -------------------------------------------------------------------
+@router.post("/demo/generate")
+def generate_ems_demo(
+    portfolio_size: int = Query(12),
+    days: int = Query(365),
+    seed: int = Query(123),
+    force: bool = Query(False),
+    db: Session = Depends(get_db),
+):
+    """Generate realistic multi-site demo data with anomalies and weather."""
+    import math
+    import random as _random
+    from models import Site, Meter, MeterReading
+    from models.energy_models import FrequencyType
+    from models.ems_models import EmsWeatherCache
+
+    rng = _random.Random(seed)
+
+    # Check idempotence: if demo readings exist and not force, skip
+    existing = db.query(MeterReading).join(Meter).filter(
+        Meter.meter_id.like("EMS-DEMO-%")
+    ).count()
+    if existing > 0 and not force:
+        return {"status": "skipped", "message": f"{existing} demo readings already exist. Use force=true to regenerate."}
+
+    # If force, purge old demo data
+    if force and existing > 0:
+        demo_meters = db.query(Meter).filter(Meter.meter_id.like("EMS-DEMO-%")).all()
+        for dm in demo_meters:
+            db.query(MeterReading).filter(MeterReading.meter_id == dm.id).delete()
+            db.query(EmsWeatherCache).filter(EmsWeatherCache.site_id == dm.site_id, EmsWeatherCache.source == "demo_ems").delete()
+        db.flush()
+
+    # Resolve sites from scope (use first N available)
+    sites = db.query(Site).order_by(Site.id).limit(portfolio_size).all()
+    if not sites:
+        raise HTTPException(400, "No sites found. Seed basic data first.")
+
+    # Site profiles (realistic B2B french energy)
+    PROFILES = [
+        {"archetype": "bureau", "base_kw": 8, "day_mult": 4.5, "wknd": 0.25, "season": 0.22, "night": 0.10, "heating_coeff": 0.4},
+        {"archetype": "bureau", "base_kw": 6, "day_mult": 3.5, "wknd": 0.30, "season": 0.18, "night": 0.12, "heating_coeff": 0.3},
+        {"archetype": "bureau", "base_kw": 10, "day_mult": 5.0, "wknd": 0.20, "season": 0.25, "night": 0.08, "heating_coeff": 0.5},
+        {"archetype": "bureau", "base_kw": 7, "day_mult": 4.0, "wknd": 0.28, "season": 0.20, "night": 0.11, "heating_coeff": 0.35},
+        {"archetype": "bureau", "base_kw": 9, "day_mult": 4.8, "wknd": 0.22, "season": 0.24, "night": 0.09, "heating_coeff": 0.45},
+        {"archetype": "retail", "base_kw": 18, "day_mult": 1.8, "wknd": 0.85, "season": 0.12, "night": 0.55, "heating_coeff": 0.15},
+        {"archetype": "retail", "base_kw": 22, "day_mult": 1.6, "wknd": 0.90, "season": 0.14, "night": 0.60, "heating_coeff": 0.12},
+        {"archetype": "retail", "base_kw": 15, "day_mult": 2.0, "wknd": 0.80, "season": 0.10, "night": 0.50, "heating_coeff": 0.18},
+        {"archetype": "logistique", "base_kw": 12, "day_mult": 3.0, "wknd": 0.15, "season": 0.08, "night": 0.05, "heating_coeff": 0.10},
+        {"archetype": "logistique", "base_kw": 14, "day_mult": 2.8, "wknd": 0.12, "season": 0.06, "night": 0.04, "heating_coeff": 0.08},
+        {"archetype": "datacenter", "base_kw": 50, "day_mult": 1.1, "wknd": 0.98, "season": 0.08, "night": 0.95, "heating_coeff": -0.2},
+        {"archetype": "process", "base_kw": 25, "day_mult": 2.5, "wknd": 0.40, "season": 0.05, "night": 0.20, "heating_coeff": 0.05},
+    ]
+
+    # Anomaly injection targets
+    ANOMALIES = {
+        0: "high_night_base",   # Bureau with elevated night consumption
+        5: "morning_peaks",     # Retail with recurring morning peaks
+        8: "progressive_drift", # Logistique with progressive drift over months
+        3: "profile_rupture",   # Bureau with schedule change mid-year
+    }
+
+    now = datetime.utcnow()
+    start_date = datetime(now.year - 1, now.month, now.day)
+    total_readings = 0
+    site_reports = []
+
+    for idx, site in enumerate(sites[:portfolio_size]):
+        profile = PROFILES[idx % len(PROFILES)]
+        meter_id_str = f"EMS-DEMO-{site.id:06d}"
+
+        # Create or reuse meter
+        meter = db.query(Meter).filter_by(meter_id=meter_id_str).first()
+        if not meter:
+            meter = Meter(
+                meter_id=meter_id_str,
+                name=f"{profile['archetype'].capitalize()} {site.nom}",
+                site_id=site.id,
+                subscribed_power_kva=profile["base_kw"] * profile["day_mult"] * 1.2,
+            )
+            db.add(meter)
+            db.flush()
+
+        readings = []
+        anomaly_type = ANOMALIES.get(idx)
+        site_rng = _random.Random(seed * 1000 + site.id)
+
+        for day_offset in range(days):
+            dt_day = start_date + __import__('datetime').timedelta(days=day_offset)
+            dow = dt_day.weekday()
+            is_wknd = dow >= 5
+            month = dt_day.month
+            day_of_year = dt_day.timetuple().tm_yday
+
+            # Seasonal factor (heating peaks in winter, cooling in summer)
+            seasonal = 1.0 + profile["season"] * math.cos(2 * math.pi * (month - 1) / 12.0)
+
+            # Temperature-driven heating/cooling component
+            temp_approx = 12 + 10 * math.sin(2 * math.pi * (day_of_year - 80) / 365)
+            temp_approx += site_rng.gauss(0, 2)
+            heating_bonus = max(0, (15 - temp_approx)) * profile["heating_coeff"] * 0.1
+
+            for hour in range(24):
+                ts = dt_day.replace(hour=hour)
+
+                if is_wknd:
+                    factor = profile["wknd"]
+                elif 8 <= hour <= 18:
+                    factor = profile["day_mult"]
+                elif 6 <= hour <= 7 or 19 <= hour <= 20:
+                    factor = profile["day_mult"] * 0.5
+                else:
+                    factor = profile["night"]
+
+                value = profile["base_kw"] * factor * seasonal + heating_bonus
+                value *= site_rng.uniform(0.88, 1.12)
+
+                # --- Anomaly injection ---
+                if anomaly_type == "high_night_base" and (hour < 6 or hour > 21) and not is_wknd:
+                    value *= 2.5  # Night consumption 2.5x normal
+                elif anomaly_type == "morning_peaks" and 7 <= hour <= 9 and not is_wknd:
+                    value *= 3.0 + site_rng.uniform(0, 1.5)  # Morning spikes
+                elif anomaly_type == "progressive_drift":
+                    drift = 1.0 + (day_offset / days) * 0.6  # +60% over the year
+                    value *= drift
+                elif anomaly_type == "profile_rupture" and day_offset > days // 2:
+                    # Schedule shift: becomes active on weekends, different hours
+                    if is_wknd:
+                        value *= 3.0
+                    if 20 <= hour <= 23:
+                        value *= 2.0
+
+                value = max(0.1, value)
+                readings.append(MeterReading(
+                    meter_id=meter.id,
+                    timestamp=ts,
+                    frequency=FrequencyType.HOURLY,
+                    value_kwh=round(value, 2),
+                    is_estimated=False,
+                    quality_score=site_rng.uniform(0.85, 1.0),
+                ))
+
+            # Weather cache for this site/day
+            weather_entry = EmsWeatherCache(
+                site_id=site.id,
+                date=dt_day,
+                temp_avg_c=round(temp_approx, 1),
+                temp_min_c=round(temp_approx - site_rng.uniform(2, 5), 1),
+                temp_max_c=round(temp_approx + site_rng.uniform(2, 5), 1),
+                source="demo_ems",
+            )
+            readings.append(weather_entry)
+
+        # Separate readings and weather for bulk insert
+        meter_readings = [r for r in readings if isinstance(r, MeterReading)]
+        weather_entries = [r for r in readings if isinstance(r, EmsWeatherCache)]
+
+        db.bulk_save_objects(meter_readings)
+        # Weather: ignore conflicts (existing entries from weather_service)
+        for w in weather_entries:
+            existing_w = db.query(EmsWeatherCache).filter_by(site_id=w.site_id, date=w.date).first()
+            if not existing_w:
+                db.add(w)
+        db.flush()
+
+        total_readings += len(meter_readings)
+        site_reports.append({
+            "site_id": site.id, "site_nom": site.nom,
+            "archetype": profile["archetype"],
+            "readings": len(meter_readings),
+            "anomaly": anomaly_type,
+        })
+
+    db.commit()
+
+    return {
+        "status": "ok",
+        "total_readings": total_readings,
+        "sites_generated": len(site_reports),
+        "period": f"{start_date.date()} - {(start_date + __import__('datetime').timedelta(days=days)).date()}",
+        "sites": site_reports,
+    }
+
+
+@router.post("/demo/purge")
+def purge_ems_demo(db: Session = Depends(get_db)):
+    """Remove all EMS demo data."""
+    from models import Meter, MeterReading
+    from models.ems_models import EmsWeatherCache
+
+    demo_meters = db.query(Meter).filter(Meter.meter_id.like("EMS-DEMO-%")).all()
+    deleted_readings = 0
+    deleted_weather = 0
+    for dm in demo_meters:
+        deleted_readings += db.query(MeterReading).filter(MeterReading.meter_id == dm.id).delete()
+        deleted_weather += db.query(EmsWeatherCache).filter(
+            EmsWeatherCache.site_id == dm.site_id,
+            EmsWeatherCache.source == "demo_ems"
+        ).delete()
+        db.delete(dm)
+
+    db.flush()
+    db.commit()
+    return {
+        "status": "ok",
+        "deleted_meters": len(demo_meters),
+        "deleted_readings": deleted_readings,
+        "deleted_weather": deleted_weather,
+    }

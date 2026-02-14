@@ -30,7 +30,7 @@ import { useScope } from '../contexts/ScopeContext';
 import { useToast } from '../ui/ToastProvider';
 import SitePicker from '../components/SitePicker';
 import {
-  getEmsTimeseries, getEmsWeather, runEmsSignature,
+  getEmsTimeseries, getEmsWeather, getEmsWeatherMulti, runEmsSignature,
   getEmsViews, createEmsView, generateEmsDemo, createEmsCollection,
 } from '../services/api';
 
@@ -473,10 +473,13 @@ export default function ConsumptionExplorerPage({ bare = false }) {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Fetch weather overlay
+  // Fetch weather overlay (single-site or multi-site average)
   useEffect(() => {
-    if (!showWeather || selectedSiteIds.length !== 1) { setWeatherData(null); return; }
-    getEmsWeather(selectedSiteIds[0], dateFrom, dateTo)
+    if (!showWeather || selectedSiteIds.length === 0) { setWeatherData(null); return; }
+    const fetchWeather = selectedSiteIds.length === 1
+      ? getEmsWeather(selectedSiteIds[0], dateFrom, dateTo)
+      : getEmsWeatherMulti(selectedSiteIds, dateFrom, dateTo);
+    fetchWeather
       .then(r => setWeatherData(r.days))
       .catch(() => setWeatherData(null));
   }, [showWeather, selectedSiteIds, dateFrom, dateTo]);
@@ -804,15 +807,23 @@ export default function ConsumptionExplorerPage({ bare = false }) {
           onClick={() => setShowWeather(!showWeather)}
           className={`px-2.5 py-1.5 text-xs rounded-lg border flex items-center gap-1 transition-colors
             ${showWeather ? 'bg-orange-100 border-orange-300 text-orange-700' : 'border-gray-300 text-gray-600 hover:bg-gray-50'}`}
+          title={selectedSiteIds.length > 1 ? 'Temperature moyenne des sites selectionnes' : 'Temperature du site'}
         >
           <Thermometer size={12} />
           Meteo
+          {showWeather && selectedSiteIds.length > 1 && (
+            <span className="text-[10px] opacity-70">(moy.)</span>
+          )}
         </button>
 
         <button
-          onClick={() => setShowSignature(!showSignature)}
+          onClick={() => selectedSiteIds.length === 1 && setShowSignature(!showSignature)}
+          disabled={selectedSiteIds.length !== 1}
           className={`px-2.5 py-1.5 text-xs rounded-lg border flex items-center gap-1 transition-colors
-            ${showSignature ? 'bg-purple-100 border-purple-300 text-purple-700' : 'border-gray-300 text-gray-600 hover:bg-gray-50'}`}
+            ${showSignature ? 'bg-purple-100 border-purple-300 text-purple-700'
+              : selectedSiteIds.length !== 1 ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+              : 'border-gray-300 text-gray-600 hover:bg-gray-50'}`}
+          title={selectedSiteIds.length !== 1 ? 'Signature disponible pour 1 site' : 'Signature energetique'}
         >
           <TrendingUp size={12} />
           Signature

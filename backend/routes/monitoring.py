@@ -65,18 +65,33 @@ def get_monitoring_kpis(
     try:
         from services.ems.weather_service import get_weather
         from services.electric_monitoring import ClimateEngine
-        weather = get_weather(db, site_id, snapshot.period_start.date(), snapshot.period_end.date())
-        meter_obj = db.query(Meter).filter_by(id=snapshot.meter_id).first() if snapshot.meter_id else None
-        if meter_obj and weather:
-            readings_orm = db.query(MeterReading).filter(
-                MeterReading.meter_id == meter_obj.id,
-                MeterReading.timestamp >= snapshot.period_start,
-                MeterReading.timestamp <= snapshot.period_end,
-            ).order_by(MeterReading.timestamp).all()
-            readings = [{"timestamp": r.timestamp, "value_kwh": r.value_kwh} for r in readings_orm]
-            climate_data = ClimateEngine().compute(readings, weather)
-    except Exception:
-        pass
+        # Resolve meter: prefer snapshot's meter, fallback to any active meter on site
+        meter_obj = None
+        if snapshot.meter_id:
+            meter_obj = db.query(Meter).filter_by(id=snapshot.meter_id).first()
+        if not meter_obj:
+            meter_obj = db.query(Meter).filter_by(site_id=site_id, is_active=True).first()
+        if not meter_obj:
+            climate_data = {"reason": "no_meter", "scatter": [], "fit_line": []}
+        else:
+            weather = get_weather(db, site_id, snapshot.period_start.date(), snapshot.period_end.date())
+            if not weather:
+                climate_data = {"reason": "no_weather", "scatter": [], "fit_line": []}
+            else:
+                readings_orm = db.query(MeterReading).filter(
+                    MeterReading.meter_id == meter_obj.id,
+                    MeterReading.timestamp >= snapshot.period_start,
+                    MeterReading.timestamp <= snapshot.period_end,
+                ).order_by(MeterReading.timestamp).all()
+                if len(readings_orm) < 240:
+                    climate_data = {"reason": "insufficient_readings", "scatter": [], "fit_line": [],
+                                    "n_readings": len(readings_orm)}
+                else:
+                    readings = [{"timestamp": r.timestamp, "value_kwh": r.value_kwh} for r in readings_orm]
+                    climate_data = ClimateEngine().compute(readings, weather)
+    except Exception as e:
+        climate_data = {"reason": "computation_error", "scatter": [], "fit_line": [],
+                        "error_detail": str(e)[:200]}
 
     return {
         "snapshot_id": snapshot.id,
@@ -284,6 +299,26 @@ def generate_monitoring_demo(request: MonitoringDemoRequest, db: Session = Depen
         raise HTTPException(status_code=404, detail=f"Site {request.site_id} not found")
 
     profile = USAGE_PROFILES.get(request.profile, USAGE_PROFILES["office"])
+
+    # Try to reuse existing EMS demo meter for this site (unified data)
+    ems_meter_id_str = f"EMS-DEMO-{request.site_id:06d}"
+    ems_meter = db.query(Meter).filter_by(meter_id=ems_meter_id_str).first()
+    if ems_meter:
+        # EMS demo data exists — reuse it, skip generation
+        ems_readings_count = db.query(MeterReading).filter_by(meter_id=ems_meter.id).count()
+        if ems_readings_count > 0:
+            return {
+                "status": "ok",
+                "site_id": request.site_id,
+                "meter_id": ems_meter.id,
+                "meter_ref": ems_meter_id_str,
+                "profile": request.profile,
+                "readings_generated": 0,
+                "readings_reused": ems_readings_count,
+                "weather_days": 0,
+                "period": f"reused EMS demo data ({ems_readings_count} readings)",
+                "source": "ems_demo_reuse",
+            }
 
     meter_id_str = f"PRM-MON-{request.site_id:03d}"
     meter = db.query(Meter).filter_by(meter_id=meter_id_str).first()

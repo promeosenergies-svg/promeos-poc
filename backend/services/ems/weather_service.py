@@ -74,6 +74,63 @@ def get_weather(
     ]
 
 
+def ensure_weather(
+    db: Session,
+    site_ids: List[int],
+    date_from: date_type,
+    date_to: date_type,
+) -> Dict:
+    """Ensure weather data exists for all given sites in the date range.
+    Returns summary: {sites_ok, sites_total, days_generated}.
+    """
+    days_generated = 0
+    for sid in site_ids:
+        weather = get_weather(db, sid, date_from, date_to)
+        days_generated += len(weather)
+    db.commit()
+    return {
+        "sites_ok": len(site_ids),
+        "sites_total": len(site_ids),
+        "days_generated": days_generated,
+    }
+
+
+def get_weather_multi(
+    db: Session,
+    site_ids: List[int],
+    date_from: date_type,
+    date_to: date_type,
+) -> List[Dict]:
+    """Get averaged daily weather across multiple sites.
+    Returns one series with averaged temperatures per day.
+    """
+    if not site_ids:
+        return []
+    # Use first site as primary, average across all
+    all_data = {}
+    for sid in site_ids:
+        weather = get_weather(db, sid, date_from, date_to)
+        for w in weather:
+            d = w["date"]
+            if d not in all_data:
+                all_data[d] = {"temps": [], "mins": [], "maxs": []}
+            all_data[d]["temps"].append(w["temp_avg_c"])
+            all_data[d]["mins"].append(w["temp_min_c"])
+            all_data[d]["maxs"].append(w["temp_max_c"])
+
+    result = []
+    for d in sorted(all_data.keys()):
+        entry = all_data[d]
+        result.append({
+            "date": d,
+            "temp_avg_c": round(sum(entry["temps"]) / len(entry["temps"]), 1),
+            "temp_min_c": round(sum(entry["mins"]) / len(entry["mins"]), 1),
+            "temp_max_c": round(sum(entry["maxs"]) / len(entry["maxs"]), 1),
+            "source": "demo_avg" if len(site_ids) > 1 else "demo",
+        })
+    return result
+
+
 def _generate_demo_weather(site_id: int, d: date_type, latitude: float) -> EmsWeatherCache:
     """Generate realistic demo weather using sinusoidal model.
     Deterministic: same (site_id, date) always produces the same result.

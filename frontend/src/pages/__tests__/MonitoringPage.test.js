@@ -73,8 +73,13 @@ describe('kpiStatus', () => {
     expect(kpiStatus(80, riskThresholds, true)).toBe('critique');
   });
 
-  it('null value returns ok', () => {
-    expect(kpiStatus(null, thresholds)).toBe('ok');
-    expect(kpiStatus(undefined, thresholds)).toBe('ok');
+  it('null value returns no_data', () => {
+    expect(kpiStatus(null, thresholds)).toBe('no_data');
+    expect(kpiStatus(undefined, thresholds)).toBe('no_data');
+  });
+
+  it('zero is a real value (not no_data)', () => {
+    expect(kpiStatus(0, thresholds)).toBe('critique');
+    expect(kpiStatus(0, { ok: 35, warn: 60 }, true)).toBe('ok');
   });
 });

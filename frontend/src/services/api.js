@@ -4,7 +4,7 @@
  */
 import axios from 'axios';
 
-const API_BASE_URL = 'http://127.0.0.1:8000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -276,6 +276,9 @@ export const getFindingDetail = (findingId) => api.get(`/compliance/findings/${f
 // Dev Tools
 export const resetDb = () => api.post('/dev/reset_db').then(r => r.data);
 
+// Health
+export const getApiHealth = () => api.get('/health').then(r => r.data);
+
 // ========================================
 // CONSUMPTION DIAGNOSTIC
 // ========================================
@@ -491,6 +494,7 @@ export const getBacsOpsPanel = (siteId) => api.get(`/regops/bacs/site/${siteId}/
 export const getEmsTimeseries = (params) => api.get('/ems/timeseries', { params }).then(r => r.data);
 export const getEmsTimeseriesSuggest = (dateFrom, dateTo) => api.get('/ems/timeseries/suggest', { params: { date_from: dateFrom, date_to: dateTo } }).then(r => r.data);
 export const getEmsWeather = (siteId, dateFrom, dateTo) => api.get('/ems/weather', { params: { site_id: siteId, date_from: dateFrom, date_to: dateTo } }).then(r => r.data);
+export const getEmsWeatherMulti = (siteIds, dateFrom, dateTo) => api.get('/ems/weather', { params: { site_ids: siteIds.join(','), date_from: dateFrom, date_to: dateTo } }).then(r => r.data);
 export const runEmsSignature = (siteId, dateFrom, dateTo, meterIds = null) => api.post('/ems/signature/run', null, { params: { site_id: siteId, date_from: dateFrom, date_to: dateTo, meter_ids: meterIds } }).then(r => r.data);
 export const getEmsViews = (userId = null) => api.get('/ems/views', { params: userId ? { user_id: userId } : {} }).then(r => r.data);
 export const createEmsView = (name, configJson, userId = null) => api.post('/ems/views', null, { params: { name, config_json: configJson, user_id: userId } }).then(r => r.data);

@@ -110,7 +110,7 @@ export function buildHeatmapGrid(weekdayProfile, weekendProfile) {
 }
 
 export function kpiStatus(value, thresholds, invert = false) {
-  if (value == null) return 'ok';
+  if (value == null) return 'no_data';
   if (invert) {
     if (value <= thresholds.ok) return 'ok';
     if (value <= thresholds.warn) return 'surveiller';
@@ -148,6 +148,7 @@ const STATUS_BADGES = {
   ok: { label: 'OK', badge: 'ok' },
   surveiller: { label: 'Surveiller', badge: 'warn' },
   critique: { label: 'Critique', badge: 'crit' },
+  no_data: { label: '-', badge: 'neutral' },
 };
 
 function StatusKpiCard({ icon, title, value, sub, tooltip, status, color, onClick }) {
@@ -300,9 +301,24 @@ function HeatmapGrid({ data }) {
   );
 }
 
+const CLIMATE_REASONS = {
+  no_meter: 'Aucun compteur associe au snapshot. Relancez l\'analyse.',
+  no_weather: 'Donnees meteo indisponibles pour la periode.',
+  meter_not_found: 'Compteur introuvable.',
+  insufficient_readings: 'Moins de 10 jours de donnees — insuffisant pour la regression.',
+  computation_error: 'Erreur de calcul. Verifiez les donnees sources.',
+};
+
 function ClimateScatter({ climate }) {
   if (!climate || !climate.scatter || climate.scatter.length === 0) {
-    return <p className="text-sm text-gray-400 text-center py-12">Pas de donnees climatiques.</p>;
+    const reason = climate?.reason;
+    const msg = reason ? CLIMATE_REASONS[reason] || reason : 'Pas de donnees climatiques.';
+    return (
+      <div className="text-center py-12">
+        <p className="text-sm text-gray-400">{msg}</p>
+        {reason && <p className="text-xs text-gray-300 mt-1">code: {reason}</p>}
+      </div>
+    );
   }
 
   return (
