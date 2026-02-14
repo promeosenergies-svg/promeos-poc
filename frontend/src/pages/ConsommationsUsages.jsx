@@ -1,15 +1,19 @@
 import { useState, useEffect } from 'react';
 import { Upload, BarChart3, AlertTriangle, Lightbulb, Database, Search, RefreshCw, CheckCircle, Zap } from 'lucide-react';
-import { PageShell } from '../ui';
+import { PageShell, EmptyState } from '../ui';
+import { SkeletonCard } from '../ui/Skeleton';
+import { useToast } from '../ui/ToastProvider';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import {
   getSites, getMeters, createMeter, uploadConsumptionData,
   runAnalysis, getAnalysisSummary, generateDemoEnergy,
-  getKBStats, getKBArchetypes, getKBRules, getKBRecommendations, reloadKB
+  getKBStats, getKBArchetypes, getKBRules, getKBRecommendations, reloadKB,
+  seedDemoKB, pingKB
 } from '../services/api';
 
 // ---- Import Wizard (7 steps) ----
-function ImportWizard({ onComplete }) {
+export function ImportWizard({ onComplete }) {
+  const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [sites, setSites] = useState([]);
   const [selectedSite, setSelectedSite] = useState(null);
@@ -24,7 +28,7 @@ function ImportWizard({ onComplete }) {
   const [useDemo, setUseDemo] = useState(false);
 
   useEffect(() => {
-    getSites({ limit: 200 }).then(data => setSites(data.sites || [])).catch(() => {});
+    getSites({ limit: 200 }).then(data => setSites(data.sites || [])).catch(() => toast('Erreur lors du chargement des sites', 'error'));
   }, []);
 
   const handleImport = async () => {
@@ -384,17 +388,30 @@ function AnalysisResultView({ result, onComplete }) {
 }
 
 // ---- KB Admin Panel ----
-function KBAdminPanel() {
+export function KBAdminPanel() {
+  const { toast } = useToast();
   const [stats, setStats] = useState(null);
   const [archetypes, setArchetypes] = useState([]);
   const [rules, setRules] = useState([]);
   const [recos, setRecos] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [seeding, setSeeding] = useState(false);
   const [reloadResult, setReloadResult] = useState(null);
+  const [serviceDown, setServiceDown] = useState(false);
 
   useEffect(() => {
-    loadData();
+    checkAndLoad();
   }, []);
+
+  const checkAndLoad = async () => {
+    try {
+      await pingKB();
+      setServiceDown(false);
+      await loadData();
+    } catch {
+      setServiceDown(true);
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -408,8 +425,8 @@ function KBAdminPanel() {
       setArchetypes(a);
       setRules(r);
       setRecos(rec);
-    } catch (err) {
-      console.error('KB load error:', err);
+    } catch {
+      toast('Erreur lors du chargement de la Knowledge Base', 'error');
     }
   };
 
@@ -425,20 +442,97 @@ function KBAdminPanel() {
     setLoading(false);
   };
 
+  const handleSeedDemo = async () => {
+    setSeeding(true);
+    try {
+      const result = await seedDemoKB();
+      if (result.status === 'already_seeded') {
+        toast('Demo KB deja presente', 'info');
+      } else {
+        toast(result.message, 'success');
+      }
+      await loadData();
+    } catch {
+      toast('Erreur lors du seed de la KB demo', 'error');
+    }
+    setSeeding(false);
+  };
+
+  const isEmpty = stats && stats.archetypes_count === 0 && stats.anomaly_rules_count === 0 && stats.recommendations_count === 0;
+
+  // ── Service down ──
+  if (serviceDown) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-8 text-center">
+          <AlertTriangle size={40} className="text-red-400 mx-auto mb-3" />
+          <h3 className="text-lg font-semibold text-red-800 mb-2">KB service indisponible</h3>
+          <p className="text-sm text-red-600 mb-4">Le backend Knowledge Base ne repond pas. Verifiez que le serveur est demarre.</p>
+          <button
+            onClick={checkAndLoad}
+            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm transition"
+          >Diagnostiquer</button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Empty KB ──
+  if (isEmpty) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-white rounded-lg shadow p-8 text-center">
+          <Database size={40} className="text-gray-300 mx-auto mb-3" />
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">Knowledge Base vide</h3>
+          <p className="text-sm text-gray-500 mb-1">0 archetypes, 0 regles, 0 recommandations</p>
+          <p className="text-sm text-gray-500 mb-6">Seedez la KB demo pour demarrer, ou rechargez depuis les fichiers YAML.</p>
+          <div className="flex items-center justify-center gap-3">
+            <button
+              onClick={handleSeedDemo}
+              disabled={seeding}
+              className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm font-medium transition"
+            >
+              <Database size={16} className={seeding ? 'animate-spin' : ''} />
+              {seeding ? 'Seed en cours...' : 'Seed demo KB'}
+            </button>
+            <button
+              onClick={handleReload}
+              disabled={loading}
+              className="flex items-center gap-2 px-4 py-2.5 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 disabled:opacity-50 text-sm transition"
+            >
+              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+              Reload YAML
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Stats */}
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold">Knowledge Base</h3>
-          <button
-            onClick={handleReload}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 text-sm transition"
-          >
-            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-            Reload KB
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleSeedDemo}
+              disabled={seeding}
+              className="flex items-center gap-2 px-3 py-2 border border-gray-300 text-gray-600 rounded hover:bg-gray-50 disabled:opacity-50 text-sm transition"
+            >
+              <Database size={14} className={seeding ? 'animate-spin' : ''} />
+              Seed demo
+            </button>
+            <button
+              onClick={handleReload}
+              disabled={loading}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 text-sm transition"
+            >
+              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+              Reload KB
+            </button>
+          </div>
         </div>
 
         {reloadResult && (
@@ -519,7 +613,7 @@ function KBAdminPanel() {
                 <div className="text-xs text-gray-500">{r.rule_type} | {r.source_section}</div>
               </div>
               <span className={`px-2 py-0.5 rounded text-xs font-bold ${
-                r.severity === 'high' ? 'bg-red-200 text-red-800' :
+                r.severity === 'high' || r.severity === 'critical' ? 'bg-red-200 text-red-800' :
                 r.severity === 'medium' ? 'bg-orange-200 text-orange-800' :
                 'bg-yellow-200 text-yellow-800'
               }`}>{r.severity}</span>
@@ -539,12 +633,12 @@ function KBAdminPanel() {
                 <div className="text-xs text-gray-500">{r.action_type} | {r.target_asset}</div>
               </div>
               <div className="flex items-center gap-2">
-                {r.savings_min_pct && r.savings_max_pct && (
+                {r.savings_min_pct != null && r.savings_max_pct != null && (
                   <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs">
                     {r.savings_min_pct}-{r.savings_max_pct}%
                   </span>
                 )}
-                {r.ice_score && (
+                {r.ice_score != null && (
                   <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-bold">
                     ICE: {r.ice_score.toFixed(3)}
                   </span>

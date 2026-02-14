@@ -163,22 +163,26 @@ export const listAiInsights = (params = {}) => api.get('/ai/insights', { params 
 // KB USAGES (Knowledge Base)
 // ========================================
 
-export const getKBArchetypes = () => api.get('/kb/archetypes').then(r => r.data);
-export const getKBArchetype = (code) => api.get(`/kb/archetypes/${code}`).then(r => r.data);
-export const getKBArchetypeByNaf = (naf) => api.get(`/kb/archetypes/by-naf/${naf}`).then(r => r.data);
-export const getKBRules = () => api.get('/kb/rules').then(r => r.data);
-export const getKBRecommendations = () => api.get('/kb/recommendations').then(r => r.data);
-export const searchKB = (q, type = null) => api.get('/kb/search', { params: { q, type } }).then(r => r.data);
-export const getKBProvenance = (itemType, code) => api.get(`/kb/provenance/${itemType}/${code}`).then(r => r.data);
-export const getKBStats = () => api.get('/kb/stats').then(r => r.data);
-export const reloadKB = () => api.post('/kb/reload').then(r => r.data);
+const KB_BASE = '/kb';
+
+export const pingKB = () => api.get(`${KB_BASE}/ping`).then(r => r.data);
+export const getKBArchetypes = () => api.get(`${KB_BASE}/archetypes`).then(r => r.data);
+export const getKBArchetype = (code) => api.get(`${KB_BASE}/archetypes/${code}`).then(r => r.data);
+export const getKBArchetypeByNaf = (naf) => api.get(`${KB_BASE}/archetypes/by-naf/${naf}`).then(r => r.data);
+export const getKBRules = () => api.get(`${KB_BASE}/rules`).then(r => r.data);
+export const getKBRecommendations = () => api.get(`${KB_BASE}/recommendations`).then(r => r.data);
+export const searchKB = (q, type = null) => api.get(`${KB_BASE}/search`, { params: { q, type } }).then(r => r.data);
+export const getKBProvenance = (itemType, code) => api.get(`${KB_BASE}/provenance/${itemType}/${code}`).then(r => r.data);
+export const getKBStats = () => api.get(`${KB_BASE}/usages-stats`).then(r => r.data);
+export const reloadKB = () => api.post(`${KB_BASE}/reload`).then(r => r.data);
+export const seedDemoKB = () => api.post(`${KB_BASE}/seed_demo`).then(r => r.data);
 
 // KB Explorer (structured KB system - FTS5 search + apply engine)
-export const getKBItemsList = (params = {}) => api.get('/kb/items', { params }).then(r => r.data);
-export const getKBItemDetail = (itemId) => api.get(`/kb/items/${itemId}`).then(r => r.data);
-export const searchKBItems = (body) => api.post('/kb/search', body).then(r => r.data);
-export const applyKB = (body) => api.post('/kb/apply', body).then(r => r.data);
-export const getKBFullStats = () => api.get('/kb/stats').then(r => r.data);
+export const getKBItemsList = (params = {}) => api.get(`${KB_BASE}/items`, { params }).then(r => r.data);
+export const getKBItemDetail = (itemId) => api.get(`${KB_BASE}/items/${itemId}`).then(r => r.data);
+export const searchKBItems = (body) => api.post(`${KB_BASE}/search`, body).then(r => r.data);
+export const applyKB = (body) => api.post(`${KB_BASE}/apply`, body).then(r => r.data);
+export const getKBFullStats = () => api.get(`${KB_BASE}/stats`).then(r => r.data);
 
 // ========================================
 // ENERGY (Import & Analysis)
@@ -481,5 +485,17 @@ export const getEmsViews = (userId = null) => api.get('/ems/views', { params: us
 export const createEmsView = (name, configJson, userId = null) => api.post('/ems/views', null, { params: { name, config_json: configJson, user_id: userId } }).then(r => r.data);
 export const updateEmsView = (id, params) => api.put(`/ems/views/${id}`, null, { params }).then(r => r.data);
 export const deleteEmsView = (id) => api.delete(`/ems/views/${id}`).then(r => r.data);
+
+// Collections (paniers de sites)
+export const getEmsCollections = () => api.get('/ems/collections').then(r => r.data);
+export const createEmsCollection = (name, siteIds, scopeType = 'custom', isFavorite = false) =>
+  api.post('/ems/collections', null, { params: { name, site_ids: siteIds.join(','), scope_type: scopeType, is_favorite: isFavorite } }).then(r => r.data);
+export const updateEmsCollection = (id, params) => api.put(`/ems/collections/${id}`, null, { params }).then(r => r.data);
+export const deleteEmsCollection = (id) => api.delete(`/ems/collections/${id}`).then(r => r.data);
+
+// Demo data
+export const generateEmsDemo = (portfolioSize = 12, days = 365, seed = 123, force = false) =>
+  api.post('/ems/demo/generate', null, { params: { portfolio_size: portfolioSize, days, seed, force } }).then(r => r.data);
+export const purgeEmsDemo = () => api.post('/ems/demo/purge').then(r => r.data);
 
 export default api;
