@@ -1,9 +1,9 @@
 /**
  * PROMEOS — Tests for ConformitePage helpers
- * Covers: sitesToObligations, isOverdue
+ * Covers: sitesToObligations, isOverdue, buildScopeParams, parseBundleError
  */
 import { describe, it, expect } from 'vitest';
-import { sitesToObligations, isOverdue, buildScopeParams } from '../ConformitePage';
+import { sitesToObligations, isOverdue, buildScopeParams, parseBundleError } from '../ConformitePage';
 
 /* ---------- isOverdue ---------- */
 describe('isOverdue', () => {
@@ -141,5 +141,36 @@ describe('buildScopeParams', () => {
     const params = buildScopeParams({ orgId: 3 }, [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }]);
     expect(params.org_id).toBe(3);
     expect(params.site_id).toBeUndefined();
+  });
+});
+
+/* ---------- parseBundleError ---------- */
+describe('parseBundleError', () => {
+  it('returns error for null bundle (network failure)', () => {
+    const err = parseBundleError(null);
+    expect(err).not.toBeNull();
+    expect(err.message).toContain('indisponibles');
+  });
+
+  it('returns error with debug info for DB_SCHEMA_MISMATCH', () => {
+    const bundle = {
+      error_code: 'DB_SCHEMA_MISMATCH',
+      empty_reason_message: 'Schema error',
+      trace_id: 'abc123',
+      hint: 'run_reset_db',
+    };
+    const err = parseBundleError(bundle);
+    expect(err.error_code).toBe('DB_SCHEMA_MISMATCH');
+    expect(err.trace_id).toBe('abc123');
+    expect(err.hint).toBe('run_reset_db');
+  });
+
+  it('returns null for healthy bundle (no error_code)', () => {
+    const bundle = {
+      summary: { total_sites: 3 },
+      sites: [],
+      empty_reason_code: null,
+    };
+    expect(parseBundleError(bundle)).toBeNull();
   });
 });

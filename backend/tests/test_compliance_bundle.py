@@ -142,3 +142,51 @@ class TestBundleEndpoint:
         assert r.status_code == 200
         data = r.json()
         assert data["empty_reason_code"] == "ALL_COMPLIANT"
+
+    def test_bundle_has_trace_id(self, client, db_session):
+        """Every bundle response includes a trace_id string."""
+        _seed_two_orgs(db_session)
+        r = client.get("/api/compliance/bundle", params={"org_id": 1})
+        assert r.status_code == 200
+        data = r.json()
+        assert "trace_id" in data
+        assert isinstance(data["trace_id"], str)
+        assert len(data["trace_id"]) > 0
+
+    def test_bundle_no_sites_trace_id(self, client):
+        """Empty bundle (no sites) also has trace_id."""
+        r = client.get("/api/compliance/bundle", params={"org_id": 999})
+        assert r.status_code == 200
+        data = r.json()
+        assert "trace_id" in data
+
+    def test_bundle_no_evaluation(self, client, db_session):
+        """Org with sites but no findings returns NOT_EVALUATED_YET or NO_EVALUATION."""
+        org = Organisation(id=10, nom="EmptyOrg")
+        db_session.add(org)
+        db_session.flush()
+        ej = EntiteJuridique(id=10, nom="EJ Empty", siren="333333333", organisation_id=10)
+        db_session.add(ej)
+        db_session.flush()
+        pf = Portefeuille(id=10, nom="PF Empty", entite_juridique_id=10)
+        db_session.add(pf)
+        db_session.flush()
+        db_session.add(Site(id=100, nom="Site Vide", type=TypeSite.BUREAU,
+                            portefeuille_id=10, actif=True))
+        db_session.commit()
+
+        r = client.get("/api/compliance/bundle", params={"org_id": 10})
+        assert r.status_code == 200
+        data = r.json()
+        assert data["empty_reason_code"] == "NO_EVALUATION"
+        assert data["summary"]["total_sites"] == 1
+
+
+class TestDevResetDb:
+    def test_reset_db_returns_ok(self, client):
+        """POST /api/dev/reset_db returns status ok."""
+        r = client.post("/api/dev/reset_db")
+        assert r.status_code == 200
+        data = r.json()
+        assert data["status"] == "ok"
+        assert data["schema"] == "recreated"
