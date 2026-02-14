@@ -15,6 +15,7 @@ from models import (
     StagingBatch, StagingSite, StagingCompteur, QualityFinding,
     StagingStatus, ImportSourceType, QualityRuleSeverity,
     Site, Compteur, TypeCompteur, EnergyVector,
+    not_deleted,
 )
 from services.onboarding_service import create_site_from_data, provision_site
 from services.quality_rules import run_all_rules
@@ -237,13 +238,14 @@ def get_staging_summary(db: Session, batch_id: int) -> dict:
         QualityFinding.batch_id == batch_id,
     ).all()
 
-    blocking = sum(1 for f in findings if f.severity == QualityRuleSeverity.BLOCKING and not f.resolved)
+    critical = sum(1 for f in findings if f.severity == QualityRuleSeverity.CRITICAL and not f.resolved)
+    blocking = sum(1 for f in findings if f.severity in (QualityRuleSeverity.BLOCKING, QualityRuleSeverity.CRITICAL) and not f.resolved)
     warnings = sum(1 for f in findings if f.severity == QualityRuleSeverity.WARNING and not f.resolved)
     total_findings = len(findings)
 
     # Quality score: 100 if no findings, decremented by severity
     max_issues = max(sites_count + compteurs_count, 1)
-    quality_score = max(0.0, 100.0 - (blocking * 20 + warnings * 5) / max_issues * 100)
+    quality_score = max(0.0, 100.0 - (blocking * 30 + warnings * 5) / max_issues * 100)
     quality_score = round(min(100.0, quality_score), 1)
 
     return {
@@ -293,8 +295,11 @@ def run_quality_gate(db: Session, batch_id: int) -> list:
 
     db.flush()
 
-    # Update batch status
-    blocking_count = sum(1 for f in persisted if f.severity == QualityRuleSeverity.BLOCKING)
+    # Update batch status (CRITICAL or BLOCKING findings prevent validation)
+    blocking_count = sum(
+        1 for f in persisted
+        if f.severity in (QualityRuleSeverity.BLOCKING, QualityRuleSeverity.CRITICAL)
+    )
     if blocking_count == 0:
         batch.status = StagingStatus.VALIDATED
 
@@ -494,14 +499,32 @@ def activate_batch(db: Session, batch_id: int, portefeuille_id: int) -> dict:
         return {"sites_created": 0, "compteurs_created": 0, "batiments": 0, "obligations": 0,
                 "detail": "Batch already applied"}
 
-    # Check no unresolved blocking findings
+    # Check no unresolved blocking/critical findings
     blocking = db.query(QualityFinding).filter(
         QualityFinding.batch_id == batch_id,
-        QualityFinding.severity == QualityRuleSeverity.BLOCKING,
+        QualityFinding.severity.in_([QualityRuleSeverity.BLOCKING, QualityRuleSeverity.CRITICAL]),
         QualityFinding.resolved.is_(False),
     ).count()
     if blocking > 0:
-        raise ValueError(f"{blocking} unresolved blocking findings — run quality gate fixes first")
+        raise ValueError(f"{blocking} unresolved blocking/critical findings — run quality gate fixes first")
+
+    # Pre-activation safety: re-check meter_id uniqueness against live DB
+    staging_compteurs_all = db.query(StagingCompteur).filter(
+        StagingCompteur.batch_id == batch_id,
+        StagingCompteur.skip.is_(False),
+        StagingCompteur.target_compteur_id.is_(None),
+        StagingCompteur.meter_id.isnot(None),
+    ).all()
+    staging_meter_ids = [sc.meter_id.strip() for sc in staging_compteurs_all if sc.meter_id and sc.meter_id.strip()]
+    if staging_meter_ids:
+        collisions = not_deleted(db.query(Compteur), Compteur).filter(
+            Compteur.meter_id.in_(staging_meter_ids),
+        ).all()
+        if collisions:
+            collision_ids = [f"{c.meter_id} (compteur #{c.id})" for c in collisions]
+            raise ValueError(
+                f"Activation blocked: duplicate delivery point(s) in DB: {', '.join(collision_ids)}"
+            )
 
     staging_sites = db.query(StagingSite).filter(
         StagingSite.batch_id == batch_id,

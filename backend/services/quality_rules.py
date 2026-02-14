@@ -1,6 +1,6 @@
 """
 PROMEOS - Quality Rules Engine (DIAMANT)
-5 deterministic rules for staging data quality gate.
+6 deterministic rules for staging data quality gate.
 """
 from difflib import SequenceMatcher
 from typing import List
@@ -197,6 +197,75 @@ def check_incomplete_sites(db: Session, batch_id: int) -> List[dict]:
     return findings
 
 
+def check_duplicate_delivery_point(db: Session, batch_id: int) -> List[dict]:
+    """Rule: dup_delivery_point_global — CRITICAL.
+
+    A PRM (elec) or PCE (gaz) must be globally unique among active compteurs.
+    Detects:
+    1. Intra-staging: two staging rows with the same meter_id
+    2. Vs existing DB: staging meter_id already exists in active compteurs
+    Soft-deleted compteurs are excluded (reuse allowed).
+    """
+    findings = []
+    staging_compteurs = db.query(StagingCompteur).filter(
+        StagingCompteur.batch_id == batch_id,
+        StagingCompteur.skip.is_(False),
+    ).all()
+
+    # 1. Intra-staging duplicates
+    seen_meter = {}
+    for sc in staging_compteurs:
+        if not sc.meter_id:
+            continue
+        mid = sc.meter_id.strip()
+        if not mid:
+            continue
+        if mid in seen_meter:
+            findings.append({
+                "rule_id": "dup_delivery_point_global",
+                "severity": QualityRuleSeverity.CRITICAL,
+                "staging_compteur_id": sc.id,
+                "evidence_json": (
+                    f'{{"dup_with_staging_id": {seen_meter[mid]}, '
+                    f'"field": "meter_id", "value": "{mid}", '
+                    f'"scope": "intra_staging"}}'
+                ),
+                "suggested_action": "skip",
+            })
+        else:
+            seen_meter[mid] = sc.id
+
+    # 2. Vs existing active compteurs (soft-deleted excluded)
+    active_compteurs = not_deleted(db.query(Compteur), Compteur).filter(
+        Compteur.meter_id.isnot(None),
+    ).all()
+    existing_map = {}
+    for c in active_compteurs:
+        if c.meter_id:
+            existing_map[c.meter_id.strip()] = c.id
+
+    for sc in staging_compteurs:
+        if not sc.meter_id:
+            continue
+        mid = sc.meter_id.strip()
+        if not mid:
+            continue
+        if mid in existing_map:
+            findings.append({
+                "rule_id": "dup_delivery_point_global",
+                "severity": QualityRuleSeverity.CRITICAL,
+                "staging_compteur_id": sc.id,
+                "evidence_json": (
+                    f'{{"dup_with_existing_id": {existing_map[mid]}, '
+                    f'"field": "meter_id", "value": "{mid}", '
+                    f'"scope": "vs_existing_db"}}'
+                ),
+                "suggested_action": "skip",
+            })
+
+    return findings
+
+
 def check_missing_entity(db: Session, batch_id: int) -> List[dict]:
     """Rule: missing_entite — staging site has SIRET but no matching EntiteJuridique."""
     findings = []
@@ -236,6 +305,12 @@ def check_missing_entity(db: Session, batch_id: int) -> List[dict]:
 # ========================================
 
 QUALITY_RULES = [
+    {
+        "id": "dup_delivery_point_global",
+        "label": "PRM/PCE duplique (point de livraison unique)",
+        "severity": "critical",
+        "check": check_duplicate_delivery_point,
+    },
     {
         "id": "dup_site_address",
         "label": "Sites avec adresse similaire",

@@ -28,6 +28,7 @@ SOFT_DELETE_TABLES = [
 def run_migrations(engine):
     """Run all pending safe migrations. Idempotent — skips existing columns."""
     _add_soft_delete_columns(engine)
+    _add_unique_meter_id_index(engine)
 
 
 def _add_soft_delete_columns(engine):
@@ -70,3 +71,31 @@ def _add_soft_delete_columns(engine):
         logger.info("migration: %d column(s) added across %d table(s)", added, len(SOFT_DELETE_TABLES))
     else:
         logger.debug("migration: soft-delete columns already present — no changes")
+
+
+def _add_unique_meter_id_index(engine):
+    """Add unique partial index on compteurs.meter_id WHERE deleted_at IS NULL.
+
+    Ensures a PRM/PCE can only exist once among active (non-deleted) compteurs.
+    SQLite supports partial indexes via WHERE clause.
+    """
+    idx_name = "uq_compteur_meter_id_active"
+    insp = inspect(engine)
+
+    if not insp.has_table("compteurs"):
+        return
+
+    existing_indexes = {idx["name"] for idx in insp.get_indexes("compteurs") if idx.get("name")}
+    if idx_name in existing_indexes:
+        return
+
+    with engine.begin() as conn:
+        try:
+            conn.execute(text(
+                f'CREATE UNIQUE INDEX IF NOT EXISTS "{idx_name}" '
+                f'ON "compteurs" ("meter_id") '
+                f'WHERE "meter_id" IS NOT NULL AND "deleted_at" IS NULL'
+            ))
+            logger.info("migration: created unique partial index %s", idx_name)
+        except Exception as e:
+            logger.warning("migration: could not create index %s: %s", idx_name, e)

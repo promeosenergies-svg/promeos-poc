@@ -351,6 +351,7 @@ class ImportSourceType(str, enum.Enum):
 
 class QualityRuleSeverity(str, enum.Enum):
     """Severite d'un finding de qualite."""
+    CRITICAL = "critical"
     BLOCKING = "blocking"
     WARNING = "warning"
     INFO = "info"
