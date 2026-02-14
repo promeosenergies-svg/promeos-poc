@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from models import (
     StagingSite, StagingCompteur, Site, Compteur, EntiteJuridique,
-    QualityFinding, QualityRuleSeverity,
+    QualityFinding, QualityRuleSeverity, not_deleted,
 )
 
 
@@ -51,7 +51,7 @@ def check_duplicate_sites(db: Session, batch_id: int) -> List[dict]:
                     })
 
     # Vs existing sites (limit to 500 for perf)
-    existing_sites = db.query(Site).filter(Site.actif.is_(True)).limit(500).all()
+    existing_sites = not_deleted(db.query(Site), Site).filter(Site.actif.is_(True)).limit(500).all()
     for ss in staging_sites:
         for ex in existing_sites:
             if ss.code_postal and ex.code_postal and ss.code_postal == ex.code_postal:
@@ -115,7 +115,7 @@ def check_duplicate_meters(db: Session, batch_id: int) -> List[dict]:
                 seen_meter[sc.meter_id] = sc.id
 
     # Vs existing compteurs
-    existing_compteurs = db.query(Compteur).filter(Compteur.actif.is_(True)).all()
+    existing_compteurs = not_deleted(db.query(Compteur), Compteur).filter(Compteur.actif.is_(True)).all()
     existing_series = {c.numero_serie for c in existing_compteurs if c.numero_serie}
     existing_meters = {c.meter_id for c in existing_compteurs if c.meter_id}
 

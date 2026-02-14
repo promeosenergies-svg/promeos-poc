@@ -13,7 +13,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import Organisation, Portefeuille, Site
+from models import Organisation, Portefeuille, Site, not_deleted
 from services.onboarding_service import (
     create_organisation_full,
     create_site_from_data,
@@ -207,8 +207,8 @@ def get_onboarding_status(db: Session = Depends(get_db)):
     - onboarding_complete: bool (org existe ET >= 1 site)
     """
     org = db.query(Organisation).first()
-    total_sites = db.query(Site).count()
-    total_portefeuilles = db.query(Portefeuille).count()
+    total_sites = not_deleted(db.query(Site), Site).count()
+    total_portefeuilles = not_deleted(db.query(Portefeuille), Portefeuille).count()
 
     return {
         "has_organisation": org is not None,

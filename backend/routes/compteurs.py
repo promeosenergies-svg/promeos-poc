@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from database import get_db
-from models import Compteur, Site, TypeCompteur, EnergyVector
+from models import Compteur, Site, TypeCompteur, EnergyVector, not_deleted
 from routes.schemas import CompteurResponse
 from typing import List, Optional
 
@@ -68,13 +68,13 @@ def get_compteurs(
     """
     Liste les compteurs avec filtres
     """
-    query = db.query(Compteur)
-    
+    query = not_deleted(db.query(Compteur), Compteur)
+
     if site_id:
         query = query.filter(Compteur.site_id == site_id)
     if type:
         query = query.filter(Compteur.type == type)
-    
+
     compteurs = query.all()
     return compteurs
 
@@ -83,7 +83,7 @@ def get_compteur(compteur_id: int, db: Session = Depends(get_db)):
     """
     Récupère un compteur spécifique
     """
-    compteur = db.query(Compteur).filter(Compteur.id == compteur_id).first()
+    compteur = not_deleted(db.query(Compteur), Compteur).filter(Compteur.id == compteur_id).first()
     
     if not compteur:
         raise HTTPException(status_code=404, detail="Compteur non trouvé")

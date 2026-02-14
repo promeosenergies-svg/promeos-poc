@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from middleware.auth import get_optional_auth, AuthContext
 from services.iam_scope import check_site_access
-from models import Organisation, Site, ConsumptionInsight
+from models import Organisation, Site, ConsumptionInsight, not_deleted
 from services.consumption_diagnostic import (
     generate_demo_consumption,
     run_diagnostic,
@@ -113,7 +113,7 @@ def seed_demo_consumption(
         return {"status": "ok", "sites": [result]}
 
     # Seed all sites
-    sites = db.query(Site).filter(Site.actif == True).all()
+    sites = not_deleted(db.query(Site), Site).filter(Site.actif == True).all()
     if not sites:
         raise HTTPException(status_code=400, detail="Aucun site actif.")
 

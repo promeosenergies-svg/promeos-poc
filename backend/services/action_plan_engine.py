@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from models import (
     Site, Obligation, Evidence, Portefeuille,
     StatutConformite, TypeObligation, StatutEvidence,
+    not_deleted,
 )
 
 # Priority weight: higher = more urgent
@@ -41,7 +42,7 @@ def compute_action_plan(
     Build prioritized action plan across all sites (or filtered by portfolio).
     Uses bulk queries (no N+1).
     """
-    site_query = db.query(Site).filter(Site.actif == True)
+    site_query = not_deleted(db.query(Site), Site).filter(Site.actif == True)
     if portefeuille_id:
         site_query = site_query.filter(Site.portefeuille_id == portefeuille_id)
     sites = site_query.all()

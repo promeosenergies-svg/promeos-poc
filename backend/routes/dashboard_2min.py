@@ -17,6 +17,7 @@ from models import (
     PurchaseScenarioResult, PurchaseRecoStatus,
     ActionItem, ActionStatus,
     NotificationEvent, NotificationStatus, NotificationSeverity,
+    not_deleted,
 )
 
 router = APIRouter(prefix="/api/dashboard", tags=["Dashboard 2min"])
@@ -47,9 +48,9 @@ def get_dashboard_2min(db: Session = Depends(get_db), auth: Optional[AuthContext
         }
 
     # Stats sites
-    total_sites = db.query(Site).count()
-    sites_actifs = db.query(Site).filter(Site.actif == True).count()
-    total_compteurs = db.query(Compteur).count()
+    total_sites = not_deleted(db.query(Site), Site).count()
+    sites_actifs = not_deleted(db.query(Site), Site).filter(Site.actif == True).count()
+    total_compteurs = not_deleted(db.query(Compteur), Compteur).count()
 
     # Conformite globale
     obligations = db.query(Obligation).all()
@@ -91,7 +92,7 @@ def get_dashboard_2min(db: Session = Depends(get_db), auth: Optional[AuthContext
         }
 
     # Risque financier (base: obligations) + pertes estimees (insights conso) + billing
-    risque_total = db.query(func.sum(Site.risque_financier_euro)).scalar() or 0
+    risque_total = not_deleted(db.query(func.sum(Site.risque_financier_euro)), Site).scalar() or 0
     pertes_conso = db.query(func.sum(ConsumptionInsight.estimated_loss_eur)).scalar() or 0
     pertes_billing = db.query(func.sum(BillingInsight.estimated_loss_eur)).scalar() or 0
 
