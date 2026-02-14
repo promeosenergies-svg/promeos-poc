@@ -15,8 +15,10 @@ import {
 } from 'recharts';
 import { Card, CardBody, Badge, Button, EmptyState, TrustBadge, Skeleton, PageShell } from '../ui';
 import { SkeletonCard } from '../ui';
+import { useToast } from '../ui/ToastProvider';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
+import { mockSites } from '../mocks/sites';
 import { track } from '../services/tracker';
 import {
   getMonitoringKpis,
@@ -180,6 +182,7 @@ export default function MonitoringPage() {
   const { scope, scopedSites, setSite } = useScope();
   const { isExpert } = useExpertMode();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const siteId = scope.siteId;
 
   const [kpis, setKpis] = useState(null);
@@ -256,7 +259,7 @@ export default function MonitoringPage() {
       setAlerts((prev) => prev.map((a) =>
         a.id === id ? { ...a, status: 'ack' } : a
       ));
-    } catch { /* ignore */ }
+    } catch { toast('Erreur lors de l\'acquittement de l\'alerte', 'error'); }
   };
 
   const handleResolve = async (id) => {
@@ -266,7 +269,7 @@ export default function MonitoringPage() {
       setAlerts((prev) => prev.map((a) =>
         a.id === id ? { ...a, status: 'resolved' } : a
       ));
-    } catch { /* ignore */ }
+    } catch { toast('Erreur lors de la resolution de l\'alerte', 'error'); }
   };
 
   // --- Derived data ---
@@ -291,6 +294,9 @@ export default function MonitoringPage() {
 
   const openCount = alerts.filter((a) => a.status === 'open').length;
 
+  // All org sites for the site selector (not filtered by siteId)
+  const allOrgSites = useMemo(() => mockSites, []);
+
   // --- No site selected ---
 
   if (!siteId) {
@@ -299,11 +305,25 @@ export default function MonitoringPage() {
         icon={Activity}
         title="Performance Electrique"
         subtitle="KPIs, puissance, qualite de donnees & alertes"
+        actions={
+          <select
+            className="border rounded-lg px-3 py-2 text-sm min-w-[200px]"
+            value=""
+            onChange={(e) => setSite(Number(e.target.value))}
+          >
+            <option value="">Choisir un site...</option>
+            {allOrgSites.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.nom || `Site ${s.id}`}
+              </option>
+            ))}
+          </select>
+        }
       >
         <EmptyState
           icon={Activity}
           title="Selectionnez un site"
-          text="Choisissez un site dans le selecteur de perimetre pour voir les KPIs de performance electrique."
+          text="Choisissez un site dans le selecteur ci-dessus pour voir les KPIs de performance electrique."
         />
       </PageShell>
     );
@@ -336,11 +356,11 @@ export default function MonitoringPage() {
       actions={
         <>
           <select
-            className="border rounded-lg px-3 py-2 text-sm"
+            className="border rounded-lg px-3 py-2 text-sm min-w-[200px]"
             value={siteId || ''}
             onChange={(e) => setSite(Number(e.target.value))}
           >
-            {scopedSites.map((s) => (
+            {allOrgSites.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.nom || `Site ${s.id}`}
               </option>
@@ -353,6 +373,10 @@ export default function MonitoringPage() {
           <Button variant="ghost" size="sm" onClick={() => navigate(`/explorer?site_id=${siteId}`)}>
             <BarChart3 size={14} />
             Explorer
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => navigate('/diagnostic-conso')}>
+            <Eye size={14} />
+            Diagnostics
           </Button>
         </>
       }

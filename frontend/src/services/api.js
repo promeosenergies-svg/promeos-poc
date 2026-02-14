@@ -280,6 +280,7 @@ export const getConsumptionInsights = (orgId = null) => api.get('/consumption/in
 export const getConsumptionSite = (siteId) => api.get(`/consumption/site/${siteId}`).then(r => r.data);
 export const runConsumptionDiagnose = (orgId = null, days = 30) => api.post('/consumption/diagnose', null, { params: { org_id: orgId, days } }).then(r => r.data);
 export const seedDemoConsumption = (siteId = null, days = 30) => api.post('/consumption/seed-demo', null, { params: { site_id: siteId, days } }).then(r => r.data);
+export const patchConsumptionInsight = (insightId, data) => api.patch(`/consumption/insights/${insightId}`, data).then(r => r.data);
 
 // ========================================
 // SITE CONFIG (Schedule + Tariff)

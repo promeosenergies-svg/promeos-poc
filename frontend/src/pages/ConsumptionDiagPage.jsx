@@ -1,17 +1,32 @@
 /**
- * PROMEOS - Page Diagnostic Consommation V1.1 (Usages & Derives)
- * Sprint 5 base + Sprint 6: schedule, tariff, recommended actions, robust stats
+ * PROMEOS — Diagnostic Consommation V2
+ * Boucle operationnelle: detecter → prouver → agir.
+ * Evidence Drawer, prix editable, workflow ACK/Resolve, cross-page nav.
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid,
+  Tooltip as RTooltip, ResponsiveContainer,
+} from 'recharts';
 import {
   getConsumptionInsights,
   runConsumptionDiagnose,
   seedDemoConsumption,
+  patchConsumptionInsight,
 } from '../services/api';
-import { Card, CardBody, Badge, Button, PageShell } from '../ui';
-import { Clock, Zap, ChevronDown, ChevronUp, Settings } from 'lucide-react';
+import { Card, CardBody, Badge, Button, PageShell, Drawer, Tooltip, Tabs } from '../ui';
+import { useToast } from '../ui/ToastProvider';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { track } from '../services/tracker';
+import CreateActionModal from '../components/CreateActionModal';
+import { fmtEur, fmtKwh, fmtDateFR } from '../utils/format';
+import {
+  Zap, ChevronDown, ChevronUp, Settings, Info,
+  ExternalLink, UserCheck, CheckCircle2, XCircle, BarChart3,
+} from 'lucide-react';
+
+// ---- Constants ----
 
 const SEVERITY_COLORS = {
   critical: 'bg-red-100 text-red-800',
@@ -39,6 +54,62 @@ const EFFORT_COLOR = {
   low: 'bg-green-50 text-green-700',
 };
 
+const WORKFLOW_CONFIG = {
+  open: { label: 'A traiter', color: 'bg-red-50 text-red-700' },
+  ack: { label: 'En cours', color: 'bg-amber-50 text-amber-700' },
+  resolved: { label: 'Resolu', color: 'bg-green-50 text-green-700' },
+  false_positive: { label: 'Faux positif', color: 'bg-gray-100 text-gray-500' },
+};
+
+const DRAWER_TABS = [
+  { id: 'evidence', label: 'Evidence' },
+  { id: 'methode', label: 'Methode' },
+  { id: 'actions', label: 'Actions' },
+];
+
+// ---- Exported helpers (testable) ----
+
+export function recalcLosses(kWh, customPrice, defaultPrice = 0.15) {
+  return Math.round((kWh || 0) * (customPrice ?? defaultPrice));
+}
+
+export function generateComparisonChart(insight) {
+  const type = insight.type;
+  const excessKwh = insight.estimated_loss_kwh || 100;
+  const seed = insight.id || 1;
+  const data = [];
+
+  for (let h = 0; h < 24; h++) {
+    const isOffice = h >= 8 && h <= 19;
+    const baseline = isOffice ? 40 + Math.sin((h - 8) / 11 * Math.PI) * 30 : 8;
+
+    let actual = baseline;
+    // Deterministic pseudo-random based on seed + hour
+    const noise = ((seed * 31 + h * 17) % 100) / 100 * 3;
+
+    if (type === 'hors_horaires' && !isOffice) {
+      actual = baseline + (excessKwh / 14) * 0.8 + noise;
+    } else if (type === 'base_load') {
+      actual = baseline + excessKwh / 24 * 0.3 + noise * 0.5;
+    } else if (type === 'pointe' && h >= 10 && h <= 14) {
+      actual = baseline + excessKwh / 4 + noise * 2;
+    } else if (type === 'derive') {
+      actual = baseline * (1 + excessKwh / 500) + noise;
+    } else {
+      actual = baseline + noise * 0.3;
+    }
+
+    data.push({
+      hour: `${h}h`,
+      baseline: Math.round(baseline * 10) / 10,
+      actual: Math.round(actual * 10) / 10,
+    });
+  }
+  return data;
+}
+
+// ---- Sub-components ----
+
 function SeverityBadge({ severity }) {
   return (
     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${SEVERITY_COLORS[severity] || SEVERITY_COLORS.info}`}>
@@ -47,13 +118,76 @@ function SeverityBadge({ severity }) {
   );
 }
 
-function SummaryCards({ summary }) {
+function DiagHeader({ insights, summary, customPrice, onPriceChange }) {
+  const periods = insights.filter(i => i.period_start && i.period_end);
+  const from = periods.length
+    ? periods.reduce((m, i) => (i.period_start < m ? i.period_start : m), periods[0].period_start)
+    : null;
+  const to = periods.length
+    ? periods.reduce((m, i) => (i.period_end > m ? i.period_end : m), periods[0].period_end)
+    : null;
+  const nbJours = from && to ? Math.round((new Date(to) - new Date(from)) / 86400000) : null;
+
+  const defaultPrice = insights.find(i => i.metrics?.price_ref_eur_kwh)?.metrics.price_ref_eur_kwh || 0.15;
+  const price = customPrice ?? defaultPrice;
+  const totalKwh = summary?.total_loss_kwh || 0;
+  const recalcEur = recalcLosses(totalKwh, customPrice, defaultPrice);
+
+  return (
+    <Card className="mb-4">
+      <CardBody>
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="text-sm text-gray-600">
+            <span className="font-medium text-gray-800">Periode : </span>
+            {from ? fmtDateFR(from) : '—'} → {to ? fmtDateFR(to) : '—'}
+            {nbJours != null && <span className="text-gray-400 ml-2">({nbJours} jours)</span>}
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-500">Prix :</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              className="w-20 border rounded px-2 py-1 text-sm text-right"
+              defaultValue={price}
+              onChange={(e) => {
+                const v = parseFloat(e.target.value);
+                onPriceChange(Number.isFinite(v) ? v : null);
+              }}
+            />
+            <span className="text-sm text-gray-500">EUR/kWh</span>
+            <Tooltip text="Pertes = kWh excedentaires × prix EUR/kWh" position="bottom">
+              <Info size={14} className="text-gray-400 cursor-help" />
+            </Tooltip>
+          </div>
+          <div className="flex items-center gap-6">
+            <div className="text-right">
+              <p className="text-xs text-gray-400">Pertes estimees</p>
+              <p className="text-lg font-bold text-red-600">{fmtEur(recalcEur)}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-gray-400">Exces kWh</p>
+              <p className="text-lg font-bold text-orange-600">{fmtKwh(Math.round(totalKwh))}</p>
+            </div>
+          </div>
+        </div>
+      </CardBody>
+    </Card>
+  );
+}
+
+function SummaryCards({ summary, customPrice }) {
   if (!summary) return null;
+  const defaultPrice = 0.15;
+  const lossEur = customPrice != null
+    ? recalcLosses(summary.total_loss_kwh, customPrice, defaultPrice)
+    : Math.round(summary.total_loss_eur || 0);
+
   const cards = [
-    { label: 'Insights total', value: summary.total_insights, color: 'text-blue-700', bg: 'bg-blue-50' },
+    { label: 'Insights detectes', value: summary.total_insights, color: 'text-blue-700', bg: 'bg-blue-50' },
     { label: 'Sites analyses', value: summary.sites_with_insights, color: 'text-indigo-700', bg: 'bg-indigo-50' },
-    { label: 'Pertes estimees', value: `${Math.round(summary.total_loss_eur || 0)} EUR`, color: 'text-red-700', bg: 'bg-red-50' },
-    { label: 'Pertes kWh', value: `${Math.round(summary.total_loss_kwh || 0)} kWh`, color: 'text-orange-700', bg: 'bg-orange-50' },
+    { label: 'Pertes estimees', value: fmtEur(lossEur), color: 'text-red-700', bg: 'bg-red-50' },
+    { label: 'Pertes kWh', value: fmtKwh(Math.round(summary.total_loss_kwh || 0)), color: 'text-orange-700', bg: 'bg-orange-50' },
   ];
 
   return (
@@ -99,7 +233,7 @@ function RecommendedAction({ action }) {
         <div className="flex items-center gap-3 mt-2">
           {action.expected_gain_eur > 0 && (
             <span className="text-xs font-medium text-green-700 bg-green-50 px-2 py-0.5 rounded">
-              +{action.expected_gain_eur.toLocaleString()} EUR/an
+              +{action.expected_gain_eur.toLocaleString('fr-FR')} EUR/an
             </span>
           )}
           {action.effort && (
@@ -114,60 +248,215 @@ function RecommendedAction({ action }) {
   );
 }
 
-function InsightRow({ insight }) {
-  const [expanded, setExpanded] = useState(false);
-  const actions = insight.recommended_actions || [];
-  const metrics = insight.metrics || {};
-
+function InsightRow({ insight, onRowClick }) {
+  const statusCfg = WORKFLOW_CONFIG[insight.insight_status] || WORKFLOW_CONFIG.open;
   return (
-    <>
-      <tr
-        className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
-        onClick={() => { setExpanded(!expanded); track('insight_toggle', { type: insight.type, expanded: !expanded }); }}
-      >
-        <td className="py-3 px-4 text-sm text-gray-800 font-medium">{insight.site_nom || `Site #${insight.site_id}`}</td>
-        <td className="py-3 px-4 text-sm">
-          <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-xs font-medium">
-            {TYPE_LABELS[insight.type] || insight.type}
-          </span>
-        </td>
-        <td className="py-3 px-4 text-sm"><SeverityBadge severity={insight.severity} /></td>
-        <td className="py-3 px-4 text-sm text-gray-600 max-w-md truncate">{insight.message}</td>
-        <td className="py-3 px-4 text-sm text-right text-red-600 font-medium">
-          {insight.estimated_loss_eur ? `${Math.round(insight.estimated_loss_eur)} EUR` : '-'}
-        </td>
-        <td className="py-3 px-4 text-sm text-right text-orange-600">
-          {insight.estimated_loss_kwh ? `${Math.round(insight.estimated_loss_kwh)} kWh` : '-'}
-        </td>
-        <td className="py-3 px-4 text-sm text-center">
-          {actions.length > 0 && (
-            expanded ? <ChevronUp size={16} className="text-gray-400 inline" /> : <ChevronDown size={16} className="text-gray-400 inline" />
-          )}
-        </td>
-      </tr>
-      {expanded && actions.length > 0 && (
-        <tr>
-          <td colSpan={7} className="px-4 py-3 bg-blue-50/30">
-            <div className="space-y-2">
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Actions recommandees</p>
-              {actions.map((a, i) => <RecommendedAction key={i} action={a} />)}
-              {metrics.price_ref_eur_kwh && (
-                <p className="text-xs text-gray-400 mt-2 flex items-center gap-1">
-                  <Settings size={12} /> Prix ref: {metrics.price_ref_eur_kwh} EUR/kWh
-                  {metrics.schedule_open && ` | Horaires: ${metrics.schedule_open}`}
-                  {metrics.schedule_source && ` (${metrics.schedule_source})`}
-                </p>
-              )}
-            </div>
-          </td>
-        </tr>
-      )}
-    </>
+    <tr
+      className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
+      onClick={() => onRowClick(insight)}
+    >
+      <td className="py-3 px-4 text-sm text-gray-800 font-medium">{insight.site_nom || `Site #${insight.site_id}`}</td>
+      <td className="py-3 px-4 text-sm">
+        <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-xs font-medium">
+          {TYPE_LABELS[insight.type] || insight.type}
+        </span>
+      </td>
+      <td className="py-3 px-4 text-sm"><SeverityBadge severity={insight.severity} /></td>
+      <td className="py-3 px-4 text-sm text-gray-600 max-w-md truncate">{insight.message}</td>
+      <td className="py-3 px-4 text-sm text-right text-red-600 font-medium">
+        {insight.estimated_loss_eur ? fmtEur(Math.round(insight.estimated_loss_eur)) : '—'}
+      </td>
+      <td className="py-3 px-4 text-sm text-right text-orange-600">
+        {insight.estimated_loss_kwh ? fmtKwh(Math.round(insight.estimated_loss_kwh)) : '—'}
+      </td>
+      <td className="py-3 px-4 text-sm text-center">
+        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusCfg.color}`}>{statusCfg.label}</span>
+      </td>
+    </tr>
   );
 }
 
+// ---- Drawer helpers ----
+
+function DrawerSection({ title, children }) {
+  return (
+    <div className="bg-gray-50 rounded-lg p-3 space-y-1.5">
+      <h4 className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{title}</h4>
+      {children}
+    </div>
+  );
+}
+
+function DrawerRow({ label, children }) {
+  return (
+    <div className="flex items-center justify-between text-sm">
+      <span className="text-gray-500">{label}</span>
+      <span className="text-gray-900 font-medium">{children}</span>
+    </div>
+  );
+}
+
+// ---- Evidence Drawer ----
+
+function EvidenceDrawer({ insight, open, onClose, onStatusChange, onCreateAction, onOpenExplorer }) {
+  const [tab, setTab] = useState('evidence');
+  if (!insight) return null;
+
+  const metrics = insight.metrics || {};
+  const actions = insight.recommended_actions || [];
+  const statusCfg = WORKFLOW_CONFIG[insight.insight_status] || WORKFLOW_CONFIG.open;
+
+  return (
+    <Drawer open={open} onClose={onClose} title={`${insight.site_nom} — ${TYPE_LABELS[insight.type] || insight.type}`} wide>
+      <div className="space-y-4">
+        {/* Header badges */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <SeverityBadge severity={insight.severity} />
+          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusCfg.color}`}>{statusCfg.label}</span>
+          {insight.estimated_loss_kwh > 0 && (
+            <span className="text-xs text-orange-600 font-medium">
+              {Math.round(insight.estimated_loss_kwh).toLocaleString('fr-FR')} kWh exces
+            </span>
+          )}
+          {insight.estimated_loss_eur > 0 && (
+            <span className="text-xs text-red-600 font-medium">{fmtEur(Math.round(insight.estimated_loss_eur))}</span>
+          )}
+        </div>
+
+        {/* Message */}
+        <p className="text-sm text-gray-700">{insight.message}</p>
+
+        {/* Tabs */}
+        <Tabs tabs={DRAWER_TABS} active={tab} onChange={setTab} />
+
+        {/* Tab: Evidence — Mini graph */}
+        {tab === 'evidence' && <EvidenceTab insight={insight} />}
+
+        {/* Tab: Methode */}
+        {tab === 'methode' && (
+          <div className="space-y-3">
+            <DrawerSection title="Methode de detection">
+              <DrawerRow label="Fenetre">{metrics.window || metrics.schedule_open || '30 jours glissants'}</DrawerRow>
+              <DrawerRow label="Formule">{metrics.formula || `Ecart vs ${insight.type === 'base_load' ? 'talon median' : 'profil horaire'}`}</DrawerRow>
+              <DrawerRow label="Seuil">{metrics.threshold || '> 2 ecarts-type'}</DrawerRow>
+              <DrawerRow label="Confiance">{metrics.confidence || 'Moyenne'}</DrawerRow>
+            </DrawerSection>
+            <DrawerSection title="Hypotheses">
+              <DrawerRow label="Prix ref">{metrics.price_ref_eur_kwh ? `${metrics.price_ref_eur_kwh} EUR/kWh` : '0.15 EUR/kWh (defaut)'}</DrawerRow>
+              <DrawerRow label="Pas de temps">{metrics.granularity || '30 min'}</DrawerRow>
+              <DrawerRow label="Couverture data">{metrics.coverage ? `${metrics.coverage}%` : '—'}</DrawerRow>
+              {metrics.schedule_source && <DrawerRow label="Source horaires">{metrics.schedule_source}</DrawerRow>}
+            </DrawerSection>
+          </div>
+        )}
+
+        {/* Tab: Actions recommandees */}
+        {tab === 'actions' && (
+          <div className="space-y-2">
+            {actions.length > 0 ? (
+              actions.map((a, i) => <RecommendedAction key={i} action={a} />)
+            ) : (
+              <p className="text-sm text-gray-400 text-center py-6">Aucune action recommandee.</p>
+            )}
+          </div>
+        )}
+
+        {/* CTAs — always visible */}
+        <div className="pt-3 border-t border-gray-100 space-y-2">
+          <button
+            onClick={() => onOpenExplorer(insight)}
+            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+          >
+            <BarChart3 size={15} className="text-blue-600" />
+            Ouvrir dans Explorer
+            <ExternalLink size={12} className="ml-auto text-gray-300" />
+          </button>
+          <button
+            onClick={() => onCreateAction(insight)}
+            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition"
+          >
+            <Zap size={15} />
+            Creer une action
+          </button>
+
+          {/* Workflow buttons */}
+          <div className="flex items-center gap-2">
+            {insight.insight_status === 'open' && (
+              <button
+                onClick={() => onStatusChange(insight.id, 'ack')}
+                className="flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-lg border border-blue-200 text-sm font-medium text-blue-700 hover:bg-blue-50 transition"
+              >
+                <UserCheck size={14} /> Prendre en charge
+              </button>
+            )}
+            {(insight.insight_status === 'open' || insight.insight_status === 'ack') && (
+              <button
+                onClick={() => onStatusChange(insight.id, 'resolved')}
+                className="flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-lg border border-green-200 text-sm font-medium text-green-700 hover:bg-green-50 transition"
+              >
+                <CheckCircle2 size={14} /> Resolu
+              </button>
+            )}
+            {(insight.insight_status === 'open' || insight.insight_status === 'ack') && (
+              <button
+                onClick={() => onStatusChange(insight.id, 'false_positive')}
+                className="flex items-center justify-center gap-1 px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-500 hover:bg-gray-50 transition"
+              >
+                <XCircle size={14} /> FP
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Metadata */}
+        <div className="text-[10px] text-gray-400 pt-1">
+          Insight #{insight.id}
+          {insight.period_start && ` · ${fmtDateFR(insight.period_start)}`}
+          {insight.period_end && ` → ${fmtDateFR(insight.period_end)}`}
+        </div>
+      </div>
+    </Drawer>
+  );
+}
+
+function EvidenceTab({ insight }) {
+  const chartData = useMemo(() => generateComparisonChart(insight), [insight]);
+  return (
+    <div className="space-y-4">
+      <div className="bg-gray-50 rounded-lg p-3">
+        <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">
+          Profil type : consommation observee vs baseline
+        </h4>
+        <ResponsiveContainer width="100%" height={200}>
+          <AreaChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+            <XAxis dataKey="hour" tick={{ fontSize: 10 }} />
+            <YAxis tick={{ fontSize: 10 }} unit=" kW" />
+            <RTooltip />
+            <Area type="monotone" dataKey="baseline" stroke="#94a3b8" fill="#e2e8f0" name="Baseline" />
+            <Area type="monotone" dataKey="actual" stroke="#ef4444" fill="#fee2e2" fillOpacity={0.5} name="Observe" />
+          </AreaChart>
+        </ResponsiveContainer>
+        {insight.estimated_loss_kwh > 0 && (
+          <p className="text-xs text-gray-500 mt-1">
+            Delta : +{Math.round(insight.estimated_loss_kwh).toLocaleString('fr-FR')} kWh
+            {insight.estimated_loss_eur > 0 && ` (${fmtEur(Math.round(insight.estimated_loss_eur))})`}
+          </p>
+        )}
+      </div>
+      <p className="text-[10px] text-gray-400 italic">
+        Graphe illustratif base sur le type d'insight et les metriques disponibles.
+      </p>
+    </div>
+  );
+}
+
+// ---- Main Page ----
+
 export default function ConsumptionDiagPage() {
+  const navigate = useNavigate();
   const { isExpert } = useExpertMode();
+  const { toast } = useToast();
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [diagnosing, setDiagnosing] = useState(false);
@@ -175,13 +464,23 @@ export default function ConsumptionDiagPage() {
   const [message, setMessage] = useState(null);
   const [filterType, setFilterType] = useState('');
 
+  // Evidence Drawer
+  const [drawerInsight, setDrawerInsight] = useState(null);
+
+  // Create Action Modal
+  const [showActionModal, setShowActionModal] = useState(false);
+  const [actionPrefill, setActionPrefill] = useState(null);
+
+  // Editable price
+  const [customPrice, setCustomPrice] = useState(null);
+
   const load = async () => {
     setLoading(true);
     try {
       const data = await getConsumptionInsights();
       setSummary(data);
-    } catch (e) {
-      console.error(e);
+    } catch {
+      toast('Erreur lors du chargement du diagnostic', 'error');
     } finally {
       setLoading(false);
     }
@@ -217,6 +516,63 @@ export default function ConsumptionDiagPage() {
       setDiagnosing(false);
     }
   };
+
+  // Drawer
+  const openDrawer = useCallback((insight) => {
+    setDrawerInsight(insight);
+    track('insight_drawer_open', { type: insight.type, id: insight.id });
+  }, []);
+
+  // Workflow
+  const handleStatusChange = async (insightId, newStatus) => {
+    try {
+      await patchConsumptionInsight(insightId, { insight_status: newStatus });
+      track('insight_workflow', { id: insightId, status: newStatus });
+      setSummary(prev => ({
+        ...prev,
+        insights: prev.insights.map(i =>
+          i.id === insightId ? { ...i, insight_status: newStatus } : i
+        ),
+      }));
+      setDrawerInsight(prev =>
+        prev?.id === insightId ? { ...prev, insight_status: newStatus } : prev
+      );
+      toast(`Insight mis a jour: ${WORKFLOW_CONFIG[newStatus]?.label || newStatus}`, 'success');
+    } catch {
+      toast('Erreur lors de la mise a jour du statut', 'error');
+    }
+  };
+
+  // Create action
+  const handleCreateAction = useCallback((insight) => {
+    setActionPrefill({
+      titre: `${TYPE_LABELS[insight.type] || insight.type} — ${insight.site_nom}`,
+      type: 'conso',
+      site: insight.site_nom,
+      impact_eur: Math.round(insight.estimated_loss_eur || 0),
+      priorite: insight.severity === 'critical' ? 'critical' : insight.severity === 'high' ? 'high' : 'medium',
+      description: insight.message + (insight.recommended_actions?.length
+        ? '\n\nActions recommandees:\n' + insight.recommended_actions.map(a => `- ${a.title}`).join('\n')
+        : ''),
+    });
+    setShowActionModal(true);
+    track('insight_create_action', { type: insight.type, id: insight.id });
+  }, []);
+
+  // Open in Explorer
+  const handleOpenExplorer = useCallback((insight) => {
+    const params = new URLSearchParams();
+    if (insight.site_id) params.set('site_id', insight.site_id);
+    if (insight.period_start) params.set('date_from', insight.period_start.slice(0, 10));
+    if (insight.period_end) params.set('date_to', insight.period_end.slice(0, 10));
+    navigate(`/consommations/explorer?${params.toString()}`);
+  }, [navigate]);
+
+  // Save action
+  const handleSaveAction = useCallback((action) => {
+    track('action_create_from_diagnostic', { titre: action.titre });
+    toast('Action creee avec succes', 'success');
+  }, [toast]);
 
   const insights = summary?.insights || [];
   const filtered = filterType ? insights.filter((i) => i.type === filterType) : insights;
@@ -265,7 +621,14 @@ export default function ConsumptionDiagPage() {
         </Card>
       ) : (
         <>
-          <SummaryCards summary={summary} />
+          <DiagHeader
+            insights={insights}
+            summary={summary}
+            customPrice={customPrice}
+            onPriceChange={setCustomPrice}
+          />
+
+          <SummaryCards summary={summary} customPrice={customPrice} />
           <ByTypeBreakdown byType={summary.by_type} />
 
           {/* Filters */}
@@ -294,14 +657,14 @@ export default function ConsumptionDiagPage() {
                     <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Type</th>
                     <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Severite</th>
                     <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Message</th>
-                    <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase">Perte EUR</th>
-                    <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase">Perte kWh</th>
-                    <th className="w-10"></th>
+                    <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase">Perte (EUR)</th>
+                    <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase">Perte (kWh)</th>
+                    <th className="text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase">Statut</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((ins, i) => (
-                    <InsightRow key={ins.id || i} insight={ins} />
+                    <InsightRow key={ins.id || i} insight={ins} onRowClick={openDrawer} />
                   ))}
                 </tbody>
               </table>
@@ -309,6 +672,24 @@ export default function ConsumptionDiagPage() {
           </Card>
         </>
       )}
+
+      {/* Evidence Drawer */}
+      <EvidenceDrawer
+        insight={drawerInsight}
+        open={!!drawerInsight}
+        onClose={() => setDrawerInsight(null)}
+        onStatusChange={handleStatusChange}
+        onCreateAction={handleCreateAction}
+        onOpenExplorer={handleOpenExplorer}
+      />
+
+      {/* Create Action Modal */}
+      <CreateActionModal
+        open={showActionModal}
+        onClose={() => { setShowActionModal(false); setActionPrefill(null); }}
+        onSave={handleSaveAction}
+        prefill={actionPrefill}
+      />
     </PageShell>
   );
 }
