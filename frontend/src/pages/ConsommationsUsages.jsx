@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Upload, BarChart3, AlertTriangle, Lightbulb, Database, Search, RefreshCw, CheckCircle, Zap } from 'lucide-react';
-import { PageShell, EmptyState } from '../ui';
+import { useNavigate } from 'react-router-dom';
+import { Upload, BarChart3, AlertTriangle, Lightbulb, Database, Search, RefreshCw, CheckCircle, Zap, ArrowRight, Link2, SlidersHorizontal, GitCompareArrows, Info, HelpCircle, Bell, CalendarRange, Activity, RotateCcw } from 'lucide-react';
+import { PageShell, EmptyState, Tooltip } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
 import { useToast } from '../ui/ToastProvider';
 import { useExpertMode } from '../contexts/ExpertModeContext';
@@ -12,7 +13,7 @@ import {
 } from '../services/api';
 
 // ---- Import Wizard (7 steps) ----
-export function ImportWizard({ onComplete }) {
+export function ImportWizard() {
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [sites, setSites] = useState([]);
@@ -261,56 +262,223 @@ export function ImportWizard({ onComplete }) {
       {step === 7 && analysisResult && (
         <div>
           <h3 className="text-lg font-semibold mb-4">7. Resultats de l'analyse</h3>
-          <AnalysisResultView result={analysisResult} onComplete={onComplete} />
+          <AnalysisResultView
+            result={analysisResult}
+            siteId={selectedSite?.id}
+            dateFrom={null}
+            dateTo={null}
+          />
         </div>
       )}
     </div>
   );
 }
 
+// ---- KPI interpretation helpers ----
+// C) Seuils alignes sur le brief UX Sprint
+function interpretBaseNuit(ratio) {
+  const pct = ratio * 100;
+  if (pct < 15) return { label: 'OK', color: 'text-green-700 bg-green-50', tip: 'Talon nuit < 15 % — bonnes pratiques d\'extinction' };
+  if (pct < 30) return { label: 'A surveiller', color: 'text-amber-700 bg-amber-50', tip: 'Talon nuit 15-30 % — verifier les equipements allumes la nuit' };
+  return { label: 'Trop eleve', color: 'text-red-700 bg-red-50', tip: 'Talon nuit > 30 % — equipements restent actifs 24/7, creer une alerte' };
+}
+
+function interpretWeekend(ratio) {
+  const pct = ratio * 100;
+  if (pct < 20) return { label: 'Normal', color: 'text-green-700 bg-green-50', tip: 'Ratio weekend < 20 % — reduction marquee le WE' };
+  if (pct < 35) return { label: 'Suspect', color: 'text-amber-700 bg-amber-50', tip: 'Ratio weekend 20-35 % — coupure partielle, marge d\'amelioration' };
+  return { label: 'Tres eleve', color: 'text-red-700 bg-red-50', tip: 'Ratio weekend > 35 % — consommation WE ≈ semaine, equipements toujours actifs' };
+}
+
+function interpretLoadFactor(lf) {
+  const pct = lf * 100;
+  if (pct < 10) return { label: 'Sous-utilisation', color: 'text-amber-700 bg-amber-50', tip: 'Facteur de charge < 10 % — site sous-utilise ou pointes tres fortes' };
+  if (pct <= 30) return { label: 'Normal', color: 'text-green-700 bg-green-50', tip: 'Facteur de charge 10-30 % — profil equilibre' };
+  return { label: 'Saturation', color: 'text-red-700 bg-red-50', tip: 'Facteur de charge > 30 % — charge quasi-constante, verifier les pics de puissance' };
+}
+
+function interpretKwhM2(kwhM2, archetype) {
+  if (!kwhM2 || !archetype?.kwh_m2_min) return null;
+  if (kwhM2 < archetype.kwh_m2_min) return { label: 'Sous la ref.', color: 'text-green-700 bg-green-50', tip: `En dessous du min archetype (${archetype.kwh_m2_min} kWh/m2/an)` };
+  if (kwhM2 <= archetype.kwh_m2_max) return { label: 'Dans la norme', color: 'text-blue-700 bg-blue-50', tip: `Dans la fourchette archetype (${archetype.kwh_m2_min}-${archetype.kwh_m2_max})` };
+  return { label: 'Au-dessus', color: 'text-red-700 bg-red-50', tip: `Au-dessus du max archetype (${archetype.kwh_m2_max} kWh/m2/an)` };
+}
+
+// C) Formule de calcul pour tooltip "Comment calcule?"
+const KPI_FORMULAS = {
+  kwh_total: 'Somme de toutes les valeurs kWh sur la periode d\'analyse.',
+  base_nuit: 'Moyenne conso 0h-5h / moyenne conso 8h-18h en jours ouvres, x 100.',
+  weekend: 'Moyenne conso samedi+dimanche / moyenne conso lundi-vendredi, x 100.',
+  load_factor: 'Consommation moyenne / consommation max sur la periode, x 100.',
+};
+
 // ---- Analysis Result View ----
-function AnalysisResultView({ result, onComplete }) {
+function AnalysisResultView({ result, siteId, dateFrom, dateTo }) {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
   if (!result || result.status !== 'ok') {
     return <div className="text-red-600">Analyse echouee: {result?.message || 'Erreur inconnue'}</div>;
   }
 
+  const baseNuit = result.features?.base_nuit_ratio || 0;
+  const weekendRatio = result.features?.weekend_ratio || 0;
+  const loadFactor = result.features?.load_factor || 0;
+  const kwhM2 = result.features?.kwh_m2_year;
+  const archCode = result.archetype?.code;
+  const archNotDetermined = !archCode || archCode === 'NON_DETERMINE';
+  const matchScore = result.archetype?.match_score || 0;
+
+  const interpBase = interpretBaseNuit(baseNuit);
+  const interpWE = interpretWeekend(weekendRatio);
+  const interpLF = interpretLoadFactor(loadFactor);
+  const interpKwh = interpretKwhM2(kwhM2, result.archetype);
+
+  const handleOpenExplorer = () => {
+    const params = new URLSearchParams();
+    if (siteId) params.set('site_id', siteId);
+    if (dateFrom) params.set('date_from', dateFrom);
+    if (dateTo) params.set('date_to', dateTo);
+    const qs = params.toString();
+    navigate(`/consommations/explorer${qs ? '?' + qs : ''}`);
+    toast('Analyse terminee — retrouvez vos donnees dans l\'Explorer', 'success');
+  };
+
   return (
     <div className="space-y-6">
       {/* Archetype */}
-      <div className="bg-blue-50 border border-blue-200 rounded p-4">
-        <h4 className="font-semibold text-blue-800 flex items-center gap-2">
+      <div className={`border rounded-lg p-4 ${archNotDetermined ? 'bg-amber-50 border-amber-200' : 'bg-blue-50 border-blue-200'}`}>
+        <h4 className={`font-semibold flex items-center gap-2 ${archNotDetermined ? 'text-amber-800' : 'text-blue-800'}`}>
           <BarChart3 size={18} /> Archetype detecte
         </h4>
         <div className="mt-2 grid grid-cols-3 gap-4 text-sm">
           <div>
             <div className="text-gray-500">Code</div>
-            <div className="font-bold">{result.archetype?.code || 'Non determine'}</div>
+            <div className="font-bold">{archCode || 'Non determine'}</div>
           </div>
           <div>
             <div className="text-gray-500">Confiance</div>
-            <div className="font-bold">{((result.archetype?.match_score || 0) * 100).toFixed(0)}%</div>
+            <div className="font-bold">{(matchScore * 100).toFixed(0)}%</div>
           </div>
           <div>
             <div className="text-gray-500">kWh/m2/an</div>
-            <div className="font-bold">{result.features?.kwh_m2_year || 'N/A'}</div>
+            <div className="font-bold">{kwhM2 || 'N/A'}</div>
+            {interpKwh && (
+              <span className={`inline-block mt-1 px-2 py-0.5 rounded text-xs font-medium ${interpKwh.color}`} title={interpKwh.tip}>
+                {interpKwh.label}
+              </span>
+            )}
           </div>
         </div>
+
+        {/* D) Archetype "Non determine" — explanation detaillee + 3 CTAs */}
+        {archNotDetermined && (
+          <div className="mt-3 p-3 bg-white/70 rounded-lg border border-amber-100">
+            <div className="flex items-start gap-2">
+              <Info size={16} className="text-amber-600 mt-0.5 shrink-0" />
+              <div className="text-sm text-amber-800">
+                <p className="font-medium mb-1">Pourquoi "Non determine" ?</p>
+                <p className="text-xs text-amber-700 mb-2">
+                  L'archetype est calcule en comparant kWh/m²/an, ratios nuit & WE aux
+                  references de la KB. Causes possibles :
+                </p>
+                <ul className="text-xs text-amber-700 mb-3 list-disc pl-4 space-y-0.5">
+                  <li>La Knowledge Base est vide (aucun archetype de reference charge)</li>
+                  <li>La surface du site n'est pas renseignee (kWh/m² impossible a calculer)</li>
+                  <li>Le code NAF / usage du site manque ou ne correspond a aucun archetype</li>
+                </ul>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => navigate('/consommations/kb')}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 text-white rounded text-xs font-medium hover:bg-amber-700 transition"
+                  >
+                    <Database size={12} /> Verifier la KB
+                  </button>
+                  <button
+                    onClick={() => navigate('/patrimoine')}
+                    className="flex items-center gap-1.5 px-3 py-1.5 border border-amber-300 text-amber-700 rounded text-xs font-medium hover:bg-amber-50 transition"
+                  >
+                    <SlidersHorizontal size={12} /> Completer les donnees site
+                  </button>
+                  <button
+                    onClick={() => { toast('Relancez l\'analyse apres avoir corrige les donnees', 'info'); }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 border border-amber-300 text-amber-700 rounded text-xs font-medium hover:bg-amber-50 transition"
+                  >
+                    <RotateCcw size={12} /> Relancer l'analyse
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-4 gap-3">
+      {/* C) Actionable KPI cards with seuils + tooltips + context */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: 'kWh total', value: result.features?.kwh_total?.toLocaleString() || '0' },
-          { label: 'Base nuit', value: `${((result.features?.base_nuit_ratio || 0) * 100).toFixed(1)}%` },
-          { label: 'Weekend ratio', value: `${((result.features?.weekend_ratio || 0) * 100).toFixed(1)}%` },
-          { label: 'Load factor', value: `${((result.features?.load_factor || 0) * 100).toFixed(1)}%` },
+          {
+            label: 'kWh total',
+            value: result.features?.kwh_total?.toLocaleString('fr-FR') || '0',
+            interp: null,
+            formula: KPI_FORMULAS.kwh_total,
+            action: null,
+          },
+          {
+            label: 'Talon nuit',
+            value: `${(baseNuit * 100).toFixed(1)}%`,
+            interp: interpBase,
+            formula: KPI_FORMULAS.base_nuit,
+            action: interpBase.label !== 'OK' ? { label: 'Creer alerte talon', icon: Bell, to: '/notifications' } : null,
+          },
+          {
+            label: 'Ratio weekend',
+            value: `${(weekendRatio * 100).toFixed(1)}%`,
+            interp: interpWE,
+            formula: KPI_FORMULAS.weekend,
+            action: interpWE.label !== 'Normal' ? { label: 'Comparer a semaine type', icon: CalendarRange, to: `/consommations/explorer${siteId ? '?site_id=' + siteId : ''}` } : null,
+          },
+          {
+            label: 'Facteur de charge',
+            value: `${(loadFactor * 100).toFixed(1)}%`,
+            interp: interpLF,
+            formula: KPI_FORMULAS.load_factor,
+            action: interpLF.label === 'Saturation' ? { label: 'Voir pics de puissance', icon: Activity, to: `/consommations/explorer${siteId ? '?site_id=' + siteId : ''}` } : null,
+          },
         ].map((kpi, i) => (
-          <div key={i} className="bg-white border rounded p-3 text-center">
-            <div className="text-xs text-gray-500">{kpi.label}</div>
-            <div className="text-lg font-bold">{kpi.value}</div>
+          <div key={i} className="bg-white border rounded-lg p-3 text-center">
+            <div className="flex items-center justify-center gap-1 text-xs text-gray-500">
+              {kpi.label}
+              <Tooltip text={kpi.formula} position="top">
+                <HelpCircle size={12} className="text-gray-400 cursor-help" />
+              </Tooltip>
+            </div>
+            <div className="text-lg font-bold mt-0.5">{kpi.value}</div>
+            {kpi.interp && (
+              <Tooltip text={kpi.interp.tip} position="bottom">
+                <span className={`inline-block mt-1.5 px-2 py-0.5 rounded-full text-xs font-medium cursor-help ${kpi.interp.color}`}>
+                  {kpi.interp.label}
+                </span>
+              </Tooltip>
+            )}
+            {kpi.action && (
+              <button
+                onClick={() => navigate(kpi.action.to)}
+                className="flex items-center gap-1 mx-auto mt-2 text-[11px] text-blue-600 hover:text-blue-800 font-medium transition"
+              >
+                <kpi.action.icon size={11} />
+                {kpi.action.label}
+              </button>
+            )}
           </div>
         ))}
       </div>
+      {/* kWh context line */}
+      {result.features?.kwh_total > 0 && (
+        <p className="text-xs text-gray-400 -mt-3 text-right">
+          Periode : {result.features?.days_count || '—'} jours
+          {result.features?.meters_count ? ` · ${result.features.meters_count} compteur${result.features.meters_count > 1 ? 's' : ''}` : ''}
+        </p>
+      )}
 
       {/* Anomalies */}
       <div>
@@ -320,7 +488,7 @@ function AnalysisResultView({ result, onComplete }) {
         {result.anomalies?.length > 0 ? (
           <div className="space-y-2">
             {result.anomalies.map((a, i) => (
-              <div key={i} className={`border rounded p-3 ${
+              <div key={i} className={`border rounded-lg p-3 ${
                 a.severity === 'high' ? 'border-red-300 bg-red-50' :
                 a.severity === 'medium' ? 'border-orange-300 bg-orange-50' :
                 'border-yellow-300 bg-yellow-50'
@@ -340,7 +508,32 @@ function AnalysisResultView({ result, onComplete }) {
             ))}
           </div>
         ) : (
-          <div className="text-sm text-green-600 bg-green-50 p-3 rounded">Aucune anomalie detectee</div>
+          /* E) Zero empty screen — next actions when no anomalies */
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="flex items-center gap-2 text-green-700 font-medium text-sm mb-3">
+              <CheckCircle size={16} /> Aucune anomalie detectee — votre site est dans les normes KB
+            </div>
+            <p className="text-xs text-green-600 mb-3">Prochaines actions pour affiner le diagnostic :</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {[
+                { icon: Link2, label: 'Connecter un compteur temps reel', desc: 'Donnees plus fines pour detection continue', to: '/connectors' },
+                { icon: SlidersHorizontal, label: 'Affiner les seuils KB', desc: 'Ajuster les regles a votre contexte', to: '/consommations/kb' },
+                { icon: GitCompareArrows, label: 'Comparer avec d\'autres sites', desc: 'Benchmark inter-sites en mode overlay', to: '/consommations/explorer' },
+              ].map((action, i) => (
+                <button
+                  key={i}
+                  onClick={() => navigate(action.to)}
+                  className="flex items-start gap-2 p-2.5 bg-white rounded-lg border border-green-100 hover:border-green-300 hover:shadow-sm text-left transition"
+                >
+                  <action.icon size={14} className="text-green-600 mt-0.5 shrink-0" />
+                  <div>
+                    <div className="text-xs font-medium text-gray-800">{action.label}</div>
+                    <div className="text-[11px] text-gray-500">{action.desc}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
         )}
       </div>
 
@@ -352,7 +545,7 @@ function AnalysisResultView({ result, onComplete }) {
         {result.recommendations?.length > 0 ? (
           <div className="space-y-2">
             {result.recommendations.map((r, i) => (
-              <div key={i} className="border border-green-200 bg-green-50 rounded p-3">
+              <div key={i} className="border border-green-200 bg-green-50 rounded-lg p-3">
                 <div className="flex items-center justify-between">
                   <div className="font-medium text-sm">{r.title}</div>
                   <div className="flex items-center gap-2">
@@ -373,16 +566,49 @@ function AnalysisResultView({ result, onComplete }) {
             ))}
           </div>
         ) : (
-          <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded">Aucune recommandation</div>
+          /* E) Zero empty screen — next actions when no recommendations */
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <p className="text-sm text-gray-600 mb-3">Aucune recommandation declenchee. Pour en obtenir :</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {[
+                { icon: Database, label: 'Enrichir la KB', desc: 'Ajouter des recommandations liees a vos archetypes', to: '/consommations/kb' },
+                { icon: ArrowRight, label: 'Lancer un diagnostic approfondi', desc: 'Detection d\'anomalies multi-sites avec historique', to: '/diagnostic-conso' },
+              ].map((action, i) => (
+                <button
+                  key={i}
+                  onClick={() => navigate(action.to)}
+                  className="flex items-start gap-2 p-2.5 bg-white rounded-lg border border-gray-100 hover:border-blue-300 hover:shadow-sm text-left transition"
+                >
+                  <action.icon size={14} className="text-blue-600 mt-0.5 shrink-0" />
+                  <div>
+                    <div className="text-xs font-medium text-gray-800">{action.label}</div>
+                    <div className="text-[11px] text-gray-500">{action.desc}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
         )}
       </div>
 
-      {onComplete && (
+      {/* B) CTA bar: primary Explorer + secondary Nouvelle analyse */}
+      <div className="flex items-center gap-3">
         <button
-          onClick={onComplete}
-          className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-        >Terminer</button>
-      )}
+          onClick={handleOpenExplorer}
+          className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium text-sm"
+        >
+          <BarChart3 size={16} />
+          Ouvrir dans l'Explorer
+          <ArrowRight size={14} />
+        </button>
+        <button
+          onClick={() => navigate('/consommations/import')}
+          className="flex items-center gap-2 px-4 py-2.5 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition text-sm"
+        >
+          <RotateCcw size={14} />
+          Nouvelle analyse
+        </button>
+      </div>
     </div>
   );
 }
@@ -477,23 +703,26 @@ export function KBAdminPanel() {
     );
   }
 
-  // ── Empty KB ──
+  // ── F) Empty KB — actionable empty state ──
   if (isEmpty) {
     return (
       <div className="space-y-6">
         <div className="bg-white rounded-lg shadow p-8 text-center">
           <Database size={40} className="text-gray-300 mx-auto mb-3" />
           <h3 className="text-lg font-semibold text-gray-700 mb-2">Knowledge Base vide</h3>
-          <p className="text-sm text-gray-500 mb-1">0 archetypes, 0 regles, 0 recommandations</p>
-          <p className="text-sm text-gray-500 mb-6">Seedez la KB demo pour demarrer, ou rechargez depuis les fichiers YAML.</p>
-          <div className="flex items-center justify-center gap-3">
+          <p className="text-sm text-gray-500 mb-1">0 archetypes · 0 regles · 0 recommandations</p>
+          <p className="text-sm text-gray-500 mb-6">
+            La KB alimente l'analyse de vos courbes de charge (detection d'anomalies, archetypes, recommandations).
+            Seedez la demo pour demarrer ou rechargez vos propres fichiers YAML.
+          </p>
+          <div className="flex items-center justify-center gap-3 mb-6">
             <button
               onClick={handleSeedDemo}
               disabled={seeding}
               className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm font-medium transition"
             >
               <Database size={16} className={seeding ? 'animate-spin' : ''} />
-              {seeding ? 'Seed en cours...' : 'Seed demo KB'}
+              {seeding ? 'Seed en cours...' : 'Seed demo KB (4 archetypes)'}
             </button>
             <button
               onClick={handleReload}
@@ -503,6 +732,22 @@ export function KBAdminPanel() {
               <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
               Reload YAML
             </button>
+          </div>
+          {/* Next steps cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
+            {[
+              { icon: Upload, title: '1. Seeder la KB', desc: 'Chargez les archetypes, regles et recommandations de reference' },
+              { icon: BarChart3, title: '2. Importer vos donnees', desc: 'Import CSV/XLSX ou generation de donnees demo par site' },
+              { icon: Lightbulb, title: '3. Lancer l\'analyse', desc: 'Detection automatique d\'anomalies et recommandations KB-driven' },
+            ].map((s, i) => (
+              <div key={i} className="flex items-start gap-2.5 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                <s.icon size={16} className="text-blue-500 mt-0.5 shrink-0" />
+                <div>
+                  <div className="text-sm font-medium text-gray-800">{s.title}</div>
+                  <div className="text-xs text-gray-500">{s.desc}</div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -652,10 +897,9 @@ export function KBAdminPanel() {
   );
 }
 
-// ---- Main Page ----
+// ---- Main Page (standalone fallback — normally rendered via ConsommationsPage tabs) ----
 export default function ConsommationsUsages() {
   const [tab, setTab] = useState('import');
-  const [analysisComplete, setAnalysisComplete] = useState(false);
   const { isExpert } = useExpertMode();
 
   return (
@@ -687,7 +931,7 @@ export default function ConsommationsUsages() {
 
       {/* Content */}
       {tab === 'import' && (
-        <ImportWizard onComplete={() => setAnalysisComplete(true)} />
+        <ImportWizard />
       )}
 
       {tab === 'kb' && (
