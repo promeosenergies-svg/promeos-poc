@@ -13,16 +13,16 @@ import { useAuth } from './AuthContext';
 const STORAGE_KEY = 'promeos_scope';
 
 const MOCK_ORGS = [
-  { id: 1, nom: 'Nexity Immobilier' },
-  { id: 2, nom: 'Groupe Casino' },
+  { id: 1, nom: 'Groupe Casino' },
+  { id: 2, nom: 'Nexity Immobilier' },
 ];
 
 const MOCK_PORTEFEUILLES = [
-  { id: 1, org_id: 1, nom: 'IDF' },
-  { id: 2, org_id: 1, nom: 'PACA' },
-  { id: 3, org_id: 1, nom: 'National' },
-  { id: 4, org_id: 2, nom: 'Hypermarches' },
-  { id: 5, org_id: 2, nom: 'Proximite' },
+  { id: 1, org_id: 1, nom: 'Hypermarches' },
+  { id: 2, org_id: 1, nom: 'Proximite' },
+  { id: 3, org_id: 1, nom: 'Logistique' },
+  { id: 4, org_id: 2, nom: 'IDF' },
+  { id: 5, org_id: 2, nom: 'PACA' },
 ];
 
 // Assign sites to portefeuilles deterministically

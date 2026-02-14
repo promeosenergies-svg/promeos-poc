@@ -63,14 +63,14 @@ def reset_db(db: Session = Depends(get_db)):
     except Exception:
         pass  # migrations are best-effort
 
-    # 4. Reseed demo data
+    # 4. Reseed: Groupe Casino (36 sites) + compliance findings + superuser
     seed_result = None
     try:
         new_db = next(get_db())
-        from routes.demo import seed_demo
-        seed_result = seed_demo(new_db)
+        from scripts.seed_casino import seed_casino_36
+        seed_result = seed_casino_36(new_db)
     except Exception as exc:
-        logger.warning("Demo seed after reset: %s", exc)
+        logger.warning("Casino seed after reset: %s", exc)
         seed_result = {"status": "seed_skipped", "reason": str(exc)}
 
     return {
