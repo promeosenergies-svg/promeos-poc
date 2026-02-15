@@ -1,15 +1,18 @@
 /**
- * PROMEOS - Command Center (/) V5 — Top Pages WOW
- * Neutral design, scope-aware KPIs, ranked actions, all states handled.
+ * PROMEOS - Command Center (/) Phase 6 — Dashboard World-Class
+ * Neutral-first + controlled accents. KPI accent bars, icon pills,
+ * premium priority card, "tout sous controle" state, trust signals.
  */
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, ArrowRight, Clock, Upload, Scan, RefreshCw,
-  FileText, CheckCircle2, AlertTriangle,
+  FileText, CheckCircle2, AlertTriangle, ShieldCheck, TrendingDown, Bell,
+  Database,
 } from 'lucide-react';
-import { Card, CardBody, Badge, Button, SkeletonCard, PageShell, MetricCard, StatusDot, EmptyState, ErrorState, Progress } from '../ui';
+import { Card, CardBody, Badge, Button, SkeletonCard, PageShell, MetricCard, StatusDot, EmptyState, ErrorState } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
+import { SEVERITY_TINT, HERO_ACCENTS } from '../ui/colorTokens';
 import {
   getComplianceBundle, getActionsSummary, getActionsList,
   getNotificationsSummary,
@@ -18,9 +21,27 @@ import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 
 const PRIORITY_RANK = { critical: 4, high: 3, medium: 2, low: 1 };
-const PRIORITY_STATUS = { critical: 'crit', high: 'warn', medium: 'info', low: 'neutral' };
+
+/* ── normalizeDashboardModel: prevent contradictions ── */
+export function normalizeDashboardModel({ kpis, topActions, alertsCount }) {
+  const norm = { ...kpis };
+  // If 100% conforme, risk must be 0
+  if (norm.pctConf === 100) {
+    norm.risque = 0;
+    norm.nonConformes = 0;
+    norm.aRisque = 0;
+  }
+  // If 0 risk sites, risque EUR must be 0
+  if (norm.nonConformes + norm.aRisque === 0) {
+    norm.risque = 0;
+  }
+  const isAllClear = norm.pctConf === 100 && norm.risque === 0 && alertsCount === 0;
+  const actions = isAllClear ? [] : topActions;
+  return { kpis: norm, topActions: actions, alertsCount, isAllClear };
+}
 
 function ActionRow({ action, index, onClick }) {
+  const sev = SEVERITY_TINT[action.priorite] || SEVERITY_TINT.neutral;
   return (
     <button
       type="button"
@@ -37,31 +58,14 @@ function ActionRow({ action, index, onClick }) {
       </div>
       <div className="flex items-center gap-2 shrink-0">
         {action.impact_eur > 0 && (
-          <span className="text-xs font-medium text-gray-600">{action.impact_eur.toLocaleString()} EUR</span>
+          <span className="text-xs font-medium text-gray-600">
+            {action.impact_eur.toLocaleString('fr-FR')} EUR
+          </span>
         )}
-        <StatusDot status={PRIORITY_STATUS[action.priorite] || 'neutral'} />
+        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border ${sev.chipBg} ${sev.chipText} ${sev.chipBorder}`}>
+          {sev.label}
+        </span>
         <ArrowRight size={14} className="text-gray-300" />
-      </div>
-    </button>
-  );
-}
-
-function TodoRow({ item, onClick }) {
-  return (
-    <button
-      type="button"
-      className="flex items-center gap-3 w-full px-4 py-3 text-left rounded-lg
-        hover:bg-gray-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-      onClick={onClick}
-    >
-      <StatusDot status={PRIORITY_STATUS[item.priorite] || 'neutral'} />
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-800 truncate">{item.texte}</p>
-        <p className="text-xs text-gray-500 mt-0.5">{item.site}</p>
-      </div>
-      <div className="flex items-center gap-1.5 text-xs text-gray-400 whitespace-nowrap">
-        <Clock size={12} />
-        {item.echeance}
       </div>
     </button>
   );
@@ -74,11 +78,11 @@ export default function CommandCenter() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Real data states
   const [compliance, setCompliance] = useState(null);
   const [actionsSummary, setActionsSummary] = useState(null);
   const [actions, setActions] = useState([]);
   const [alertsSummary, setAlertsSummary] = useState(null);
+  const [lastSync, setLastSync] = useState(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -94,6 +98,7 @@ export default function CommandCenter() {
       setActionsSummary(actSummary);
       setActions(Array.isArray(actList) ? actList : actList?.actions || []);
       setAlertsSummary(notifSummary);
+      setLastSync(new Date());
     } catch {
       setError('Impossible de charger le tableau de bord');
     } finally {
@@ -103,8 +108,8 @@ export default function CommandCenter() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  // Derived KPIs from scope
-  const kpis = useMemo(() => {
+  // Raw KPIs from scope
+  const rawKpis = useMemo(() => {
     const total = scopedSites.length;
     const conformes = scopedSites.filter(s => s.statut_conformite === 'conforme').length;
     const nonConformes = scopedSites.filter(s => s.statut_conformite === 'non_conforme').length;
@@ -116,11 +121,9 @@ export default function CommandCenter() {
     return { total, conformes, nonConformes, aRisque, risque, pctConf, compStatus, risqueStatus };
   }, [scopedSites]);
 
-  // Top actions — merge compliance findings + action plan, rank by priority+impact
-  const topActions = useMemo(() => {
+  // Top actions — merge compliance + action plan
+  const rawTopActions = useMemo(() => {
     const items = [];
-
-    // From compliance bundle
     if (compliance?.sites) {
       const findings = compliance.sites
         .flatMap(s => (s.findings || []).filter(f => f.status !== 'conforme').map(f => ({
@@ -138,8 +141,6 @@ export default function CommandCenter() {
         });
       }
     }
-
-    // From actions list
     for (const a of actions.slice(0, 5)) {
       items.push({
         id: `act-${a.id}`,
@@ -150,17 +151,26 @@ export default function CommandCenter() {
         route: '/actions',
       });
     }
-
     return items
       .sort((a, b) => (PRIORITY_RANK[b.priorite] || 0) - (PRIORITY_RANK[a.priorite] || 0) || b.impact_eur - a.impact_eur)
       .slice(0, 5);
   }, [compliance, actions]);
 
-  // Alerts count
-  const alertsCount = useMemo(() => {
+  const rawAlertsCount = useMemo(() => {
     if (!alertsSummary) return 0;
     return (alertsSummary.by_severity?.critical || 0) + (alertsSummary.by_severity?.warn || 0);
   }, [alertsSummary]);
+
+  // Normalized model (no contradictions)
+  const { kpis, topActions, alertsCount, isAllClear } = useMemo(
+    () => normalizeDashboardModel({ kpis: rawKpis, topActions: rawTopActions, alertsCount: rawAlertsCount }),
+    [rawKpis, rawTopActions, rawAlertsCount],
+  );
+
+  // Data coverage
+  const coveragePct = useMemo(() => {
+    return kpis.total > 0 ? Math.round(scopedSites.filter(s => s.conso_kwh_an > 0).length / kpis.total * 100) : 0;
+  }, [scopedSites, kpis.total]);
 
   const hasSites = scopedSites.length > 0;
 
@@ -188,7 +198,20 @@ export default function CommandCenter() {
       title="Tableau de bord"
       subtitle={`${org.nom} · ${kpis.total} sites`}
       actions={
-        <>
+        <div className="flex items-center gap-2">
+          {/* Trust signals — compact */}
+          <div className="hidden sm:flex items-center gap-3 mr-2 text-[11px] text-gray-400">
+            {lastSync && (
+              <span className="flex items-center gap-1">
+                <Clock size={11} />
+                {lastSync.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
+            <span className="flex items-center gap-1" title="Couverture donnees">
+              <Database size={11} />
+              {coveragePct}%
+            </span>
+          </div>
           <Button variant="secondary" size="sm" onClick={() => navigate('/cockpit-2min')}>
             <FileText size={14} /> Briefing
           </Button>
@@ -206,12 +229,14 @@ export default function CommandCenter() {
               <Scan size={16} /> Scanner
             </Button>
           )}
-        </>
+        </div>
       }
     >
-      {/* North Star KPIs — neutral MetricCards */}
+      {/* ── KPI Row: 3 MetricCards with accent bars + icon pills ── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <MetricCard
+          accent="conformite"
+          icon={ShieldCheck}
           label="Conformite"
           value={`${kpis.pctConf}%`}
           sub={`${kpis.conformes} / ${kpis.total} sites conformes`}
@@ -219,6 +244,8 @@ export default function CommandCenter() {
           onClick={() => navigate('/conformite')}
         />
         <MetricCard
+          accent="risque"
+          icon={TrendingDown}
           label="Risque financier"
           value={kpis.risque > 0 ? `${(kpis.risque / 1000).toFixed(0)}k EUR` : '0 EUR'}
           sub={`${kpis.nonConformes + kpis.aRisque} sites a risque`}
@@ -226,6 +253,8 @@ export default function CommandCenter() {
           onClick={() => navigate('/actions')}
         />
         <MetricCard
+          accent="alertes"
+          icon={Bell}
           label="Alertes actives"
           value={alertsCount}
           sub={alertsSummary ? `dont ${alertsSummary.by_severity?.critical || 0} critiques` : 'Chargement...'}
@@ -234,64 +263,65 @@ export default function CommandCenter() {
         />
       </div>
 
-      {/* Priority #1 action card — neutral */}
-      {topActions.length > 0 && (
-        <Card>
-          <CardBody>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3 min-w-0">
-                <AlertTriangle size={20} className="text-gray-400 shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-xs text-gray-500 font-medium uppercase">Action prioritaire</p>
-                  <p className="text-sm font-semibold text-gray-900 mt-0.5 truncate">{topActions[0].titre}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{topActions[0].source_label}</p>
-                </div>
+      {/* ── Top Priority #1 — premium card OR "Tout sous controle" ── */}
+      {isAllClear ? (
+        <div className={`rounded-lg border p-5 ${HERO_ACCENTS.success.bg} ${HERO_ACCENTS.success.border} ${HERO_ACCENTS.success.ring}`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
+                <CheckCircle2 size={20} className="text-emerald-600" />
               </div>
-              <div className="flex items-center gap-3 shrink-0">
-                {topActions[0].impact_eur > 0 && (
-                  <span className="text-sm font-medium text-gray-700">{topActions[0].impact_eur.toLocaleString()} EUR</span>
-                )}
-                <Badge status={PRIORITY_STATUS[topActions[0].priorite] || 'neutral'}>{topActions[0].priorite}</Badge>
-                <Button variant="secondary" size="sm" onClick={() => navigate(topActions[0].route)}>
-                  Traiter <ArrowRight size={14} />
-                </Button>
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Tout est sous controle</p>
+                <p className="text-xs text-gray-500 mt-0.5">Conformite 100%, aucun risque, aucune alerte active.</p>
               </div>
             </div>
-          </CardBody>
-        </Card>
+            <Button variant="secondary" size="sm" onClick={() => navigate('/conformite')}>
+              Voir opportunites <ArrowRight size={14} />
+            </Button>
+          </div>
+        </div>
+      ) : topActions.length > 0 && (
+        <div className={`rounded-lg border p-5 ${HERO_ACCENTS.priority.bg} ${HERO_ACCENTS.priority.border} ${HERO_ACCENTS.priority.ring}`}>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
+                <AlertTriangle size={20} className="text-amber-600" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mb-0.5">Action prioritaire</p>
+                <p className="text-sm font-semibold text-gray-900 truncate">{topActions[0].titre}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{topActions[0].source_label}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 shrink-0">
+              {topActions[0].impact_eur > 0 && (
+                <span className="text-sm font-semibold text-gray-700">
+                  {topActions[0].impact_eur.toLocaleString('fr-FR')} EUR
+                </span>
+              )}
+              {(() => {
+                const sev = SEVERITY_TINT[topActions[0].priorite] || SEVERITY_TINT.neutral;
+                return (
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border ${sev.chipBg} ${sev.chipText} ${sev.chipBorder}`}>
+                    {sev.label}
+                  </span>
+                );
+              })()}
+              <Button size="sm" onClick={() => navigate(topActions[0].route)}>
+                Traiter <ArrowRight size={14} />
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
 
-      {/* Data coverage */}
-      {isExpert && (
-        <Card>
-          <CardBody className="flex items-center gap-4">
-            <div className="flex-1">
-              <p className="text-xs text-gray-500 font-medium uppercase mb-2">Couverture donnees</p>
-              <Progress
-                value={kpis.total > 0 ? Math.round(scopedSites.filter(s => s.conso_kwh_an > 0).length / kpis.total * 100) : 0}
-                color="gray"
-                size="sm"
-                label="Sites avec consommation renseignee"
-              />
-            </div>
-            <div className="text-right">
-              <p className="text-2xl font-bold text-gray-900">
-                {kpis.total > 0 ? Math.round(scopedSites.filter(s => s.conso_kwh_an > 0).length / kpis.total * 100) : 0}%
-              </p>
-              <p className="text-xs text-gray-400">
-                {new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
-              </p>
-            </div>
-          </CardBody>
-        </Card>
-      )}
-
-      {/* Two-column: Ranked actions + Quick alerts */}
+      {/* ── Two-column: Actions + Sites ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Ranked actions */}
         <Card>
           <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h3 className="font-semibold text-gray-800">Actions recommandees</h3>
+            <h3 className="font-semibold text-gray-800">Priorites</h3>
             <Button variant="ghost" size="sm" onClick={() => navigate('/actions')}>
               Tout voir <ArrowRight size={14} />
             </Button>
@@ -309,7 +339,7 @@ export default function CommandCenter() {
           </div>
         </Card>
 
-        {/* Sites at risk — compact list */}
+        {/* Sites at risk — table with accent on risk column */}
         <Card>
           <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
             <h3 className="font-semibold text-gray-800">Sites a traiter</h3>
@@ -336,7 +366,7 @@ export default function CommandCenter() {
                   .sort((a, b) => (b.risque_eur || 0) - (a.risque_eur || 0))
                   .slice(0, 8)
                   .map((site) => (
-                    <Tr key={site.id} onClick={() => navigate(`/sites/${site.id}`)} className="group">
+                    <Tr key={site.id} onClick={() => navigate(`/sites/${site.id}`)} className="group cursor-pointer hover:bg-blue-50/40">
                       <Td>
                         <div className="font-medium text-gray-900">{site.nom}</div>
                         <div className="text-xs text-gray-400">{site.ville}</div>
@@ -349,8 +379,12 @@ export default function CommandCenter() {
                           </span>
                         </div>
                       </Td>
-                      <Td className="text-right text-sm font-medium text-gray-700">
-                        {site.risque_eur > 0 ? `${site.risque_eur.toLocaleString()} EUR` : '-'}
+                      <Td className="text-right text-sm font-medium">
+                        {site.risque_eur > 0 ? (
+                          <span className="text-amber-700">{site.risque_eur.toLocaleString('fr-FR')} EUR</span>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
                       </Td>
                     </Tr>
                   ))}
