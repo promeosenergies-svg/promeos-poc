@@ -301,6 +301,32 @@ describe('CLIMATE_LABEL_FR', () => {
       expect(label).not.toMatch(/dominant|cooling|heating|mixed|unknown/i);
     }
   });
+
+  it('unknown label uses proper French accent (déterminé)', () => {
+    expect(CLIMATE_LABEL_FR.unknown).toBe('Non déterminé');
+  });
+});
+
+describe('V9 FR copy — accents in exported constants', () => {
+  it('CLIMATE_REASONS use proper French accents', () => {
+    expect(CLIMATE_REASONS.no_meter).toContain('associé');
+    expect(CLIMATE_REASONS.no_weather).toContain('météo');
+    expect(CLIMATE_REASONS.no_weather).toContain('période');
+    expect(CLIMATE_REASONS.insufficient_readings).toContain('données');
+    expect(CLIMATE_REASONS.insufficient_readings).toContain('régression');
+    expect(CLIMATE_REASONS.computation_error).toContain('Vérifiez');
+    expect(CLIMATE_REASONS.computation_error).toContain('données');
+  });
+
+  it('computeConfidence reason text uses accents', () => {
+    const c = computeConfidence({ r2: 0.9, nPoints: 20 });
+    expect(c.reason).toContain('données');
+  });
+
+  it('computeConfidence default reason uses accents', () => {
+    const c = computeConfidence({ r2: 0.9, nPoints: 60, coveragePct: 90 });
+    expect(c.reason).toContain('Données suffisantes');
+  });
 });
 
 describe('USAGE_DAYS_FR', () => {
