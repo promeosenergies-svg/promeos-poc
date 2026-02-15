@@ -108,6 +108,30 @@ def get_monitoring_kpis(
     except Exception:
         pass
 
+    # Compute EUR impact via ImpactModel
+    impact_data = {}
+    try:
+        from services.impact_model import resolve_price, compute_off_hours_eur, compute_power_overrun_eur
+        from dataclasses import asdict
+        price_info = resolve_price(db, site_id)
+        impact_data["price"] = asdict(price_info)
+
+        kpis = snapshot.kpis_json or {}
+        period_days = max(1, (snapshot.period_end.date() - snapshot.period_start.date()).days)
+
+        # Off-hours impact
+        off_hours_kwh = kpis.get("off_hours_kwh", 0) or 0
+        off_hours_result = compute_off_hours_eur(off_hours_kwh, period_days, price_info)
+        impact_data["off_hours"] = asdict(off_hours_result)
+
+        # Power overrun impact
+        p95_kw = kpis.get("p95_kw", 0) or 0
+        psub_kva = kpis.get("puissance_souscrite_kva") or kpis.get("psub_kva")
+        power_result = compute_power_overrun_eur(p95_kw, psub_kva, price_info)
+        impact_data["power_overrun"] = asdict(power_result)
+    except Exception as e:
+        impact_data["error"] = str(e)[:200]
+
     return {
         "snapshot_id": snapshot.id,
         "site_id": snapshot.site_id,
@@ -120,6 +144,7 @@ def get_monitoring_kpis(
         "risk_power_details": snapshot.risk_power_details_json or {},
         "climate": climate_data,
         "schedule": schedule_data,
+        "impact": impact_data,
         "engine_version": snapshot.engine_version,
         "created_at": snapshot.created_at.isoformat(),
     }
