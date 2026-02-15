@@ -16,6 +16,7 @@ import { useToast } from '../ui/ToastProvider';
 import Modal from '../ui/Modal';
 import CreateActionModal from '../components/CreateActionModal';
 import ActionDetailDrawer from '../components/ActionDetailDrawer';
+import ROISummaryBar from '../components/ROISummaryBar';
 import { getActionsList, syncActions, patchAction, exportActionsCSV, downloadAuditPDF } from '../services/api';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
@@ -560,6 +561,9 @@ export default function ActionsPage() {
         </>
       }
     >
+
+      {/* ROI Summary (V5.0) */}
+      <ROISummaryBar />
 
       {/* Quick views with counts */}
       <div className="flex items-center gap-2">
