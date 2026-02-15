@@ -150,6 +150,118 @@ def get_monitoring_kpis(
     }
 
 
+# --- 1b. GET /api/monitoring/kpis/compare ---
+
+@router.get("/kpis/compare")
+def get_monitoring_kpis_compare(
+    site_id: int = Query(...),
+    mode: str = Query("previous", description="previous|n-1|custom"),
+    custom_start: Optional[str] = None,
+    custom_end: Optional[str] = None,
+    meter_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Get comparison KPIs for a site. Modes: previous period, N-1, or custom dates."""
+    if auth and auth.site_ids is not None and site_id not in auth.site_ids:
+        raise HTTPException(status_code=403, detail="Site not in auth scope")
+
+    # Get current snapshot first
+    current_q = db.query(MonitoringSnapshot).filter_by(site_id=site_id)
+    if meter_id:
+        current_q = current_q.filter_by(meter_id=meter_id)
+    current = current_q.order_by(MonitoringSnapshot.created_at.desc()).first()
+    if not current:
+        return {"compare": None, "reason": "no_current_snapshot"}
+
+    compare_snapshot = None
+
+    if mode == "previous":
+        # Find snapshot whose period_end < current.period_start
+        compare_snapshot = (
+            db.query(MonitoringSnapshot)
+            .filter(
+                MonitoringSnapshot.site_id == site_id,
+                MonitoringSnapshot.period_end < current.period_start,
+                MonitoringSnapshot.id != current.id,
+            )
+            .order_by(MonitoringSnapshot.period_end.desc())
+            .first()
+        )
+    elif mode == "n-1":
+        # Find snapshot from ~1 year ago (period_start close to current - 365 days)
+        from datetime import timedelta as td
+        target_start = current.period_start - td(days=365)
+        target_end = current.period_end - td(days=365)
+        compare_snapshot = (
+            db.query(MonitoringSnapshot)
+            .filter(
+                MonitoringSnapshot.site_id == site_id,
+                MonitoringSnapshot.period_start >= target_start - td(days=30),
+                MonitoringSnapshot.period_start <= target_start + td(days=30),
+                MonitoringSnapshot.id != current.id,
+            )
+            .order_by(MonitoringSnapshot.created_at.desc())
+            .first()
+        )
+    elif mode == "custom":
+        # Find snapshot overlapping the custom date range
+        if custom_start and custom_end:
+            from datetime import datetime as dt_cls
+            try:
+                cs = dt_cls.fromisoformat(custom_start)
+                ce = dt_cls.fromisoformat(custom_end)
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Dates invalides (format ISO)")
+            compare_snapshot = (
+                db.query(MonitoringSnapshot)
+                .filter(
+                    MonitoringSnapshot.site_id == site_id,
+                    MonitoringSnapshot.period_start >= cs,
+                    MonitoringSnapshot.period_end <= ce,
+                    MonitoringSnapshot.id != current.id,
+                )
+                .order_by(MonitoringSnapshot.created_at.desc())
+                .first()
+            )
+        else:
+            return {"compare": None, "reason": "custom_dates_required"}
+
+    if not compare_snapshot:
+        return {"compare": None, "reason": f"no_{mode}_snapshot"}
+
+    # Build compare impact
+    compare_impact = {}
+    try:
+        from services.impact_model import resolve_price, compute_off_hours_eur, compute_power_overrun_eur
+        from dataclasses import asdict
+        price_info = resolve_price(db, site_id)
+        compare_impact["price"] = asdict(price_info)
+        ckpis = compare_snapshot.kpis_json or {}
+        cperiod_days = max(1, (compare_snapshot.period_end.date() - compare_snapshot.period_start.date()).days)
+        off_kwh = ckpis.get("off_hours_kwh", 0) or 0
+        compare_impact["off_hours"] = asdict(compute_off_hours_eur(off_kwh, cperiod_days, price_info))
+        p95 = ckpis.get("p95_kw", 0) or 0
+        psub = ckpis.get("puissance_souscrite_kva") or ckpis.get("psub_kva")
+        compare_impact["power_overrun"] = asdict(compute_power_overrun_eur(p95, psub, price_info))
+    except Exception:
+        pass
+
+    return {
+        "compare": {
+            "snapshot_id": compare_snapshot.id,
+            "period": f"{compare_snapshot.period_start.date()} - {compare_snapshot.period_end.date()}",
+            "kpis": compare_snapshot.kpis_json or {},
+            "data_quality_score": compare_snapshot.data_quality_score,
+            "risk_power_score": compare_snapshot.risk_power_score,
+            "impact": compare_impact,
+            "created_at": compare_snapshot.created_at.isoformat(),
+        },
+        "mode": mode,
+        "reason": None,
+    }
+
+
 # --- 2. POST /api/monitoring/run ---
 
 @router.post("/run")

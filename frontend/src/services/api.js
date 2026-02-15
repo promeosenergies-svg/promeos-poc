@@ -489,6 +489,8 @@ export const getMonitoringAlerts = (siteId, status = null, limit = 50) => api.ge
 export const ackMonitoringAlert = (id) => api.post(`/monitoring/alerts/${id}/ack`, { acknowledged_by: 'user' }).then(r => r.data);
 export const resolveMonitoringAlert = (id, note = null) => api.post(`/monitoring/alerts/${id}/resolve`, { resolved_by: 'user', resolution_note: note }).then(r => r.data);
 export const generateMonitoringDemo = (siteId, days = 90, profile = 'office') => api.post('/monitoring/demo/generate', { site_id: siteId, days, profile }).then(r => r.data);
+export const getMonitoringKpisCompare = (siteId, mode = 'previous', customStart = null, customEnd = null) =>
+  api.get('/monitoring/kpis/compare', { params: { site_id: siteId, mode, custom_start: customStart, custom_end: customEnd } }).then(r => r.data);
 
 // ========================================
 // BACS Expert (Decret n°2020-887)

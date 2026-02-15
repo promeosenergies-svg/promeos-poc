@@ -42,6 +42,7 @@ import {
   getActionsList,
   getScheduleSuggest,
   putSiteSchedule,
+  getMonitoringKpisCompare,
 } from '../services/api';
 
 // --- Constants ---
@@ -184,6 +185,29 @@ export function computeOffHoursEstimate(kwh, price = 0.18) {
   const annualized = kwh * (365 / 90);
   const eur = Math.round(annualized * price);
   return { eur, label: `~${fmtNum(eur, 0)} EUR/an`, price };
+}
+
+/**
+ * Compute KPI delta for comparison.
+ * @param {number} current
+ * @param {number} previous
+ * @param {boolean} lowerIsBetter - true for risk/off-hours metrics (lower = improvement)
+ * @returns {{ pct: number, direction: 'up'|'down'|'flat', isGood: boolean }}
+ */
+export function computeKpiDelta(current, previous, lowerIsBetter = false) {
+  if (current == null || previous == null || previous === 0) return null;
+  const pct = ((current - previous) / Math.abs(previous)) * 100;
+  const direction = pct > 1 ? 'up' : pct < -1 ? 'down' : 'flat';
+  const isGood = lowerIsBetter ? direction === 'down' : direction === 'up';
+  return { pct: Math.round(pct), direction, isGood };
+}
+
+function KpiDelta({ current, previous, lowerIsBetter = false }) {
+  const delta = computeKpiDelta(current, previous, lowerIsBetter);
+  if (!delta || delta.direction === 'flat') return null;
+  const arrow = delta.direction === 'up' ? '↑' : '↓';
+  const color = delta.isGood ? 'text-emerald-600' : 'text-red-600';
+  return <span className={`text-[10px] font-semibold ${color}`}>{arrow} {Math.abs(delta.pct)}%</span>;
 }
 
 const MODE_COLORS = { CONTRAT: 'bg-green-100 text-green-700', TARIF: 'bg-blue-100 text-blue-700', DEMO: 'bg-amber-100 text-amber-700' };
@@ -440,9 +464,9 @@ function ExecutiveSummary({ alerts, kpiData, climate, qualityScore, qualityConf,
 }
 
 /**
- * Quick actions bar: Explorer, Create Action, Compare (stub)
+ * Quick actions bar: Explorer, Create Action, Compare
  */
-function QuickActionsBar({ onOpenExplorer, onCreateAction, onCompare, compareEnabled }) {
+function QuickActionsBar({ onOpenExplorer, onCreateAction, compareEnabled, compareMode, onCompareChange, compareLoading }) {
   return (
     <div className="flex items-center gap-2 mb-6 flex-wrap">
       <Button variant="secondary" size="sm" onClick={onOpenExplorer}>
@@ -454,10 +478,21 @@ function QuickActionsBar({ onOpenExplorer, onCreateAction, onCompare, compareEna
         Créer une action
       </Button>
       {compareEnabled && (
-        <Button variant="ghost" size="sm" onClick={onCompare}>
-          <Clock size={14} />
-          Comparer période précédente
-        </Button>
+        <div className="flex items-center gap-1">
+          <select
+            className="text-xs border border-gray-300 rounded-lg px-2 py-1.5 bg-white text-gray-700 focus:ring-2 focus:ring-blue-500"
+            value={compareMode || ''}
+            onChange={(e) => onCompareChange(e.target.value || null)}
+          >
+            <option value="">Comparer...</option>
+            <option value="previous">vs période précédente</option>
+            <option value="n-1">vs N-1</option>
+          </select>
+          {compareLoading && <RefreshCw size={12} className="animate-spin text-blue-400" />}
+          {compareMode && (
+            <button onClick={() => onCompareChange(null)} className="text-xs text-gray-400 hover:text-gray-600 px-1">✕</button>
+          )}
+        </div>
       )}
     </div>
   );
@@ -1062,6 +1097,9 @@ export default function MonitoringPage() {
   const [benchmark, setBenchmark] = useState(null);
   const [scheduleSuggest, setScheduleSuggest] = useState(null);
   const [suggestLoading, setSuggestLoading] = useState(false);
+  const [compareMode, setCompareMode] = useState(null); // null|'previous'|'n-1'
+  const [compareKpis, setCompareKpis] = useState(null);
+  const [compareLoading, setCompareLoading] = useState(false);
 
   // Drawer state
   const [drawerAlert, setDrawerAlert] = useState(null);
@@ -1110,6 +1148,19 @@ export default function MonitoringPage() {
       loadSiteActions();
     }
   }, [siteId, loadAll, loadSiteActions]);
+
+  // Compare period
+  useEffect(() => {
+    if (!siteId || !compareMode) {
+      setCompareKpis(null);
+      return;
+    }
+    setCompareLoading(true);
+    getMonitoringKpisCompare(siteId, compareMode)
+      .then((res) => setCompareKpis(res?.compare || null))
+      .catch(() => setCompareKpis(null))
+      .finally(() => setCompareLoading(false));
+  }, [siteId, compareMode]);
 
   // --- Actions ---
 
@@ -1483,15 +1534,9 @@ export default function MonitoringPage() {
               setShowActionModal(true);
             }}
             compareEnabled={!!kpis?.period}
-            onCompare={() => {
-              const params = new URLSearchParams({ site_id: siteId, compare: '30d' });
-              if (kpis?.period) {
-                const parts = kpis.period.split(' - ');
-                if (parts[0]) params.set('date_from', parts[0]);
-                if (parts[1]) params.set('date_to', parts[1]);
-              }
-              navigate(`/explorer?${params.toString()}`);
-            }}
+            compareMode={compareMode}
+            onCompareChange={setCompareMode}
+            compareLoading={compareLoading}
           />
 
           {/* Impact mode + Actions mini-list */}
@@ -1503,6 +1548,15 @@ export default function MonitoringPage() {
             </div>
           )}
           <ActionMiniList actions={siteActions} siteId={siteId} navigate={navigate} />
+
+          {/* Compare period banner */}
+          {compareKpis && (
+            <div className="flex items-center gap-2 mb-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700">
+              <TrendingUp size={12} />
+              <span>Comparaison: <strong>{compareKpis.period}</strong></span>
+              <button onClick={() => setCompareMode(null)} className="ml-auto text-blue-400 hover:text-blue-600">Fermer</button>
+            </div>
+          )}
 
           {/* KPI Strip — 6 cards */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
@@ -1569,6 +1623,30 @@ export default function MonitoringPage() {
               onClick={() => setShowOffHoursDrawer(true)}
             />
           </div>
+
+          {/* Compare deltas row */}
+          {compareKpis?.kpis && (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4 -mt-2">
+              <div className="text-center text-[10px] text-gray-400">
+                Pmax <KpiDelta current={kpiData.pmax_kw} previous={compareKpis.kpis.pmax_kw} lowerIsBetter />
+              </div>
+              <div className="text-center text-[10px] text-gray-400">
+                Talon <KpiDelta current={kpiData.pbase_kw} previous={compareKpis.kpis.pbase_kw} lowerIsBetter />
+              </div>
+              <div className="text-center text-[10px] text-gray-400">
+                LF <KpiDelta current={kpiData.load_factor} previous={compareKpis.kpis.load_factor} />
+              </div>
+              <div className="text-center text-[10px] text-gray-400">
+                Risque <KpiDelta current={riskScore} previous={compareKpis.risk_power_score} lowerIsBetter />
+              </div>
+              <div className="text-center text-[10px] text-gray-400">
+                Qualité <KpiDelta current={qualityScore} previous={compareKpis.data_quality_score} />
+              </div>
+              <div className="text-center text-[10px] text-gray-400">
+                HH <KpiDelta current={offHoursRatio} previous={compareKpis.kpis.off_hours_ratio} lowerIsBetter />
+              </div>
+            </div>
+          )}
 
           {/* Climate KPI card — always visible, with reason code if no data */}
           {climate && (
