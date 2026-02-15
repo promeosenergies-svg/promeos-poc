@@ -8,7 +8,7 @@ const styles = {
 
 export default function Badge({ status = 'neutral', children, className = '' }) {
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${styles[status] || styles.neutral} ${className}`}>
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${styles[status] || styles.neutral} ${className}`}>
       {children}
     </span>
   );

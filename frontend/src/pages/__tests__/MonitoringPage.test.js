@@ -1,9 +1,13 @@
 /**
  * PROMEOS — Tests for MonitoringPage helpers
- * Covers: buildHeatmapGrid, kpiStatus
+ * Covers: buildHeatmapGrid, kpiStatus, computeConfidence, kpiStatusWithConfidence, LF thresholds
  */
 import { describe, it, expect } from 'vitest';
-import { buildHeatmapGrid, kpiStatus } from '../MonitoringPage';
+import {
+  buildHeatmapGrid, kpiStatus, computeConfidence,
+  kpiStatusWithConfidence, LF_THRESHOLDS_BY_ARCHETYPE,
+  groupInsights,
+} from '../MonitoringPage';
 
 describe('buildHeatmapGrid', () => {
   const weekday = Array.from({ length: 24 }, (_, i) => 10 + i);
@@ -81,5 +85,151 @@ describe('kpiStatus', () => {
   it('zero is a real value (not no_data)', () => {
     expect(kpiStatus(0, thresholds)).toBe('critique');
     expect(kpiStatus(0, { ok: 35, warn: 60 }, true)).toBe('ok');
+  });
+});
+
+describe('computeConfidence', () => {
+  it('high confidence when R² >= 0.6', () => {
+    const c = computeConfidence({ r2: 0.85 });
+    expect(c.level).toBe('high');
+    expect(c.pct).toBeGreaterThanOrEqual(60);
+  });
+
+  it('low confidence when R² < 0.3', () => {
+    const c = computeConfidence({ r2: 0.12 });
+    expect(c.level).toBe('low');
+    expect(c.reason).toMatch(/R²/);
+  });
+
+  it('low confidence when reason code present', () => {
+    const c = computeConfidence({ reason: 'no_weather' });
+    expect(c.level).toBe('low');
+    expect(c.pct).toBe(0);
+  });
+
+  it('low when nPoints < 10', () => {
+    const c = computeConfidence({ r2: 0.9, nPoints: 5 });
+    expect(c.level).toBe('low');
+  });
+
+  it('medium when coverage between 30 and 60', () => {
+    const c = computeConfidence({ coveragePct: 45 });
+    expect(c.level).toBe('medium');
+  });
+
+  it('pct bounded 0-100', () => {
+    expect(computeConfidence({ r2: 1.5 }).pct).toBeLessThanOrEqual(100);
+    expect(computeConfidence({ r2: -0.5 }).pct).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe('kpiStatusWithConfidence', () => {
+  const thresholds = { ok: 2, warn: 4 };
+
+  it('critique with high confidence stays critique', () => {
+    expect(kpiStatusWithConfidence(6, thresholds, true, { level: 'high' })).toBe('critique');
+  });
+
+  it('critique with low confidence becomes a_confirmer', () => {
+    expect(kpiStatusWithConfidence(6, thresholds, true, { level: 'low' })).toBe('a_confirmer');
+  });
+
+  it('R² faible => slope high but status a_confirmer', () => {
+    const conf = computeConfidence({ r2: 0.12 });
+    const status = kpiStatusWithConfidence(6, thresholds, true, conf);
+    expect(status).toBe('a_confirmer');
+  });
+
+  it('ok/surveiller unaffected by low confidence', () => {
+    expect(kpiStatusWithConfidence(1, thresholds, true, { level: 'low' })).toBe('ok');
+    expect(kpiStatusWithConfidence(3, thresholds, true, { level: 'low' })).toBe('surveiller');
+  });
+
+  it('works without confidence (fallback)', () => {
+    expect(kpiStatusWithConfidence(6, thresholds, true, null)).toBe('critique');
+  });
+});
+
+describe('LF_THRESHOLDS_BY_ARCHETYPE', () => {
+  it('has entries for 4 profiles + default', () => {
+    expect(Object.keys(LF_THRESHOLDS_BY_ARCHETYPE)).toEqual(
+      expect.arrayContaining(['office', 'hotel', 'retail', 'warehouse', 'default'])
+    );
+  });
+
+  it('office ok threshold is higher than default', () => {
+    expect(LF_THRESHOLDS_BY_ARCHETYPE.office.ok).toBeGreaterThan(
+      LF_THRESHOLDS_BY_ARCHETYPE.default.ok
+    );
+  });
+
+  it('all thresholds have ok > warn', () => {
+    for (const [, t] of Object.entries(LF_THRESHOLDS_BY_ARCHETYPE)) {
+      expect(t.ok).toBeGreaterThan(t.warn);
+    }
+  });
+
+  it('load factor 33% is NOT critique for office (was the bug)', () => {
+    const t = LF_THRESHOLDS_BY_ARCHETYPE.office;
+    expect(kpiStatus(33, t)).toBe('surveiller');
+  });
+
+  it('load factor 33% is NOT critique for default', () => {
+    const t = LF_THRESHOLDS_BY_ARCHETYPE.default;
+    expect(kpiStatus(33, t)).toBe('surveiller');
+  });
+});
+
+describe('groupInsights', () => {
+  const mkAlert = (id, type, eur, severity = 'high', meterId = 1) => ({
+    id, alert_type: type, meter_id: meterId,
+    estimated_impact_eur: eur, estimated_impact_kwh: eur * 5,
+    severity, status: 'open', explanation: `Alert ${id}`,
+  });
+
+  it('groups duplicates by alert_type + meter_id', () => {
+    const alerts = [
+      mkAlert(1, 'DEPASSEMENT_PUISSANCE', 500),
+      mkAlert(2, 'DEPASSEMENT_PUISSANCE', 300),
+      mkAlert(3, 'BASE_NUIT_ELEVEE', 200),
+    ];
+    const grouped = groupInsights(alerts);
+    expect(grouped).toHaveLength(2);
+    const dep = grouped.find((g) => g.alert_type === 'DEPASSEMENT_PUISSANCE');
+    expect(dep._count).toBe(2);
+    expect(dep._totalEur).toBe(800);
+    expect(dep._ids).toEqual([1, 2]);
+  });
+
+  it('keeps worst severity', () => {
+    const alerts = [
+      mkAlert(1, 'PIC_ANORMAL', 100, 'warning'),
+      mkAlert(2, 'PIC_ANORMAL', 200, 'critical'),
+    ];
+    const grouped = groupInsights(alerts);
+    expect(grouped[0]._maxSeverity).toBe('critical');
+  });
+
+  it('sorted by total impact desc', () => {
+    const alerts = [
+      mkAlert(1, 'A', 100),
+      mkAlert(2, 'B', 500),
+    ];
+    const grouped = groupInsights(alerts);
+    expect(grouped[0].alert_type).toBe('B');
+    expect(grouped[1].alert_type).toBe('A');
+  });
+
+  it('handles empty list', () => {
+    expect(groupInsights([])).toEqual([]);
+  });
+
+  it('different meter_id = separate groups', () => {
+    const alerts = [
+      mkAlert(1, 'X', 100, 'high', 1),
+      mkAlert(2, 'X', 200, 'high', 2),
+    ];
+    const grouped = groupInsights(alerts);
+    expect(grouped).toHaveLength(2);
   });
 });

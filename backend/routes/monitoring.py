@@ -281,14 +281,21 @@ class MonitoringDemoRequest(BaseModel):
 
 USAGE_PROFILES = {
     "office":    {"peak": 35, "shoulder": 18, "night": 6, "weekend": 5,
-                  "peak_h": (8, 18), "heat_coeff": 1.5, "cool_coeff": 0.8},
+                  "peak_h": (8, 18), "heat_coeff": 1.5, "cool_coeff": 0.8,
+                  "psub_kva": 80, "label": "Bureau tertiaire"},
     "hotel":     {"peak": 25, "shoulder": 20, "night": 15, "weekend": 22,
-                  "peak_h": (7, 22), "heat_coeff": 2.0, "cool_coeff": 1.2},
+                  "peak_h": (7, 22), "heat_coeff": 2.0, "cool_coeff": 1.2,
+                  "psub_kva": 100, "label": "Hotel / Hebergement"},
     "retail":    {"peak": 40, "shoulder": 15, "night": 4, "weekend": 38,
-                  "peak_h": (9, 20), "heat_coeff": 1.0, "cool_coeff": 1.5},
+                  "peak_h": (9, 20), "heat_coeff": 1.0, "cool_coeff": 1.5,
+                  "psub_kva": 120, "label": "Commerce / Retail"},
     "warehouse": {"peak": 20, "shoulder": 15, "night": 12, "weekend": 10,
-                  "peak_h": (6, 20), "heat_coeff": 0.5, "cool_coeff": 0.3},
+                  "peak_h": (6, 20), "heat_coeff": 0.5, "cool_coeff": 0.3,
+                  "psub_kva": 60, "label": "Entrepot / Logistique"},
 }
+
+# Max plausible EUR/an impact per alert to prevent absurd values in demo
+MAX_IMPACT_EUR_PER_ALERT = 50_000
 
 
 @router.post("/demo/generate")
@@ -328,7 +335,7 @@ def generate_monitoring_demo(request: MonitoringDemoRequest, db: Session = Depen
             name=f"Compteur Monitoring {site.nom or site.id}",
             site_id=site.id,
             energy_vector=EnergyVector.ELECTRICITY,
-            subscribed_power_kva=80.0,
+            subscribed_power_kva=float(profile.get("psub_kva", 80)),
             tariff_type="C5",
         )
         db.add(meter)
@@ -401,7 +408,9 @@ def generate_monitoring_demo(request: MonitoringDemoRequest, db: Session = Depen
                 value = 15.0
 
             value *= random.uniform(0.90, 1.10)
-            value = max(0.1, round(value, 2))
+            # Guardrail: cap at 3x subscribed power (no absurd spikes)
+            max_kw = profile.get("psub_kva", 80) * 3
+            value = max(0.1, min(round(value, 2), max_kw))
 
             readings.append(MeterReading(
                 meter_id=meter.id,
@@ -420,6 +429,8 @@ def generate_monitoring_demo(request: MonitoringDemoRequest, db: Session = Depen
         "meter_id": meter.id,
         "meter_ref": meter_id_str,
         "profile": request.profile,
+        "profile_label": profile.get("label", request.profile),
+        "psub_kva": profile.get("psub_kva", 80),
         "readings_generated": len(readings),
         "weather_days": len(weather_days),
         "period": f"{start.date()} - {now.date()}",

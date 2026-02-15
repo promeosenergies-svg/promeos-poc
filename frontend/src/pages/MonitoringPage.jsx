@@ -121,6 +121,93 @@ export function kpiStatus(value, thresholds, invert = false) {
   return 'critique';
 }
 
+/**
+ * Compute confidence level for a KPI.
+ * @param {object} opts - { r2, nPoints, coveragePct, reason }
+ * @returns {{ level: 'low'|'medium'|'high', pct: number, reason: string }}
+ */
+export function computeConfidence({ r2, nPoints, coveragePct, reason } = {}) {
+  if (reason) return { level: 'low', pct: 0, reason };
+
+  let score = 50; // baseline
+  if (r2 != null) score = r2 * 100; // R² dominates for climate
+  if (nPoints != null) {
+    if (nPoints < 10) score = Math.min(score, 15);
+    else if (nPoints < 30) score = Math.min(score, 40);
+  }
+  if (coveragePct != null) score = Math.min(score, coveragePct);
+
+  score = Math.max(0, Math.min(100, Math.round(score)));
+  const level = score >= 60 ? 'high' : score >= 30 ? 'medium' : 'low';
+  const reasons = [];
+  if (r2 != null && r2 < 0.3) reasons.push(`R² faible (${r2.toFixed(2)})`);
+  if (nPoints != null && nPoints < 30) reasons.push(`${nPoints} jours de donnees`);
+  if (coveragePct != null && coveragePct < 60) reasons.push(`Couverture ${coveragePct}%`);
+  return { level, pct: score, reason: reasons.join(' · ') || 'Donnees suffisantes' };
+}
+
+/**
+ * Load factor thresholds by archetype.
+ * lower ok = LF below ok is OK (LF is "high=ok" for some, "high=warn" for others).
+ * Seuils: if LF >= ok → ok, >= warn → surveiller, else critique.
+ */
+export const LF_THRESHOLDS_BY_ARCHETYPE = {
+  office:    { ok: 40, warn: 25 },
+  hotel:     { ok: 55, warn: 35 },
+  retail:    { ok: 45, warn: 30 },
+  warehouse: { ok: 50, warn: 35 },
+  default:   { ok: 35, warn: 20 },
+};
+
+/**
+ * Enhanced kpiStatus that accounts for confidence.
+ * If confidence is low, downgrades 'critique' → 'a_confirmer'.
+ */
+export function kpiStatusWithConfidence(value, thresholds, invert, confidence) {
+  const raw = kpiStatus(value, thresholds, invert);
+  if (raw === 'critique' && confidence && confidence.level === 'low') {
+    return 'a_confirmer';
+  }
+  return raw;
+}
+
+/**
+ * Aggregate duplicate insights by alert_type + meter_id.
+ * Returns grouped rows sorted by total impact desc.
+ */
+export function groupInsights(alerts) {
+  const map = new Map();
+  for (const a of alerts) {
+    const key = `${a.alert_type}:${a.meter_id || 0}`;
+    if (!map.has(key)) {
+      map.set(key, {
+        ...a,
+        _count: 1,
+        _totalEur: a.estimated_impact_eur || 0,
+        _totalKwh: a.estimated_impact_kwh || 0,
+        _maxSeverity: a.severity,
+        _ids: [a.id],
+      });
+    } else {
+      const g = map.get(key);
+      g._count += 1;
+      g._totalEur += a.estimated_impact_eur || 0;
+      g._totalKwh += a.estimated_impact_kwh || 0;
+      g._ids.push(a.id);
+      // Keep worst severity
+      const order = { critical: 3, high: 2, warning: 1, info: 0 };
+      if ((order[a.severity] || 0) > (order[g._maxSeverity] || 0)) {
+        g._maxSeverity = a.severity;
+      }
+      // Keep longest explanation
+      if ((a.explanation || '').length > (g.explanation || '').length) {
+        g.explanation = a.explanation;
+      }
+    }
+  }
+  return [...map.values()].sort((a, b) => b._totalEur - a._totalEur);
+}
+
 // --- Helpers ---
 
 function scoreColor(score) {
@@ -139,7 +226,11 @@ function riskColor(score) {
 
 function fmtNum(v, digits = 1) {
   if (v == null) return '-';
-  return typeof v === 'number' ? v.toFixed(digits) : String(v);
+  if (typeof v !== 'number') return String(v);
+  // French format: space for thousands, comma for decimal
+  const parts = v.toFixed(digits).split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '\u00A0');
+  return parts.join(',');
 }
 
 // --- Sub-components ---
@@ -148,78 +239,149 @@ const STATUS_BADGES = {
   ok: { label: 'OK', badge: 'ok' },
   surveiller: { label: 'Surveiller', badge: 'warn' },
   critique: { label: 'Critique', badge: 'crit' },
-  no_data: { label: '-', badge: 'neutral' },
+  a_confirmer: { label: 'A confirmer', badge: 'info' },
+  no_data: { label: 'Pas de donnees', badge: 'neutral' },
 };
 
-function StatusKpiCard({ icon, title, value, sub, tooltip, status, color, onClick }) {
+const CONFIDENCE_DOT = {
+  high: 'bg-green-500',
+  medium: 'bg-yellow-500',
+  low: 'bg-red-400',
+};
+
+function StatusKpiCard({ icon, title, value, sub, tooltip, status, color, onClick, confidence }) {
   const st = STATUS_BADGES[status] || STATUS_BADGES.ok;
+  const confTip = confidence
+    ? `Confiance: ${confidence.level === 'high' ? 'Forte' : confidence.level === 'medium' ? 'Moyenne' : 'Faible'}${confidence.reason ? ' — ' + confidence.reason : ''}`
+    : null;
+  const fullTip = [tooltip, confTip].filter(Boolean).join('\n');
   return (
-    <Tooltip text={tooltip} position="bottom">
-      <KpiCard
-        icon={icon}
-        title={title}
-        value={value}
-        sub={sub}
-        color={color}
-        onClick={onClick}
-        badge={st.label}
-        badgeStatus={st.badge}
-      />
+    <Tooltip text={fullTip} position="bottom">
+      <div>
+        <KpiCard
+          icon={icon}
+          title={title}
+          value={value}
+          sub={sub}
+          color={color}
+          onClick={onClick}
+          badge={st.label}
+          badgeStatus={st.badge}
+        />
+        {confidence && (
+          <div className="flex items-center gap-1 px-3 pb-2 -mt-1 text-[10px] text-gray-400">
+            <span className={`w-1.5 h-1.5 rounded-full ${CONFIDENCE_DOT[confidence.level] || CONFIDENCE_DOT.low}`} />
+            Confiance: {confidence.level === 'high' ? 'Forte' : confidence.level === 'medium' ? 'Moyenne' : 'Faible'}
+          </div>
+        )}
+      </div>
     </Tooltip>
   );
 }
 
-function ResumeBanner({ alerts, kpiData, climate }) {
-  const items = [];
-
-  // Top alert by EUR impact
+/**
+ * Executive summary: top risk, top waste, data confidence — each with CTA.
+ */
+function ExecutiveSummary({ alerts, kpiData, climate, qualityScore, qualityConf, onOpenExplorer, onCreateAction }) {
+  // Top risk: highest EUR impact open alert
   const topAlert = alerts
     .filter((a) => a.status === 'open' && a.estimated_impact_eur)
     .sort((a, b) => (b.estimated_impact_eur || 0) - (a.estimated_impact_eur || 0))[0];
-  if (topAlert) {
-    items.push({
+
+  // Top waste: off-hours or high base load
+  const wasteAlerts = alerts.filter((a) =>
+    ['HORS_HORAIRES', 'BASE_NUIT_ELEVEE', 'WEEKEND_ANORMAL'].includes(a.alert_type) && a.status !== 'resolved'
+  );
+  const totalWasteEur = wasteAlerts.reduce((s, a) => s + (a.estimated_impact_eur || 0), 0);
+
+  // Data confidence
+  const confLabel = qualityConf?.level === 'high' ? 'Forte' : qualityConf?.level === 'medium' ? 'Moyenne' : 'Faible';
+  const confColor = qualityConf?.level === 'high' ? 'text-green-600' : qualityConf?.level === 'medium' ? 'text-yellow-600' : 'text-red-500';
+
+  const cards = [
+    {
       icon: AlertTriangle,
-      color: 'text-red-600',
-      text: `${ALERT_TYPE_LABELS[topAlert.alert_type] || topAlert.alert_type}: ${topAlert.estimated_impact_eur} EUR/an potentiels`,
-    });
-  }
-
-  // Load factor insight
-  const lf = kpiData?.load_factor;
-  if (lf != null) {
-    const lfPct = Math.round(lf * 100);
-    if (lfPct > 85) {
-      items.push({ icon: TrendingUp, color: 'text-green-600', text: `Load factor ${lfPct}% — courbe tres plate, verifier compteur.` });
-    } else if (lfPct < 30) {
-      items.push({ icon: TrendingUp, color: 'text-orange-600', text: `Load factor ${lfPct}% — forte variabilite, potentiel d'effacement.` });
-    }
-  }
-
-  // Climate slope insight
-  const slope = climate?.slope_kw_per_c;
-  if (slope != null && slope > 2) {
-    items.push({
-      icon: Thermometer,
-      color: 'text-blue-600',
-      text: `Sensibilite climatique: ${slope.toFixed(1)} kW/degC — isolation ou regulation a verifier.`,
-    });
-  }
-
-  if (items.length === 0) return null;
+      iconColor: topAlert ? 'text-red-500' : 'text-gray-300',
+      title: 'Risque principal',
+      value: topAlert
+        ? `${topAlert.estimated_impact_eur} EUR/an`
+        : 'Aucun risque detecte',
+      sub: topAlert
+        ? ALERT_TYPE_LABELS[topAlert.alert_type] || topAlert.alert_type
+        : 'Continuez le suivi',
+      cta: topAlert ? { label: 'Voir preuve', action: () => onCreateAction(topAlert) } : null,
+    },
+    {
+      icon: Zap,
+      iconColor: totalWasteEur > 0 ? 'text-orange-500' : 'text-gray-300',
+      title: 'Gaspillage estime',
+      value: totalWasteEur > 0 ? `${totalWasteEur} EUR/an` : 'Non detecte',
+      sub: wasteAlerts.length > 0
+        ? `${wasteAlerts.length} alerte${wasteAlerts.length > 1 ? 's' : ''} (hors horaires, WE, talon)`
+        : 'Aucune anomalie de gaspillage',
+      cta: totalWasteEur > 0 ? { label: 'Explorer', action: onOpenExplorer } : null,
+    },
+    {
+      icon: Database,
+      iconColor: confColor,
+      title: 'Confiance donnees',
+      value: `${qualityScore ?? '-'}/100`,
+      sub: `${confLabel}${qualityConf?.reason ? ' — ' + qualityConf.reason : ''}`,
+      cta: null,
+    },
+  ];
 
   return (
-    <Card className="mb-4">
-      <CardBody>
-        <div className="flex flex-col gap-2">
-          {items.slice(0, 3).map((item, i) => (
-            <div key={i} className="flex items-center gap-2 text-sm">
-              <item.icon size={14} className={item.color} />
-              <span className="text-gray-700">{item.text}</span>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+      {cards.map((c, i) => (
+        <Card key={i}>
+          <CardBody className="p-4">
+            <div className="flex items-start gap-3">
+              <div className={`p-2 rounded-lg bg-gray-50 ${c.iconColor}`}>
+                <c.icon size={18} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{c.title}</p>
+                <p className="text-lg font-bold text-gray-800 mt-0.5">{c.value}</p>
+                <p className="text-xs text-gray-500 mt-0.5 truncate">{c.sub}</p>
+                {c.cta && (
+                  <button
+                    onClick={c.cta.action}
+                    className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-800 transition flex items-center gap-1"
+                  >
+                    {c.cta.label} <ExternalLink size={10} />
+                  </button>
+                )}
+              </div>
             </div>
-          ))}
-        </div>
-      </CardBody>
-    </Card>
+          </CardBody>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Quick actions bar: Explorer, Create Action, Compare (stub)
+ */
+function QuickActionsBar({ onOpenExplorer, onCreateAction, onCompare, compareEnabled }) {
+  return (
+    <div className="flex items-center gap-2 mb-6 flex-wrap">
+      <Button variant="secondary" size="sm" onClick={onOpenExplorer}>
+        <BarChart3 size={14} />
+        Ouvrir dans Explorer
+      </Button>
+      <Button variant="primary" size="sm" onClick={onCreateAction}>
+        <Zap size={14} />
+        Creer une action
+      </Button>
+      {compareEnabled && (
+        <Button variant="ghost" size="sm" onClick={onCompare}>
+          <Clock size={14} />
+          Comparer periode precedente
+        </Button>
+      )}
+    </div>
   );
 }
 
@@ -234,7 +396,12 @@ function WeekdayWeekendChart({ weekdayProfile, weekendProfile }) {
   }, [weekdayProfile, weekendProfile]);
 
   if (!data) {
-    return <p className="text-sm text-gray-400 text-center py-12">Lancez une analyse pour generer le profil.</p>;
+    return (
+      <div className="text-center py-12">
+        <Clock size={28} className="mx-auto text-gray-200 mb-2" />
+        <p className="text-sm text-gray-400">Lancez une analyse pour generer le profil jour-type.</p>
+      </div>
+    );
   }
 
   return (
@@ -254,7 +421,12 @@ function WeekdayWeekendChart({ weekdayProfile, weekendProfile }) {
 
 function HeatmapGrid({ data }) {
   if (!data || data.length === 0) {
-    return <p className="text-xs text-gray-400 text-center py-8">Pas de donnees heatmap</p>;
+    return (
+      <div className="text-center py-8">
+        <Sun size={24} className="mx-auto text-gray-200 mb-2" />
+        <p className="text-xs text-gray-400">Pas de donnees heatmap. Lancez une analyse.</p>
+      </div>
+    );
   }
 
   const allValues = data.flat().filter((v) => v > 0);
@@ -315,6 +487,7 @@ function ClimateScatter({ climate }) {
     const msg = reason ? CLIMATE_REASONS[reason] || reason : 'Pas de donnees climatiques.';
     return (
       <div className="text-center py-12">
+        <Thermometer size={28} className="mx-auto text-gray-200 mb-2" />
         <p className="text-sm text-gray-400">{msg}</p>
         {reason && <p className="text-xs text-gray-300 mt-1">code: {reason}</p>}
       </div>
@@ -517,6 +690,7 @@ export default function MonitoringPage() {
   const [error, setError] = useState(null);
   const [demoLoading, setDemoLoading] = useState(false);
   const [alertFilter, setAlertFilter] = useState('all');
+  const [severityFilter, setSeverityFilter] = useState('all');
   const [demoProfile, setDemoProfile] = useState('office');
 
   // Drawer state
@@ -661,27 +835,45 @@ export default function MonitoringPage() {
   );
 
   const filteredAlerts = useMemo(() => {
-    if (alertFilter === 'all') return alerts;
-    return alerts.filter((a) => a.status === alertFilter);
-  }, [alerts, alertFilter]);
+    let filtered = alerts;
+    if (alertFilter !== 'all') filtered = filtered.filter((a) => a.status === alertFilter);
+    if (severityFilter !== 'all') filtered = filtered.filter((a) => a.severity === severityFilter);
+    return filtered;
+  }, [alerts, alertFilter, severityFilter]);
 
-  const sortedAlerts = useMemo(() =>
-    [...filteredAlerts].sort((a, b) => (b.estimated_impact_eur || 0) - (a.estimated_impact_eur || 0)).slice(0, 8),
-    [filteredAlerts]
-  );
+  const groupedAlerts = useMemo(() => groupInsights(filteredAlerts), [filteredAlerts]);
 
   const openCount = alerts.filter((a) => a.status === 'open').length;
 
   const allOrgSites = useMemo(() => mockSites, []);
 
-  // KPI statuses
+  // Confidence
+  const climateConf = useMemo(() => computeConfidence({
+    r2: climate?.r_squared,
+    nPoints: climate?.n_points,
+    reason: climate?.reason,
+  }), [climate]);
+
+  const qualityConf = useMemo(() => computeConfidence({
+    coveragePct: kpis?.data_quality_details?.completeness_pct,
+  }), [kpis]);
+
+  // Load factor: archetype-aware thresholds
+  const lfThresholds = useMemo(() => {
+    const prof = demoProfile || 'default';
+    return LF_THRESHOLDS_BY_ARCHETYPE[prof] || LF_THRESHOLDS_BY_ARCHETYPE.default;
+  }, [demoProfile]);
+
+  // KPI statuses (confidence-aware)
   const qualityStatus = kpiStatus(qualityScore, KPI_THRESHOLDS.quality);
   const riskStatus = kpiStatus(riskScore, KPI_THRESHOLDS.risk, true);
   const lfStatus = kpiStatus(
     kpiData.load_factor != null ? kpiData.load_factor * 100 : null,
-    KPI_THRESHOLDS.loadFactor
+    lfThresholds
   );
-  const climateStatus = kpiStatus(climate?.slope_kw_per_c, KPI_THRESHOLDS.climate, true);
+  const climateStatus = kpiStatusWithConfidence(
+    climate?.slope_kw_per_c, KPI_THRESHOLDS.climate, true, climateConf
+  );
 
   // --- No site selected ---
 
@@ -807,8 +999,41 @@ export default function MonitoringPage() {
 
       {hasData && (
         <>
-          {/* Resume Banner */}
-          <ResumeBanner alerts={alerts} kpiData={kpiData} climate={climate} />
+          {/* Executive Summary */}
+          <ExecutiveSummary
+            alerts={alerts}
+            kpiData={kpiData}
+            climate={climate}
+            qualityScore={qualityScore}
+            qualityConf={qualityConf}
+            onOpenExplorer={() => handleOpenExplorer(null)}
+            onCreateAction={(a) => {
+              if (a) handleCreateAction(a);
+              else {
+                setActionPrefill({ titre: `Action — Site ${siteId}`, type: 'conso' });
+                setShowActionModal(true);
+              }
+            }}
+          />
+
+          {/* Quick Actions Bar */}
+          <QuickActionsBar
+            onOpenExplorer={() => handleOpenExplorer(null)}
+            onCreateAction={() => {
+              setActionPrefill({ titre: `Action — Site ${siteId}`, type: 'conso' });
+              setShowActionModal(true);
+            }}
+            compareEnabled={!!kpis?.period}
+            onCompare={() => {
+              const params = new URLSearchParams({ site_id: siteId, compare: '30d' });
+              if (kpis?.period) {
+                const parts = kpis.period.split(' - ');
+                if (parts[0]) params.set('date_from', parts[0]);
+                if (parts[1]) params.set('date_to', parts[1]);
+              }
+              navigate(`/explorer?${params.toString()}`);
+            }}
+          />
 
           {/* KPI Strip — 5 cards */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
@@ -856,6 +1081,7 @@ export default function MonitoringPage() {
               tooltip={KPI_TOOLTIPS.quality}
               status={qualityStatus}
               color={qualityScore >= 80 ? 'bg-green-500' : qualityScore >= 60 ? 'bg-yellow-500' : 'bg-red-500'}
+              confidence={qualityConf}
             />
           </div>
 
@@ -870,6 +1096,7 @@ export default function MonitoringPage() {
                 tooltip={KPI_TOOLTIPS.climate}
                 status={climateStatus}
                 color="bg-cyan-500"
+                confidence={climateConf}
               />
             </div>
           )}
@@ -881,6 +1108,7 @@ export default function MonitoringPage() {
               <CardBody>
                 <h2 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
                   <Clock size={18} /> Signature Jour-Type
+                  <span className="text-[10px] text-gray-400 font-normal ml-auto">Puissance moyenne (kW)</span>
                 </h2>
                 <WeekdayWeekendChart weekdayProfile={weekdayProfile} weekendProfile={weekendProfile} />
               </CardBody>
@@ -890,7 +1118,8 @@ export default function MonitoringPage() {
             <Card>
               <CardBody>
                 <h2 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
-                  <Sun size={18} /> Heatmap 7j × 24h
+                  <Sun size={18} /> Heatmap 7j x 24h
+                  <span className="text-[10px] text-gray-400 font-normal ml-auto">kW moyen / creneau</span>
                 </h2>
                 <HeatmapGrid data={heatmapData} />
               </CardBody>
@@ -901,6 +1130,7 @@ export default function MonitoringPage() {
               <CardBody>
                 <h2 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
                   <Thermometer size={18} /> Conso vs Temperature
+                  <span className="text-[10px] text-gray-400 font-normal ml-auto">kWh/jour vs degC</span>
                 </h2>
                 <ClimateScatter climate={climate} />
               </CardBody>
@@ -911,21 +1141,29 @@ export default function MonitoringPage() {
               <CardBody>
                 <h2 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
                   <BarChart3 size={18} /> Courbe de Charge (Semaine)
+                  <span className="text-[10px] text-gray-400 font-normal ml-auto">kW moyen / heure</span>
                 </h2>
                 {weekdayBarData ? (
                   <ResponsiveContainer width="100%" height={250}>
                     <BarChart data={weekdayBarData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                       <XAxis dataKey="hour" tick={{ fontSize: 11 }} interval={2} />
-                      <YAxis tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} unit=" kW" />
                       <RTooltip formatter={(v) => [`${v} kW`, 'Puissance']} />
-                      <Bar dataKey="kw" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="kw" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Puissance" />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
-                  <p className="text-sm text-gray-400 text-center py-12">
-                    Lancez une analyse pour generer la courbe de charge.
-                  </p>
+                  <div className="text-center py-12">
+                    <BarChart3 size={32} className="mx-auto text-gray-200 mb-2" />
+                    <p className="text-sm text-gray-400">Lancez une analyse pour generer la courbe de charge.</p>
+                    <button
+                      onClick={handleRun}
+                      className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-800"
+                    >
+                      Lancer analyse
+                    </button>
+                  </div>
                 )}
               </CardBody>
             </Card>
@@ -934,15 +1172,20 @@ export default function MonitoringPage() {
           {/* Insights & Alerts */}
           <Card className="mb-6">
             <CardBody>
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                 <h2 className="font-semibold text-gray-700 flex items-center gap-2">
                   <AlertTriangle size={18} className="text-orange-500" />
                   Insights & Alertes
                   {openCount > 0 && (
                     <Badge status="crit">{openCount} ouvertes</Badge>
                   )}
+                  {groupedAlerts.length < filteredAlerts.length && (
+                    <span className="text-[10px] text-gray-400 font-normal">
+                      ({filteredAlerts.length} alertes → {groupedAlerts.length} groupes)
+                    </span>
+                  )}
                 </h2>
-                <div className="flex gap-1">
+                <div className="flex gap-1 flex-wrap">
                   {[
                     { key: 'all', label: 'Tous' },
                     { key: 'open', label: 'Ouverts' },
@@ -962,15 +1205,42 @@ export default function MonitoringPage() {
                       {tab.key !== 'all' && ` (${alerts.filter((a) => a.status === tab.key).length})`}
                     </button>
                   ))}
+                  <span className="w-px bg-gray-200 mx-1" />
+                  {[
+                    { key: 'all', label: 'Toutes' },
+                    { key: 'critical', label: 'Critiques' },
+                    { key: 'high', label: 'Haute' },
+                    { key: 'warning', label: 'Moyenne' },
+                  ].map((tab) => (
+                    <button
+                      key={tab.key}
+                      onClick={() => setSeverityFilter(tab.key)}
+                      className={`px-2 py-1 text-xs rounded-full font-medium transition ${
+                        severityFilter === tab.key
+                          ? 'bg-orange-100 text-orange-700'
+                          : 'text-gray-400 hover:bg-gray-100'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              {sortedAlerts.length === 0 ? (
-                <p className="text-sm text-gray-400 text-center py-6">
-                  {alerts.length === 0
-                    ? 'Aucune alerte. Lancez une analyse pour detecter les anomalies.'
-                    : 'Aucune alerte pour ce filtre.'}
-                </p>
+              {groupedAlerts.length === 0 ? (
+                <div className="text-center py-8">
+                  <AlertTriangle size={28} className="mx-auto text-gray-200 mb-2" />
+                  <p className="text-sm text-gray-400">
+                    {alerts.length === 0
+                      ? 'Aucune alerte. Lancez une analyse pour detecter les anomalies.'
+                      : 'Aucune alerte pour ce filtre.'}
+                  </p>
+                  {alerts.length === 0 && (
+                    <button onClick={handleRun} className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-800">
+                      Lancer analyse
+                    </button>
+                  )}
+                </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -980,12 +1250,12 @@ export default function MonitoringPage() {
                         <th className="pb-2 pr-4">Type</th>
                         <th className="pb-2 pr-4">Severite</th>
                         <th className="pb-2 pr-4">Explication</th>
-                        <th className="pb-2 pr-4 text-right">Impact</th>
+                        <th className="pb-2 pr-4 text-right">Impact (EUR)</th>
                         <th className="pb-2">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {sortedAlerts.map((a) => {
+                      {groupedAlerts.map((a) => {
                         const stCfg = STATUS_CONFIG[a.status] || STATUS_CONFIG.open;
                         return (
                           <tr
@@ -997,19 +1267,33 @@ export default function MonitoringPage() {
                               <Badge status={stCfg.badge}>{stCfg.label}</Badge>
                             </td>
                             <td className="py-3 pr-4">
-                              <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-xs font-medium">
-                                {ALERT_TYPE_LABELS[a.alert_type] || a.alert_type}
-                              </span>
+                              <div className="flex items-center gap-1">
+                                <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-xs font-medium whitespace-nowrap">
+                                  {ALERT_TYPE_LABELS[a.alert_type] || a.alert_type}
+                                </span>
+                                {a._count > 1 && (
+                                  <span className="px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded text-[10px] font-medium">
+                                    x{a._count}
+                                  </span>
+                                )}
+                              </div>
                             </td>
                             <td className="py-3 pr-4">
-                              <Badge status={SEVERITY_BADGE[a.severity] || 'neutral'}>{a.severity}</Badge>
+                              <Badge status={SEVERITY_BADGE[a._maxSeverity || a.severity] || 'neutral'}>
+                                {a._maxSeverity || a.severity}
+                              </Badge>
                             </td>
                             <td className="py-3 pr-4 text-gray-600 max-w-md truncate">{a.explanation}</td>
-                            <td className="py-3 pr-4 text-right text-red-600 font-medium">
-                              {a.estimated_impact_eur ? `${a.estimated_impact_eur} EUR` : '-'}
+                            <td className="py-3 pr-4 text-right font-medium">
+                              {a._totalEur > 0 ? (
+                                <span className="text-red-600">{a._totalEur} EUR</span>
+                              ) : '-'}
                             </td>
                             <td className="py-3">
                               <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                <Button size="sm" variant="ghost" onClick={() => openInsightDrawer(a)}>
+                                  <Eye size={13} /> Preuve
+                                </Button>
                                 {a.status === 'open' && (
                                   <Button size="sm" variant="secondary" onClick={() => handleAck(a.id)}>ACK</Button>
                                 )}
@@ -1068,12 +1352,17 @@ export default function MonitoringPage() {
           </Card>
 
           {/* Trust Badge + Demo CTA */}
-          <div className="flex items-center justify-between">
-            <TrustBadge
-              source="Monitoring Engine"
-              period={kpis?.period}
-              confidence={qualityScore >= 80 ? 'high' : qualityScore >= 50 ? 'medium' : 'low'}
-            />
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <TrustBadge
+                source="Monitoring Engine"
+                period={kpis?.period}
+                confidence={qualityScore >= 80 ? 'high' : qualityScore >= 50 ? 'medium' : 'low'}
+              />
+              <Badge status="info">
+                Profil: {PROFILE_OPTIONS.find((p) => p.value === demoProfile)?.label || demoProfile}
+              </Badge>
+            </div>
             <div className="flex items-center gap-2">
               <select
                 className="border rounded-lg px-2 py-1 text-sm"
