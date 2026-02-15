@@ -176,6 +176,7 @@ export const tint = {
       icon:       () => p.icon,
       softBg:     () => p.softBg,
       dot:        () => p.dot,
+      tab:        () => ({ active: `border-b-2 ${p.activeBorder} ${p.activeText}`, ring: p.pillRing.replace('/60', '') }),
       raw:        () => p,
     };
   },

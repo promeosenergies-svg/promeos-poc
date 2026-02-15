@@ -1,7 +1,9 @@
+import { tint } from './colorTokens';
+
 const DEFAULT_TINT = { active: 'border-blue-600 text-blue-600', ring: 'ring-blue-500' };
 
-export default function Tabs({ tabs, active, onChange, tint: tintOverride }) {
-  const t = tintOverride || DEFAULT_TINT;
+export default function Tabs({ tabs, active, onChange, tint: tintOverride, moduleKey }) {
+  const t = tintOverride || (moduleKey ? tint.module(moduleKey).tab() : DEFAULT_TINT);
   return (
     <div className="border-b border-gray-200">
       <nav className="flex gap-0 -mb-px">
