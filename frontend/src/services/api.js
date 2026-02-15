@@ -533,6 +533,7 @@ export const deleteEmsCollection = (id) => api.delete(`/ems/collections/${id}`).
 // Usage suggest & benchmark
 export const getUsageSuggest = (siteId) => api.get('/ems/usage_suggest', { params: { site_id: siteId } }).then(r => r.data);
 export const getEmsBenchmark = (siteId) => api.get('/ems/benchmark', { params: { site_id: siteId } }).then(r => r.data);
+export const getScheduleSuggest = (siteId, days = 90) => api.get('/ems/schedule_suggest', { params: { site_id: siteId, days } }).then(r => r.data);
 
 // Demo data
 export const generateEmsDemo = (portfolioSize = 12, days = 365, seed = 123, force = false) =>

@@ -192,6 +192,23 @@ def ems_benchmark(site_id: int = Query(...), db: Session = Depends(get_db)):
 
 
 # -------------------------------------------------------------------
+# Schedule Suggest (from consumption data)
+# -------------------------------------------------------------------
+@router.get("/schedule_suggest")
+def schedule_suggest(
+    site_id: int = Query(...),
+    days: int = Query(90, ge=7, le=365),
+    db: Session = Depends(get_db),
+):
+    """Suggest operating schedule from actual consumption data."""
+    from services.ems.schedule_suggest_service import suggest_schedule_from_consumption
+    try:
+        return suggest_schedule_from_consumption(db, site_id, days)
+    except Exception as e:
+        return {"error": "computation_error", "reasons": [str(e)[:200]], "schedule_suggested": None}
+
+
+# -------------------------------------------------------------------
 # Timeseries
 # -------------------------------------------------------------------
 @router.get("/timeseries")

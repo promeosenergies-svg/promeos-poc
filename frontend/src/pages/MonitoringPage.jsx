@@ -40,6 +40,8 @@ import {
   getUsageSuggest,
   getEmsBenchmark,
   getActionsList,
+  getScheduleSuggest,
+  putSiteSchedule,
 } from '../services/api';
 
 // --- Constants ---
@@ -580,7 +582,7 @@ export function formatSchedule(sched) {
 const CONFIDENCE_LABEL_FR = { high: 'Forte', medium: 'Moyenne', low: 'Faible' };
 const SOURCE_LABEL_FR = { naf: 'NAF', type_fallback: 'Type site', default: 'Defaut' };
 
-function UsagePanel({ usage, loading: usageLoading }) {
+function UsagePanel({ usage, loading: usageLoading, scheduleSuggest, onSuggestSchedule, onApplySchedule, suggestLoading }) {
   if (usageLoading) return (
     <div className="bg-white border rounded-xl p-4 mb-4 animate-pulse">
       <div className="h-4 bg-gray-200 rounded w-1/3 mb-2" />
@@ -593,6 +595,10 @@ function UsagePanel({ usage, loading: usageLoading }) {
   const suggested = usage.schedule_suggested;
   const schedText = current ? formatSchedule(current) : null;
   const suggestText = formatSchedule(suggested);
+
+  // Data-driven suggestion from consumption
+  const dataSuggested = scheduleSuggest?.schedule_suggested;
+  const dataSuggestText = dataSuggested ? formatSchedule(dataSuggested) : null;
 
   return (
     <Card className="mb-4">
@@ -611,7 +617,7 @@ function UsagePanel({ usage, loading: usageLoading }) {
               {current ? (
                 <span>{schedText} · Source: horaires site</span>
               ) : (
-                <span className="text-yellow-600">Horaires suggeres: {suggestText}</span>
+                <span className="text-yellow-600">Horaires suggérés: {suggestText}</span>
               )}
             </div>
             <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
@@ -619,8 +625,30 @@ function UsagePanel({ usage, loading: usageLoading }) {
               <span>Source: {SOURCE_LABEL_FR[usage.archetype_source] || usage.archetype_source}</span>
               {usage.has_vacation && <span className="text-blue-500">Vacances actives</span>}
             </div>
+            {/* Data-driven suggestion result */}
+            {dataSuggested && (
+              <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center gap-2 text-xs">
+                  <Database size={12} className="text-blue-500" />
+                  <span className="font-medium text-blue-700">Suggestion depuis conso:</span>
+                  <span className="text-blue-600">{dataSuggested.is_24_7 ? '24/7' : dataSuggestText}</span>
+                  <Badge status={scheduleSuggest.confidence === 'high' ? 'success' : scheduleSuggest.confidence === 'medium' ? 'info' : 'warn'} size="sm">
+                    {CONFIDENCE_LABEL_FR[scheduleSuggest.confidence] || scheduleSuggest.confidence}
+                  </Badge>
+                </div>
+                {scheduleSuggest.reasons?.map((r, i) => (
+                  <p key={i} className="text-[10px] text-blue-500 mt-0.5">{r}</p>
+                ))}
+                <Button variant="primary" size="xs" className="mt-1.5" onClick={() => onApplySchedule(dataSuggested)}>
+                  Appliquer
+                </Button>
+              </div>
+            )}
+            {scheduleSuggest?.error && (
+              <p className="mt-1 text-xs text-amber-600">{scheduleSuggest.reasons?.[0] || scheduleSuggest.error}</p>
+            )}
           </div>
-          <div className="shrink-0">
+          <div className="shrink-0 flex flex-col gap-1">
             {current ? (
               <Button variant="ghost" size="sm" onClick={() => {}}>
                 Modifier
@@ -630,6 +658,10 @@ function UsagePanel({ usage, loading: usageLoading }) {
                 Appliquer
               </Button>
             )}
+            <Button variant="ghost" size="xs" onClick={onSuggestSchedule} disabled={suggestLoading}>
+              <Database size={12} />
+              {suggestLoading ? 'Analyse...' : 'Suggérer depuis conso'}
+            </Button>
           </div>
         </div>
       </CardBody>
@@ -1028,6 +1060,8 @@ export default function MonitoringPage() {
   const [usageSuggest, setUsageSuggest] = useState(null);
   const [usageLoading, setUsageLoading] = useState(false);
   const [benchmark, setBenchmark] = useState(null);
+  const [scheduleSuggest, setScheduleSuggest] = useState(null);
+  const [suggestLoading, setSuggestLoading] = useState(false);
 
   // Drawer state
   const [drawerAlert, setDrawerAlert] = useState(null);
@@ -1158,6 +1192,33 @@ export default function MonitoringPage() {
     setShowActionModal(false);
     track('monitoring_action_created', { site_id: siteId });
     await loadSiteActions();
+  };
+
+  const handleSuggestSchedule = async () => {
+    if (!siteId) return;
+    setSuggestLoading(true);
+    try {
+      const result = await getScheduleSuggest(siteId, 90);
+      setScheduleSuggest(result);
+      track('schedule_suggest', { site_id: siteId, confidence: result.confidence });
+    } catch {
+      setScheduleSuggest({ error: 'request_failed', reasons: ['Erreur lors de l\'analyse'] });
+    }
+    setSuggestLoading(false);
+  };
+
+  const handleApplySchedule = async (suggested) => {
+    if (!siteId || !suggested) return;
+    try {
+      await putSiteSchedule(siteId, suggested);
+      toast('Horaires appliqués avec succès', 'success');
+      track('schedule_apply', { site_id: siteId });
+      setScheduleSuggest(null);
+      // Reload to reflect new schedule
+      await loadAll();
+    } catch {
+      toast('Erreur lors de l\'application des horaires', 'error');
+    }
   };
 
   const handleOpenExplorer = (alert) => {
@@ -1385,7 +1446,14 @@ export default function MonitoringPage() {
       {hasData && (
         <>
           {/* Usage Panel */}
-          <UsagePanel usage={usageSuggest} loading={usageLoading} />
+          <UsagePanel
+            usage={usageSuggest}
+            loading={usageLoading}
+            scheduleSuggest={scheduleSuggest}
+            onSuggestSchedule={handleSuggestSchedule}
+            onApplySchedule={handleApplySchedule}
+            suggestLoading={suggestLoading}
+          />
 
           {/* Executive Summary */}
           <ExecutiveSummary
