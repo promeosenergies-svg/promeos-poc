@@ -54,6 +54,10 @@ class ActionPatch(BaseModel):
     notes: Optional[str] = None
     due_date: Optional[str] = None
     priority: Optional[int] = None
+    realized_gain_eur: Optional[float] = None
+    realized_at: Optional[str] = None
+    category: Optional[str] = None
+    description: Optional[str] = None
 
 
 class CommentCreate(BaseModel):
@@ -388,6 +392,27 @@ def patch_action(
             action.priority = data.priority
             _create_event(db, action.id, "priority_change", old_value=str(old_prio), new_value=str(data.priority))
 
+    # V5.0: ROI + metadata fields
+    if data.realized_gain_eur is not None:
+        old_val = action.realized_gain_eur
+        action.realized_gain_eur = data.realized_gain_eur
+        if old_val != data.realized_gain_eur:
+            _create_event(db, action.id, "realized_updated",
+                          old_value=str(old_val) if old_val else None,
+                          new_value=str(data.realized_gain_eur))
+
+    if data.realized_at is not None:
+        try:
+            action.realized_at = dt_date.fromisoformat(data.realized_at)
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Date invalide: {data.realized_at}")
+
+    if data.category is not None:
+        action.category = data.category
+
+    if data.description is not None:
+        action.description = data.description
+
     db.commit()
     db.refresh(action)
     return {"status": "updated", **_serialize_action(action)}
@@ -483,6 +508,78 @@ def export_csv(
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=actions_promeos.csv"},
     )
+
+
+# ========================================
+# ROI Summary
+# ========================================
+
+@router.get("/roi_summary")
+def roi_summary(
+    org_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """
+    GET /api/actions/roi_summary?org_id=
+    Aggregate ROI: estimated vs realized gains.
+    """
+    oid = _resolve_org_id(db, org_id, auth)
+
+    q = db.query(ActionItem).filter(ActionItem.org_id == oid)
+    q = apply_scope_filter(q, auth, ActionItem.site_id)
+    items = q.all()
+
+    total_estimated = 0.0
+    total_realized = 0.0
+    actions_with_realized = 0
+    by_source = {}
+    by_category = {}
+
+    for a in items:
+        # Exclude false positives from totals
+        if a.status == ActionStatus.FALSE_POSITIVE:
+            continue
+
+        est = a.estimated_gain_eur or 0.0
+        real = a.realized_gain_eur or 0.0
+        total_estimated += est
+        total_realized += real
+        if a.realized_gain_eur and a.realized_gain_eur > 0:
+            actions_with_realized += 1
+
+        # by_source breakdown
+        src = a.source_type.value if a.source_type else "unknown"
+        if src not in by_source:
+            by_source[src] = {"estimated": 0.0, "realized": 0.0, "count": 0}
+        by_source[src]["estimated"] += est
+        by_source[src]["realized"] += real
+        by_source[src]["count"] += 1
+
+        # by_category breakdown
+        cat = a.category or "non_classe"
+        if cat not in by_category:
+            by_category[cat] = {"estimated": 0.0, "realized": 0.0, "count": 0}
+        by_category[cat]["estimated"] += est
+        by_category[cat]["realized"] += real
+        by_category[cat]["count"] += 1
+
+    roi_ratio = round(total_realized / total_estimated, 4) if total_estimated > 0 else 0.0
+
+    # Top 5 actions by realized gain
+    realized_items = [a for a in items if a.realized_gain_eur and a.realized_gain_eur > 0]
+    realized_items.sort(key=lambda a: a.realized_gain_eur, reverse=True)
+    top_roi = [_serialize_action(a) for a in realized_items[:5]]
+
+    return {
+        "total_estimated_eur": round(total_estimated, 2),
+        "total_realized_eur": round(total_realized, 2),
+        "roi_ratio": roi_ratio,
+        "actions_with_realized": actions_with_realized,
+        "by_source": {k: {kk: round(vv, 2) if isinstance(vv, float) else vv for kk, vv in v.items()} for k, v in by_source.items()},
+        "by_category": {k: {kk: round(vv, 2) if isinstance(vv, float) else vv for kk, vv in v.items()} for k, v in by_category.items()},
+        "top_roi_actions": top_roi,
+    }
 
 
 # ========================================
