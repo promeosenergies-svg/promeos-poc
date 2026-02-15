@@ -349,6 +349,38 @@ describe('computeScopeLabel', () => {
   });
 });
 
+/* ---------- Demo-ready: forbidden strings regression ---------- */
+describe('FR demo-ready — forbidden strings in key pages', () => {
+  const fs = require('fs');
+  const path = require('path');
+
+  const readPage = (name) => fs.readFileSync(path.resolve(__dirname, '..', name), 'utf8');
+
+  it('CreateActionModal uses "À planifier" not "Backlog"', () => {
+    const src = fs.readFileSync(path.resolve(__dirname, '../../components/CreateActionModal.jsx'), 'utf8');
+    // "Backlog" should not appear as a user-facing label
+    expect(src).not.toMatch(/label:\s*['"]Backlog['"]/);
+    expect(src).toMatch(/À planifier/);
+  });
+
+  it('CompliancePage uses "Réévaluer" not "Re-evaluer"', () => {
+    const src = readPage('CompliancePage.jsx');
+    expect(src).not.toMatch(/Re-evaluer/);
+  });
+
+  it('ConformitePage uses "Recommandations" not "Actions à mener"', () => {
+    const src = readPage('ConformitePage.jsx');
+    expect(src).not.toMatch(/Actions à mener/);
+    expect(src).toMatch(/Recommandations/);
+  });
+
+  it('ConformitePage rule_id fallback never shows raw code to non-expert', () => {
+    const src = readPage('ConformitePage.jsx');
+    // The fallback in findings list should NOT be f.rule_id alone
+    expect(src).not.toMatch(/\?\.\s*title_fr\s*\|\|\s*f\.rule_id\s*\}/);
+  });
+});
+
 /* ---------- Sprint Conformité: centralized FR labels ---------- */
 describe('FR labels — no English in user-facing constants', () => {
   it('STATUT_LABELS has only FR text', () => {
