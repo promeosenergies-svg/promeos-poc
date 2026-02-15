@@ -86,7 +86,7 @@ const DAYS_FR = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 const HOURS_24 = Array.from({ length: 24 }, (_, i) => `${i}h`);
 
 const DRAWER_TABS = [
-  { id: 'evidence', label: 'Evidence' },
+  { id: 'evidence', label: 'Preuve' },
   { id: 'methode', label: 'Methode' },
   { id: 'actions', label: 'Actions' },
 ];
@@ -515,7 +515,7 @@ function ClimateScatter({ climate }) {
       <ResponsiveContainer width="100%" height={250}>
         <ScatterChart margin={{ top: 5, right: 10, bottom: 5, left: 10 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-          <XAxis dataKey="T" name="Temperature" unit=" °C" tick={{ fontSize: 11 }} type="number" />
+          <XAxis dataKey="T" name="Temperature (°C)" unit=" °C" tick={{ fontSize: 11 }} type="number" />
           <YAxis dataKey="kwh" name="Conso. journaliere" unit=" kWh/j" tick={{ fontSize: 11 }} type="number" />
           <RTooltip cursor={{ strokeDasharray: '3 3' }} />
           <Scatter data={climate.scatter} fill="#3b82f6" fillOpacity={0.6} r={3} name="Jours" />
@@ -589,7 +589,7 @@ function InsightDrawer({ alert, open, onClose, onAck, onResolve, onCreateAction,
         {tab === 'evidence' && (
           <div className="space-y-3">
             {Object.keys(evidence).length > 0 ? (
-              <DrawerSection title="Evidence">
+              <DrawerSection title="Preuve">
                 {Object.entries(evidence).map(([k, v]) => (
                   <DrawerRow key={k} label={k}>
                     {typeof v === 'object' ? JSON.stringify(v) : String(v)}
@@ -597,7 +597,7 @@ function InsightDrawer({ alert, open, onClose, onAck, onResolve, onCreateAction,
                 ))}
               </DrawerSection>
             ) : (
-              <p className="text-sm text-gray-400 text-center py-4">Pas d'evidence detaillee.</p>
+              <p className="text-sm text-gray-400 text-center py-4">Pas de preuve detaillee.</p>
             )}
             {Object.keys(kbLink).length > 0 && (
               <DrawerSection title="Base de connaissances">
@@ -614,10 +614,10 @@ function InsightDrawer({ alert, open, onClose, onAck, onResolve, onCreateAction,
             <DrawerSection title="Methode de detection">
               <DrawerRow label="Type">{alert.alert_type}</DrawerRow>
               <DrawerRow label="Severite">{alert.severity}</DrawerRow>
-              <DrawerRow label="Engine">Monitoring Engine v1.0</DrawerRow>
+              <DrawerRow label="Moteur">Moteur Monitoring v1.0</DrawerRow>
             </DrawerSection>
             <DrawerSection title="Seuils">
-              <DrawerRow label="Seuil declenchement">Defini dans alert_engine.py</DrawerRow>
+              <DrawerRow label="Seuil declenchement">Calcule par le moteur d'alertes</DrawerRow>
               <DrawerRow label="Confiance">{alert.severity === 'critical' ? 'Haute' : 'Moyenne'}</DrawerRow>
             </DrawerSection>
           </div>
@@ -1079,9 +1079,9 @@ export default function MonitoringPage() {
             />
             <StatusKpiCard
               icon={Activity}
-              title="Load Factor"
+              title="Facteur de charge"
               value={kpiData.load_factor != null ? `${fmtNum(kpiData.load_factor * 100)}%` : '-'}
-              sub={`Peak/Avg: ${fmtNum(kpiData.peak_to_average)}x · ${archetypeLabel}`}
+              sub={`Pic/Moy: ${fmtNum(kpiData.peak_to_average)}x · ${archetypeLabel}`}
               tooltip={`${KPI_TOOLTIPS.loadFactor}\nProfil: ${archetypeLabel} (OK >= ${lfThresholds.ok}%, Attention >= ${lfThresholds.warn}%)${isDefaultArchetype ? '\n⚠ Profil par defaut — choisissez un profil pour des seuils adaptes.' : ''}`}
               status={lfStatus}
               color="bg-indigo-500"
@@ -1164,11 +1164,11 @@ export default function MonitoringPage() {
               </CardBody>
             </Card>
 
-            {/* Conso vs Temperature */}
+            {/* Conso. vs Temperature */}
             <Card>
               <CardBody>
                 <h2 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
-                  <Thermometer size={18} /> Conso vs Temperature
+                  <Thermometer size={18} /> Conso. vs Temperature
                   <span className="text-[10px] text-gray-400 font-normal ml-auto">kWh/jour vs °C</span>
                 </h2>
                 <ClimateScatter climate={climate} />
@@ -1341,7 +1341,7 @@ export default function MonitoringPage() {
                                   <Eye size={13} /> Preuve
                                 </Button>
                                 {a.status === 'open' && (
-                                  <Button size="sm" variant="secondary" onClick={() => handleAck(a.id)}>ACK</Button>
+                                  <Button size="sm" variant="secondary" onClick={() => handleAck(a.id)}>Acquitter</Button>
                                 )}
                                 {(a.status === 'open' || a.status === 'ack') && (
                                   <Button size="sm" variant="primary" onClick={() => handleResolve(a.id)}>Resoudre</Button>
