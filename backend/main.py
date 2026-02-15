@@ -124,6 +124,10 @@ def api_health():
         "version": "1.0.0",
         "git_sha": git_sha,
         "time": datetime.datetime.now(datetime.UTC).isoformat(),
+        "engine_versions": {
+            "compliance": "1.0",
+            "bacs": "bacs_v2.0",
+        },
     }
 
 
