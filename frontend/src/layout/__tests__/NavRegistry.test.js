@@ -1,7 +1,7 @@
 /**
- * PROMEOS — NavRegistry Tests (Rail + Panel Architecture)
+ * PROMEOS — NavRegistry Tests (Expandable Sidebar Architecture)
  * Covers: modules, sections, route mapping, expert filtering,
- *         helpers (getSectionsForModule, resolveModule), structure integrity.
+ *         helpers, quick actions, sidebar tints, structure integrity.
  */
 import { describe, it, expect } from 'vitest';
 import {
@@ -10,6 +10,9 @@ import {
   MODULE_TINTS,
   ROUTE_MODULE_MAP,
   ALL_NAV_ITEMS,
+  QUICK_ACTIONS,
+  SECTION_TINTS,
+  SIDEBAR_ITEM_TINTS,
   getSectionsForModule,
   resolveModule,
 } from '../NavRegistry';
@@ -263,5 +266,61 @@ describe('IA coherence', () => {
       expect(typeof item.module).toBe('string');
       expect(item.module.length).toBeGreaterThan(0);
     }
+  });
+});
+
+/* ── Quick Actions ── */
+describe('QUICK_ACTIONS', () => {
+  it('has exactly 4 quick actions', () => {
+    expect(QUICK_ACTIONS).toHaveLength(4);
+  });
+
+  it('each action has key, label, icon, to', () => {
+    for (const action of QUICK_ACTIONS) {
+      expect(typeof action.key).toBe('string');
+      expect(typeof action.label).toBe('string');
+      expect(action.icon).toBeDefined();
+      expect(typeof action.to).toBe('string');
+    }
+  });
+
+  it('all quick action routes exist in ROUTE_MODULE_MAP', () => {
+    for (const action of QUICK_ACTIONS) {
+      expect(ROUTE_MODULE_MAP).toHaveProperty(action.to);
+    }
+  });
+});
+
+/* ── Section tints ── */
+describe('SECTION_TINTS', () => {
+  it('has a tint for every section', () => {
+    for (const section of NAV_SECTIONS) {
+      expect(SECTION_TINTS[section.key]).toBeDefined();
+    }
+  });
+
+  it('tint values are valid SIDEBAR_ITEM_TINTS keys', () => {
+    const validTints = Object.keys(SIDEBAR_ITEM_TINTS);
+    for (const tint of Object.values(SECTION_TINTS)) {
+      expect(validTints).toContain(tint);
+    }
+  });
+});
+
+/* ── Sidebar item tints ── */
+describe('SIDEBAR_ITEM_TINTS', () => {
+  it('has activeBg, activeText, activeBorder, dot for each tint', () => {
+    for (const [, classes] of Object.entries(SIDEBAR_ITEM_TINTS)) {
+      expect(typeof classes.activeBg).toBe('string');
+      expect(typeof classes.activeText).toBe('string');
+      expect(typeof classes.activeBorder).toBe('string');
+      expect(typeof classes.dot).toBe('string');
+    }
+  });
+
+  it('covers all 5 module tints', () => {
+    expect(Object.keys(SIDEBAR_ITEM_TINTS)).toEqual(
+      expect.arrayContaining(['blue', 'emerald', 'indigo', 'violet', 'slate'])
+    );
   });
 });

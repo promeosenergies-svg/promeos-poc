@@ -1,6 +1,6 @@
 /**
- * PROMEOS — Navigation Registry (Rail + Panel IA)
- * 5 modules stables, each with a rail icon + tint color:
+ * PROMEOS — Navigation Registry (Expandable Sidebar IA)
+ * 5 modules stables, each with a tint color:
  * Cockpit / Operations / Analyse / Marche / Donnees
  *
  * Normal mode: Cockpit + Operations + Analyse core (~8 visible items)
@@ -10,7 +10,7 @@ import {
   LayoutDashboard, Building2, ShieldCheck, FileText,
   Zap, ListChecks, Activity, Import, Users, Receipt,
   BookOpen, ShoppingCart, Search, Link2, Eye, Bell, Lock,
-  Target, Database,
+  Target, Database, ScanLine, ListPlus,
 } from 'lucide-react';
 
 /* ── Route → module mapping (for permission checks + auto-select) ── */
@@ -58,6 +58,14 @@ export const MODULE_TINTS = {
   marche:     'from-violet-50/40 to-transparent',
   donnees:    'from-slate-100/50 to-transparent',
 };
+
+/* ── Quick Actions (sidebar + CommandPalette) ── */
+export const QUICK_ACTIONS = [
+  { key: 'scan',   label: 'Scanner',        icon: ScanLine, to: '/conformite',      keywords: ['scan', 'evaluer'] },
+  { key: 'import', label: 'Importer',       icon: Import,   to: '/import',           keywords: ['csv', 'upload'] },
+  { key: 'action', label: 'Creer action',   icon: ListPlus, to: '/actions',          keywords: ['action', 'plan'] },
+  { key: 'diag',   label: 'Lancer analyse', icon: Search,   to: '/diagnostic-conso', keywords: ['diagnostic', 'anomalies'] },
+];
 
 /* ── Section definitions (Panel content per module) ── */
 export const NAV_SECTIONS = [
@@ -163,3 +171,17 @@ export function resolveModule(pathname) {
 export const ALL_NAV_ITEMS = NAV_SECTIONS.flatMap((s) =>
   s.items.map((item) => ({ ...item, section: s.label, module: s.module }))
 );
+
+/* ── Section tints (section key → tint name from parent module) ── */
+export const SECTION_TINTS = Object.fromEntries(
+  NAV_SECTIONS.map((s) => [s.key, NAV_MODULES.find((m) => m.key === s.module)?.tint || 'slate'])
+);
+
+/* ── Sidebar item active-state classes per tint ── */
+export const SIDEBAR_ITEM_TINTS = {
+  blue:    { activeBg: 'bg-blue-50/60',    activeText: 'text-blue-600',    activeBorder: 'border-blue-600',    dot: 'bg-blue-400' },
+  emerald: { activeBg: 'bg-emerald-50/60', activeText: 'text-emerald-600', activeBorder: 'border-emerald-600', dot: 'bg-emerald-400' },
+  indigo:  { activeBg: 'bg-indigo-50/60',  activeText: 'text-indigo-600',  activeBorder: 'border-indigo-600',  dot: 'bg-indigo-400' },
+  violet:  { activeBg: 'bg-violet-50/60',  activeText: 'text-violet-600',  activeBorder: 'border-violet-600',  dot: 'bg-violet-400' },
+  slate:   { activeBg: 'bg-slate-100/60',  activeText: 'text-slate-700',   activeBorder: 'border-slate-600',   dot: 'bg-slate-400' },
+};

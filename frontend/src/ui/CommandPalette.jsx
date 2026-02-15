@@ -5,14 +5,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, ArrowRight, CornerDownLeft } from 'lucide-react';
-import { ALL_NAV_ITEMS } from '../layout/NavRegistry';
-
-const QUICK_ACTIONS = [
-  { id: 'scan', label: 'Lancer un scan conformite', to: '/conformite', keywords: ['scan', 'evaluer'] },
-  { id: 'import', label: 'Importer un fichier CSV', to: '/import', keywords: ['csv', 'upload'] },
-  { id: 'diag', label: 'Lancer diagnostic conso', to: '/diagnostic-conso', keywords: ['diagnostic', 'anomalies'] },
-  { id: 'demo', label: 'Generer donnees demo', to: '/monitoring', keywords: ['demo', 'generer'] },
-];
+import { ALL_NAV_ITEMS, QUICK_ACTIONS } from '../layout/NavRegistry';
 
 export default function CommandPalette({ open, onClose }) {
   const [query, setQuery] = useState('');
@@ -108,7 +101,7 @@ export default function CommandPalette({ open, onClose }) {
             const isSelected = idx === selectedIdx;
             return (
               <button
-                key={item.to + (item.id || '')}
+                key={item.to + (item.key || '')}
                 onClick={() => handleSelect(item)}
                 className={`w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm transition
                   ${isSelected ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'}`}
