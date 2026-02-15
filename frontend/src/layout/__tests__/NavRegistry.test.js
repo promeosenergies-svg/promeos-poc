@@ -14,8 +14,10 @@ import {
   QUICK_ACTIONS,
   SECTION_TINTS,
   SIDEBAR_ITEM_TINTS,
+  TINT_PALETTE,
   getSectionsForModule,
   resolveModule,
+  getModuleTint,
 } from '../NavRegistry';
 
 /* ── Module definitions ── */
@@ -341,7 +343,70 @@ describe('SIDEBAR_ITEM_TINTS', () => {
 
   it('covers all 5 module tints', () => {
     expect(Object.keys(SIDEBAR_ITEM_TINTS)).toEqual(
-      expect.arrayContaining(['blue', 'emerald', 'indigo', 'violet', 'slate'])
+      expect.arrayContaining(['blue', 'emerald', 'indigo', 'amber', 'slate'])
     );
+  });
+});
+
+/* ── TINT_PALETTE (Color Life System) ── */
+describe('TINT_PALETTE', () => {
+  const REQUIRED_KEYS = [
+    'headerBand', 'panelHeader', 'softBg', 'hoverBg',
+    'activeBg', 'activeText', 'activeBorder',
+    'railActiveBg', 'railActiveRing', 'railActiveText',
+    'dot', 'icon', 'pillBg', 'pillText', 'pillRing',
+  ];
+
+  it('has entries for all 5 module tints', () => {
+    const tintNames = NAV_MODULES.map((m) => m.tint);
+    for (const name of tintNames) {
+      expect(TINT_PALETTE[name]).toBeDefined();
+    }
+  });
+
+  it('each palette entry has all required semantic keys', () => {
+    for (const [name, palette] of Object.entries(TINT_PALETTE)) {
+      for (const key of REQUIRED_KEYS) {
+        expect(typeof palette[key]).toBe('string');
+      }
+    }
+  });
+
+  it('headerBand values are gradient strings', () => {
+    for (const [, p] of Object.entries(TINT_PALETTE)) {
+      expect(p.headerBand).toMatch(/^from-/);
+      expect(p.headerBand).toContain('to-transparent');
+    }
+  });
+
+  it('SIDEBAR_ITEM_TINTS is derived from TINT_PALETTE', () => {
+    for (const [name, tint] of Object.entries(SIDEBAR_ITEM_TINTS)) {
+      expect(tint.activeBg).toBe(TINT_PALETTE[name].activeBg);
+      expect(tint.dot).toBe(TINT_PALETTE[name].dot);
+    }
+  });
+
+  it('MODULE_TINTS is derived from TINT_PALETTE', () => {
+    for (const mod of NAV_MODULES) {
+      expect(MODULE_TINTS[mod.key]).toBe(TINT_PALETTE[mod.tint].headerBand);
+    }
+  });
+});
+
+/* ── getModuleTint helper ── */
+describe('getModuleTint', () => {
+  it('returns palette by module key', () => {
+    const t = getModuleTint('cockpit');
+    expect(t).toBe(TINT_PALETTE.blue);
+  });
+
+  it('returns palette by pathname', () => {
+    const t = getModuleTint('/conformite');
+    expect(t).toBe(TINT_PALETTE.emerald);
+  });
+
+  it('falls back to slate for unknown path', () => {
+    const t = getModuleTint('/unknown');
+    expect(t).toBe(TINT_PALETTE.blue); // cockpit fallback → blue
   });
 });

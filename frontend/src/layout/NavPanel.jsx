@@ -1,14 +1,14 @@
 /**
- * PROMEOS — NavPanel (Contextual Module Panel)
- * Shows header (module title + desc), quick actions, recents, pins,
- * then the module's sections with items. Filtered by expert + permissions.
+ * PROMEOS — NavPanel (Contextual Module Panel — Premium Life)
+ * Glass surface. Module-tinted header from TINT_PALETTE.
+ * Quick actions, recents, pins, sections with premium hover/active.
  */
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { ChevronDown, Star, Clock } from 'lucide-react';
 import {
   NAV_MODULES, NAV_SECTIONS, ROUTE_MODULE_MAP, ALL_NAV_ITEMS,
-  QUICK_ACTIONS, SECTION_TINTS, SIDEBAR_ITEM_TINTS,
+  QUICK_ACTIONS, SECTION_TINTS, SIDEBAR_ITEM_TINTS, TINT_PALETTE,
   getSectionsForModule,
 } from './NavRegistry';
 import { useExpertMode } from '../contexts/ExpertModeContext';
@@ -22,9 +22,9 @@ const BADGE_STYLES = {
   _default:   'bg-blue-50 text-blue-700 ring-1 ring-blue-200',
 };
 
-/* ── Panel Link ── */
+/* ── Panel Link (premium active/hover) ── */
 function PanelLink({ to, icon: Icon, label, badge, badgeKey, pinned, onTogglePin, tint }) {
-  const tintClasses = SIDEBAR_ITEM_TINTS[tint] || SIDEBAR_ITEM_TINTS.blue;
+  const t = TINT_PALETTE[tint] || TINT_PALETTE.slate;
   const badgeStyle = badgeKey ? (BADGE_STYLES[badgeKey] || BADGE_STYLES._default) : BADGE_STYLES._default;
 
   return (
@@ -32,17 +32,17 @@ function PanelLink({ to, icon: Icon, label, badge, badgeKey, pinned, onTogglePin
       to={to}
       end={to === '/'}
       className={({ isActive }) =>
-        `group/link flex items-center gap-2.5 h-9 rounded-md text-[13px] transition-colors relative px-2.5
+        `group/link flex items-center gap-2.5 h-9 rounded-lg text-[13px] transition-all duration-150 relative px-2.5
         ${isActive
-          ? `${tintClasses.activeBg} text-slate-900 font-medium border-l-2 ${tintClasses.activeBorder} pl-2`
-          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-normal'
+          ? `${t.activeBg} text-slate-900 font-medium border-l-2 ${t.activeBorder} pl-2`
+          : `text-slate-600 hover:${t.hoverBg.replace('bg-', 'bg-')} hover:text-slate-900 font-normal`
         }
         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1`
       }
     >
       {({ isActive }) => (
         <>
-          <Icon size={15} className={`shrink-0 ${isActive ? tintClasses.activeText : 'text-slate-400'}`} />
+          <Icon size={15} className={`shrink-0 transition-colors duration-150 ${isActive ? t.icon : 'text-slate-400'}`} />
           <span className="flex-1 truncate">{label}</span>
           {badge > 0 && (
             <span className={`ml-auto px-1.5 py-0.5 text-[10px] font-semibold rounded-full min-w-[18px] text-center ${badgeStyle}`}>
@@ -69,21 +69,23 @@ function PanelLink({ to, icon: Icon, label, badge, badgeKey, pinned, onTogglePin
   );
 }
 
-/* ── Section Header ── */
+/* ── Section Header (premium) ── */
 function SectionHeader({ label, isOpen, onToggle, tint }) {
-  const dotClass = SIDEBAR_ITEM_TINTS[tint]?.dot || 'bg-slate-400';
+  const dotClass = TINT_PALETTE[tint]?.dot || 'bg-slate-400';
   return (
     <button
       onClick={onToggle}
-      className="flex items-center w-full px-2.5 py-1 group mt-3 first:mt-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
+      className="flex items-center w-full px-2.5 py-1.5 group mt-3 first:mt-0
+        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-md
+        hover:bg-slate-50/60 transition-colors duration-150"
       aria-expanded={isOpen}
     >
-      <span className={`w-1.5 h-1.5 rounded-full ${dotClass} mr-1.5 shrink-0`} />
+      <span className={`w-1.5 h-1.5 rounded-full ${dotClass} mr-2 shrink-0`} />
       <ChevronDown
         size={11}
         className={`text-slate-400 transition-transform duration-150 mr-1 ${isOpen ? '' : '-rotate-90'}`}
       />
-      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider group-hover:text-slate-600 transition-colors">
+      <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider group-hover:text-slate-700 transition-colors duration-150">
         {label}
       </span>
     </button>
@@ -99,6 +101,7 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
 
   const mod = NAV_MODULES.find((m) => m.key === activeModule) || NAV_MODULES[0];
   const tint = mod.tint;
+  const t = TINT_PALETTE[tint] || TINT_PALETTE.slate;
 
   /* ── Permission filter ── */
   const filterItems = useCallback((items) => {
@@ -174,31 +177,32 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
 
   return (
     <div
-      className="flex flex-col w-52 h-screen bg-white border-r border-slate-200/70 shrink-0 overflow-hidden"
+      className="flex flex-col w-52 h-screen bg-white/80 backdrop-blur-sm border-r border-slate-200/60 shrink-0 overflow-hidden"
       role="navigation"
       aria-label={`Module ${mod.label}`}
     >
-      {/* Module header */}
-      <div className={`px-4 pt-4 pb-3 border-b border-slate-100 bg-gradient-to-b from-${mod.tint === 'slate' ? 'slate-50/60' : `${mod.tint}-50/30`} to-transparent`}>
+      {/* Module header — tinted gradient */}
+      <div className={`px-4 pt-4 pb-3 border-b border-slate-200/50 bg-gradient-to-b ${t.panelHeader}`}>
         <div className="flex items-center gap-2">
-          <mod.icon size={18} className={SIDEBAR_ITEM_TINTS[tint]?.activeText || 'text-slate-600'} />
+          <mod.icon size={18} className={t.icon} />
           <h2 className="text-sm font-semibold text-slate-800">{mod.label}</h2>
         </div>
         <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">{mod.desc}</p>
       </div>
 
-      {/* Quick actions (if any for this module) */}
+      {/* Quick actions — subtle tinted pills */}
       {moduleQuickActions.length > 0 && (
-        <div className="px-3 py-2 border-b border-slate-100">
+        <div className="px-3 py-2 border-b border-slate-200/40">
           <div className="flex flex-wrap gap-1">
             {moduleQuickActions.map((action) => (
               <NavLink
                 key={action.key}
                 to={action.to}
-                className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-slate-500
-                  hover:bg-slate-50 hover:text-slate-700 transition-colors"
+                className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium
+                  text-slate-500 hover:text-slate-700 transition-all duration-150
+                  ${t.softBg} hover:ring-1 ${t.pillRing}`}
               >
-                <action.icon size={12} className="text-slate-400 shrink-0" />
+                <action.icon size={12} className={`${t.icon} shrink-0`} />
                 <span className="truncate">{action.label}</span>
               </NavLink>
             ))}
@@ -210,7 +214,7 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
       <nav className="flex-1 overflow-y-auto py-2 px-2" aria-label={`Navigation ${mod.label}`}>
         {/* Pinned items */}
         {pinnedItems.length > 0 && (
-          <div className="pb-2 mb-1 border-b border-slate-100">
+          <div className="pb-2 mb-1 border-b border-slate-200/40">
             <p className="px-2.5 pb-0.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
               <Star size={9} className="text-amber-400" fill="currentColor" /> Epingles
             </p>
@@ -229,7 +233,7 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
 
         {/* Recents */}
         {recentItems.length > 0 && (
-          <div className="pb-2 mb-1 border-b border-slate-100">
+          <div className="pb-2 mb-1 border-b border-slate-200/40">
             <p className="px-2.5 pb-0.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
               <Clock size={9} className="text-slate-400" /> Recents
             </p>
