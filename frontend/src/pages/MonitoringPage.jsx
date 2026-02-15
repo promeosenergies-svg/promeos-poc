@@ -38,6 +38,7 @@ import {
   resolveMonitoringAlert,
   generateMonitoringDemo,
   getUsageSuggest,
+  getEmsBenchmark,
 } from '../services/api';
 
 // --- Constants ---
@@ -975,6 +976,7 @@ export default function MonitoringPage() {
   // Usage suggest
   const [usageSuggest, setUsageSuggest] = useState(null);
   const [usageLoading, setUsageLoading] = useState(false);
+  const [benchmark, setBenchmark] = useState(null);
 
   // Drawer state
   const [drawerAlert, setDrawerAlert] = useState(null);
@@ -1010,12 +1012,15 @@ export default function MonitoringPage() {
     if (siteId) {
       loadAll();
       track('monitoring_view', { site_id: siteId });
-      // Fetch usage suggestion
+      // Fetch usage suggestion + benchmark
       setUsageLoading(true);
       getUsageSuggest(siteId)
         .then(setUsageSuggest)
         .catch(() => setUsageSuggest(null))
         .finally(() => setUsageLoading(false));
+      getEmsBenchmark(siteId)
+        .then(setBenchmark)
+        .catch(() => setBenchmark(null));
     }
   }, [siteId, loadAll]);
 
@@ -1101,6 +1106,19 @@ export default function MonitoringPage() {
       if (parts[1]) params.set('date_to', parts[1]);
     }
     navigate(`/explorer?${params.toString()}`);
+  };
+
+  // --- Helpers ---
+
+  const benchmarkLabel = (key) => {
+    if (!benchmark || benchmark.insufficient || !benchmark.benchmarks?.[key]) return '';
+    const b = benchmark.benchmarks[key];
+    return ` · Bench: P${b.percentile}`;
+  };
+  const benchmarkTip = (key) => {
+    if (!benchmark || benchmark.insufficient || !benchmark.benchmarks?.[key]) return 'Benchmark: donnees insuffisantes';
+    const b = benchmark.benchmarks[key];
+    return `Benchmark (${benchmark.peer_count} pairs): P25=${b.p25} P50=${b.p50} P75=${b.p75} — votre P${b.percentile}`;
   };
 
   // --- Derived data ---
@@ -1344,8 +1362,8 @@ export default function MonitoringPage() {
               icon={Zap}
               title="Pmax / P95"
               value={kpiData.pmax_kw != null ? `${fmtNum(kpiData.pmax_kw)} kW` : '-'}
-              sub={`P95: ${fmtNum(kpiData.p95_kw)} kW`}
-              tooltip={KPI_TOOLTIPS.pmax}
+              sub={`P95: ${fmtNum(kpiData.p95_kw)} kW${benchmarkLabel('pmax_kw')}`}
+              tooltip={`${KPI_TOOLTIPS.pmax}\n${benchmarkTip('pmax_kw')}`}
               status="ok"
               color="bg-yellow-500"
             />
@@ -1353,8 +1371,8 @@ export default function MonitoringPage() {
               icon={TrendingUp}
               title="Talon / Base"
               value={kpiData.pbase_kw != null ? `${fmtNum(kpiData.pbase_kw)} kW` : '-'}
-              sub={`Nuit: ${fmtNum(kpiData.pbase_night_kw)} kW | WE: ${kpiData.weekend_ratio != null ? fmtNum(kpiData.weekend_ratio * 100) + '%' : '-'}`}
-              tooltip="Talon = consommation mini hors periodes d'activite. Ratio WE = part weekend."
+              sub={`Nuit: ${fmtNum(kpiData.pbase_night_kw)} kW${benchmarkLabel('pbase_kw')}`}
+              tooltip={`Talon = consommation mini hors periodes d'activite.\n${benchmarkTip('pbase_kw')}`}
               status="ok"
               color="bg-blue-500"
             />
@@ -1362,8 +1380,8 @@ export default function MonitoringPage() {
               icon={Activity}
               title="Facteur de charge"
               value={kpiData.load_factor != null ? `${fmtNum(kpiData.load_factor * 100)}%` : '-'}
-              sub={`Pic/Moy: ${fmtNum(kpiData.peak_to_average)}x · ${archetypeLabel}`}
-              tooltip={`${KPI_TOOLTIPS.loadFactor}\nProfil: ${archetypeLabel} (OK >= ${lfThresholds.ok}%, Attention >= ${lfThresholds.warn}%)${isDefaultArchetype ? '\n⚠ Profil par defaut — choisissez un profil pour des seuils adaptes.' : ''}`}
+              sub={`Pic/Moy: ${fmtNum(kpiData.peak_to_average)}x · ${archetypeLabel}${benchmarkLabel('load_factor')}`}
+              tooltip={`${KPI_TOOLTIPS.loadFactor}\nProfil: ${archetypeLabel} (OK >= ${lfThresholds.ok}%, Attention >= ${lfThresholds.warn}%)${isDefaultArchetype ? '\n⚠ Profil par defaut — choisissez un profil pour des seuils adaptes.' : ''}\n${benchmarkTip('load_factor')}`}
               status={lfStatus}
               color="bg-indigo-500"
             />

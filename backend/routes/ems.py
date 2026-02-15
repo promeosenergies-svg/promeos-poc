@@ -132,6 +132,66 @@ def usage_suggest(site_id: int = Query(...), db: Session = Depends(get_db)):
 
 
 # -------------------------------------------------------------------
+# Benchmark by archetype
+# -------------------------------------------------------------------
+@router.get("/benchmark")
+def ems_benchmark(site_id: int = Query(...), db: Session = Depends(get_db)):
+    """Benchmark a site's KPIs against peers of the same archetype."""
+    from models import Site, MonitoringSnapshot, KBMappingCode, TypeSite
+    from services.electric_monitoring.benchmark import build_benchmark
+
+    site = db.query(Site).filter(Site.id == site_id).first()
+    if not site:
+        raise HTTPException(404, "Site not found")
+
+    # Get latest snapshot for target site
+    target_snap = (
+        db.query(MonitoringSnapshot)
+        .filter(MonitoringSnapshot.site_id == site_id)
+        .order_by(MonitoringSnapshot.id.desc())
+        .first()
+    )
+    if not target_snap or not target_snap.kpis_json:
+        return {"site_id": site_id, "insufficient": True, "peer_count": 0, "benchmarks": {}, "source": "demo"}
+
+    target_kpis = target_snap.kpis_json
+
+    # Determine peer group: same site type
+    peer_site_ids = [
+        r[0] for r in db.query(Site.id)
+        .filter(Site.type == site.type, Site.id != site_id, Site.actif == True)
+        .all()
+    ]
+
+    # Collect peer KPIs from latest snapshots
+    peer_kpis_list = []
+    for pid in peer_site_ids:
+        snap = (
+            db.query(MonitoringSnapshot)
+            .filter(MonitoringSnapshot.site_id == pid)
+            .order_by(MonitoringSnapshot.id.desc())
+            .first()
+        )
+        if snap and snap.kpis_json:
+            peer_kpis_list.append(snap.kpis_json)
+
+    if len(peer_kpis_list) < 3:
+        return {"site_id": site_id, "insufficient": True, "peer_count": len(peer_kpis_list), "benchmarks": {}, "source": "demo"}
+
+    benchmark_keys = ["pbase_kw", "off_hours_ratio", "load_factor", "pmax_kw", "p95_kw"]
+    benchmarks = build_benchmark(target_kpis, peer_kpis_list, benchmark_keys)
+
+    return {
+        "site_id": site_id,
+        "archetype": site.type.value if site.type else "unknown",
+        "peer_count": len(peer_kpis_list),
+        "benchmarks": benchmarks,
+        "source": "demo",
+        "insufficient": False,
+    }
+
+
+# -------------------------------------------------------------------
 # Timeseries
 # -------------------------------------------------------------------
 @router.get("/timeseries")
