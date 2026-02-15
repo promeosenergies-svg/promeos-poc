@@ -375,6 +375,15 @@ export const patchAction = (id, data) => api.patch(`/actions/${id}`, data).then(
 export const getActionBatches = (orgId = null) => api.get('/actions/batches', { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);
 export const exportActionsCSV = (params = {}) => api.get('/actions/export.csv', { params, responseType: 'blob' });
 
+// Action Detail + Sub-resources (V5.0)
+export const getActionDetail = (id) => api.get(`/actions/${id}`).then(r => r.data);
+export const getActionComments = (id) => api.get(`/actions/${id}/comments`).then(r => r.data);
+export const addActionComment = (id, data) => api.post(`/actions/${id}/comments`, data).then(r => r.data);
+export const getActionEvidence = (id) => api.get(`/actions/${id}/evidence`).then(r => r.data);
+export const addActionEvidence = (id, data) => api.post(`/actions/${id}/evidence`, data).then(r => r.data);
+export const getActionEvents = (id) => api.get(`/actions/${id}/events`).then(r => r.data);
+export const getROISummary = (orgId) => api.get('/actions/roi_summary', { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);
+
 // ========================================
 // REPORTS (Sprint 10.1)
 // ========================================

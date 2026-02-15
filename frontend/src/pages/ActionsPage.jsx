@@ -15,6 +15,7 @@ import { Table, Thead, Tbody, Th, Tr, Td, ThCheckbox, TdCheckbox } from '../ui';
 import { useToast } from '../ui/ToastProvider';
 import Modal from '../ui/Modal';
 import CreateActionModal from '../components/CreateActionModal';
+import ActionDetailDrawer from '../components/ActionDetailDrawer';
 import { getActionsList, syncActions, patchAction, exportActionsCSV, downloadAuditPDF } from '../services/api';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
@@ -860,73 +861,17 @@ export default function ActionsPage() {
         </div>
       </Modal>
 
-      {/* Detail Modal */}
-      <Modal open={!!detailAction} onClose={() => setDetailAction(null)} title={detailAction?.titre || 'Détail'} wide>
-        {detailAction && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-4">
-              <div><p className="text-xs text-gray-500">Type</p><Badge status={(TYPE_BADGE[detailAction.type] || {}).status}>{detailAction.type}</Badge></div>
-              <div>
-                <p className="text-xs text-gray-500">Priorité</p>
-                <Badge status={PRIORITY_BADGE[detailAction.priorite]}>{PRIORITY_LABEL[detailAction.priorite] || detailAction.priorite}</Badge>
-              </div>
-              <div><p className="text-xs text-gray-500">Statut</p><span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${STATUT_PILL[detailAction.statut] || STATUT_PILL.backlog}`}>{STATUT_LABELS[detailAction.statut]}</span></div>
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div><p className="text-xs text-gray-500">Site</p><p className="text-sm font-medium">{detailAction.site_nom}</p></div>
-              <div><p className="text-xs text-gray-500">Impact EUR</p><p className="text-sm font-bold text-red-600">{detailAction.impact_eur.toLocaleString()} EUR</p></div>
-              <div><p className="text-xs text-gray-500">Effort</p><p className="text-sm">{detailAction.effort}</p></div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs text-gray-500">Échéance</p>
-                <p className={`text-sm flex items-center gap-1 ${isOverdue(detailAction) ? 'text-red-600 font-semibold' : ''}`}>
-                  <Clock size={14} /> {detailAction.due_date}
-                  {isOverdue(detailAction) && <span className="text-xs bg-red-50 text-red-600 px-1.5 py-0.5 rounded ml-1">En retard</span>}
-                </p>
-              </div>
-              <div><p className="text-xs text-gray-500">Responsable</p><p className="text-sm">{detailAction.owner || <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-400 rounded">Non assigné</span>}</p></div>
-            </div>
-
-            {/* Obligation link */}
-            {detailAction.obligation_code && (
-              <div className="p-3 bg-blue-50 rounded-lg text-sm">
-                <p className="text-xs font-semibold text-blue-600 uppercase mb-1">Obligation liée</p>
-                <p className="text-blue-800">{detailAction.obligation_code}</p>
-              </div>
-            )}
-
-            {/* Tags */}
-            <div className="flex items-center gap-2">
-              <Tag size={14} className="text-gray-400" />
-              <span className="text-xs px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded">{detailAction.type}</span>
-              <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">{detailAction.site_nom}</span>
-              {isOverdue(detailAction) && <span className="text-xs px-2 py-0.5 bg-red-50 text-red-600 rounded">en-retard</span>}
-            </div>
-
-            {/* Mock comments */}
-            <div className="border-t border-gray-100 pt-4">
-              <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1"><MessageSquare size={14} /> Commentaires</h3>
-              <div className="space-y-2">
-                <div className="p-3 bg-gray-50 rounded-lg text-sm">
-                  <p className="font-medium text-gray-700">J. Dupont <span className="text-gray-400 font-normal">— 10/02/2026</span></p>
-                  <p className="text-gray-600 mt-1">RDV planifié avec le prestataire pour le 20/02.</p>
-                </div>
-              </div>
-              <div className="mt-3 flex gap-2">
-                <input placeholder="Ajouter un commentaire..." className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                <Button size="sm">Envoyer</Button>
-              </div>
-            </div>
-
-            {/* Mock attachments */}
-            <div className="border-t border-gray-100 pt-4">
-              <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1"><Paperclip size={14} /> Pièces jointes</h3>
-              <p className="text-sm text-gray-400">Aucune pièce jointe.</p>
-            </div>
-          </div>
-        )}
-      </Modal>
+      {/* Detail Drawer (V5.0) */}
+      <ActionDetailDrawer
+        action={detailAction}
+        open={!!detailAction}
+        onClose={() => setDetailAction(null)}
+        onUpdate={(actionId, changes) => {
+          setActions(prev => prev.map(a =>
+            a.id === actionId ? { ...a, ...changes } : a
+          ));
+        }}
+      />
     </PageShell>
   );
 }
