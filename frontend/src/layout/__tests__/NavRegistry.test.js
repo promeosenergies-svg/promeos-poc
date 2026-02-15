@@ -1,7 +1,8 @@
 /**
- * PROMEOS — NavRegistry Tests (Expandable Sidebar Architecture)
+ * PROMEOS — NavRegistry Tests (Rail + Panel Architecture)
  * Covers: modules, sections, route mapping, expert filtering,
- *         helpers, quick actions, sidebar tints, structure integrity.
+ *         helpers, quick actions, sidebar tints, structure integrity,
+ *         5-module rule, Patrimoine in Admin, IA coherence.
  */
 import { describe, it, expect } from 'vitest';
 import {
@@ -25,7 +26,7 @@ describe('NAV_MODULES', () => {
 
   it('modules are in correct order', () => {
     const keys = NAV_MODULES.map((m) => m.key);
-    expect(keys).toEqual(['cockpit', 'operations', 'analyse', 'marche', 'donnees']);
+    expect(keys).toEqual(['cockpit', 'operations', 'analyse', 'marche', 'admin']);
   });
 
   it('order field is sequential 1-5', () => {
@@ -33,13 +34,15 @@ describe('NAV_MODULES', () => {
     expect(orders).toEqual([1, 2, 3, 4, 5]);
   });
 
-  it('each module has icon, label, tint, expertOnly', () => {
+  it('each module has icon, label, tint, expertOnly, desc', () => {
     for (const mod of NAV_MODULES) {
       expect(mod.icon).toBeDefined();
       expect(typeof mod.label).toBe('string');
       expect(mod.label.length).toBeGreaterThan(0);
       expect(typeof mod.tint).toBe('string');
       expect(typeof mod.expertOnly).toBe('boolean');
+      expect(typeof mod.desc).toBe('string');
+      expect(mod.desc.length).toBeGreaterThan(0);
     }
   });
 
@@ -49,10 +52,14 @@ describe('NAV_MODULES', () => {
     expect(normal.map((m) => m.key)).toEqual(['cockpit', 'operations', 'analyse']);
   });
 
-  it('expert mode adds 2 modules (marche, donnees)', () => {
+  it('expert mode adds 2 modules (marche, admin)', () => {
     const expert = NAV_MODULES.filter((m) => m.expertOnly);
     expect(expert).toHaveLength(2);
-    expect(expert.map((m) => m.key)).toEqual(['marche', 'donnees']);
+    expect(expert.map((m) => m.key)).toEqual(['marche', 'admin']);
+  });
+
+  it('5-module rule: no more than 5 modules allowed', () => {
+    expect(NAV_MODULES.length).toBeLessThanOrEqual(5);
   });
 });
 
@@ -107,10 +114,10 @@ describe('NAV_SECTIONS', () => {
     }
   });
 
-  it('donnees module has 2 sections (donnees + admin)', () => {
-    const donneesSections = NAV_SECTIONS.filter((s) => s.module === 'donnees');
-    expect(donneesSections).toHaveLength(2);
-    expect(donneesSections.map((s) => s.key)).toEqual(['donnees', 'admin']);
+  it('admin module has 2 sections (donnees + iam)', () => {
+    const adminSections = NAV_SECTIONS.filter((s) => s.module === 'admin');
+    expect(adminSections).toHaveLength(2);
+    expect(adminSections.map((s) => s.key)).toEqual(['donnees', 'iam']);
   });
 });
 
@@ -126,15 +133,15 @@ describe('Expert filtering', () => {
 
   it('expert mode adds 3 sections', () => {
     expect(expertSections).toHaveLength(3);
-    expect(expertSections.map((s) => s.key)).toEqual(['marche', 'donnees', 'admin']);
+    expect(expertSections.map((s) => s.key)).toEqual(['marche', 'donnees', 'iam']);
   });
 
-  it('normal mode shows ~8 items (excluding expertOnly items)', () => {
+  it('normal mode shows ~7 items (excluding expertOnly items)', () => {
     const normalItems = normalSections.flatMap((s) =>
       s.items.filter((item) => !item.expertOnly)
     );
-    expect(normalItems.length).toBeGreaterThanOrEqual(7);
-    expect(normalItems.length).toBeLessThanOrEqual(9);
+    expect(normalItems.length).toBeGreaterThanOrEqual(6);
+    expect(normalItems.length).toBeLessThanOrEqual(8);
   });
 
   it('Diagnostic is expertOnly within Analyser', () => {
@@ -144,9 +151,9 @@ describe('Expert filtering', () => {
     expect(diag.expertOnly).toBe(true);
   });
 
-  it('admin items are expertOnly + requireAdmin', () => {
-    const admin = NAV_SECTIONS.find((s) => s.key === 'admin');
-    const iamItems = admin.items.filter((item) => item.requireAdmin);
+  it('IAM items are expertOnly + requireAdmin', () => {
+    const iam = NAV_SECTIONS.find((s) => s.key === 'iam');
+    const iamItems = iam.items.filter((item) => item.requireAdmin);
     expect(iamItems.length).toBeGreaterThanOrEqual(4);
     for (const item of iamItems) {
       expect(item.expertOnly).toBe(true);
@@ -194,10 +201,10 @@ describe('getSectionsForModule', () => {
     expect(sections[0].key).toBe('cockpit');
   });
 
-  it('returns 2 sections for donnees module', () => {
-    const sections = getSectionsForModule('donnees');
+  it('returns 2 sections for admin module', () => {
+    const sections = getSectionsForModule('admin');
     expect(sections).toHaveLength(2);
-    expect(sections.map((s) => s.key)).toEqual(['donnees', 'admin']);
+    expect(sections.map((s) => s.key)).toEqual(['donnees', 'iam']);
   });
 
   it('returns empty array for unknown module', () => {
@@ -220,14 +227,15 @@ describe('resolveModule', () => {
     expect(resolveModule('/conformite')).toBe('operations');
     expect(resolveModule('/consommations')).toBe('analyse');
     expect(resolveModule('/bill-intel')).toBe('marche');
-    expect(resolveModule('/import')).toBe('donnees');
+    expect(resolveModule('/import')).toBe('admin');
+    expect(resolveModule('/patrimoine')).toBe('admin');
   });
 
   it('resolves sub-routes by prefix', () => {
     expect(resolveModule('/consommations/explorer')).toBe('analyse');
     expect(resolveModule('/consommations/import')).toBe('analyse');
-    expect(resolveModule('/admin/users')).toBe('donnees');
-    expect(resolveModule('/admin/audit')).toBe('donnees');
+    expect(resolveModule('/admin/users')).toBe('admin');
+    expect(resolveModule('/admin/audit')).toBe('admin');
   });
 
   it('falls back to cockpit for unknown routes', () => {
@@ -253,10 +261,23 @@ describe('IA coherence', () => {
     expect(alertes.badgeKey).toBe('alerts');
   });
 
-  it('Analyse has Patrimoine', () => {
+  it('Patrimoine lives in Admin module (Donnees section)', () => {
+    const donnees = NAV_SECTIONS.find((s) => s.key === 'donnees');
+    expect(donnees.module).toBe('admin');
+    const patrimoine = donnees.items.find((item) => item.to === '/patrimoine');
+    expect(patrimoine).toBeDefined();
+    expect(patrimoine.label).toBe('Patrimoine');
+  });
+
+  it('Patrimoine is first item in Donnees section', () => {
+    const donnees = NAV_SECTIONS.find((s) => s.key === 'donnees');
+    expect(donnees.items[0].to).toBe('/patrimoine');
+  });
+
+  it('Patrimoine is NOT in Analyse section', () => {
     const analyse = NAV_SECTIONS.find((s) => s.key === 'analyse');
     const patrimoine = analyse.items.find((item) => item.to === '/patrimoine');
-    expect(patrimoine).toBeDefined();
+    expect(patrimoine).toBeUndefined();
   });
 
   it('ALL_NAV_ITEMS has section and module for each item', () => {

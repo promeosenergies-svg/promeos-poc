@@ -1,10 +1,10 @@
 /**
- * PROMEOS — Navigation Registry (Expandable Sidebar IA)
+ * PROMEOS — Navigation Registry (Rail + Panel Architecture)
  * 5 modules stables, each with a tint color:
- * Cockpit / Operations / Analyse / Marche / Donnees
+ * Cockpit / Operations / Analyse / Marche / Admin
  *
- * Normal mode: Cockpit + Operations + Analyse core (~8 visible items)
- * Expert mode: + Diagnostic + Marche + Donnees & Admin
+ * Normal mode: Cockpit + Operations + Analyse core (~7 visible items)
+ * Expert mode: + Diagnostic + Marche + Admin (Donnees & IAM)
  */
 import {
   LayoutDashboard, Building2, ShieldCheck, FileText,
@@ -20,7 +20,6 @@ export const ROUTE_MODULE_MAP = {
   '/notifications': 'cockpit',
   '/conformite': 'operations',
   '/actions': 'operations',
-  '/patrimoine': 'analyse',
   '/consommations': 'analyse',
   '/consommations/explorer': 'analyse',
   '/consommations/import': 'analyse',
@@ -30,24 +29,25 @@ export const ROUTE_MODULE_MAP = {
   '/bill-intel': 'marche',
   '/achat-energie': 'marche',
   '/achat-assistant': 'marche',
-  '/import': 'donnees',
-  '/connectors': 'donnees',
-  '/segmentation': 'donnees',
-  '/watchers': 'donnees',
-  '/kb': 'donnees',
-  '/admin/users': 'donnees',
-  '/admin/roles': 'donnees',
-  '/admin/assignments': 'donnees',
-  '/admin/audit': 'donnees',
+  '/patrimoine': 'admin',
+  '/import': 'admin',
+  '/connectors': 'admin',
+  '/segmentation': 'admin',
+  '/watchers': 'admin',
+  '/kb': 'admin',
+  '/admin/users': 'admin',
+  '/admin/roles': 'admin',
+  '/admin/assignments': 'admin',
+  '/admin/audit': 'admin',
 };
 
 /* ── Module definitions (Rail) ── */
 export const NAV_MODULES = [
-  { key: 'cockpit',    label: 'Cockpit',    icon: LayoutDashboard, tint: 'blue',    expertOnly: false, order: 1 },
-  { key: 'operations', label: 'Operations', icon: ListChecks,      tint: 'emerald', expertOnly: false, order: 2 },
-  { key: 'analyse',    label: 'Analyse',    icon: Activity,        tint: 'indigo',  expertOnly: false, order: 3 },
-  { key: 'marche',     label: 'Marche',     icon: Receipt,         tint: 'violet',  expertOnly: true,  order: 4 },
-  { key: 'donnees',    label: 'Donnees',    icon: Database,        tint: 'slate',   expertOnly: true,  order: 5 },
+  { key: 'cockpit',    label: 'Cockpit',    icon: LayoutDashboard, tint: 'blue',    expertOnly: false, order: 1, desc: "Vue d'ensemble et alertes" },
+  { key: 'operations', label: 'Operations', icon: ListChecks,      tint: 'emerald', expertOnly: false, order: 2, desc: "Conformite et plans d'actions" },
+  { key: 'analyse',    label: 'Analyse',    icon: Activity,        tint: 'indigo',  expertOnly: false, order: 3, desc: 'Consommations et performance' },
+  { key: 'marche',     label: 'Marche',     icon: Receipt,         tint: 'violet',  expertOnly: true,  order: 4, desc: 'Factures et achats energie' },
+  { key: 'admin',      label: 'Admin',      icon: Database,        tint: 'slate',   expertOnly: true,  order: 5, desc: 'Donnees, connexions et IAM' },
 ];
 
 /* ── Module tint colors for header bands ── */
@@ -56,7 +56,7 @@ export const MODULE_TINTS = {
   operations: 'from-emerald-50/35 to-transparent',
   analyse:    'from-indigo-50/50 to-transparent',
   marche:     'from-violet-50/40 to-transparent',
-  donnees:    'from-slate-100/50 to-transparent',
+  admin:      'from-slate-100/50 to-transparent',
 };
 
 /* ── Quick Actions (sidebar + CommandPalette) ── */
@@ -102,7 +102,6 @@ export const NAV_SECTIONS = [
       { to: '/consommations',    icon: Zap,       label: 'Consommations', keywords: ['conso', 'energie', 'import', 'explorer', 'ems', 'timeseries'] },
       { to: '/monitoring',       icon: Activity,  label: 'Performance', badgeKey: 'monitoring', keywords: ['monitoring', 'kpi', 'puissance'] },
       { to: '/diagnostic-conso', icon: Search,    label: 'Diagnostic', expertOnly: true, keywords: ['anomalies', 'diagnostic', 'analyse'] },
-      { to: '/patrimoine',       icon: Building2, label: 'Patrimoine', keywords: ['sites', 'batiments', 'immobilier'] },
     ],
   },
   {
@@ -119,21 +118,22 @@ export const NAV_SECTIONS = [
   },
   {
     key: 'donnees',
-    module: 'donnees',
+    module: 'admin',
     label: 'Donnees',
     expertOnly: true,
     order: 5,
     items: [
-      { to: '/import',       icon: Import,   label: 'Imports', keywords: ['import', 'csv', 'upload'] },
-      { to: '/connectors',   icon: Link2,    label: 'Connexions', keywords: ['connecteurs', 'api', 'sync'] },
-      { to: '/kb',           icon: BookOpen, label: 'Knowledge Base', keywords: ['kb', 'knowledge', 'base'] },
-      { to: '/segmentation', icon: Users,    label: 'Segmentation', keywords: ['segment', 'profil'] },
-      { to: '/watchers',     icon: Eye,      label: 'Veille', keywords: ['veille', 'rss', 'reglementaire'] },
+      { to: '/patrimoine',    icon: Building2, label: 'Patrimoine', keywords: ['sites', 'batiments', 'immobilier'] },
+      { to: '/import',        icon: Import,    label: 'Imports', keywords: ['import', 'csv', 'upload'] },
+      { to: '/connectors',    icon: Link2,     label: 'Connexions', keywords: ['connecteurs', 'api', 'sync'] },
+      { to: '/kb',            icon: BookOpen,  label: 'Knowledge Base', keywords: ['kb', 'knowledge', 'base'] },
+      { to: '/segmentation',  icon: Users,     label: 'Segmentation', keywords: ['segment', 'profil'] },
+      { to: '/watchers',      icon: Eye,       label: 'Veille', keywords: ['veille', 'rss', 'reglementaire'] },
     ],
   },
   {
-    key: 'admin',
-    module: 'donnees',
+    key: 'iam',
+    module: 'admin',
     label: 'Administration',
     expertOnly: true,
     order: 6,
