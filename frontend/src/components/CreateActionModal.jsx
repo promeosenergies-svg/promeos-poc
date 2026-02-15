@@ -28,7 +28,7 @@ const STATUT_OPTIONS = [
   { value: 'in_progress', label: 'En cours' },
 ];
 
-export default function CreateActionModal({ open, onClose, onSave, defaultSite = '', defaultType = 'conformite', prefill = null, siteId = null, sourceType = 'manual', sourceId = null }) {
+export default function CreateActionModal({ open, onClose, onSave, defaultSite = '', defaultType = 'conformite', prefill = null, siteId = null, sourceType = 'manual', sourceId = null, idempotencyKey = null }) {
   const [saving, setSaving] = useState(false);
   const defaults = {
     titre: '',
@@ -64,6 +64,7 @@ export default function CreateActionModal({ open, onClose, onSave, defaultSite =
     if (!form.titre.trim()) return;
     setSaving(true);
     try {
+      const idemKey = idempotencyKey || prefill?._idempotencyKey || undefined;
       const payload = {
         title: form.titre.trim(),
         source_type: sourceType || 'manual',
@@ -75,6 +76,7 @@ export default function CreateActionModal({ open, onClose, onSave, defaultSite =
         owner: form.owner || undefined,
         notes: form.description || undefined,
         rationale: form.description || undefined,
+        idempotency_key: idemKey,
       };
       const result = await createAction(payload);
       track('action_create', { type: form.type, site: form.site, backend: true });

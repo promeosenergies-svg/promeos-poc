@@ -244,7 +244,7 @@ function RecommendedAction({ action }) {
   );
 }
 
-function InsightRow({ insight, onRowClick }) {
+function InsightRow({ insight, onRowClick, onCreateAction }) {
   const statusCfg = WORKFLOW_CONFIG[insight.insight_status] || WORKFLOW_CONFIG.open;
   return (
     <tr
@@ -267,6 +267,15 @@ function InsightRow({ insight, onRowClick }) {
       </td>
       <td className="py-3 px-4 text-sm text-center">
         <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusCfg.color}`}>{statusCfg.label}</span>
+      </td>
+      <td className="py-3 px-1 text-center">
+        <button
+          onClick={(e) => { e.stopPropagation(); onCreateAction(insight); }}
+          className="p-1.5 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition"
+          title="Creer une action"
+        >
+          <Zap size={14} />
+        </button>
       </td>
     </tr>
   );
@@ -649,8 +658,12 @@ export default function ConsumptionDiagPage() {
       impact_eur: Math.round(insight.estimated_loss_eur || 0),
       priorite: insight.severity === 'critical' ? 'critical' : insight.severity === 'high' ? 'high' : 'medium',
       description: insight.message + (insight.recommended_actions?.length
-        ? '\n\nActions recommandées :\n' + insight.recommended_actions.map(a => `- ${a.title}`).join('\n')
+        ? '\n\nActions recommandees :\n' + insight.recommended_actions.map(a => `- ${a.title}`).join('\n')
         : ''),
+      _siteId: insight.site_id || null,
+      _sourceType: 'consumption',
+      _sourceId: `insight-${insight.id}`,
+      _idempotencyKey: `diag-insight-${insight.id}`,
     });
     setShowActionModal(true);
     track('insight_create_action', { type: insight.type, id: insight.id });
@@ -757,11 +770,12 @@ export default function ConsumptionDiagPage() {
                     <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase">Perte (EUR)</th>
                     <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase">Perte (kWh)</th>
                     <th className="text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase">Statut</th>
+                    <th className="text-center py-3 px-1 text-xs font-medium text-gray-500 uppercase w-10"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((ins, i) => (
-                    <InsightRow key={ins.id || i} insight={ins} onRowClick={openDrawer} />
+                    <InsightRow key={ins.id || i} insight={ins} onRowClick={openDrawer} onCreateAction={handleCreateAction} />
                   ))}
                 </tbody>
               </table>
@@ -786,6 +800,9 @@ export default function ConsumptionDiagPage() {
         onClose={() => { setShowActionModal(false); setActionPrefill(null); }}
         onSave={handleSaveAction}
         prefill={actionPrefill}
+        siteId={actionPrefill?._siteId}
+        sourceType={actionPrefill?._sourceType || 'consumption'}
+        sourceId={actionPrefill?._sourceId}
       />
     </PageShell>
   );
