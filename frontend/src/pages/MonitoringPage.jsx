@@ -97,7 +97,7 @@ const HOURS_24 = Array.from({ length: 24 }, (_, i) => `${i}h`);
 
 const DRAWER_TABS = [
   { id: 'evidence', label: 'Preuve' },
-  { id: 'methode', label: 'Methode' },
+  { id: 'methode', label: 'Méthode' },
   { id: 'actions', label: 'Actions' },
 ];
 
