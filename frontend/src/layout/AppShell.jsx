@@ -136,11 +136,11 @@ export default function AppShell() {
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-slate-50/80">
+    <div className="flex min-h-screen bg-slate-50/60">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between sticky top-0 z-10">
+        <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200/80 px-6 py-3 flex items-center justify-between sticky top-0 z-10">
           <div className="flex items-center gap-4">
             <Breadcrumb />
             <div className="relative">
@@ -172,6 +172,11 @@ export default function AppShell() {
             <UserMenu />
           </div>
         </header>
+
+        {/* Cockpit header band — subtle gradient on dashboard pages */}
+        {(location.pathname === '/' || location.pathname === '/cockpit') && (
+          <div className="h-24 bg-gradient-to-b from-blue-50/60 to-transparent -mb-24 pointer-events-none" aria-hidden="true" />
+        )}
 
         {/* Content */}
         <main className="flex-1 overflow-y-auto">
