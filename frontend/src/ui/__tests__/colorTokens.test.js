@@ -88,6 +88,30 @@ describe('tint.severity', () => {
   });
 });
 
+/* ── tint.module — tab recipe ── */
+describe('tint.module — tab recipe', () => {
+  it('returns tab object with active and ring', () => {
+    const tab = tint.module('cockpit').tab();
+    expect(tab).toHaveProperty('active');
+    expect(tab).toHaveProperty('ring');
+    expect(tab.active).toContain('border-b-2');
+    expect(tab.active).toContain('text-blue');
+  });
+
+  it('marche tab uses amber', () => {
+    const tab = tint.module('marche').tab();
+    expect(tab.active).toContain('amber');
+  });
+
+  it('covers all 5 modules without error', () => {
+    for (const mod of NAV_MODULES) {
+      const tab = tint.module(mod.key).tab();
+      expect(tab.active).toBeTruthy();
+      expect(tab.ring).toBeTruthy();
+    }
+  });
+});
+
 /* ── Module vs Severity Disambiguation ── */
 describe('module vs severity disambiguation', () => {
   it('module amber pill differs from severity amber badge', () => {
@@ -108,6 +132,12 @@ describe('module vs severity disambiguation', () => {
     for (const mod of NAV_MODULES) {
       expect(TINT_PALETTE).toHaveProperty(mod.tint);
     }
+  });
+
+  it('module amber softBg differs from severity warn chipBg', () => {
+    const moduleAmber = tint.module('marche').softBg();
+    const severityWarn = tint.severity('warn').raw().chipBg;
+    expect(moduleAmber).not.toBe(severityWarn);
   });
 });
 
