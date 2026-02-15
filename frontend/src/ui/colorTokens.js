@@ -3,6 +3,7 @@
  * Semantic color mapping for KPI types, severity levels, and accents.
  * Rule: neutral-first + controlled accents. No full-color backgrounds.
  */
+import { NAV_MODULES, TINT_PALETTE } from '../layout/NavRegistry';
 
 // ── KPI Accent Mapping ──
 // Each KPI type gets ONE stable accent color.
@@ -142,5 +143,49 @@ export const HERO_ACCENTS = {
     bg: 'bg-indigo-50/40',
     border: 'border-indigo-200/50',
     ring: 'ring-1 ring-indigo-200/30',
+  },
+};
+
+/* ── Module vs Severity Disambiguation ──
+ * Module tints (soft semantics): bg-{color}-50/40, text-{color}-700, border-{color}-500
+ *   Used for: nav active, header band, icon accent, pill
+ * Severity tints (signal semantics): dot bg-{color}-500, chip bg-{color}-50 + border-{color}-200
+ *   Used for: status badges, alert dots, KPI severity pills
+ * Amber appears in BOTH (marche module + high/warn severity) but recipes differ:
+ *   Module amber: bg-amber-50/40 (subtle wash) + ring-amber-200/60
+ *   Severity amber: border-amber-200 chip (signal pill)
+ */
+
+// Lookup maps for tint helper (built once from NavRegistry exports)
+const _modLookup = Object.fromEntries(NAV_MODULES.map((m) => [m.key, m]));
+const _palLookup = TINT_PALETTE;
+
+/**
+ * Unified tint helper API.
+ *   tint.module('cockpit').navActive()  → class string
+ *   tint.severity('critical').badge()   → class string
+ */
+export const tint = {
+  module(moduleKey) {
+    const mod = _modLookup[moduleKey];
+    const p = _palLookup[mod?.tint || 'slate'] || _palLookup.slate;
+    return {
+      navActive:  () => `${p.activeBg} ${p.activeText} ${p.activeBorder}`,
+      headerBand: () => p.headerBand,
+      pill:       () => `${p.pillBg} ${p.pillText} ring-1 ${p.pillRing}`,
+      icon:       () => p.icon,
+      softBg:     () => p.softBg,
+      dot:        () => p.dot,
+      raw:        () => p,
+    };
+  },
+  severity(level) {
+    const s = SEVERITY_TINT[level] || SEVERITY_TINT.neutral;
+    return {
+      badge: () => `${s.chipBg} ${s.chipText} border ${s.chipBorder}`,
+      dot:   () => s.dot,
+      label: () => s.label,
+      raw:   () => s,
+    };
   },
 };
