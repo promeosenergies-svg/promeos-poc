@@ -165,6 +165,20 @@ export const LF_THRESHOLDS_BY_ARCHETYPE = {
 };
 
 /**
+ * Estimate off-hours cost in EUR/year.
+ * Extrapolates from a 90-day measurement period to annual.
+ * @param {number|null} kwh - off-hours kWh over the measurement period
+ * @param {number} price - EUR/kWh (default 0.18)
+ * @returns {{ eur: number, label: string, price: number }}
+ */
+export function computeOffHoursEstimate(kwh, price = 0.18) {
+  if (kwh == null || kwh <= 0) return { eur: 0, label: '-', price };
+  const annualized = kwh * (365 / 90);
+  const eur = Math.round(annualized * price);
+  return { eur, label: `~${fmtNum(eur, 0)} EUR/an`, price };
+}
+
+/**
  * Enhanced kpiStatus that accounts for confidence.
  * If confidence is low, caps status at 'a_confirmer' (both critique & surveiller).
  * Rule: low confidence => no alarm — only "A confirmer".
@@ -570,6 +584,91 @@ function UsagePanel({ usage, loading: usageLoading }) {
   );
 }
 
+const OFF_HOURS_TABS = [
+  { id: 'methode', label: 'Methode' },
+  { id: 'hypotheses', label: 'Hypotheses' },
+  { id: 'actions', label: 'Actions' },
+];
+
+function OffHoursDrawer({ open, onClose, offHoursRatio, offHoursKwh, schedule, onCreateAction }) {
+  const [tab, setTab] = useState('methode');
+  const estimate = computeOffHoursEstimate(offHoursKwh);
+
+  return (
+    <Drawer open={open} onClose={onClose} title="Hors Horaires — Detail" wide>
+      <div className="space-y-4">
+        <div className="flex items-center gap-3 flex-wrap">
+          {offHoursRatio != null && <Badge status={offHoursRatio <= 0.20 ? 'ok' : offHoursRatio <= 0.40 ? 'warn' : 'crit'}>{fmtNum(offHoursRatio * 100)}%</Badge>}
+          {offHoursKwh > 0 && <span className="text-sm text-orange-600 font-medium">{fmtNum(offHoursKwh, 0)} kWh (90j)</span>}
+          {estimate.eur > 0 && <span className="text-sm text-red-600 font-medium">{estimate.label}</span>}
+        </div>
+
+        <Tabs tabs={OFF_HOURS_TABS} active={tab} onChange={setTab} />
+
+        {tab === 'methode' && (
+          <div className="space-y-3">
+            <DrawerSection title="Definition">
+              <p className="text-sm text-gray-600">Energie consommee en dehors des heures d'exploitation definies dans le planning du site.</p>
+              <DrawerRow label="Ratio">{offHoursRatio != null ? `${fmtNum(offHoursRatio * 100)}%` : '-'}</DrawerRow>
+              <DrawerRow label="kWh (90 jours)">{offHoursKwh != null ? fmtNum(offHoursKwh, 0) : '-'}</DrawerRow>
+            </DrawerSection>
+            <DrawerSection title="Horaires actuels">
+              {schedule ? (
+                <>
+                  <DrawerRow label="Jours">{schedule.open_days || '-'}</DrawerRow>
+                  <DrawerRow label="Heures">{schedule.is_24_7 ? '24/7' : `${schedule.open_time}-${schedule.close_time}`}</DrawerRow>
+                </>
+              ) : (
+                <p className="text-sm text-gray-400">Horaires non definis — le ratio est base sur un profil par defaut.</p>
+              )}
+            </DrawerSection>
+            <DrawerSection title="Extrapolation">
+              <DrawerRow label="Periode mesuree">90 jours</DrawerRow>
+              <DrawerRow label="Facteur annuel">x {(365 / 90).toFixed(2)}</DrawerRow>
+              <DrawerRow label="kWh annuel estime">{offHoursKwh > 0 ? fmtNum(offHoursKwh * (365 / 90), 0) : '-'}</DrawerRow>
+            </DrawerSection>
+          </div>
+        )}
+
+        {tab === 'hypotheses' && (
+          <div className="space-y-3">
+            <DrawerSection title="Prix de reference">
+              <DrawerRow label="Prix kWh">{estimate.price} EUR/kWh</DrawerRow>
+              <DrawerRow label="Source">Tarif moyen tertiaire France (estimation)</DrawerRow>
+            </DrawerSection>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-700">
+              Les montants affiches sont des estimations. Renseignez vos tarifs reels pour un chiffrage precis.
+            </div>
+          </div>
+        )}
+
+        {tab === 'actions' && (
+          <div className="space-y-3">
+            <DrawerSection title="Action recommandee">
+              <p className="text-sm text-gray-600">Reduire la consommation hors horaires d'exploitation par ajustement des equipements CVC, eclairage, et veilles.</p>
+            </DrawerSection>
+            {estimate.eur > 0 && (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => onCreateAction({
+                  titre: `Reduction conso hors horaires — Site`,
+                  type: 'conso',
+                  impact_eur: estimate.eur,
+                  description: `Off-hours ${offHoursRatio != null ? fmtNum(offHoursRatio * 100) : '?'}% — ${fmtNum(offHoursKwh, 0)} kWh sur 90j. Estimation: ${estimate.label}.`,
+                })}
+              >
+                <Zap size={14} />
+                Creer action ({estimate.label})
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+    </Drawer>
+  );
+}
+
 function ClimateScatter({ climate }) {
   if (!climate || !climate.scatter || climate.scatter.length === 0) {
     const reason = climate?.reason;
@@ -789,6 +888,7 @@ export default function MonitoringPage() {
 
   // Drawer state
   const [drawerAlert, setDrawerAlert] = useState(null);
+  const [showOffHoursDrawer, setShowOffHoursDrawer] = useState(false);
   const [showActionModal, setShowActionModal] = useState(false);
   const [actionPrefill, setActionPrefill] = useState(null);
 
@@ -920,6 +1020,7 @@ export default function MonitoringPage() {
   const schedule = kpis?.schedule || null;
   const offHoursRatio = kpiData.off_hours_ratio ?? null;
   const offHoursKwh = kpiData.off_hours_kwh ?? null;
+  const offHoursEstimate = useMemo(() => computeOffHoursEstimate(offHoursKwh), [offHoursKwh]);
 
   const weekdayProfile = kpiData.weekday_profile_kw;
   const weekendProfile = kpiData.weekend_profile_kw;
@@ -1199,12 +1300,13 @@ export default function MonitoringPage() {
               sub={schedule
                 ? (schedule.is_24_7
                   ? '24/7 — pas de hors horaires'
-                  : `${schedule.open_time}-${schedule.close_time}`)
-                : 'Horaires non definis'}
-              tooltip="Part d'energie consommee en dehors des heures d'exploitation. Un ratio eleve signale un talon ou des equipements actifs la nuit/week-end."
+                  : `${schedule.open_time}-${schedule.close_time}${offHoursEstimate.eur > 0 ? ` · ${offHoursEstimate.label}` : ''}`)
+                : `Horaires non definis${offHoursEstimate.eur > 0 ? ` · ${offHoursEstimate.label}` : ''}`}
+              tooltip={`Part d'energie consommee en dehors des heures d'exploitation. Un ratio eleve signale un talon ou des equipements actifs la nuit/week-end.\nHypothese: ${offHoursEstimate.price} EUR/kWh (tarif moyen)`}
               status={offHoursRatio != null ? (offHoursRatio <= 0.20 ? 'ok' : offHoursRatio <= 0.40 ? 'surveiller' : 'critique') : 'no_data'}
               color={offHoursRatio != null ? (offHoursRatio <= 0.20 ? 'bg-green-500' : offHoursRatio <= 0.40 ? 'bg-orange-500' : 'bg-red-500') : 'bg-slate-400'}
               confidence={qualityConf}
+              onClick={() => setShowOffHoursDrawer(true)}
             />
           </div>
 
@@ -1513,6 +1615,20 @@ export default function MonitoringPage() {
           </div>
         </>
       )}
+
+      {/* OffHoursDrawer */}
+      <OffHoursDrawer
+        open={showOffHoursDrawer}
+        onClose={() => setShowOffHoursDrawer(false)}
+        offHoursRatio={offHoursRatio}
+        offHoursKwh={offHoursKwh}
+        schedule={schedule}
+        onCreateAction={(prefill) => {
+          setShowOffHoursDrawer(false);
+          setActionPrefill(prefill);
+          setShowActionModal(true);
+        }}
+      />
 
       {/* InsightDrawer */}
       <InsightDrawer

@@ -8,7 +8,7 @@ import {
   buildHeatmapGrid, kpiStatus, computeConfidence,
   kpiStatusWithConfidence, LF_THRESHOLDS_BY_ARCHETYPE,
   groupInsights, CLIMATE_REASONS, CLIMATE_LABEL_FR,
-  USAGE_DAYS_FR, formatSchedule,
+  USAGE_DAYS_FR, formatSchedule, computeOffHoursEstimate,
 } from '../MonitoringPage';
 
 describe('buildHeatmapGrid', () => {
@@ -332,6 +332,37 @@ describe('formatSchedule', () => {
   it('handles custom day subsets', () => {
     const result = formatSchedule({ open_days: '0,1,2,3,4,5', open_time: '09:00', close_time: '20:00', is_24_7: false });
     expect(result).toBe('Lun, Mar, Mer, Jeu, Ven, Sam 09:00-20:00');
+  });
+});
+
+describe('computeOffHoursEstimate', () => {
+  it('returns zero for null input', () => {
+    const r = computeOffHoursEstimate(null);
+    expect(r.eur).toBe(0);
+    expect(r.label).toBe('-');
+  });
+
+  it('returns zero for zero kWh', () => {
+    expect(computeOffHoursEstimate(0).eur).toBe(0);
+  });
+
+  it('returns zero for negative kWh', () => {
+    expect(computeOffHoursEstimate(-100).eur).toBe(0);
+  });
+
+  it('annualizes from 90d and applies price', () => {
+    // 1000 kWh over 90 days → (1000 * 365/90) * 0.18 = ~730 EUR
+    const r = computeOffHoursEstimate(1000, 0.18);
+    const expected = Math.round(1000 * (365 / 90) * 0.18);
+    expect(r.eur).toBe(expected);
+    expect(r.label).toContain('EUR/an');
+  });
+
+  it('accepts custom price', () => {
+    const r = computeOffHoursEstimate(1000, 0.25);
+    const expected = Math.round(1000 * (365 / 90) * 0.25);
+    expect(r.eur).toBe(expected);
+    expect(r.price).toBe(0.25);
   });
 });
 
