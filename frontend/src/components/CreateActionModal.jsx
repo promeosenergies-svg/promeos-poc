@@ -23,7 +23,7 @@ const PRIORITE_OPTIONS = [
 ];
 
 const STATUT_OPTIONS = [
-  { value: 'backlog', label: 'Backlog' },
+  { value: 'backlog', label: 'À planifier' },
   { value: 'planned', label: 'Planifiée' },
   { value: 'in_progress', label: 'En cours' },
 ];

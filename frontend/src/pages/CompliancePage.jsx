@@ -231,7 +231,7 @@ export default function CompliancePage() {
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50"
         >
           <RefreshCw size={16} className={recomputing ? 'animate-spin' : ''} />
-          {recomputing ? 'Evaluation...' : 'Re-evaluer'}
+          {recomputing ? 'Évaluation...' : 'Réévaluer'}
         </button>
       </div>
 
@@ -288,9 +288,9 @@ export default function CompliancePage() {
             {sites.length === 0 ? (
               <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
                 <ShieldCheck size={40} className="mx-auto mb-3 text-gray-300" />
-                <p>Aucun finding.</p>
+                <p>Aucun constat.</p>
                 <p className="text-sm mt-1">
-                  Cliquez "Re-evaluer" pour lancer l'evaluation ou{' '}
+                  Cliquez « Réévaluer » pour lancer l'évaluation ou{' '}
                   <Link to="/import" className="text-blue-600 hover:underline">importez des sites</Link>.
                 </p>
               </div>

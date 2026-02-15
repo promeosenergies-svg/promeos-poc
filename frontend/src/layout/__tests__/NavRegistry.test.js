@@ -91,7 +91,7 @@ describe('NAV_SECTIONS', () => {
     const labels = NAV_SECTIONS.map((s) => s.label);
     expect(labels).toEqual([
       'Piloter',
-      'Executer',
+      'Exécuter',
       'Analyser',
       'Marche & Factures',
       'Donnees',

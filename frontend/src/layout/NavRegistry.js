@@ -44,10 +44,10 @@ export const ROUTE_MODULE_MAP = {
 /* ── Module definitions (Rail) ── */
 export const NAV_MODULES = [
   { key: 'cockpit',    label: 'Cockpit',    icon: LayoutDashboard, tint: 'blue',    expertOnly: false, order: 1, desc: "Vue d'ensemble et alertes" },
-  { key: 'operations', label: 'Operations', icon: ListChecks,      tint: 'emerald', expertOnly: false, order: 2, desc: "Conformite et plans d'actions" },
+  { key: 'operations', label: 'Opérations', icon: ListChecks,      tint: 'emerald', expertOnly: false, order: 2, desc: "Conformité et plans d'actions" },
   { key: 'analyse',    label: 'Analyse',    icon: Activity,        tint: 'indigo',  expertOnly: false, order: 3, desc: 'Consommations et performance' },
-  { key: 'marche',     label: 'Marche',     icon: Receipt,         tint: 'amber',   expertOnly: true,  order: 4, desc: 'Factures et achats energie' },
-  { key: 'admin',      label: 'Admin',      icon: Database,        tint: 'slate',   expertOnly: true,  order: 5, desc: 'Donnees, connexions et IAM' },
+  { key: 'marche',     label: 'Marché',     icon: Receipt,         tint: 'amber',   expertOnly: true,  order: 4, desc: 'Factures et achats énergie' },
+  { key: 'admin',      label: 'Admin',      icon: Database,        tint: 'slate',   expertOnly: true,  order: 5, desc: 'Données, connexions et IAM' },
 ];
 
 /* ── Centralized Tint Palette (Color Life System) ──
@@ -172,11 +172,11 @@ export const NAV_SECTIONS = [
   {
     key: 'operations',
     module: 'operations',
-    label: 'Executer',
+    label: 'Exécuter',
     expertOnly: false,
     order: 2,
     items: [
-      { to: '/conformite', icon: ShieldCheck, label: 'Conformite', keywords: ['compliance', 'reglementation', 'decret'] },
+      { to: '/conformite', icon: ShieldCheck, label: 'Conformité', keywords: ['compliance', 'reglementation', 'decret'] },
       { to: '/actions',    icon: ListChecks,  label: "Plan d'actions", keywords: ['actions', 'plan', 'todo'] },
     ],
   },

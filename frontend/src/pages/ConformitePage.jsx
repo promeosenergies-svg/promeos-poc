@@ -657,7 +657,7 @@ function ObligationCard({ obligation, onCreateAction, onWorkflowAction, onUpload
                     <div key={f.id} className="flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-gray-50 transition-colors">
                       <span className={`w-2 h-2 rounded-full shrink-0 ${f.status === 'NOK' ? 'bg-red-500' : 'bg-amber-500'}`} />
                       <span className="text-gray-700 font-medium truncate flex-1">{f.site_nom}</span>
-                      <span className="text-xs text-gray-500 hidden sm:inline">{RULE_LABELS[f.rule_id]?.title_fr || f.rule_id}</span>
+                      <span className="text-xs text-gray-500 hidden sm:inline">{RULE_LABELS[f.rule_id]?.title_fr || f.regulation || 'Non conforme'}</span>
                       <button
                         onClick={() => onAuditFinding(f.id)}
                         className="text-xs text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50 font-medium flex items-center gap-1 px-2 py-1 rounded transition-colors"
@@ -982,9 +982,10 @@ function ActionRow({ finding, onWorkflowAction, onCreateAction, onAuditFinding }
             <CheckCircle2 size={12} /> Résolu
           </button>
         )}
+        <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 font-medium shrink-0">Recommandation</span>
         {finding.status === 'NOK' && (
           <Button size="sm" variant="secondary" onClick={() => onCreateAction(finding)}>
-            <Plus size={12} /> Action
+            <Plus size={12} /> Créer une action
           </Button>
         )}
       </div>
@@ -1040,7 +1041,18 @@ function ProofSection({ obligation, files, onUpload }) {
           </div>
         )}
         {files.length === 0 && (
-          <p className="text-xs text-gray-400 mb-3">Aucune preuve jointe pour cette obligation.</p>
+          <div className="mb-3">
+            {obligation.statut === 'conforme' && (
+              <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 font-medium mb-1">
+                Preuve non jointe
+              </span>
+            )}
+            <p className="text-xs text-gray-400">
+              {obligation.statut === 'conforme'
+                ? 'Vous pouvez joindre un justificatif pour renforcer la conformité.'
+                : 'Aucune preuve jointe pour cette obligation.'}
+            </p>
+          </div>
         )}
         <label className="inline-flex items-center gap-2 cursor-pointer text-sm text-indigo-600 hover:text-indigo-800 transition font-medium">
           <Upload size={14} />
@@ -1500,7 +1512,7 @@ export default function ConformitePage() {
             <div className="flex items-center gap-2">
               <ClipboardList size={16} className="text-blue-600" />
               <h3 className="text-sm font-semibold text-gray-700">
-                Actions à mener ({actionableFindings.length})
+                Recommandations ({actionableFindings.length})
               </h3>
             </div>
             {actionableFindings.length > 0 && (
