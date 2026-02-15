@@ -1132,6 +1132,14 @@ export default function MonitoringPage() {
     setLoading(false);
   }, [siteId]);
 
+  const loadSiteActions = useCallback(async () => {
+    if (!siteId) return;
+    try {
+      const list = await getActionsList({ site_id: siteId });
+      setSiteActions(list.slice(0, 5));
+    } catch { /* silent */ }
+  }, [siteId]);
+
   useEffect(() => {
     if (siteId) {
       loadAll();
@@ -1229,14 +1237,6 @@ export default function MonitoringPage() {
     });
     setShowActionModal(true);
   };
-
-  const loadSiteActions = useCallback(async () => {
-    if (!siteId) return;
-    try {
-      const list = await getActionsList({ site_id: siteId });
-      setSiteActions(list.slice(0, 5));
-    } catch { /* silent */ }
-  }, [siteId]);
 
   const handleSaveAction = async () => {
     toast('Action créée avec succès', 'success');
