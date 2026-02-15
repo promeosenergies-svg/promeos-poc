@@ -4,6 +4,8 @@
  *         LF thresholds, groupInsights, CLIMATE_REASONS, CLIMATE_LABEL_FR
  */
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 import {
   buildHeatmapGrid, kpiStatus, computeConfidence,
   kpiStatusWithConfidence, LF_THRESHOLDS_BY_ARCHETYPE,
@@ -414,5 +416,30 @@ describe('computeConfidence with climate reason codes', () => {
     const conf = computeConfidence({ r2: 0.90, nPoints: 20 });
     expect(conf.level).toBe('medium');
     expect(conf.reason).toContain('20 jours');
+  });
+});
+
+describe('MonitoringPage: no TDZ on loadSiteActions', () => {
+  const src = readFileSync(resolve(__dirname, '../MonitoringPage.jsx'), 'utf8');
+
+  it('loadSiteActions is declared before any useEffect that references it', () => {
+    const declLine = src.indexOf('const loadSiteActions = useCallback');
+    const effectUseLine = src.indexOf('loadSiteActions()');
+    expect(declLine).toBeGreaterThan(-1);
+    expect(effectUseLine).toBeGreaterThan(-1);
+    expect(declLine).toBeLessThan(effectUseLine);
+  });
+
+  it('loadSiteActions is declared before the useEffect dep array that references it', () => {
+    const declLine = src.indexOf('const loadSiteActions = useCallback');
+    const depLine = src.indexOf('loadSiteActions]');
+    expect(declLine).toBeGreaterThan(-1);
+    expect(depLine).toBeGreaterThan(-1);
+    expect(declLine).toBeLessThan(depLine);
+  });
+
+  it('no duplicate loadSiteActions declarations', () => {
+    const matches = src.match(/const loadSiteActions = useCallback/g);
+    expect(matches).toHaveLength(1);
   });
 });
