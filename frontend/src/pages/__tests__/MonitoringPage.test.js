@@ -8,6 +8,7 @@ import {
   buildHeatmapGrid, kpiStatus, computeConfidence,
   kpiStatusWithConfidence, LF_THRESHOLDS_BY_ARCHETYPE,
   groupInsights, CLIMATE_REASONS, CLIMATE_LABEL_FR,
+  USAGE_DAYS_FR, formatSchedule,
 } from '../MonitoringPage';
 
 describe('buildHeatmapGrid', () => {
@@ -299,6 +300,38 @@ describe('CLIMATE_LABEL_FR', () => {
     for (const label of Object.values(CLIMATE_LABEL_FR)) {
       expect(label).not.toMatch(/dominant|cooling|heating|mixed|unknown/i);
     }
+  });
+});
+
+describe('USAGE_DAYS_FR', () => {
+  it('maps 0-6 to French day abbreviations', () => {
+    expect(USAGE_DAYS_FR[0]).toBe('Lun');
+    expect(USAGE_DAYS_FR[4]).toBe('Ven');
+    expect(USAGE_DAYS_FR[6]).toBe('Dim');
+  });
+
+  it('has all 7 days', () => {
+    expect(Object.keys(USAGE_DAYS_FR)).toHaveLength(7);
+  });
+});
+
+describe('formatSchedule', () => {
+  it('returns 24/7 for is_24_7 schedule', () => {
+    expect(formatSchedule({ open_days: '0,1,2,3,4,5,6', open_time: '00:00', close_time: '23:59', is_24_7: true })).toBe('24/7');
+  });
+
+  it('returns Lun-Ven for weekday-only schedule', () => {
+    const result = formatSchedule({ open_days: '0,1,2,3,4', open_time: '08:00', close_time: '19:00', is_24_7: false });
+    expect(result).toBe('Lun-Ven 08:00-19:00');
+  });
+
+  it('returns dash for null input', () => {
+    expect(formatSchedule(null)).toBe('-');
+  });
+
+  it('handles custom day subsets', () => {
+    const result = formatSchedule({ open_days: '0,1,2,3,4,5', open_time: '09:00', close_time: '20:00', is_24_7: false });
+    expect(result).toBe('Lun, Mar, Mer, Jeu, Ven, Sam 09:00-20:00');
   });
 });
 

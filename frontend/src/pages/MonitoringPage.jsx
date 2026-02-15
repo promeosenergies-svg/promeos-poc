@@ -37,6 +37,7 @@ import {
   ackMonitoringAlert,
   resolveMonitoringAlert,
   generateMonitoringDemo,
+  getUsageSuggest,
 } from '../services/api';
 
 // --- Constants ---
@@ -497,6 +498,78 @@ export const CLIMATE_LABEL_FR = {
   unknown: 'Non determine',
 };
 
+// --- Usage Panel helpers ---
+
+export const USAGE_DAYS_FR = { 0: 'Lun', 1: 'Mar', 2: 'Mer', 3: 'Jeu', 4: 'Ven', 5: 'Sam', 6: 'Dim' };
+
+export function formatSchedule(sched) {
+  if (!sched) return '-';
+  if (sched.is_24_7) return '24/7';
+  const days = (sched.open_days || '').split(',').map((d) => USAGE_DAYS_FR[d.trim()]).filter(Boolean);
+  const daysStr = days.length === 7 ? 'Tous les jours' : days.length === 5 && !days.includes('Sam') ? 'Lun-Ven' : days.join(', ');
+  return `${daysStr} ${sched.open_time}-${sched.close_time}`;
+}
+
+const CONFIDENCE_LABEL_FR = { high: 'Forte', medium: 'Moyenne', low: 'Faible' };
+const SOURCE_LABEL_FR = { naf: 'NAF', type_fallback: 'Type site', default: 'Defaut' };
+
+function UsagePanel({ usage, loading: usageLoading }) {
+  if (usageLoading) return (
+    <div className="bg-white border rounded-xl p-4 mb-4 animate-pulse">
+      <div className="h-4 bg-gray-200 rounded w-1/3 mb-2" />
+      <div className="h-3 bg-gray-100 rounded w-2/3" />
+    </div>
+  );
+  if (!usage) return null;
+
+  const current = usage.schedule_current;
+  const suggested = usage.schedule_suggested;
+  const schedText = current ? formatSchedule(current) : null;
+  const suggestText = formatSchedule(suggested);
+
+  return (
+    <Card className="mb-4">
+      <CardBody className="p-4">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <Clock size={16} className="text-blue-500 shrink-0" />
+              <span className="font-semibold text-sm text-gray-800">Usages & Horaires</span>
+              <Badge status="info">{usage.archetype_label || usage.archetype_code}</Badge>
+              {usage.archetype_source === 'naf' && (
+                <span className="text-[10px] text-gray-400">NAF: {usage.reasons?.[0]?.split('→')[0]?.replace('NAF ', '').trim()}</span>
+              )}
+            </div>
+            <div className="text-sm text-gray-600">
+              {current ? (
+                <span>{schedText} · Source: horaires site</span>
+              ) : (
+                <span className="text-yellow-600">Horaires suggeres: {suggestText}</span>
+              )}
+            </div>
+            <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
+              <span>Confiance: {CONFIDENCE_LABEL_FR[usage.confidence] || usage.confidence}</span>
+              <span>Source: {SOURCE_LABEL_FR[usage.archetype_source] || usage.archetype_source}</span>
+              {usage.has_vacation && <span className="text-blue-500">Vacances actives</span>}
+            </div>
+          </div>
+          <div className="shrink-0">
+            {current ? (
+              <Button variant="ghost" size="sm" onClick={() => {}}>
+                Modifier
+              </Button>
+            ) : (
+              <Button variant="secondary" size="sm" onClick={() => {}}>
+                Appliquer
+              </Button>
+            )}
+          </div>
+        </div>
+      </CardBody>
+    </Card>
+  );
+}
+
 function ClimateScatter({ climate }) {
   if (!climate || !climate.scatter || climate.scatter.length === 0) {
     const reason = climate?.reason;
@@ -710,6 +783,10 @@ export default function MonitoringPage() {
   const [severityFilter, setSeverityFilter] = useState('all');
   const [demoProfile, setDemoProfile] = useState('office');
 
+  // Usage suggest
+  const [usageSuggest, setUsageSuggest] = useState(null);
+  const [usageLoading, setUsageLoading] = useState(false);
+
   // Drawer state
   const [drawerAlert, setDrawerAlert] = useState(null);
   const [showActionModal, setShowActionModal] = useState(false);
@@ -742,6 +819,12 @@ export default function MonitoringPage() {
     if (siteId) {
       loadAll();
       track('monitoring_view', { site_id: siteId });
+      // Fetch usage suggestion
+      setUsageLoading(true);
+      getUsageSuggest(siteId)
+        .then(setUsageSuggest)
+        .catch(() => setUsageSuggest(null))
+        .finally(() => setUsageLoading(false));
     }
   }, [siteId, loadAll]);
 
@@ -1021,6 +1104,9 @@ export default function MonitoringPage() {
 
       {hasData && (
         <>
+          {/* Usage Panel */}
+          <UsagePanel usage={usageSuggest} loading={usageLoading} />
+
           {/* Executive Summary */}
           <ExecutiveSummary
             alerts={alerts}

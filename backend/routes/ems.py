@@ -19,6 +19,119 @@ def ems_health():
 
 
 # -------------------------------------------------------------------
+# Usage Suggest (archetype + schedule)
+# -------------------------------------------------------------------
+def _archetype_to_profile(code: str) -> str:
+    """Map KB archetype code to a profile name for schedule lookup."""
+    c = code.lower()
+    if "bureau" in c:
+        return "office"
+    if "commerce" in c or "magasin" in c or "restauration" in c:
+        return "retail"
+    if "hotel" in c:
+        return "hotel"
+    if "sante" in c or "hopital" in c:
+        return "hospital"
+    if "enseignement" in c:
+        return "school"
+    if "logistique" in c or "entrepot" in c:
+        return "warehouse"
+    return "office"
+
+
+@router.get("/usage_suggest")
+def usage_suggest(site_id: int = Query(...), db: Session = Depends(get_db)):
+    """Suggest archetype + operating schedule for a site based on NAF code or site type."""
+    from models import Site, SiteOperatingSchedule, KBMappingCode, TypeSite
+    from services.demo_seed.gen_master import _PROFILE_SCHEDULES
+
+    site = db.query(Site).filter(Site.id == site_id).first()
+    if not site:
+        raise HTTPException(404, "Site not found")
+
+    # Current schedule
+    schedule = db.query(SiteOperatingSchedule).filter_by(site_id=site_id).first()
+    schedule_current = None
+    if schedule:
+        schedule_current = {
+            "open_days": schedule.open_days,
+            "open_time": schedule.open_time,
+            "close_time": schedule.close_time,
+            "is_24_7": schedule.is_24_7,
+        }
+
+    # Determine archetype
+    archetype_code = None
+    archetype_label = None
+    archetype_source = "default"
+    confidence = "low"
+    profile_name = "office"
+    reasons = []
+
+    # 1. Try NAF mapping via KBMappingCode → KBArchetype
+    if site.naf_code:
+        mapping = (
+            db.query(KBMappingCode)
+            .filter_by(naf_code=site.naf_code)
+            .order_by(KBMappingCode.priority.desc())
+            .first()
+        )
+        if mapping and mapping.archetype:
+            arch = mapping.archetype
+            archetype_code = arch.code
+            archetype_label = arch.title
+            archetype_source = "naf"
+            confidence = "high"
+            profile_name = _archetype_to_profile(arch.code)
+            reasons.append(f"NAF {site.naf_code} → {arch.code}")
+
+    # 2. Fallback to site type
+    _TYPE_FALLBACK = {
+        TypeSite.BUREAU: ("BUREAU_STANDARD", "Bureau standard", "office"),
+        TypeSite.COMMERCE: ("COMMERCE_ALIMENTAIRE", "Commerce alimentaire", "retail"),
+        TypeSite.MAGASIN: ("COMMERCE_ALIMENTAIRE", "Commerce alimentaire", "retail"),
+        TypeSite.ENTREPOT: ("LOGISTIQUE_ENTREPOT", "Logistique entrepot", "warehouse"),
+        TypeSite.HOTEL: ("HOTEL", "Hotel", "hotel"),
+        TypeSite.SANTE: ("SANTE_HOPITAL", "Sante hopital", "hospital"),
+        TypeSite.ENSEIGNEMENT: ("ENSEIGNEMENT", "Enseignement", "school"),
+        TypeSite.COPROPRIETE: ("BUREAU_STANDARD", "Bureau standard", "office"),
+    }
+    if not archetype_code:
+        fb = _TYPE_FALLBACK.get(site.type)
+        if fb:
+            archetype_code, archetype_label, profile_name = fb
+            archetype_source = "type_fallback"
+            confidence = "medium"
+            reasons.append(f"Type {site.type.value} → {archetype_code}")
+        else:
+            archetype_code = "BUREAU_STANDARD"
+            archetype_label = "Bureau standard"
+            confidence = "low"
+            reasons.append("Archetype par defaut")
+
+    # Schedule suggestion from profile
+    sched_cfg = _PROFILE_SCHEDULES.get(profile_name, _PROFILE_SCHEDULES["office"])
+    schedule_suggested = {
+        "open_days": sched_cfg["open_days"],
+        "open_time": sched_cfg["open_time"],
+        "close_time": sched_cfg["close_time"],
+        "is_24_7": sched_cfg["is_24_7"],
+    }
+
+    return {
+        "site_id": site_id,
+        "archetype_code": archetype_code,
+        "archetype_label": archetype_label,
+        "archetype_source": archetype_source,
+        "confidence": confidence,
+        "schedule_current": schedule_current,
+        "schedule_suggested": schedule_suggested,
+        "has_vacation": profile_name == "school",
+        "reasons": reasons,
+    }
+
+
+# -------------------------------------------------------------------
 # Timeseries
 # -------------------------------------------------------------------
 @router.get("/timeseries")

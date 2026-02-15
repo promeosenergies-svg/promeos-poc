@@ -102,6 +102,12 @@ export const getDemoStatus = () => api.get('/demo/status').then(r => r.data);
 export const enableDemo = () => api.post('/demo/enable').then(r => r.data);
 export const disableDemo = () => api.post('/demo/disable').then(r => r.data);
 export const getDemoTemplates = () => api.get('/demo/templates').then(r => r.data);
+export const getDemoPacks = () => api.get('/demo/packs').then(r => r.data);
+export const seedDemoPack = (pack, size, reset = false) =>
+  api.post('/demo/seed-pack', { pack, size, reset, rng_seed: 42 }).then(r => r.data);
+export const getDemoPackStatus = () => api.get('/demo/status-pack').then(r => r.data);
+export const resetDemoPack = (mode = 'soft', confirm = false) =>
+  api.post('/demo/reset-pack', { mode, confirm }).then(r => r.data);
 
 // ========================================
 // GUIDANCE (Action Plan + Readiness)
@@ -514,6 +520,9 @@ export const createEmsCollection = (name, siteIds, scopeType = 'custom', isFavor
   api.post('/ems/collections', null, { params: { name, site_ids: siteIds.join(','), scope_type: scopeType, is_favorite: isFavorite } }).then(r => r.data);
 export const updateEmsCollection = (id, params) => api.put(`/ems/collections/${id}`, null, { params }).then(r => r.data);
 export const deleteEmsCollection = (id) => api.delete(`/ems/collections/${id}`).then(r => r.data);
+
+// Usage suggest & benchmark
+export const getUsageSuggest = (siteId) => api.get('/ems/usage_suggest', { params: { site_id: siteId } }).then(r => r.data);
 
 // Demo data
 export const generateEmsDemo = (portfolioSize = 12, days = 365, seed = 123, force = false) =>
