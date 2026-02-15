@@ -79,6 +79,9 @@ from .purchase_models import (
 # Action Hub (Sprint 10)
 from .action_item import ActionItem, ActionSyncBatch
 
+# Action Detail (Sprint V5.0)
+from .action_detail_models import ActionEvent, ActionComment, ActionEvidence
+
 # Notifications (Sprint 10.2)
 from .notification import NotificationEvent, NotificationBatch, NotificationPreference
 
@@ -141,6 +144,8 @@ __all__ = [
     "PurchaseStrategy", "PurchaseRecoStatus",
     # Action Hub (Sprint 10)
     "ActionItem", "ActionSyncBatch", "ActionSourceType", "ActionStatus",
+    # Action Detail (Sprint V5.0)
+    "ActionEvent", "ActionComment", "ActionEvidence",
     # Notifications (Sprint 10.2)
     "NotificationEvent", "NotificationBatch", "NotificationPreference",
     "NotificationSeverity", "NotificationStatus", "NotificationSourceType",

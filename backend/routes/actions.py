@@ -1,6 +1,6 @@
 """
-PROMEOS — Action Hub Routes (Sprint 10 + V4.9)
-7 endpoints: create, sync, list, summary, patch, batches, export CSV.
+PROMEOS — Action Hub Routes (Sprint 10 + V4.9 + V5.0)
+Endpoints: create, sync, list, summary, detail, patch, batches, export CSV.
 """
 import csv
 import hashlib
@@ -17,6 +17,7 @@ from database import get_db
 from models import (
     Organisation, ActionItem, ActionSyncBatch,
     ActionSourceType, ActionStatus,
+    ActionEvent, ActionComment, ActionEvidence,
 )
 from services.action_hub_service import sync_actions, compute_priority
 from middleware.auth import get_optional_auth, AuthContext
@@ -85,6 +86,12 @@ def _serialize_action(a: ActionItem) -> dict:
         "status": a.status.value if a.status else "open",
         "owner": a.owner,
         "notes": a.notes,
+        # V5.0 fields
+        "category": a.category,
+        "description": a.description,
+        "realized_gain_eur": a.realized_gain_eur,
+        "realized_at": a.realized_at.isoformat() if a.realized_at else None,
+        "closed_at": a.closed_at.isoformat() if a.closed_at else None,
     }
 
 
@@ -394,3 +401,32 @@ def export_csv(
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=actions_promeos.csv"},
     )
+
+
+# ========================================
+# Detail endpoint (after fixed-path routes to avoid conflict)
+# ========================================
+
+@router.get("/{action_id}")
+def get_action_detail(
+    action_id: int,
+    db: Session = Depends(get_db),
+):
+    """
+    GET /api/actions/{action_id}
+    Full detail with sub-resource counts.
+    """
+    action = db.query(ActionItem).filter(ActionItem.id == action_id).first()
+    if not action:
+        raise HTTPException(status_code=404, detail="Action non trouvee")
+
+    comments_count = db.query(ActionComment).filter(ActionComment.action_id == action_id).count()
+    evidence_count = db.query(ActionEvidence).filter(ActionEvidence.action_id == action_id).count()
+    events_count = db.query(ActionEvent).filter(ActionEvent.action_id == action_id).count()
+
+    return {
+        **_serialize_action(action),
+        "comments_count": comments_count,
+        "evidence_count": evidence_count,
+        "events_count": events_count,
+    }
