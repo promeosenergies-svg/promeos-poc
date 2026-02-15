@@ -3,7 +3,7 @@
  * Covers: sitesToObligations, isOverdue, buildScopeParams, parseBundleError
  */
 import { describe, it, expect } from 'vitest';
-import { sitesToObligations, isOverdue, buildScopeParams, parseBundleError, resolveScopeLabel } from '../ConformitePage';
+import { sitesToObligations, isOverdue, buildScopeParams, parseBundleError, resolveScopeLabel, computeBacsV2Summary, computeScopeLabel } from '../ConformitePage';
 
 /* ---------- isOverdue ---------- */
 describe('isOverdue', () => {
@@ -261,5 +261,73 @@ describe('API badge logic', () => {
   it('API connected: parseBundleError with healthy bundle returns null', () => {
     const bundle = { summary: { total_sites: 36 }, sites: [], empty_reason_code: null };
     expect(parseBundleError(bundle)).toBeNull();
+  });
+});
+
+/* ---------- computeBacsV2Summary ---------- */
+describe('computeBacsV2Summary', () => {
+  it('returns null when no bacs_v2 data', () => {
+    expect(computeBacsV2Summary(null)).toBeNull();
+    expect(computeBacsV2Summary(undefined)).toBeNull();
+    expect(computeBacsV2Summary({})).toBeNull();
+  });
+
+  it('aggregates applicable from bundle entries', () => {
+    const data = {
+      1: { applicable: true, deadline: '2025-01-01', threshold_kw: 290, putile_kw: 350, tri_exemption: false },
+      2: { applicable: false, deadline: null, threshold_kw: 0, putile_kw: 50, tri_exemption: false },
+    };
+    const result = computeBacsV2Summary(data);
+    expect(result.applicable).toBe(true);
+    expect(result.threshold_kw).toBe(290);
+    expect(result.tier).toBe('TIER1');
+  });
+
+  it('picks closest deadline', () => {
+    const data = {
+      1: { applicable: true, deadline: '2030-01-01', threshold_kw: 70, putile_kw: 150, tri_exemption: false },
+      2: { applicable: true, deadline: '2025-01-01', threshold_kw: 290, putile_kw: 350, tri_exemption: true },
+    };
+    const result = computeBacsV2Summary(data);
+    expect(result.deadline).toBe('2025-01-01');
+    expect(result.tri_exemption).toBe(true);
+  });
+
+  it('returns TIER2 when max threshold < 290', () => {
+    const data = {
+      1: { applicable: true, deadline: '2030-01-01', threshold_kw: 70, putile_kw: 150, tri_exemption: false },
+    };
+    const result = computeBacsV2Summary(data);
+    expect(result.tier).toBe('TIER2');
+    expect(result.putile_kw).toBe(150);
+  });
+});
+
+/* ---------- computeScopeLabel ---------- */
+describe('computeScopeLabel', () => {
+  const org = { nom: 'Nexity' };
+
+  it('returns org scope by default', () => {
+    const result = computeScopeLabel(org, { siteId: null, portefeuilleId: null }, [{}, {}, {}], []);
+    expect(result).toBe('Nexity \u00b7 Organisation (3 sites)');
+  });
+
+  it('shows portefeuille name when selected', () => {
+    const pfs = [{ id: 3, nom: 'PF Alpha' }];
+    const result = computeScopeLabel(org, { siteId: null, portefeuilleId: 3 }, [{}, {}], pfs);
+    expect(result).toContain('Portefeuille: PF Alpha');
+    expect(result).toContain('2 sites');
+  });
+
+  it('shows site name when site selected', () => {
+    const sites = [{ id: 42, nom: 'Hyper Lyon' }];
+    const result = computeScopeLabel(org, { siteId: 42, portefeuilleId: 1 }, sites, []);
+    expect(result).toContain('Site: Hyper Lyon');
+  });
+
+  it('falls back to site ID when site has no nom', () => {
+    const sites = [{ id: 42 }];
+    const result = computeScopeLabel(org, { siteId: 42, portefeuilleId: null }, sites, []);
+    expect(result).toContain('42');
   });
 });
