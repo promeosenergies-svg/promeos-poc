@@ -10,14 +10,14 @@ const API = 'http://127.0.0.1:8000';
 
 const STATUT_BADGE = {
   non_conforme: { label: 'Non conforme', bg: 'bg-red-100', text: 'text-red-800' },
-  a_risque: { label: 'A risque', bg: 'bg-orange-100', text: 'text-orange-800' },
+  a_risque: { label: 'À risque', bg: 'bg-orange-100', text: 'text-orange-800' },
   conforme: { label: 'Conforme', bg: 'bg-green-100', text: 'text-green-800' },
   manquant: { label: 'Manquant', bg: 'bg-red-100', text: 'text-red-800' },
 };
 
 const TYPE_LABELS = {
   bacs: 'BACS',
-  decret_tertiaire: 'Decret Tertiaire',
+  decret_tertiaire: 'Décret Tertiaire',
   evidence: 'Preuves',
 };
 
@@ -80,7 +80,7 @@ const ActionPlan = () => {
             <h1 className="text-2xl font-bold">Plan d'action PROMEOS</h1>
           </div>
           <p className="text-indigo-200 text-sm">
-            Actions prioritaires pour la conformite energetique de votre patrimoine
+            Actions prioritaires pour la conformité énergétique de votre patrimoine
           </p>
         </div>
       </header>
@@ -90,7 +90,7 @@ const ActionPlan = () => {
         {/* Readiness Score */}
         <div className="bg-white rounded-lg shadow mb-8 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-800">Score de readiness</h2>
+            <h2 className="text-lg font-semibold text-gray-800">Score de maturité</h2>
             <span className={`text-3xl font-bold ${
               readiness_score >= 70 ? 'text-green-600' :
               readiness_score >= 40 ? 'text-orange-600' : 'text-red-600'
@@ -126,7 +126,7 @@ const ActionPlan = () => {
           </div>
           <div className="bg-white rounded-lg shadow p-4 border-l-4 border-orange-500">
             <div className="text-sm text-gray-500 flex items-center gap-1">
-              <ShieldAlert size={14} /> A risque
+              <ShieldAlert size={14} /> À risque
             </div>
             <div className="text-2xl font-bold text-orange-600">{summary.sites_a_risque}</div>
           </div>
@@ -177,7 +177,7 @@ const ActionPlan = () => {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Risque</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Echeance</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Échéance</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase w-8"></th>
                 </tr>
               </thead>

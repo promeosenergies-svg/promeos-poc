@@ -19,6 +19,7 @@ import { getActionsList, syncActions, patchAction, exportActionsCSV, downloadAud
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { track } from '../services/tracker';
+import { ACTION_STATUS_LABELS, ACTION_TYPE_LABELS } from '../domain/compliance/complianceLabels.fr';
 
 /* Backend → frontend field mappers */
 const SOURCE_MAP = { compliance: 'conformite', consumption: 'conso', billing: 'facture', purchase: 'maintenance' };
@@ -45,7 +46,7 @@ function mapBackendAction(a) {
 }
 
 const TYPE_BADGE = {
-  conformite: { status: 'crit', label: 'Conformite' },
+  conformite: { status: 'crit', label: 'Conformité' },
   conso: { status: 'warn', label: 'Conso' },
   facture: { status: 'info', label: 'Facture' },
   maintenance: { status: 'neutral', label: 'Maintenance' },
@@ -61,9 +62,7 @@ const PRIORITY_LABEL = {
 
 const PRIORITY_RANK = { critical: 4, high: 3, medium: 2, low: 1 };
 
-const STATUT_LABELS = {
-  backlog: 'Backlog', planned: 'Planifiee', in_progress: 'En cours', done: 'Terminee',
-};
+const STATUT_LABELS = ACTION_STATUS_LABELS;
 
 const STATUT_PILL = {
   backlog:     'bg-gray-100 text-gray-700',
@@ -74,40 +73,29 @@ const STATUT_PILL = {
 
 const STATUT_TABS = [
   { id: '', label: 'Toutes' },
-  { id: 'backlog', label: 'Backlog' },
-  { id: 'planned', label: 'Planifiee' },
-  { id: 'in_progress', label: 'En cours' },
-  { id: 'done', label: 'Terminee' },
+  ...Object.entries(ACTION_STATUS_LABELS).map(([id, label]) => ({ id, label })),
 ];
 
 const TYPE_OPTIONS = [
   { value: '', label: 'Tous types' },
-  { value: 'conformite', label: 'Conformite' },
-  { value: 'conso', label: 'Conso' },
-  { value: 'facture', label: 'Facture' },
-  { value: 'maintenance', label: 'Maintenance' },
+  ...Object.entries(ACTION_TYPE_LABELS).map(([value, label]) => ({ value, label })),
 ];
 
-const BULK_STATUS_OPTIONS = [
-  { value: 'backlog', label: 'Backlog' },
-  { value: 'planned', label: 'Planifiee' },
-  { value: 'in_progress', label: 'En cours' },
-  { value: 'done', label: 'Terminee' },
-];
+const BULK_STATUS_OPTIONS = Object.entries(ACTION_STATUS_LABELS).map(([value, label]) => ({ value, label }));
 
 const GROUP_OPTIONS = [
   { value: 'none', label: 'Pas de groupement' },
   { value: 'site_nom', label: 'Par site' },
   { value: 'type', label: 'Par type' },
   { value: 'owner', label: 'Par responsable' },
-  { value: 'priorite', label: 'Par priorite' },
+  { value: 'priorite', label: 'Par priorité' },
   { value: 'statut', label: 'Par statut' },
 ];
 
 const QUICK_VIEWS = [
   { id: 'overdue', label: 'En retard', icon: AlertTriangle, color: 'text-red-600' },
-  { id: 'high_impact', label: 'Impact eleve', icon: BadgeEuro, color: 'text-amber-600' },
-  { id: 'conformite_crit', label: 'Critique conformite', icon: ShieldCheck, color: 'text-blue-600' },
+  { id: 'high_impact', label: 'Impact élevé', icon: BadgeEuro, color: 'text-amber-600' },
+  { id: 'conformite_crit', label: 'Critique conformité', icon: ShieldCheck, color: 'text-blue-600' },
 ];
 
 const KANBAN_COLUMNS = ['backlog', 'planned', 'in_progress', 'done'];
@@ -193,7 +181,7 @@ function KanbanBoard({ actions, onStatusChange, onCardClick, selected, onToggleS
                   </div>
                   <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
                     <span>{a.impact_eur.toLocaleString()} EUR</span>
-                    <span>{a.owner || 'Non assigne'}</span>
+                    <span>{a.owner || 'Non assigné'}</span>
                   </div>
                   {isOverdue(a) && (
                     <div className="mt-1.5 text-xs font-medium text-red-600 flex items-center gap-1">
@@ -221,8 +209,8 @@ function GroupedTableView({ actions, groupBy, onCardClick, selected, onToggleSel
     const map = {};
     actions.forEach(a => {
       const key = groupBy === 'owner'
-        ? (a[groupBy] || 'Non assigne')
-        : (a[groupBy] || 'Non defini');
+        ? (a[groupBy] || 'Non assigné')
+        : (a[groupBy] || 'Non défini');
       if (!map[key]) map[key] = [];
       map[key].push(a);
     });
@@ -258,10 +246,10 @@ function GroupedTableView({ actions, groupBy, onCardClick, selected, onToggleSel
                 <tr>
                   <Th>Action</Th>
                   <Th>Type</Th>
-                  <Th sortable={false}>Priorite</Th>
+                  <Th sortable={false}>Priorité</Th>
                   <Th className="text-right">Impact EUR</Th>
-                  <Th>Echeance</Th>
-                  <Th>Owner</Th>
+                  <Th>Échéance</Th>
+                  <Th>Responsable</Th>
                   <Th>Statut</Th>
                 </tr>
               </Thead>
@@ -279,7 +267,7 @@ function GroupedTableView({ actions, groupBy, onCardClick, selected, onToggleSel
                         {a.due_date}
                         {overdue && <span className="ml-1 text-xs bg-red-50 text-red-600 px-1.5 py-0.5 rounded">En retard</span>}
                       </Td>
-                      <Td className="text-sm">{a.owner || <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-400 rounded">Non assigne</span>}</Td>
+                      <Td className="text-sm">{a.owner || <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-400 rounded">Non assigné</span>}</Td>
                       <Td>
                         <select
                           value={a.statut}
@@ -374,7 +362,7 @@ export default function ActionsPage() {
       el.click();
       URL.revokeObjectURL(url);
       track('download_audit_pdf', {});
-    } catch { toast('Erreur lors du telechargement du PDF', 'error'); }
+    } catch { toast('Erreur lors du téléchargement du PDF', 'error'); }
     setPdfLoading(false);
   }
 
@@ -482,7 +470,7 @@ export default function ActionsPage() {
     const types = [...new Set(rows.map(r => r.type))];
     const sites = [...new Set(rows.map(r => r.site_nom))];
     setCreatePrefill({
-      titre: rows.length === 1 ? rows[0].titre : `Action groupee (${rows.length} items)`,
+      titre: rows.length === 1 ? rows[0].titre : `Action groupée (${rows.length} items)`,
       type: types.length === 1 ? types[0] : 'conformite',
       site: sites.length === 1 ? sites[0] : sites.slice(0, 3).join(', '),
       description: rows.map(r => `- ${r.titre}`).join('\n'),
@@ -505,7 +493,7 @@ export default function ActionsPage() {
         .filter(a => { const d = new Date(a.due_date); const now = new Date(); const diff = (d - now) / 86400000; return diff >= 0 && diff <= 30; })
         .sort((a, b) => a.due_date.localeCompare(b.due_date));
       const header = 'titre,type,site,priorite,echeance,impact_eur,owner,statut';
-      const csv = [header, ...next30.map(a => `"${a.titre}",${a.type},${a.site_nom},${a.priorite},${a.due_date},${a.impact_eur},${a.owner || 'Non assigne'},${a.statut}`)].join('\n');
+      const csv = [header, ...next30.map(a => `"${a.titre}",${a.type},${a.site_nom},${a.priorite},${a.due_date},${a.impact_eur},${a.owner || 'Non assigné'},${a.statut}`)].join('\n');
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
       const el = document.createElement('a'); el.href = url; el.download = 'plan-30-jours.csv'; el.click();
@@ -517,7 +505,7 @@ export default function ActionsPage() {
   function exportSelected() {
     const rows = actions.filter(a => selected.has(a.id));
     const header = 'titre,type,site,priorite,echeance,impact_eur,owner,statut';
-    const csv = [header, ...rows.map(a => `"${a.titre}",${a.type},${a.site_nom},${a.priorite},${a.due_date},${a.impact_eur},${a.owner || 'Non assigne'},${a.statut}`)].join('\n');
+    const csv = [header, ...rows.map(a => `"${a.titre}",${a.type},${a.site_nom},${a.priorite},${a.due_date},${a.impact_eur},${a.owner || 'Non assigné'},${a.statut}`)].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const el = document.createElement('a'); el.href = url; el.download = 'actions-export.csv'; el.click();
@@ -538,15 +526,15 @@ export default function ActionsPage() {
       return <EmptyState icon={CheckCircle} title="Aucune action en retard" text="Toutes vos actions sont dans les temps. Continuez ainsi !" />;
     }
     if (quickView === 'high_impact') {
-      return <EmptyState icon={BadgeEuro} title="Aucune action a fort impact" text="Aucune action avec un impact superieur a 10 000 EUR n'a ete detectee." />;
+      return <EmptyState icon={BadgeEuro} title="Aucune action à fort impact" text="Aucune action avec un impact supérieur à 10 000 EUR n'a été détectée." />;
     }
     if (quickView === 'conformite_crit') {
-      return <EmptyState icon={ShieldCheck} title="Pas d'action critique conformite" text="Aucune action de conformite critique ou haute priorite." />;
+      return <EmptyState icon={ShieldCheck} title="Pas d'action critique conformité" text="Aucune action de conformité critique ou haute priorité." />;
     }
     if (filterStatut || filterType || searchQuery.trim()) {
-      return <EmptyState icon={ListChecks} title="Aucune action pour ce filtre" text="Essayez de modifier vos filtres ou de reinitialiser la vue." ctaLabel="Reinitialiser" onCta={resetAllFilters} />;
+      return <EmptyState icon={ListChecks} title="Aucune action pour ce filtre" text="Essayez de modifier vos filtres ou de réinitialiser la vue." ctaLabel="Réinitialiser" onCta={resetAllFilters} />;
     }
-    return <EmptyState icon={ListChecks} title="Aucune action" text="Synchronisez vos donnees ou creez votre premiere action pour commencer." ctaLabel="Creer action" onCta={() => setShowCreate(true)} />;
+    return <EmptyState icon={ListChecks} title="Aucune action" text="Synchronisez vos données ou créez votre première action pour commencer." ctaLabel="Créer action" onCta={() => setShowCreate(true)} />;
   }
 
   return (
@@ -564,10 +552,10 @@ export default function ActionsPage() {
               <FileText size={16} className={pdfLoading ? 'animate-pulse' : ''} /> {pdfLoading ? 'PDF...' : 'Rapport PDF'}
             </Button>
           )}
-          <Button variant="secondary" size="sm" onClick={exportPlan30j} title="Export CSV">
-            <Printer size={16} /> Export CSV
+          <Button variant="secondary" size="sm" onClick={exportPlan30j} title="Exporter CSV">
+            <Printer size={16} /> Exporter CSV
           </Button>
-          <Button onClick={() => { setCreatePrefill(null); setShowCreate(true); }}><Plus size={16} /> Creer action</Button>
+          <Button onClick={() => { setCreatePrefill(null); setShowCreate(true); }}><Plus size={16} /> Créer action</Button>
         </>
       }
     >
@@ -602,10 +590,10 @@ export default function ActionsPage() {
       {/* Clickable stats cards */}
       <div className="grid grid-cols-5 gap-3">
         {[
-          { label: 'Backlog', value: stats.backlog, color: 'text-gray-700', bg: 'bg-gray-50', statut: 'backlog', ringColor: 'ring-gray-400' },
-          { label: 'Planifiee', value: stats.planned, color: 'text-blue-700', bg: 'bg-blue-50', statut: 'planned', ringColor: 'ring-blue-400' },
+          { label: 'À planifier', value: stats.backlog, color: 'text-gray-700', bg: 'bg-gray-50', statut: 'backlog', ringColor: 'ring-gray-400' },
+          { label: 'Planifiée', value: stats.planned, color: 'text-blue-700', bg: 'bg-blue-50', statut: 'planned', ringColor: 'ring-blue-400' },
           { label: 'En cours', value: stats.in_progress, color: 'text-amber-700', bg: 'bg-amber-50', statut: 'in_progress', ringColor: 'ring-amber-400' },
-          { label: 'Terminee', value: stats.done, color: 'text-green-700', bg: 'bg-green-50', statut: 'done', ringColor: 'ring-green-400' },
+          { label: 'Terminée', value: stats.done, color: 'text-green-700', bg: 'bg-green-50', statut: 'done', ringColor: 'ring-green-400' },
           { label: 'En retard', value: stats.overdue, color: 'text-red-700', bg: 'bg-red-50', statut: '_overdue', ringColor: 'ring-red-400' },
         ].map(c => {
           const isCardActive = c.statut === '_overdue' ? quickView === 'overdue' : filterStatut === c.statut;
@@ -682,13 +670,13 @@ export default function ActionsPage() {
       {/* Filtered impact summary */}
       {(filterStatut || filterType || quickView || searchQuery.trim()) && total > 0 && (
         <div className="flex items-center gap-3 px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
-          <span className="text-gray-500">Resultat filtre :</span>
+          <span className="text-gray-500">Résultat filtré :</span>
           <span className="font-semibold text-gray-900">{total} action(s)</span>
           <span className="text-gray-400">&middot;</span>
           <span className="font-bold text-red-600">{filtered.reduce((s, a) => s + a.impact_eur, 0).toLocaleString()} EUR</span>
           <span className="text-gray-400 text-xs">d'impact</span>
           <button onClick={resetAllFilters} className="ml-auto text-xs text-blue-600 hover:text-blue-800 font-medium">
-            Reinitialiser
+            Réinitialiser
           </button>
         </div>
       )}
@@ -723,10 +711,10 @@ export default function ActionsPage() {
                 <Th sortable sorted={sortCol === 'titre' ? sortDir : ''} onSort={() => handleSort('titre')}>Action</Th>
                 <Th>Type</Th>
                 <Th>Site</Th>
-                <Th sortable sorted={sortCol === 'priorite' ? sortDir : ''} onSort={() => handleSort('priorite')}>Priorite</Th>
+                <Th sortable sorted={sortCol === 'priorite' ? sortDir : ''} onSort={() => handleSort('priorite')}>Priorité</Th>
                 <Th sortable sorted={sortCol === 'impact_eur' ? sortDir : ''} onSort={() => handleSort('impact_eur')} className="text-right">Impact EUR</Th>
-                <Th sortable sorted={sortCol === 'due_date' ? sortDir : ''} onSort={() => handleSort('due_date')}>Echeance</Th>
-                <Th>Owner</Th>
+                <Th sortable sorted={sortCol === 'due_date' ? sortDir : ''} onSort={() => handleSort('due_date')}>Échéance</Th>
+                <Th>Responsable</Th>
                 <Th>Statut</Th>
               </tr>
             </Thead>
@@ -755,7 +743,7 @@ export default function ActionsPage() {
                     <Td className="text-sm">
                       {a.owner
                         ? a.owner
-                        : <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-400 rounded">Non assigne</span>
+                        : <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-400 rounded">Non assigné</span>
                       }
                     </Td>
                     <Td>
@@ -780,7 +768,7 @@ export default function ActionsPage() {
           <div className="flex items-center justify-between px-4 py-2 border-t border-gray-100">
             <TrustBadge
               source="PROMEOS"
-              period={`perimetre : ${scopedSites.length} sites`}
+              period={`périmètre : ${scopedSites.length} sites`}
               confidence="medium"
             />
             <Pagination page={page} pageSize={pageSize} total={total} onChange={setPage} />
@@ -796,7 +784,7 @@ export default function ActionsPage() {
               {selected.size}
             </span>
             <div>
-              <span className="font-semibold text-gray-900">selectionnee(s)</span>
+              <span className="font-semibold text-gray-900">sélectionnée(s)</span>
               <span className="ml-2 text-gray-500">&middot;</span>
               <span className="ml-2 font-bold text-red-600">
                 {actions.filter(a => selected.has(a.id)).reduce((s, a) => s + a.impact_eur, 0).toLocaleString()} EUR
@@ -812,7 +800,7 @@ export default function ActionsPage() {
             <ArrowUpDown size={14} /> Statut
           </Button>
           <Button size="sm" variant="secondary" onClick={handleBulkCreate}>
-            <Plus size={14} /> Creer action
+            <Plus size={14} /> Créer action
           </Button>
           <Button size="sm" variant="secondary" onClick={exportSelected}>
             <Download size={14} /> Exporter
@@ -820,7 +808,7 @@ export default function ActionsPage() {
           <button
             onClick={() => setSelected(new Set())}
             className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition"
-            title="Deselectionner"
+            title="Désélectionner"
           >
             <X size={16} />
           </button>
@@ -838,7 +826,7 @@ export default function ActionsPage() {
       {/* Assign Modal */}
       <Modal open={showAssign} onClose={() => setShowAssign(false)} title="Assigner un responsable">
         <div className="space-y-2">
-          <p className="text-sm text-gray-600">{selected.size} action(s) selectionnee(s)</p>
+          <p className="text-sm text-gray-600">{selected.size} action(s) sélectionnée(s)</p>
           {ownerOptions.map(owner => (
             <button
               key={owner}
@@ -858,7 +846,7 @@ export default function ActionsPage() {
       {/* Bulk Status Modal */}
       <Modal open={showBulkStatus} onClose={() => setShowBulkStatus(false)} title="Changer le statut">
         <div className="space-y-2">
-          <p className="text-sm text-gray-600">{selected.size} action(s) selectionnee(s)</p>
+          <p className="text-sm text-gray-600">{selected.size} action(s) sélectionnée(s)</p>
           {BULK_STATUS_OPTIONS.map(opt => (
             <button
               key={opt.value}
@@ -873,13 +861,13 @@ export default function ActionsPage() {
       </Modal>
 
       {/* Detail Modal */}
-      <Modal open={!!detailAction} onClose={() => setDetailAction(null)} title={detailAction?.titre || 'Detail'} wide>
+      <Modal open={!!detailAction} onClose={() => setDetailAction(null)} title={detailAction?.titre || 'Détail'} wide>
         {detailAction && (
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-4">
               <div><p className="text-xs text-gray-500">Type</p><Badge status={(TYPE_BADGE[detailAction.type] || {}).status}>{detailAction.type}</Badge></div>
               <div>
-                <p className="text-xs text-gray-500">Priorite</p>
+                <p className="text-xs text-gray-500">Priorité</p>
                 <Badge status={PRIORITY_BADGE[detailAction.priorite]}>{PRIORITY_LABEL[detailAction.priorite] || detailAction.priorite}</Badge>
               </div>
               <div><p className="text-xs text-gray-500">Statut</p><span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${STATUT_PILL[detailAction.statut] || STATUT_PILL.backlog}`}>{STATUT_LABELS[detailAction.statut]}</span></div>
@@ -891,19 +879,19 @@ export default function ActionsPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs text-gray-500">Echeance</p>
+                <p className="text-xs text-gray-500">Échéance</p>
                 <p className={`text-sm flex items-center gap-1 ${isOverdue(detailAction) ? 'text-red-600 font-semibold' : ''}`}>
                   <Clock size={14} /> {detailAction.due_date}
                   {isOverdue(detailAction) && <span className="text-xs bg-red-50 text-red-600 px-1.5 py-0.5 rounded ml-1">En retard</span>}
                 </p>
               </div>
-              <div><p className="text-xs text-gray-500">Responsable</p><p className="text-sm">{detailAction.owner || 'Non assigne'}</p></div>
+              <div><p className="text-xs text-gray-500">Responsable</p><p className="text-sm">{detailAction.owner || <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-400 rounded">Non assigné</span>}</p></div>
             </div>
 
             {/* Obligation link */}
             {detailAction.obligation_code && (
               <div className="p-3 bg-blue-50 rounded-lg text-sm">
-                <p className="text-xs font-semibold text-blue-600 uppercase mb-1">Obligation liee</p>
+                <p className="text-xs font-semibold text-blue-600 uppercase mb-1">Obligation liée</p>
                 <p className="text-blue-800">{detailAction.obligation_code}</p>
               </div>
             )}
@@ -922,7 +910,7 @@ export default function ActionsPage() {
               <div className="space-y-2">
                 <div className="p-3 bg-gray-50 rounded-lg text-sm">
                   <p className="font-medium text-gray-700">J. Dupont <span className="text-gray-400 font-normal">— 10/02/2026</span></p>
-                  <p className="text-gray-600 mt-1">RDV planifie avec le prestataire pour le 20/02.</p>
+                  <p className="text-gray-600 mt-1">RDV planifié avec le prestataire pour le 20/02.</p>
                 </div>
               </div>
               <div className="mt-3 flex gap-2">
@@ -933,8 +921,8 @@ export default function ActionsPage() {
 
             {/* Mock attachments */}
             <div className="border-t border-gray-100 pt-4">
-              <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1"><Paperclip size={14} /> Pieces jointes</h3>
-              <p className="text-sm text-gray-400">Aucune piece jointe.</p>
+              <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1"><Paperclip size={14} /> Pièces jointes</h3>
+              <p className="text-sm text-gray-400">Aucune pièce jointe.</p>
             </div>
           </div>
         )}

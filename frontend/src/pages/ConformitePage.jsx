@@ -7,7 +7,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ShieldCheck, AlertTriangle, CheckCircle, Clock, FileText,
-  ChevronDown, ChevronUp, Plus, Upload, Building,
+  ChevronDown, ChevronUp, ChevronRight, Plus, Upload, Building,
   BookOpen, ExternalLink, Zap, RotateCcw, RefreshCw,
   UserCheck, CheckCircle2, XCircle, X, Eye, Search,
   ClipboardList, Database, FolderOpen,
@@ -21,6 +21,12 @@ import { useExpertMode } from '../contexts/ExpertModeContext';
 import { track } from '../services/tracker';
 import ErrorState from '../ui/ErrorState';
 import {
+  REG_LABELS, REG_DESCRIPTIONS, STATUT_LABELS, BACKEND_STATUS_MAP,
+  WORKFLOW_LABELS, SEVERITY_LABELS, SEVERITY_BADGE_MAP, CONFIDENCE_LABELS,
+  COCKPIT_TABS, EMPTY_REASONS as EMPTY_REASONS_LABELS, RULE_LABELS,
+  RULE_NEXT_STEPS, RULE_EXPECTED_PROOFS, DRAWER_LABELS,
+} from '../domain/compliance/complianceLabels.fr';
+import {
   applyKB,
   getComplianceBundle,
   getApiHealth,
@@ -32,46 +38,28 @@ import {
   resetDb,
 } from '../services/api';
 
-const REG_LABELS = {
-  decret_tertiaire_operat: 'Decret Tertiaire',
-  bacs: 'BACS (GTB/GTC)',
-  aper: 'Loi APER (ENR)',
-};
-
-const REG_DESCRIPTIONS = {
-  decret_tertiaire_operat: 'Reduire la consommation energetique des batiments tertiaires > 1000 m2',
-  bacs: "Systemes d'automatisation et de controle des batiments (GTB/GTC)",
-  aper: "Installation d'energies renouvelables sur parkings > 1500 m2",
-};
-
-const SEVERITY_BADGE = {
-  critical: 'crit', high: 'warn', medium: 'info', low: 'neutral',
-};
+const SEVERITY_BADGE = SEVERITY_BADGE_MAP;
 
 const STATUT_CONFIG = {
-  non_conforme: { label: 'Non conforme', color: 'text-red-700', bg: 'bg-red-50', border: 'border-red-200', icon: AlertTriangle },
-  a_risque: { label: 'A risque', color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200', icon: Clock },
-  conforme: { label: 'Conforme', color: 'text-green-700', bg: 'bg-green-50', border: 'border-green-200', icon: CheckCircle },
+  non_conforme:  { label: STATUT_LABELS.non_conforme,  color: 'text-red-700',   bg: 'bg-red-50',   border: 'border-red-200',   icon: AlertTriangle },
+  a_risque:      { label: STATUT_LABELS.a_risque,      color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200', icon: Clock },
+  a_qualifier:   { label: STATUT_LABELS.a_qualifier,   color: 'text-blue-700',  bg: 'bg-blue-50',  border: 'border-blue-200',  icon: Search },
+  conforme:      { label: STATUT_LABELS.conforme,      color: 'text-green-700', bg: 'bg-green-50', border: 'border-green-200', icon: CheckCircle },
+  hors_perimetre:{ label: STATUT_LABELS.hors_perimetre,color: 'text-gray-500',  bg: 'bg-gray-50',  border: 'border-gray-200',  icon: X },
 };
 
 const WORKFLOW_CONFIG = {
-  open: { label: 'A traiter', color: 'bg-red-50 text-red-700' },
-  ack: { label: 'En cours', color: 'bg-amber-50 text-amber-700' },
-  resolved: { label: 'Resolu', color: 'bg-green-50 text-green-700' },
-  false_positive: { label: 'Faux positif', color: 'bg-gray-100 text-gray-500' },
+  open:           { label: WORKFLOW_LABELS.open,           color: 'bg-red-50 text-red-700' },
+  ack:            { label: WORKFLOW_LABELS.ack,            color: 'bg-amber-50 text-amber-700' },
+  resolved:       { label: WORKFLOW_LABELS.resolved,       color: 'bg-green-50 text-green-700' },
+  false_positive: { label: WORKFLOW_LABELS.false_positive, color: 'bg-gray-100 text-gray-500' },
 };
 
-const COCKPIT_TABS = [
-  { id: 'obligations', label: 'Obligations' },
-  { id: 'donnees', label: 'Donnees & Qualite' },
-  { id: 'execution', label: "Plan d'execution" },
-  { id: 'preuves', label: 'Preuves & Rapports' },
-];
-
 const EMPTY_REASONS = {
-  NO_SITES: { Icon: Building, title: 'Aucun site dans le perimetre', text: 'Ajoutez des sites via le patrimoine pour demarrer.', ctaLabel: 'Aller au patrimoine', ctaPath: '/patrimoine' },
-  NO_EVALUATION: { Icon: RefreshCw, title: 'Evaluation non lancee', text: 'Cliquez "Re-evaluer" pour lancer la premiere analyse.' },
-  ALL_COMPLIANT: { Icon: CheckCircle, title: 'Tout est conforme', text: 'Aucune non-conformite detectee. Felicitations !' },
+  NO_SITES:      { Icon: Building,    ...EMPTY_REASONS_LABELS.NO_SITES },
+  NO_EVALUATION: { Icon: RefreshCw,   ...EMPTY_REASONS_LABELS.NO_EVALUATION },
+  ALL_COMPLIANT: { Icon: CheckCircle, ...EMPTY_REASONS_LABELS.ALL_COMPLIANT },
+  DATA_BLOCKED:  { Icon: Database,    ...EMPTY_REASONS_LABELS.DATA_BLOCKED },
 };
 
 /* ---------- Dev-only badges ---------- */
@@ -94,10 +82,10 @@ function DevApiBadge() {
       className={`inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full ${
         isOk ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
       }`}
-      title={isOk ? `v${health.version} · ${health.git_sha}` : 'API unreachable'}
+      title={isOk ? `v${health.version} · ${health.git_sha}` : 'API injoignable'}
     >
       <span className={`w-1.5 h-1.5 rounded-full ${isOk ? 'bg-green-500' : 'bg-red-500'}`} />
-      {isOk ? 'API: Connected' : 'API: Offline'}
+      {isOk ? 'API : Connectée' : 'API : Hors ligne'}
       {!isOk && (
         <span className="ml-1 text-[9px] text-red-500">{`${window.location.protocol}//${window.location.hostname}:8000/api/health`}</span>
       )}
@@ -130,12 +118,12 @@ export function DevScopeBadge({ scope, scopedSites }) {
       data-testid="scope-badge"
       className="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 cursor-pointer"
       onClick={handleCopy}
-      title={`Click to copy scope: ${label} (${scopedSites.length} sites)`}
+      title={`Copier le périmètre : ${label} (${scopedSites.length} sites)`}
     >
       <Database size={10} />
       {label}
       <span className="text-indigo-400">({scopedSites.length})</span>
-      {copied && <span className="text-green-600 font-medium">copied</span>}
+      {copied && <span className="text-green-600 font-medium">copié</span>}
     </span>
   );
 }
@@ -159,10 +147,10 @@ export function buildScopeParams(scope, scopedSites) {
  * Returns null if the bundle is healthy, or an error object with message/error_code/trace_id/hint.
  */
 export function parseBundleError(bundle) {
-  if (!bundle) return { message: 'Donnees de conformite indisponibles' };
+  if (!bundle) return { message: 'Données de conformité indisponibles' };
   if (bundle.error_code) {
     return {
-      message: bundle.empty_reason_message || 'Donnees de conformite indisponibles',
+      message: bundle.empty_reason_message || 'Données de conformité indisponibles',
       error_code: bundle.error_code,
       trace_id: bundle.trace_id,
       hint: bundle.hint,
@@ -234,8 +222,8 @@ function ScoreGauge({ pct, isEmpty }) {
         </div>
         <div className="flex-1">
           <div className="h-3 bg-gray-200 rounded-full" />
-          <p className="text-xs text-gray-500 mt-1">Score de conformite global</p>
-          <p className="text-xs text-gray-400 mt-0.5">Aucune evaluation disponible</p>
+          <p className="text-xs text-gray-500 mt-1">Score de conformité global</p>
+          <p className="text-xs text-gray-400 mt-0.5">Aucune évaluation disponible</p>
         </div>
       </div>
     );
@@ -254,8 +242,8 @@ function ScoreGauge({ pct, isEmpty }) {
         <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
           <div className={`h-full ${fill} rounded-full transition-all`} style={{ width: `${pct}%` }} />
         </div>
-        <p className="text-xs text-gray-500 mt-1">Score de conformite global</p>
-        <p className="text-xs text-gray-400 mt-0.5">Score = sites conformes / sites evalues (pondere par criticite)</p>
+        <p className="text-xs text-gray-500 mt-1">Score de conformité global</p>
+        <p className="text-xs text-gray-400 mt-0.5">Score = sites conformes / sites évalués (pondéré par criticité)</p>
       </div>
     </div>
   );
@@ -264,6 +252,7 @@ function ScoreGauge({ pct, isEmpty }) {
 const KB_SEVERITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
 
 function KBObligationsSection({ scopedSites }) {
+  const { isExpert } = useExpertMode();
   const [kbResult, setKbResult] = useState(null);
   const [kbLoading, setKbLoading] = useState(true);
   const [kbError, setKbError] = useState(false);
@@ -301,7 +290,7 @@ function KBObligationsSection({ scopedSites }) {
       <Card>
         <CardBody className="text-center py-6">
           <BookOpen size={24} className="text-blue-300 mx-auto mb-2 animate-pulse" />
-          <p className="text-sm text-gray-400">Analyse reglementaire KB en cours...</p>
+          <p className="text-sm text-gray-400">Analyse réglementaire KB en cours\u2026</p>
         </CardBody>
       </Card>
     );
@@ -320,7 +309,7 @@ function KBObligationsSection({ scopedSites }) {
       <div className="flex items-center gap-2">
         <BookOpen size={16} className="text-blue-600" />
         <h3 className="text-sm font-semibold text-gray-700">
-          Obligations detectees par la KB ({items.length})
+          Obligations détectées par la KB ({items.length})
         </h3>
         <Badge status="info">Intelligence KB</Badge>
       </div>
@@ -336,9 +325,9 @@ function KBObligationsSection({ scopedSites }) {
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap mb-1">
-                  <Badge status={SEVERITY_BADGE[item.severity] || 'neutral'}>{item.severity}</Badge>
+                  <Badge status={SEVERITY_BADGE[item.severity] || 'neutral'}>{SEVERITY_LABELS[item.severity] || item.severity}</Badge>
                   {item.confidence && (
-                    <Badge status={item.confidence === 'high' ? 'ok' : 'neutral'}>{item.confidence}</Badge>
+                    <Badge status={item.confidence === 'high' ? 'ok' : 'neutral'}>{CONFIDENCE_LABELS[item.confidence] || item.confidence}</Badge>
                   )}
                   {item.domain && (
                     <span className="text-xs font-medium px-2 py-0.5 rounded bg-red-50 text-red-700">{item.domain}</span>
@@ -394,7 +383,7 @@ function KBObligationsSection({ scopedSites }) {
                 )}
                 {item.sources && item.sources.length > 0 && (
                   <div>
-                    <p className="text-xs font-semibold text-gray-500 mb-1">Sources reglementaires</p>
+                    <p className="text-xs font-semibold text-gray-500 mb-1">Sources réglementaires</p>
                     {item.sources.map((src, i) => (
                       <div key={i} className="flex items-center gap-2 text-xs text-gray-600">
                         <ExternalLink size={12} />
@@ -415,7 +404,7 @@ function KBObligationsSection({ scopedSites }) {
                   </div>
                 )}
                 <div className="flex items-center gap-4 text-xs text-gray-400">
-                  <span>KB ID: {item.id}</span>
+                  {isExpert && <span>KB ID: {item.id}</span>}
                   {item.updated_at && <span>MAJ: {item.updated_at}</span>}
                 </div>
               </div>
@@ -429,7 +418,7 @@ function KBObligationsSection({ scopedSites }) {
           <CardBody className="py-3">
             <div className="flex items-center gap-2 mb-2">
               <AlertTriangle size={14} className="text-amber-500" />
-              <p className="text-xs font-semibold text-amber-700">Donnees manquantes pour une analyse complete</p>
+              <p className="text-xs font-semibold text-amber-700">Données manquantes pour une analyse complète</p>
             </div>
             <div className="flex flex-wrap gap-2">
               {missing.map((field) => (
@@ -443,7 +432,7 @@ function KBObligationsSection({ scopedSites }) {
         </Card>
       )}
 
-      <TrustBadge source="PROMEOS KB" period="Analyse reglementaire automatique" confidence="high" />
+      <TrustBadge source="PROMEOS KB" period="Analyse réglementaire automatique" confidence="high" />
     </div>
   );
 }
@@ -489,7 +478,9 @@ export function sitesToObligations(sitesData, summary) {
       if (f.status === 'NOK') {
         obl.statut = 'non_conforme';
       } else if (f.status === 'UNKNOWN' && obl.statut === 'conforme') {
-        obl.statut = 'a_risque';
+        obl.statut = 'a_qualifier';
+      } else if (f.status === 'OUT_OF_SCOPE') {
+        if (obl.statut === 'conforme') obl.statut = 'hors_perimetre';
       }
 
       // Track closest deadline
@@ -510,17 +501,17 @@ export function sitesToObligations(sitesData, summary) {
     ...obl,
     sites_concernes: obl._site_ids_all.size,
     sites_conformes: obl._site_ids_ok.size,
-    proof_status: obl.statut === 'conforme' ? 'ok' : obl.statut === 'a_risque' ? 'in_progress' : 'missing',
-    pourquoi: `${obl._site_ids_all.size} site(s) concerne(s) par ${obl.regulation}`,
-    quoi_faire: obl.findings.filter(f => f.actions?.length).flatMap(f => f.actions).filter((v, i, a) => a.indexOf(v) === i).join('. ') || 'Evaluer la conformite',
-    preuve: 'Attestation ou rapport de conformite',
+    proof_status: obl.statut === 'conforme' ? 'ok' : obl.statut === 'a_qualifier' ? 'pending' : obl.statut === 'a_risque' ? 'in_progress' : 'missing',
+    pourquoi: `${obl._site_ids_all.size} site(s) concerné(s) par ${obl.regulation}`,
+    quoi_faire: obl.findings.filter(f => f.actions?.length).flatMap(f => f.actions).filter((v, i, a) => a.indexOf(v) === i).join('. ') || 'Évaluer la conformité',
+    preuve: 'Attestation ou rapport de conformité',
     impact_eur: 0,
   }));
 }
 
 function ObligationCard({ obligation, onCreateAction, onWorkflowAction, onUploadProof, proofFiles, onAuditFinding, bacsV2Summary, onNavigateIntake }) {
   const [expanded, setExpanded] = useState(false);
-  const cfg = STATUT_CONFIG[obligation.statut] || STATUT_CONFIG.a_risque;
+  const cfg = STATUT_CONFIG[obligation.statut] || STATUT_CONFIG.a_qualifier;
   const Icon = cfg.icon;
   const overdue = isOverdue(obligation);
   const pctConforme = obligation.sites_concernes > 0
@@ -535,7 +526,7 @@ function ObligationCard({ obligation, onCreateAction, onWorkflowAction, onUpload
         {overdue && (
           <div className="flex items-center gap-2 mb-2 px-3 py-1.5 bg-red-50 rounded-lg">
             <AlertTriangle size={14} className="text-red-600" />
-            <span className="text-xs font-semibold text-red-700">En retard — echeance depassee ({obligation.echeance})</span>
+            <span className="text-xs font-semibold text-red-700">En retard — échéance dépassée ({obligation.echeance})</span>
           </div>
         )}
 
@@ -548,7 +539,7 @@ function ObligationCard({ obligation, onCreateAction, onWorkflowAction, onUpload
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-sm font-bold text-gray-900">{obligation.regulation}</h3>
-                <Badge status={SEVERITY_BADGE[obligation.severity] || 'neutral'}>{obligation.severity}</Badge>
+                <Badge status={SEVERITY_BADGE[obligation.severity] || 'neutral'}>{SEVERITY_LABELS[obligation.severity] || obligation.severity}</Badge>
                 <span className={`text-xs font-medium px-2 py-0.5 rounded ${cfg.bg} ${cfg.color}`}>{cfg.label}</span>
                 {overdue && <Badge status="crit">En retard</Badge>}
               </div>
@@ -566,7 +557,7 @@ function ObligationCard({ obligation, onCreateAction, onWorkflowAction, onUpload
         {/* Stats row */}
         <div className="flex items-center gap-6 mt-3 text-sm">
           <div>
-            <span className="text-gray-500">Sites concernes : </span>
+            <span className="text-gray-500">Sites concernés : </span>
             <span className="font-medium text-gray-800">{obligation.sites_concernes}</span>
           </div>
           <div>
@@ -577,7 +568,7 @@ function ObligationCard({ obligation, onCreateAction, onWorkflowAction, onUpload
           {obligation.echeance && (
             <div className="flex items-center gap-1">
               <Clock size={14} className={overdue ? 'text-red-500' : 'text-gray-400'} />
-              <span className="text-gray-500">Echeance : </span>
+              <span className="text-gray-500">Échéance : </span>
               <span className={`font-medium ${overdue ? 'text-red-600' : 'text-gray-800'}`}>{obligation.echeance}</span>
             </div>
           )}
@@ -602,7 +593,7 @@ function ObligationCard({ obligation, onCreateAction, onWorkflowAction, onUpload
                 new Date(bacsV2Summary.deadline) < new Date() ? 'text-red-600 font-semibold' : 'text-gray-600'
               }`}>
                 <Clock size={12} />
-                Echeance: {bacsV2Summary.deadline}
+                Échéance : {bacsV2Summary.deadline}
               </span>
             )}
             {bacsV2Summary.tri_exemption && (
@@ -618,11 +609,11 @@ function ObligationCard({ obligation, onCreateAction, onWorkflowAction, onUpload
           <div className="mt-2 p-3 bg-blue-50 rounded-lg flex items-center gap-3">
             <AlertTriangle size={16} className="text-blue-600 shrink-0" />
             <div className="flex-1">
-              <p className="text-sm font-medium text-blue-700">Donnees BACS incompletes</p>
-              <p className="text-xs text-blue-600">Completez les donnees pour determiner l'applicabilite et l'echeance.</p>
+              <p className="text-sm font-medium text-blue-700">Données BACS incomplètes</p>
+              <p className="text-xs text-blue-600">Complétez les données pour déterminer l'applicabilité et l'échéance.</p>
             </div>
             <Button size="sm" variant="secondary" onClick={onNavigateIntake}>
-              Completer donnees BACS
+              Compléter données BACS
             </Button>
           </div>
         )}
@@ -638,7 +629,7 @@ function ObligationCard({ obligation, onCreateAction, onWorkflowAction, onUpload
         {obligation.statut !== 'conforme' && !expanded && (
           <div className="mt-3 flex items-center gap-2">
             <Button onClick={() => onCreateAction(obligation)} size="sm" variant="secondary">
-              <Plus size={14} /> Creer action
+              <Plus size={14} /> Créer action
             </Button>
           </div>
         )}
@@ -648,7 +639,7 @@ function ObligationCard({ obligation, onCreateAction, onWorkflowAction, onUpload
           <div className="mt-4 pt-4 border-t border-gray-100 space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="p-3 bg-blue-50 rounded-lg">
-                <p className="text-xs font-semibold text-blue-600 uppercase mb-1">Pourquoi concerne</p>
+                <p className="text-xs font-semibold text-blue-600 uppercase mb-1">Pourquoi concerné</p>
                 <p className="text-sm text-gray-700">{obligation.pourquoi}</p>
               </div>
               <div className="p-3 bg-amber-50 rounded-lg">
@@ -666,13 +657,13 @@ function ObligationCard({ obligation, onCreateAction, onWorkflowAction, onUpload
                     <div key={f.id} className="flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-gray-50 transition-colors">
                       <span className={`w-2 h-2 rounded-full shrink-0 ${f.status === 'NOK' ? 'bg-red-500' : 'bg-amber-500'}`} />
                       <span className="text-gray-700 font-medium truncate flex-1">{f.site_nom}</span>
-                      <span className="text-xs text-gray-400 font-mono hidden sm:inline">{f.rule_id}</span>
+                      <span className="text-xs text-gray-500 hidden sm:inline">{RULE_LABELS[f.rule_id]?.title_fr || f.rule_id}</span>
                       <button
                         onClick={() => onAuditFinding(f.id)}
                         className="text-xs text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50 font-medium flex items-center gap-1 px-2 py-1 rounded transition-colors"
-                        title="Voir audit"
+                        title="Voir les détails"
                       >
-                        <Eye size={12} /> Audit
+                        <Eye size={12} /> Détails
                       </button>
                       <WorkflowBadge status={f.insight_status} />
                       {f.insight_status === 'open' && (
@@ -688,7 +679,7 @@ function ObligationCard({ obligation, onCreateAction, onWorkflowAction, onUpload
                           onClick={() => onWorkflowAction(f.id, 'resolved')}
                           className="text-xs text-green-600 hover:text-green-800 hover:bg-green-50 font-medium flex items-center gap-1 px-2 py-1 rounded transition-colors"
                         >
-                          <CheckCircle2 size={12} /> Resolu
+                          <CheckCircle2 size={12} /> Résolu
                         </button>
                       )}
                       {(f.insight_status === 'open' || f.insight_status === 'ack') && (
@@ -730,7 +721,7 @@ function ObligationCard({ obligation, onCreateAction, onWorkflowAction, onUpload
 
             {obligation.statut !== 'conforme' && (
               <Button onClick={() => onCreateAction(obligation)} size="sm">
-                <Plus size={14} /> Creer action conformite
+                <Plus size={14} /> Créer action conformité
               </Button>
             )}
           </div>
@@ -741,6 +732,7 @@ function ObligationCard({ obligation, onCreateAction, onWorkflowAction, onUpload
 }
 
 function FindingAuditDrawer({ findingId, onClose }) {
+  const { isExpert } = useExpertMode();
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -754,30 +746,30 @@ function FindingAuditDrawer({ findingId, onClose }) {
   }, [findingId]);
 
   return (
-    <Drawer open={!!findingId} onClose={onClose} title="Audit Finding" wide>
+    <Drawer open={!!findingId} onClose={onClose} title={DRAWER_LABELS.finding_title} wide>
       {loading ? (
-        <div className="py-12 text-center text-gray-400">Chargement...</div>
+        <div className="py-12 text-center text-gray-400">{DRAWER_LABELS.loading}</div>
       ) : !detail ? (
-        <div className="py-12 text-center text-gray-400">Finding introuvable</div>
+        <div className="py-12 text-center text-gray-400">{DRAWER_LABELS.not_found}</div>
       ) : (
         <div className="space-y-5">
           {/* Identity */}
           <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Identite</p>
+            <p className="text-xs font-semibold text-gray-500 uppercase mb-2">{DRAWER_LABELS.identity}</p>
             <div className="grid grid-cols-2 gap-2 text-sm">
-              <div><span className="text-gray-500">Rule ID:</span> <span className="font-mono font-medium">{detail.rule_id}</span></div>
-              <div><span className="text-gray-500">Regulation:</span> <span className="font-medium">{detail.regulation}</span></div>
-              <div><span className="text-gray-500">Status:</span> <span className="font-medium">{detail.status}</span></div>
-              <div><span className="text-gray-500">Severity:</span> <span className="font-medium">{detail.severity}</span></div>
-              <div><span className="text-gray-500">Site:</span> <span className="font-medium">{detail.site_nom}</span></div>
-              {detail.deadline && <div><span className="text-gray-500">Echeance:</span> <span className="font-medium">{detail.deadline}</span></div>}
+              {isExpert && <div><span className="text-gray-500">{DRAWER_LABELS.rule_id} :</span> <span className="font-mono font-medium">{detail.rule_id}</span></div>}
+              <div><span className="text-gray-500">{DRAWER_LABELS.regulation} :</span> <span className="font-medium">{detail.regulation}</span></div>
+              <div><span className="text-gray-500">{DRAWER_LABELS.status} :</span> <span className="font-medium">{STATUT_LABELS[BACKEND_STATUS_MAP[detail.status]] || detail.status}</span></div>
+              <div><span className="text-gray-500">{DRAWER_LABELS.severity} :</span> <span className="font-medium">{SEVERITY_LABELS[detail.severity] || detail.severity}</span></div>
+              <div><span className="text-gray-500">{DRAWER_LABELS.site} :</span> <span className="font-medium">{detail.site_nom}</span></div>
+              {detail.deadline && <div><span className="text-gray-500">{DRAWER_LABELS.deadline} :</span> <span className="font-medium">{detail.deadline}</span></div>}
             </div>
           </div>
 
           {/* Inputs */}
           {detail.inputs && Object.keys(detail.inputs).length > 0 && (
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Inputs utilises</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">{DRAWER_LABELS.inputs}</p>
               <div className="bg-gray-50 rounded-lg p-3 space-y-1">
                 {Object.entries(detail.inputs).map(([k, v]) => (
                   <div key={k} className="flex justify-between text-sm">
@@ -792,7 +784,7 @@ function FindingAuditDrawer({ findingId, onClose }) {
           {/* Params */}
           {detail.params && Object.keys(detail.params).length > 0 && (
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Parametres / seuils</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">{DRAWER_LABELS.params}</p>
               <div className="bg-blue-50 rounded-lg p-3 space-y-1">
                 {Object.entries(detail.params).map(([k, v]) => (
                   <div key={k} className="flex justify-between text-sm">
@@ -807,7 +799,7 @@ function FindingAuditDrawer({ findingId, onClose }) {
           {/* Evidence */}
           {detail.evidence_refs && Object.keys(detail.evidence_refs).length > 0 && (
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Evidence / references</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">{DRAWER_LABELS.evidence_refs}</p>
               <div className="bg-green-50 rounded-lg p-3 text-sm text-gray-700">
                 <pre className="whitespace-pre-wrap">{JSON.stringify(detail.evidence_refs, null, 2)}</pre>
               </div>
@@ -817,20 +809,20 @@ function FindingAuditDrawer({ findingId, onClose }) {
           {/* Evidence text */}
           {detail.evidence && (
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Explication</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">{DRAWER_LABELS.explanation}</p>
               <p className="text-sm text-gray-700 bg-gray-50 rounded-lg p-3">{detail.evidence}</p>
             </div>
           )}
 
           {/* Metadata */}
           <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Metadata</p>
+            <p className="text-xs font-semibold text-gray-500 uppercase mb-2">{DRAWER_LABELS.metadata}</p>
             <div className="text-xs text-gray-400 space-y-1">
-              {detail.engine_version && <div>Engine version: <span className="font-mono">{detail.engine_version}</span></div>}
-              {detail.created_at && <div>Computed at: {new Date(detail.created_at).toLocaleString('fr-FR')}</div>}
-              {detail.updated_at && <div>Updated at: {new Date(detail.updated_at).toLocaleString('fr-FR')}</div>}
-              <div>Workflow: {detail.insight_status}</div>
-              {detail.owner && <div>Owner: {detail.owner}</div>}
+              {isExpert && detail.engine_version && <div>{DRAWER_LABELS.engine_version} : <span className="font-mono">{detail.engine_version}</span></div>}
+              {detail.created_at && <div>{DRAWER_LABELS.computed_at} : {new Date(detail.created_at).toLocaleString('fr-FR')}</div>}
+              {detail.updated_at && <div>{DRAWER_LABELS.updated_at} : {new Date(detail.updated_at).toLocaleString('fr-FR')}</div>}
+              <div>{DRAWER_LABELS.workflow} : {WORKFLOW_LABELS[detail.insight_status] || detail.insight_status}</div>
+              <div>{DRAWER_LABELS.owner} : {detail.owner || '-'}</div>
             </div>
           </div>
         </div>
@@ -857,7 +849,7 @@ function DataQualityGate({ siteId, siteName }) {
         <CardBody className="bg-gray-50 py-3">
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <AlertTriangle size={14} className="text-gray-400" />
-            <span>{siteName || 'Site'} — Qualite indisponible</span>
+            <span>{siteName || 'Site'} — Qualité indisponible</span>
           </div>
         </CardBody>
       </Card>
@@ -882,7 +874,7 @@ function DataQualityGate({ siteId, siteName }) {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold text-gray-900">
-                  {siteName ? `${siteName} — Qualite` : 'Qualite des donnees'}
+                  {siteName ? `${siteName} — Qualité` : 'Qualité des données'}
                 </span>
                 <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${sc.badge}`}>{dq.gate_status}</span>
               </div>
@@ -915,7 +907,7 @@ function DataQualityGate({ siteId, siteName }) {
             {/* Missing critical fields */}
             {dq.missing_critical && dq.missing_critical.length > 0 && (
               <div className="p-3 bg-red-50 rounded-lg">
-                <p className="text-xs font-semibold text-red-700 uppercase mb-1">Donnees critiques manquantes</p>
+                <p className="text-xs font-semibold text-red-700 uppercase mb-1">Données critiques manquantes</p>
                 <div className="flex flex-wrap gap-1.5">
                   {dq.missing_critical.map((m, i) => (
                     <span key={i} className="px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs font-medium">
@@ -929,7 +921,7 @@ function DataQualityGate({ siteId, siteName }) {
             {/* Missing optional fields */}
             {dq.missing_optional && dq.missing_optional.length > 0 && (
               <div className="p-3 bg-amber-50 rounded-lg">
-                <p className="text-xs font-semibold text-amber-700 uppercase mb-1">Donnees optionnelles manquantes</p>
+                <p className="text-xs font-semibold text-amber-700 uppercase mb-1">Données optionnelles manquantes</p>
                 <div className="flex flex-wrap gap-1.5">
                   {dq.missing_optional.map((m, i) => (
                     <span key={i} className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded text-xs font-medium">
@@ -947,47 +939,82 @@ function DataQualityGate({ siteId, siteName }) {
 }
 
 function ActionRow({ finding, onWorkflowAction, onCreateAction, onAuditFinding }) {
+  const { isExpert } = useExpertMode();
+  const ruleInfo = RULE_LABELS[finding.rule_id];
+  const nextSteps = RULE_NEXT_STEPS[finding.rule_id] || [];
+  const expectedProofs = RULE_EXPECTED_PROOFS[finding.rule_id] || [];
+  const [expanded, setExpanded] = useState(false);
+
   return (
-    <div className="flex items-center gap-3 px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-      <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${finding.status === 'NOK' ? 'bg-red-500' : 'bg-amber-500'}`} />
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-900 truncate">{finding.site_nom} — {REG_LABELS[finding.regulation] || finding.regulation}</p>
-        <p className="text-xs text-gray-500 truncate">{finding.rule_id}: {finding.evidence || 'Non conforme'}</p>
+    <div className="border border-gray-200 rounded-lg hover:bg-gray-50/50 transition-colors">
+      <div className="flex items-center gap-3 px-4 py-3">
+        <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${finding.status === 'NOK' ? 'bg-red-500' : finding.status === 'UNKNOWN' ? 'bg-blue-400' : 'bg-amber-500'}`} />
+        <button onClick={() => setExpanded(!expanded)} className="flex-1 min-w-0 text-left">
+          <p className="text-sm font-medium text-gray-900 truncate">
+            {finding.site_nom} — {ruleInfo?.title_fr || REG_LABELS[finding.regulation] || finding.regulation}
+          </p>
+          <p className="text-xs text-gray-500 truncate">
+            {ruleInfo?.why_fr || finding.evidence || 'Non conforme'}
+          </p>
+          {isExpert && <p className="text-[10px] text-gray-400 font-mono mt-0.5">{finding.rule_id}</p>}
+        </button>
+        <WorkflowBadge status={finding.insight_status} />
+        <button
+          onClick={() => onAuditFinding(finding.id)}
+          className="text-xs text-indigo-500 hover:text-indigo-700 font-medium flex items-center gap-1 px-2 py-1 rounded hover:bg-indigo-50 transition-colors"
+          title="Voir les détails"
+        >
+          <Eye size={12} /> Détails
+        </button>
+        {finding.insight_status === 'open' && (
+          <button
+            onClick={() => onWorkflowAction(finding.id, 'ack')}
+            className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 px-2 py-1 rounded hover:bg-blue-50 transition-colors"
+          >
+            <UserCheck size={12} /> Prendre en charge
+          </button>
+        )}
+        {finding.insight_status === 'ack' && (
+          <button
+            onClick={() => onWorkflowAction(finding.id, 'resolved')}
+            className="text-xs text-green-600 hover:text-green-800 font-medium flex items-center gap-1 px-2 py-1 rounded hover:bg-green-50 transition-colors"
+          >
+            <CheckCircle2 size={12} /> Résolu
+          </button>
+        )}
+        {finding.status === 'NOK' && (
+          <Button size="sm" variant="secondary" onClick={() => onCreateAction(finding)}>
+            <Plus size={12} /> Action
+          </Button>
+        )}
       </div>
-      <WorkflowBadge status={finding.insight_status} />
-      <button
-        onClick={() => onAuditFinding(finding.id)}
-        className="text-xs text-indigo-500 hover:text-indigo-700 font-medium flex items-center gap-1 px-2 py-1 rounded hover:bg-indigo-50 transition-colors"
-      >
-        <Eye size={12} /> Audit
-      </button>
-      {finding.insight_status === 'open' && (
-        <button
-          onClick={() => onWorkflowAction(finding.id, 'ack')}
-          className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 px-2 py-1 rounded hover:bg-blue-50 transition-colors"
-        >
-          <UserCheck size={12} /> Prendre en charge
-        </button>
-      )}
-      {finding.insight_status === 'ack' && (
-        <button
-          onClick={() => onWorkflowAction(finding.id, 'resolved')}
-          className="text-xs text-green-600 hover:text-green-800 font-medium flex items-center gap-1 px-2 py-1 rounded hover:bg-green-50 transition-colors"
-        >
-          <CheckCircle2 size={12} /> Resolu
-        </button>
-      )}
-      {finding.status === 'NOK' && (
-        <Button size="sm" variant="secondary" onClick={() => onCreateAction(finding)}>
-          <Plus size={12} /> Action
-        </Button>
+
+      {expanded && (nextSteps.length > 0 || expectedProofs.length > 0) && (
+        <div className="px-4 pb-3 pt-1 border-t border-gray-100 grid grid-cols-2 gap-4">
+          {nextSteps.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-gray-600 mb-1">Prochaines étapes</p>
+              <ul className="text-xs text-gray-600 space-y-0.5">
+                {nextSteps.map((step, i) => <li key={i} className="flex items-start gap-1"><ChevronRight size={10} className="shrink-0 mt-0.5 text-blue-400" />{step}</li>)}
+              </ul>
+            </div>
+          )}
+          {expectedProofs.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-gray-600 mb-1">Preuves attendues</p>
+              <ul className="text-xs text-gray-600 space-y-0.5">
+                {expectedProofs.map((proof, i) => <li key={i} className="flex items-start gap-1"><FileText size={10} className="shrink-0 mt-0.5 text-indigo-400" />{proof}</li>)}
+              </ul>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
 }
 
 function ProofSection({ obligation, files, onUpload }) {
-  const cfg = STATUT_CONFIG[obligation.statut] || STATUT_CONFIG.a_risque;
+  const cfg = STATUT_CONFIG[obligation.statut] || STATUT_CONFIG.a_qualifier;
 
   return (
     <Card className={`border-l-4 ${cfg.border}`}>
@@ -995,9 +1022,9 @@ function ProofSection({ obligation, files, onUpload }) {
         <div className="flex items-center justify-between mb-3">
           <div>
             <h4 className="text-sm font-semibold text-gray-900">{obligation.regulation}</h4>
-            <p className="text-xs text-gray-500">{obligation.sites_concernes} site(s) concerne(s)</p>
+            <p className="text-xs text-gray-500">{obligation.sites_concernes} site(s) concerné(s)</p>
           </div>
-          <Badge status={obligation.statut === 'conforme' ? 'ok' : obligation.statut === 'non_conforme' ? 'crit' : 'warn'}>
+          <Badge status={obligation.statut === 'conforme' ? 'ok' : obligation.statut === 'non_conforme' ? 'crit' : obligation.statut === 'a_qualifier' ? 'info' : 'warn'}>
             {cfg.label}
           </Badge>
         </div>
@@ -1146,7 +1173,7 @@ export default function ConformitePage() {
       loadData();
       track('conformite_recompute');
     } catch {
-      setError('Erreur lors de la re-evaluation des regles');
+      setError('Erreur lors de la réévaluation des règles');
     } finally {
       setRecomputing(false);
     }
@@ -1158,19 +1185,19 @@ export default function ConformitePage() {
       loadData();
       track('conformite_workflow', { finding_id: findingId, status: newStatus });
     } catch {
-      toast('Erreur lors de la mise a jour du workflow', 'error');
+      toast('Erreur lors de la mise à jour du workflow', 'error');
     }
   };
 
   function handleCreateFromObligation(obligation) {
     setPrefill({
-      titre: `Mise en conformite ${obligation.regulation}`,
+      titre: `Mise en conformité ${obligation.regulation}`,
       type: 'conformite',
       priorite: obligation.severity === 'critical' ? 'critical' : obligation.severity === 'high' ? 'high' : 'medium',
       description: obligation.quoi_faire,
       obligation_code: obligation.code,
       impact_eur: obligation.impact_eur,
-      site: `${obligation.sites_concernes} sites concernes`,
+      site: `${obligation.sites_concernes} sites concernés`,
     });
     setShowCreate(true);
     track('conformite_create_action', { regulation: obligation.code });
@@ -1178,7 +1205,7 @@ export default function ConformitePage() {
 
   function handleCreateFromFinding(finding) {
     setPrefill({
-      titre: `Mise en conformite ${REG_LABELS[finding.regulation] || finding.regulation} — ${finding.site_nom}`,
+      titre: `Mise en conformité ${REG_LABELS[finding.regulation] || finding.regulation} — ${finding.site_nom}`,
       type: 'conformite',
       priorite: finding.severity === 'critical' ? 'critical' : finding.severity === 'high' ? 'high' : 'medium',
       description: finding.evidence || `Non conforme: ${finding.rule_id}`,
@@ -1206,7 +1233,7 @@ export default function ConformitePage() {
 
   if (loading) {
     return (
-      <PageShell icon={ShieldCheck} title="Conformite reglementaire" subtitle="Chargement...">
+      <PageShell icon={ShieldCheck} title="Conformité réglementaire" subtitle="Chargement...">
         <div className="animate-pulse space-y-4">
           <div className="grid grid-cols-4 gap-4">
             {[1,2,3,4].map(i => <div key={i} className="h-24 bg-gray-200 rounded-lg" />)}
@@ -1224,18 +1251,18 @@ export default function ConformitePage() {
         setError(null);
         loadData();
       } catch {
-        setError({ message: 'Echec du reset de la base de donnees' });
+        setError({ message: 'Échec du reset de la base de données' });
       }
     };
 
     return (
-      <PageShell icon={ShieldCheck} title="Conformite reglementaire"
+      <PageShell icon={ShieldCheck} title="Conformité réglementaire"
                  subtitle={`${org.nom} · ${scopedSites.length} sites`}>
         <ErrorState
           title="Erreur de chargement"
-          message={error.message || 'Donnees de conformite indisponibles'}
+          message={error.message || 'Données de conformité indisponibles'}
           onRetry={() => { setError(null); loadData(); }}
-          debug={(error.error_code || error.status || error.request_url) ? {
+          debug={isExpert && (error.error_code || error.status || error.request_url) ? {
             ...(error.status ? { status: error.status } : {}),
             ...(error.error_code ? { error_code: error.error_code } : {}),
             ...(error.trace_id ? { trace_id: error.trace_id } : {}),
@@ -1255,31 +1282,33 @@ export default function ConformitePage() {
   return (
     <PageShell
       icon={ShieldCheck}
-      title="Conformite reglementaire"
+      title="Conformité réglementaire"
       subtitle={scopeLabel}
       actions={
         <>
           <Button variant="secondary" size="sm" onClick={handleRecompute} disabled={recomputing}>
             <RefreshCw size={14} className={recomputing ? 'animate-spin' : ''} />
-            {recomputing ? 'Evaluation...' : 'Re-evaluer'}
+            {recomputing ? 'Évaluation...' : 'Réévaluer'}
           </Button>
           <Button onClick={() => { setPrefill(null); setShowCreate(true); }}>
-            <Plus size={16} /> Creer action conformite
+            <Plus size={16} /> Créer action conformité
           </Button>
         </>
       }
     >
 
-      {/* Dev-only badges */}
-      <div className="flex items-center gap-2 -mt-1 mb-1">
-        <DevApiBadge />
-        <DevScopeBadge scope={{ orgId: org.id, portefeuilleId: scope.portefeuilleId, siteId: scope.siteId }} scopedSites={scopedSites} />
-        {bundle?.meta?.generated_at && (
-          <span className="text-[10px] font-mono text-gray-400">
-            bundle: {new Date(bundle.meta.generated_at).toLocaleTimeString('fr-FR')}
-          </span>
-        )}
-      </div>
+      {/* Expert-only badges */}
+      {isExpert && (
+        <div className="flex items-center gap-2 -mt-1 mb-1">
+          <DevApiBadge />
+          <DevScopeBadge scope={{ orgId: org.id, portefeuilleId: scope.portefeuilleId, siteId: scope.siteId }} scopedSites={scopedSites} />
+          {bundle?.meta?.generated_at && (
+            <span className="text-[10px] font-mono text-gray-400">
+              Synthèse : {new Date(bundle.meta.generated_at).toLocaleTimeString('fr-FR')}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Cockpit Tabs */}
       <Tabs tabs={COCKPIT_TABS} active={activeTab} onChange={(tab) => { setActiveTab(tab); track('conformite_tab', { tab }); }} />
@@ -1292,7 +1321,7 @@ export default function ConformitePage() {
             <Card className="col-span-2">
               <CardBody>
                 <ScoreGauge pct={score.pct} isEmpty={!!emptyReason && emptyReason !== 'ALL_COMPLIANT'} />
-                <TrustBadge source="RegOps" period={`perimetre : ${scopedSites.length} sites`} confidence="medium" className="mt-2" />
+                <TrustBadge source="RegOps" period={`périmètre : ${scopedSites.length} sites`} confidence="medium" className="mt-2" />
               </CardBody>
             </Card>
             <Card
@@ -1315,7 +1344,7 @@ export default function ConformitePage() {
               <CardBody className="bg-amber-50">
                 <div className="flex items-center gap-2 mb-1">
                   <Clock size={16} className="text-amber-600" />
-                  <p className="text-xs text-gray-500 font-medium">A evaluer</p>
+                  <p className="text-xs text-gray-500 font-medium">À évaluer</p>
                 </div>
                 <p className="text-2xl font-bold text-amber-700">{score.a_risque}</p>
                 <p className="text-xs text-gray-500 mt-1">sites</p>
@@ -1327,13 +1356,13 @@ export default function ConformitePage() {
           {statusFilter && (
             <div className="flex items-center gap-2">
               <Badge status={statusFilter === 'non_conforme' ? 'crit' : 'warn'}>
-                Filtre : {statusFilter === 'non_conforme' ? 'Non conformes' : 'A risque'}
+                Filtre : {statusFilter === 'non_conforme' ? 'Non conformes' : 'À risque'}
               </Badge>
               <button
                 onClick={() => setStatusFilter(null)}
                 className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition"
               >
-                <RotateCcw size={12} /> Reinitialiser
+                <RotateCcw size={12} /> Réinitialiser
               </button>
             </div>
           )}
@@ -1343,7 +1372,7 @@ export default function ConformitePage() {
             <div className="flex items-center gap-2 px-4 py-2.5 bg-red-50 border border-red-200 rounded-lg">
               <AlertTriangle size={16} className="text-red-600" />
               <span className="text-sm font-medium text-red-700">
-                {overdueCount} obligation(s) en retard — echeance(s) depassee(s)
+                {overdueCount} obligation(s) en retard — échéance(s) dépassée(s)
               </span>
             </div>
           )}
@@ -1352,7 +1381,7 @@ export default function ConformitePage() {
           <div>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-gray-700">
-                {statusFilter || searchQuery.trim() ? sortedObligations.length : score.total} Obligations reglementaires
+                {statusFilter || searchQuery.trim() ? sortedObligations.length : score.total} Obligations réglementaires
               </h3>
               <div className="relative w-64">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -1376,8 +1405,8 @@ export default function ConformitePage() {
             ) : sortedObligations.length === 0 ? (
               <EmptyState
                 icon={ShieldCheck}
-                title="Aucune obligation detectee"
-                text="Cliquez Re-evaluer pour lancer l'evaluation, ou ajoutez des sites a votre patrimoine."
+                title="Aucune obligation détectée"
+                text="Cliquez Réévaluer pour lancer l'évaluation, ou ajoutez des sites à votre patrimoine."
                 ctaLabel="Aller au patrimoine"
               />
             ) : (
@@ -1408,12 +1437,12 @@ export default function ConformitePage() {
       {activeTab === 'donnees' && (
         <div className="space-y-4">
           {scopedSites.length === 0 ? (
-            <EmptyState icon={Database} title="Aucun site dans le perimetre" text="Ajoutez des sites pour analyser la qualite des donnees." />
+            <EmptyState icon={Database} title="Aucun site dans le périmètre" text="Ajoutez des sites pour analyser la qualité des données." />
           ) : (
             <>
               <div className="flex items-center gap-2 mb-2">
                 <Database size={16} className="text-blue-600" />
-                <h3 className="text-sm font-semibold text-gray-700">Qualite des donnees par site ({scopedSites.length})</h3>
+                <h3 className="text-sm font-semibold text-gray-700">Qualité des données par site ({scopedSites.length})</h3>
               </div>
               {scopedSites.map(site => (
                 <DataQualityGate key={site.id} siteId={site.id} siteName={site.nom} />
@@ -1454,7 +1483,7 @@ export default function ConformitePage() {
                       className="mt-3"
                       onClick={() => { navigate(`/intake/${scopedSites[0]?.id}`); track('conformite_goto_intake'); }}
                     >
-                      Completer le questionnaire
+                      Compléter le questionnaire
                     </Button>
                   </CardBody>
                 </Card>
@@ -1471,7 +1500,7 @@ export default function ConformitePage() {
             <div className="flex items-center gap-2">
               <ClipboardList size={16} className="text-blue-600" />
               <h3 className="text-sm font-semibold text-gray-700">
-                Actions a mener ({actionableFindings.length})
+                Actions à mener ({actionableFindings.length})
               </h3>
             </div>
             {actionableFindings.length > 0 && (
@@ -1487,7 +1516,7 @@ export default function ConformitePage() {
               title="Aucune action en attente"
               text={emptyReason === 'ALL_COMPLIANT'
                 ? 'Toutes les obligations sont conformes. Aucune action requise.'
-                : 'Lancez une evaluation pour identifier les actions necessaires.'}
+                : 'Lancez une évaluation pour identifier les actions nécessaires.'}
             />
           ) : (
             <div className="space-y-2">
@@ -1525,7 +1554,7 @@ export default function ConformitePage() {
             <EmptyState
               icon={FolderOpen}
               title="Aucune obligation"
-              text="Lancez une evaluation pour voir les obligations et joindre des preuves."
+              text="Lancez une évaluation pour voir les obligations et joindre des preuves."
             />
           ) : (
             <>
@@ -1540,7 +1569,7 @@ export default function ConformitePage() {
             </>
           )}
 
-          <TrustBadge source="Preuves locales" period="Upload client-side (non persiste)" confidence="low" />
+          <TrustBadge source="Preuves locales" period="Téléversement local (non enregistré)" confidence="low" />
         </div>
       )}
 

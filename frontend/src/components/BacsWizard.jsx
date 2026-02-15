@@ -15,9 +15,9 @@ import {
 } from '../services/api';
 
 const PHASES = [
-  { id: 'eligibilite', label: 'Eligibilite', icon: Building2 },
+  { id: 'eligibilite', label: 'Éligibilité', icon: Building2 },
   { id: 'inventaire', label: 'Inventaire CVC', icon: Thermometer },
-  { id: 'resultat', label: 'Resultat', icon: ShieldCheck },
+  { id: 'resultat', label: 'Résultat', icon: ShieldCheck },
   { id: 'actions', label: 'Plan d\'actions', icon: FileText },
 ];
 
@@ -28,9 +28,9 @@ const SYSTEM_TYPES = [
 ];
 
 const ARCHITECTURES = [
-  { value: 'cascade', label: 'Cascade', desc: 'Unites en serie — Putile = somme des kW' },
-  { value: 'network', label: 'Reseau', desc: 'Unites en reseau — Putile = somme des kW' },
-  { value: 'independent', label: 'Independant', desc: 'Unites separees — Putile = max des kW' },
+  { value: 'cascade', label: 'Cascade', desc: 'Unités en série — Putile = somme des kW' },
+  { value: 'network', label: 'Réseau', desc: 'Unités en réseau — Putile = somme des kW' },
+  { value: 'independent', label: 'Indépendant', desc: 'Unités séparées — Putile = max des kW' },
 ];
 
 function ProgressBar({ phase }) {
@@ -62,7 +62,7 @@ function ProgressBar({ phase }) {
 function StepEligibilite({ data, setData, onNext }) {
   return (
     <div className="space-y-5">
-      <h3 className="text-base font-semibold text-gray-800">Eligibilite & perimetre</h3>
+      <h3 className="text-base font-semibold text-gray-800">Éligibilité & périmètre</h3>
 
       <label className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer">
         <input
@@ -72,8 +72,8 @@ function StepEligibilite({ data, setData, onNext }) {
           className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
         />
         <div>
-          <p className="text-sm font-medium text-gray-800">Batiment tertiaire non-residentiel</p>
-          <p className="text-xs text-gray-500">Critere obligatoire pour le decret BACS</p>
+          <p className="text-sm font-medium text-gray-800">Bâtiment tertiaire non-résidentiel</p>
+          <p className="text-xs text-gray-500">Critère obligatoire pour le décret BACS</p>
         </div>
       </label>
 
@@ -96,7 +96,7 @@ function StepEligibilite({ data, setData, onNext }) {
         />
         <div>
           <p className="text-sm font-medium text-gray-800">Renouvellement CVC depuis le 09/04/2023</p>
-          <p className="text-xs text-gray-500">Declenche l'obligation meme sous 70 kW</p>
+          <p className="text-xs text-gray-500">Déclenche l'obligation même sous 70 kW</p>
         </div>
       </label>
 
@@ -119,7 +119,7 @@ function StepEligibilite({ data, setData, onNext }) {
           onChange={(e) => setData({ ...data, responsible_type: e.target.value })}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         >
-          <option value="owner">Proprietaire</option>
+          <option value="owner">Propriétaire</option>
           <option value="tenant">Locataire</option>
           <option value="syndic">Syndic</option>
         </select>
@@ -190,7 +190,7 @@ function StepInventaire({ systems, setSystems, putile, onNext, onPrev }) {
       <div className="flex items-center justify-between">
         <h3 className="text-base font-semibold text-gray-800">Inventaire CVC</h3>
         <Button size="sm" variant="outline" onClick={addSystem}>
-          <Plus size={14} className="mr-1" /> Ajouter un systeme
+          <Plus size={14} className="mr-1" /> Ajouter un système
         </Button>
       </div>
 
@@ -219,7 +219,7 @@ function StepInventaire({ systems, setSystems, putile, onNext, onPrev }) {
       {/* Systems list */}
       {systems.length === 0 && (
         <div className="text-center py-8 text-gray-400 text-sm">
-          Aucun systeme CVC. Cliquez "Ajouter" pour commencer l'inventaire.
+          Aucun système CVC. Cliquez "Ajouter" pour commencer l'inventaire.
         </div>
       )}
 
@@ -233,7 +233,7 @@ function StepInventaire({ systems, setSystems, putile, onNext, onPrev }) {
                 <div className="flex items-center gap-2">
                   <Icon size={16} className={typeInfo?.color || 'text-gray-500'} />
                   <span className="text-sm font-medium text-gray-800">
-                    Systeme {idx + 1}: {typeInfo?.label || sys.type}
+                    Système {idx + 1}: {typeInfo?.label || sys.type}
                   </span>
                 </div>
                 <button onClick={() => removeSystem(idx)} className="p-1 text-gray-400 hover:text-red-500">
@@ -270,7 +270,7 @@ function StepInventaire({ systems, setSystems, putile, onNext, onPrev }) {
               {/* Units */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-gray-600">Unites</span>
+                  <span className="text-xs font-medium text-gray-600">Unités</span>
                   <button onClick={() => addUnit(idx)} className="text-xs text-blue-600 hover:underline flex items-center gap-0.5">
                     <Plus size={12} /> Ajouter
                   </button>
@@ -306,10 +306,10 @@ function StepInventaire({ systems, setSystems, putile, onNext, onPrev }) {
 
       <div className="flex justify-between pt-2">
         <Button variant="outline" onClick={onPrev}>
-          <ChevronLeft size={14} className="mr-1" /> Precedent
+          <ChevronLeft size={14} className="mr-1" /> Précédent
         </Button>
         <Button onClick={onNext} disabled={systems.length === 0}>
-          Evaluer <ChevronRight size={14} className="ml-1" />
+          Évaluer <ChevronRight size={14} className="ml-1" />
         </Button>
       </div>
     </div>
@@ -323,7 +323,7 @@ function StepResultat({ assessment, scoreExplain, loading, onNext, onPrev }) {
     return (
       <div className="text-center py-12">
         <Calculator size={32} className="text-blue-400 mx-auto mb-3 animate-pulse" />
-        <p className="text-sm text-gray-500">Evaluation BACS en cours...</p>
+        <p className="text-sm text-gray-500">Évaluation BACS en cours...</p>
       </div>
     );
   }
@@ -332,7 +332,7 @@ function StepResultat({ assessment, scoreExplain, loading, onNext, onPrev }) {
     return (
       <div className="text-center py-12 text-gray-400">
         <AlertTriangle size={28} className="mx-auto mb-2" />
-        <p className="text-sm">Erreur: pas de resultat disponible.</p>
+        <p className="text-sm">Erreur: pas de résultat disponible.</p>
         <Button variant="outline" className="mt-4" onClick={onPrev}>Retour</Button>
       </div>
     );
@@ -344,7 +344,7 @@ function StepResultat({ assessment, scoreExplain, loading, onNext, onPrev }) {
 
   return (
     <div className="space-y-5">
-      <h3 className="text-base font-semibold text-gray-800">Resultat de l'evaluation</h3>
+      <h3 className="text-base font-semibold text-gray-800">Résultat de l'évaluation</h3>
 
       {/* Main verdict */}
       <Card className={`border-l-4 ${a.is_obligated ? 'border-l-red-500 bg-red-50' : 'border-l-green-500 bg-green-50'}`}>
@@ -352,16 +352,16 @@ function StepResultat({ assessment, scoreExplain, loading, onNext, onPrev }) {
           <ShieldCheck size={28} className={a.is_obligated ? 'text-red-500' : 'text-green-500'} />
           <div>
             <h4 className="text-lg font-bold text-gray-900">
-              {a.is_obligated ? 'Site assujetti au decret BACS' : 'Site non assujetti'}
+              {a.is_obligated ? 'Site assujetti au décret BACS' : 'Site non assujetti'}
             </h4>
             {a.is_obligated && (
               <p className="text-sm text-gray-600">
-                Seuil: {a.threshold_applied} kW | Declencheur: {a.trigger_reason || 'seuil'}
+                Seuil: {a.threshold_applied} kW | Déclencheur: {a.trigger_reason || 'seuil'}
               </p>
             )}
           </div>
           <Badge status={a.is_obligated ? 'crit' : 'ok'} className="ml-auto">
-            {a.is_obligated ? 'Assujetti' : 'Hors perimetre'}
+            {a.is_obligated ? 'Assujetti' : 'Hors périmètre'}
           </Badge>
         </CardBody>
       </Card>
@@ -370,7 +370,7 @@ function StepResultat({ assessment, scoreExplain, loading, onNext, onPrev }) {
       {a.is_obligated && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="p-3 bg-gray-50 rounded-lg text-center">
-            <p className="text-xs text-gray-500">Echeance</p>
+            <p className="text-xs text-gray-500">Échéance</p>
             <p className="text-sm font-bold text-gray-800">{a.deadline_date || '—'}</p>
             {daysLeft !== null && (
               <p className={`text-xs ${daysLeft < 0 ? 'text-red-600 font-bold' : daysLeft < 180 ? 'text-amber-600' : 'text-green-600'}`}>
@@ -383,7 +383,7 @@ function StepResultat({ assessment, scoreExplain, loading, onNext, onPrev }) {
             <p className="text-sm font-bold text-gray-800">{a.threshold_applied} kW</p>
           </div>
           <div className="p-3 bg-gray-50 rounded-lg text-center">
-            <p className="text-xs text-gray-500">Score conformite</p>
+            <p className="text-xs text-gray-500">Score conformité</p>
             <p className={`text-sm font-bold ${(a.compliance_score || 0) >= 50 ? 'text-green-600' : 'text-red-600'}`}>
               {a.compliance_score?.toFixed(0) ?? '—'}%
             </p>
@@ -418,15 +418,15 @@ function StepResultat({ assessment, scoreExplain, loading, onNext, onPrev }) {
       {/* Findings list */}
       {a.findings && a.findings.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-sm font-semibold text-gray-700">Findings detailles</h4>
+          <h4 className="text-sm font-semibold text-gray-700">Constats détaillés</h4>
           {a.findings.map((f, i) => (
             <Card key={i} className="border-l-2 border-l-gray-300">
               <CardBody className="py-2">
                 <div className="flex items-center gap-2 mb-1">
                   <Badge status={f.status === 'NON_COMPLIANT' ? 'crit' : f.status === 'AT_RISK' ? 'warn' : 'ok'}>
-                    {f.status}
+                    {{ NON_COMPLIANT: 'Non conforme', AT_RISK: 'À risque', COMPLIANT: 'Conforme', UNKNOWN: 'À qualifier' }[f.status] || f.status}
                   </Badge>
-                  <span className="text-xs text-gray-500">{f.rule_id}</span>
+                  <span className="text-xs text-gray-500">{f.regulation || f.rule_id}</span>
                 </div>
                 <p className="text-sm text-gray-700">{f.explanation}</p>
               </CardBody>
@@ -447,7 +447,7 @@ function StepResultat({ assessment, scoreExplain, loading, onNext, onPrev }) {
 
       <div className="flex justify-between pt-2">
         <Button variant="outline" onClick={onPrev}>
-          <ChevronLeft size={14} className="mr-1" /> Precedent
+          <ChevronLeft size={14} className="mr-1" /> Précédent
         </Button>
         <Button onClick={onNext}>
           Plan d'actions <ChevronRight size={14} className="ml-1" />
@@ -466,7 +466,7 @@ function StepActions({ assessment, onClose }) {
         <h3 className="text-base font-semibold text-gray-800">Plan d'actions</h3>
         <div className="text-center py-8">
           <Check size={32} className="text-green-500 mx-auto mb-2" />
-          <p className="text-sm text-gray-600">Ce site n'est pas assujetti au decret BACS.</p>
+          <p className="text-sm text-gray-600">Ce site n'est pas assujetti au décret BACS.</p>
           <p className="text-xs text-gray-400 mt-1">Aucune action requise.</p>
         </div>
         <div className="flex justify-end">
@@ -477,15 +477,15 @@ function StepActions({ assessment, onClose }) {
   }
 
   const actions = [
-    { priority: 'CRITICAL', label: 'Installer un systeme GTB/GTC conforme', effort: 'Eleve', roi: 'Conformite reglementaire' },
-    { priority: 'HIGH', label: 'Planifier l\'inspection quinquennale', effort: 'Moyen', roi: 'Eviter sanction' },
-    { priority: 'MEDIUM', label: 'Evaluer le TRI pour exemption eventuelle', effort: 'Faible', roi: 'Potentielle exemption' },
-    { priority: 'LOW', label: 'Documenter le responsable et les preuves', effort: 'Faible', roi: 'Auditabilite' },
+    { priority: 'CRITICAL', label: 'Installer un systeme GTB/GTC conforme', effort: 'Élevé', roi: 'Conformité réglementaire' },
+    { priority: 'HIGH', label: 'Planifier l\'inspection quinquennale', effort: 'Moyen', roi: 'Éviter sanction' },
+    { priority: 'MEDIUM', label: 'Évaluer le TRI pour exemption éventuelle', effort: 'Faible', roi: 'Potentielle exemption' },
+    { priority: 'LOW', label: 'Documenter le responsable et les preuves', effort: 'Faible', roi: 'Auditabilité' },
   ];
 
   return (
     <div className="space-y-5">
-      <h3 className="text-base font-semibold text-gray-800">Plan d'actions recommande</h3>
+      <h3 className="text-base font-semibold text-gray-800">Plan d'actions recommandé</h3>
 
       {actions.map((a, i) => (
         <Card key={i} className={`border-l-4 ${
@@ -497,7 +497,7 @@ function StepActions({ assessment, onClose }) {
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <Badge status={a.priority === 'CRITICAL' ? 'crit' : a.priority === 'HIGH' ? 'warn' : 'info'}>
-                  {a.priority}
+                  {{ CRITICAL: 'Critique', HIGH: 'Élevée', MEDIUM: 'Moyenne', LOW: 'Faible' }[a.priority] || a.priority}
                 </Badge>
                 <span className="text-sm font-medium text-gray-800">{a.label}</span>
               </div>
@@ -522,7 +522,7 @@ function StepActions({ assessment, onClose }) {
             a.click();
             URL.revokeObjectURL(url);
           }}>
-            <FileText size={14} className="mr-1" /> Telecharger JSON
+            <FileText size={14} className="mr-1" /> Télécharger JSON
           </Button>
         </CardBody>
       </Card>
@@ -577,7 +577,7 @@ export default function BacsWizard({ siteId, onClose }) {
         // Asset already exists — skip to phase 2
         setPhase(1);
       } else {
-        setError(err.response?.data?.detail || 'Erreur creation asset');
+        setError(err.response?.data?.detail || 'Erreur création asset');
       }
     }
     setLoading(false);
@@ -612,7 +612,7 @@ export default function BacsWizard({ siteId, onClose }) {
 
       setPhase(2);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Erreur evaluation');
+      setError(err.response?.data?.detail || 'Erreur évaluation');
     }
     setLoading(false);
   }, [siteId, assetId, systems]);
@@ -623,7 +623,7 @@ export default function BacsWizard({ siteId, onClose }) {
       <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-[slideInUp_0.25s_ease-out]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
-          <h2 className="text-lg font-semibold text-gray-900">Evaluation BACS</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Évaluation BACS</h2>
           <button
             onClick={onClose}
             className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition
