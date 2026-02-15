@@ -477,12 +477,20 @@ function HeatmapGrid({ data }) {
   );
 }
 
-const CLIMATE_REASONS = {
+export const CLIMATE_REASONS = {
   no_meter: 'Aucun compteur associe au snapshot. Relancez l\'analyse.',
   no_weather: 'Donnees meteo indisponibles pour la periode.',
   meter_not_found: 'Compteur introuvable.',
   insufficient_readings: 'Moins de 10 jours de donnees — insuffisant pour la regression.',
   computation_error: 'Erreur de calcul. Verifiez les donnees sources.',
+};
+
+export const CLIMATE_LABEL_FR = {
+  heating_dominant: 'Chauffage majoritaire',
+  cooling_dominant: 'Climatisation majoritaire',
+  mixed: 'Mixte (chauffage + clim.)',
+  flat: 'Insensible au climat',
+  unknown: 'Non determine',
 };
 
 function ClimateScatter({ climate }) {
@@ -516,6 +524,7 @@ function ClimateScatter({ climate }) {
         {climate.slope_kw_per_c != null && <span>Pente: {climate.slope_kw_per_c.toFixed(1)} (kWh/j)/°C</span>}
         {climate.balance_point_c != null && <span>Tb: {climate.balance_point_c.toFixed(1)} °C</span>}
         {climate.r_squared != null && <span>R²: {climate.r_squared.toFixed(2)}</span>}
+        {climate.label && <span>{CLIMATE_LABEL_FR[climate.label] || climate.label}</span>}
       </div>
     </div>
   );
@@ -1109,17 +1118,19 @@ export default function MonitoringPage() {
             />
           </div>
 
-          {/* Climate KPI card (if climate data available) */}
-          {climate && climate.slope_kw_per_c != null && (
+          {/* Climate KPI card — always visible, with reason code if no data */}
+          {climate && (
             <div className="mb-6">
               <StatusKpiCard
                 icon={Thermometer}
                 title="Sensibilite Climatique"
-                value={`${climate.slope_kw_per_c.toFixed(1)} (kWh/j)/°C`}
-                sub={`R²: ${climate.r_squared != null ? climate.r_squared.toFixed(2) : '-'} | ${climate.label || 'unknown'}`}
+                value={climate.slope_kw_per_c != null ? `${climate.slope_kw_per_c.toFixed(1)} (kWh/j)/°C` : '-'}
+                sub={climate.slope_kw_per_c != null
+                  ? `R²: ${climate.r_squared != null ? climate.r_squared.toFixed(2) : '-'} | ${CLIMATE_LABEL_FR[climate.label] || climate.label || 'Non determine'}`
+                  : (CLIMATE_REASONS[climate.reason] || 'Analyse climatique non disponible')}
                 tooltip={KPI_TOOLTIPS.climate}
                 status={climateStatus}
-                color="bg-cyan-500"
+                color={climate.slope_kw_per_c != null ? 'bg-cyan-500' : 'bg-slate-400'}
                 confidence={climateConf}
               />
             </div>

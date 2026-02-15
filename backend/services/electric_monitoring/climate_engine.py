@@ -1,6 +1,8 @@
 """
 PROMEOS Electric Monitoring - Climate Engine
-Computes climate sensitivity (kW vs temperature) from readings + weather.
+Computes climate sensitivity (kWh/j vs temperature) from readings + weather.
+Aggregates hourly readings to daily kWh, then runs regression against daily avg temp.
+Slope unit: (kWh/j)/°C — energy per day per degree Celsius.
 Delegates to signature_service.run_signature() for the actual regression.
 """
 from collections import defaultdict

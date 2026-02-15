@@ -1,12 +1,13 @@
 /**
  * PROMEOS — Tests for MonitoringPage helpers
- * Covers: buildHeatmapGrid, kpiStatus, computeConfidence, kpiStatusWithConfidence, LF thresholds
+ * Covers: buildHeatmapGrid, kpiStatus, computeConfidence, kpiStatusWithConfidence,
+ *         LF thresholds, groupInsights, CLIMATE_REASONS, CLIMATE_LABEL_FR
  */
 import { describe, it, expect } from 'vitest';
 import {
   buildHeatmapGrid, kpiStatus, computeConfidence,
   kpiStatusWithConfidence, LF_THRESHOLDS_BY_ARCHETYPE,
-  groupInsights,
+  groupInsights, CLIMATE_REASONS, CLIMATE_LABEL_FR,
 } from '../MonitoringPage';
 
 describe('buildHeatmapGrid', () => {
@@ -267,5 +268,61 @@ describe('groupInsights', () => {
     expect(grouped).toHaveLength(1);
     expect(grouped[0]._meters.size).toBe(2);
     expect(grouped[0]._count).toBe(3);
+  });
+});
+
+describe('CLIMATE_REASONS', () => {
+  it('has 5 reason codes', () => {
+    expect(Object.keys(CLIMATE_REASONS)).toHaveLength(5);
+  });
+
+  it('covers all backend reason codes', () => {
+    const expected = ['no_meter', 'no_weather', 'meter_not_found', 'insufficient_readings', 'computation_error'];
+    for (const key of expected) {
+      expect(CLIMATE_REASONS).toHaveProperty(key);
+      expect(typeof CLIMATE_REASONS[key]).toBe('string');
+      expect(CLIMATE_REASONS[key].length).toBeGreaterThan(5);
+    }
+  });
+});
+
+describe('CLIMATE_LABEL_FR', () => {
+  it('has French labels for all climate types', () => {
+    const expected = ['heating_dominant', 'cooling_dominant', 'mixed', 'flat', 'unknown'];
+    for (const key of expected) {
+      expect(CLIMATE_LABEL_FR).toHaveProperty(key);
+      expect(typeof CLIMATE_LABEL_FR[key]).toBe('string');
+    }
+  });
+
+  it('does not contain English text', () => {
+    for (const label of Object.values(CLIMATE_LABEL_FR)) {
+      expect(label).not.toMatch(/dominant|cooling|heating|mixed|unknown/i);
+    }
+  });
+});
+
+describe('computeConfidence with climate reason codes', () => {
+  it('reason code yields low confidence', () => {
+    const conf = computeConfidence({ reason: 'no_weather' });
+    expect(conf.level).toBe('low');
+    expect(conf.pct).toBe(0);
+  });
+
+  it('R² < 0.3 yields low confidence', () => {
+    const conf = computeConfidence({ r2: 0.15 });
+    expect(conf.level).toBe('low');
+    expect(conf.reason).toContain('R²');
+  });
+
+  it('R² >= 0.6 yields high confidence', () => {
+    const conf = computeConfidence({ r2: 0.85 });
+    expect(conf.level).toBe('high');
+  });
+
+  it('few data points cap confidence at medium', () => {
+    const conf = computeConfidence({ r2: 0.90, nPoints: 20 });
+    expect(conf.level).toBe('medium');
+    expect(conf.reason).toContain('20 jours');
   });
 });

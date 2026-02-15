@@ -115,6 +115,30 @@ class TestClimateEmpty:
         assert result["n_points"] == 0
 
 
+class TestClimateReasonCodes:
+    """Ensure reason codes are present when analysis cannot run."""
+
+    def test_no_meter_reason(self, engine):
+        result = engine.compute([], [])
+        assert result.get("reason") == "no_meter"
+
+    def test_no_weather_reason(self, engine):
+        readings, _ = _make_correlated_data(days=30)
+        result = engine.compute(readings, [])
+        assert result.get("reason") == "no_weather"
+
+    def test_insufficient_readings_reason(self, engine):
+        readings, weather = _make_correlated_data(days=5)
+        result = engine.compute(readings, weather)
+        assert result.get("reason") == "insufficient_readings"
+
+    def test_no_reason_when_successful(self, engine):
+        readings, weather = _make_correlated_data(days=60, heating_slope=8.0)
+        result = engine.compute(readings, weather)
+        assert "reason" not in result
+        assert result["slope_kw_per_c"] is not None
+
+
 class TestClimateScatter:
     def test_scatter_has_correct_shape(self, engine):
         readings, weather = _make_correlated_data(days=60, heating_slope=8.0)
