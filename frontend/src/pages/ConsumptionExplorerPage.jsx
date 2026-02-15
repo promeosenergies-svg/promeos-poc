@@ -280,7 +280,7 @@ function EnrichedTooltip({ active, payload, label, mode, metric, normalized, mul
   const envEntry = payload.find(p => p.dataKey === 'temp_env');
 
   return (
-    <div className="bg-white/95 backdrop-blur border border-gray-200 rounded-lg shadow-xl px-3 py-2 text-xs max-w-xs">
+    <div className="bg-white/95 backdrop-blur border border-indigo-200/60 rounded-lg shadow-xl px-3 py-2 text-xs max-w-xs ring-1 ring-indigo-100/40">
       <p className="font-medium text-gray-600 mb-1.5 border-b border-gray-100 pb-1">{label}</p>
       {visible.filter(p => p.dataKey !== 'temp').map((p, i) => {
         const pct = total > 0 ? Math.round((p.value / total) * 100) : 0;
@@ -1182,7 +1182,7 @@ export default function ConsumptionExplorerPage({ bare = false }) {
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                   <XAxis dataKey="T" name="Temp (°C)" tick={{ fontSize: 10 }} type="number" />
                   <YAxis dataKey="kwh" name="kWh/j" tick={{ fontSize: 10 }} />
-                  <RTooltip contentStyle={{ fontSize: 12 }} />
+                  <RTooltip contentStyle={{ fontSize: 12, borderColor: '#c7d2fe', borderRadius: 8 }} />
                   <Scatter data={sigData.scatter} fill="#3b82f6" fillOpacity={0.5} />
                   <Scatter data={sigData.fit_line} fill="none" line={{ stroke: '#ef4444', strokeWidth: 2 }} shape={() => null}>
                     {sigData.fit_line.map((_, i) => (
