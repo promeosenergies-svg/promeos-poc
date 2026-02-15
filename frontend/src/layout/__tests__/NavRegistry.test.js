@@ -409,4 +409,18 @@ describe('getModuleTint', () => {
     const t = getModuleTint('/unknown');
     expect(t).toBe(TINT_PALETTE.blue); // cockpit fallback → blue
   });
+
+  it('resolves for all routes in ROUTE_MODULE_MAP', () => {
+    for (const [path, moduleKey] of Object.entries(ROUTE_MODULE_MAP)) {
+      const mod = NAV_MODULES.find((m) => m.key === moduleKey);
+      expect(mod).toBeDefined();
+      const t = getModuleTint(path);
+      expect(t).toBe(TINT_PALETTE[mod.tint]);
+    }
+  });
+
+  it('every module has exactly one unique tint key', () => {
+    const tints = NAV_MODULES.map((m) => m.tint);
+    expect(new Set(tints).size).toBe(tints.length);
+  });
 });
