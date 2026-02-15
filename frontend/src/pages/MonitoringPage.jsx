@@ -303,36 +303,43 @@ function StatusKpiCard({ icon, title, value, sub, tooltip, status, color, onClic
 }
 
 /**
- * Executive summary: top risk, top waste, data confidence — each with CTA.
+ * Executive summary v2: top risk, top waste, data confidence — each with CTAs.
+ * Confidence downgrade: if qualityConf.level === 'low', risk card shows "(A confirmer)".
  */
-function ExecutiveSummary({ alerts, kpiData, climate, qualityScore, qualityConf, onOpenExplorer, onCreateAction }) {
+function ExecutiveSummary({ alerts, kpiData, climate, qualityScore, qualityConf, offHoursKwh, onOpenExplorer, onCreateAction, onInsight, onConfidenceDetail }) {
   // Top risk: highest EUR impact open alert
   const topAlert = alerts
     .filter((a) => a.status === 'open' && a.estimated_impact_eur)
     .sort((a, b) => (b.estimated_impact_eur || 0) - (a.estimated_impact_eur || 0))[0];
+
+  const isLowConf = qualityConf?.level === 'low';
 
   // Top waste: off-hours or high base load
   const wasteAlerts = alerts.filter((a) =>
     ['HORS_HORAIRES', 'BASE_NUIT_ELEVEE', 'WEEKEND_ANORMAL'].includes(a.alert_type) && a.status !== 'resolved'
   );
   const totalWasteEur = wasteAlerts.reduce((s, a) => s + (a.estimated_impact_eur || 0), 0);
+  const totalWasteKwh = wasteAlerts.reduce((s, a) => s + (a.estimated_impact_kwh || 0), 0);
+  const offHoursEst = computeOffHoursEstimate(offHoursKwh);
 
   // Data confidence
-  const confLabel = qualityConf?.level === 'high' ? 'Forte' : qualityConf?.level === 'medium' ? 'Moyenne' : 'Faible';
-  const confColor = qualityConf?.level === 'high' ? 'text-green-600' : qualityConf?.level === 'medium' ? 'text-yellow-600' : 'text-red-500';
+  const confOk = qualityConf?.level === 'high' || qualityConf?.level === 'medium';
 
   const cards = [
     {
       icon: AlertTriangle,
-      iconColor: topAlert ? 'text-red-500' : 'text-gray-300',
+      iconColor: topAlert ? (isLowConf ? 'text-gray-400' : 'text-red-500') : 'text-gray-300',
       title: 'Risque principal',
       value: topAlert
-        ? `${fmtNum(topAlert.estimated_impact_eur, 0)} EUR/an`
+        ? `${fmtNum(topAlert.estimated_impact_eur, 0)} EUR/an${isLowConf ? ' (A confirmer)' : ''}`
         : 'Aucun risque detecte',
       sub: topAlert
         ? ALERT_TYPE_LABELS[topAlert.alert_type] || topAlert.alert_type
         : 'Continuez le suivi',
-      cta: topAlert ? { label: 'Voir preuve', action: () => onCreateAction(topAlert) } : null,
+      ctas: topAlert ? [
+        { label: 'Voir preuves', action: () => onInsight(topAlert) },
+        { label: 'Creer action', action: () => onCreateAction(topAlert) },
+      ] : [],
     },
     {
       icon: Zap,
@@ -340,17 +347,20 @@ function ExecutiveSummary({ alerts, kpiData, climate, qualityScore, qualityConf,
       title: 'Gaspillage estime',
       value: totalWasteEur > 0 ? `${fmtNum(totalWasteEur, 0)} EUR/an` : 'Non detecte',
       sub: wasteAlerts.length > 0
-        ? `${wasteAlerts.length} alerte${wasteAlerts.length > 1 ? 's' : ''} (hors horaires, WE, talon)`
+        ? `${fmtNum(totalWasteKwh, 0)} kWh · ${wasteAlerts.length} alerte${wasteAlerts.length > 1 ? 's' : ''}${offHoursEst.eur > 0 ? ` · Off-hours: ${offHoursEst.label}` : ''}`
         : 'Aucune anomalie de gaspillage',
-      cta: totalWasteEur > 0 ? { label: 'Explorer', action: onOpenExplorer } : null,
+      ctas: totalWasteEur > 0 ? [
+        { label: 'Explorer', action: onOpenExplorer },
+        { label: 'Creer action', action: () => onCreateAction(wasteAlerts[0]) },
+      ] : [],
     },
     {
       icon: Database,
-      iconColor: confColor,
+      iconColor: confOk ? 'text-green-600' : 'text-red-500',
       title: 'Confiance donnees',
-      value: `${qualityScore ?? '-'}/100`,
-      sub: `${confLabel}${qualityConf?.reason ? ' — ' + qualityConf.reason : ''}`,
-      cta: null,
+      value: confOk ? 'OK' : 'A confirmer',
+      sub: qualityConf?.reason || 'Donnees suffisantes',
+      ctas: [{ label: 'Pourquoi ?', action: onConfidenceDetail }],
     },
   ];
 
@@ -367,13 +377,18 @@ function ExecutiveSummary({ alerts, kpiData, climate, qualityScore, qualityConf,
                 <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{c.title}</p>
                 <p className="text-lg font-bold text-gray-800 mt-0.5">{c.value}</p>
                 <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{c.sub}</p>
-                {c.cta && (
-                  <button
-                    onClick={c.cta.action}
-                    className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-800 transition flex items-center gap-1"
-                  >
-                    {c.cta.label} <ExternalLink size={10} />
-                  </button>
+                {c.ctas && c.ctas.length > 0 && (
+                  <div className="flex items-center gap-3 mt-2">
+                    {c.ctas.map((cta, j) => (
+                      <button
+                        key={j}
+                        onClick={cta.action}
+                        className="text-xs font-medium text-blue-600 hover:text-blue-800 transition flex items-center gap-1"
+                      >
+                        {cta.label} <ExternalLink size={10} />
+                      </button>
+                    ))}
+                  </div>
                 )}
               </div>
             </div>
@@ -581,6 +596,81 @@ function UsagePanel({ usage, loading: usageLoading }) {
         </div>
       </CardBody>
     </Card>
+  );
+}
+
+const CONFIDENCE_TABS = [
+  { id: 'facteurs', label: 'Facteurs' },
+  { id: 'recommandations', label: 'Recommandations' },
+];
+
+function ConfidenceDrawer({ open, onClose, qualityConf, qualityScore, climate }) {
+  const [tab, setTab] = useState('facteurs');
+  const r2 = climate?.r_squared;
+  const nPoints = climate?.n_points;
+  const coverage = qualityConf?.pct;
+
+  const factors = [
+    { label: 'Score qualite', value: qualityScore != null ? `${qualityScore}/100` : '-', level: qualityScore >= 80 ? 'ok' : qualityScore >= 60 ? 'warn' : 'crit' },
+    { label: 'R² signature', value: r2 != null ? r2.toFixed(2) : '-', level: r2 >= 0.6 ? 'ok' : r2 >= 0.3 ? 'warn' : 'crit' },
+    { label: 'Points de donnees', value: nPoints != null ? `${nPoints} jours` : '-', level: nPoints >= 30 ? 'ok' : nPoints >= 10 ? 'warn' : 'crit' },
+    { label: 'Couverture', value: coverage != null ? `${coverage}%` : '-', level: coverage >= 60 ? 'ok' : coverage >= 30 ? 'warn' : 'crit' },
+  ];
+
+  const DOT_COLORS = { ok: 'bg-green-500', warn: 'bg-yellow-500', crit: 'bg-red-500' };
+
+  return (
+    <Drawer open={open} onClose={onClose} title="Confiance donnees — Detail" wide>
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Badge status={qualityConf?.level === 'high' ? 'ok' : qualityConf?.level === 'medium' ? 'warn' : 'crit'}>
+            {qualityConf?.level === 'high' ? 'Forte' : qualityConf?.level === 'medium' ? 'Moyenne' : 'Faible'}
+          </Badge>
+          {qualityConf?.reason && <span className="text-xs text-gray-500">{qualityConf.reason}</span>}
+        </div>
+
+        <Tabs tabs={CONFIDENCE_TABS} active={tab} onChange={setTab} />
+
+        {tab === 'facteurs' && (
+          <div className="space-y-2">
+            {factors.map((f) => (
+              <div key={f.label} className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
+                <div className="flex items-center gap-2">
+                  <span className={`w-2 h-2 rounded-full ${DOT_COLORS[f.level] || DOT_COLORS.crit}`} />
+                  <span className="text-sm text-gray-700">{f.label}</span>
+                </div>
+                <span className="text-sm font-medium text-gray-900">{f.value}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {tab === 'recommandations' && (
+          <div className="space-y-3">
+            {qualityScore != null && qualityScore < 80 && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-700">
+                Verifiez la qualite des donnees source: completude des releves, absence de trous et de doublons.
+              </div>
+            )}
+            {r2 != null && r2 < 0.3 && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-700">
+                R² faible — la signature climatique n'est pas fiable. Augmentez la periode d'analyse ou verifiez les donnees meteo.
+              </div>
+            )}
+            {nPoints != null && nPoints < 30 && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-700">
+                Seulement {nPoints} jours de donnees. Augmentez la periode d'analyse pour une confiance plus elevee (minimum 30 jours recommandes).
+              </div>
+            )}
+            {(qualityScore == null || qualityScore >= 80) && (r2 == null || r2 >= 0.3) && (nPoints == null || nPoints >= 30) && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-700">
+                Tous les facteurs de confiance sont satisfaisants. Les KPIs sont fiables.
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </Drawer>
   );
 }
 
@@ -889,6 +979,7 @@ export default function MonitoringPage() {
   // Drawer state
   const [drawerAlert, setDrawerAlert] = useState(null);
   const [showOffHoursDrawer, setShowOffHoursDrawer] = useState(false);
+  const [showConfidenceDrawer, setShowConfidenceDrawer] = useState(false);
   const [showActionModal, setShowActionModal] = useState(false);
   const [actionPrefill, setActionPrefill] = useState(null);
 
@@ -1215,6 +1306,7 @@ export default function MonitoringPage() {
             climate={climate}
             qualityScore={qualityScore}
             qualityConf={qualityConf}
+            offHoursKwh={offHoursKwh}
             onOpenExplorer={() => handleOpenExplorer(null)}
             onCreateAction={(a) => {
               if (a) handleCreateAction(a);
@@ -1223,6 +1315,8 @@ export default function MonitoringPage() {
                 setShowActionModal(true);
               }
             }}
+            onInsight={(a) => openInsightDrawer(a)}
+            onConfidenceDetail={() => setShowConfidenceDrawer(true)}
           />
 
           {/* Quick Actions Bar */}
@@ -1615,6 +1709,15 @@ export default function MonitoringPage() {
           </div>
         </>
       )}
+
+      {/* ConfidenceDrawer */}
+      <ConfidenceDrawer
+        open={showConfidenceDrawer}
+        onClose={() => setShowConfidenceDrawer(false)}
+        qualityConf={qualityConf}
+        qualityScore={qualityScore}
+        climate={climate}
+      />
 
       {/* OffHoursDrawer */}
       <OffHoursDrawer
