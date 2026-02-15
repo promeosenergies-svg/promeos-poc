@@ -367,6 +367,7 @@ export const getPurchaseActions = (orgId = null) => api.get('/purchase/actions',
 // ACTION HUB (Sprint 10)
 // ========================================
 
+export const createAction = (data) => api.post('/actions', data).then(r => r.data);
 export const syncActions = (orgId = null) => api.post('/actions/sync', null, { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);
 export const getActionsList = (params = {}) => api.get('/actions/list', { params }).then(r => r.data);
 export const getActionsSummary = (orgId = null) => api.get('/actions/summary', { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);

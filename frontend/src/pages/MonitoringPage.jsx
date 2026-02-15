@@ -39,6 +39,7 @@ import {
   generateMonitoringDemo,
   getUsageSuggest,
   getEmsBenchmark,
+  getActionsList,
 } from '../services/api';
 
 // --- Constants ---
@@ -181,6 +182,38 @@ export function computeOffHoursEstimate(kwh, price = 0.18) {
   const annualized = kwh * (365 / 90);
   const eur = Math.round(annualized * price);
   return { eur, label: `~${fmtNum(eur, 0)} EUR/an`, price };
+}
+
+const MODE_COLORS = { CONTRAT: 'bg-green-100 text-green-700', TARIF: 'bg-blue-100 text-blue-700', DEMO: 'bg-amber-100 text-amber-700' };
+
+function ModeBadge({ mode }) {
+  if (!mode) return null;
+  return <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase ${MODE_COLORS[mode] || MODE_COLORS.DEMO}`}>{mode}</span>;
+}
+
+const ACTION_STATUS_BADGE = { open: 'warn', in_progress: 'info', done: 'success', blocked: 'crit' };
+
+function ActionMiniList({ actions, siteId, navigate }) {
+  if (!actions || actions.length === 0) return null;
+  return (
+    <Card>
+      <CardBody>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sm font-semibold text-gray-700">Actions du site</h3>
+          <Button variant="ghost" size="xs" onClick={() => navigate(`/actions?site_id=${siteId}`)}>Voir tout</Button>
+        </div>
+        <div className="space-y-1.5">
+          {actions.map((a) => (
+            <div key={a.id} className="flex items-center gap-2 text-xs">
+              <Badge variant={ACTION_STATUS_BADGE[a.status] || 'info'} size="sm">{a.status}</Badge>
+              <span className="truncate flex-1 text-gray-700">{a.title}</span>
+              {a.estimated_gain_eur > 0 && <span className="text-emerald-600 font-medium">{fmtNum(a.estimated_gain_eur, 0)} EUR</span>}
+            </div>
+          ))}
+        </div>
+      </CardBody>
+    </Card>
+  );
 }
 
 /**
@@ -735,12 +768,19 @@ function OffHoursDrawer({ open, onClose, offHoursRatio, offHoursKwh, schedule, o
         {tab === 'hypotheses' && (
           <div className="space-y-3">
             <DrawerSection title="Prix de référence">
-              <DrawerRow label="Prix kWh">{estimate.price} EUR/kWh</DrawerRow>
-              <DrawerRow label="Source">Tarif moyen tertiaire France (estimation)</DrawerRow>
+              <DrawerRow label="Prix kWh">{estimate.price} EUR/kWh <ModeBadge mode={estimate.mode} /></DrawerRow>
+              <DrawerRow label="Source">{estimate.mode === 'CONTRAT' ? 'Contrat fournisseur' : estimate.mode === 'TARIF' ? 'Profil tarifaire site' : 'Tarif moyen tertiaire France (estimation)'}</DrawerRow>
             </DrawerSection>
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-700">
-              Les montants affichés sont des estimations. Renseignez vos tarifs réels pour un chiffrage précis.
-            </div>
+            {estimate.assumptions?.length > 0 && (
+              <DrawerSection title="Détail du calcul">
+                {estimate.assumptions.map((a, i) => <p key={i} className="text-xs text-gray-500">{a}</p>)}
+              </DrawerSection>
+            )}
+            {estimate.mode === 'DEMO' && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-700">
+                Les montants affichés sont des estimations. Renseignez vos tarifs réels pour un chiffrage précis.
+              </div>
+            )}
           </div>
         )}
 
@@ -995,6 +1035,7 @@ export default function MonitoringPage() {
   const [showConfidenceDrawer, setShowConfidenceDrawer] = useState(false);
   const [showActionModal, setShowActionModal] = useState(false);
   const [actionPrefill, setActionPrefill] = useState(null);
+  const [siteActions, setSiteActions] = useState([]);
 
   // --- Data loading ---
 
@@ -1032,8 +1073,9 @@ export default function MonitoringPage() {
       getEmsBenchmark(siteId)
         .then(setBenchmark)
         .catch(() => setBenchmark(null));
+      loadSiteActions();
     }
-  }, [siteId, loadAll]);
+  }, [siteId, loadAll, loadSiteActions]);
 
   // --- Actions ---
 
@@ -1103,10 +1145,19 @@ export default function MonitoringPage() {
     setShowActionModal(true);
   };
 
-  const handleSaveAction = () => {
+  const loadSiteActions = useCallback(async () => {
+    if (!siteId) return;
+    try {
+      const list = await getActionsList({ site_id: siteId });
+      setSiteActions(list.slice(0, 5));
+    } catch { /* silent */ }
+  }, [siteId]);
+
+  const handleSaveAction = async () => {
     toast('Action créée avec succès', 'success');
     setShowActionModal(false);
     track('monitoring_action_created', { site_id: siteId });
+    await loadSiteActions();
   };
 
   const handleOpenExplorer = (alert) => {
@@ -1140,7 +1191,15 @@ export default function MonitoringPage() {
   const schedule = kpis?.schedule || null;
   const offHoursRatio = kpiData.off_hours_ratio ?? null;
   const offHoursKwh = kpiData.off_hours_kwh ?? null;
-  const offHoursEstimate = useMemo(() => computeOffHoursEstimate(offHoursKwh), [offHoursKwh]);
+  const impact = kpis?.impact || {};
+  const offHoursEstimate = useMemo(() => {
+    // Use server-side impact if available, fallback to client-side
+    if (impact?.off_hours?.eur_year != null) {
+      const eur = impact.off_hours.eur_year;
+      return { eur, label: `~${fmtNum(eur, 0)} EUR/an`, price: impact.off_hours.price_eur_kwh, mode: impact.off_hours.mode, confidence: impact.off_hours.confidence, assumptions: impact.off_hours.assumptions };
+    }
+    return computeOffHoursEstimate(offHoursKwh);
+  }, [offHoursKwh, impact]);
 
   const weekdayProfile = kpiData.weekday_profile_kw;
   const weekendProfile = kpiData.weekend_profile_kw;
@@ -1367,6 +1426,16 @@ export default function MonitoringPage() {
             }}
           />
 
+          {/* Impact mode + Actions mini-list */}
+          {impact?.price?.mode && (
+            <div className="flex items-center gap-2 mb-3 text-xs text-gray-500">
+              <span>Tarification:</span>
+              <ModeBadge mode={impact.price.mode} />
+              <span className="text-gray-400">{impact.price.source_label}</span>
+            </div>
+          )}
+          <ActionMiniList actions={siteActions} siteId={siteId} navigate={navigate} />
+
           {/* KPI Strip — 6 cards */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
             <StatusKpiCard
@@ -1425,7 +1494,7 @@ export default function MonitoringPage() {
                   ? '24/7 — pas de hors horaires'
                   : `${schedule.open_time}-${schedule.close_time}${offHoursEstimate.eur > 0 ? ` · ${offHoursEstimate.label}` : ''}`)
                 : `Horaires non définis${offHoursEstimate.eur > 0 ? ` · ${offHoursEstimate.label}` : ''}`}
-              tooltip={`Part d'énergie consommée en dehors des heures d'exploitation. Un ratio élevé signale un talon ou des équipements actifs la nuit/week-end.\nHypothèse: ${offHoursEstimate.price} EUR/kWh (tarif moyen)`}
+              tooltip={`Part d'énergie consommée en dehors des heures d'exploitation. Un ratio élevé signale un talon ou des équipements actifs la nuit/week-end.\nPrix: ${offHoursEstimate.price} EUR/kWh (${offHoursEstimate.mode || 'estimation'})`}
               status={offHoursRatio != null ? (offHoursRatio <= 0.20 ? 'ok' : offHoursRatio <= 0.40 ? 'surveiller' : 'critique') : 'no_data'}
               color={offHoursRatio != null ? (offHoursRatio <= 0.20 ? 'bg-green-500' : offHoursRatio <= 0.40 ? 'bg-orange-500' : 'bg-red-500') : 'bg-slate-400'}
               confidence={qualityConf}
@@ -1779,6 +1848,9 @@ export default function MonitoringPage() {
         onClose={() => setShowActionModal(false)}
         onSave={handleSaveAction}
         prefill={actionPrefill}
+        siteId={siteId ? Number(siteId) : null}
+        sourceType={actionPrefill?.sourceType || 'insight'}
+        sourceId={actionPrefill?.sourceId || null}
       />
     </PageShell>
   );

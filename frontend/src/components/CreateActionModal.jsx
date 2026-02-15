@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { Button, Input, Select } from '../ui';
 import Modal from '../ui/Modal';
 import { track } from '../services/tracker';
+import { createAction } from '../services/api';
 
 const TYPE_OPTIONS = [
   { value: 'conformite', label: 'Conformite' },
@@ -27,7 +28,8 @@ const STATUT_OPTIONS = [
   { value: 'in_progress', label: 'En cours' },
 ];
 
-export default function CreateActionModal({ open, onClose, onSave, defaultSite = '', defaultType = 'conformite', prefill = null }) {
+export default function CreateActionModal({ open, onClose, onSave, defaultSite = '', defaultType = 'conformite', prefill = null, siteId = null, sourceType = 'manual', sourceId = null }) {
+  const [saving, setSaving] = useState(false);
   const defaults = {
     titre: '',
     type: defaultType,
@@ -57,17 +59,39 @@ export default function CreateActionModal({ open, onClose, onSave, defaultSite =
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     if (!form.titre.trim()) return;
-    const action = {
-      ...form,
-      id: Date.now(),
-      impact_eur: Number(form.impact_eur) || 0,
-      created_at: new Date().toISOString(),
-    };
-    track('action_create', { type: form.type, site: form.site });
-    onSave(action);
+    setSaving(true);
+    try {
+      const payload = {
+        title: form.titre.trim(),
+        source_type: sourceType || 'manual',
+        source_id: sourceId || undefined,
+        site_id: siteId || undefined,
+        severity: form.priorite || undefined,
+        estimated_gain_eur: Number(form.impact_eur) || undefined,
+        due_date: form.due_date || undefined,
+        owner: form.owner || undefined,
+        notes: form.description || undefined,
+        rationale: form.description || undefined,
+      };
+      const result = await createAction(payload);
+      track('action_create', { type: form.type, site: form.site, backend: true });
+      onSave(result);
+    } catch {
+      // Fallback: emit local action for graceful degradation
+      const action = {
+        ...form,
+        id: Date.now(),
+        impact_eur: Number(form.impact_eur) || 0,
+        created_at: new Date().toISOString(),
+      };
+      track('action_create', { type: form.type, site: form.site, backend: false });
+      onSave(action);
+    } finally {
+      setSaving(false);
+    }
     setForm({ titre: '', type: defaultType, site: defaultSite, impact_eur: '', effort: '', priorite: 'high', statut: 'backlog', owner: '', due_date: '', description: '' });
     onClose();
   }
@@ -114,8 +138,8 @@ export default function CreateActionModal({ open, onClose, onSave, defaultSite =
           />
         </div>
         <div className="flex justify-end gap-2 pt-2">
-          <Button variant="secondary" type="button" onClick={onClose}>Annuler</Button>
-          <Button type="submit">Creer l'action</Button>
+          <Button variant="secondary" type="button" onClick={onClose} disabled={saving}>Annuler</Button>
+          <Button type="submit" disabled={saving}>{saving ? 'Enregistrement...' : 'Créer l\'action'}</Button>
         </div>
       </form>
     </Modal>
