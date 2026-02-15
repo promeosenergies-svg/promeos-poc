@@ -91,13 +91,13 @@ describe('sitesToObligations', () => {
     expect(result[0].statut).toBe('non_conforme');
   });
 
-  it('sets statut a_risque when UNKNOWN (no NOK)', () => {
+  it('sets statut a_qualifier when UNKNOWN (no NOK)', () => {
     const sites = [
       makeSite(1, 'A', [makeFinding('bacs', 'OK')]),
       makeSite(2, 'B', [makeFinding('bacs', 'UNKNOWN')]),
     ];
     const result = sitesToObligations(sites);
-    expect(result[0].statut).toBe('a_risque');
+    expect(result[0].statut).toBe('a_qualifier');
   });
 
   it('tracks closest deadline', () => {
@@ -114,6 +114,23 @@ describe('sitesToObligations', () => {
     const result = sitesToObligations(sites);
     expect(result[0].findings[0].site_id).toBe(7);
     expect(result[0].findings[0].site_nom).toBe('SiteX');
+  });
+
+  it('sets statut hors_perimetre when OUT_OF_SCOPE', () => {
+    const sites = [
+      makeSite(1, 'A', [makeFinding('bacs', 'OUT_OF_SCOPE')]),
+    ];
+    const result = sitesToObligations(sites);
+    expect(result[0].statut).toBe('hors_perimetre');
+  });
+
+  it('NOK overrides a_qualifier', () => {
+    const sites = [
+      makeSite(1, 'A', [makeFinding('bacs', 'UNKNOWN')]),
+      makeSite(2, 'B', [makeFinding('bacs', 'NOK', 'critical')]),
+    ];
+    const result = sitesToObligations(sites);
+    expect(result[0].statut).toBe('non_conforme');
   });
 });
 
@@ -331,3 +348,51 @@ describe('computeScopeLabel', () => {
     expect(result).toContain('42');
   });
 });
+
+/* ---------- Sprint Conformité: centralized FR labels ---------- */
+describe('FR labels — no English in user-facing constants', () => {
+  it('STATUT_LABELS has only FR text', () => {
+    const { STATUT_LABELS } = require('../../domain/compliance/complianceLabels.fr');
+    const values = Object.values(STATUT_LABELS);
+    values.forEach(v => {
+      expect(v).not.toMatch(/^(Compliant|Non compliant|At risk|Unknown|Out of scope)$/i);
+    });
+    expect(STATUT_LABELS.a_qualifier).toBe('À qualifier');
+    expect(STATUT_LABELS.hors_perimetre).toBe('Hors périmètre');
+  });
+
+  it('BACKEND_STATUS_MAP maps UNKNOWN to a_qualifier', () => {
+    const { BACKEND_STATUS_MAP } = require('../../domain/compliance/complianceLabels.fr');
+    expect(BACKEND_STATUS_MAP.UNKNOWN).toBe('a_qualifier');
+    expect(BACKEND_STATUS_MAP.OUT_OF_SCOPE).toBe('hors_perimetre');
+    expect(BACKEND_STATUS_MAP.OK).toBe('conforme');
+    expect(BACKEND_STATUS_MAP.NOK).toBe('non_conforme');
+  });
+
+  it('RULE_LABELS has title_fr and why_fr for all rules', () => {
+    const { RULE_LABELS } = require('../../domain/compliance/complianceLabels.fr');
+    const rules = Object.values(RULE_LABELS);
+    expect(rules.length).toBeGreaterThanOrEqual(13);
+    rules.forEach(r => {
+      expect(r).toHaveProperty('title_fr');
+      expect(r).toHaveProperty('why_fr');
+      expect(r.title_fr.length).toBeGreaterThan(3);
+    });
+  });
+
+  it('ACTION_STATUS_LABELS uses proper accents', () => {
+    const { ACTION_STATUS_LABELS } = require('../../domain/compliance/complianceLabels.fr');
+    expect(ACTION_STATUS_LABELS.backlog).toBe('À planifier');
+    expect(ACTION_STATUS_LABELS.planned).toBe('Planifiée');
+    expect(ACTION_STATUS_LABELS.done).toBe('Terminée');
+  });
+
+  it('SEVERITY_LABELS are in FR', () => {
+    const { SEVERITY_LABELS } = require('../../domain/compliance/complianceLabels.fr');
+    expect(SEVERITY_LABELS.critical).toBe('Critique');
+    expect(SEVERITY_LABELS.high).toBe('Élevée');
+    expect(SEVERITY_LABELS.medium).toBe('Moyenne');
+    expect(SEVERITY_LABELS.low).toBe('Faible');
+  });
+});
+
