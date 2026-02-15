@@ -1,9 +1,9 @@
 /**
  * PROMEOS — Tests for PerformanceSnapshot helpers
- * Covers: fmtN, SEVERITY_COLOR
+ * Covers: fmtN, SEVERITY_COLOR, PERF_KEYS
  */
 import { describe, it, expect } from 'vitest';
-import { fmtN, SEVERITY_COLOR } from '../PerformanceSnapshot';
+import { fmtN, SEVERITY_COLOR, PERF_KEYS } from '../PerformanceSnapshot';
 
 describe('fmtN', () => {
   it('formats integer with locale FR', () => {
@@ -71,5 +71,19 @@ describe('SEVERITY_COLOR', () => {
 
   it('info is blue', () => {
     expect(SEVERITY_COLOR.info).toContain('blue');
+  });
+});
+
+describe('PERF_KEYS', () => {
+  it('has 5 performance keys', () => {
+    expect(PERF_KEYS).toHaveLength(5);
+  });
+
+  it('includes all expected keys', () => {
+    expect(PERF_KEYS).toContain('pmax_kw');
+    expect(PERF_KEYS).toContain('risk');
+    expect(PERF_KEYS).toContain('quality');
+    expect(PERF_KEYS).toContain('off_hours');
+    expect(PERF_KEYS).toContain('climate');
   });
 });

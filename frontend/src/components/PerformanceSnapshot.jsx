@@ -1,13 +1,14 @@
 /**
- * PROMEOS — PerformanceSnapshot
- * Compact KPI strip for ConsumptionExplorer. Shows 3 key metrics + 1 insight + CTA.
- * Fetches latest monitoring data for a given site. Handles "no data" gracefully.
+ * PROMEOS — PerformanceSnapshot v2
+ * 5-KPI compact sticky banner for ConsumptionExplorer.
+ * Each card clickable → navigates to /monitoring with context.
+ * Handles single-site, multi-site, and no-data states.
  */
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, CheckCircle, Zap, TrendingUp, AlertTriangle, PlayCircle } from 'lucide-react';
+import { Shield, CheckCircle, Zap, Clock, Thermometer, TrendingUp, PlayCircle } from 'lucide-react';
 import { Card, CardBody, Badge } from '../ui';
-import { getMonitoringKpis, getMonitoringAlerts } from '../services/api';
+import { getMonitoringKpis } from '../services/api';
 
 export const SEVERITY_COLOR = {
   critical: 'bg-red-50 text-red-700 ring-1 ring-red-200',
@@ -21,10 +22,28 @@ export function fmtN(v, d = 0) {
   return Number(v).toLocaleString('fr-FR', { maximumFractionDigits: d });
 }
 
-export default function PerformanceSnapshot({ siteId, siteIds, className = '' }) {
+export const PERF_KEYS = ['pmax_kw', 'risk', 'quality', 'off_hours', 'climate'];
+
+function PerfCard({ icon: Icon, iconColor, title, value, sub, onClick }) {
+  return (
+    <Card className="cursor-pointer hover:ring-2 hover:ring-blue-200 transition-all" onClick={onClick}>
+      <CardBody className="py-2.5 px-3">
+        <div className="flex items-center gap-2">
+          <Icon size={14} className={iconColor} />
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">{title}</p>
+            <p className="text-sm font-bold text-slate-800">{value}</p>
+            {sub && <p className="text-[10px] text-slate-400 truncate">{sub}</p>}
+          </div>
+        </div>
+      </CardBody>
+    </Card>
+  );
+}
+
+export default function PerformanceSnapshot({ siteId, siteIds, dateFrom, dateTo, className = '' }) {
   const navigate = useNavigate();
   const [data, setData] = useState(null);
-  const [topAlert, setTopAlert] = useState(null);
   const [loading, setLoading] = useState(true);
   const [hasData, setHasData] = useState(false);
 
@@ -38,35 +57,31 @@ export default function PerformanceSnapshot({ siteId, siteIds, className = '' })
       return;
     }
     setLoading(true);
-    Promise.all([
-      getMonitoringKpis(targetId).catch(() => null),
-      getMonitoringAlerts(targetId, 'open', 5).catch(() => []),
-    ]).then(([kpiRes, alertsRes]) => {
-      if (kpiRes && kpiRes.kpis) {
-        setData(kpiRes);
-        setHasData(true);
-        const alerts = Array.isArray(alertsRes) ? alertsRes : [];
-        const top = alerts
-          .filter((a) => a.estimated_impact_eur > 0)
-          .sort((a, b) => (b.estimated_impact_eur || 0) - (a.estimated_impact_eur || 0))[0];
-        setTopAlert(top || null);
-      } else {
-        setHasData(false);
-      }
-      setLoading(false);
-    });
+    getMonitoringKpis(targetId)
+      .then((kpiRes) => {
+        if (kpiRes && kpiRes.kpis) {
+          setData(kpiRes);
+          setHasData(true);
+        } else {
+          setHasData(false);
+        }
+      })
+      .catch(() => setHasData(false))
+      .finally(() => setLoading(false));
   }, [targetId]);
 
   const goToMonitoring = () => {
     const params = new URLSearchParams();
     if (targetId) params.set('site_id', targetId);
+    if (dateFrom) params.set('date_from', dateFrom);
+    if (dateTo) params.set('date_to', dateTo);
     navigate(`/monitoring?${params.toString()}`);
   };
 
   if (loading) {
     return (
-      <div className={`animate-pulse flex gap-3 ${className}`}>
-        {[1, 2, 3, 4].map((i) => (
+      <div className={`animate-pulse flex gap-2 ${className}`}>
+        {[1, 2, 3, 4, 5].map((i) => (
           <div key={i} className="flex-1 h-16 bg-slate-100 rounded-lg" />
         ))}
       </div>
@@ -83,7 +98,7 @@ export default function PerformanceSnapshot({ siteId, siteIds, className = '' })
           </div>
           <div className="flex-1">
             <p className="text-sm font-medium text-slate-700">Performance Portfolio</p>
-            <p className="text-xs text-slate-400">{siteIds.length} sites selectionnes — analyse individuelle requise</p>
+            <p className="text-xs text-slate-400">{siteIds.length} sites — Analyse individuelle requise</p>
           </div>
           <button
             onClick={goToMonitoring}
@@ -119,83 +134,56 @@ export default function PerformanceSnapshot({ siteId, siteIds, className = '' })
     );
   }
 
-  // Single site with data: 3 KPIs + insight + CTA
+  // Single site with data: 5 KPI cards
   const kpis = data.kpis || {};
   const riskScore = data.risk_power_score;
   const qualityScore = data.data_quality_score;
+  const climate = data.climate;
+  const offHoursRatio = kpis.off_hours_ratio;
+  const schedule = data.schedule;
 
   return (
-    <div className={`grid grid-cols-2 md:grid-cols-4 gap-2 ${className}`}>
-      {/* Risk */}
-      <Card>
-        <CardBody className="py-2.5 px-3">
-          <div className="flex items-center gap-2">
-            <Shield size={14} className={riskScore >= 60 ? 'text-red-500' : riskScore >= 35 ? 'text-orange-500' : 'text-green-500'} />
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Risque</p>
-              <p className="text-sm font-bold text-slate-800">{riskScore != null ? `${fmtN(riskScore)}/100` : '-'}</p>
-            </div>
-          </div>
-        </CardBody>
-      </Card>
-
-      {/* Quality */}
-      <Card>
-        <CardBody className="py-2.5 px-3">
-          <div className="flex items-center gap-2">
-            <CheckCircle size={14} className={qualityScore >= 80 ? 'text-green-500' : qualityScore >= 60 ? 'text-yellow-500' : 'text-red-500'} />
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Qualite</p>
-              <p className="text-sm font-bold text-slate-800">{qualityScore != null ? `${fmtN(qualityScore)}/100` : '-'}</p>
-            </div>
-          </div>
-        </CardBody>
-      </Card>
-
-      {/* Pmax or Talon */}
-      <Card>
-        <CardBody className="py-2.5 px-3">
-          <div className="flex items-center gap-2">
-            <Zap size={14} className="text-amber-500" />
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Pmax</p>
-              <p className="text-sm font-bold text-slate-800">{kpis.pmax_kw != null ? `${fmtN(kpis.pmax_kw)} kW` : '-'}</p>
-            </div>
-          </div>
-        </CardBody>
-      </Card>
-
-      {/* Top insight / CTA */}
-      <Card className="bg-slate-50/80">
-        <CardBody className="py-2.5 px-3">
-          {topAlert ? (
-            <div className="flex items-center gap-2">
-              <AlertTriangle size={14} className="text-orange-500 shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide truncate">Alerte</p>
-                <p className="text-xs text-slate-700 truncate">{fmtN(topAlert.estimated_impact_eur, 0)} EUR/an</p>
-              </div>
-              <button
-                onClick={goToMonitoring}
-                className="text-[10px] font-medium text-blue-600 hover:text-blue-800 whitespace-nowrap"
-              >
-                Voir
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <TrendingUp size={14} className="text-blue-500 shrink-0" />
-              <p className="text-xs text-slate-500 flex-1">Aucune alerte</p>
-              <button
-                onClick={goToMonitoring}
-                className="text-[10px] font-medium text-blue-600 hover:text-blue-800 whitespace-nowrap"
-              >
-                Details
-              </button>
-            </div>
-          )}
-        </CardBody>
-      </Card>
+    <div className={`grid grid-cols-2 md:grid-cols-5 gap-2 ${className}`}>
+      <PerfCard
+        icon={Zap}
+        iconColor="text-amber-500"
+        title="Pmax"
+        value={kpis.pmax_kw != null ? `${fmtN(kpis.pmax_kw)} kW` : '-'}
+        sub={kpis.p95_kw != null ? `P95: ${fmtN(kpis.p95_kw)} kW` : null}
+        onClick={goToMonitoring}
+      />
+      <PerfCard
+        icon={Shield}
+        iconColor={riskScore >= 60 ? 'text-red-500' : riskScore >= 35 ? 'text-orange-500' : 'text-green-500'}
+        title="Risque"
+        value={riskScore != null ? `${fmtN(riskScore)}/100` : '-'}
+        sub={riskScore != null ? (riskScore < 35 ? 'Marge OK' : riskScore < 60 ? 'Surveiller' : 'Critique') : null}
+        onClick={goToMonitoring}
+      />
+      <PerfCard
+        icon={CheckCircle}
+        iconColor={qualityScore >= 80 ? 'text-green-500' : qualityScore >= 60 ? 'text-yellow-500' : 'text-red-500'}
+        title="Qualite"
+        value={qualityScore != null ? `${fmtN(qualityScore)}/100` : '-'}
+        sub={qualityScore != null ? (qualityScore >= 80 ? 'Excellente' : qualityScore >= 60 ? 'Correcte' : 'Degradee') : null}
+        onClick={goToMonitoring}
+      />
+      <PerfCard
+        icon={Clock}
+        iconColor={offHoursRatio != null ? (offHoursRatio <= 0.20 ? 'text-green-500' : offHoursRatio <= 0.40 ? 'text-orange-500' : 'text-red-500') : 'text-slate-400'}
+        title="Off-Hours"
+        value={offHoursRatio != null ? `${fmtN(offHoursRatio * 100)}%` : '-'}
+        sub={schedule ? (schedule.is_24_7 ? '24/7' : `${schedule.open_time}-${schedule.close_time}`) : null}
+        onClick={goToMonitoring}
+      />
+      <PerfCard
+        icon={Thermometer}
+        iconColor={climate?.r_squared >= 0.6 ? 'text-blue-500' : 'text-slate-400'}
+        title="Climat"
+        value={climate?.slope_kw_per_c != null ? `${climate.slope_kw_per_c.toFixed(1)} (kWh/j)/°C` : '-'}
+        sub={climate?.r_squared != null ? `R²: ${climate.r_squared.toFixed(2)}` : null}
+        onClick={goToMonitoring}
+      />
     </div>
   );
 }
