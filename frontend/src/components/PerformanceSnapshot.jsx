@@ -10,6 +10,7 @@ import { Shield, CheckCircle, Zap, Clock, Thermometer, TrendingUp, PlayCircle } 
 import { Card, CardBody, Badge } from '../ui';
 import { getMonitoringKpis } from '../services/api';
 
+// Legacy severity color map — prefer SEVERITY_TINT from ui/colorTokens for new code
 export const SEVERITY_COLOR = {
   critical: 'bg-red-50 text-red-700 ring-1 ring-red-200',
   high:     'bg-orange-50 text-orange-700 ring-1 ring-orange-200',

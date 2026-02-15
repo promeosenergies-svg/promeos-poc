@@ -22,20 +22,13 @@ import { useExpertMode } from '../contexts/ExpertModeContext';
 import { track } from '../services/tracker';
 import CreateActionModal from '../components/CreateActionModal';
 import { fmtEur, fmtKwh, fmtDateFR } from '../utils/format';
+import { SEVERITY_TINT } from '../ui/colorTokens';
 import {
   Zap, ChevronDown, ChevronUp, Settings, Info,
   ExternalLink, UserCheck, CheckCircle2, XCircle, BarChart3,
 } from 'lucide-react';
 
 // ---- Constants ----
-
-const SEVERITY_COLORS = {
-  critical: 'bg-red-100 text-red-800',
-  high: 'bg-orange-100 text-orange-800',
-  medium: 'bg-yellow-100 text-yellow-800',
-  low: 'bg-blue-100 text-blue-800',
-  info: 'bg-gray-100 text-gray-700',
-};
 
 const SEVERITY_BADGE = {
   critical: 'crit', high: 'warn', medium: 'info', low: 'neutral',
@@ -113,9 +106,10 @@ export function generateComparisonChart(insight) {
 // ---- Sub-components ----
 
 function SeverityBadge({ severity }) {
+  const s = SEVERITY_TINT[severity] || SEVERITY_TINT.info;
   return (
-    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${SEVERITY_COLORS[severity] || SEVERITY_COLORS.info}`}>
-      {severity}
+    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${s.chipBg} ${s.chipText}`}>
+      {s.label || severity}
     </span>
   );
 }
