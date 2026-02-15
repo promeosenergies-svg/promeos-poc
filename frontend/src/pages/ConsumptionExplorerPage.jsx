@@ -29,6 +29,7 @@ import { Card, CardBody, Badge, Button, EmptyState, PageShell, KpiCard, TrustBad
 import { useScope } from '../contexts/ScopeContext';
 import { useToast } from '../ui/ToastProvider';
 import SitePicker from '../components/SitePicker';
+import PerformanceSnapshot from '../components/PerformanceSnapshot';
 import {
   getEmsTimeseries, getEmsWeather, getEmsWeatherMulti, runEmsSignature,
   runEmsSignaturePortfolio,
@@ -934,6 +935,14 @@ export default function ConsumptionExplorerPage({ bare = false }) {
           </span>
         )}
       </div>
+
+      {/* Performance Snapshot — KPI strip from monitoring */}
+      {selectedSiteIds.length > 0 && (
+        <PerformanceSnapshot
+          siteId={selectedSiteIds.length === 1 ? selectedSiteIds[0] : null}
+          siteIds={selectedSiteIds}
+        />
+      )}
 
       {/* Cap points error banner */}
       {capError && (
