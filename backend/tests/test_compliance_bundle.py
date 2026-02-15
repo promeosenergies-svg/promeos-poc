@@ -182,6 +182,85 @@ class TestBundleEndpoint:
         assert data["summary"]["total_sites"] == 1
 
 
+def _seed_portefeuille_scope(db_session):
+    """Create 1 org with 2 portefeuilles (2 sites each) for portefeuille scope tests."""
+    org = Organisation(id=1, nom="TestOrg")
+    db_session.add(org)
+    db_session.flush()
+    ej = EntiteJuridique(id=1, nom="EJ1", siren="111111111", organisation_id=1)
+    db_session.add(ej)
+    db_session.flush()
+    pf_a = Portefeuille(id=1, nom="PF Alpha", entite_juridique_id=1)
+    pf_b = Portefeuille(id=2, nom="PF Beta", entite_juridique_id=1)
+    db_session.add_all([pf_a, pf_b])
+    db_session.flush()
+    # PF Alpha: sites 1,2 — PF Beta: sites 3,4
+    for i in [1, 2]:
+        db_session.add(Site(id=i, nom=f"Alpha Site {i}", type=TypeSite.BUREAU,
+                            portefeuille_id=1, actif=True))
+    for i in [3, 4]:
+        db_session.add(Site(id=i, nom=f"Beta Site {i}", type=TypeSite.BUREAU,
+                            portefeuille_id=2, actif=True))
+    db_session.flush()
+    for sid in [1, 2]:
+        db_session.add(ComplianceFinding(
+            site_id=sid, regulation="bacs", rule_id="BACS_SCOPE",
+            status="NOK", severity="high", evidence="test alpha",
+        ))
+    for sid in [3, 4]:
+        db_session.add(ComplianceFinding(
+            site_id=sid, regulation="bacs", rule_id="BACS_SCOPE",
+            status="OK", severity="low", evidence="test beta",
+        ))
+    db_session.commit()
+
+
+class TestBundlePortefeuille:
+    def test_bundle_portefeuille_scope_ok(self, client, db_session):
+        """GET /bundle?org_id=1&portefeuille_id=1 returns only PF Alpha sites."""
+        _seed_portefeuille_scope(db_session)
+        r = client.get("/api/compliance/bundle", params={"org_id": 1, "portefeuille_id": 1})
+        assert r.status_code == 200
+        data = r.json()
+        assert data["scope"]["portefeuille_id"] == 1
+        assert data["summary"]["total_sites"] == 2
+        assert len(data["sites"]) == 2
+        names = [s["site_nom"] for s in data["sites"]]
+        assert all("Alpha" in n for n in names)
+
+    def test_bundle_portefeuille_unknown_returns_empty_reason(self, client, db_session):
+        """GET /bundle?org_id=1&portefeuille_id=999 returns NO_SITES empty reason."""
+        _seed_portefeuille_scope(db_session)
+        r = client.get("/api/compliance/bundle", params={"org_id": 1, "portefeuille_id": 999})
+        assert r.status_code == 200
+        data = r.json()
+        assert data["empty_reason_code"] == "NO_SITES"
+        assert data["summary"]["total_sites"] == 0
+
+
+class TestHealthEndpoint:
+    def test_health_returns_ok(self, client):
+        """GET /api/health returns ok with version and git_sha."""
+        r = client.get("/api/health")
+        assert r.status_code == 200
+        data = r.json()
+        assert data["ok"] is True
+        assert "version" in data
+        assert "git_sha" in data
+        assert "time" in data
+
+    def test_bundle_route_canonical_200(self, client, db_session):
+        """GET /api/compliance/bundle returns 200 (not 404) with seeded data."""
+        _seed_two_orgs(db_session)
+        r = client.get("/api/compliance/bundle", params={"org_id": 1})
+        assert r.status_code == 200
+        data = r.json()
+        assert "scope" in data
+        assert "summary" in data
+        assert "trace_id" in data
+        assert data["scope"]["org_id"] == 1
+
+
 class TestDevResetDb:
     def test_reset_db_returns_ok(self, client):
         """POST /api/dev/reset_db returns status ok."""

@@ -25,12 +25,13 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip as RTooltip,
   ResponsiveContainer, Brush, ReferenceLine,
 } from 'recharts';
-import { Card, CardBody, Badge, Button, EmptyState, PageShell, KpiCard, TrustBadge } from '../ui';
+import { Card, CardBody, Badge, Button, EmptyState, PageShell, KpiCard, TrustBadge, MetricCard, StatusDot } from '../ui';
 import { useScope } from '../contexts/ScopeContext';
 import { useToast } from '../ui/ToastProvider';
 import SitePicker from '../components/SitePicker';
 import {
   getEmsTimeseries, getEmsWeather, getEmsWeatherMulti, runEmsSignature,
+  runEmsSignaturePortfolio,
   getEmsViews, createEmsView, generateEmsDemo, createEmsCollection,
 } from '../services/api';
 
@@ -76,8 +77,45 @@ export function normalizeIndex100(chartData, seriesKeys) {
       }
     }
     if (row.temp !== undefined) out.temp = row.temp;
+    if (row.temp_env !== undefined) out.temp_env = row.temp_env;
     return out;
   });
+}
+
+/**
+ * Compute signature KPI insights with status (ok/warn/crit) and contextual phrases.
+ */
+export function sigInsights(sigData) {
+  if (!sigData) return {};
+  const r2 = sigData.r_squared ?? 0;
+  const base = sigData.base_kwh ?? 0;
+  const heat = sigData.a_heating ?? 0;
+  const cool = sigData.b_cooling ?? 0;
+
+  const r2Status = r2 >= 0.85 ? 'ok' : r2 >= 0.65 ? 'warn' : 'crit';
+  const r2Phrase = r2 >= 0.85 ? 'Modele fiable'
+    : r2 >= 0.65 ? 'Modele moyen — verifier les donnees'
+    : 'Modele faible — collecte insuffisante';
+
+  const baseStatus = base > 0 ? 'ok' : 'warn';
+  const basePhrase = base > 0 ? `Consommation incompressible: ${base} kWh/j` : 'Talon non detecte';
+
+  const heatStatus = Math.abs(heat) > 3 ? 'crit' : Math.abs(heat) > 1 ? 'warn' : 'ok';
+  const heatPhrase = Math.abs(heat) > 3 ? 'Forte dependance au chauffage'
+    : Math.abs(heat) > 1 ? 'Sensibilite chauffage moderee'
+    : 'Faible impact chauffage';
+
+  const coolStatus = Math.abs(cool) > 3 ? 'crit' : Math.abs(cool) > 1 ? 'warn' : 'ok';
+  const coolPhrase = Math.abs(cool) > 3 ? 'Forte dependance climatisation'
+    : Math.abs(cool) > 1 ? 'Sensibilite clim moderee'
+    : 'Faible impact climatisation';
+
+  return {
+    r2: { status: r2Status, phrase: r2Phrase },
+    base: { status: baseStatus, phrase: basePhrase },
+    heat: { status: heatStatus, phrase: heatPhrase },
+    cool: { status: coolStatus, phrase: coolPhrase },
+  };
 }
 
 // Palette: 8 distinct, accessible colors
@@ -228,17 +266,22 @@ function generateMockTimeseries(siteIds, dateFrom, dateTo, granularity, modeStr,
 
 // ── Tooltip ──────────────────────────────────────────────────────
 
-function EnrichedTooltip({ active, payload, label, mode, metric, normalized }) {
+function EnrichedTooltip({ active, payload, label, mode, metric, normalized, multiSiteWeather }) {
   if (!active || !payload?.length) return null;
-  const visible = payload.filter(p => !p.hide);
+  const visible = payload.filter(p => !p.hide && p.dataKey !== 'temp_env');
   if (!visible.length) return null;
-  const total = visible.reduce((s, p) => s + (p.value || 0), 0);
+  const total = visible.filter(p => p.dataKey !== 'temp').reduce((s, p) => s + (p.value || 0), 0);
   const unit = normalized ? 'idx' : metric === 'kw' ? 'kW' : 'kWh';
   const isStack = mode === 'stack';
+
+  // Extract weather data from payload
+  const tempEntry = payload.find(p => p.dataKey === 'temp');
+  const envEntry = payload.find(p => p.dataKey === 'temp_env');
+
   return (
     <div className="bg-white/95 backdrop-blur border border-gray-200 rounded-lg shadow-xl px-3 py-2 text-xs max-w-xs">
       <p className="font-medium text-gray-600 mb-1.5 border-b border-gray-100 pb-1">{label}</p>
-      {visible.map((p, i) => {
+      {visible.filter(p => p.dataKey !== 'temp').map((p, i) => {
         const pct = total > 0 ? Math.round((p.value / total) * 100) : 0;
         return (
           <div key={i} className="flex items-center gap-2 py-0.5">
@@ -248,19 +291,36 @@ function EnrichedTooltip({ active, payload, label, mode, metric, normalized }) {
               {(p.value || 0).toLocaleString(undefined, { maximumFractionDigits: 1 })}
             </span>
             <span className="text-gray-400 w-8 text-right">{unit}</span>
-            {(isStack || visible.length > 1) && total > 0 && (
+            {(isStack || visible.length > 2) && total > 0 && (
               <span className="text-gray-400 w-8 text-right">{pct}%</span>
             )}
           </div>
         );
       })}
-      {visible.length > 1 && (
+      {visible.filter(p => p.dataKey !== 'temp').length > 1 && (
         <div className="flex items-center gap-2 pt-1.5 mt-1 border-t border-gray-100">
           <span className="w-2.5 h-2.5" />
           <span className="text-gray-500 flex-1 font-medium">Total</span>
           <span className="font-bold text-gray-900 tabular-nums">{total.toLocaleString(undefined, { maximumFractionDigits: 1 })}</span>
           <span className="text-gray-400 w-8 text-right">{unit}</span>
-          {(isStack || visible.length > 1) && <span className="w-8" />}
+          {(isStack || visible.length > 2) && <span className="w-8" />}
+        </div>
+      )}
+      {/* Weather section */}
+      {tempEntry && tempEntry.value != null && (
+        <div className="pt-1.5 mt-1 border-t border-gray-100">
+          <div className="flex items-center gap-2 py-0.5">
+            <span className="w-2.5 h-2.5 rounded-full shrink-0 bg-orange-400" />
+            <span className="text-gray-700 flex-1">Temp moy</span>
+            <span className="font-semibold text-gray-900 tabular-nums">{tempEntry.value}°C</span>
+          </div>
+          {multiSiteWeather && envEntry?.value && Array.isArray(envEntry.value) && (
+            <div className="flex items-center gap-2 py-0.5 text-gray-500">
+              <span className="w-2.5 h-2.5" />
+              <span className="flex-1">Min / Max sites</span>
+              <span className="tabular-nums">{envEntry.value[0]}°C / {envEntry.value[1]}°C</span>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -403,6 +463,7 @@ export default function ConsumptionExplorerPage({ bare = false }) {
   // State: data
   const [tsData, setTsData] = useState(null);
   const [weatherData, setWeatherData] = useState(null);
+  const [weatherMeta, setWeatherMeta] = useState(null);
   const [sigData, setSigData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -473,24 +534,35 @@ export default function ConsumptionExplorerPage({ bare = false }) {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Fetch weather overlay (single-site or multi-site average)
+  // Fetch weather overlay (single-site or multi-site avg+envelope)
   useEffect(() => {
-    if (!showWeather || selectedSiteIds.length === 0) { setWeatherData(null); return; }
+    if (!showWeather || selectedSiteIds.length === 0) { setWeatherData(null); setWeatherMeta(null); return; }
     const fetchWeather = selectedSiteIds.length === 1
       ? getEmsWeather(selectedSiteIds[0], dateFrom, dateTo)
       : getEmsWeatherMulti(selectedSiteIds, dateFrom, dateTo);
     fetchWeather
-      .then(r => setWeatherData(r.days))
-      .catch(() => setWeatherData(null));
+      .then(r => {
+        setWeatherData(r.days);
+        setWeatherMeta(r.meta || null);
+      })
+      .catch(() => { setWeatherData(null); setWeatherMeta(null); });
   }, [showWeather, selectedSiteIds, dateFrom, dateTo]);
 
-  // Fetch signature
+  // Fetch signature (single-site or portfolio in aggregate mode)
   useEffect(() => {
-    if (!showSignature || selectedSiteIds.length !== 1) { setSigData(null); return; }
-    runEmsSignature(selectedSiteIds[0], dateFrom, dateTo)
-      .then(setSigData)
-      .catch(() => setSigData(null));
-  }, [showSignature, selectedSiteIds, dateFrom, dateTo]);
+    if (!showSignature || selectedSiteIds.length === 0) { setSigData(null); return; }
+    if (selectedSiteIds.length === 1) {
+      runEmsSignature(selectedSiteIds[0], dateFrom, dateTo)
+        .then(setSigData)
+        .catch(() => setSigData(null));
+    } else if (mode === 'aggregate') {
+      runEmsSignaturePortfolio(selectedSiteIds, dateFrom, dateTo)
+        .then(setSigData)
+        .catch(() => setSigData(null));
+    } else {
+      setSigData(null);
+    }
+  }, [showSignature, selectedSiteIds, dateFrom, dateTo, mode]);
 
   // Load saved views
   useEffect(() => { getEmsViews().then(setViews).catch(() => {}); }, []);
@@ -599,7 +671,13 @@ export default function ConsumptionExplorerPage({ bare = false }) {
     const main = tsData.series[0].data;
     const weatherMap = {};
     if (weatherData) {
-      for (const w of weatherData) weatherMap[w.date] = w.temp_avg_c;
+      for (const w of weatherData) {
+        weatherMap[w.date] = {
+          avg: w.temp_avg_c,
+          envMin: w.envelope_min_c ?? w.temp_min_c,
+          envMax: w.envelope_max_c ?? w.temp_max_c,
+        };
+      }
     }
     return main.map((pt, i) => {
       const row = { t: pt.t, _quality: pt.quality };
@@ -607,7 +685,10 @@ export default function ConsumptionExplorerPage({ bare = false }) {
         row[s.key] = s.data[i]?.v ?? null;
       }
       const dateKey = pt.t?.slice(0, 10);
-      if (dateKey && weatherMap[dateKey] !== undefined) row.temp = weatherMap[dateKey];
+      if (dateKey && weatherMap[dateKey] !== undefined) {
+        row.temp = weatherMap[dateKey].avg;
+        row.temp_env = [weatherMap[dateKey].envMin, weatherMap[dateKey].envMax];
+      }
       return row;
     });
   }, [tsData, weatherData]);
@@ -812,21 +893,37 @@ export default function ConsumptionExplorerPage({ bare = false }) {
           <Thermometer size={12} />
           Meteo
           {showWeather && selectedSiteIds.length > 1 && (
-            <span className="text-[10px] opacity-70">(moy.)</span>
+            <span className="text-[10px] opacity-70">(moy/min/max)</span>
           )}
         </button>
+        {showWeather && weatherMeta?.multi_city_risk && (
+          <span className="text-[10px] text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded" title="Les sites sont eloignes (>200km) — la moyenne meteo peut masquer des ecarts significatifs.">
+            <AlertTriangle size={10} className="inline mr-0.5 -mt-px" />
+            Multi-ville
+          </span>
+        )}
 
         <button
-          onClick={() => selectedSiteIds.length === 1 && setShowSignature(!showSignature)}
-          disabled={selectedSiteIds.length !== 1}
+          onClick={() => {
+            const canRun = selectedSiteIds.length === 1 || (selectedSiteIds.length > 1 && mode === 'aggregate');
+            if (canRun) setShowSignature(!showSignature);
+          }}
+          disabled={selectedSiteIds.length === 0 || (selectedSiteIds.length > 1 && mode !== 'aggregate')}
           className={`px-2.5 py-1.5 text-xs rounded-lg border flex items-center gap-1 transition-colors
             ${showSignature ? 'bg-purple-100 border-purple-300 text-purple-700'
-              : selectedSiteIds.length !== 1 ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-              : 'border-gray-300 text-gray-600 hover:bg-gray-50'}`}
-          title={selectedSiteIds.length !== 1 ? 'Signature disponible pour 1 site' : 'Signature energetique'}
+              : (selectedSiteIds.length === 0 || (selectedSiteIds.length > 1 && mode !== 'aggregate'))
+                ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                : 'border-gray-300 text-gray-600 hover:bg-gray-50'}`}
+          title={selectedSiteIds.length > 1 && mode !== 'aggregate'
+            ? 'Signature portefeuille disponible en mode Agrege uniquement'
+            : selectedSiteIds.length === 0 ? 'Selectionnez au moins 1 site'
+            : selectedSiteIds.length > 1 ? 'Signature portefeuille (agregee)' : 'Signature energetique'}
         >
           <TrendingUp size={12} />
           Signature
+          {showSignature && selectedSiteIds.length > 1 && (
+            <span className="text-[10px] opacity-70">(portfolio)</span>
+          )}
         </button>
 
         {/* Overlay info badges */}
@@ -885,6 +982,16 @@ export default function ConsumptionExplorerPage({ bare = false }) {
               {(qualityStats.avgEstimated * 100).toFixed(0)}% estime
             </span>
           )}
+          {tsData.availability?.[0] && (
+            <span className={`text-xs px-2 py-0.5 rounded ${
+              tsData.availability[0].coverage_pct >= 95 ? 'text-green-700 bg-green-50' :
+              tsData.availability[0].coverage_pct >= 80 ? 'text-amber-700 bg-amber-50' :
+              'text-red-700 bg-red-50'
+            }`}>
+              Couverture: {tsData.availability[0].coverage_pct}%
+              {tsData.availability[0].gaps?.length > 0 && ` · ${tsData.availability[0].gaps.length} trou(s)`}
+            </span>
+          )}
           {brushIndex && (
             <button
               onClick={resetBrush}
@@ -936,7 +1043,7 @@ export default function ConsumptionExplorerPage({ bare = false }) {
                   <YAxis yAxisId="temp" orientation="right" tick={{ fontSize: 10 }} unit="°C" tickLine={false} />
                 )}
                 <RTooltip
-                  content={<EnrichedTooltip mode={mode} metric={metric} normalized={normalized} />}
+                  content={<EnrichedTooltip mode={mode} metric={metric} normalized={normalized} multiSiteWeather={showWeather && selectedSiteIds.length > 1} />}
                   cursor={{ stroke: '#94a3b8', strokeWidth: 1, strokeDasharray: '4 4' }}
                 />
 
@@ -988,6 +1095,20 @@ export default function ConsumptionExplorerPage({ bare = false }) {
                   }
                 })}
 
+                {/* Weather envelope band (min/max across sites) */}
+                {showWeather && weatherData && selectedSiteIds.length > 1 && (
+                  <Area
+                    yAxisId="temp"
+                    dataKey="temp_env"
+                    name="Temp enveloppe"
+                    fill="#f97316"
+                    stroke="none"
+                    fillOpacity={0.10}
+                    isAnimationActive={false}
+                    legendType="none"
+                    tooltipType="none"
+                  />
+                )}
                 {/* Weather overlay line */}
                 {showWeather && weatherData && (
                   <Line yAxisId="temp" dataKey="temp" name="Temp (°C)" stroke="#f97316" dot={false} strokeDasharray="4 2" strokeWidth={1} />
@@ -1029,17 +1150,20 @@ export default function ConsumptionExplorerPage({ bare = false }) {
       ) : null}
 
       {/* Signature panel */}
-      {showSignature && sigData && !sigData.error && (
+      {showSignature && sigData && !sigData.error && (() => {
+        const ins = sigInsights(sigData);
+        return (
         <div>
           <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
             <TrendingUp size={16} /> Signature Energetique
+            {sigData.mode === 'portfolio' && <Badge status="info">Portfolio ({sigData.n_sites} sites)</Badge>}
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
-            <KpiCard title="Talon" value={`${sigData.base_kwh} kWh`} color="bg-blue-600" icon={Zap} />
-            <KpiCard title="R²" value={sigData.r_squared?.toFixed(3)} color="bg-green-600" icon={TrendingUp} />
-            <KpiCard title="Label" value={sigData.label?.replace('_', ' ')} color="bg-gray-600" icon={BarChart3} />
-            <KpiCard title="Pente chauffage" value={`${sigData.a_heating} kWh/°C`} color="bg-red-600" icon={Thermometer} />
-            <KpiCard title="Pente clim" value={`${sigData.b_cooling} kWh/°C`} color="bg-cyan-600" icon={Thermometer} />
+            <MetricCard label="Talon" value={`${sigData.base_kwh} kWh`} sub={ins.base?.phrase} status={ins.base?.status} />
+            <MetricCard label="R²" value={sigData.r_squared?.toFixed(3)} sub={ins.r2?.phrase} status={ins.r2?.status} />
+            <MetricCard label="Profil" value={sigData.label?.replace('_', ' ')} sub={`${sigData.n_points || '—'} jours`} />
+            <MetricCard label="Pente chauffage" value={`${sigData.a_heating} kWh/°C`} sub={ins.heat?.phrase} status={ins.heat?.status} />
+            <MetricCard label="Pente clim" value={`${sigData.b_cooling} kWh/°C`} sub={ins.cool?.phrase} status={ins.cool?.status} />
           </div>
 
           <Card>
@@ -1061,7 +1185,8 @@ export default function ConsumptionExplorerPage({ bare = false }) {
             </CardBody>
           </Card>
         </div>
-      )}
+        );
+      })()}
       {showSignature && sigData?.error && (
         <div className="p-3 bg-gray-50 border rounded-lg text-sm text-gray-600">
           Signature: {sigData.error} ({sigData.n_points} points)

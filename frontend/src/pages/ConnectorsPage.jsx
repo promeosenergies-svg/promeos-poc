@@ -3,13 +3,26 @@
  * Test and sync external data connectors (RTE, PVGIS, Enedis, MeteoFrance)
  */
 import { useState, useEffect } from 'react';
+import { Link2, Play, RefreshCw, CheckCircle, XCircle, Lock, Globe } from 'lucide-react';
 import { listConnectors, testConnector, syncConnector } from '../services/api';
+import { PageShell, Card, CardBody, Badge, Button, EmptyState, Modal, Input, Select } from '../ui';
+import { SkeletonCard } from '../ui/Skeleton';
+import { useToast } from '../ui/ToastProvider';
+
+const SYNC_OBJECT_TYPES = [
+  { value: 'site', label: 'Site' },
+  { value: 'meter', label: 'Compteur' },
+  { value: 'batiment', label: 'Batiment' },
+];
 
 export default function ConnectorsPage() {
   const [connectors, setConnectors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [testResults, setTestResults] = useState({});
   const [syncResults, setSyncResults] = useState({});
+  const [syncModal, setSyncModal] = useState(null);
+  const [syncForm, setSyncForm] = useState({ objectType: 'site', objectId: '' });
+  const { toast } = useToast();
 
   useEffect(() => {
     loadConnectors();
@@ -20,8 +33,8 @@ export default function ConnectorsPage() {
     try {
       const data = await listConnectors();
       setConnectors(data.connectors || []);
-    } catch (error) {
-      console.error('Error loading connectors:', error);
+    } catch {
+      toast('Erreur lors du chargement des connecteurs', 'error');
     } finally {
       setLoading(false);
     }
@@ -32,153 +45,159 @@ export default function ConnectorsPage() {
       setTestResults(prev => ({ ...prev, [connectorName]: { loading: true } }));
       const result = await testConnector(connectorName);
       setTestResults(prev => ({ ...prev, [connectorName]: result }));
+      if (result?.status === 'ok') {
+        toast(`${connectorName}: connexion OK`, 'success');
+      }
     } catch (error) {
       setTestResults(prev => ({ ...prev, [connectorName]: { status: 'error', message: error.message } }));
+      toast(`${connectorName}: echec du test`, 'error');
     }
   };
 
-  const handleSync = async (connectorName) => {
-    const objectType = prompt('Object type (site, meter, batiment):');
-    const objectId = prompt('Object ID:');
-
-    if (!objectType || !objectId) return;
-
+  const handleSyncSubmit = async () => {
+    if (!syncModal || !syncForm.objectId) return;
+    const connectorName = syncModal;
     try {
       setSyncResults(prev => ({ ...prev, [connectorName]: { loading: true } }));
-      const result = await syncConnector(connectorName, objectType, parseInt(objectId));
+      setSyncModal(null);
+      const result = await syncConnector(connectorName, syncForm.objectType, parseInt(syncForm.objectId));
       setSyncResults(prev => ({ ...prev, [connectorName]: result }));
+      toast(`${connectorName}: ${result.datapoints_created || 0} datapoints synchronises`, 'success');
     } catch (error) {
       setSyncResults(prev => ({ ...prev, [connectorName]: { error: error.message } }));
+      toast(`Erreur de synchronisation ${connectorName}`, 'error');
     }
   };
 
-  const getAuthBadge = (requiresAuth) => {
-    if (requiresAuth) {
-      return <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded">🔒 Auth Required</span>;
-    }
-    return <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded">🌐 Public</span>;
-  };
-
-  const getTestStatusBadge = (result) => {
-    if (result?.loading) {
-      return <span className="text-blue-500">Testing...</span>;
-    }
-    if (result?.status === 'ok') {
-      return <span className="text-green-600">✓ OK</span>;
-    }
-    if (result?.status === 'error') {
-      return <span className="text-red-600">✗ Error</span>;
-    }
+  const getStatusIcon = (result) => {
+    if (!result) return null;
+    if (result.loading) return <RefreshCw size={16} className="text-blue-500 animate-spin" />;
+    if (result.status === 'ok') return <CheckCircle size={16} className="text-green-600" />;
+    if (result.status === 'error') return <XCircle size={16} className="text-red-500" />;
     return null;
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-      </div>
+      <PageShell icon={Link2} title="Connexions" subtitle="Chargement...">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <SkeletonCard /><SkeletonCard /><SkeletonCard />
+        </div>
+      </PageShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Connexions</h1>
-          <p className="text-gray-600">
-            Sources : Enedis, GRDF, fournisseurs, GTB, IoT…
-          </p>
-        </div>
-
+    <PageShell
+      icon={Link2}
+      title="Connexions"
+      subtitle="Sources : Enedis, GRDF, fournisseurs, GTB, IoT..."
+      actions={
+        <Button variant="secondary" onClick={loadConnectors}>
+          <RefreshCw size={14} className="mr-1.5" /> Actualiser
+        </Button>
+      }
+    >
+      {connectors.length === 0 ? (
+        <EmptyState
+          icon={Link2}
+          title="Aucun connecteur configure"
+          text="Les connecteurs permettent de synchroniser automatiquement les donnees depuis Enedis, RTE, PVGIS et Meteo-France."
+        />
+      ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {connectors.map((connector) => (
-            <div key={connector.name} className="bg-white rounded-lg shadow-md p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800">{connector.name}</h3>
-                  <p className="text-sm text-gray-600 mt-1">{connector.description}</p>
-                </div>
-              </div>
-
-              <div className="mb-4">
-                {getAuthBadge(connector.requires_auth)}
-              </div>
-
-              {/* Test Result */}
-              {testResults[connector.name] && (
-                <div className="mb-4 p-3 bg-gray-50 rounded">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Test Status:</span>
-                    {getTestStatusBadge(testResults[connector.name])}
+            <Card key={connector.name} className="hover:shadow-md transition-shadow duration-200">
+              <CardBody>
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base font-semibold text-gray-900">{connector.name}</h3>
+                    <p className="text-sm text-gray-500 mt-1">{connector.description}</p>
                   </div>
-                  {testResults[connector.name].message && (
-                    <p className="text-xs text-gray-600 mt-1">{testResults[connector.name].message}</p>
-                  )}
+                  {getStatusIcon(testResults[connector.name])}
                 </div>
-              )}
 
-              {/* Sync Result */}
-              {syncResults[connector.name] && (
-                <div className="mb-4 p-3 bg-blue-50 rounded">
-                  {syncResults[connector.name].loading ? (
-                    <p className="text-sm text-blue-600">Synchronization en cours...</p>
-                  ) : syncResults[connector.name].error ? (
-                    <p className="text-sm text-red-600">Erreur: {syncResults[connector.name].error}</p>
+                <div className="mb-4">
+                  {connector.requires_auth ? (
+                    <Badge status="warning"><Lock size={10} className="mr-1" /> Auth requise</Badge>
                   ) : (
-                    <div className="text-sm">
-                      <p className="font-medium text-blue-800">✓ Synchronisé</p>
-                      <p className="text-gray-600">
-                        {syncResults[connector.name].datapoints_created} datapoints créés
-                      </p>
-                    </div>
+                    <Badge status="ok"><Globe size={10} className="mr-1" /> Public</Badge>
                   )}
                 </div>
-              )}
 
-              {/* Actions */}
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleTest(connector.name)}
-                  className="flex-1 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
-                  disabled={testResults[connector.name]?.loading}
-                >
-                  Test Connection
-                </button>
-                <button
-                  onClick={() => handleSync(connector.name)}
-                  className="flex-1 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
-                  disabled={syncResults[connector.name]?.loading}
-                >
-                  Sync Data
-                </button>
-              </div>
-            </div>
+                {testResults[connector.name]?.message && (
+                  <p className="text-xs text-gray-500 mb-3 bg-gray-50 rounded-lg px-3 py-2">
+                    {testResults[connector.name].message}
+                  </p>
+                )}
+
+                {syncResults[connector.name] && !syncResults[connector.name].loading && (
+                  <div className={`text-xs mb-3 rounded-lg px-3 py-2 ${syncResults[connector.name].error ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+                    {syncResults[connector.name].error
+                      ? `Erreur: ${syncResults[connector.name].error}`
+                      : `${syncResults[connector.name].datapoints_created || 0} datapoints crees`
+                    }
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <Button
+                    variant="secondary"
+                    className="flex-1 text-sm"
+                    onClick={() => handleTest(connector.name)}
+                    disabled={testResults[connector.name]?.loading}
+                  >
+                    <Play size={14} className="mr-1" /> Test
+                  </Button>
+                  <Button
+                    className="flex-1 text-sm"
+                    onClick={() => { setSyncModal(connector.name); setSyncForm({ objectType: 'site', objectId: '' }); }}
+                    disabled={syncResults[connector.name]?.loading}
+                  >
+                    <RefreshCw size={14} className="mr-1" /> Sync
+                  </Button>
+                </div>
+              </CardBody>
+            </Card>
           ))}
         </div>
+      )}
 
-        {/* Info Panel */}
-        <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-blue-800 mb-2">ℹ️ À propos des Connecteurs</h3>
-          <ul className="text-sm text-gray-700 space-y-2">
-            <li>
-              <strong>RTE eCO2mix:</strong> Intensité CO2 du réseau électrique français (API publique)
-            </li>
-            <li>
-              <strong>PVGIS:</strong> Estimations de production photovoltaïque (EU JRC, API publique)
-            </li>
-            <li>
-              <strong>Enedis DataConnect:</strong> Données de consommation des compteurs Linky (OAuth requis)
-            </li>
-            <li>
-              <strong>Météo-France:</strong> Données météorologiques historiques (API key requis)
-            </li>
+      {/* Info panel */}
+      <Card className="mt-6 border-blue-200 bg-blue-50/50">
+        <CardBody>
+          <h3 className="text-sm font-semibold text-blue-800 mb-2">A propos des Connecteurs</h3>
+          <ul className="text-sm text-gray-700 space-y-1.5">
+            <li><strong>RTE eCO2mix:</strong> Intensite CO2 du reseau electrique francais (API publique)</li>
+            <li><strong>PVGIS:</strong> Estimations de production photovoltaique (EU JRC, API publique)</li>
+            <li><strong>Enedis DataConnect:</strong> Donnees de consommation des compteurs Linky (OAuth requis)</li>
+            <li><strong>Meteo-France:</strong> Donnees meteorologiques historiques (API key requis)</li>
           </ul>
-          <p className="text-xs text-gray-600 mt-4">
-            Les connecteurs avec authentification nécessitent des variables d'environnement (.env).
-            Voir la documentation pour plus de détails.
-          </p>
+        </CardBody>
+      </Card>
+
+      {/* Sync Modal — replaces native prompt() */}
+      <Modal open={!!syncModal} onClose={() => setSyncModal(null)} title={`Synchroniser — ${syncModal}`}>
+        <div className="space-y-4">
+          <Select
+            label="Type d'objet"
+            value={syncForm.objectType}
+            onChange={(e) => setSyncForm(prev => ({ ...prev, objectType: e.target.value }))}
+            options={SYNC_OBJECT_TYPES}
+          />
+          <Input
+            label="ID de l'objet"
+            type="number"
+            value={syncForm.objectId}
+            onChange={(e) => setSyncForm(prev => ({ ...prev, objectId: e.target.value }))}
+            placeholder="Ex: 1"
+          />
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="secondary" onClick={() => setSyncModal(null)}>Annuler</Button>
+            <Button onClick={handleSyncSubmit} disabled={!syncForm.objectId}>Synchroniser</Button>
+          </div>
         </div>
-      </div>
-    </div>
+      </Modal>
+    </PageShell>
   );
 }

@@ -6,6 +6,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { ClipboardList, ChevronLeft, ChevronRight, Filter, ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { getAuditLogs } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { PageShell, EmptyState } from '../ui';
+import { SkeletonCard } from '../ui/Skeleton';
+import { useToast } from '../ui/ToastProvider';
 
 const ACTION_COLORS = {
   login: 'bg-green-100 text-green-700',
@@ -61,6 +64,7 @@ function DetailPanel({ detail }) {
 
 export default function AdminAuditLogPage() {
   const { hasPermission } = useAuth();
+  const { toast } = useToast();
   const [entries, setEntries] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -82,7 +86,7 @@ export default function AdminAuditLogPage() {
         setEntries(data.entries || []);
         setTotal(data.total || 0);
       })
-      .catch(() => {})
+      .catch(() => toast('Erreur lors du chargement de l\'audit log', 'error'))
       .finally(() => setLoading(false));
   }, [page, actionFilter, resourceFilter]);
 
@@ -90,10 +94,9 @@ export default function AdminAuditLogPage() {
 
   if (!hasPermission('admin')) {
     return (
-      <div className="p-8 text-center text-gray-500">
-        <ClipboardList size={48} className="mx-auto mb-4 text-gray-300" />
-        <p className="text-lg font-medium">Acces refuse</p>
-      </div>
+      <PageShell icon={ClipboardList} title="Audit Log">
+        <EmptyState icon={ClipboardList} title="Acces refuse" text="Vous n'avez pas les droits d'administration." />
+      </PageShell>
     );
   }
 
@@ -107,14 +110,11 @@ export default function AdminAuditLogPage() {
     : entries;
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-5">
-      <div className="flex items-center gap-3">
-        <ClipboardList size={24} className="text-blue-600" />
-        <div>
-          <h1 className="text-xl font-bold text-gray-800">Audit Log</h1>
-          <p className="text-sm text-gray-400">{total} evenement{total !== 1 ? 's' : ''} traces</p>
-        </div>
-      </div>
+    <PageShell
+      icon={ClipboardList}
+      title="Audit Log"
+      subtitle={`${total} evenement${total !== 1 ? 's' : ''} traces`}
+    >
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
@@ -230,6 +230,6 @@ export default function AdminAuditLogPage() {
           </button>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

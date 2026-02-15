@@ -3,7 +3,7 @@
  * Covers: sitesToObligations, isOverdue, buildScopeParams, parseBundleError
  */
 import { describe, it, expect } from 'vitest';
-import { sitesToObligations, isOverdue, buildScopeParams, parseBundleError } from '../ConformitePage';
+import { sitesToObligations, isOverdue, buildScopeParams, parseBundleError, resolveScopeLabel } from '../ConformitePage';
 
 /* ---------- isOverdue ---------- */
 describe('isOverdue', () => {
@@ -142,6 +142,20 @@ describe('buildScopeParams', () => {
     expect(params.org_id).toBe(3);
     expect(params.site_id).toBeUndefined();
   });
+
+  it('includes portefeuille_id when portefeuille scope with many sites', () => {
+    const params = buildScopeParams({ orgId: 1, portefeuilleId: 3 }, [{ id: 10 }, { id: 20 }]);
+    expect(params.org_id).toBe(1);
+    expect(params.portefeuille_id).toBe(3);
+    expect(params.site_id).toBeUndefined();
+  });
+
+  it('site_id takes priority over portefeuille_id when 1 site', () => {
+    const params = buildScopeParams({ orgId: 1, portefeuilleId: 3 }, [{ id: 42 }]);
+    expect(params.org_id).toBe(1);
+    expect(params.site_id).toBe(42);
+    expect(params.portefeuille_id).toBeUndefined();
+  });
 });
 
 /* ---------- parseBundleError ---------- */
@@ -209,5 +223,43 @@ describe('sitesToObligations — 3 regulations', () => {
   it('shows dash score when no evaluated sites (empty bundle)', () => {
     const obligations = sitesToObligations([]);
     expect(obligations).toHaveLength(0);
+  });
+});
+
+/* ---------- resolveScopeLabel (DevScopeBadge logic) ---------- */
+describe('resolveScopeLabel', () => {
+  it('returns org scope by default', () => {
+    const result = resolveScopeLabel({ orgId: 1, portefeuilleId: null, siteId: null });
+    expect(result.scopeType).toBe('org');
+    expect(result.scopeId).toBe(1);
+    expect(result.label).toBe('org/1');
+  });
+
+  it('returns portefeuille scope when set', () => {
+    const result = resolveScopeLabel({ orgId: 1, portefeuilleId: 3, siteId: null });
+    expect(result.scopeType).toBe('portefeuille');
+    expect(result.scopeId).toBe(3);
+    expect(result.label).toBe('portefeuille/3');
+  });
+
+  it('returns site scope when site selected', () => {
+    const result = resolveScopeLabel({ orgId: 1, portefeuilleId: 2, siteId: 42 });
+    expect(result.scopeType).toBe('site');
+    expect(result.scopeId).toBe(42);
+    expect(result.label).toBe('site/42');
+  });
+});
+
+/* ---------- API badge logic (Connected / Offline) ---------- */
+describe('API badge logic', () => {
+  it('API offline: parseBundleError(null) returns error with indisponibles message', () => {
+    const err = parseBundleError(null);
+    expect(err).not.toBeNull();
+    expect(err.message).toContain('indisponibles');
+  });
+
+  it('API connected: parseBundleError with healthy bundle returns null', () => {
+    const bundle = { summary: { total_sites: 36 }, sites: [], empty_reason_code: null };
+    expect(parseBundleError(bundle)).toBeNull();
   });
 });

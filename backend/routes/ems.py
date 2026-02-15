@@ -96,8 +96,8 @@ def get_weather_data(
 
     if site_ids:
         parsed_ids = [int(x) for x in site_ids.split(",") if x.strip()]
-        data = get_weather_multi(db, parsed_ids, df, dt)
-        return {"site_ids": parsed_ids, "days": data, "mode": "average"}
+        result = get_weather_multi(db, parsed_ids, df, dt)
+        return {"site_ids": parsed_ids, "days": result["days"], "meta": result["meta"], "mode": "average"}
     elif site_id:
         data = get_weather(db, site_id, df, dt)
         return {"site_id": site_id, "days": data}
@@ -152,6 +152,62 @@ def run_energy_signature(
             daily_temp.append(weather_map[date_key])
 
     result = run_signature(daily_kwh, daily_temp)
+    return result
+
+
+@router.post("/signature/portfolio")
+def run_portfolio_signature(
+    site_ids: str = Query(..., description="Comma-separated site IDs"),
+    date_from: str = Query(...),
+    date_to: str = Query(...),
+    meter_ids: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
+    """Run energy signature on aggregated consumption across multiple sites.
+    Uses averaged weather and summed consumption for the portfolio.
+    """
+    from services.ems.weather_service import get_weather_multi
+    from services.ems.signature_service import run_signature
+    from services.ems.timeseries_service import query_timeseries
+    from datetime import date as date_cls
+
+    parsed_site_ids = [int(x) for x in site_ids.split(",") if x.strip()]
+    if not parsed_site_ids:
+        raise HTTPException(400, "No site IDs provided")
+
+    df = date_cls.fromisoformat(date_from)
+    dt_to = date_cls.fromisoformat(date_to)
+    parsed_meter_ids = [int(x) for x in meter_ids.split(",") if x.strip()] if meter_ids else None
+
+    # Get aggregated daily consumption across all sites
+    ts_data = query_timeseries(
+        db, parsed_site_ids, parsed_meter_ids,
+        datetime.combine(df, datetime.min.time()),
+        datetime.combine(dt_to, datetime.min.time()),
+        "daily", "aggregate", "kwh",
+    )
+
+    if not ts_data["series"] or not ts_data["series"][0]["data"]:
+        raise HTTPException(404, "No consumption data for this portfolio/period")
+
+    daily_series = ts_data["series"][0]["data"]
+
+    # Get averaged weather across sites
+    weather_result = get_weather_multi(db, parsed_site_ids, df, dt_to)
+    weather_map = {w["date"]: w["temp_avg_c"] for w in weather_result["days"]}
+
+    # Align: only days with both consumption and weather
+    daily_kwh = []
+    daily_temp = []
+    for pt in daily_series:
+        date_key = pt["t"][:10]
+        if date_key in weather_map:
+            daily_kwh.append(pt["v"])
+            daily_temp.append(weather_map[date_key])
+
+    result = run_signature(daily_kwh, daily_temp)
+    result["mode"] = "portfolio"
+    result["n_sites"] = len(parsed_site_ids)
     return result
 
 

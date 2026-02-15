@@ -8,7 +8,7 @@ from typing import List, Optional, Tuple, Dict, Any
 from sqlalchemy.orm import Session
 from sqlalchemy import func, literal_column, Integer as SAInteger, cast
 
-from models import Meter, MeterReading
+from models import Meter, MeterReading, Site
 from models.energy_models import EnergyVector
 
 # -------------------------------------------------------------------
@@ -129,6 +129,28 @@ def query_timeseries(
     # 3. Query per mode
     if mode == "aggregate":
         series = [_query_aggregate(db, meter_id_list, bucket_expr, date_from, date_to, granularity, metric)]
+    elif mode == "overlay":
+        # One series per site (aggregate meters within each site)
+        MAX_OVERLAY = 8
+        site_meter_map = {}
+        for m in meters:
+            site_meter_map.setdefault(m.site_id, []).append(m)
+        site_names = {s.id: s.nom for s in db.query(Site).filter(Site.id.in_(list(site_meter_map.keys()))).all()}
+        sorted_site_ids = sorted(site_meter_map.keys())
+        main_sites = sorted_site_ids[:MAX_OVERLAY]
+        other_sites = sorted_site_ids[MAX_OVERLAY:]
+        series = []
+        for sid in main_sites:
+            m_ids = [m.id for m in site_meter_map[sid]]
+            label = site_names.get(sid, f"Site {sid}")
+            series.append(_query_aggregate(db, m_ids, bucket_expr, date_from, date_to, granularity, metric,
+                                           key=f"site_{sid}", label=label))
+        if other_sites:
+            other_ids = []
+            for sid in other_sites:
+                other_ids.extend([m.id for m in site_meter_map[sid]])
+            series.append(_query_aggregate(db, other_ids, bucket_expr, date_from, date_to, granularity, metric,
+                                           key="others", label=f"Autres ({len(other_sites)} sites)"))
     elif mode == "stack":
         series = [
             _query_single(db, m, bucket_expr, date_from, date_to, granularity, metric)
@@ -152,9 +174,12 @@ def query_timeseries(
             ))
 
     n_points = max((len(s["data"]) for s in series), default=0)
+    expected = estimate_points(date_from, date_to, granularity)
+    availability = _compute_availability(series, expected, granularity)
     return {
         "series": series,
         "meta": _meta(granularity, n_points, len(meters), date_from, date_to, metric),
+        "availability": availability,
     }
 
 
@@ -242,3 +267,43 @@ def _query_single(db, meter, bucket_expr, date_from, date_to, granularity, metri
     rows = _base_query(db, meter.id, bucket_expr, date_from, date_to).all()
     label = meter.name or meter.meter_id or f"Meter {meter.id}"
     return _rows_to_series(f"meter_{meter.id}", label, rows, granularity, metric)
+
+
+def _compute_availability(series: list, expected_points: int, granularity: str) -> list:
+    """Compute availability stats per series: coverage, gaps."""
+    bucket_delta = {
+        "15min": timedelta(minutes=15),
+        "30min": timedelta(minutes=30),
+        "hourly": timedelta(hours=1),
+        "daily": timedelta(days=1),
+        "monthly": timedelta(days=30),
+    }
+    delta = bucket_delta.get(granularity, timedelta(days=1))
+    result = []
+    for s in series:
+        actual = len(s["data"])
+        coverage = round(actual / expected_points, 4) if expected_points > 0 else 0.0
+        # Detect gaps (consecutive missing buckets)
+        gaps = []
+        timestamps = [pt["t"] for pt in s["data"]]
+        for i in range(1, len(timestamps)):
+            try:
+                t_prev = datetime.fromisoformat(timestamps[i - 1])
+                t_curr = datetime.fromisoformat(timestamps[i])
+                gap_size = (t_curr - t_prev) / delta if delta.total_seconds() > 0 else 0
+                if gap_size > 1.5:  # More than 1.5x expected interval = gap
+                    gaps.append({
+                        "from": timestamps[i - 1],
+                        "to": timestamps[i],
+                        "missing_buckets": int(gap_size) - 1,
+                    })
+            except (ValueError, TypeError):
+                pass
+        result.append({
+            "key": s["key"],
+            "expected_points": expected_points,
+            "actual_points": actual,
+            "coverage_pct": round(coverage * 100, 1),
+            "gaps": gaps[:20],  # Cap at 20 gaps to avoid huge payloads
+        })
+    return result

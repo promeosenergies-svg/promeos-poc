@@ -8,8 +8,10 @@ import { Flame, Building2, AlertTriangle, TrendingUp, Upload } from 'lucide-reac
 import { PageShell, KpiCard, Badge, Card, CardBody, Button, EmptyState } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
+import { useToast } from '../ui/ToastProvider';
 
 function Dashboard({ onUpgradeClick }) {
+  const { toast } = useToast();
   const [sites, setSites] = useState([]);
   const [alertes, setAlertes] = useState([]);
   const [stats, setStats] = useState({
@@ -42,8 +44,8 @@ function Dashboard({ onUpgradeClick }) {
         }
 
         setLoading(false);
-      } catch (error) {
-        console.error('Erreur chargement dashboard:', error);
+      } catch {
+        toast('Erreur lors du chargement du dashboard', 'error');
         setLoading(false);
       }
     };

@@ -17,9 +17,11 @@ export default function ErrorState({ title = 'Erreur', message, onRetry, debug, 
       </div>
       {debug && (
         <div className="mt-4 px-4 py-2 bg-gray-100 rounded text-xs text-gray-500 font-mono max-w-md text-left">
+          {debug.status && <div>status: {debug.status}</div>}
           {debug.error_code && <div>error_code: {debug.error_code}</div>}
           {debug.trace_id && <div>trace_id: {debug.trace_id}</div>}
           {debug.hint && <div>hint: {debug.hint}</div>}
+          {debug.request_url && <div className="truncate">request_url: {debug.request_url}</div>}
         </div>
       )}
     </div>

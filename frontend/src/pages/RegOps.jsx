@@ -10,10 +10,12 @@ import {
   getAiRecommendations,
   getAiDataQuality
 } from '../services/api';
+import { useToast } from '../ui/ToastProvider';
 
 export default function RegOps() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const [assessment, setAssessment] = useState(null);
   const [aiExplanation, setAiExplanation] = useState(null);
@@ -40,8 +42,8 @@ export default function RegOps() {
       setAiExplanation(explanationData);
       setAiRecommendations(recommendationsData);
       setDataQuality(qualityData);
-    } catch (error) {
-      console.error('Error loading RegOps data:', error);
+    } catch {
+      toast('Erreur lors du chargement des donnees RegOps', 'error');
     } finally {
       setLoading(false);
     }

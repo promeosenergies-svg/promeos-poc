@@ -24,7 +24,9 @@ const ActionPlan = lazy(() => import('./pages/ActionPlan'));
 const RegOps = lazy(() => import('./pages/RegOps'));
 const ConnectorsPage = lazy(() => import('./pages/ConnectorsPage'));
 const WatchersPage = lazy(() => import('./pages/WatchersPage'));
-const ConsommationsUsages = lazy(() => import('./pages/ConsommationsUsages'));
+const ConsommationsPage = lazy(() => import('./pages/ConsommationsPage'));
+const ConsommationsImportTab = lazy(() => import('./pages/ConsommationsUsages').then(m => ({ default: m.ImportWizard })));
+const ConsommationsKBTab = lazy(() => import('./pages/ConsommationsUsages').then(m => ({ default: m.KBAdminPanel })));
 const MonitoringPage = lazy(() => import('./pages/MonitoringPage'));
 const StatusPage = lazy(() => import('./pages/StatusPage'));
 const ImportPage = lazy(() => import('./pages/ImportPage'));
@@ -35,6 +37,7 @@ const ConsumptionDiagPage = lazy(() => import('./pages/ConsumptionDiagPage'));
 const BillIntelPage = lazy(() => import('./pages/BillIntelPage'));
 const KBExplorerPage = lazy(() => import('./pages/KBExplorerPage'));
 const PurchasePage = lazy(() => import('./pages/PurchasePage'));
+const PurchaseAssistantPage = lazy(() => import('./pages/PurchaseAssistantPage'));
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const AdminUsersPage = lazy(() => import('./pages/AdminUsersPage'));
@@ -90,7 +93,13 @@ function App() {
                   <Route path="/sites-legacy/:id" element={<PageSuspense><SiteDetail /></PageSuspense>} />
                   <Route path="/action-plan" element={<PageSuspense><ActionPlan /></PageSuspense>} />
                   <Route path="/regops/:id" element={<PageSuspense><RegOps /></PageSuspense>} />
-                  <Route path="/consommations" element={<PageSuspense><ConsommationsUsages /></PageSuspense>} />
+                  {/* Consommations: 3-tab layout (Explorer | Import & Analyse | KB) */}
+                  <Route path="/consommations" element={<PageSuspense><ConsommationsPage /></PageSuspense>}>
+                    <Route index element={<Navigate to="/consommations/explorer" replace />} />
+                    <Route path="explorer" element={<PageSuspense><ConsumptionExplorerPage bare /></PageSuspense>} />
+                    <Route path="import" element={<PageSuspense><ConsommationsImportTab /></PageSuspense>} />
+                    <Route path="kb" element={<PageSuspense><ConsommationsKBTab /></PageSuspense>} />
+                  </Route>
                   <Route path="/connectors" element={<PageSuspense><ConnectorsPage /></PageSuspense>} />
                   <Route path="/watchers" element={<PageSuspense><WatchersPage /></PageSuspense>} />
                   <Route path="/monitoring" element={<PageSuspense><MonitoringPage /></PageSuspense>} />
@@ -98,11 +107,12 @@ function App() {
                   <Route path="/diagnostic-conso" element={<PageSuspense><ConsumptionDiagPage /></PageSuspense>} />
                   <Route path="/bill-intel" element={<PageSuspense><BillIntelPage /></PageSuspense>} />
                   <Route path="/achat-energie" element={<PageSuspense><PurchasePage /></PageSuspense>} />
+                  <Route path="/achat-assistant" element={<PageSuspense><PurchaseAssistantPage /></PageSuspense>} />
                   <Route path="/kb" element={<PageSuspense><KBExplorerPage /></PageSuspense>} />
                   <Route path="/segmentation" element={<PageSuspense><SegmentationPage /></PageSuspense>} />
                   <Route path="/import" element={<PageSuspense><ImportPage /></PageSuspense>} />
                   <Route path="/notifications" element={<PageSuspense><NotificationsPage /></PageSuspense>} />
-                  <Route path="/explorer" element={<PageSuspense><ConsumptionExplorerPage /></PageSuspense>} />
+                  <Route path="/explorer" element={<Navigate to="/consommations/explorer" replace />} />
                   <Route path="/status" element={<PageSuspense><StatusPage /></PageSuspense>} />
 
                   {/* IAM pages */}
@@ -125,12 +135,12 @@ function App() {
                   <Route path="/synthese" element={<Navigate to="/cockpit" replace />} />
                   <Route path="/executive" element={<Navigate to="/cockpit" replace />} />
                   <Route path="/dashboard" element={<Navigate to="/" replace />} />
-                  <Route path="/conso" element={<Navigate to="/consommations" replace />} />
+                  <Route path="/conso" element={<Navigate to="/consommations/explorer" replace />} />
                   <Route path="/imports" element={<Navigate to="/import" replace />} />
                   <Route path="/connexions" element={<Navigate to="/connectors" replace />} />
                   <Route path="/veille" element={<Navigate to="/watchers" replace />} />
                   <Route path="/alertes" element={<Navigate to="/notifications" replace />} />
-                  <Route path="/ems" element={<Navigate to="/explorer" replace />} />
+                  <Route path="/ems" element={<Navigate to="/consommations/explorer" replace />} />
 
                   {/* Catch-all */}
                   <Route path="*" element={<PageSuspense><NotFound /></PageSuspense>} />

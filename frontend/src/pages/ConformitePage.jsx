@@ -23,6 +23,7 @@ import ErrorState from '../ui/ErrorState';
 import {
   applyKB,
   getComplianceBundle,
+  getApiHealth,
   patchComplianceFinding,
   recomputeComplianceRules,
   getDataQuality,
@@ -73,14 +74,82 @@ const EMPTY_REASONS = {
   ALL_COMPLIANT: { Icon: CheckCircle, title: 'Tout est conforme', text: 'Aucune non-conformite detectee. Felicitations !' },
 };
 
+/* ---------- Dev-only badges ---------- */
+
+function DevApiBadge() {
+  const [health, setHealth] = useState(null);
+
+  useEffect(() => {
+    getApiHealth()
+      .then((data) => setHealth(data))
+      .catch(() => setHealth(false));
+  }, []);
+
+  if (health === null) return null; // loading
+
+  const isOk = health && health.ok;
+  return (
+    <span
+      data-testid="api-badge"
+      className={`inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full ${
+        isOk ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+      }`}
+      title={isOk ? `v${health.version} · ${health.git_sha}` : 'API unreachable'}
+    >
+      <span className={`w-1.5 h-1.5 rounded-full ${isOk ? 'bg-green-500' : 'bg-red-500'}`} />
+      {isOk ? 'API: Connected' : 'API: Offline'}
+      {!isOk && (
+        <span className="ml-1 text-[9px] text-red-500">{`${window.location.protocol}//${window.location.hostname}:8000/api/health`}</span>
+      )}
+    </span>
+  );
+}
+
+/**
+ * Resolve scope type and id from scope object.
+ * Exported for testing.
+ */
+export function resolveScopeLabel(scope) {
+  const scopeType = scope.siteId ? 'site' : scope.portefeuilleId ? 'portefeuille' : 'org';
+  const scopeId = scope.siteId || scope.portefeuilleId || scope.orgId;
+  return { scopeType, scopeId, label: `${scopeType}/${scopeId}` };
+}
+
+export function DevScopeBadge({ scope, scopedSites }) {
+  const [copied, setCopied] = useState(false);
+  const { scopeType, scopeId, label } = resolveScopeLabel(scope);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(JSON.stringify({ scope_type: scopeType, scope_id: scopeId, sites_count: scopedSites.length }));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1200);
+  };
+
+  return (
+    <span
+      data-testid="scope-badge"
+      className="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 cursor-pointer"
+      onClick={handleCopy}
+      title={`Click to copy scope: ${label} (${scopedSites.length} sites)`}
+    >
+      <Database size={10} />
+      {label}
+      <span className="text-indigo-400">({scopedSites.length})</span>
+      {copied && <span className="text-green-600 font-medium">copied</span>}
+    </span>
+  );
+}
+
 /**
  * Build API scope params from ScopeContext.
- * Always includes org_id. Adds site_id only when exactly 1 site is scoped.
+ * Always includes org_id. Adds portefeuille_id or site_id based on scope.
  */
 export function buildScopeParams(scope, scopedSites) {
   const params = { org_id: scope.orgId };
   if (scopedSites.length === 1) {
     params.site_id = scopedSites[0].id;
+  } else if (scope.portefeuilleId) {
+    params.portefeuille_id = scope.portefeuilleId;
   }
   return params;
 }
@@ -873,7 +942,7 @@ function ProofSection({ obligation, files, onUpload }) {
 }
 
 export default function ConformitePage() {
-  const { org, scopedSites } = useScope();
+  const { org, scope, scopedSites } = useScope();
   const { isExpert } = useExpertMode();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -895,7 +964,7 @@ export default function ConformitePage() {
   const loadData = useCallback(() => {
     setLoading(true);
     setError(null);
-    const scopeParams = buildScopeParams({ orgId: org.id }, scopedSites);
+    const scopeParams = buildScopeParams({ orgId: org.id, portefeuilleId: scope.portefeuilleId, siteId: scope.siteId }, scopedSites);
 
     getComplianceBundle(scopeParams)
       .then((bundle) => {
@@ -907,11 +976,18 @@ export default function ConformitePage() {
         else if (bundle.empty_reason_code) setEmptyReason(bundle.empty_reason_code);
         else setEmptyReason(null);
       })
-      .catch(() => {
-        setError(parseBundleError(null));
+      .catch((err) => {
+        const status = err?.response?.status;
+        const base = parseBundleError(null);
+        if (status) base.status = status;
+        const reqUrl = err?.config?.baseURL && err?.config?.url
+          ? `${err.config.baseURL}${err.config.url}`
+          : null;
+        if (reqUrl) base.request_url = reqUrl;
+        setError(base);
       })
       .finally(() => setLoading(false));
-  }, [org.id, scopedSites]);
+  }, [org.id, scope.portefeuilleId, scope.siteId, scopedSites]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -1066,7 +1142,13 @@ export default function ConformitePage() {
           title="Erreur de chargement"
           message={error.message || 'Donnees de conformite indisponibles'}
           onRetry={() => { setError(null); loadData(); }}
-          debug={error.error_code ? { error_code: error.error_code, trace_id: error.trace_id, hint: error.hint } : null}
+          debug={(error.error_code || error.status || error.request_url) ? {
+            ...(error.status ? { status: error.status } : {}),
+            ...(error.error_code ? { error_code: error.error_code } : {}),
+            ...(error.trace_id ? { trace_id: error.trace_id } : {}),
+            ...(error.hint ? { hint: error.hint } : {}),
+            ...(error.request_url ? { request_url: error.request_url } : {}),
+          } : null}
           actions={error.hint === 'run_reset_db' ? (
             <Button variant="secondary" onClick={handleResetDb}>
               <RotateCcw size={14} /> Reset DB (dev)
@@ -1094,6 +1176,12 @@ export default function ConformitePage() {
         </>
       }
     >
+
+      {/* Dev-only badges */}
+      <div className="flex items-center gap-2 -mt-1 mb-1">
+        <DevApiBadge />
+        <DevScopeBadge scope={{ orgId: org.id, portefeuilleId: scope.portefeuilleId, siteId: scope.siteId }} scopedSites={scopedSites} />
+      </div>
 
       {/* Cockpit Tabs */}
       <Tabs tabs={COCKPIT_TABS} active={activeTab} onChange={(tab) => { setActiveTab(tab); track('conformite_tab', { tab }); }} />

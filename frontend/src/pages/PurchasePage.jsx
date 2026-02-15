@@ -6,7 +6,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
-import { PageShell } from '../ui';
+import { PageShell, EmptyState } from '../ui';
+import { SkeletonCard } from '../ui/Skeleton';
+import { useToast } from '../ui/ToastProvider';
 import {
   getPurchaseEstimate,
   getPurchaseAssumptions,
@@ -62,6 +64,7 @@ const TABS = [
 export default function PurchasePage() {
   const { scopedSites } = useScope();
   const { isExpert } = useExpertMode();
+  const { toast } = useToast();
 
   // Tab state
   const [activeTab, setActiveTab] = useState('simulation');
@@ -129,7 +132,7 @@ export default function PurchasePage() {
       setScenarios(results.scenarios || []);
       setAcceptedId(null);
     } catch {
-      // Silent — mock mode may not have backend
+      toast('Erreur lors du chargement des donnees du site', 'error');
     }
     setLoading(false);
   }, []);
@@ -144,7 +147,7 @@ export default function PurchasePage() {
       setRenewalsLoading(true);
       getPurchaseRenewals().then(data => {
         setRenewals(data.renewals || []);
-      }).catch(() => {}).finally(() => setRenewalsLoading(false));
+      }).catch(() => toast('Erreur lors du chargement des echeances', 'error')).finally(() => setRenewalsLoading(false));
     }
   }, [activeTab, renewals.length]);
 
@@ -154,20 +157,20 @@ export default function PurchasePage() {
       setHistoryLoading(true);
       getPurchaseHistory(selectedSiteId).then(data => {
         setHistory(data.runs || []);
-      }).catch(() => {}).finally(() => setHistoryLoading(false));
+      }).catch(() => toast('Erreur lors du chargement de l\'historique', 'error')).finally(() => setHistoryLoading(false));
     }
   }, [activeTab, selectedSiteId]);
 
   const handleSaveAssumptions = async () => {
     if (!selectedSiteId) return;
     setSavingAssumptions(true);
-    try { await putPurchaseAssumptions(selectedSiteId, assumptions); } catch { /* silent */ }
+    try { await putPurchaseAssumptions(selectedSiteId, assumptions); } catch { toast('Erreur lors de la sauvegarde des hypotheses', 'error'); }
     setSavingAssumptions(false);
   };
 
   const handleSavePreferences = async () => {
     setSavingPrefs(true);
-    try { await putPurchasePreferences(preferences); } catch { /* silent */ }
+    try { await putPurchasePreferences(preferences); } catch { toast('Erreur lors de la sauvegarde des preferences', 'error'); }
     setSavingPrefs(false);
   };
 
@@ -180,7 +183,7 @@ export default function PurchasePage() {
       const result = await computePurchaseScenarios(selectedSiteId);
       setScenarios(result.scenarios || []);
       setAcceptedId(null);
-    } catch { /* silent */ }
+    } catch { toast('Erreur lors du calcul des scenarios', 'error'); }
     setComputing(false);
   };
 
@@ -191,7 +194,7 @@ export default function PurchasePage() {
       setScenarios(prev => prev.map(s =>
         s.id === resultId ? { ...s, reco_status: 'accepted' } : s
       ));
-    } catch { /* silent */ }
+    } catch { toast('Erreur lors de l\'acceptation du scenario', 'error'); }
   };
 
   const handleComputePortfolio = async () => {
@@ -199,7 +202,7 @@ export default function PurchasePage() {
     try {
       const data = await computePortfolio(1);
       setPortfolioData(data);
-    } catch { /* silent */ }
+    } catch { toast('Erreur lors du calcul du portefeuille', 'error'); }
     setPortfolioLoading(false);
   };
 
@@ -208,7 +211,7 @@ export default function PurchasePage() {
     try {
       const data = await getPortfolioResults(1);
       setPortfolioData(data);
-    } catch { /* silent */ }
+    } catch { toast('Erreur lors du chargement du portefeuille', 'error'); }
     setPortfolioLoading(false);
   };
 
@@ -468,7 +471,7 @@ export default function PurchasePage() {
               )}
             </div>
           )}
-          {loading && <div className="text-center py-12 text-gray-400">Chargement...</div>}
+          {loading && <div className="grid grid-cols-1 md:grid-cols-3 gap-4"><SkeletonCard /><SkeletonCard /><SkeletonCard /></div>}
         </>
       )}
 

@@ -21,3 +21,6 @@ export { default as Tooltip } from './Tooltip';
 export { default as Progress } from './Progress';
 export { default as Drawer } from './Drawer';
 export { ToastProvider, useToast } from './ToastProvider';
+
+// Design System V2 — Sprint Top Pages WOW
+export { default as MetricCard, StatusDot } from './MetricCard';

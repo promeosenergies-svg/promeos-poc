@@ -40,9 +40,9 @@ class TestGetWeatherMulti:
         """Multi-site weather averages temperatures across sites."""
         sites = _seed_sites(db, 2)
         result = get_weather_multi(db, [s.id for s in sites], date(2025, 7, 1), date(2025, 7, 3))
-        assert len(result) == 3  # 3 days
+        assert len(result["days"]) == 3  # 3 days
         # Each day should have avg temp
-        for day in result:
+        for day in result["days"]:
             assert "temp_avg_c" in day
             assert "date" in day
 
@@ -51,20 +51,21 @@ class TestGetWeatherMulti:
         sites = _seed_sites(db, 1)
         single = get_weather(db, sites[0].id, date(2025, 6, 1), date(2025, 6, 5))
         multi = get_weather_multi(db, [sites[0].id], date(2025, 6, 1), date(2025, 6, 5))
-        assert len(single) == len(multi)
-        for s, m in zip(single, multi):
+        assert len(single) == len(multi["days"])
+        for s, m in zip(single, multi["days"]):
             assert s["temp_avg_c"] == m["temp_avg_c"]
 
     def test_empty_site_ids_returns_empty(self, db):
         result = get_weather_multi(db, [], date(2025, 1, 1), date(2025, 1, 5))
-        assert result == []
+        assert result["days"] == []
+        assert result["meta"]["n_sites"] == 0
 
     def test_multi_site_source_is_average(self, db):
         """Multi-site weather source should indicate averaging."""
         sites = _seed_sites(db, 3)
         result = get_weather_multi(db, [s.id for s in sites], date(2025, 3, 1), date(2025, 3, 2))
-        assert len(result) == 2
-        assert result[0]["source"] == "demo_avg"
+        assert len(result["days"]) == 2
+        assert result["days"][0]["source"] == "demo_avg"
 
 
 class TestEnsureWeather:

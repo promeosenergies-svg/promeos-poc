@@ -1,16 +1,16 @@
 /**
- * PROMEOS - Actions & Plan (/actions) V3.1
- * Default sort (overdue > P1 > due), sticky bulk bar with assign/status,
- * owner "Non assigne", trust footer scoped, FR copy fixes.
+ * PROMEOS - Actions & Plan (/actions) V4 WOW
+ * Table/Kanban toggle, group-by, search, colored status pills,
+ * inline status change, context-aware empty states, impact bulk bar.
  */
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   Plus, Download, Printer, Clock, ListChecks, RefreshCw,
   MessageSquare, Paperclip, AlertTriangle, BadgeEuro, ShieldCheck,
   Tag, Users, ArrowUpDown, UserPlus, FileText,
+  Columns3, List, ChevronRight, ChevronDown, Search, CheckCircle, X,
 } from 'lucide-react';
-import { Card, CardBody, Badge, Button, Select, Pagination, EmptyState, Tabs, TrustBadge, PageShell, FilterBar } from '../ui';
+import { Card, CardBody, Badge, Button, Select, Pagination, EmptyState, Tabs, TrustBadge, PageShell } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td, ThCheckbox, TdCheckbox } from '../ui';
 import { useToast } from '../ui/ToastProvider';
 import Modal from '../ui/Modal';
@@ -65,6 +65,13 @@ const STATUT_LABELS = {
   backlog: 'Backlog', planned: 'Planifiee', in_progress: 'En cours', done: 'Terminee',
 };
 
+const STATUT_PILL = {
+  backlog:     'bg-gray-100 text-gray-700',
+  planned:     'bg-blue-100 text-blue-700',
+  in_progress: 'bg-amber-100 text-amber-700',
+  done:        'bg-green-100 text-green-700',
+};
+
 const STATUT_TABS = [
   { id: '', label: 'Toutes' },
   { id: 'backlog', label: 'Backlog' },
@@ -88,13 +95,23 @@ const BULK_STATUS_OPTIONS = [
   { value: 'done', label: 'Terminee' },
 ];
 
-const OWNER_OPTIONS = ['J. Dupont', 'M. Martin', 'S. Bernard', 'A. Leroy', 'C. Moreau'];
+const GROUP_OPTIONS = [
+  { value: 'none', label: 'Pas de groupement' },
+  { value: 'site_nom', label: 'Par site' },
+  { value: 'type', label: 'Par type' },
+  { value: 'owner', label: 'Par responsable' },
+  { value: 'priorite', label: 'Par priorite' },
+  { value: 'statut', label: 'Par statut' },
+];
 
 const QUICK_VIEWS = [
   { id: 'overdue', label: 'En retard', icon: AlertTriangle, color: 'text-red-600' },
   { id: 'high_impact', label: 'Impact eleve', icon: BadgeEuro, color: 'text-amber-600' },
   { id: 'conformite_crit', label: 'Critique conformite', icon: ShieldCheck, color: 'text-blue-600' },
 ];
+
+const KANBAN_COLUMNS = ['backlog', 'planned', 'in_progress', 'done'];
+const KANBAN_DOT = { backlog: 'bg-gray-400', planned: 'bg-blue-500', in_progress: 'bg-amber-500', done: 'bg-green-500' };
 
 function isOverdue(action) {
   if (!action.due_date || action.statut === 'done') return false;
@@ -112,8 +129,185 @@ function defaultSort(a, b) {
   return (a.due_date || '9999').localeCompare(b.due_date || '9999');
 }
 
+/* ── Kanban Board ────────────────────────────────────────────── */
+function KanbanBoard({ actions, onStatusChange, onCardClick, selected, onToggleSelect }) {
+  const [dragId, setDragId] = useState(null);
+
+  const columnActions = useMemo(() => {
+    const map = {};
+    KANBAN_COLUMNS.forEach(col => { map[col] = actions.filter(a => a.statut === col); });
+    return map;
+  }, [actions]);
+
+  function handleDragStart(e, actionId) {
+    setDragId(actionId);
+    e.dataTransfer.effectAllowed = 'move';
+  }
+
+  function handleDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  }
+
+  function handleDrop(e, newStatus) {
+    e.preventDefault();
+    if (dragId) {
+      onStatusChange(dragId, newStatus);
+      setDragId(null);
+    }
+  }
+
+  return (
+    <div className="grid grid-cols-4 gap-4">
+      {KANBAN_COLUMNS.map(col => (
+        <div
+          key={col}
+          onDragOver={handleDragOver}
+          onDrop={(e) => handleDrop(e, col)}
+          className="bg-gray-50 rounded-xl p-3 min-h-[400px]"
+        >
+          <div className="flex items-center gap-2 mb-3 px-1">
+            <span className={`w-2.5 h-2.5 rounded-full ${KANBAN_DOT[col]}`} />
+            <span className="text-sm font-semibold text-gray-700">{STATUT_LABELS[col]}</span>
+            <span className="text-xs text-gray-400 ml-auto">{columnActions[col].length}</span>
+          </div>
+          <div className="space-y-2">
+            {columnActions[col].map(a => {
+              const typeBadge = TYPE_BADGE[a.type] || TYPE_BADGE.maintenance;
+              return (
+                <div
+                  key={a.id}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, a.id)}
+                  onClick={() => onCardClick(a)}
+                  className={`bg-white rounded-lg border p-3 cursor-grab active:cursor-grabbing
+                    hover:shadow-md transition-shadow ${dragId === a.id ? 'opacity-50' : ''}
+                    ${selected.has(a.id) ? 'ring-2 ring-blue-400' : 'border-gray-200'}`}
+                >
+                  <p className="text-sm font-medium text-gray-900 line-clamp-2">{a.titre}</p>
+                  <div className="flex items-center gap-1.5 mt-2">
+                    <Badge status={PRIORITY_BADGE[a.priorite] || 'neutral'}>
+                      {PRIORITY_LABEL[a.priorite]}
+                    </Badge>
+                    <Badge status={typeBadge.status}>{typeBadge.label}</Badge>
+                  </div>
+                  <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
+                    <span>{a.impact_eur.toLocaleString()} EUR</span>
+                    <span>{a.owner || 'Non assigne'}</span>
+                  </div>
+                  {isOverdue(a) && (
+                    <div className="mt-1.5 text-xs font-medium text-red-600 flex items-center gap-1">
+                      <AlertTriangle size={12} /> En retard
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            {columnActions[col].length === 0 && (
+              <p className="text-xs text-gray-400 text-center py-8">Aucune action</p>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ── Grouped Table View ──────────────────────────────────────── */
+function GroupedTableView({ actions, groupBy, onCardClick, selected, onToggleSelect, onInlineStatus }) {
+  const [collapsed, setCollapsed] = useState(new Set());
+
+  const groups = useMemo(() => {
+    const map = {};
+    actions.forEach(a => {
+      const key = groupBy === 'owner'
+        ? (a[groupBy] || 'Non assigne')
+        : (a[groupBy] || 'Non defini');
+      if (!map[key]) map[key] = [];
+      map[key].push(a);
+    });
+    return Object.entries(map).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [actions, groupBy]);
+
+  function toggleGroup(key) {
+    setCollapsed(prev => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  }
+
+  return (
+    <div className="space-y-4">
+      {groups.map(([key, items]) => (
+        <Card key={key}>
+          <button
+            onClick={() => toggleGroup(key)}
+            className="w-full flex items-center gap-2 px-4 py-3 bg-gray-50 hover:bg-gray-100 transition text-left"
+          >
+            {collapsed.has(key) ? <ChevronRight size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
+            <span className="text-sm font-semibold text-gray-800">{key}</span>
+            <span className="text-xs text-gray-400">{items.length} action(s)</span>
+            <span className="ml-auto text-xs font-medium text-gray-500">
+              {items.reduce((s, a) => s + a.impact_eur, 0).toLocaleString()} EUR
+            </span>
+          </button>
+          {!collapsed.has(key) && (
+            <Table compact>
+              <Thead>
+                <tr>
+                  <Th>Action</Th>
+                  <Th>Type</Th>
+                  <Th sortable={false}>Priorite</Th>
+                  <Th className="text-right">Impact EUR</Th>
+                  <Th>Echeance</Th>
+                  <Th>Owner</Th>
+                  <Th>Statut</Th>
+                </tr>
+              </Thead>
+              <Tbody>
+                {items.map(a => {
+                  const typeBadge = TYPE_BADGE[a.type] || TYPE_BADGE.maintenance;
+                  const overdue = isOverdue(a);
+                  return (
+                    <Tr key={a.id} selected={selected.has(a.id)} onClick={() => onCardClick(a)}>
+                      <Td className="font-medium text-gray-900 max-w-xs truncate">{a.titre}</Td>
+                      <Td><Badge status={typeBadge.status}>{typeBadge.label}</Badge></Td>
+                      <Td><Badge status={PRIORITY_BADGE[a.priorite] || 'neutral'}>{PRIORITY_LABEL[a.priorite]}</Badge></Td>
+                      <Td className="text-right font-medium">{a.impact_eur.toLocaleString()} EUR</Td>
+                      <Td className={`text-sm whitespace-nowrap ${overdue ? 'text-red-600 font-semibold' : ''}`}>
+                        {a.due_date}
+                        {overdue && <span className="ml-1 text-xs bg-red-50 text-red-600 px-1.5 py-0.5 rounded">En retard</span>}
+                      </Td>
+                      <Td className="text-sm">{a.owner || <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-400 rounded">Non assigne</span>}</Td>
+                      <Td>
+                        <select
+                          value={a.statut}
+                          onChange={(e) => { e.stopPropagation(); onInlineStatus(a.id, e.target.value); }}
+                          onClick={(e) => e.stopPropagation()}
+                          className={`text-xs font-medium px-2.5 py-0.5 rounded-full border-0 cursor-pointer
+                            appearance-none hover:ring-2 hover:ring-blue-300 transition
+                            ${STATUT_PILL[a.statut] || STATUT_PILL.backlog}`}
+                        >
+                          {BULK_STATUS_OPTIONS.map(opt => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
+                      </Td>
+                    </Tr>
+                  );
+                })}
+              </Tbody>
+            </Table>
+          )}
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+/* ── Main Component ──────────────────────────────────────────── */
 export default function ActionsPage() {
-  const navigate = useNavigate();
   const { scopedSites } = useScope();
   const { isExpert } = useExpertMode();
   const { toast } = useToast();
@@ -133,7 +327,16 @@ export default function ActionsPage() {
   const [showAssign, setShowAssign] = useState(false);
   const [showBulkStatus, setShowBulkStatus] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [viewMode, setViewMode] = useState('table');
+  const [groupBy, setGroupBy] = useState('none');
+  const [searchQuery, setSearchQuery] = useState('');
   const pageSize = 15;
+
+  const ownerOptions = useMemo(() => {
+    const unique = [...new Set(actions.map(a => a.owner).filter(Boolean))];
+    unique.sort((a, b) => a.localeCompare(b));
+    return unique;
+  }, [actions]);
 
   const fetchActions = useCallback(async () => {
     try {
@@ -171,7 +374,7 @@ export default function ActionsPage() {
       el.click();
       URL.revokeObjectURL(url);
       track('download_audit_pdf', {});
-    } catch { /* noop */ }
+    } catch { toast('Erreur lors du telechargement du PDF', 'error'); }
     setPdfLoading(false);
   }
 
@@ -185,6 +388,16 @@ export default function ActionsPage() {
 
     if (filterStatut) result = result.filter(a => a.statut === filterStatut);
     if (filterType) result = result.filter(a => a.type === filterType);
+
+    // Search
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(a =>
+        a.titre.toLowerCase().includes(q) ||
+        a.site_nom.toLowerCase().includes(q) ||
+        (a.owner || '').toLowerCase().includes(q)
+      );
+    }
 
     // Sort
     if (sortCol) {
@@ -200,7 +413,7 @@ export default function ActionsPage() {
       result.sort(defaultSort);
     }
     return result;
-  }, [actions, filterStatut, filterType, quickView, sortCol, sortDir]);
+  }, [actions, filterStatut, filterType, quickView, sortCol, sortDir, searchQuery]);
 
   const total = filtered.length;
   const pageData = filtered.slice((page - 1) * pageSize, page * pageSize);
@@ -236,10 +449,19 @@ export default function ActionsPage() {
     else setSelected(new Set(pageData.map(a => a.id)));
   }
 
+  async function handleInlineStatusChange(actionId, newStatus) {
+    const beStatus = STATUS_TO_BE[newStatus] || newStatus;
+    try {
+      await patchAction(actionId, { status: beStatus });
+    } catch { /* silent fallback */ }
+    setActions(prev => prev.map(a => a.id === actionId ? { ...a, statut: newStatus } : a));
+    track('inline_status_change', { action_id: actionId, status: newStatus });
+  }
+
   async function bulkChangeStatus(newStatus) {
     const beStatus = STATUS_TO_BE[newStatus] || newStatus;
     const ids = [...selected];
-    await Promise.all(ids.map(id => patchAction(id, { status: beStatus }).catch(() => {})));
+    await Promise.all(ids.map(id => patchAction(id, { status: beStatus }).catch(() => toast('Erreur lors du changement de statut', 'error'))));
     setActions(prev => prev.map(a => selected.has(a.id) ? { ...a, statut: newStatus } : a));
     track('bulk_status_change', { count: selected.size, status: newStatus });
     setSelected(new Set());
@@ -248,7 +470,7 @@ export default function ActionsPage() {
 
   async function bulkAssign(owner) {
     const ids = [...selected];
-    await Promise.all(ids.map(id => patchAction(id, { owner }).catch(() => {})));
+    await Promise.all(ids.map(id => patchAction(id, { owner }).catch(() => toast('Erreur lors de l\'assignation', 'error'))));
     setActions(prev => prev.map(a => selected.has(a.id) ? { ...a, owner } : a));
     track('bulk_assign', { count: selected.size, owner });
     setSelected(new Set());
@@ -303,7 +525,29 @@ export default function ActionsPage() {
     track('export_csv', { type: 'selected', rows: rows.length });
   }
 
-  const hasUnassigned = [...selected].some(id => { const a = actions.find(x => x.id === id); return a && !a.owner; });
+  function resetAllFilters() {
+    setFilterStatut('');
+    setFilterType('');
+    setQuickView('');
+    setSearchQuery('');
+    setPage(1);
+  }
+
+  function renderEmptyState() {
+    if (quickView === 'overdue') {
+      return <EmptyState icon={CheckCircle} title="Aucune action en retard" text="Toutes vos actions sont dans les temps. Continuez ainsi !" />;
+    }
+    if (quickView === 'high_impact') {
+      return <EmptyState icon={BadgeEuro} title="Aucune action a fort impact" text="Aucune action avec un impact superieur a 10 000 EUR n'a ete detectee." />;
+    }
+    if (quickView === 'conformite_crit') {
+      return <EmptyState icon={ShieldCheck} title="Pas d'action critique conformite" text="Aucune action de conformite critique ou haute priorite." />;
+    }
+    if (filterStatut || filterType || searchQuery.trim()) {
+      return <EmptyState icon={ListChecks} title="Aucune action pour ce filtre" text="Essayez de modifier vos filtres ou de reinitialiser la vue." ctaLabel="Reinitialiser" onCta={resetAllFilters} />;
+    }
+    return <EmptyState icon={ListChecks} title="Aucune action" text="Synchronisez vos donnees ou creez votre premiere action pour commencer." ctaLabel="Creer action" onCta={() => setShowCreate(true)} />;
+  }
 
   return (
     <PageShell
@@ -328,11 +572,14 @@ export default function ActionsPage() {
       }
     >
 
-      {/* Quick views */}
+      {/* Quick views with counts */}
       <div className="flex items-center gap-2">
         {QUICK_VIEWS.map(qv => {
           const Icon = qv.icon;
           const isActive = quickView === qv.id;
+          const count = qv.id === 'overdue' ? stats.overdue
+            : qv.id === 'high_impact' ? actions.filter(a => a.impact_eur >= 10000).length
+            : actions.filter(a => a.type === 'conformite' && (a.priorite === 'critical' || a.priorite === 'high')).length;
           return (
             <button
               key={qv.id}
@@ -342,27 +589,48 @@ export default function ActionsPage() {
             >
               <Icon size={14} className={isActive ? 'text-blue-600' : qv.color} />
               {qv.label}
+              {count > 0 && (
+                <span className={`ml-0.5 px-1.5 py-0 rounded-full text-[10px] font-bold ${isActive ? 'bg-blue-200 text-blue-800' : 'bg-gray-200 text-gray-600'}`}>
+                  {count}
+                </span>
+              )}
             </button>
           );
         })}
       </div>
 
-      {/* Stats cards */}
+      {/* Clickable stats cards */}
       <div className="grid grid-cols-5 gap-3">
         {[
-          { label: 'Backlog', value: stats.backlog, color: 'text-gray-700', bg: 'bg-gray-50' },
-          { label: 'Planifiee', value: stats.planned, color: 'text-blue-700', bg: 'bg-blue-50' },
-          { label: 'En cours', value: stats.in_progress, color: 'text-amber-700', bg: 'bg-amber-50' },
-          { label: 'Terminee', value: stats.done, color: 'text-green-700', bg: 'bg-green-50' },
-          { label: 'En retard', value: stats.overdue, color: 'text-red-700', bg: 'bg-red-50' },
-        ].map(c => (
-          <Card key={c.label}>
-            <CardBody className={c.bg}>
-              <p className="text-xs text-gray-500">{c.label}</p>
-              <p className={`text-2xl font-bold ${c.color}`}>{c.value}</p>
-            </CardBody>
-          </Card>
-        ))}
+          { label: 'Backlog', value: stats.backlog, color: 'text-gray-700', bg: 'bg-gray-50', statut: 'backlog', ringColor: 'ring-gray-400' },
+          { label: 'Planifiee', value: stats.planned, color: 'text-blue-700', bg: 'bg-blue-50', statut: 'planned', ringColor: 'ring-blue-400' },
+          { label: 'En cours', value: stats.in_progress, color: 'text-amber-700', bg: 'bg-amber-50', statut: 'in_progress', ringColor: 'ring-amber-400' },
+          { label: 'Terminee', value: stats.done, color: 'text-green-700', bg: 'bg-green-50', statut: 'done', ringColor: 'ring-green-400' },
+          { label: 'En retard', value: stats.overdue, color: 'text-red-700', bg: 'bg-red-50', statut: '_overdue', ringColor: 'ring-red-400' },
+        ].map(c => {
+          const isCardActive = c.statut === '_overdue' ? quickView === 'overdue' : filterStatut === c.statut;
+          return (
+            <Card
+              key={c.label}
+              className={`cursor-pointer transition-all hover:shadow-md ${isCardActive ? `ring-2 ${c.ringColor}` : ''} ${c.statut !== '_overdue' && c.value === 0 ? '' : ''}`}
+              onClick={() => {
+                if (c.statut === '_overdue') {
+                  setQuickView(quickView === 'overdue' ? '' : 'overdue');
+                  setFilterStatut('');
+                } else {
+                  setFilterStatut(filterStatut === c.statut ? '' : c.statut);
+                  setQuickView('');
+                }
+                setPage(1);
+              }}
+            >
+              <CardBody className={c.bg}>
+                <p className="text-xs text-gray-500">{c.label}</p>
+                <p className={`text-2xl font-bold ${c.color}`}>{c.value}</p>
+              </CardBody>
+            </Card>
+          );
+        })}
       </div>
 
       {/* Filters */}
@@ -373,9 +641,76 @@ export default function ActionsPage() {
         </div>
       </div>
 
-      {/* Table */}
-      {total === 0 ? (
-        <EmptyState icon={ListChecks} title="Aucune action" text="Creez votre premiere action pour commencer." ctaLabel="Creer action" onCta={() => setShowCreate(true)} />
+      {/* Toolbar: search + group-by + view toggle */}
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 max-w-xs">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Rechercher une action..."
+            value={searchQuery}
+            onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+            className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm placeholder:text-gray-400
+              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>
+        <div className="ml-auto flex items-center gap-2">
+          <Select
+            options={GROUP_OPTIONS}
+            value={groupBy}
+            onChange={(e) => { setGroupBy(e.target.value); setPage(1); }}
+          />
+          <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
+            <button
+              onClick={() => setViewMode('table')}
+              className={`p-1.5 rounded-md transition ${viewMode === 'table' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+              title="Vue tableau"
+            >
+              <List size={16} />
+            </button>
+            <button
+              onClick={() => setViewMode('kanban')}
+              className={`p-1.5 rounded-md transition ${viewMode === 'kanban' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+              title="Vue Kanban"
+            >
+              <Columns3 size={16} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Filtered impact summary */}
+      {(filterStatut || filterType || quickView || searchQuery.trim()) && total > 0 && (
+        <div className="flex items-center gap-3 px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+          <span className="text-gray-500">Resultat filtre :</span>
+          <span className="font-semibold text-gray-900">{total} action(s)</span>
+          <span className="text-gray-400">&middot;</span>
+          <span className="font-bold text-red-600">{filtered.reduce((s, a) => s + a.impact_eur, 0).toLocaleString()} EUR</span>
+          <span className="text-gray-400 text-xs">d'impact</span>
+          <button onClick={resetAllFilters} className="ml-auto text-xs text-blue-600 hover:text-blue-800 font-medium">
+            Reinitialiser
+          </button>
+        </div>
+      )}
+
+      {/* Content: table / kanban / grouped */}
+      {total === 0 ? renderEmptyState() : viewMode === 'kanban' ? (
+        <KanbanBoard
+          actions={filtered}
+          onStatusChange={handleInlineStatusChange}
+          onCardClick={(a) => { setDetailAction(a); track('row_click', { action_id: a.id }); }}
+          selected={selected}
+          onToggleSelect={toggleSelect}
+        />
+      ) : groupBy !== 'none' ? (
+        <GroupedTableView
+          actions={filtered}
+          groupBy={groupBy}
+          onCardClick={(a) => { setDetailAction(a); track('row_click', { action_id: a.id }); }}
+          selected={selected}
+          onToggleSelect={toggleSelect}
+          onInlineStatus={handleInlineStatusChange}
+        />
       ) : (
         <Card>
           <Table compact={false}>
@@ -423,7 +758,20 @@ export default function ActionsPage() {
                         : <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-400 rounded">Non assigne</span>
                       }
                     </Td>
-                    <Td><span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">{STATUT_LABELS[a.statut]}</span></Td>
+                    <Td>
+                      <select
+                        value={a.statut}
+                        onChange={(e) => { e.stopPropagation(); handleInlineStatusChange(a.id, e.target.value); }}
+                        onClick={(e) => e.stopPropagation()}
+                        className={`text-xs font-medium px-2.5 py-0.5 rounded-full border-0 cursor-pointer
+                          appearance-none hover:ring-2 hover:ring-blue-300 transition
+                          ${STATUT_PILL[a.statut] || STATUT_PILL.backlog}`}
+                      >
+                        {BULK_STATUS_OPTIONS.map(opt => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                    </Td>
                   </Tr>
                 );
               })}
@@ -442,14 +790,26 @@ export default function ActionsPage() {
 
       {/* Sticky bulk bar */}
       {selected.size > 0 && (
-        <div className="sticky bottom-4 z-30 flex items-center gap-3 px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl shadow-lg text-sm">
-          <span className="font-semibold text-blue-700">{selected.size} selectionnee(s)</span>
+        <div className="sticky bottom-4 z-30 flex items-center gap-4 px-5 py-3 bg-white border border-gray-200 rounded-xl shadow-xl text-sm">
+          <div className="flex items-center gap-3">
+            <span className="inline-flex items-center justify-center w-7 h-7 bg-blue-600 text-white rounded-full text-xs font-bold">
+              {selected.size}
+            </span>
+            <div>
+              <span className="font-semibold text-gray-900">selectionnee(s)</span>
+              <span className="ml-2 text-gray-500">&middot;</span>
+              <span className="ml-2 font-bold text-red-600">
+                {actions.filter(a => selected.has(a.id)).reduce((s, a) => s + a.impact_eur, 0).toLocaleString()} EUR
+              </span>
+              <span className="ml-1 text-xs text-gray-400">d'impact total</span>
+            </div>
+          </div>
           <div className="flex-1" />
           <Button size="sm" variant="secondary" onClick={() => setShowAssign(true)}>
-            <UserPlus size={14} /> Assigner{hasUnassigned ? ' *' : ''}
+            <UserPlus size={14} /> Assigner
           </Button>
           <Button size="sm" variant="secondary" onClick={() => setShowBulkStatus(true)}>
-            <ArrowUpDown size={14} /> Changer statut
+            <ArrowUpDown size={14} /> Statut
           </Button>
           <Button size="sm" variant="secondary" onClick={handleBulkCreate}>
             <Plus size={14} /> Creer action
@@ -457,7 +817,13 @@ export default function ActionsPage() {
           <Button size="sm" variant="secondary" onClick={exportSelected}>
             <Download size={14} /> Exporter
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>Deselectionner</Button>
+          <button
+            onClick={() => setSelected(new Set())}
+            className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition"
+            title="Deselectionner"
+          >
+            <X size={16} />
+          </button>
         </div>
       )}
 
@@ -473,7 +839,7 @@ export default function ActionsPage() {
       <Modal open={showAssign} onClose={() => setShowAssign(false)} title="Assigner un responsable">
         <div className="space-y-2">
           <p className="text-sm text-gray-600">{selected.size} action(s) selectionnee(s)</p>
-          {OWNER_OPTIONS.map(owner => (
+          {ownerOptions.map(owner => (
             <button
               key={owner}
               onClick={() => bulkAssign(owner)}
@@ -483,6 +849,9 @@ export default function ActionsPage() {
               {owner}
             </button>
           ))}
+          {ownerOptions.length === 0 && (
+            <p className="text-sm text-gray-400 py-2">Aucun responsable connu. Les responsables apparaissent automatiquement.</p>
+          )}
         </div>
       </Modal>
 
@@ -496,6 +865,7 @@ export default function ActionsPage() {
               onClick={() => bulkChangeStatus(opt.value)}
               className="w-full text-left px-4 py-2.5 rounded-lg hover:bg-blue-50 text-sm font-medium text-gray-700 transition"
             >
+              <span className={`inline-block w-2.5 h-2.5 rounded-full mr-2 ${KANBAN_DOT[opt.value]}`} />
               {opt.label}
             </button>
           ))}
@@ -512,7 +882,7 @@ export default function ActionsPage() {
                 <p className="text-xs text-gray-500">Priorite</p>
                 <Badge status={PRIORITY_BADGE[detailAction.priorite]}>{PRIORITY_LABEL[detailAction.priorite] || detailAction.priorite}</Badge>
               </div>
-              <div><p className="text-xs text-gray-500">Statut</p><span className="text-sm font-medium">{STATUT_LABELS[detailAction.statut]}</span></div>
+              <div><p className="text-xs text-gray-500">Statut</p><span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${STATUT_PILL[detailAction.statut] || STATUT_PILL.backlog}`}>{STATUT_LABELS[detailAction.statut]}</span></div>
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div><p className="text-xs text-gray-500">Site</p><p className="text-sm font-medium">{detailAction.site_nom}</p></div>

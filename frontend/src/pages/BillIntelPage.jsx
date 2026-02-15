@@ -12,7 +12,9 @@ import {
   importInvoicesCsv,
   resolveBillingInsight,
 } from '../services/api';
-import { Card, CardBody, Badge, Button, TrustBadge, PageShell } from '../ui';
+import { Card, CardBody, Badge, Button, TrustBadge, PageShell, EmptyState } from '../ui';
+import { SkeletonCard } from '../ui/Skeleton';
+import { useToast } from '../ui/ToastProvider';
 import {
   FileText, AlertTriangle, CheckCircle, Upload, Play, Download,
   DollarSign, Zap, TrendingUp, RefreshCw, CheckCircle2,
@@ -69,6 +71,7 @@ const INSIGHT_FILTER_OPTIONS = [
 
 export default function BillIntelPage() {
   const { isExpert } = useExpertMode();
+  const { toast } = useToast();
   const [summary, setSummary] = useState(null);
   const [insights, setInsights] = useState([]);
   const [invoices, setInvoices] = useState([]);
@@ -90,7 +93,7 @@ export default function BillIntelPage() {
       setInsights(i.insights || []);
       setInvoices(inv.invoices || []);
     } catch {
-      // API may not be running
+      toast('Erreur lors du chargement de la facturation', 'error');
     }
     setLoading(false);
   }

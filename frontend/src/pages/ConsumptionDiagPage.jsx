@@ -14,6 +14,7 @@ import {
   runConsumptionDiagnose,
   seedDemoConsumption,
   patchConsumptionInsight,
+  getFlexMini,
 } from '../services/api';
 import { Card, CardBody, Badge, Button, PageShell, Drawer, Tooltip, Tabs } from '../ui';
 import { useToast } from '../ui/ToastProvider';
@@ -65,6 +66,7 @@ const DRAWER_TABS = [
   { id: 'evidence', label: 'Evidence' },
   { id: 'methode', label: 'Methode' },
   { id: 'actions', label: 'Actions' },
+  { id: 'flex', label: 'Flex' },
 ];
 
 // ---- Exported helpers (testable) ----
@@ -296,6 +298,104 @@ function DrawerRow({ label, children }) {
   );
 }
 
+// ---- Flex Tab ----
+
+const LEVER_ICONS = { hvac: '🌡️', irve: '🔌', froid: '❄️' };
+const LEVER_COLORS = {
+  hvac: 'border-orange-200 bg-orange-50',
+  irve: 'border-blue-200 bg-blue-50',
+  froid: 'border-cyan-200 bg-cyan-50',
+};
+
+function FlexScoreRing({ score }) {
+  const r = 28;
+  const c = 2 * Math.PI * r;
+  const pct = Math.min(100, Math.max(0, score));
+  const color = pct >= 60 ? '#22c55e' : pct >= 30 ? '#f59e0b' : '#94a3b8';
+  return (
+    <svg width="72" height="72" className="shrink-0">
+      <circle cx="36" cy="36" r={r} fill="none" stroke="#f1f5f9" strokeWidth="6" />
+      <circle
+        cx="36" cy="36" r={r} fill="none" stroke={color} strokeWidth="6"
+        strokeDasharray={c} strokeDashoffset={c * (1 - pct / 100)}
+        strokeLinecap="round" transform="rotate(-90 36 36)"
+      />
+      <text x="36" y="40" textAnchor="middle" className="text-base font-bold" fill={color}>{pct}</text>
+    </svg>
+  );
+}
+
+function FlexTab({ siteId }) {
+  const [flex, setFlex] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!siteId) return;
+    setLoading(true);
+    getFlexMini(siteId)
+      .then(setFlex)
+      .catch(() => setFlex(null))
+      .finally(() => setLoading(false));
+  }, [siteId]);
+
+  if (loading) return <p className="text-sm text-gray-400 text-center py-6">Calcul du potentiel flex...</p>;
+  if (!flex || flex.error) return <p className="text-sm text-gray-400 text-center py-6">Potentiel flex non disponible.</p>;
+
+  return (
+    <div className="space-y-4">
+      {/* Score header */}
+      <div className="flex items-center gap-4">
+        <FlexScoreRing score={flex.flex_potential_score} />
+        <div>
+          <p className="text-sm font-semibold text-gray-800">Potentiel flexibilite</p>
+          <p className="text-xs text-gray-500">
+            Score {flex.flex_potential_score}/100
+            {flex.inputs_used?.insights_count > 0 && ` · ${flex.inputs_used.insights_count} insight(s) analyses`}
+            {flex.inputs_used?.archetype && ` · ${flex.inputs_used.archetype}`}
+          </p>
+        </div>
+      </div>
+
+      {/* Levers */}
+      {flex.levers.map((lever) => (
+        <div
+          key={lever.id}
+          className={`p-3 rounded-lg border ${LEVER_COLORS[lever.id] || 'border-gray-200 bg-gray-50'}`}
+        >
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-base">{LEVER_ICONS[lever.id] || '⚡'}</span>
+            <span className="text-sm font-semibold text-gray-800">{lever.label}</span>
+            <span className={`ml-auto text-xs font-bold ${
+              lever.score >= 50 ? 'text-green-700' : lever.score >= 20 ? 'text-amber-700' : 'text-gray-400'
+            }`}>
+              {lever.score}/100
+            </span>
+          </div>
+          <p className="text-xs text-gray-600">{lever.justification}</p>
+          {(lever.estimate_kw || lever.estimate_kwh_year) && (
+            <div className="flex gap-3 mt-1.5">
+              {lever.estimate_kw && (
+                <span className="text-[10px] text-gray-500 bg-white/60 px-1.5 py-0.5 rounded">
+                  ~{lever.estimate_kw} kW effacable
+                </span>
+              )}
+              {lever.estimate_kwh_year && (
+                <span className="text-[10px] text-gray-500 bg-white/60 px-1.5 py-0.5 rounded">
+                  ~{lever.estimate_kwh_year.toLocaleString()} kWh/an
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      ))}
+
+      {flex.levers.every(l => l.score === 0) && (
+        <p className="text-xs text-gray-400 text-center">Aucun levier flex identifie pour ce site.</p>
+      )}
+    </div>
+  );
+}
+
 // ---- Evidence Drawer ----
 
 function EvidenceDrawer({ insight, open, onClose, onStatusChange, onCreateAction, onOpenExplorer }) {
@@ -360,6 +460,9 @@ function EvidenceDrawer({ insight, open, onClose, onStatusChange, onCreateAction
             )}
           </div>
         )}
+
+        {/* Tab: Flex potential */}
+        {tab === 'flex' && <FlexTab siteId={insight.site_id} />}
 
         {/* CTAs — always visible */}
         <div className="pt-3 border-t border-gray-100 space-y-2">

@@ -1,8 +1,8 @@
 /**
- * PROMEOS - Notifications & Alert Center V2 (/notifications)
- * PageShell + KpiCard + FilterBar + useToast + Expert Mode
+ * PROMEOS - Alert Inbox (/notifications) V3 — Top Pages WOW
+ * Triage tabs, detail drawer, bulk actions always visible, neutral design.
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   getNotificationsList,
@@ -10,20 +10,16 @@ import {
   patchNotification,
   getNotificationsSummary,
 } from '../services/api';
-import { Card, CardBody, Badge, Button, PageShell, KpiCard, FilterBar, Select } from '../ui';
+import { Card, Badge, Button, PageShell, MetricCard, StatusDot, EmptyState, ErrorState, SkeletonCard, Pagination, Tabs, Drawer } from '../ui';
+import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { useToast } from '../ui/ToastProvider';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import {
-  Bell, AlertTriangle, AlertCircle, Info, RefreshCw,
-  ExternalLink, Eye, X, Trash2,
+  Bell, RefreshCw, ExternalLink, Eye, X, Trash2, Search, ArrowRight, Clock,
 } from 'lucide-react';
-import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 
-const SEVERITY_META = {
-  critical: { label: 'Critique', color: 'bg-red-100 text-red-800', icon: AlertCircle, badge: 'crit', kpiColor: 'bg-red-600' },
-  warn:     { label: 'Attention', color: 'bg-orange-100 text-orange-800', icon: AlertTriangle, badge: 'warn', kpiColor: 'bg-amber-600' },
-  info:     { label: 'Info', color: 'bg-blue-100 text-blue-800', icon: Info, badge: 'info', kpiColor: 'bg-blue-600' },
-};
+const SEVERITY_STATUS = { critical: 'crit', warn: 'warn', info: 'info' };
+const SEVERITY_LABEL = { critical: 'Critique', warn: 'Attention', info: 'Info' };
 
 const SOURCE_LABELS = {
   compliance: 'Conformite',
@@ -39,6 +35,13 @@ const STATUS_LABELS = {
   dismissed: 'Ignore',
 };
 
+const TRIAGE_TABS = [
+  { id: 'all', label: 'Toutes' },
+  { id: 'new', label: 'Nouvelles' },
+  { id: 'read', label: 'Lues' },
+  { id: 'dismissed', label: 'Ignorees' },
+];
+
 export default function NotificationsPage() {
   const navigate = useNavigate();
   const { isExpert } = useExpertMode();
@@ -46,42 +49,43 @@ export default function NotificationsPage() {
   const [events, setEvents] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [syncing, setSyncing] = useState(false);
-  const [filterSeverity, setFilterSeverity] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
-  const [filterSource, setFilterSource] = useState('');
   const [selected, setSelected] = useState(new Set());
+  const [searchQuery, setSearchQuery] = useState('');
+  const [triageTab, setTriageTab] = useState('all');
+  const [filterSource, setFilterSource] = useState('');
+  const [page, setPage] = useState(1);
+  const [drawerEvent, setDrawerEvent] = useState(null);
+  const pageSize = 20;
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
-      const params = {};
-      if (filterSeverity) params.severity = filterSeverity;
-      if (filterStatus) params.status = filterStatus;
-      if (filterSource) params.source_type = filterSource;
       const [evts, sum] = await Promise.all([
-        getNotificationsList(params),
+        getNotificationsList({}),
         getNotificationsSummary(),
       ]);
       setEvents(evts);
       setSummary(sum);
-    } catch (e) {
-      toast('Erreur chargement alertes', 'error');
+    } catch {
+      setError('Erreur de chargement des alertes');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  useEffect(() => { load(); }, [filterSeverity, filterStatus, filterSource]);
+  useEffect(() => { load(); }, [load]);
 
   const handleSync = async () => {
     setSyncing(true);
     try {
       const r = await syncNotifications();
-      toast(`Sync terminee: ${r.created} creees, ${r.updated} maj, ${r.skipped} inchangees`, 'success');
+      toast(`Sync: ${r.created} creees, ${r.updated} maj`, 'success');
       await load();
     } catch (e) {
-      toast('Erreur: ' + (e.response?.data?.detail || e.message), 'error');
+      toast('Erreur synchronisation', 'error');
     } finally {
       setSyncing(false);
     }
@@ -91,26 +95,22 @@ export default function NotificationsPage() {
     try {
       await patchNotification(id, { status });
       setEvents(prev => prev.map(e => e.id === id ? { ...e, status } : e));
-      toast(`Alerte ${status === 'read' ? 'marquee lue' : 'ignoree'}`, 'success');
-    } catch (e) {
+      // Update drawer if open
+      if (drawerEvent?.id === id) setDrawerEvent(prev => ({ ...prev, status }));
+    } catch {
       toast('Erreur mise a jour', 'error');
     }
   };
 
-  const handleBulkDismiss = async () => {
+  const handleBulkAction = async (status) => {
     const ids = Array.from(selected);
-    for (const id of ids) {
-      try {
-        await patchNotification(id, { status: 'dismissed' });
-      } catch {}
-    }
-    setEvents(prev => prev.map(e => ids.includes(e.id) ? { ...e, status: 'dismissed' } : e));
+    if (ids.length === 0) return;
+    // Parallel batch
+    await Promise.allSettled(ids.map(id => patchNotification(id, { status })));
+    setEvents(prev => prev.map(e => ids.includes(e.id) ? { ...e, status } : e));
     setSelected(new Set());
-    toast(`${ids.length} alerte(s) ignoree(s)`, 'success');
+    toast(`${ids.length} alerte(s) ${status === 'dismissed' ? 'ignoree(s)' : 'marquee(s) lue(s)'}`, 'success');
   };
-
-  const hasFilters = filterSeverity || filterStatus || filterSource;
-  const resetFilters = () => { setFilterSeverity(''); setFilterStatus(''); setFilterSource(''); };
 
   const toggleSelect = (id) => {
     setSelected(prev => {
@@ -120,170 +120,246 @@ export default function NotificationsPage() {
     });
   };
 
-  const getSevMeta = (severity) => SEVERITY_META[severity] || SEVERITY_META.info;
+  const toggleSelectAll = () => {
+    if (selected.size === pageData.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(pageData.map(e => e.id)));
+    }
+  };
+
+  // Triage + source + search filters
+  const filteredEvents = useMemo(() => {
+    let list = events;
+
+    // Triage tab
+    if (triageTab !== 'all') {
+      list = list.filter(e => e.status === triageTab);
+    }
+
+    // Source filter
+    if (filterSource) {
+      list = list.filter(e => e.source_type === filterSource);
+    }
+
+    // Search
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(e =>
+        e.title.toLowerCase().includes(q) || (e.message || '').toLowerCase().includes(q)
+      );
+    }
+
+    return list;
+  }, [events, triageTab, filterSource, searchQuery]);
+
+  const totalFiltered = filteredEvents.length;
+  const pageData = filteredEvents.slice((page - 1) * pageSize, page * pageSize);
+
+  // Tab counts
+  const tabsWithCounts = useMemo(() => {
+    const counts = { all: events.length, new: 0, read: 0, dismissed: 0 };
+    for (const e of events) { counts[e.status] = (counts[e.status] || 0) + 1; }
+    return TRIAGE_TABS.map(t => ({
+      ...t,
+      label: `${t.label} (${counts[t.id] || 0})`,
+    }));
+  }, [events]);
+
+  if (loading) {
+    return (
+      <PageShell icon={Bell} title="Alertes" subtitle="Chargement...">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <SkeletonCard /><SkeletonCard /><SkeletonCard />
+        </div>
+      </PageShell>
+    );
+  }
+
+  if (error) {
+    return (
+      <PageShell icon={Bell} title="Alertes">
+        <ErrorState title="Erreur" message={error} onRetry={load} />
+      </PageShell>
+    );
+  }
 
   return (
     <PageShell
       icon={Bell}
       title="Alertes"
-      subtitle="Centre d'alertes : conformite, factures, contrats, conso, actions"
+      subtitle={`${events.length} alertes${events.filter(e => e.status === 'new').length > 0 ? ` · ${events.filter(e => e.status === 'new').length} nouvelles` : ''}`}
       actions={
-        <>
-          {isExpert && selected.size > 0 && (
-            <Button variant="secondary" size="sm" onClick={handleBulkDismiss}>
-              <Trash2 size={14} /> Ignorer {selected.size}
-            </Button>
-          )}
-          <Button size="sm" onClick={handleSync} disabled={syncing}>
-            <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />
-            {syncing ? 'Sync...' : 'Synchroniser'}
-          </Button>
-        </>
+        <Button size="sm" onClick={handleSync} disabled={syncing}>
+          <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />
+          {syncing ? 'Sync...' : 'Synchroniser'}
+        </Button>
       }
     >
-      {/* Summary KPIs */}
+      {/* Summary KPIs — neutral MetricCards */}
       {summary && (
-        <div className="grid grid-cols-3 gap-4">
-          <KpiCard
-            icon={AlertCircle}
-            title="Critique"
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <MetricCard
+            label="Critique"
             value={summary.by_severity?.critical || 0}
-            sub={summary.new_critical > 0 ? `${summary.new_critical} nouveau${summary.new_critical > 1 ? 'x' : ''}` : undefined}
-            color="bg-red-600"
+            sub={summary.new_critical > 0 ? `${summary.new_critical} nouvelle(s)` : undefined}
+            status="crit"
           />
-          <KpiCard
-            icon={AlertTriangle}
-            title="Attention"
+          <MetricCard
+            label="Attention"
             value={summary.by_severity?.warn || 0}
-            sub={summary.new_warn > 0 ? `${summary.new_warn} nouveau${summary.new_warn > 1 ? 'x' : ''}` : undefined}
-            color="bg-amber-600"
+            sub={summary.new_warn > 0 ? `${summary.new_warn} nouvelle(s)` : undefined}
+            status="warn"
           />
-          <KpiCard
-            icon={Info}
-            title="Info"
+          <MetricCard
+            label="Info"
             value={summary.by_severity?.info || 0}
-            color="bg-blue-600"
+            status="info"
           />
         </div>
       )}
 
-      {/* Filters */}
-      <FilterBar onReset={hasFilters ? resetFilters : undefined} count={events.length}>
-        <select
-          value={filterSeverity}
-          onChange={(e) => setFilterSeverity(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">Toutes severites</option>
-          <option value="critical">Critique</option>
-          <option value="warn">Attention</option>
-          <option value="info">Info</option>
-        </select>
-        <select
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">Tous statuts</option>
-          <option value="new">Nouveau</option>
-          <option value="read">Lu</option>
-          <option value="dismissed">Ignore</option>
-        </select>
+      {/* Triage tabs */}
+      <Tabs
+        tabs={tabsWithCounts}
+        active={triageTab}
+        onChange={(id) => { setTriageTab(id); setPage(1); setSelected(new Set()); }}
+      />
+
+      {/* Search + source filter + bulk actions */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="relative flex-1 max-w-xs">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Rechercher..."
+            value={searchQuery}
+            onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+            className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm placeholder:text-gray-400
+              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>
         <select
           value={filterSource}
-          onChange={(e) => setFilterSource(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          onChange={(e) => { setFilterSource(e.target.value); setPage(1); }}
+          className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white
+            focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">Toutes sources</option>
-          <option value="compliance">Conformite</option>
-          <option value="billing">Facturation</option>
-          <option value="purchase">Achats</option>
-          <option value="consumption">Consommation</option>
-          <option value="action_hub">Actions</option>
+          {Object.entries(SOURCE_LABELS).map(([k, v]) => (
+            <option key={k} value={k}>{v}</option>
+          ))}
         </select>
-      </FilterBar>
+
+        {/* Bulk actions — always visible when items selected */}
+        {selected.size > 0 && (
+          <div className="flex items-center gap-2 ml-auto">
+            <span className="text-xs text-gray-500">{selected.size} selectionnee(s)</span>
+            <Button variant="secondary" size="sm" onClick={() => handleBulkAction('read')}>
+              <Eye size={14} /> Marquer lues
+            </Button>
+            <Button variant="secondary" size="sm" onClick={() => handleBulkAction('dismissed')}>
+              <Trash2 size={14} /> Ignorer
+            </Button>
+          </div>
+        )}
+      </div>
 
       {/* Events Table */}
-      {loading ? (
-        <div className="text-center py-16 text-gray-400">Chargement...</div>
-      ) : events.length === 0 ? (
-        <Card>
-          <CardBody className="text-center py-12">
-            <Bell size={32} className="mx-auto text-gray-300 mb-4" />
-            <p className="text-gray-500 text-lg mb-2">Aucune alerte</p>
-            <p className="text-gray-400 text-sm mb-6">
-              Synchronisez pour detecter les alertes depuis toutes les briques.
-            </p>
-            <Button onClick={handleSync} disabled={syncing}>Synchroniser</Button>
-          </CardBody>
-        </Card>
+      {totalFiltered === 0 ? (
+        <EmptyState
+          icon={Bell}
+          title={searchQuery.trim() || filterSource ? 'Aucune alerte pour ces filtres' : 'Aucune alerte'}
+          text={searchQuery.trim() || filterSource
+            ? 'Modifiez vos filtres ou reinitialiser la vue.'
+            : 'Synchronisez pour detecter les alertes depuis toutes les briques.'
+          }
+          ctaLabel={searchQuery.trim() || filterSource ? 'Reinitialiser' : 'Synchroniser'}
+          onCta={searchQuery.trim() || filterSource
+            ? () => { setSearchQuery(''); setFilterSource(''); }
+            : handleSync
+          }
+        />
       ) : (
         <Card>
           <Table>
             <Thead>
               <tr>
-                {isExpert && <Th className="w-8"><span className="sr-only">Select</span></Th>}
-                <Th>Severite</Th>
+                <Th className="w-8">
+                  <input
+                    type="checkbox"
+                    checked={selected.size === pageData.length && pageData.length > 0}
+                    onChange={toggleSelectAll}
+                    className="rounded border-gray-300"
+                    aria-label="Selectionner tout"
+                  />
+                </Th>
+                <Th className="w-8">Sev.</Th>
                 <Th>Titre</Th>
                 <Th>Source</Th>
-                <Th>Impact</Th>
+                <Th className="text-right">Impact</Th>
                 <Th>Echeance</Th>
                 <Th>Statut</Th>
                 {isExpert && <Th>ID</Th>}
-                <Th className="text-right">Actions</Th>
+                <Th className="text-right w-24">Actions</Th>
               </tr>
             </Thead>
             <Tbody>
-              {events.map((evt) => {
-                const meta = getSevMeta(evt.severity);
-                const Icon = meta.icon;
+              {pageData.map((evt) => {
+                const isNew = evt.status === 'new';
                 return (
-                  <Tr key={evt.id}>
-                    {isExpert && (
-                      <Td>
-                        <input
-                          type="checkbox"
-                          checked={selected.has(evt.id)}
-                          onChange={() => toggleSelect(evt.id)}
-                          className="rounded border-gray-300"
-                        />
-                      </Td>
-                    )}
+                  <Tr
+                    key={evt.id}
+                    className={`${isNew ? 'bg-gray-50/50' : ''} cursor-pointer`}
+                    onClick={() => setDrawerEvent(evt)}
+                  >
+                    <Td onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={selected.has(evt.id)}
+                        onChange={() => toggleSelect(evt.id)}
+                        className="rounded border-gray-300"
+                      />
+                    </Td>
                     <Td>
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${meta.color}`}>
-                        <Icon size={12} /> {meta.label}
-                      </span>
+                      <StatusDot status={SEVERITY_STATUS[evt.severity] || 'info'} />
                     </Td>
                     <Td className="max-w-md">
-                      <p className="font-medium text-gray-800 truncate">{evt.title}</p>
-                      {evt.message && (
-                        <p className="text-xs text-gray-500 mt-0.5 truncate">{evt.message}</p>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {isNew && <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />}
+                        <div className="min-w-0">
+                          <p className={`truncate ${isNew ? 'font-semibold text-gray-900' : 'font-medium text-gray-800'}`}>{evt.title}</p>
+                          {evt.message && (
+                            <p className="text-xs text-gray-500 mt-0.5 truncate">{evt.message}</p>
+                          )}
+                        </div>
+                      </div>
                     </Td>
                     <Td>
-                      <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">
+                      <span className="text-xs text-gray-500">
                         {SOURCE_LABELS[evt.source_type] || evt.source_type}
                       </span>
                     </Td>
-                    <Td className="text-red-600 font-medium">
+                    <Td className="text-right text-sm font-medium text-gray-700">
                       {evt.estimated_impact_eur ? `${Math.round(evt.estimated_impact_eur)} EUR` : '-'}
                     </Td>
-                    <Td className="text-gray-600">{evt.due_date || '-'}</Td>
+                    <Td className="text-xs text-gray-500">{evt.due_date || '-'}</Td>
                     <Td>
-                      <Badge status={evt.status === 'new' ? 'warn' : evt.status === 'read' ? 'neutral' : 'ok'}>
+                      <span className={`text-xs ${isNew ? 'font-medium text-gray-900' : 'text-gray-500'}`}>
                         {STATUS_LABELS[evt.status] || evt.status}
-                      </Badge>
+                      </span>
                     </Td>
                     {isExpert && (
                       <Td className="text-xs text-gray-400 font-mono">{evt.id}</Td>
                     )}
-                    <Td className="text-right">
+                    <Td className="text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1">
                         {evt.deeplink_path && (
                           <button
                             onClick={() => navigate(evt.deeplink_path)}
-                            className="p-1 text-blue-500 hover:bg-blue-50 rounded"
-                            title="Voir"
+                            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded transition-colors"
+                            title="Ouvrir"
+                            aria-label="Ouvrir le lien"
                           >
                             <ExternalLink size={14} />
                           </button>
@@ -291,8 +367,9 @@ export default function NotificationsPage() {
                         {evt.status === 'new' && (
                           <button
                             onClick={() => handlePatch(evt.id, 'read')}
-                            className="p-1 text-green-500 hover:bg-green-50 rounded"
+                            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded transition-colors"
                             title="Marquer lu"
+                            aria-label="Marquer comme lu"
                           >
                             <Eye size={14} />
                           </button>
@@ -300,8 +377,9 @@ export default function NotificationsPage() {
                         {evt.status !== 'dismissed' && (
                           <button
                             onClick={() => handlePatch(evt.id, 'dismissed')}
-                            className="p-1 text-gray-400 hover:bg-gray-100 rounded"
+                            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded transition-colors"
                             title="Ignorer"
+                            aria-label="Ignorer cette alerte"
                           >
                             <X size={14} />
                           </button>
@@ -313,8 +391,104 @@ export default function NotificationsPage() {
               })}
             </Tbody>
           </Table>
+          {totalFiltered > pageSize && (
+            <div className="flex items-center justify-end px-4 py-2 border-t border-gray-100">
+              <Pagination page={page} pageSize={pageSize} total={totalFiltered} onChange={setPage} />
+            </div>
+          )}
         </Card>
       )}
+
+      {/* Detail Drawer */}
+      <Drawer
+        open={!!drawerEvent}
+        onClose={() => setDrawerEvent(null)}
+        title="Detail de l'alerte"
+        wide
+      >
+        {drawerEvent && (
+          <div className="space-y-6">
+            {/* Header */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <StatusDot status={SEVERITY_STATUS[drawerEvent.severity] || 'info'} />
+                <span className="text-xs font-medium text-gray-500 uppercase">
+                  {SEVERITY_LABEL[drawerEvent.severity] || drawerEvent.severity}
+                </span>
+                <span className="text-xs text-gray-400">·</span>
+                <span className="text-xs text-gray-500">
+                  {STATUS_LABELS[drawerEvent.status] || drawerEvent.status}
+                </span>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">{drawerEvent.title}</h3>
+            </div>
+
+            {/* Message */}
+            {drawerEvent.message && (
+              <div>
+                <p className="text-xs text-gray-500 font-medium uppercase mb-1">Description</p>
+                <p className="text-sm text-gray-700">{drawerEvent.message}</p>
+              </div>
+            )}
+
+            {/* Metadata */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-gray-500 font-medium uppercase mb-1">Source</p>
+                <p className="text-sm text-gray-900">{SOURCE_LABELS[drawerEvent.source_type] || drawerEvent.source_type}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 font-medium uppercase mb-1">Impact estime</p>
+                <p className="text-sm text-gray-900">
+                  {drawerEvent.estimated_impact_eur ? `${Math.round(drawerEvent.estimated_impact_eur)} EUR` : 'Non estime'}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 font-medium uppercase mb-1">Echeance</p>
+                <p className="text-sm text-gray-900">{drawerEvent.due_date || 'Non definie'}</p>
+              </div>
+              {drawerEvent.site_nom && (
+                <div>
+                  <p className="text-xs text-gray-500 font-medium uppercase mb-1">Site</p>
+                  <p className="text-sm text-gray-900">{drawerEvent.site_nom}</p>
+                </div>
+              )}
+            </div>
+
+            {isExpert && (
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500 font-medium uppercase mb-1">Debug</p>
+                <p className="text-xs font-mono text-gray-400">ID: {drawerEvent.id}</p>
+                {drawerEvent.source_id && (
+                  <p className="text-xs font-mono text-gray-400">Source ID: {drawerEvent.source_id}</p>
+                )}
+                {drawerEvent.created_at && (
+                  <p className="text-xs font-mono text-gray-400">Cree: {drawerEvent.created_at}</p>
+                )}
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
+              {drawerEvent.deeplink_path && (
+                <Button size="sm" onClick={() => { setDrawerEvent(null); navigate(drawerEvent.deeplink_path); }}>
+                  <ExternalLink size={14} /> Ouvrir
+                </Button>
+              )}
+              {drawerEvent.status === 'new' && (
+                <Button variant="secondary" size="sm" onClick={() => handlePatch(drawerEvent.id, 'read')}>
+                  <Eye size={14} /> Marquer lu
+                </Button>
+              )}
+              {drawerEvent.status !== 'dismissed' && (
+                <Button variant="secondary" size="sm" onClick={() => handlePatch(drawerEvent.id, 'dismissed')}>
+                  <X size={14} /> Ignorer
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+      </Drawer>
     </PageShell>
   );
 }

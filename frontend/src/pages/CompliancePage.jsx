@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldCheck, AlertTriangle, XCircle, HelpCircle, RefreshCw, Filter, ChevronDown, ChevronRight } from 'lucide-react';
 import { getComplianceSummary, getComplianceSites, recomputeComplianceRules } from '../services/api';
+import { useToast } from '../ui/ToastProvider';
 
 const STATUS_CONFIG = {
   OK: { label: 'Conforme', color: 'text-green-700 bg-green-100', icon: ShieldCheck },
@@ -172,6 +173,7 @@ function SiteRow({ site }) {
 }
 
 export default function CompliancePage() {
+  const { toast } = useToast();
   const [summary, setSummary] = useState(null);
   const [sites, setSites] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -193,7 +195,7 @@ export default function CompliancePage() {
     ]).then(([s, st]) => {
       setSummary(s);
       setSites(st);
-    }).catch(() => {})
+    }).catch(() => toast('Erreur lors du chargement de la conformite', 'error'))
       .finally(() => setLoading(false));
   };
 
@@ -205,7 +207,7 @@ export default function CompliancePage() {
       await recomputeComplianceRules();
       loadData();
     } catch {
-      // silent
+      toast('Erreur lors du recalcul des regles', 'error');
     } finally {
       setRecomputing(false);
     }

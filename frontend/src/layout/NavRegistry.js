@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Building2, ShieldCheck, FileText,
   Zap, ListChecks, Activity, Import, Users, Receipt,
   BookOpen, ShoppingCart, Search, Link2, Eye, Bell, Lock,
-  BarChart3,
+  Target,
 } from 'lucide-react';
 
 export const ROUTE_MODULE_MAP = {
@@ -18,11 +18,14 @@ export const ROUTE_MODULE_MAP = {
   '/actions': 'actions',
   '/patrimoine': 'patrimoine',
   '/consommations': 'consommations',
+  '/consommations/explorer': 'consommations',
+  '/consommations/import': 'consommations',
+  '/consommations/kb': 'consommations',
   '/diagnostic-conso': 'diagnostic',
   '/bill-intel': 'billing',
   '/achat-energie': 'purchase',
+  '/achat-assistant': 'purchase',
   '/monitoring': 'monitoring',
-  '/explorer': 'ems',
   '/import': null,
   '/connectors': null,
   '/segmentation': null,
@@ -51,12 +54,12 @@ export const NAV_SECTIONS = [
     label: 'Analyse',
     items: [
       { to: '/patrimoine',       icon: Building2,     label: 'Patrimoine', keywords: ['sites', 'batiments', 'immobilier'] },
-      { to: '/consommations',    icon: Zap,           label: 'Consommations', keywords: ['conso', 'energie', 'import'] },
+      { to: '/consommations', icon: Zap, label: 'Consommations', keywords: ['conso', 'energie', 'import', 'explorer', 'ems', 'timeseries'] },
       { to: '/diagnostic-conso', icon: Search,        label: 'Diagnostic', keywords: ['anomalies', 'diagnostic', 'analyse'] },
       { to: '/bill-intel',       icon: Receipt,       label: 'Facturation', keywords: ['factures', 'billing', 'invoices'] },
       { to: '/achat-energie',    icon: ShoppingCart,   label: 'Achats energie', keywords: ['achat', 'purchase', 'scenarios'] },
+      { to: '/achat-assistant',  icon: Target,         label: 'Assistant Achat', keywords: ['assistant', 'wizard', 'rfp', 'arenh', 'corridor'] },
       { to: '/monitoring',       icon: Activity,      label: 'Performance', badgeKey: 'monitoring', keywords: ['monitoring', 'kpi', 'puissance'] },
-      { to: '/explorer',        icon: BarChart3,     label: 'Explorateur Conso', keywords: ['explorer', 'ems', 'timeseries', 'signature'] },
     ],
   },
   {

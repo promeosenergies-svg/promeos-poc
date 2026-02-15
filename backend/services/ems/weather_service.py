@@ -100,35 +100,59 @@ def get_weather_multi(
     site_ids: List[int],
     date_from: date_type,
     date_to: date_type,
-) -> List[Dict]:
-    """Get averaged daily weather across multiple sites.
-    Returns one series with averaged temperatures per day.
+) -> Dict:
+    """Get daily weather across multiple sites with envelope (avg/min/max across sites).
+
+    Returns::
+
+        {
+          "days": [{date, temp_avg_c, temp_min_c, temp_max_c,
+                    envelope_min_c, envelope_max_c, source}],
+          "meta": {n_sites, multi_city_risk}
+        }
     """
     if not site_ids:
-        return []
-    # Use first site as primary, average across all
+        return {"days": [], "meta": {"n_sites": 0, "multi_city_risk": False}}
+
     all_data = {}
+    site_latitudes = []
     for sid in site_ids:
         weather = get_weather(db, sid, date_from, date_to)
+        site = db.query(Site).filter(Site.id == sid).first()
+        if site and site.latitude:
+            site_latitudes.append(site.latitude)
         for w in weather:
             d = w["date"]
             if d not in all_data:
-                all_data[d] = {"temps": [], "mins": [], "maxs": []}
-            all_data[d]["temps"].append(w["temp_avg_c"])
+                all_data[d] = {"avgs": [], "mins": [], "maxs": []}
+            all_data[d]["avgs"].append(w["temp_avg_c"])
             all_data[d]["mins"].append(w["temp_min_c"])
             all_data[d]["maxs"].append(w["temp_max_c"])
 
-    result = []
+    # Detect multi-city risk: latitude spread > 2 degrees (~220 km)
+    multi_city_risk = False
+    if len(site_latitudes) >= 2:
+        lat_spread = max(site_latitudes) - min(site_latitudes)
+        multi_city_risk = lat_spread > 2.0
+
+    days = []
     for d in sorted(all_data.keys()):
         entry = all_data[d]
-        result.append({
+        avgs = entry["avgs"]
+        days.append({
             "date": d,
-            "temp_avg_c": round(sum(entry["temps"]) / len(entry["temps"]), 1),
+            "temp_avg_c": round(sum(avgs) / len(avgs), 1),
             "temp_min_c": round(sum(entry["mins"]) / len(entry["mins"]), 1),
             "temp_max_c": round(sum(entry["maxs"]) / len(entry["maxs"]), 1),
+            "envelope_min_c": round(min(avgs), 1),
+            "envelope_max_c": round(max(avgs), 1),
             "source": "demo_avg" if len(site_ids) > 1 else "demo",
         })
-    return result
+
+    return {
+        "days": days,
+        "meta": {"n_sites": len(site_ids), "multi_city_risk": multi_city_risk},
+    }
 
 
 def _generate_demo_weather(site_id: int, d: date_type, latitude: float) -> EmsWeatherCache:

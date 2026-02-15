@@ -445,10 +445,14 @@ def evaluate_organisation(db: Session, org_id: int) -> dict:
     }
 
 
-def _resolve_site_ids(db: Session, org_id: int, entity_id: int = None, site_id: int = None) -> list:
-    """Resolve site IDs from scope filters (site > entity > org)."""
+def _resolve_site_ids(db: Session, org_id: int, entity_id: int = None,
+                      site_id: int = None, portefeuille_id: int = None) -> list:
+    """Resolve site IDs from scope filters (site > portefeuille > entity > org)."""
     if site_id:
         return [site_id]
+    if portefeuille_id:
+        rows = db.query(Site.id).filter(Site.portefeuille_id == portefeuille_id).all()
+        return [row[0] for row in rows]
     q = db.query(Site.id).join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
     if entity_id:
         q = q.filter(Portefeuille.entite_juridique_id == entity_id)
@@ -458,9 +462,10 @@ def _resolve_site_ids(db: Session, org_id: int, entity_id: int = None, site_id: 
     return [row[0] for row in q.all()]
 
 
-def get_summary(db: Session, org_id: int, entity_id: int = None, site_id: int = None) -> dict:
-    """Aggregate compliance findings for an org/entity/site into a summary."""
-    site_ids = _resolve_site_ids(db, org_id, entity_id, site_id)
+def get_summary(db: Session, org_id: int, entity_id: int = None,
+                site_id: int = None, portefeuille_id: int = None) -> dict:
+    """Aggregate compliance findings for an org/entity/portefeuille/site into a summary."""
+    site_ids = _resolve_site_ids(db, org_id, entity_id, site_id, portefeuille_id=portefeuille_id)
 
     _empty = {
         "total_sites": 0,
@@ -553,9 +558,10 @@ def get_summary(db: Session, org_id: int, entity_id: int = None, site_id: int = 
 
 def get_sites_findings(db: Session, org_id: int, regulation: str = None,
                        status: str = None, severity: str = None,
-                       entity_id: int = None, site_id: int = None) -> List[dict]:
+                       entity_id: int = None, site_id: int = None,
+                       portefeuille_id: int = None) -> List[dict]:
     """Return per-site findings list with filters."""
-    site_ids = _resolve_site_ids(db, org_id, entity_id, site_id)
+    site_ids = _resolve_site_ids(db, org_id, entity_id, site_id, portefeuille_id=portefeuille_id)
 
     if not site_ids:
         return []
@@ -615,6 +621,7 @@ def get_compliance_bundle(
     org_id: int,
     entity_id: int = None,
     site_id: int = None,
+    portefeuille_id: int = None,
     regulation: str = None,
     status: str = None,
     severity: str = None,
@@ -622,10 +629,12 @@ def get_compliance_bundle(
     """Single-request bundle for Conformite cockpit. org_id REQUIRED."""
     trace_id = str(uuid.uuid4())[:12]
     try:
-        summary = get_summary(db, org_id, entity_id=entity_id, site_id=site_id)
+        summary = get_summary(db, org_id, entity_id=entity_id, site_id=site_id,
+                              portefeuille_id=portefeuille_id)
         sites = get_sites_findings(
             db, org_id, regulation, status, severity,
             entity_id=entity_id, site_id=site_id,
+            portefeuille_id=portefeuille_id,
         )
     except (OperationalError, ProgrammingError) as exc:
         msg = str(exc)
@@ -634,7 +643,8 @@ def get_compliance_bundle(
         code = "DB_SCHEMA_MISMATCH" if is_schema else "DATA_BLOCKED"
         return {
             "scope": {"org_id": org_id, "entity_id": entity_id,
-                      "site_id": site_id, "site_count": 0},
+                      "site_id": site_id, "portefeuille_id": portefeuille_id,
+                      "site_count": 0},
             "summary": {"total_sites": 0, "sites_ok": 0, "sites_nok": 0,
                          "sites_unknown": 0, "pct_ok": 0,
                          "findings_by_regulation": {}, "top_actions": []},
@@ -652,6 +662,7 @@ def get_compliance_bundle(
             "org_id": org_id,
             "entity_id": entity_id,
             "site_id": site_id,
+            "portefeuille_id": portefeuille_id,
             "site_count": summary.get("total_sites", 0),
         },
         "summary": summary,

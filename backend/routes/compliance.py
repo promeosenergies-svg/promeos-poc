@@ -139,16 +139,17 @@ def compliance_bundle(
     org_id: Optional[int] = Query(None),
     entity_id: Optional[int] = Query(None),
     site_id: Optional[int] = Query(None),
+    portefeuille_id: Optional[int] = Query(None),
     regulation: Optional[str] = Query(None),
     status: Optional[str] = Query(None),
     severity: Optional[str] = Query(None),
     db: Session = Depends(get_db),
 ):
     """
-    GET /api/compliance/bundle?org_id=&entity_id=&site_id=
+    GET /api/compliance/bundle?org_id=&entity_id=&site_id=&portefeuille_id=
 
     Single-request bundle: summary + sites + empty_reason.
-    Frontend must pass org_id explicitly for correct scope.
+    Scope priority: site_id > portefeuille_id > entity_id > org_id.
     """
     if org_id is None:
         org = db.query(Organisation).first()
@@ -159,6 +160,7 @@ def compliance_bundle(
     return get_compliance_bundle(
         db, org_id,
         entity_id=entity_id, site_id=site_id,
+        portefeuille_id=portefeuille_id,
         regulation=regulation, status=status, severity=severity,
     )
 

@@ -290,6 +290,12 @@ export const seedDemoConsumption = (siteId = null, days = 30) => api.post('/cons
 export const patchConsumptionInsight = (insightId, data) => api.patch(`/consumption/insights/${insightId}`, data).then(r => r.data);
 
 // ========================================
+// FLEX MINI
+// ========================================
+export const getFlexMini = (siteId, start, end) =>
+  api.get(`/sites/${siteId}/flex/mini`, { params: { start, end } }).then(r => r.data);
+
+// ========================================
 // SITE CONFIG (Schedule + Tariff)
 // ========================================
 
@@ -496,6 +502,7 @@ export const getEmsTimeseriesSuggest = (dateFrom, dateTo) => api.get('/ems/times
 export const getEmsWeather = (siteId, dateFrom, dateTo) => api.get('/ems/weather', { params: { site_id: siteId, date_from: dateFrom, date_to: dateTo } }).then(r => r.data);
 export const getEmsWeatherMulti = (siteIds, dateFrom, dateTo) => api.get('/ems/weather', { params: { site_ids: siteIds.join(','), date_from: dateFrom, date_to: dateTo } }).then(r => r.data);
 export const runEmsSignature = (siteId, dateFrom, dateTo, meterIds = null) => api.post('/ems/signature/run', null, { params: { site_id: siteId, date_from: dateFrom, date_to: dateTo, meter_ids: meterIds } }).then(r => r.data);
+export const runEmsSignaturePortfolio = (siteIds, dateFrom, dateTo) => api.post('/ems/signature/portfolio', null, { params: { site_ids: siteIds.join(','), date_from: dateFrom, date_to: dateTo } }).then(r => r.data);
 export const getEmsViews = (userId = null) => api.get('/ems/views', { params: userId ? { user_id: userId } : {} }).then(r => r.data);
 export const createEmsView = (name, configJson, userId = null) => api.post('/ems/views', null, { params: { name, config_json: configJson, user_id: userId } }).then(r => r.data);
 export const updateEmsView = (id, params) => api.put(`/ems/views/${id}`, null, { params }).then(r => r.data);
