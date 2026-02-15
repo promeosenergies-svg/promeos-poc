@@ -22,13 +22,45 @@ api.interceptors.request.use((config) => {
 
 // Silent URL patterns — passive checks that should never trigger toasts
 const SILENT_URLS = ['/demo/status-pack'];
-export const isSilentUrl = (url) => SILENT_URLS.some(u => url?.includes(u));
+
+/**
+ * Normalize an Axios config into a clean pathname for matching.
+ * Handles: baseURL+url join, absolute URLs, querystring/hash, missing slash.
+ */
+export function normalizePathFromAxiosConfig(config) {
+  if (!config) return '';
+  let raw = config.url || '';
+  // Join baseURL + url if url is relative
+  if (raw && !/^https?:\/\//i.test(raw) && config.baseURL) {
+    const base = config.baseURL.replace(/\/+$/, '');
+    raw = base + (raw.startsWith('/') ? raw : '/' + raw);
+  }
+  // Strip protocol + host for absolute URLs
+  try {
+    if (/^https?:\/\//i.test(raw)) {
+      raw = new URL(raw).pathname;
+    }
+  } catch { /* keep raw as-is */ }
+  // Strip querystring and hash
+  raw = raw.split('?')[0].split('#')[0];
+  // Ensure leading slash
+  if (raw && !raw.startsWith('/')) raw = '/' + raw;
+  return raw;
+}
+
+export const isSilentUrl = (urlOrConfig) => {
+  // Accept either a string (legacy) or an axios config object
+  const path = typeof urlOrConfig === 'object' && urlOrConfig !== null
+    ? normalizePathFromAxiosConfig(urlOrConfig)
+    : String(urlOrConfig || '');
+  return SILENT_URLS.some(u => path.endsWith(u) || path.includes(u + '?') || path.includes(u + '#') || path === u);
+};
 
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     const cfg = error.config || {};
-    const isSilent = cfg.silent || isSilentUrl(cfg.url);
+    const isSilent = cfg.silent || isSilentUrl(cfg);
 
     if (!isSilent && error.response?.status === 401 && !cfg.url?.includes('/auth/')) {
       localStorage.removeItem('promeos_token');
@@ -114,7 +146,7 @@ export const getDemoTemplates = () => api.get('/demo/templates').then(r => r.dat
 export const getDemoPacks = () => api.get('/demo/packs').then(r => r.data);
 export const seedDemoPack = (pack, size, reset = false) =>
   api.post('/demo/seed-pack', { pack, size, reset, rng_seed: 42 }).then(r => r.data);
-export const getDemoPackStatus = () => api.get('/demo/status-pack').then(r => r.data);
+export const getDemoPackStatus = () => api.get('/demo/status-pack', { silent: true }).then(r => r.data);
 export const resetDemoPack = (mode = 'soft', confirm = false) =>
   api.post('/demo/reset-pack', { mode, confirm }).then(r => r.data);
 
