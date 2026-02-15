@@ -6,7 +6,8 @@ import csv
 import hashlib
 import io
 from datetime import date as dt_date, datetime
-from typing import Optional
+from datetime import timedelta
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
@@ -44,6 +45,7 @@ class ActionCreate(BaseModel):
     due_date: Optional[str] = None
     owner: Optional[str] = None
     notes: Optional[str] = None
+    idempotency_key: Optional[str] = None
 
 
 class ActionPatch(BaseModel):
@@ -52,6 +54,18 @@ class ActionPatch(BaseModel):
     notes: Optional[str] = None
     due_date: Optional[str] = None
     priority: Optional[int] = None
+
+
+class CommentCreate(BaseModel):
+    author: str
+    body: str
+
+
+class EvidenceCreate(BaseModel):
+    label: str
+    file_url: Optional[str] = None
+    mime_type: Optional[str] = None
+    uploaded_by: Optional[str] = None
 
 
 # ========================================
@@ -95,6 +109,20 @@ def _serialize_action(a: ActionItem) -> dict:
     }
 
 
+def _create_event(db: Session, action_id: int, event_type: str, actor: str = "system",
+                   old_value: str = None, new_value: str = None):
+    """Insert an audit trail event."""
+    event = ActionEvent(
+        action_id=action_id,
+        event_type=event_type,
+        actor=actor,
+        old_value=old_value,
+        new_value=new_value,
+    )
+    db.add(event)
+    return event
+
+
 # ========================================
 # Endpoints
 # ========================================
@@ -108,8 +136,19 @@ def create_action(
     """
     POST /api/actions
     Create a single action from the UI (manual or insight-driven).
+    Supports idempotency_key and collision detection.
     """
     oid = _resolve_org_id(db, data.org_id, auth)
+
+    # Idempotency: if key provided and action exists, return existing
+    if data.idempotency_key:
+        existing = (
+            db.query(ActionItem)
+            .filter(ActionItem.idempotency_key == data.idempotency_key)
+            .first()
+        )
+        if existing:
+            return {"status": "existing", **_serialize_action(existing)}
 
     # Validate source_type
     try:
@@ -144,6 +183,23 @@ def create_action(
     if priority is None:
         priority = compute_priority(data.severity, data.estimated_gain_eur, parsed_due)
 
+    # Collision detection: similar title + same site within 24h
+    warning = None
+    similar_id = None
+    cutoff = datetime.utcnow() - timedelta(hours=24)
+    similar = (
+        db.query(ActionItem)
+        .filter(
+            ActionItem.title == data.title.strip()[:500],
+            ActionItem.site_id == data.site_id,
+            ActionItem.created_at >= cutoff,
+        )
+        .first()
+    )
+    if similar:
+        warning = "similar_action_exists"
+        similar_id = similar.id
+
     # Generate source_key for uniqueness
     source_id = data.source_id or f"manual_{int(datetime.utcnow().timestamp())}"
     source_key = hashlib.sha256(
@@ -165,12 +221,21 @@ def create_action(
         status=ActionStatus.OPEN,
         owner=data.owner,
         notes=data.notes,
+        idempotency_key=data.idempotency_key,
     )
     db.add(item)
     db.commit()
     db.refresh(item)
 
-    return {"status": "created", **_serialize_action(item)}
+    # Auto-event: created
+    _create_event(db, item.id, "created", new_value="open")
+    db.commit()
+
+    result = {"status": "created", **_serialize_action(item)}
+    if warning:
+        result["warning"] = warning
+        result["similar_id"] = similar_id
+    return result
 
 
 @router.post("/sync")
@@ -281,30 +346,47 @@ def patch_action(
     """
     PATCH /api/actions/{action_id}
     Workflow update: status, owner, notes, due_date, priority.
+    Auto-creates audit events for each changed field.
     """
     action = db.query(ActionItem).filter(ActionItem.id == action_id).first()
     if not action:
         raise HTTPException(status_code=404, detail="Action non trouvee")
 
     if data.status is not None:
+        old_status = action.status.value if action.status else "open"
         try:
-            action.status = ActionStatus(data.status)
+            new_status = ActionStatus(data.status)
         except ValueError:
             raise HTTPException(status_code=400, detail=f"Statut invalide: {data.status}")
+        if old_status != data.status:
+            action.status = new_status
+            _create_event(db, action.id, "status_change", old_value=old_status, new_value=data.status)
+            # Set closed_at when action is marked done
+            if new_status == ActionStatus.DONE and action.closed_at is None:
+                action.closed_at = datetime.utcnow()
+
     if data.owner is not None:
-        action.owner = data.owner
+        old_owner = action.owner
+        if old_owner != data.owner:
+            action.owner = data.owner
+            _create_event(db, action.id, "assigned", old_value=old_owner, new_value=data.owner)
+
     if data.notes is not None:
         action.notes = data.notes
+
     if data.due_date is not None:
-        from datetime import date as dt_date
         try:
             action.due_date = dt_date.fromisoformat(data.due_date)
         except ValueError:
             raise HTTPException(status_code=400, detail=f"Date invalide: {data.due_date}")
+
     if data.priority is not None:
         if not 1 <= data.priority <= 5:
             raise HTTPException(status_code=400, detail="Priorite doit etre entre 1 et 5")
-        action.priority = data.priority
+        old_prio = action.priority
+        if old_prio != data.priority:
+            action.priority = data.priority
+            _create_event(db, action.id, "priority_change", old_value=str(old_prio), new_value=str(data.priority))
 
     db.commit()
     db.refresh(action)
@@ -401,6 +483,191 @@ def export_csv(
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=actions_promeos.csv"},
     )
+
+
+# ========================================
+# Sub-resource endpoints: comments, evidence, events
+# ========================================
+
+@router.post("/{action_id}/comments")
+def add_comment(
+    action_id: int,
+    data: CommentCreate,
+    db: Session = Depends(get_db),
+):
+    """
+    POST /api/actions/{action_id}/comments
+    Add a comment to an action.
+    """
+    action = db.query(ActionItem).filter(ActionItem.id == action_id).first()
+    if not action:
+        raise HTTPException(status_code=404, detail="Action non trouvee")
+
+    if not data.body or not data.body.strip():
+        raise HTTPException(status_code=422, detail="Contenu du commentaire requis")
+    if not data.author or not data.author.strip():
+        raise HTTPException(status_code=422, detail="Auteur requis")
+
+    comment = ActionComment(
+        action_id=action_id,
+        author=data.author.strip(),
+        body=data.body.strip(),
+    )
+    db.add(comment)
+
+    # Auto-event
+    _create_event(db, action_id, "commented", actor=data.author.strip(), new_value=data.body.strip()[:200])
+
+    db.commit()
+    db.refresh(comment)
+
+    return {
+        "id": comment.id,
+        "action_id": comment.action_id,
+        "author": comment.author,
+        "body": comment.body,
+        "created_at": comment.created_at.isoformat() if comment.created_at else None,
+    }
+
+
+@router.get("/{action_id}/comments")
+def list_comments(
+    action_id: int,
+    db: Session = Depends(get_db),
+):
+    """
+    GET /api/actions/{action_id}/comments
+    List comments for an action, ordered by creation date.
+    """
+    action = db.query(ActionItem).filter(ActionItem.id == action_id).first()
+    if not action:
+        raise HTTPException(status_code=404, detail="Action non trouvee")
+
+    comments = (
+        db.query(ActionComment)
+        .filter(ActionComment.action_id == action_id)
+        .order_by(ActionComment.created_at.asc())
+        .all()
+    )
+    return [
+        {
+            "id": c.id,
+            "action_id": c.action_id,
+            "author": c.author,
+            "body": c.body,
+            "created_at": c.created_at.isoformat() if c.created_at else None,
+        }
+        for c in comments
+    ]
+
+
+@router.post("/{action_id}/evidence")
+def add_evidence(
+    action_id: int,
+    data: EvidenceCreate,
+    db: Session = Depends(get_db),
+):
+    """
+    POST /api/actions/{action_id}/evidence
+    Add an evidence/attachment reference to an action.
+    """
+    action = db.query(ActionItem).filter(ActionItem.id == action_id).first()
+    if not action:
+        raise HTTPException(status_code=404, detail="Action non trouvee")
+
+    if not data.label or not data.label.strip():
+        raise HTTPException(status_code=422, detail="Libelle de la piece requis")
+
+    evidence = ActionEvidence(
+        action_id=action_id,
+        label=data.label.strip(),
+        file_url=data.file_url,
+        mime_type=data.mime_type,
+        uploaded_by=data.uploaded_by,
+    )
+    db.add(evidence)
+
+    # Auto-event
+    _create_event(db, action_id, "evidence_added", actor=data.uploaded_by, new_value=data.label.strip())
+
+    db.commit()
+    db.refresh(evidence)
+
+    return {
+        "id": evidence.id,
+        "action_id": evidence.action_id,
+        "label": evidence.label,
+        "file_url": evidence.file_url,
+        "mime_type": evidence.mime_type,
+        "uploaded_by": evidence.uploaded_by,
+        "created_at": evidence.created_at.isoformat() if evidence.created_at else None,
+    }
+
+
+@router.get("/{action_id}/evidence")
+def list_evidence(
+    action_id: int,
+    db: Session = Depends(get_db),
+):
+    """
+    GET /api/actions/{action_id}/evidence
+    List evidence items for an action.
+    """
+    action = db.query(ActionItem).filter(ActionItem.id == action_id).first()
+    if not action:
+        raise HTTPException(status_code=404, detail="Action non trouvee")
+
+    items = (
+        db.query(ActionEvidence)
+        .filter(ActionEvidence.action_id == action_id)
+        .order_by(ActionEvidence.created_at.asc())
+        .all()
+    )
+    return [
+        {
+            "id": e.id,
+            "action_id": e.action_id,
+            "label": e.label,
+            "file_url": e.file_url,
+            "mime_type": e.mime_type,
+            "uploaded_by": e.uploaded_by,
+            "created_at": e.created_at.isoformat() if e.created_at else None,
+        }
+        for e in items
+    ]
+
+
+@router.get("/{action_id}/events")
+def list_events(
+    action_id: int,
+    db: Session = Depends(get_db),
+):
+    """
+    GET /api/actions/{action_id}/events
+    Audit trail for an action.
+    """
+    action = db.query(ActionItem).filter(ActionItem.id == action_id).first()
+    if not action:
+        raise HTTPException(status_code=404, detail="Action non trouvee")
+
+    events = (
+        db.query(ActionEvent)
+        .filter(ActionEvent.action_id == action_id)
+        .order_by(ActionEvent.created_at.asc())
+        .all()
+    )
+    return [
+        {
+            "id": e.id,
+            "action_id": e.action_id,
+            "event_type": e.event_type,
+            "actor": e.actor,
+            "old_value": e.old_value,
+            "new_value": e.new_value,
+            "created_at": e.created_at.isoformat() if e.created_at else None,
+        }
+        for e in events
+    ]
 
 
 # ========================================
