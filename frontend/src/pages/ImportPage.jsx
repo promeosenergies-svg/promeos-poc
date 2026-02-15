@@ -42,12 +42,15 @@ function ImportPage() {
   const [packStatus, setPackStatus] = useState(null);
   const [resetLoading, setResetLoading] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
+  const [statusError, setStatusError] = useState(false);
 
-  useEffect(() => {
+  const refreshStatus = () => {
     getDemoPackStatus()
-      .then(setPackStatus)
-      .catch(() => {});
-  }, []);
+      .then((s) => { setPackStatus(s); setStatusError(false); })
+      .catch(() => { setPackStatus(null); setStatusError(true); });
+  };
+
+  useEffect(() => { refreshStatus(); }, []);
 
   const handleFileChange = (e) => {
     const f = e.target.files[0];
@@ -103,7 +106,7 @@ function ImportPage() {
       const res = await seedDemoPack(selectedPack, selectedSize, false);
       setPackResult(res);
       toast(`Pack ${selectedPack} charge : ${res.sites_count} sites en ${res.elapsed_s}s`, 'success');
-      getDemoPackStatus().then(setPackStatus).catch(() => {});
+      refreshStatus();
     } catch (err) {
       toast(err.response?.data?.detail || 'Erreur lors du chargement du pack', 'error');
     }
@@ -118,7 +121,7 @@ function ImportPage() {
       setPackResult(null);
       clearScope();
       toast('Donnees demo supprimees', 'success');
-      getDemoPackStatus().then(setPackStatus).catch(() => {});
+      refreshStatus();
     } catch (err) {
       toast(err.response?.data?.detail || 'Erreur lors du reset', 'error');
     }
@@ -166,6 +169,10 @@ function ImportPage() {
             Charger un jeu de donnees complet : sites, compteurs, releves 90j, meteo, conformite, monitoring, factures, actions, achat.
           </p>
 
+          {statusError && (
+            <p className="text-xs text-amber-600 mb-2">Statut demo indisponible — reset manuel possible.</p>
+          )}
+
           {/* Pack selector */}
           <div className="flex flex-wrap gap-3 mb-4">
             {DEMO_PACKS.map(p => (
@@ -210,15 +217,13 @@ function ImportPage() {
               )}
             </Button>
 
-            {totalRows > 0 && (
-              <Button variant="secondary" onClick={() => setShowResetModal(true)} disabled={resetLoading}>
-                {resetLoading ? (
-                  <><Loader2 size={14} className="mr-1.5 animate-spin" />Reset...</>
-                ) : (
-                  <><RotateCcw size={14} className="mr-1.5" />Reset</>
-                )}
-              </Button>
-            )}
+            <Button variant="secondary" onClick={() => setShowResetModal(true)} disabled={resetLoading}>
+              {resetLoading ? (
+                <><Loader2 size={14} className="mr-1.5 animate-spin" />Reset...</>
+              ) : (
+                <><RotateCcw size={14} className="mr-1.5" />Reset</>
+              )}
+            </Button>
           </div>
 
           {/* Pack result */}

@@ -116,3 +116,12 @@ class TestStatusAlias:
         assert "counts" in data
         assert "total_rows" in data
         assert data["total_rows"] > 0
+
+    def test_status_pack_empty_db_returns_200(self, client):
+        """GET /api/demo/status-pack returns 200 even on empty DB."""
+        resp = client.get("/api/demo/status-pack")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["total_rows"] == 0
+        for val in data["counts"].values():
+            assert val == 0

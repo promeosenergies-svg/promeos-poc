@@ -20,15 +20,24 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Silent URL patterns — passive checks that should never trigger toasts
+const SILENT_URLS = ['/demo/status-pack'];
+export const isSilentUrl = (url) => SILENT_URLS.some(u => url?.includes(u));
+
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && !error.config?.url?.includes('/auth/')) {
+    const cfg = error.config || {};
+    const isSilent = cfg.silent || isSilentUrl(cfg.url);
+
+    if (!isSilent && error.response?.status === 401 && !cfg.url?.includes('/auth/')) {
       localStorage.removeItem('promeos_token');
       if (window.location.pathname !== '/login') {
         window.location.href = '/login';
       }
     }
+    // Mark error as silent so downstream handlers can skip toasting
+    if (isSilent) error._silent = true;
     return Promise.reject(error);
   }
 );
