@@ -274,8 +274,11 @@ def _get_current_value(site: Site, batiments: list, evidences: list, q: dict):
     """Get the current value for a question's field_path."""
     fp = q["field_path"]
 
-    # meta questions: informational, always return None (ask unless BacsAsset exists)
+    # meta questions: informational — "answered" if site already has CVC data
     if q.get("model") == "meta":
+        if q["column"] in ("bacs_systems_present", "bacs_scope_basis"):
+            max_cvc = max((b.cvc_power_kw or 0 for b in batiments), default=0)
+            return "answered" if max_cvc > 0 else None
         return None
 
     if fp.startswith("site."):
