@@ -349,11 +349,19 @@ def sync_actions(db: Session, org_id: int, triggered_by: str = "api") -> dict:
             batch.skipped_count += 1
 
     # Auto-close: actions still OPEN/IN_PROGRESS whose source is no longer active
+    # Only consider auto-harvested sources — manual/insight actions are user-managed
+    _harvested_types = [
+        ActionSourceType.COMPLIANCE,
+        ActionSourceType.CONSUMPTION,
+        ActionSourceType.BILLING,
+        ActionSourceType.PURCHASE,
+    ]
     open_items = (
         db.query(ActionItem)
         .filter(
             ActionItem.org_id == org_id,
             ActionItem.status.in_([ActionStatus.OPEN, ActionStatus.IN_PROGRESS]),
+            ActionItem.source_type.in_(_harvested_types),
         )
         .all()
     )

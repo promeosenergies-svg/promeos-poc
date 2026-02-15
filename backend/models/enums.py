@@ -253,6 +253,8 @@ class ActionSourceType(str, enum.Enum):
     CONSUMPTION = "consumption"
     BILLING = "billing"
     PURCHASE = "purchase"
+    INSIGHT = "insight"       # from monitoring insight/alert
+    MANUAL = "manual"         # manually created by user
 
 
 class ActionStatus(str, enum.Enum):

@@ -1,9 +1,11 @@
 """
-PROMEOS — Action Hub Routes (Sprint 10)
-6 endpoints: sync, list, summary, patch, batches, export CSV.
+PROMEOS — Action Hub Routes (Sprint 10 + V4.9)
+7 endpoints: create, sync, list, summary, patch, batches, export CSV.
 """
 import csv
+import hashlib
 import io
+from datetime import date as dt_date, datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -16,7 +18,7 @@ from models import (
     Organisation, ActionItem, ActionSyncBatch,
     ActionSourceType, ActionStatus,
 )
-from services.action_hub_service import sync_actions
+from services.action_hub_service import sync_actions, compute_priority
 from middleware.auth import get_optional_auth, AuthContext
 from services.iam_scope import apply_scope_filter
 
@@ -26,6 +28,22 @@ router = APIRouter(prefix="/api/actions", tags=["Actions"])
 # ========================================
 # Schemas
 # ========================================
+
+class ActionCreate(BaseModel):
+    """Schema for direct action creation from UI."""
+    org_id: Optional[int] = None
+    site_id: Optional[int] = None
+    source_type: str = "manual"
+    source_id: Optional[str] = None
+    title: str
+    rationale: Optional[str] = None
+    priority: Optional[int] = None
+    severity: Optional[str] = None
+    estimated_gain_eur: Optional[float] = None
+    due_date: Optional[str] = None
+    owner: Optional[str] = None
+    notes: Optional[str] = None
+
 
 class ActionPatch(BaseModel):
     status: Optional[str] = None
@@ -73,6 +91,80 @@ def _serialize_action(a: ActionItem) -> dict:
 # ========================================
 # Endpoints
 # ========================================
+
+@router.post("")
+def create_action(
+    data: ActionCreate,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """
+    POST /api/actions
+    Create a single action from the UI (manual or insight-driven).
+    """
+    oid = _resolve_org_id(db, data.org_id, auth)
+
+    # Validate source_type
+    try:
+        source_type = ActionSourceType(data.source_type)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Source invalide: {data.source_type}")
+
+    if source_type not in (ActionSourceType.MANUAL, ActionSourceType.INSIGHT):
+        raise HTTPException(
+            status_code=400,
+            detail="Creation directe: source_type doit etre 'manual' ou 'insight'",
+        )
+
+    # Validate title
+    if not data.title or not data.title.strip():
+        raise HTTPException(status_code=422, detail="Titre requis")
+
+    # Parse due_date
+    parsed_due = None
+    if data.due_date:
+        try:
+            parsed_due = dt_date.fromisoformat(data.due_date)
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Date invalide: {data.due_date}")
+
+    # Validate priority
+    if data.priority is not None and not (1 <= data.priority <= 5):
+        raise HTTPException(status_code=400, detail="Priorite doit etre entre 1 et 5")
+
+    # Auto-compute priority if absent
+    priority = data.priority
+    if priority is None:
+        priority = compute_priority(data.severity, data.estimated_gain_eur, parsed_due)
+
+    # Generate source_key for uniqueness
+    source_id = data.source_id or f"manual_{int(datetime.utcnow().timestamp())}"
+    source_key = hashlib.sha256(
+        f"{data.title}:{source_id}".encode()
+    ).hexdigest()[:16]
+
+    item = ActionItem(
+        org_id=oid,
+        site_id=data.site_id,
+        source_type=source_type,
+        source_id=source_id,
+        source_key=source_key,
+        title=data.title.strip()[:500],
+        rationale=data.rationale,
+        priority=priority,
+        severity=data.severity,
+        estimated_gain_eur=data.estimated_gain_eur,
+        due_date=parsed_due,
+        status=ActionStatus.OPEN,
+        owner=data.owner,
+        notes=data.notes,
+    )
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+
+    return {"status": "created", **_serialize_action(item)}
+
 
 @router.post("/sync")
 def sync_action_hub(
