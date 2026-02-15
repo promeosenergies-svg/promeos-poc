@@ -5,9 +5,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { Upload, FileText, CheckCircle, AlertTriangle, Download, Trash2, Database, Package, RotateCcw, Loader2 } from 'lucide-react';
 import { importSitesStandalone, seedDemo, seedDemoPack, getDemoPackStatus, resetDemoPack } from '../services/api';
-import { PageShell, Card, CardBody, Badge, Button, EmptyState } from '../ui';
+import { PageShell, Card, CardBody, Badge, Button, EmptyState, Modal } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { useToast } from '../ui/ToastProvider';
+import { useScope } from '../contexts/ScopeContext';
 
 const DEMO_PACKS = [
   {
@@ -31,6 +32,7 @@ function ImportPage() {
   const [seedLoading, setSeedLoading] = useState(false);
   const fileRef = useRef(null);
   const { toast } = useToast();
+  const { clearScope } = useScope();
 
   // Demo Packs state
   const [selectedPack, setSelectedPack] = useState('casino');
@@ -39,6 +41,7 @@ function ImportPage() {
   const [packResult, setPackResult] = useState(null);
   const [packStatus, setPackStatus] = useState(null);
   const [resetLoading, setResetLoading] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
 
   useEffect(() => {
     getDemoPackStatus()
@@ -108,10 +111,12 @@ function ImportPage() {
   };
 
   const handleResetPack = async () => {
+    setShowResetModal(false);
     setResetLoading(true);
     try {
       await resetDemoPack('hard', true);
       setPackResult(null);
+      clearScope();
       toast('Donnees demo supprimees', 'success');
       getDemoPackStatus().then(setPackStatus).catch(() => {});
     } catch (err) {
@@ -206,7 +211,7 @@ function ImportPage() {
             </Button>
 
             {totalRows > 0 && (
-              <Button variant="secondary" onClick={handleResetPack} disabled={resetLoading}>
+              <Button variant="secondary" onClick={() => setShowResetModal(true)} disabled={resetLoading}>
                 {resetLoading ? (
                   <><Loader2 size={14} className="mr-1.5 animate-spin" />Reset...</>
                 ) : (
@@ -423,6 +428,22 @@ function ImportPage() {
           text="Selectionnez un fichier CSV ci-dessus ou utilisez le mode demo pour commencer."
         />
       )}
+
+      {/* Confirmation modal for hard reset */}
+      <Modal open={showResetModal} onClose={() => setShowResetModal(false)} title="Confirmer la suppression">
+        <p className="text-sm text-gray-600 mb-2">
+          Cette action va supprimer <strong>toutes les donnees demo</strong> (sites, compteurs, releves, factures, alertes, actions).
+        </p>
+        <p className="text-sm text-red-600 mb-4">
+          Les donnees importees manuellement ne seront pas affectees (reset soft).
+        </p>
+        <div className="flex justify-end gap-3">
+          <Button variant="secondary" onClick={() => setShowResetModal(false)}>Annuler</Button>
+          <Button onClick={handleResetPack}>
+            <Trash2 size={14} className="mr-1.5" />Confirmer la suppression
+          </Button>
+        </div>
+      </Modal>
     </PageShell>
   );
 }

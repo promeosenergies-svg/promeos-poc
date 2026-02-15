@@ -419,7 +419,6 @@ export const getAuditLogs = (params = {}) => api.get('/auth/audit', { params }).
 // ========================================
 
 export const impersonateUser = (email) => api.post('/auth/impersonate', { email }).then(r => r.data);
-export const resetDemo = () => api.post('/auth/reset-demo').then(r => r.data);
 
 // ========================================
 // PATRIMOINE STAGING (DIAMANT)

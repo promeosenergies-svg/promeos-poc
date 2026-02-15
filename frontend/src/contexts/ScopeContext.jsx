@@ -81,6 +81,12 @@ export function ScopeProvider({ children }) {
     saveScope(next);
   }, [effectiveOrgId]);
 
+  const clearScope = useCallback(() => {
+    const next = { orgId: null, portefeuilleId: null, siteId: null };
+    setScope(next);
+    localStorage.removeItem(STORAGE_KEY);
+  }, []);
+
   // When authenticated, use auth orgs; otherwise mock
   const orgsData = isAuth && auth.orgs && auth.orgs.length > 0
     ? auth.orgs.map(o => ({ id: o.id, nom: o.nom }))
@@ -112,7 +118,7 @@ export function ScopeProvider({ children }) {
     scope: { ...scope, orgId: effectiveOrgId },
     org, portefeuille, portefeuilles, scopedSites,
     orgs: orgsData,
-    setOrg, setPortefeuille, setSite, resetScope,
+    setOrg, setPortefeuille, setSite, resetScope, clearScope,
   };
 
   return <ScopeContext.Provider value={value}>{children}</ScopeContext.Provider>;
