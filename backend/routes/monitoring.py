@@ -312,6 +312,15 @@ USAGE_PROFILES = {
                   "peak_h": (6, 20), "heat_coeff": 0.5, "cool_coeff": 0.3,
                   "psub_kva": 60, "label": "Entrepot / Logistique",
                   "open_days": "0,1,2,3,4", "open_time": "06:00", "close_time": "20:00", "is_24_7": False},
+    "school":    {"peak": 28, "shoulder": 12, "night": 3, "weekend": 3,
+                  "peak_h": (8, 17), "heat_coeff": 2.5, "cool_coeff": 0.3,
+                  "psub_kva": 60, "label": "Ecole / Etablissement scolaire",
+                  "open_days": "0,1,2,3,4", "open_time": "07:30", "close_time": "18:00", "is_24_7": False,
+                  "vacation_weeks": [1, 2, 7, 8, 16, 17, 27, 28, 29, 30, 31, 32, 33, 34]},
+    "hospital":  {"peak": 45, "shoulder": 35, "night": 28, "weekend": 30,
+                  "peak_h": (7, 21), "heat_coeff": 2.0, "cool_coeff": 1.8,
+                  "psub_kva": 200, "label": "Hopital / Sante",
+                  "open_days": "0,1,2,3,4,5,6", "open_time": "00:00", "close_time": "23:59", "is_24_7": True},
 }
 
 # Max plausible EUR/an impact per alert to prevent absurd values in demo
@@ -404,8 +413,12 @@ def generate_monitoring_demo(request: MonitoringDemoRequest, db: Session = Depen
         for hour in range(24):
             ts = dt.replace(hour=hour, minute=0, second=0, microsecond=0)
 
+            # School vacation check (ISO week)
+            vacation_weeks = profile.get("vacation_weeks", [])
+            is_vacation = dt.isocalendar()[1] in vacation_weeks if vacation_weeks else False
+
             # Base pattern from profile
-            if is_weekend:
+            if is_weekend or is_vacation:
                 base_kwh = profile["weekend"]
             elif peak_start <= hour <= peak_end:
                 base_kwh = profile["peak"]

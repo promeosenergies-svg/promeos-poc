@@ -96,6 +96,8 @@ const PROFILE_OPTIONS = [
   { value: 'hotel', label: 'Hotel' },
   { value: 'retail', label: 'Commerce' },
   { value: 'warehouse', label: 'Logistique' },
+  { value: 'school', label: 'Ecole' },
+  { value: 'hospital', label: 'Hopital' },
 ];
 
 // --- Exported helpers (testable) ---
@@ -156,6 +158,8 @@ export const LF_THRESHOLDS_BY_ARCHETYPE = {
   hotel:     { ok: 55, warn: 35 },
   retail:    { ok: 45, warn: 30 },
   warehouse: { ok: 50, warn: 35 },
+  school:    { ok: 35, warn: 20 },
+  hospital:  { ok: 60, warn: 40 },
   default:   { ok: 35, warn: 20 },
 };
 

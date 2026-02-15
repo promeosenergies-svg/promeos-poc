@@ -163,9 +163,9 @@ describe('kpiStatusWithConfidence', () => {
 });
 
 describe('LF_THRESHOLDS_BY_ARCHETYPE', () => {
-  it('has entries for 4 profiles + default', () => {
+  it('has entries for 6 profiles + default', () => {
     expect(Object.keys(LF_THRESHOLDS_BY_ARCHETYPE)).toEqual(
-      expect.arrayContaining(['office', 'hotel', 'retail', 'warehouse', 'default'])
+      expect.arrayContaining(['office', 'hotel', 'retail', 'warehouse', 'school', 'hospital', 'default'])
     );
   });
 
