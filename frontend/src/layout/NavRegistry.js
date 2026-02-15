@@ -1,8 +1,10 @@
 /**
- * PROMEOS — Navigation Registry (Phase 6.1 - IA v4)
- * Jobs-to-be-done sections with progressive disclosure via ExpertMode.
- * Normal: Cockpit + Operations + Analyse core (~8 visible items)
- * Expert: + Diagnostic + Marche + Donnees & Admin
+ * PROMEOS — Navigation Registry (World-Class IA)
+ * 5 sections stables oriente jobs-to-be-done:
+ * Piloter / Executer / Analyser / Marche & Factures / Donnees & Admin
+ *
+ * Normal mode: ~8 items (Piloter + Executer + Analyser core)
+ * Expert mode: + Diagnostic + Marche + Donnees & Admin
  */
 import {
   LayoutDashboard, Building2, ShieldCheck, FileText,
@@ -40,66 +42,72 @@ export const ROUTE_MODULE_MAP = {
 
 export const NAV_SECTIONS = [
   {
-    label: 'Cockpit',
+    key: 'piloter',
+    label: 'Piloter',
     expertOnly: false,
     collapsible: false,
     order: 1,
     items: [
-      { to: '/',        icon: LayoutDashboard, label: 'Dashboard', keywords: ['dashboard', 'accueil', 'home', 'tableau'] },
-      { to: '/cockpit', icon: FileText,        label: 'Vue executive', keywords: ['synthese', 'executive', 'brief'] },
+      { to: '/',              icon: LayoutDashboard, label: 'Tableau de bord', keywords: ['dashboard', 'accueil', 'home', 'tableau'] },
+      { to: '/cockpit',       icon: FileText,        label: 'Vue executive', keywords: ['synthese', 'executive', 'brief'] },
+      { to: '/notifications', icon: Bell,            label: 'Alertes', badgeKey: 'alerts', keywords: ['alertes', 'notifications'] },
     ],
   },
   {
-    label: 'Operations',
+    key: 'executer',
+    label: 'Executer',
     expertOnly: false,
     collapsible: false,
     order: 2,
     items: [
-      { to: '/actions',       icon: ListChecks,  label: "Plan d'actions", keywords: ['actions', 'plan', 'todo'] },
-      { to: '/notifications', icon: Bell,         label: 'Alertes', badgeKey: 'alerts', keywords: ['alertes', 'notifications'] },
-      { to: '/conformite',    icon: ShieldCheck,  label: 'Conformite', keywords: ['compliance', 'reglementation', 'decret'] },
+      { to: '/conformite', icon: ShieldCheck, label: 'Conformite', keywords: ['compliance', 'reglementation', 'decret'] },
+      { to: '/actions',    icon: ListChecks,  label: "Plan d'actions", keywords: ['actions', 'plan', 'todo'] },
     ],
   },
   {
-    label: 'Analyse',
+    key: 'analyser',
+    label: 'Analyser',
     expertOnly: false,
     collapsible: true,
     defaultCollapsed: false,
     order: 3,
     items: [
-      { to: '/consommations',    icon: Zap,      label: 'Consommations', keywords: ['conso', 'energie', 'import', 'explorer', 'ems', 'timeseries'] },
-      { to: '/monitoring',       icon: Activity, label: 'Performance', badgeKey: 'monitoring', keywords: ['monitoring', 'kpi', 'puissance'] },
-      { to: '/diagnostic-conso', icon: Search,   label: 'Diagnostic', expertOnly: true, keywords: ['anomalies', 'diagnostic', 'analyse'] },
+      { to: '/consommations',    icon: Zap,       label: 'Consommations', keywords: ['conso', 'energie', 'import', 'explorer', 'ems', 'timeseries'] },
+      { to: '/monitoring',       icon: Activity,  label: 'Performance', badgeKey: 'monitoring', keywords: ['monitoring', 'kpi', 'puissance'] },
+      { to: '/diagnostic-conso', icon: Search,    label: 'Diagnostic', expertOnly: true, keywords: ['anomalies', 'diagnostic', 'analyse'] },
+      { to: '/patrimoine',       icon: Building2, label: 'Patrimoine', keywords: ['sites', 'batiments', 'immobilier'] },
     ],
   },
   {
-    label: 'Marche',
+    key: 'marche',
+    label: 'Marche & Factures',
     expertOnly: true,
     collapsible: true,
     defaultCollapsed: true,
     order: 4,
     items: [
       { to: '/bill-intel',      icon: Receipt,      label: 'Facturation', keywords: ['factures', 'billing', 'invoices'] },
-      { to: '/achat-energie',   icon: ShoppingCart,  label: "Strategie d'achat", keywords: ['achat', 'purchase', 'scenarios', 'strategie'] },
+      { to: '/achat-energie',   icon: ShoppingCart,  label: 'Achats energie', keywords: ['achat', 'purchase', 'scenarios', 'strategie'] },
       { to: '/achat-assistant', icon: Target,        label: 'Assistant Achat', keywords: ['assistant', 'wizard', 'rfp', 'arenh', 'corridor'] },
     ],
   },
   {
+    key: 'admin',
     label: 'Donnees & Admin',
     expertOnly: true,
     collapsible: true,
     defaultCollapsed: true,
     order: 5,
     items: [
-      { to: '/patrimoine',          icon: Building2,   label: 'Patrimoine', keywords: ['sites', 'batiments', 'immobilier'] },
       { to: '/import',              icon: Import,      label: 'Imports', keywords: ['import', 'csv', 'upload'] },
       { to: '/connectors',          icon: Link2,       label: 'Connexions', keywords: ['connecteurs', 'api', 'sync'] },
+      { to: '/kb',                  icon: BookOpen,    label: 'Knowledge Base', keywords: ['kb', 'knowledge', 'base'] },
       { to: '/segmentation',        icon: Users,       label: 'Segmentation', keywords: ['segment', 'profil'] },
-      { to: '/kb',                  icon: BookOpen,    label: 'Referentiels', keywords: ['kb', 'knowledge', 'base'] },
-      { to: '/admin/users',         icon: Lock,        label: 'Utilisateurs', requireAdmin: true, keywords: ['users', 'comptes'] },
-      { to: '/admin/roles',         icon: ShieldCheck, label: 'Roles', requireAdmin: true, keywords: ['roles', 'permissions'] },
-      { to: '/admin/assignments',   icon: Users,       label: 'Assignments', requireAdmin: true, keywords: ['assignments', 'scopes'] },
-      { to: '/admin/audit',         icon: FileText,    label: 'Audit Log', requireAdmin: true, keywords: ['audit', 'log', 'historique'] },
+      { to: '/watchers',            icon: Eye,         label: 'Veille', keywords: ['veille', 'rss', 'reglementaire'] },
+      { to: '/admin/users',         icon: Lock,        label: 'Utilisateurs', requireAdmin: true, expertOnly: true, keywords: ['users', 'comptes'] },
+      { to: '/admin/roles',         icon: ShieldCheck, label: 'Roles', requireAdmin: true, expertOnly: true, keywords: ['roles', 'permissions'] },
+      { to: '/admin/assignments',   icon: Users,       label: 'Assignments', requireAdmin: true, expertOnly: true, keywords: ['assignments', 'scopes'] },
+      { to: '/admin/audit',         icon: FileText,    label: 'Audit Log', requireAdmin: true, expertOnly: true, keywords: ['audit', 'log', 'historique'] },
     ],
   },
 ];
