@@ -106,9 +106,25 @@ def get_demo_pack_status(db: Session = Depends(get_db)):
     }
 
 
+def _reset_iam_demo(db):
+    """Delete @atlas.demo users and their roles, then re-seed IAM."""
+    from models import User, UserOrgRole
+    demo_users = db.query(User).filter(User.email.like("%@atlas.demo")).all()
+    for u in demo_users:
+        db.query(UserOrgRole).filter(UserOrgRole.user_id == u.id).delete()
+        db.query(User).filter(User.id == u.id).delete()
+    db.commit()
+    # Re-seed IAM if an org still exists
+    org = db.query(Organisation).first()
+    if org:
+        from scripts.seed_data import seed_iam_demo
+        seed_iam_demo(db, org)
+
+
 @router.post("/reset-pack")
 def reset_demo_pack(request: ResetPackRequest, db: Session = Depends(get_db)):
-    """Reset des donnees demo. mode=soft (demo only) ou hard (tout)."""
+    """Reset des donnees demo. mode=soft (demo only) ou hard (tout).
+    Canonical reset endpoint — also resets IAM demo users."""
     if request.mode == "hard" and not request.confirm:
         raise HTTPException(
             status_code=400,
@@ -118,6 +134,10 @@ def reset_demo_pack(request: ResetPackRequest, db: Session = Depends(get_db)):
     from services.demo_seed import SeedOrchestrator
     orch = SeedOrchestrator(db)
     result = orch.reset(mode=request.mode)
+
+    # Also reset IAM demo users
+    _reset_iam_demo(db)
+
     return result
 
 

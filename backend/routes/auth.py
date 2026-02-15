@@ -289,24 +289,16 @@ def impersonate(
 
 @router.post("/reset-demo")
 def reset_demo(db: Session = Depends(get_db)):
-    """Reset IAM demo data (reseed users). DEMO_MODE only."""
+    """Legacy compat — delegates to canonical /api/demo/reset-pack (soft + IAM)."""
     if not DEMO_MODE:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Demo mode only")
 
-    # Delete existing demo users and re-seed
-    demo_users = db.query(User).filter(User.email.like("%@atlas.demo")).all()
-    for u in demo_users:
-        db.query(UserOrgRole).filter(UserOrgRole.user_id == u.id).delete()
-        db.query(User).filter(User.id == u.id).delete()
-    db.commit()
-
-    # Re-seed
-    org = db.query(Organisation).first()
-    if org:
-        from scripts.seed_data import seed_iam_demo
-        seed_iam_demo(db, org)
-
-    return {"status": "reset", "message": "Demo IAM data reseeded"}
+    from services.demo_seed import SeedOrchestrator
+    from routes.demo import _reset_iam_demo
+    orch = SeedOrchestrator(db)
+    result = orch.reset(mode="soft")
+    _reset_iam_demo(db)
+    return {"status": "reset", "message": "Demo data + IAM reseeded", **result}
 
 
 # ========================================
