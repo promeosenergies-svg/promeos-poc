@@ -16,6 +16,7 @@ class Organisation(Base, TimestampMixin, SoftDeleteMixin):
     logo_url = Column(String, nullable=True)
     siren = Column(String(9), nullable=True, comment="Numero SIREN")
     actif = Column(Boolean, default=True)
+    is_demo = Column(Boolean, default=False, comment="Donnees de demonstration")
 
     # Relations (1-to-many)
     entites_juridiques = relationship(

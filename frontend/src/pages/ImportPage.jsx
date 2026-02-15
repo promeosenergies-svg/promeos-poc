@@ -1,13 +1,26 @@
 /**
  * PROMEOS - Page Import de sites
- * Upload CSV + apercu + validation + import
+ * Upload CSV + apercu + validation + import + Demo Packs
  */
-import { useState, useRef } from 'react';
-import { Upload, FileText, CheckCircle, AlertTriangle, Download, Trash2, Database } from 'lucide-react';
-import { importSitesStandalone, seedDemo } from '../services/api';
+import { useState, useRef, useEffect } from 'react';
+import { Upload, FileText, CheckCircle, AlertTriangle, Download, Trash2, Database, Package, RotateCcw, Loader2 } from 'lucide-react';
+import { importSitesStandalone, seedDemo, seedDemoPack, getDemoPackStatus, resetDemoPack } from '../services/api';
 import { PageShell, Card, CardBody, Badge, Button, EmptyState } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { useToast } from '../ui/ToastProvider';
+
+const DEMO_PACKS = [
+  {
+    key: 'casino', label: 'Groupe Casino — Retail',
+    description: 'Hypermarches, proximite, entrepots. 3 portefeuilles.',
+    sizes: { S: '36 sites', M: '72 sites' },
+  },
+  {
+    key: 'tertiaire', label: 'SCI Les Terrasses — Tertiaire',
+    description: '10 batiments: bureaux, ecoles, hopital, hotel.',
+    sizes: { S: '10 sites', M: '20 sites' },
+  },
+];
 
 function ImportPage() {
   const [file, setFile] = useState(null);
@@ -18,6 +31,20 @@ function ImportPage() {
   const [seedLoading, setSeedLoading] = useState(false);
   const fileRef = useRef(null);
   const { toast } = useToast();
+
+  // Demo Packs state
+  const [selectedPack, setSelectedPack] = useState('casino');
+  const [selectedSize, setSelectedSize] = useState('S');
+  const [packLoading, setPackLoading] = useState(false);
+  const [packResult, setPackResult] = useState(null);
+  const [packStatus, setPackStatus] = useState(null);
+  const [resetLoading, setResetLoading] = useState(false);
+
+  useEffect(() => {
+    getDemoPackStatus()
+      .then(setPackStatus)
+      .catch(() => {});
+  }, []);
 
   const handleFileChange = (e) => {
     const f = e.target.files[0];
@@ -66,6 +93,33 @@ function ImportPage() {
     setSeedLoading(false);
   };
 
+  const handleSeedPack = async () => {
+    setPackLoading(true);
+    setPackResult(null);
+    try {
+      const res = await seedDemoPack(selectedPack, selectedSize, false);
+      setPackResult(res);
+      toast(`Pack ${selectedPack} charge : ${res.sites_count} sites en ${res.elapsed_s}s`, 'success');
+      getDemoPackStatus().then(setPackStatus).catch(() => {});
+    } catch (err) {
+      toast(err.response?.data?.detail || 'Erreur lors du chargement du pack', 'error');
+    }
+    setPackLoading(false);
+  };
+
+  const handleResetPack = async () => {
+    setResetLoading(true);
+    try {
+      await resetDemoPack('hard', true);
+      setPackResult(null);
+      toast('Donnees demo supprimees', 'success');
+      getDemoPackStatus().then(setPackStatus).catch(() => {});
+    } catch (err) {
+      toast(err.response?.data?.detail || 'Erreur lors du reset', 'error');
+    }
+    setResetLoading(false);
+  };
+
   const clearFile = () => {
     setFile(null);
     setPreview(null);
@@ -73,6 +127,9 @@ function ImportPage() {
     setError(null);
     if (fileRef.current) fileRef.current.value = '';
   };
+
+  const packDef = DEMO_PACKS.find(p => p.key === selectedPack);
+  const totalRows = packStatus?.total_rows || 0;
 
   return (
     <PageShell
@@ -90,11 +147,120 @@ function ImportPage() {
         </a>
       }
     >
-      {/* Demo seed */}
+      {/* Demo Packs */}
+      <Card className="border-indigo-200 bg-indigo-50/30">
+        <CardBody>
+          <div className="flex items-center gap-2 mb-3">
+            <Package size={18} className="text-indigo-600" />
+            <h2 className="font-semibold text-indigo-900">Demo Packs</h2>
+            {totalRows > 0 && (
+              <Badge status="info">{totalRows.toLocaleString('fr-FR')} lignes</Badge>
+            )}
+          </div>
+          <p className="text-sm text-indigo-700 mb-4">
+            Charger un jeu de donnees complet : sites, compteurs, releves 90j, meteo, conformite, monitoring, factures, actions, achat.
+          </p>
+
+          {/* Pack selector */}
+          <div className="flex flex-wrap gap-3 mb-4">
+            {DEMO_PACKS.map(p => (
+              <button
+                key={p.key}
+                onClick={() => setSelectedPack(p.key)}
+                className={`flex-1 min-w-[200px] p-3 rounded-lg border-2 text-left transition ${
+                  selectedPack === p.key
+                    ? 'border-indigo-500 bg-white shadow-sm'
+                    : 'border-transparent bg-white/50 hover:border-indigo-200'
+                }`}
+              >
+                <p className="font-medium text-gray-800 text-sm">{p.label}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{p.description}</p>
+              </button>
+            ))}
+          </div>
+
+          {/* Size selector + actions */}
+          <div className="flex items-center gap-3">
+            <div className="flex gap-1 bg-white rounded-lg p-0.5 border border-gray-200">
+              {packDef && Object.entries(packDef.sizes).map(([sz, label]) => (
+                <button
+                  key={sz}
+                  onClick={() => setSelectedSize(sz)}
+                  className={`px-3 py-1.5 rounded-md text-sm transition ${
+                    selectedSize === sz
+                      ? 'bg-indigo-600 text-white font-medium'
+                      : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  {sz} ({label})
+                </button>
+              ))}
+            </div>
+
+            <Button onClick={handleSeedPack} disabled={packLoading}>
+              {packLoading ? (
+                <><Loader2 size={14} className="mr-1.5 animate-spin" />Chargement...</>
+              ) : (
+                <><Database size={14} className="mr-1.5" />Charger demo</>
+              )}
+            </Button>
+
+            {totalRows > 0 && (
+              <Button variant="secondary" onClick={handleResetPack} disabled={resetLoading}>
+                {resetLoading ? (
+                  <><Loader2 size={14} className="mr-1.5 animate-spin" />Reset...</>
+                ) : (
+                  <><RotateCcw size={14} className="mr-1.5" />Reset</>
+                )}
+              </Button>
+            )}
+          </div>
+
+          {/* Pack result */}
+          {packResult && packResult.status === 'ok' && (
+            <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <CheckCircle size={16} className="text-green-600" />
+                <span className="font-medium text-green-800 text-sm">
+                  Pack {packResult.pack} ({packResult.size}) charge en {packResult.elapsed_s}s
+                </span>
+              </div>
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 text-xs">
+                <div className="bg-white rounded p-2 text-center">
+                  <p className="font-bold text-gray-800">{packResult.sites_count}</p>
+                  <p className="text-gray-500">Sites</p>
+                </div>
+                <div className="bg-white rounded p-2 text-center">
+                  <p className="font-bold text-gray-800">{packResult.readings_count?.toLocaleString('fr-FR')}</p>
+                  <p className="text-gray-500">Releves</p>
+                </div>
+                <div className="bg-white rounded p-2 text-center">
+                  <p className="font-bold text-gray-800">{packResult.monitoring?.alerts_count || 0}</p>
+                  <p className="text-gray-500">Alertes</p>
+                </div>
+                <div className="bg-white rounded p-2 text-center">
+                  <p className="font-bold text-gray-800">{packResult.billing?.invoices_count || 0}</p>
+                  <p className="text-gray-500">Factures</p>
+                </div>
+                <div className="bg-white rounded p-2 text-center">
+                  <p className="font-bold text-gray-800">{packResult.actions?.actions_count || 0}</p>
+                  <p className="text-gray-500">Actions</p>
+                </div>
+                <div className="bg-white rounded p-2 text-center">
+                  <p className="font-bold text-gray-800">{packResult.compliance?.findings_count || 0}</p>
+                  <p className="text-gray-500">Findings</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </CardBody>
+      </Card>
+
+      {/* Legacy demo seed */}
       <Card className="border-amber-200 bg-amber-50/50">
         <CardBody className="flex items-center justify-between">
           <div>
-            <p className="font-medium text-amber-800">Mode demonstration</p>
+            <p className="font-medium text-amber-800">Seed legacy (3 sites)</p>
             <p className="text-sm text-amber-600">Charger 3 sites demo (commerce, bureau, entrepot) avec compteurs et obligations.</p>
           </div>
           <Button
