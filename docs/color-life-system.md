@@ -63,6 +63,7 @@ tint.module('cockpit').navActive()   // "bg-blue-50/60 text-blue-700 border-blue
 tint.module('marche').pill()         // "bg-amber-50 text-amber-700 ring-1 ring-amber-200/60"
 tint.module('analyse').icon()        // "text-indigo-500"
 tint.module('cockpit').headerBand()  // "from-blue-50/60 to-transparent"
+tint.module('cockpit').tab()          // { active: 'border-b-2 border-blue-500 text-blue-700', ring: 'ring-blue-200' }
 tint.module('cockpit').raw()         // full TINT_PALETTE entry
 
 // Severity
@@ -103,7 +104,7 @@ tint.severity('critical').label()    // "Critique"
 |---------|---------|
 | `layout/NavRegistry.js` | `TINT_PALETTE`, `NAV_MODULES`, `MODULE_TINTS`, `getModuleTint()` |
 | `ui/colorTokens.js` | `SEVERITY_TINT`, `KPI_ACCENTS`, `ACCENT_BAR`, `HERO_ACCENTS`, `tint` helper |
-| `ui/PageShell.jsx` | Prop `tintColor` pour icone module |
-| `ui/Tabs.jsx` | Prop `tint` pour tab active |
+| `ui/PageShell.jsx` | Props `tintColor` / `moduleKey` pour icone module |
+| `ui/Tabs.jsx` | Props `tint` / `moduleKey` pour tab active |
 | `ui/Badge.jsx` | Severity badges (ok/warn/crit/info/neutral) |
 | `ui/MetricCard.jsx` | KPI accent bar + icon pill |
