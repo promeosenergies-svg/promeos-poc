@@ -1,8 +1,8 @@
 /**
- * PROMEOS — AppShell Layout
- * Sidebar + Header (Breadcrumb, ScopeSwitcher, CommandPalette trigger, Expert toggle, UserMenu)
+ * PROMEOS — AppShell Layout (Rail + Panel)
+ * Sidebar (Rail+Panel) + Header + Content with module-tinted header bands.
  */
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Search, LogOut, ChevronDown, Building2, Command } from 'lucide-react';
 import Sidebar from './Sidebar';
@@ -14,6 +14,7 @@ import { Toggle } from '../ui';
 import { trackRouteChange } from '../services/tracker';
 import { useAuth } from '../contexts/AuthContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
+import { resolveModule, MODULE_TINTS } from './NavRegistry';
 
 const ROLE_LABELS = {
   dg_owner: 'DG / Owner',
@@ -135,12 +136,16 @@ export default function AppShell() {
     return () => document.removeEventListener('keydown', onKey);
   }, []);
 
+  // Module-tinted header band
+  const currentModule = useMemo(() => resolveModule(location.pathname), [location.pathname]);
+  const headerBandClass = MODULE_TINTS[currentModule] || MODULE_TINTS.cockpit;
+
   return (
     <div className="flex min-h-screen bg-slate-50/60">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200/80 px-6 py-3 flex items-center justify-between sticky top-0 z-10">
+        <header className="bg-white/95 backdrop-blur-sm border-b border-slate-200/60 px-6 py-3 flex items-center justify-between sticky top-0 z-10">
           <div className="flex items-center gap-4">
             <Breadcrumb />
             <div className="relative">
@@ -151,12 +156,12 @@ export default function AppShell() {
             {/* Command Palette trigger */}
             <button
               onClick={() => setPaletteOpen(true)}
-              className="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-400
-                hover:bg-gray-100 hover:text-gray-600 transition"
+              className="flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-400
+                hover:bg-slate-100 hover:text-slate-600 transition"
             >
               <Search size={14} />
               <span className="hidden sm:inline">Rechercher...</span>
-              <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono bg-white border border-gray-200 rounded ml-2">
+              <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono bg-white border border-slate-200 rounded ml-2">
                 <Command size={10} className="mr-0.5" />K
               </kbd>
             </button>
@@ -173,10 +178,8 @@ export default function AppShell() {
           </div>
         </header>
 
-        {/* Cockpit header band — subtle gradient on dashboard pages */}
-        {(location.pathname === '/' || location.pathname === '/cockpit') && (
-          <div className="h-24 bg-gradient-to-b from-blue-50/60 to-transparent -mb-24 pointer-events-none" aria-hidden="true" />
-        )}
+        {/* Module-tinted header band */}
+        <div className={`h-20 bg-gradient-to-b ${headerBandClass} -mb-20 pointer-events-none`} aria-hidden="true" />
 
         {/* Content */}
         <main className="flex-1 overflow-y-auto">
