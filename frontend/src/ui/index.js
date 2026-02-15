@@ -18,6 +18,7 @@ export { default as KpiCard } from './KpiCard';
 export { default as FilterBar } from './FilterBar';
 export { default as Toggle } from './Toggle';
 export { default as Tooltip } from './Tooltip';
+export { default as TooltipPortal } from './TooltipPortal';
 export { default as Progress } from './Progress';
 export { default as Drawer } from './Drawer';
 export { ToastProvider, useToast } from './ToastProvider';

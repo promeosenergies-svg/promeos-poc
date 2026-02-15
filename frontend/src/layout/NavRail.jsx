@@ -3,7 +3,7 @@
  * Glass surface with tinted active states from TINT_PALETTE.
  * Tooltip on hover. Logo at top, expert badge at bottom.
  */
-import { Tooltip } from '../ui';
+import { TooltipPortal } from '../ui';
 import { NAV_MODULES, TINT_PALETTE } from './NavRegistry';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 
@@ -13,7 +13,7 @@ function RailIcon({ mod, isActive, onClick }) {
   const Icon = mod.icon;
 
   return (
-    <Tooltip text={mod.label} position="right">
+    <TooltipPortal text={mod.label} position="right">
       <button
         onClick={() => onClick(mod.key)}
         className={`relative flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-150
@@ -27,7 +27,7 @@ function RailIcon({ mod, isActive, onClick }) {
       >
         <Icon size={20} />
       </button>
-    </Tooltip>
+    </TooltipPortal>
   );
 }
 
