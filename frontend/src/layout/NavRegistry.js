@@ -1,7 +1,8 @@
 /**
- * PROMEOS — Navigation Registry
- * Single source of truth for all navigation items.
- * Used by Sidebar, CommandPalette, and Breadcrumb.
+ * PROMEOS — Navigation Registry (Phase 6 - IA Redesign)
+ * Jobs-to-be-done sections with progressive disclosure via ExpertMode.
+ * Normal: Pilotage + Execution + Analyse core (max ~7 visible items)
+ * Expert: + Diagnostic + Marche + Reglages
  */
 import {
   LayoutDashboard, Building2, ShieldCheck, FileText,
@@ -32,11 +33,16 @@ export const ROUTE_MODULE_MAP = {
   '/watchers': null,
   '/kb': null,
   '/admin/users': null,
+  '/admin/roles': null,
+  '/admin/assignments': null,
+  '/admin/audit': null,
 };
 
 export const NAV_SECTIONS = [
   {
     label: 'Pilotage',
+    expertOnly: false,
+    collapsible: false,
     items: [
       { to: '/',              icon: LayoutDashboard, label: 'Tableau de bord', keywords: ['dashboard', 'accueil', 'home'] },
       { to: '/cockpit',       icon: FileText,        label: 'Vue executive', keywords: ['synthese', 'executive', 'brief'] },
@@ -45,6 +51,8 @@ export const NAV_SECTIONS = [
   },
   {
     label: 'Execution',
+    expertOnly: false,
+    collapsible: false,
     items: [
       { to: '/conformite', icon: ShieldCheck, label: 'Conformite', keywords: ['compliance', 'reglementation', 'decret'] },
       { to: '/actions',    icon: ListChecks,  label: "Plan d'actions", keywords: ['actions', 'plan', 'todo'] },
@@ -52,29 +60,38 @@ export const NAV_SECTIONS = [
   },
   {
     label: 'Analyse',
+    expertOnly: false,
+    collapsible: true,
+    defaultCollapsed: true,
     items: [
-      { to: '/patrimoine',       icon: Building2,     label: 'Patrimoine', keywords: ['sites', 'batiments', 'immobilier'] },
-      { to: '/consommations', icon: Zap, label: 'Consommations', keywords: ['conso', 'energie', 'import', 'explorer', 'ems', 'timeseries'] },
-      { to: '/diagnostic-conso', icon: Search,        label: 'Diagnostic', keywords: ['anomalies', 'diagnostic', 'analyse'] },
-      { to: '/bill-intel',       icon: Receipt,       label: 'Facturation', keywords: ['factures', 'billing', 'invoices'] },
-      { to: '/achat-energie',    icon: ShoppingCart,   label: 'Achats energie', keywords: ['achat', 'purchase', 'scenarios'] },
-      { to: '/achat-assistant',  icon: Target,         label: 'Assistant Achat', keywords: ['assistant', 'wizard', 'rfp', 'arenh', 'corridor'] },
-      { to: '/monitoring',       icon: Activity,      label: 'Performance', badgeKey: 'monitoring', keywords: ['monitoring', 'kpi', 'puissance'] },
+      { to: '/patrimoine',       icon: Building2,   label: 'Patrimoine', keywords: ['sites', 'batiments', 'immobilier'] },
+      { to: '/consommations',    icon: Zap,         label: 'Consommations', keywords: ['conso', 'energie', 'import', 'explorer', 'ems', 'timeseries'] },
+      { to: '/monitoring',       icon: Activity,    label: 'Performance', badgeKey: 'monitoring', keywords: ['monitoring', 'kpi', 'puissance'] },
+      { to: '/diagnostic-conso', icon: Search,      label: 'Diagnostic', expertOnly: true, keywords: ['anomalies', 'diagnostic', 'analyse'] },
     ],
   },
   {
-    label: 'Administration',
+    label: 'Marche & factures',
+    expertOnly: true,
+    collapsible: true,
+    defaultCollapsed: true,
+    items: [
+      { to: '/bill-intel',       icon: Receipt,       label: 'Facturation', keywords: ['factures', 'billing', 'invoices'] },
+      { to: '/achat-energie',    icon: ShoppingCart,   label: 'Achats energie', keywords: ['achat', 'purchase', 'scenarios'] },
+      { to: '/achat-assistant',  icon: Target,         label: 'Assistant Achat', keywords: ['assistant', 'wizard', 'rfp', 'arenh', 'corridor'] },
+    ],
+  },
+  {
+    label: 'Reglages',
+    expertOnly: true,
+    collapsible: true,
+    defaultCollapsed: true,
     items: [
       { to: '/import',       icon: Import,   label: 'Imports', keywords: ['import', 'csv', 'upload'] },
       { to: '/connectors',   icon: Link2,    label: 'Connexions', keywords: ['connecteurs', 'api', 'sync'] },
       { to: '/segmentation', icon: Users,    label: 'Segmentation', keywords: ['segment', 'profil'] },
       { to: '/watchers',     icon: Eye,      label: 'Veille', keywords: ['veille', 'rss', 'reglementaire'] },
       { to: '/kb',           icon: BookOpen, label: 'Referentiels', keywords: ['kb', 'knowledge', 'base'] },
-    ],
-  },
-  {
-    label: 'IAM',
-    items: [
       { to: '/admin/users',       icon: Lock,       label: 'Utilisateurs', requireAdmin: true, keywords: ['users', 'comptes'] },
       { to: '/admin/roles',       icon: ShieldCheck, label: 'Roles', requireAdmin: true, keywords: ['roles', 'permissions'] },
       { to: '/admin/assignments', icon: Users,      label: 'Assignments', requireAdmin: true, keywords: ['assignments', 'scopes'] },
