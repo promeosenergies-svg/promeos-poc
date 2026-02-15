@@ -79,7 +79,7 @@ export const SEVERITY_TINT = {
     chipBg: 'bg-amber-50',
     chipText: 'text-amber-700',
     chipBorder: 'border-amber-200',
-    label: 'Eleve',
+    label: 'Élevé',
   },
   warn: {
     dot: 'bg-amber-500',

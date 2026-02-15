@@ -1,6 +1,6 @@
 /**
  * PROMEOS - MonitoringPage V3 (/monitoring)
- * Performance Electrique — premium dashboard.
+ * Performance Électrique — premium dashboard.
  * 5 KPI cards, 4 graphs (signature, heatmap, climate scatter, bar chart),
  * InsightDrawer, CreateActionModal, demo profile selector.
  */
@@ -47,26 +47,30 @@ const SEVERITY_BADGE = {
   critical: 'crit', high: 'warn', warning: 'warn', info: 'info',
 };
 
+const SEVERITY_LABEL_FR = {
+  critical: 'Critique', high: 'Élevée', warning: 'Moyenne', info: 'Info',
+};
+
 const STATUS_CONFIG = {
   open: { label: 'Ouvert', badge: 'crit' },
   ack: { label: 'En cours', badge: 'warn' },
-  resolved: { label: 'Resolu', badge: 'ok' },
+  resolved: { label: 'Résolu', badge: 'ok' },
 };
 
 const ALERT_TYPE_LABELS = {
-  BASE_NUIT_ELEVEE: 'Base nuit elevee',
+  BASE_NUIT_ELEVEE: 'Base nuit élevée',
   WEEKEND_ANORMAL: 'Week-end anormal',
-  DERIVE_TALON: 'Derive talon',
+  DERIVE_TALON: 'Dérive talon',
   PIC_ANORMAL: 'Pic anormal',
   P95_HAUSSE: 'Hausse P95',
-  DEPASSEMENT_PUISSANCE: 'Depassement puissance',
+  DEPASSEMENT_PUISSANCE: 'Dépassement puissance',
   RUPTURE_PROFIL: 'Rupture de profil',
   HORS_HORAIRES: 'Consommation hors horaires',
   COURBE_PLATE: 'Courbe plate',
-  DONNEES_MANQUANTES: 'Donnees manquantes',
+  DONNEES_MANQUANTES: 'Données manquantes',
   DOUBLONS_DST: 'Doublons DST',
-  VALEURS_NEGATIVES: 'Valeurs negatives',
-  SENSIBILITE_CLIMATIQUE: 'Sensibilite climatique',
+  VALEURS_NEGATIVES: 'Valeurs négatives',
+  SENSIBILITE_CLIMATIQUE: 'Sensibilité climatique',
 };
 
 const KPI_THRESHOLDS = {
@@ -78,10 +82,10 @@ const KPI_THRESHOLDS = {
 
 const KPI_TOOLTIPS = {
   pmax: 'Puissance max atteinte (P = E / dt). P95 = 95e centile.',
-  loadFactor: 'E_totale / (Pmax x heures). Eleve = courbe plate.',
-  risk: 'Risque depassement Psub. 4 facteurs: P95/Psub, frequence, volatilite, pics.',
-  quality: 'Qualite donnees: completude, trous, doublons, negatifs, outliers.',
-  climate: 'Pente (kWh/j)/°C de la signature energetique. Eleve = forte dependance climatique.',
+  loadFactor: 'E_totale / (Pmax x heures). Élevé = courbe plate.',
+  risk: 'Risque dépassement Psub. 4 facteurs: P95/Psub, fréquence, volatilité, pics.',
+  quality: 'Qualité données: complétude, trous, doublons, négatifs, outliers.',
+  climate: 'Pente (kWh/j)/°C de la signature énergétique. Élevé = forte dépendance climatique.',
 };
 
 const DAYS_FR = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
@@ -145,9 +149,9 @@ export function computeConfidence({ r2, nPoints, coveragePct, reason } = {}) {
   const level = score >= 60 ? 'high' : score >= 30 ? 'medium' : 'low';
   const reasons = [];
   if (r2 != null && r2 < 0.3) reasons.push(`R² faible (${r2.toFixed(2)})`);
-  if (nPoints != null && nPoints < 30) reasons.push(`${nPoints} jours de donnees`);
+  if (nPoints != null && nPoints < 30) reasons.push(`${nPoints} jours de données`);
   if (coveragePct != null && coveragePct < 60) reasons.push(`Couverture ${coveragePct}%`);
-  return { level, pct: score, reason: reasons.join(' · ') || 'Donnees suffisantes' };
+  return { level, pct: score, reason: reasons.join(' · ') || 'Données suffisantes' };
 }
 
 /**
@@ -263,8 +267,8 @@ const STATUS_BADGES = {
   ok: { label: 'OK', badge: 'ok' },
   surveiller: { label: 'Surveiller', badge: 'warn' },
   critique: { label: 'Critique', badge: 'crit' },
-  a_confirmer: { label: 'A confirmer', badge: 'info' },
-  no_data: { label: 'Pas de donnees', badge: 'neutral' },
+  a_confirmer: { label: 'À confirmer', badge: 'info' },
+  no_data: { label: 'Pas de données', badge: 'neutral' },
 };
 
 const CONFIDENCE_DOT = {
@@ -332,35 +336,35 @@ function ExecutiveSummary({ alerts, kpiData, climate, qualityScore, qualityConf,
       iconColor: topAlert ? (isLowConf ? 'text-gray-400' : 'text-red-500') : 'text-gray-300',
       title: 'Risque principal',
       value: topAlert
-        ? `${fmtNum(topAlert.estimated_impact_eur, 0)} EUR/an${isLowConf ? ' (A confirmer)' : ''}`
-        : 'Aucun risque detecte',
+        ? `${fmtNum(topAlert.estimated_impact_eur, 0)} EUR/an${isLowConf ? ' (À confirmer)' : ''}`
+        : 'Aucun risque détecté',
       sub: topAlert
         ? ALERT_TYPE_LABELS[topAlert.alert_type] || topAlert.alert_type
         : 'Continuez le suivi',
       ctas: topAlert ? [
         { label: 'Voir preuves', action: () => onInsight(topAlert) },
-        { label: 'Creer action', action: () => onCreateAction(topAlert) },
+        { label: 'Créer action', action: () => onCreateAction(topAlert) },
       ] : [],
     },
     {
       icon: Zap,
       iconColor: totalWasteEur > 0 ? 'text-orange-500' : 'text-gray-300',
-      title: 'Gaspillage estime',
-      value: totalWasteEur > 0 ? `${fmtNum(totalWasteEur, 0)} EUR/an` : 'Non detecte',
+      title: 'Gaspillage estimé',
+      value: totalWasteEur > 0 ? `${fmtNum(totalWasteEur, 0)} EUR/an` : 'Non détecté',
       sub: wasteAlerts.length > 0
         ? `${fmtNum(totalWasteKwh, 0)} kWh · ${wasteAlerts.length} alerte${wasteAlerts.length > 1 ? 's' : ''}${offHoursEst.eur > 0 ? ` · Off-hours: ${offHoursEst.label}` : ''}`
         : 'Aucune anomalie de gaspillage',
       ctas: totalWasteEur > 0 ? [
         { label: 'Explorer', action: onOpenExplorer },
-        { label: 'Creer action', action: () => onCreateAction(wasteAlerts[0]) },
+        { label: 'Créer action', action: () => onCreateAction(wasteAlerts[0]) },
       ] : [],
     },
     {
       icon: Database,
       iconColor: confOk ? 'text-green-600' : 'text-red-500',
-      title: 'Confiance donnees',
-      value: confOk ? 'OK' : 'A confirmer',
-      sub: qualityConf?.reason || 'Donnees suffisantes',
+      title: 'Confiance données',
+      value: confOk ? 'OK' : 'À confirmer',
+      sub: qualityConf?.reason || 'Données suffisantes',
       ctas: [{ label: 'Pourquoi ?', action: onConfidenceDetail }],
     },
   ];
@@ -412,12 +416,12 @@ function QuickActionsBar({ onOpenExplorer, onCreateAction, onCompare, compareEna
       </Button>
       <Button variant="primary" size="sm" onClick={onCreateAction}>
         <Zap size={14} />
-        Creer une action
+        Créer une action
       </Button>
       {compareEnabled && (
         <Button variant="ghost" size="sm" onClick={onCompare}>
           <Clock size={14} />
-          Comparer periode precedente
+          Comparer période précédente
         </Button>
       )}
     </div>
@@ -438,7 +442,7 @@ function WeekdayWeekendChart({ weekdayProfile, weekendProfile }) {
     return (
       <div className="text-center py-12">
         <Clock size={28} className="mx-auto text-gray-200 mb-2" />
-        <p className="text-sm text-gray-400">Lancez une analyse pour generer le profil jour-type.</p>
+        <p className="text-sm text-gray-400">Lancez une analyse pour générer le profil jour-type.</p>
       </div>
     );
   }
@@ -463,7 +467,7 @@ function HeatmapGrid({ data }) {
     return (
       <div className="text-center py-8">
         <Sun size={24} className="mx-auto text-gray-200 mb-2" />
-        <p className="text-xs text-gray-400">Pas de donnees heatmap. Lancez une analyse.</p>
+        <p className="text-xs text-gray-400">Pas de données heatmap. Lancez une analyse.</p>
       </div>
     );
   }
@@ -513,11 +517,11 @@ function HeatmapGrid({ data }) {
 }
 
 export const CLIMATE_REASONS = {
-  no_meter: 'Aucun compteur associe au snapshot. Relancez l\'analyse.',
-  no_weather: 'Donnees meteo indisponibles pour la periode.',
+  no_meter: 'Aucun compteur associé au snapshot. Relancez l\'analyse.',
+  no_weather: 'Données météo indisponibles pour la période.',
   meter_not_found: 'Compteur introuvable.',
-  insufficient_readings: 'Moins de 10 jours de donnees — insuffisant pour la regression.',
-  computation_error: 'Erreur de calcul. Verifiez les donnees sources.',
+  insufficient_readings: 'Moins de 10 jours de données — insuffisant pour la régression.',
+  computation_error: 'Erreur de calcul. Vérifiez les données sources.',
 };
 
 export const CLIMATE_LABEL_FR = {
@@ -525,7 +529,7 @@ export const CLIMATE_LABEL_FR = {
   cooling_dominant: 'Climatisation majoritaire',
   mixed: 'Mixte (chauffage + clim.)',
   flat: 'Insensible au climat',
-  unknown: 'Non determine',
+  unknown: 'Non déterminé',
 };
 
 // --- Usage Panel helpers ---
@@ -612,16 +616,16 @@ function ConfidenceDrawer({ open, onClose, qualityConf, qualityScore, climate })
   const coverage = qualityConf?.pct;
 
   const factors = [
-    { label: 'Score qualite', value: qualityScore != null ? `${qualityScore}/100` : '-', level: qualityScore >= 80 ? 'ok' : qualityScore >= 60 ? 'warn' : 'crit' },
+    { label: 'Score qualité', value: qualityScore != null ? `${qualityScore}/100` : '-', level: qualityScore >= 80 ? 'ok' : qualityScore >= 60 ? 'warn' : 'crit' },
     { label: 'R² signature', value: r2 != null ? r2.toFixed(2) : '-', level: r2 >= 0.6 ? 'ok' : r2 >= 0.3 ? 'warn' : 'crit' },
-    { label: 'Points de donnees', value: nPoints != null ? `${nPoints} jours` : '-', level: nPoints >= 30 ? 'ok' : nPoints >= 10 ? 'warn' : 'crit' },
+    { label: 'Points de données', value: nPoints != null ? `${nPoints} jours` : '-', level: nPoints >= 30 ? 'ok' : nPoints >= 10 ? 'warn' : 'crit' },
     { label: 'Couverture', value: coverage != null ? `${coverage}%` : '-', level: coverage >= 60 ? 'ok' : coverage >= 30 ? 'warn' : 'crit' },
   ];
 
   const DOT_COLORS = { ok: 'bg-green-500', warn: 'bg-yellow-500', crit: 'bg-red-500' };
 
   return (
-    <Drawer open={open} onClose={onClose} title="Confiance donnees — Detail" wide>
+    <Drawer open={open} onClose={onClose} title="Confiance données — Détail" wide>
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <Badge status={qualityConf?.level === 'high' ? 'ok' : qualityConf?.level === 'medium' ? 'warn' : 'crit'}>
@@ -650,17 +654,17 @@ function ConfidenceDrawer({ open, onClose, qualityConf, qualityScore, climate })
           <div className="space-y-3">
             {qualityScore != null && qualityScore < 80 && (
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-700">
-                Verifiez la qualite des donnees source: completude des releves, absence de trous et de doublons.
+                Vérifiez la qualité des données source: complétude des relevés, absence de trous et de doublons.
               </div>
             )}
             {r2 != null && r2 < 0.3 && (
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-700">
-                R² faible — la signature climatique n'est pas fiable. Augmentez la periode d'analyse ou verifiez les donnees meteo.
+                R² faible — la signature climatique n'est pas fiable. Augmentez la période d'analyse ou vérifiez les données météo.
               </div>
             )}
             {nPoints != null && nPoints < 30 && (
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-700">
-                Seulement {nPoints} jours de donnees. Augmentez la periode d'analyse pour une confiance plus elevee (minimum 30 jours recommandes).
+                Seulement {nPoints} jours de données. Augmentez la période d'analyse pour une confiance plus élevée (minimum 30 jours recommandés).
               </div>
             )}
             {(qualityScore == null || qualityScore >= 80) && (r2 == null || r2 >= 0.3) && (nPoints == null || nPoints >= 30) && (
@@ -676,17 +680,18 @@ function ConfidenceDrawer({ open, onClose, qualityConf, qualityScore, climate })
 }
 
 const OFF_HOURS_TABS = [
-  { id: 'methode', label: 'Methode' },
-  { id: 'hypotheses', label: 'Hypotheses' },
+  { id: 'methode', label: 'Méthode' },
+  { id: 'hypotheses', label: 'Hypothèses' },
   { id: 'actions', label: 'Actions' },
 ];
 
 function OffHoursDrawer({ open, onClose, offHoursRatio, offHoursKwh, schedule, onCreateAction }) {
   const [tab, setTab] = useState('methode');
   const estimate = computeOffHoursEstimate(offHoursKwh);
+  const navTo = useNavigate();
 
   return (
-    <Drawer open={open} onClose={onClose} title="Hors Horaires — Detail" wide>
+    <Drawer open={open} onClose={onClose} title="Hors Horaires — Détail" wide>
       <div className="space-y-4">
         <div className="flex items-center gap-3 flex-wrap">
           {offHoursRatio != null && <Badge status={offHoursRatio <= 0.20 ? 'ok' : offHoursRatio <= 0.40 ? 'warn' : 'crit'}>{fmtNum(offHoursRatio * 100)}%</Badge>}
@@ -698,8 +703,8 @@ function OffHoursDrawer({ open, onClose, offHoursRatio, offHoursKwh, schedule, o
 
         {tab === 'methode' && (
           <div className="space-y-3">
-            <DrawerSection title="Definition">
-              <p className="text-sm text-gray-600">Energie consommee en dehors des heures d'exploitation definies dans le planning du site.</p>
+            <DrawerSection title="Définition">
+              <p className="text-sm text-gray-600">Énergie consommée en dehors des heures d'exploitation définies dans le planning du site.</p>
               <DrawerRow label="Ratio">{offHoursRatio != null ? `${fmtNum(offHoursRatio * 100)}%` : '-'}</DrawerRow>
               <DrawerRow label="kWh (90 jours)">{offHoursKwh != null ? fmtNum(offHoursKwh, 0) : '-'}</DrawerRow>
             </DrawerSection>
@@ -710,47 +715,53 @@ function OffHoursDrawer({ open, onClose, offHoursRatio, offHoursKwh, schedule, o
                   <DrawerRow label="Heures">{schedule.is_24_7 ? '24/7' : `${schedule.open_time}-${schedule.close_time}`}</DrawerRow>
                 </>
               ) : (
-                <p className="text-sm text-gray-400">Horaires non definis — le ratio est base sur un profil par defaut.</p>
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-400">Horaires non définis — le ratio est basé sur un profil par défaut.</p>
+                  <Button variant="secondary" size="sm" onClick={() => { onClose(); navTo('/patrimoine'); }}>
+                    <Clock size={14} />
+                    Définir les horaires
+                  </Button>
+                </div>
               )}
             </DrawerSection>
             <DrawerSection title="Extrapolation">
-              <DrawerRow label="Periode mesuree">90 jours</DrawerRow>
+              <DrawerRow label="Période mesurée">90 jours</DrawerRow>
               <DrawerRow label="Facteur annuel">x {(365 / 90).toFixed(2)}</DrawerRow>
-              <DrawerRow label="kWh annuel estime">{offHoursKwh > 0 ? fmtNum(offHoursKwh * (365 / 90), 0) : '-'}</DrawerRow>
+              <DrawerRow label="kWh annuel estimé">{offHoursKwh > 0 ? fmtNum(offHoursKwh * (365 / 90), 0) : '-'}</DrawerRow>
             </DrawerSection>
           </div>
         )}
 
         {tab === 'hypotheses' && (
           <div className="space-y-3">
-            <DrawerSection title="Prix de reference">
+            <DrawerSection title="Prix de référence">
               <DrawerRow label="Prix kWh">{estimate.price} EUR/kWh</DrawerRow>
               <DrawerRow label="Source">Tarif moyen tertiaire France (estimation)</DrawerRow>
             </DrawerSection>
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-700">
-              Les montants affiches sont des estimations. Renseignez vos tarifs reels pour un chiffrage precis.
+              Les montants affichés sont des estimations. Renseignez vos tarifs réels pour un chiffrage précis.
             </div>
           </div>
         )}
 
         {tab === 'actions' && (
           <div className="space-y-3">
-            <DrawerSection title="Action recommandee">
-              <p className="text-sm text-gray-600">Reduire la consommation hors horaires d'exploitation par ajustement des equipements CVC, eclairage, et veilles.</p>
+            <DrawerSection title="Action recommandée">
+              <p className="text-sm text-gray-600">Réduire la consommation hors horaires d'exploitation par ajustement des équipements CVC, éclairage, et veilles.</p>
             </DrawerSection>
             {estimate.eur > 0 && (
               <Button
                 variant="primary"
                 size="sm"
                 onClick={() => onCreateAction({
-                  titre: `Reduction conso hors horaires — Site`,
+                  titre: `Réduction conso hors horaires — Site`,
                   type: 'conso',
                   impact_eur: estimate.eur,
                   description: `Off-hours ${offHoursRatio != null ? fmtNum(offHoursRatio * 100) : '?'}% — ${fmtNum(offHoursKwh, 0)} kWh sur 90j. Estimation: ${estimate.label}.`,
                 })}
               >
                 <Zap size={14} />
-                Creer action ({estimate.label})
+                Créer action ({estimate.label})
               </Button>
             )}
           </div>
@@ -763,7 +774,7 @@ function OffHoursDrawer({ open, onClose, offHoursRatio, offHoursKwh, schedule, o
 function ClimateScatter({ climate }) {
   if (!climate || !climate.scatter || climate.scatter.length === 0) {
     const reason = climate?.reason;
-    const msg = reason ? CLIMATE_REASONS[reason] || reason : 'Pas de donnees climatiques.';
+    const msg = reason ? CLIMATE_REASONS[reason] || reason : 'Pas de données climatiques.';
     return (
       <div className="text-center py-12">
         <Thermometer size={28} className="mx-auto text-gray-200 mb-2" />
@@ -778,12 +789,12 @@ function ClimateScatter({ climate }) {
       <ResponsiveContainer width="100%" height={250}>
         <ScatterChart margin={{ top: 5, right: 10, bottom: 5, left: 10 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-          <XAxis dataKey="T" name="Temperature (°C)" unit=" °C" tick={{ fontSize: 11 }} type="number" />
-          <YAxis dataKey="kwh" name="Conso. journaliere" unit=" kWh/j" tick={{ fontSize: 11 }} type="number" />
+          <XAxis dataKey="T" name="Température (°C)" unit=" °C" tick={{ fontSize: 11 }} type="number" />
+          <YAxis dataKey="kwh" name="Conso. journalière" unit=" kWh/j" tick={{ fontSize: 11 }} type="number" />
           <RTooltip cursor={{ strokeDasharray: '3 3' }} />
           <Scatter data={climate.scatter} fill="#3b82f6" fillOpacity={0.6} r={3} name="Jours" />
           {climate.fit_line && climate.fit_line.length > 0 && (
-            <Scatter data={climate.fit_line} fill="none" line={{ stroke: '#ef4444', strokeWidth: 2 }} shape={() => null} name="Regression" />
+            <Scatter data={climate.fit_line} fill="none" line={{ stroke: '#ef4444', strokeWidth: 2 }} shape={() => null} name="Régression" />
           )}
         </ScatterChart>
       </ResponsiveContainer>
@@ -832,7 +843,7 @@ function InsightDrawer({ alert, open, onClose, onAck, onResolve, onCreateAction,
         {/* Header badges */}
         <div className="flex items-center gap-2 flex-wrap">
           <Badge status={stCfg.badge}>{stCfg.label}</Badge>
-          <Badge status={SEVERITY_BADGE[alert.severity] || 'neutral'}>{alert.severity}</Badge>
+          <Badge status={SEVERITY_BADGE[alert.severity] || 'neutral'}>{SEVERITY_LABEL_FR[alert.severity] || alert.severity}</Badge>
           {alert.estimated_impact_kwh > 0 && (
             <span className="text-xs text-orange-600 font-medium">{alert.estimated_impact_kwh} kWh</span>
           )}
@@ -860,7 +871,7 @@ function InsightDrawer({ alert, open, onClose, onAck, onResolve, onCreateAction,
                 ))}
               </DrawerSection>
             ) : (
-              <p className="text-sm text-gray-400 text-center py-4">Pas de preuve detaillee.</p>
+              <p className="text-sm text-gray-400 text-center py-4">Pas de preuve détaillée.</p>
             )}
             {Object.keys(kbLink).length > 0 && (
               <DrawerSection title="Base de connaissances">
@@ -874,13 +885,13 @@ function InsightDrawer({ alert, open, onClose, onAck, onResolve, onCreateAction,
         {/* Methode tab */}
         {tab === 'methode' && (
           <div className="space-y-3">
-            <DrawerSection title="Methode de detection">
+            <DrawerSection title="Méthode de détection">
               <DrawerRow label="Type">{alert.alert_type}</DrawerRow>
-              <DrawerRow label="Severite">{alert.severity}</DrawerRow>
+              <DrawerRow label="Sévérité">{SEVERITY_LABEL_FR[alert.severity] || alert.severity}</DrawerRow>
               <DrawerRow label="Moteur">Moteur Monitoring v1.0</DrawerRow>
             </DrawerSection>
             <DrawerSection title="Seuils">
-              <DrawerRow label="Seuil declenchement">Calcule par le moteur d'alertes</DrawerRow>
+              <DrawerRow label="Seuil déclenchement">Calculé par le moteur d'alertes</DrawerRow>
               <DrawerRow label="Confiance">{alert.severity === 'critical' ? 'Haute' : 'Moyenne'}</DrawerRow>
             </DrawerSection>
           </div>
@@ -922,7 +933,7 @@ function InsightDrawer({ alert, open, onClose, onAck, onResolve, onCreateAction,
             className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition"
           >
             <Zap size={15} />
-            Creer une action
+            Créer une action
           </button>
           <div className="flex items-center gap-2">
             {alert.status === 'open' && (
@@ -1093,7 +1104,7 @@ export default function MonitoringPage() {
   };
 
   const handleSaveAction = () => {
-    toast('Action creee avec succes', 'success');
+    toast('Action créée avec succès', 'success');
     setShowActionModal(false);
     track('monitoring_action_created', { site_id: siteId });
   };
@@ -1116,7 +1127,7 @@ export default function MonitoringPage() {
     return ` · Bench: P${b.percentile}`;
   };
   const benchmarkTip = (key) => {
-    if (!benchmark || benchmark.insufficient || !benchmark.benchmarks?.[key]) return 'Benchmark: donnees insuffisantes';
+    if (!benchmark || benchmark.insufficient || !benchmark.benchmarks?.[key]) return 'Benchmark: données insuffisantes';
     const b = benchmark.benchmarks[key];
     return `Benchmark (${benchmark.peer_count} pairs): P25=${b.p25} P50=${b.p50} P75=${b.p75} — votre P${b.percentile}`;
   };
@@ -1196,8 +1207,8 @@ export default function MonitoringPage() {
     return (
       <PageShell
         icon={Activity}
-        title="Performance Electrique"
-        subtitle="KPIs, puissance, qualite de donnees & alertes"
+        title="Performance Électrique"
+        subtitle="KPIs, puissance, qualité de données & alertes"
         actions={
           <select
             className="border rounded-lg px-3 py-2 text-sm min-w-[200px]"
@@ -1215,8 +1226,8 @@ export default function MonitoringPage() {
       >
         <EmptyState
           icon={Activity}
-          title="Selectionnez un site"
-          text="Choisissez un site dans le selecteur ci-dessus pour voir les KPIs de performance electrique."
+          title="Sélectionnez un site"
+          text="Choisissez un site dans le sélecteur ci-dessus pour voir les KPIs de performance électrique."
         />
       </PageShell>
     );
@@ -1228,11 +1239,11 @@ export default function MonitoringPage() {
     return (
       <PageShell
         icon={Activity}
-        title="Performance Electrique"
-        subtitle="KPIs, puissance, qualite de donnees & alertes"
+        title="Performance Électrique"
+        subtitle="KPIs, puissance, qualité de données & alertes"
       >
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
-          {[1, 2, 3, 4, 5].map((i) => <SkeletonCard key={i} />)}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+          {[1, 2, 3, 4, 5, 6].map((i) => <SkeletonCard key={i} />)}
         </div>
         <Skeleton rows={6} />
       </PageShell>
@@ -1244,8 +1255,8 @@ export default function MonitoringPage() {
   return (
     <PageShell
       icon={Activity}
-      title="Performance Electrique"
-      subtitle="KPIs, puissance, qualite de donnees & alertes"
+      title="Performance Électrique"
+      subtitle="KPIs, puissance, qualité de données & alertes"
       actions={
         <>
           <select
@@ -1292,9 +1303,9 @@ export default function MonitoringPage() {
         <div>
           <EmptyState
             icon={Database}
-            title="Aucune donnee de monitoring"
-            text="Generez des donnees de demo pour explorer les KPIs de performance electrique, les profils jour-type et les alertes automatiques."
-            ctaLabel={demoLoading ? 'Generation...' : 'Generer Donnees Demo'}
+            title="Aucune donnée de monitoring"
+            text="Générez des données de démo pour explorer les KPIs de performance électrique, les profils jour-type et les alertes automatiques."
+            ctaLabel={demoLoading ? 'Génération...' : 'Générer Données Démo'}
             onCta={handleDemo}
           />
           <div className="flex items-center justify-center gap-2 mt-4">
@@ -1372,7 +1383,7 @@ export default function MonitoringPage() {
               title="Talon / Base"
               value={kpiData.pbase_kw != null ? `${fmtNum(kpiData.pbase_kw)} kW` : '-'}
               sub={`Nuit: ${fmtNum(kpiData.pbase_night_kw)} kW${benchmarkLabel('pbase_kw')}`}
-              tooltip={`Talon = consommation mini hors periodes d'activite.\n${benchmarkTip('pbase_kw')}`}
+              tooltip={`Talon = consommation mini hors périodes d'activité.\n${benchmarkTip('pbase_kw')}`}
               status="ok"
               color="bg-blue-500"
             />
@@ -1381,7 +1392,7 @@ export default function MonitoringPage() {
               title="Facteur de charge"
               value={kpiData.load_factor != null ? `${fmtNum(kpiData.load_factor * 100)}%` : '-'}
               sub={`Pic/Moy: ${fmtNum(kpiData.peak_to_average)}x · ${archetypeLabel}${benchmarkLabel('load_factor')}`}
-              tooltip={`${KPI_TOOLTIPS.loadFactor}\nProfil: ${archetypeLabel} (OK >= ${lfThresholds.ok}%, Attention >= ${lfThresholds.warn}%)${isDefaultArchetype ? '\n⚠ Profil par defaut — choisissez un profil pour des seuils adaptes.' : ''}\n${benchmarkTip('load_factor')}`}
+              tooltip={`${KPI_TOOLTIPS.loadFactor}\nProfil: ${archetypeLabel} (OK >= ${lfThresholds.ok}%, Attention >= ${lfThresholds.warn}%)${isDefaultArchetype ? '\n⚠ Profil par défaut — choisissez un profil pour des seuils adaptés.' : ''}\n${benchmarkTip('load_factor')}`}
               status={lfStatus}
               color="bg-indigo-500"
             />
@@ -1389,7 +1400,7 @@ export default function MonitoringPage() {
               icon={Shield}
               title="Risque Puissance"
               value={riskScore != null ? `${riskScore}/100` : '-'}
-              sub={riskScore != null ? (riskScore < 35 ? 'Marge confortable' : riskScore < 60 ? 'A surveiller' : 'Depassement probable') : ''}
+              sub={riskScore != null ? (riskScore < 35 ? 'Marge confortable' : riskScore < 60 ? 'À surveiller' : 'Dépassement probable') : ''}
               tooltip={KPI_TOOLTIPS.risk}
               status={riskStatus}
               color={riskScore >= 60 ? 'bg-red-500' : riskScore >= 35 ? 'bg-orange-500' : 'bg-green-500'}
@@ -1397,9 +1408,9 @@ export default function MonitoringPage() {
             />
             <StatusKpiCard
               icon={CheckCircle}
-              title="Qualite Donnees"
+              title="Qualité Données"
               value={qualityScore != null ? `${qualityScore}/100` : '-'}
-              sub={qualityScore != null ? (qualityScore >= 80 ? 'Excellente' : qualityScore >= 60 ? 'Correcte' : 'Degradee') : ''}
+              sub={qualityScore != null ? (qualityScore >= 80 ? 'Excellente' : qualityScore >= 60 ? 'Correcte' : 'Dégradée') : ''}
               tooltip={KPI_TOOLTIPS.quality}
               status={qualityStatus}
               color={qualityScore >= 80 ? 'bg-green-500' : qualityScore >= 60 ? 'bg-yellow-500' : 'bg-red-500'}
@@ -1413,8 +1424,8 @@ export default function MonitoringPage() {
                 ? (schedule.is_24_7
                   ? '24/7 — pas de hors horaires'
                   : `${schedule.open_time}-${schedule.close_time}${offHoursEstimate.eur > 0 ? ` · ${offHoursEstimate.label}` : ''}`)
-                : `Horaires non definis${offHoursEstimate.eur > 0 ? ` · ${offHoursEstimate.label}` : ''}`}
-              tooltip={`Part d'energie consommee en dehors des heures d'exploitation. Un ratio eleve signale un talon ou des equipements actifs la nuit/week-end.\nHypothese: ${offHoursEstimate.price} EUR/kWh (tarif moyen)`}
+                : `Horaires non définis${offHoursEstimate.eur > 0 ? ` · ${offHoursEstimate.label}` : ''}`}
+              tooltip={`Part d'énergie consommée en dehors des heures d'exploitation. Un ratio élevé signale un talon ou des équipements actifs la nuit/week-end.\nHypothèse: ${offHoursEstimate.price} EUR/kWh (tarif moyen)`}
               status={offHoursRatio != null ? (offHoursRatio <= 0.20 ? 'ok' : offHoursRatio <= 0.40 ? 'surveiller' : 'critique') : 'no_data'}
               color={offHoursRatio != null ? (offHoursRatio <= 0.20 ? 'bg-green-500' : offHoursRatio <= 0.40 ? 'bg-orange-500' : 'bg-red-500') : 'bg-slate-400'}
               confidence={qualityConf}
@@ -1427,7 +1438,7 @@ export default function MonitoringPage() {
             <div className="mb-6">
               <StatusKpiCard
                 icon={Thermometer}
-                title="Sensibilite Climatique"
+                title="Sensibilité Climatique"
                 value={climate.slope_kw_per_c != null ? `${climate.slope_kw_per_c.toFixed(1)} (kWh/j)/°C` : '-'}
                 sub={climate.slope_kw_per_c != null
                   ? `R²: ${climate.r_squared != null ? climate.r_squared.toFixed(2) : '-'} | ${CLIMATE_LABEL_FR[climate.label] || climate.label || 'Non determine'}`
@@ -1468,7 +1479,7 @@ export default function MonitoringPage() {
             <Card>
               <CardBody>
                 <h2 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
-                  <Thermometer size={18} /> Conso. vs Temperature
+                  <Thermometer size={18} /> Conso. vs Température
                   <span className="text-[10px] text-gray-400 font-normal ml-auto">kWh/jour vs °C</span>
                 </h2>
                 <ClimateScatter climate={climate} />
@@ -1495,7 +1506,7 @@ export default function MonitoringPage() {
                 ) : (
                   <div className="text-center py-12">
                     <BarChart3 size={32} className="mx-auto text-gray-200 mb-2" />
-                    <p className="text-sm text-gray-400">Lancez une analyse pour generer la courbe de charge.</p>
+                    <p className="text-sm text-gray-400">Lancez une analyse pour générer la courbe de charge.</p>
                     <button
                       onClick={handleRun}
                       className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-800"
@@ -1670,7 +1681,7 @@ export default function MonitoringPage() {
                     <thead>
                       <tr className="border-b text-left text-gray-500">
                         <th className="pb-2 pr-4">ID</th>
-                        <th className="pb-2 pr-4">Periode</th>
+                        <th className="pb-2 pr-4">Période</th>
                         <th className="pb-2 pr-4">Qualite</th>
                         <th className="pb-2 pr-4">Risque</th>
                         <th className="pb-2">Date</th>
@@ -1721,7 +1732,7 @@ export default function MonitoringPage() {
               </select>
               <Button variant="ghost" size="sm" onClick={handleDemo} disabled={demoLoading}>
                 <PlayCircle size={14} />
-                {demoLoading ? 'Generation...' : 'Regenerer Demo'}
+                {demoLoading ? 'Génération...' : 'Régénérer Démo'}
               </Button>
             </div>
           </div>

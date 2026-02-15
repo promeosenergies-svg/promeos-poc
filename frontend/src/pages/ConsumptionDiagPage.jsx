@@ -36,10 +36,10 @@ const SEVERITY_BADGE = {
 
 const TYPE_LABELS = {
   hors_horaires: 'Hors horaires',
-  base_load: 'Talon eleve',
+  base_load: 'Talon élevé',
   pointe: 'Pointe anormale',
-  derive: 'Derive consommation',
-  data_gap: 'Lacunes donnees',
+  derive: 'Dérive consommation',
+  data_gap: 'Lacunes données',
 };
 
 const EFFORT_COLOR = {
@@ -49,15 +49,15 @@ const EFFORT_COLOR = {
 };
 
 const WORKFLOW_CONFIG = {
-  open: { label: 'A traiter', color: 'bg-red-50 text-red-700' },
+  open: { label: 'À traiter', color: 'bg-red-50 text-red-700' },
   ack: { label: 'En cours', color: 'bg-amber-50 text-amber-700' },
-  resolved: { label: 'Resolu', color: 'bg-green-50 text-green-700' },
+  resolved: { label: 'Résolu', color: 'bg-green-50 text-green-700' },
   false_positive: { label: 'Faux positif', color: 'bg-gray-100 text-gray-500' },
 };
 
 const DRAWER_TABS = [
-  { id: 'evidence', label: 'Evidence' },
-  { id: 'methode', label: 'Methode' },
+  { id: 'evidence', label: 'Évidence' },
+  { id: 'methode', label: 'Méthode' },
   { id: 'actions', label: 'Actions' },
   { id: 'flex', label: 'Flex' },
 ];
@@ -134,7 +134,7 @@ function DiagHeader({ insights, summary, customPrice, onPriceChange }) {
       <CardBody>
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div className="text-sm text-gray-600">
-            <span className="font-medium text-gray-800">Periode : </span>
+            <span className="font-medium text-gray-800">Période : </span>
             {from ? fmtDateFR(from) : '—'} → {to ? fmtDateFR(to) : '—'}
             {nbJours != null && <span className="text-gray-400 ml-2">({nbJours} jours)</span>}
           </div>
@@ -158,11 +158,11 @@ function DiagHeader({ insights, summary, customPrice, onPriceChange }) {
           </div>
           <div className="flex items-center gap-6">
             <div className="text-right">
-              <p className="text-xs text-gray-400">Pertes estimees</p>
+              <p className="text-xs text-gray-400">Pertes estimées</p>
               <p className="text-lg font-bold text-red-600">{fmtEur(recalcEur)}</p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-gray-400">Exces kWh</p>
+              <p className="text-xs text-gray-400">Excès kWh</p>
               <p className="text-lg font-bold text-orange-600">{fmtKwh(Math.round(totalKwh))}</p>
             </div>
           </div>
@@ -182,7 +182,7 @@ function SummaryCards({ summary, customPrice }) {
   const cards = [
     { label: 'Insights detectes', value: summary.total_insights, color: 'text-blue-700', bg: 'bg-blue-50' },
     { label: 'Sites analyses', value: summary.sites_with_insights, color: 'text-indigo-700', bg: 'bg-indigo-50' },
-    { label: 'Pertes estimees', value: fmtEur(lossEur), color: 'text-red-700', bg: 'bg-red-50' },
+    { label: 'Pertes estimées', value: fmtEur(lossEur), color: 'text-red-700', bg: 'bg-red-50' },
     { label: 'Pertes kWh', value: fmtKwh(Math.round(summary.total_loss_kwh || 0)), color: 'text-orange-700', bg: 'bg-orange-50' },
   ];
 
@@ -205,7 +205,7 @@ function ByTypeBreakdown({ byType }) {
   return (
     <Card className="mb-6">
       <CardBody>
-        <h3 className="font-semibold text-gray-800 mb-3">Repartition par type</h3>
+        <h3 className="font-semibold text-gray-800 mb-3">Répartition par type</h3>
         <div className="grid grid-cols-5 gap-3">
           {Object.entries(byType).map(([type, count]) => (
             <div key={type} className="text-center p-3 bg-gray-50 rounded-lg">
@@ -370,7 +370,7 @@ function FlexTab({ siteId }) {
             <div className="flex gap-3 mt-1.5">
               {lever.estimate_kw && (
                 <span className="text-[10px] text-gray-500 bg-white/60 px-1.5 py-0.5 rounded">
-                  ~{lever.estimate_kw} kW effacable
+                  ~{lever.estimate_kw} kW effaçable
                 </span>
               )}
               {lever.estimate_kwh_year && (
@@ -384,7 +384,7 @@ function FlexTab({ siteId }) {
       ))}
 
       {flex.levers.every(l => l.score === 0) && (
-        <p className="text-xs text-gray-400 text-center">Aucun levier flex identifie pour ce site.</p>
+        <p className="text-xs text-gray-400 text-center">Aucun levier flex identifié pour ce site.</p>
       )}
     </div>
   );
@@ -435,8 +435,8 @@ function EvidenceDrawer({ insight, open, onClose, onStatusChange, onCreateAction
               <DrawerRow label="Seuil">{metrics.threshold || '> 2 ecarts-type'}</DrawerRow>
               <DrawerRow label="Confiance">{metrics.confidence || 'Moyenne'}</DrawerRow>
             </DrawerSection>
-            <DrawerSection title="Hypotheses">
-              <DrawerRow label="Prix ref">{metrics.price_ref_eur_kwh ? `${metrics.price_ref_eur_kwh} EUR/kWh` : '0.15 EUR/kWh (defaut)'}</DrawerRow>
+            <DrawerSection title="Hypothèses">
+              <DrawerRow label="Prix ref">{metrics.price_ref_eur_kwh ? `${metrics.price_ref_eur_kwh} EUR/kWh` : '0.15 EUR/kWh (défaut)'}</DrawerRow>
               <DrawerRow label="Pas de temps">{metrics.granularity || '30 min'}</DrawerRow>
               <DrawerRow label="Couverture data">{metrics.coverage ? `${metrics.coverage}%` : '—'}</DrawerRow>
               {metrics.schedule_source && <DrawerRow label="Source horaires">{metrics.schedule_source}</DrawerRow>}
@@ -450,7 +450,7 @@ function EvidenceDrawer({ insight, open, onClose, onStatusChange, onCreateAction
             {actions.length > 0 ? (
               actions.map((a, i) => <RecommendedAction key={i} action={a} />)
             ) : (
-              <p className="text-sm text-gray-400 text-center py-6">Aucune action recommandee.</p>
+              <p className="text-sm text-gray-400 text-center py-6">Aucune action recommandée.</p>
             )}
           </div>
         )}
@@ -473,7 +473,7 @@ function EvidenceDrawer({ insight, open, onClose, onStatusChange, onCreateAction
             className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition"
           >
             <Zap size={15} />
-            Creer une action
+            Créer une action
           </button>
 
           {/* Workflow buttons */}
@@ -522,7 +522,7 @@ function EvidenceTab({ insight }) {
     <div className="space-y-4">
       <div className="bg-gray-50 rounded-lg p-3">
         <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">
-          Profil type : consommation observee vs baseline
+          Profil type : consommation observée vs référence
         </h4>
         <ResponsiveContainer width="100%" height={200}>
           <AreaChart data={chartData}>
@@ -530,19 +530,19 @@ function EvidenceTab({ insight }) {
             <XAxis dataKey="hour" tick={{ fontSize: 10 }} />
             <YAxis tick={{ fontSize: 10 }} unit=" kW" />
             <RTooltip />
-            <Area type="monotone" dataKey="baseline" stroke="#94a3b8" fill="#e2e8f0" name="Baseline" />
-            <Area type="monotone" dataKey="actual" stroke="#ef4444" fill="#fee2e2" fillOpacity={0.5} name="Observe" />
+            <Area type="monotone" dataKey="baseline" stroke="#94a3b8" fill="#e2e8f0" name="Référence" />
+            <Area type="monotone" dataKey="actual" stroke="#ef4444" fill="#fee2e2" fillOpacity={0.5} name="Observée" />
           </AreaChart>
         </ResponsiveContainer>
         {insight.estimated_loss_kwh > 0 && (
           <p className="text-xs text-gray-500 mt-1">
-            Delta : +{Math.round(insight.estimated_loss_kwh).toLocaleString('fr-FR')} kWh
+            Écart : +{Math.round(insight.estimated_loss_kwh).toLocaleString('fr-FR')} kWh
             {insight.estimated_loss_eur > 0 && ` (${fmtEur(Math.round(insight.estimated_loss_eur))})`}
           </p>
         )}
       </div>
       <p className="text-[10px] text-gray-400 italic">
-        Graphe illustratif base sur le type d'insight et les metriques disponibles.
+        Graphe illustratif basé sur le type d'insight et les métriques disponibles.
       </p>
     </div>
   );
@@ -649,7 +649,7 @@ export default function ConsumptionDiagPage() {
       impact_eur: Math.round(insight.estimated_loss_eur || 0),
       priorite: insight.severity === 'critical' ? 'critical' : insight.severity === 'high' ? 'high' : 'medium',
       description: insight.message + (insight.recommended_actions?.length
-        ? '\n\nActions recommandees:\n' + insight.recommended_actions.map(a => `- ${a.title}`).join('\n')
+        ? '\n\nActions recommandées :\n' + insight.recommended_actions.map(a => `- ${a.title}`).join('\n')
         : ''),
     });
     setShowActionModal(true);
@@ -678,11 +678,11 @@ export default function ConsumptionDiagPage() {
     <PageShell
       icon={Zap}
       title="Diagnostic"
-      subtitle="Detection automatique : horaires, talon, pointes, derives"
+      subtitle="Détection automatique : horaires, talon, pointes, dérives"
       actions={
         <>
           <Button variant="secondary" size="sm" onClick={handleSeedDemo} disabled={seeding}>
-            {seeding ? 'Generation...' : 'Generer conso demo'}
+            {seeding ? 'Génération...' : 'Générer conso démo'}
           </Button>
           <Button size="sm" onClick={handleDiagnose} disabled={diagnosing}>
             <Zap size={14} />
@@ -704,11 +704,11 @@ export default function ConsumptionDiagPage() {
             <Zap size={32} className="mx-auto text-gray-300 mb-4" />
             <p className="text-gray-500 text-lg mb-2">Aucun insight de consommation</p>
             <p className="text-gray-400 text-sm mb-6">
-              Generez des donnees demo puis lancez le diagnostic pour detecter les anomalies.
+              Générez des données démo puis lancez le diagnostic pour détecter les anomalies.
             </p>
             <div className="flex gap-3 justify-center">
               <Button variant="secondary" onClick={handleSeedDemo} disabled={seeding}>
-                1. Generer conso demo
+                1. Générer conso démo
               </Button>
               <Button onClick={handleDiagnose} disabled={diagnosing}>
                 2. Lancer le diagnostic
