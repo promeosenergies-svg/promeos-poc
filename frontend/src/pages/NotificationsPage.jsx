@@ -1,6 +1,6 @@
 /**
- * PROMEOS - Alert Inbox (/notifications) V3 — Top Pages WOW
- * Triage tabs, detail drawer, bulk actions always visible, neutral design.
+ * PROMEOS - Alert Inbox (/notifications) Phase 6 — Finitions
+ * Sticky filter bar, sync meta, improved density, accent hover.
  */
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -15,7 +15,7 @@ import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { useToast } from '../ui/ToastProvider';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import {
-  Bell, RefreshCw, ExternalLink, Eye, X, Trash2, Search, ArrowRight, Clock,
+  Bell, RefreshCw, ExternalLink, Eye, X, Trash2, Search, ArrowRight, Clock, Database,
 } from 'lucide-react';
 
 const SEVERITY_STATUS = { critical: 'crit', warn: 'warn', info: 'info' };
@@ -51,6 +51,7 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [syncing, setSyncing] = useState(false);
+  const [lastSync, setLastSync] = useState(null);
   const [selected, setSelected] = useState(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [triageTab, setTriageTab] = useState('all');
@@ -69,6 +70,7 @@ export default function NotificationsPage() {
       ]);
       setEvents(evts);
       setSummary(sum);
+      setLastSync(new Date());
     } catch {
       setError('Erreur de chargement des alertes');
     } finally {
@@ -82,7 +84,7 @@ export default function NotificationsPage() {
     setSyncing(true);
     try {
       const r = await syncNotifications();
-      toast(`Sync: ${r.created} creees, ${r.updated} maj`, 'success');
+      toast(`Sync : ${r.created} creees, ${r.updated} maj`, 'success');
       await load();
     } catch (e) {
       toast('Erreur synchronisation', 'error');
@@ -95,7 +97,6 @@ export default function NotificationsPage() {
     try {
       await patchNotification(id, { status });
       setEvents(prev => prev.map(e => e.id === id ? { ...e, status } : e));
-      // Update drawer if open
       if (drawerEvent?.id === id) setDrawerEvent(prev => ({ ...prev, status }));
     } catch {
       toast('Erreur mise a jour', 'error');
@@ -105,7 +106,6 @@ export default function NotificationsPage() {
   const handleBulkAction = async (status) => {
     const ids = Array.from(selected);
     if (ids.length === 0) return;
-    // Parallel batch
     await Promise.allSettled(ids.map(id => patchNotification(id, { status })));
     setEvents(prev => prev.map(e => ids.includes(e.id) ? { ...e, status } : e));
     setSelected(new Set());
@@ -128,35 +128,26 @@ export default function NotificationsPage() {
     }
   };
 
-  // Triage + source + search filters
   const filteredEvents = useMemo(() => {
     let list = events;
-
-    // Triage tab
     if (triageTab !== 'all') {
       list = list.filter(e => e.status === triageTab);
     }
-
-    // Source filter
     if (filterSource) {
       list = list.filter(e => e.source_type === filterSource);
     }
-
-    // Search
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       list = list.filter(e =>
         e.title.toLowerCase().includes(q) || (e.message || '').toLowerCase().includes(q)
       );
     }
-
     return list;
   }, [events, triageTab, filterSource, searchQuery]);
 
   const totalFiltered = filteredEvents.length;
   const pageData = filteredEvents.slice((page - 1) * pageSize, page * pageSize);
 
-  // Tab counts
   const tabsWithCounts = useMemo(() => {
     const counts = { all: events.length, new: 0, read: 0, dismissed: 0 };
     for (const e of events) { counts[e.status] = (counts[e.status] || 0) + 1; }
@@ -190,28 +181,49 @@ export default function NotificationsPage() {
       title="Alertes"
       subtitle={`${events.length} alertes${events.filter(e => e.status === 'new').length > 0 ? ` · ${events.filter(e => e.status === 'new').length} nouvelles` : ''}`}
       actions={
-        <Button size="sm" onClick={handleSync} disabled={syncing}>
-          <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />
-          {syncing ? 'Sync...' : 'Synchroniser'}
-        </Button>
+        <div className="flex items-center gap-2">
+          {/* Sync meta — compact */}
+          {lastSync && (
+            <div className="hidden sm:flex items-center gap-3 mr-1 text-[11px] text-gray-400">
+              <span className="flex items-center gap-1">
+                <Clock size={11} />
+                {lastSync.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+              {summary && (
+                <span className="flex items-center gap-1" title="Couverture sources">
+                  <Database size={11} />
+                  {Object.keys(summary.by_source || {}).length} sources
+                </span>
+              )}
+            </div>
+          )}
+          <Button size="sm" onClick={handleSync} disabled={syncing}>
+            <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />
+            {syncing ? 'Sync...' : 'Synchroniser'}
+          </Button>
+        </div>
       }
     >
-      {/* Summary KPIs — neutral MetricCards */}
+      {/* Summary KPIs with accents */}
       {summary && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <MetricCard
+            accent="risque"
+            icon={Bell}
             label="Critique"
             value={summary.by_severity?.critical || 0}
             sub={summary.new_critical > 0 ? `${summary.new_critical} nouvelle(s)` : undefined}
             status="crit"
           />
           <MetricCard
+            accent="alertes"
             label="Attention"
             value={summary.by_severity?.warn || 0}
             sub={summary.new_warn > 0 ? `${summary.new_warn} nouvelle(s)` : undefined}
             status="warn"
           />
           <MetricCard
+            accent="conformite"
             label="Info"
             value={summary.by_severity?.info || 0}
             status="info"
@@ -226,8 +238,8 @@ export default function NotificationsPage() {
         onChange={(id) => { setTriageTab(id); setPage(1); setSelected(new Set()); }}
       />
 
-      {/* Search + source filter + bulk actions */}
-      <div className="flex items-center gap-3 flex-wrap">
+      {/* Sticky filter bar */}
+      <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm -mx-6 px-6 py-3 border-b border-gray-100 flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 max-w-xs">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
@@ -235,15 +247,16 @@ export default function NotificationsPage() {
             placeholder="Rechercher..."
             value={searchQuery}
             onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
-            className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm placeholder:text-gray-400
+            className="w-full pl-9 pr-3 py-1.5 border border-gray-300 rounded-lg text-sm placeholder:text-gray-400
               focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
         <select
           value={filterSource}
           onChange={(e) => { setFilterSource(e.target.value); setPage(1); }}
-          className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white
+          className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white
             focus:outline-none focus:ring-2 focus:ring-blue-500"
+          aria-label="Filtrer par source"
         >
           <option value="">Toutes sources</option>
           {Object.entries(SOURCE_LABELS).map(([k, v]) => (
@@ -251,7 +264,6 @@ export default function NotificationsPage() {
           ))}
         </select>
 
-        {/* Bulk actions — always visible when items selected */}
         {selected.size > 0 && (
           <div className="flex items-center gap-2 ml-auto">
             <span className="text-xs text-gray-500">{selected.size} selectionnee(s)</span>
@@ -310,7 +322,7 @@ export default function NotificationsPage() {
                 return (
                   <Tr
                     key={evt.id}
-                    className={`${isNew ? 'bg-gray-50/50' : ''} cursor-pointer`}
+                    className={`${isNew ? 'bg-blue-50/30' : ''} cursor-pointer hover:bg-blue-50/40`}
                     onClick={() => setDrawerEvent(evt)}
                   >
                     <Td onClick={(e) => e.stopPropagation()}>
@@ -330,7 +342,7 @@ export default function NotificationsPage() {
                         <div className="min-w-0">
                           <p className={`truncate ${isNew ? 'font-semibold text-gray-900' : 'font-medium text-gray-800'}`}>{evt.title}</p>
                           {evt.message && (
-                            <p className="text-xs text-gray-500 mt-0.5 truncate">{evt.message}</p>
+                            <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{evt.message}</p>
                           )}
                         </div>
                       </div>
@@ -340,10 +352,14 @@ export default function NotificationsPage() {
                         {SOURCE_LABELS[evt.source_type] || evt.source_type}
                       </span>
                     </Td>
-                    <Td className="text-right text-sm font-medium text-gray-700">
-                      {evt.estimated_impact_eur ? `${Math.round(evt.estimated_impact_eur)} EUR` : '-'}
+                    <Td className="text-right text-sm font-medium">
+                      {evt.estimated_impact_eur ? (
+                        <span className="text-amber-700">{Math.round(evt.estimated_impact_eur).toLocaleString('fr-FR')} EUR</span>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
                     </Td>
-                    <Td className="text-xs text-gray-500">{evt.due_date || '-'}</Td>
+                    <Td className="text-xs text-gray-500 whitespace-nowrap">{evt.due_date || '-'}</Td>
                     <Td>
                       <span className={`text-xs ${isNew ? 'font-medium text-gray-900' : 'text-gray-500'}`}>
                         {STATUS_LABELS[evt.status] || evt.status}
@@ -357,7 +373,7 @@ export default function NotificationsPage() {
                         {evt.deeplink_path && (
                           <button
                             onClick={() => navigate(evt.deeplink_path)}
-                            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded transition-colors"
+                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
                             title="Ouvrir"
                             aria-label="Ouvrir le lien"
                           >
@@ -367,7 +383,7 @@ export default function NotificationsPage() {
                         {evt.status === 'new' && (
                           <button
                             onClick={() => handlePatch(evt.id, 'read')}
-                            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded transition-colors"
+                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
                             title="Marquer lu"
                             aria-label="Marquer comme lu"
                           >
@@ -408,7 +424,6 @@ export default function NotificationsPage() {
       >
         {drawerEvent && (
           <div className="space-y-6">
-            {/* Header */}
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <StatusDot status={SEVERITY_STATUS[drawerEvent.severity] || 'info'} />
@@ -423,7 +438,6 @@ export default function NotificationsPage() {
               <h3 className="text-lg font-semibold text-gray-900">{drawerEvent.title}</h3>
             </div>
 
-            {/* Message */}
             {drawerEvent.message && (
               <div>
                 <p className="text-xs text-gray-500 font-medium uppercase mb-1">Description</p>
@@ -431,7 +445,6 @@ export default function NotificationsPage() {
               </div>
             )}
 
-            {/* Metadata */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-xs text-gray-500 font-medium uppercase mb-1">Source</p>
@@ -440,7 +453,7 @@ export default function NotificationsPage() {
               <div>
                 <p className="text-xs text-gray-500 font-medium uppercase mb-1">Impact estime</p>
                 <p className="text-sm text-gray-900">
-                  {drawerEvent.estimated_impact_eur ? `${Math.round(drawerEvent.estimated_impact_eur)} EUR` : 'Non estime'}
+                  {drawerEvent.estimated_impact_eur ? `${Math.round(drawerEvent.estimated_impact_eur).toLocaleString('fr-FR')} EUR` : 'Non estime'}
                 </p>
               </div>
               <div>
@@ -458,17 +471,16 @@ export default function NotificationsPage() {
             {isExpert && (
               <div className="bg-gray-50 rounded-lg p-3">
                 <p className="text-xs text-gray-500 font-medium uppercase mb-1">Debug</p>
-                <p className="text-xs font-mono text-gray-400">ID: {drawerEvent.id}</p>
+                <p className="text-xs font-mono text-gray-400">ID : {drawerEvent.id}</p>
                 {drawerEvent.source_id && (
-                  <p className="text-xs font-mono text-gray-400">Source ID: {drawerEvent.source_id}</p>
+                  <p className="text-xs font-mono text-gray-400">Source ID : {drawerEvent.source_id}</p>
                 )}
                 {drawerEvent.created_at && (
-                  <p className="text-xs font-mono text-gray-400">Cree: {drawerEvent.created_at}</p>
+                  <p className="text-xs font-mono text-gray-400">Cree : {drawerEvent.created_at}</p>
                 )}
               </div>
             )}
 
-            {/* Actions */}
             <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
               {drawerEvent.deeplink_path && (
                 <Button size="sm" onClick={() => { setDrawerEvent(null); navigate(drawerEvent.deeplink_path); }}>
