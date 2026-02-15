@@ -153,7 +153,57 @@ class TestKPICompleteness:
             "load_factor", "peak_to_average", "weekend_ratio", "night_ratio",
             "total_kwh", "readings_count", "interval_minutes",
             "ramp_rate_max_kw_h", "weekday_profile_kw", "weekend_profile_kw",
-            "monthly_kwh"
+            "monthly_kwh", "off_hours_kwh", "off_hours_ratio",
         ]
         for key in expected_keys:
             assert key in kpis, f"Missing KPI key: {key}"
+
+
+class TestOffHours:
+    """Tests for off-hours energy computation."""
+
+    def test_office_schedule_has_off_hours(self, engine):
+        """Mon-Fri 08-19: nights + weekends count as off-hours."""
+        readings = _make_week_readings(base_day=30, base_night=5, base_weekend=5)
+        schedule = {"open_days": "0,1,2,3,4", "open_time": "08:00", "close_time": "19:00", "is_24_7": False}
+        kpis = engine.compute(readings, interval_minutes=60, schedule=schedule)
+        assert kpis["off_hours_kwh"] > 0
+        assert 0 < kpis["off_hours_ratio"] < 1
+
+    def test_24_7_has_no_off_hours(self, engine):
+        """24/7 sites have zero off-hours energy."""
+        readings = _make_week_readings(base_day=20, base_night=20, base_weekend=20)
+        schedule = {"open_days": "0,1,2,3,4,5,6", "open_time": "00:00", "close_time": "23:59", "is_24_7": True}
+        kpis = engine.compute(readings, interval_minutes=60, schedule=schedule)
+        assert kpis["off_hours_kwh"] == 0
+        assert kpis["off_hours_ratio"] == 0
+
+    def test_no_schedule_uses_default(self, engine):
+        """Without schedule, defaults to Mon-Fri 08-19."""
+        readings = _make_week_readings(base_day=30, base_night=5, base_weekend=5)
+        kpis_no_sched = engine.compute(readings, interval_minutes=60, schedule=None)
+        kpis_default = engine.compute(readings, interval_minutes=60,
+                                      schedule={"open_days": "0,1,2,3,4", "open_time": "08:00",
+                                                "close_time": "19:00", "is_24_7": False})
+        assert abs(kpis_no_sched["off_hours_ratio"] - kpis_default["off_hours_ratio"]) < 0.01
+
+    def test_weekend_only_schedule(self, engine):
+        """A site open only on weekends should count weekdays as off-hours."""
+        readings = _make_week_readings(base_day=10, base_night=10, base_weekend=10)
+        schedule = {"open_days": "5,6", "open_time": "00:00", "close_time": "23:59", "is_24_7": False}
+        kpis = engine.compute(readings, interval_minutes=60, schedule=schedule)
+        # 5 weekdays out of 7 = ~71% off-hours
+        assert kpis["off_hours_ratio"] > 0.60
+
+    def test_empty_readings(self, engine):
+        """Empty readings should return zero off-hours."""
+        kpis = engine.compute([], interval_minutes=60)
+        assert kpis["off_hours_kwh"] == 0
+        assert kpis["off_hours_ratio"] == 0
+
+    def test_off_hours_ratio_bounded(self, engine):
+        """Off-hours ratio must be between 0 and 1."""
+        readings = _make_week_readings()
+        schedule = {"open_days": "0,1,2,3,4", "open_time": "09:00", "close_time": "17:00", "is_24_7": False}
+        kpis = engine.compute(readings, interval_minutes=60, schedule=schedule)
+        assert 0 <= kpis["off_hours_ratio"] <= 1

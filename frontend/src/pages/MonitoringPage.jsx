@@ -821,6 +821,9 @@ export default function MonitoringPage() {
   const kpiData = kpis?.kpis || {};
   const qualityScore = kpis?.data_quality_score ?? null;
   const riskScore = kpis?.risk_power_score ?? null;
+  const schedule = kpis?.schedule || null;
+  const offHoursRatio = kpiData.off_hours_ratio ?? null;
+  const offHoursKwh = kpiData.off_hours_kwh ?? null;
 
   const weekdayProfile = kpiData.weekday_profile_kw;
   const weekendProfile = kpiData.weekend_profile_kw;
@@ -1041,8 +1044,8 @@ export default function MonitoringPage() {
             }}
           />
 
-          {/* KPI Strip — 5 cards */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+          {/* KPI Strip — 6 cards */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
             <StatusKpiCard
               icon={Zap}
               title="Pmax / P95"
@@ -1088,6 +1091,20 @@ export default function MonitoringPage() {
               tooltip={KPI_TOOLTIPS.quality}
               status={qualityStatus}
               color={qualityScore >= 80 ? 'bg-green-500' : qualityScore >= 60 ? 'bg-yellow-500' : 'bg-red-500'}
+              confidence={qualityConf}
+            />
+            <StatusKpiCard
+              icon={Clock}
+              title="Hors Horaires"
+              value={offHoursRatio != null ? `${fmtNum(offHoursRatio * 100)}%` : '-'}
+              sub={schedule
+                ? (schedule.is_24_7
+                  ? '24/7 — pas de hors horaires'
+                  : `${schedule.open_time}-${schedule.close_time}`)
+                : 'Horaires non definis'}
+              tooltip="Part d'energie consommee en dehors des heures d'exploitation. Un ratio eleve signale un talon ou des equipements actifs la nuit/week-end."
+              status={offHoursRatio != null ? (offHoursRatio <= 0.20 ? 'ok' : offHoursRatio <= 0.40 ? 'surveiller' : 'critique') : 'no_data'}
+              color={offHoursRatio != null ? (offHoursRatio <= 0.20 ? 'bg-green-500' : offHoursRatio <= 0.40 ? 'bg-orange-500' : 'bg-red-500') : 'bg-slate-400'}
               confidence={qualityConf}
             />
           </div>

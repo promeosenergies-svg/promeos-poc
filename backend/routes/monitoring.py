@@ -15,7 +15,7 @@ from database import get_db
 from middleware.auth import get_optional_auth, AuthContext
 from models import (
     Site, Meter, MeterReading, MonitoringSnapshot, MonitoringAlert,
-    AlertStatus, AlertSeverity, FrequencyType
+    AlertStatus, AlertSeverity, FrequencyType, SiteOperatingSchedule
 )
 from models.energy_models import EnergyVector
 
@@ -93,6 +93,21 @@ def get_monitoring_kpis(
         climate_data = {"reason": "computation_error", "scatter": [], "fit_line": [],
                         "error_detail": str(e)[:200]}
 
+    # Fetch operating schedule for display
+    schedule_data = None
+    try:
+        sched = db.query(SiteOperatingSchedule).filter_by(site_id=site_id).first()
+        if sched:
+            schedule_data = {
+                "open_days": sched.open_days,
+                "open_time": sched.open_time,
+                "close_time": sched.close_time,
+                "is_24_7": sched.is_24_7,
+                "timezone": sched.timezone,
+            }
+    except Exception:
+        pass
+
     return {
         "snapshot_id": snapshot.id,
         "site_id": snapshot.site_id,
@@ -104,6 +119,7 @@ def get_monitoring_kpis(
         "data_quality_details": snapshot.data_quality_details_json or {},
         "risk_power_details": snapshot.risk_power_details_json or {},
         "climate": climate_data,
+        "schedule": schedule_data,
         "engine_version": snapshot.engine_version,
         "created_at": snapshot.created_at.isoformat(),
     }
@@ -282,16 +298,20 @@ class MonitoringDemoRequest(BaseModel):
 USAGE_PROFILES = {
     "office":    {"peak": 35, "shoulder": 18, "night": 6, "weekend": 5,
                   "peak_h": (8, 18), "heat_coeff": 1.5, "cool_coeff": 0.8,
-                  "psub_kva": 80, "label": "Bureau tertiaire"},
+                  "psub_kva": 80, "label": "Bureau tertiaire",
+                  "open_days": "0,1,2,3,4", "open_time": "08:00", "close_time": "19:00", "is_24_7": False},
     "hotel":     {"peak": 25, "shoulder": 20, "night": 15, "weekend": 22,
                   "peak_h": (7, 22), "heat_coeff": 2.0, "cool_coeff": 1.2,
-                  "psub_kva": 100, "label": "Hotel / Hebergement"},
+                  "psub_kva": 100, "label": "Hotel / Hebergement",
+                  "open_days": "0,1,2,3,4,5,6", "open_time": "00:00", "close_time": "23:59", "is_24_7": True},
     "retail":    {"peak": 40, "shoulder": 15, "night": 4, "weekend": 38,
                   "peak_h": (9, 20), "heat_coeff": 1.0, "cool_coeff": 1.5,
-                  "psub_kva": 120, "label": "Commerce / Retail"},
+                  "psub_kva": 120, "label": "Commerce / Retail",
+                  "open_days": "0,1,2,3,4,5", "open_time": "09:00", "close_time": "20:00", "is_24_7": False},
     "warehouse": {"peak": 20, "shoulder": 15, "night": 12, "weekend": 10,
                   "peak_h": (6, 20), "heat_coeff": 0.5, "cool_coeff": 0.3,
-                  "psub_kva": 60, "label": "Entrepot / Logistique"},
+                  "psub_kva": 60, "label": "Entrepot / Logistique",
+                  "open_days": "0,1,2,3,4", "open_time": "06:00", "close_time": "20:00", "is_24_7": False},
 }
 
 # Max plausible EUR/an impact per alert to prevent absurd values in demo
@@ -344,6 +364,17 @@ def generate_monitoring_demo(request: MonitoringDemoRequest, db: Session = Depen
     else:
         db.query(MeterReading).filter_by(meter_id=meter.id).delete()
         db.commit()
+
+    # Upsert operating schedule for this site
+    sched = db.query(SiteOperatingSchedule).filter_by(site_id=site.id).first()
+    if not sched:
+        sched = SiteOperatingSchedule(site_id=site.id)
+        db.add(sched)
+    sched.open_days = profile.get("open_days", "0,1,2,3,4")
+    sched.open_time = profile.get("open_time", "08:00")
+    sched.close_time = profile.get("close_time", "19:00")
+    sched.is_24_7 = profile.get("is_24_7", False)
+    db.commit()
 
     now = datetime.utcnow()
     start = now - timedelta(days=request.days)

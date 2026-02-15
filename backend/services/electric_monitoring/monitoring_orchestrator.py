@@ -123,8 +123,26 @@ class MonitoringOrchestrator:
             except Exception:
                 weather_data = []
 
-        # 2. Compute KPIs
-        kpis = self.kpi_engine.compute(readings, interval_minutes)
+        # 1c. Fetch operating schedule for off-hours KPI
+        schedule = None
+        if self.db:
+            try:
+                from models import SiteOperatingSchedule
+                sched = self.db.query(SiteOperatingSchedule).filter_by(
+                    site_id=meter.site_id
+                ).first()
+                if sched:
+                    schedule = {
+                        "open_days": sched.open_days,
+                        "open_time": sched.open_time,
+                        "close_time": sched.close_time,
+                        "is_24_7": sched.is_24_7,
+                    }
+            except Exception:
+                schedule = None
+
+        # 2. Compute KPIs (with schedule for off-hours)
+        kpis = self.kpi_engine.compute(readings, interval_minutes, schedule=schedule)
 
         # 3. Data quality
         quality = self.quality_engine.compute(
@@ -258,7 +276,8 @@ class MonitoringOrchestrator:
                        interval_minutes: int = 60,
                        subscribed_power_kva: float = 0,
                        previous_kpis: Optional[Dict] = None,
-                       weather_data: Optional[List[Dict]] = None) -> Dict[str, Any]:
+                       weather_data: Optional[List[Dict]] = None,
+                       schedule: Optional[Dict] = None) -> Dict[str, Any]:
         """
         Run pipeline without DB (for testing / stateless use).
 
@@ -268,6 +287,7 @@ class MonitoringOrchestrator:
             subscribed_power_kva: subscribed power
             previous_kpis: previous period KPIs for trend comparison
             weather_data: optional daily weather for climate analysis
+            schedule: optional operating schedule for off-hours KPI
 
         Returns:
             full analysis result dict
@@ -275,7 +295,7 @@ class MonitoringOrchestrator:
         if not readings:
             return {"kpis": {}, "data_quality": {}, "power_risk": {}, "climate": {}, "alerts": []}
 
-        kpis = self.kpi_engine.compute(readings, interval_minutes)
+        kpis = self.kpi_engine.compute(readings, interval_minutes, schedule=schedule)
         quality = self.quality_engine.compute(readings, interval_minutes)
         power_risk = self.power_engine.compute(
             kpis, readings,

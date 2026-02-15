@@ -20,13 +20,15 @@ class KPIEngine:
     """Compute expert electricity KPIs from time-series readings."""
 
     def compute(self, readings: List[Dict[str, Any]],
-                interval_minutes: int = 60) -> Dict[str, Any]:
+                interval_minutes: int = 60,
+                schedule: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
         Compute all KPIs from a list of readings.
 
         Args:
             readings: list of {timestamp: datetime, value_kwh: float}
             interval_minutes: step size in minutes (15, 30, 60)
+            schedule: optional operating schedule {open_days, open_time, close_time, is_24_7}
 
         Returns:
             dict of KPI values
@@ -99,6 +101,11 @@ class KPIEngine:
             ramp_rates.append(delta_p)
         ramp_rate_max = max(ramp_rates) if ramp_rates else 0
 
+        # Off-hours energy (hors horaires)
+        off_hours_kwh, off_hours_ratio = self._compute_off_hours(
+            readings, schedule
+        )
+
         return {
             "pmax_kw": round(pmax, 2),
             "p95_kw": round(p95, 2),
@@ -117,7 +124,67 @@ class KPIEngine:
             "weekday_profile_kw": weekday_profile,
             "weekend_profile_kw": weekend_profile,
             "monthly_kwh": dict(monthly_kwh),
+            "off_hours_kwh": round(off_hours_kwh, 2),
+            "off_hours_ratio": round(off_hours_ratio, 4),
         }
+
+    def _compute_off_hours(self, readings: List[Dict[str, Any]],
+                           schedule: Optional[Dict[str, Any]]) -> Tuple[float, float]:
+        """
+        Compute energy consumed outside operating hours.
+
+        Args:
+            readings: list of {timestamp, value_kwh}
+            schedule: {open_days: "0,1,2,3,4", open_time: "08:00", close_time: "19:00", is_24_7: bool}
+
+        Returns:
+            (off_hours_kwh, off_hours_ratio)
+        """
+        if not readings:
+            return 0.0, 0.0
+
+        # Default schedule: Mon-Fri 08:00-19:00
+        if not schedule or schedule.get("is_24_7"):
+            # 24/7 sites have no "off hours" concept
+            if schedule and schedule.get("is_24_7"):
+                return 0.0, 0.0
+            # No schedule provided — use default Mon-Fri 08:00-19:00
+            open_days = {0, 1, 2, 3, 4}
+            open_hour = 8
+            open_minute = 0
+            close_hour = 19
+            close_minute = 0
+        else:
+            open_days_str = schedule.get("open_days", "0,1,2,3,4")
+            open_days = set(int(d.strip()) for d in open_days_str.split(",") if d.strip().isdigit())
+            open_time = schedule.get("open_time", "08:00")
+            close_time = schedule.get("close_time", "19:00")
+            open_parts = open_time.split(":")
+            open_hour, open_minute = int(open_parts[0]), int(open_parts[1]) if len(open_parts) > 1 else 0
+            close_parts = close_time.split(":")
+            close_hour, close_minute = int(close_parts[0]), int(close_parts[1]) if len(close_parts) > 1 else 0
+
+        total_kwh = 0.0
+        off_kwh = 0.0
+
+        for r in readings:
+            ts = r["timestamp"]
+            v = r["value_kwh"]
+            total_kwh += v
+
+            # Check if this reading is during operating hours
+            day_of_week = ts.weekday()  # 0=Monday
+            if day_of_week not in open_days:
+                off_kwh += v
+            else:
+                current_minutes = ts.hour * 60 + ts.minute
+                open_minutes = open_hour * 60 + open_minute
+                close_minutes = close_hour * 60 + close_minute
+                if current_minutes < open_minutes or current_minutes >= close_minutes:
+                    off_kwh += v
+
+        ratio = off_kwh / total_kwh if total_kwh > 0 else 0.0
+        return off_kwh, ratio
 
     def _percentile(self, data: List[float], pct: float) -> float:
         """Compute percentile without numpy."""
@@ -165,4 +232,6 @@ class KPIEngine:
             "weekday_profile_kw": [0] * 24,
             "weekend_profile_kw": [0] * 24,
             "monthly_kwh": {},
+            "off_hours_kwh": 0,
+            "off_hours_ratio": 0,
         }
