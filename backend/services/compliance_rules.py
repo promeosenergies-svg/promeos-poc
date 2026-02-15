@@ -20,6 +20,7 @@ from models import (
     Portefeuille, EntiteJuridique, ComplianceRunBatch,
     StatutConformite, TypeObligation, TypeEvidence, StatutEvidence,
     OperatStatus, ParkingType, InsightStatus,
+    BacsAsset, BacsCvcSystem, BacsAssessment,
 )
 
 RULES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "rules")
@@ -603,6 +604,45 @@ def get_sites_findings(db: Session, org_id: int, regulation: str = None,
 
 
 # ---------------------------------------------------------------------------
+# BACS v2 enrichment (per-site assessment data)
+# ---------------------------------------------------------------------------
+
+def _enrich_bacs_meta(db: Session, site_ids: list) -> dict:
+    """Fetch BACS v2 assessment data for sites that have BacsAssets."""
+    from services.bacs_engine import compute_putile
+    meta = {}
+    assets = db.query(BacsAsset).filter(BacsAsset.site_id.in_(site_ids)).all()
+    for asset in assets:
+        latest = (
+            db.query(BacsAssessment)
+            .filter(BacsAssessment.asset_id == asset.id)
+            .order_by(BacsAssessment.assessed_at.desc())
+            .first()
+        )
+        if not latest:
+            continue
+        entry = {
+            "applicable": latest.is_obligated,
+            "tier": f"TIER1_{latest.threshold_applied}" if latest.threshold_applied else None,
+            "threshold_kw": latest.threshold_applied,
+            "deadline": latest.deadline_date.isoformat() if latest.deadline_date else None,
+            "putile_kw": None,
+            "tri_exemption": latest.tri_exemption_possible,
+            "tri_years": latest.tri_years,
+            "compliance_score": latest.compliance_score,
+            "confidence_score": latest.confidence_score,
+            "engine_version": latest.engine_version,
+        }
+        # Get putile from CVC systems
+        systems = db.query(BacsCvcSystem).filter(BacsCvcSystem.asset_id == asset.id).all()
+        if systems:
+            putile = compute_putile(systems)
+            entry["putile_kw"] = putile.get("putile_kw")
+        meta[asset.site_id] = entry
+    return meta
+
+
+# ---------------------------------------------------------------------------
 # Bundle (single-request for Conformite cockpit)
 # ---------------------------------------------------------------------------
 
@@ -627,8 +667,11 @@ def get_compliance_bundle(
     severity: str = None,
 ) -> dict:
     """Single-request bundle for Conformite cockpit. org_id REQUIRED."""
+    from datetime import datetime as _dt
     trace_id = str(uuid.uuid4())[:12]
     try:
+        site_ids_resolved = _resolve_site_ids(db, org_id, entity_id, site_id,
+                                              portefeuille_id=portefeuille_id)
         summary = get_summary(db, org_id, entity_id=entity_id, site_id=site_id,
                               portefeuille_id=portefeuille_id)
         sites = get_sites_findings(
@@ -636,6 +679,7 @@ def get_compliance_bundle(
             entity_id=entity_id, site_id=site_id,
             portefeuille_id=portefeuille_id,
         )
+        bacs_meta = _enrich_bacs_meta(db, site_ids_resolved) if site_ids_resolved else {}
     except (OperationalError, ProgrammingError) as exc:
         msg = str(exc)
         logger.error("bundle trace_id=%s DB error: %s", trace_id, msg)
@@ -649,6 +693,11 @@ def get_compliance_bundle(
                          "sites_unknown": 0, "pct_ok": 0,
                          "findings_by_regulation": {}, "top_actions": []},
             "sites": [],
+            "bacs_v2": {},
+            "meta": {
+                "generated_at": _dt.utcnow().isoformat(),
+                "engine_versions": {"compliance": "1.0", "bacs": "bacs_v2.0"},
+            },
             "empty_reason_code": code,
             "empty_reason_message": _EMPTY_MESSAGES.get(code, msg),
             "error_code": code,
@@ -667,6 +716,11 @@ def get_compliance_bundle(
         },
         "summary": summary,
         "sites": sites,
+        "bacs_v2": bacs_meta,
+        "meta": {
+            "generated_at": _dt.utcnow().isoformat(),
+            "engine_versions": {"compliance": "1.0", "bacs": "bacs_v2.0"},
+        },
         "empty_reason_code": code,
         "empty_reason_message": _EMPTY_MESSAGES.get(code),
         "trace_id": trace_id,

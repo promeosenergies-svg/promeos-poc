@@ -3,9 +3,11 @@ PROMEOS - BACS Engine v2 (Decret n°2020-887)
 Moteur complet: Putile, calendrier reglementaire, TRI exemption, inspections.
 """
 import json
+import os
 from datetime import date, datetime, timedelta
 from typing import Optional
 
+import yaml
 from sqlalchemy.orm import Session
 
 from models import (
@@ -17,7 +19,35 @@ from regops.schemas import Finding
 
 ENGINE_VERSION = "bacs_v2.0"
 
-# ── Reference dates (Decret n°2020-887) ──
+# ── Load reference config from YAML (Decret n°2020-887) ──
+_BACS_CONFIG_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(__file__)), "regulations", "bacs", "v2.yaml"
+)
+_BACS_CONFIG = None
+
+
+def _load_bacs_config() -> dict:
+    global _BACS_CONFIG
+    if _BACS_CONFIG is None:
+        with open(_BACS_CONFIG_PATH, "r", encoding="utf-8") as f:
+            _BACS_CONFIG = yaml.safe_load(f)
+    return _BACS_CONFIG
+
+
+def _get_deadlines() -> dict:
+    cfg = _load_bacs_config()
+    return {
+        290: date.fromisoformat(cfg["deadlines"]["tier1"]),
+        70: date.fromisoformat(cfg["deadlines"]["tier2"]),
+    }
+
+
+def _get_renewal_cutoff() -> date:
+    cfg = _load_bacs_config()
+    return date.fromisoformat(cfg["renewal_cutoff"])
+
+
+# Legacy constants (kept for backward-compat in tests)
 DEADLINE_290 = date(2025, 1, 1)
 DEADLINE_70 = date(2030, 1, 1)
 RENEWAL_CUTOFF = date(2023, 4, 9)
@@ -121,8 +151,11 @@ def determine_obligation(
     high_kw = config.get("high_kw", 290)
     low_kw = config.get("low_kw", 70)
 
+    deadlines = _get_deadlines()
+    renewal_cutoff = _get_renewal_cutoff()
+
     # Check new construction post 2023-04-09
-    if pc_date and pc_date >= RENEWAL_CUTOFF:
+    if pc_date and pc_date >= renewal_cutoff:
         return {
             "is_obligated": True,
             "threshold": 0,
@@ -137,7 +170,7 @@ def determine_obligation(
             evt_date = date.fromisoformat(evt_date_str)
         except (ValueError, TypeError):
             continue
-        if evt_date >= RENEWAL_CUTOFF:
+        if evt_date >= renewal_cutoff:
             return {
                 "is_obligated": True,
                 "threshold": low_kw,
@@ -150,14 +183,14 @@ def determine_obligation(
         return {
             "is_obligated": True,
             "threshold": high_kw,
-            "deadline": DEADLINE_290,
+            "deadline": deadlines.get(290, DEADLINE_290),
             "trigger_reason": BacsTriggerReason.THRESHOLD_290,
         }
     elif putile_kw > low_kw:
         return {
             "is_obligated": True,
             "threshold": low_kw,
-            "deadline": DEADLINE_70,
+            "deadline": deadlines.get(70, DEADLINE_70),
             "trigger_reason": BacsTriggerReason.THRESHOLD_70,
         }
     else:

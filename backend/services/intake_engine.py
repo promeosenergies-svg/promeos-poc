@@ -171,6 +171,43 @@ QUESTION_BANK = [
         "column": "DEROGATION_BACS",
     },
     {
+        "field_path": "site.bacs_systems_present",
+        "question": "Avez-vous des systemes CVC automatises (GTB/GTC) a piloter ?",
+        "help": "Systemes de chauffage, climatisation ou ventilation avec automates.",
+        "input_type": "select",
+        "unit": None,
+        "options": [
+            {"value": "yes", "label": "Oui"},
+            {"value": "no", "label": "Non"},
+            {"value": "unknown", "label": "Je ne sais pas"},
+        ],
+        "regulations": ["bacs"],
+        "blocking_rules": ["BACS_POWER"],
+        "severity": "high",
+        "prefill_from": None,
+        "model": "meta",
+        "column": "bacs_systems_present",
+    },
+    {
+        "field_path": "site.bacs_scope_basis",
+        "question": "Quel est le type principal des systemes CVC ?",
+        "help": "Chauffage, climatisation, ventilation ou combine.",
+        "input_type": "select",
+        "unit": None,
+        "options": [
+            {"value": "heating", "label": "Chauffage"},
+            {"value": "cooling", "label": "Climatisation"},
+            {"value": "ventilation", "label": "Ventilation"},
+            {"value": "combined", "label": "Combine"},
+        ],
+        "regulations": ["bacs"],
+        "blocking_rules": [],
+        "severity": "medium",
+        "prefill_from": None,
+        "model": "meta",
+        "column": "bacs_scope_basis",
+    },
+    {
         "field_path": "site.surface_m2",
         "question": "Quelle est la surface totale du site (m2) ?",
         "help": "Surface brute totale du site.",
@@ -236,6 +273,10 @@ QUESTION_BANK = [
 def _get_current_value(site: Site, batiments: list, evidences: list, q: dict):
     """Get the current value for a question's field_path."""
     fp = q["field_path"]
+
+    # meta questions: informational, always return None (ask unless BacsAsset exists)
+    if q.get("model") == "meta":
+        return None
 
     if fp.startswith("site."):
         col = fp.split(".", 1)[1]
