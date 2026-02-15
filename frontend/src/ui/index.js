@@ -24,3 +24,6 @@ export { ToastProvider, useToast } from './ToastProvider';
 
 // Design System V2 — Sprint Top Pages WOW
 export { default as MetricCard, StatusDot } from './MetricCard';
+
+// Design System V3 — Phase 6 Color Tokens
+export { KPI_ACCENTS, SEVERITY_TINT, ACCENT_BAR, HERO_ACCENTS } from './colorTokens';
