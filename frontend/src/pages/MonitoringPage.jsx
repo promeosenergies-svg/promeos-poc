@@ -79,7 +79,7 @@ const KPI_TOOLTIPS = {
   loadFactor: 'E_totale / (Pmax x heures). Eleve = courbe plate.',
   risk: 'Risque depassement Psub. 4 facteurs: P95/Psub, frequence, volatilite, pics.',
   quality: 'Qualite donnees: completude, trous, doublons, negatifs, outliers.',
-  climate: 'Pente kW/degC de la signature energetique.',
+  climate: 'Pente (kWh/j)/°C de la signature energetique. Eleve = forte dependance climatique.',
 };
 
 const DAYS_FR = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
@@ -161,24 +161,26 @@ export const LF_THRESHOLDS_BY_ARCHETYPE = {
 
 /**
  * Enhanced kpiStatus that accounts for confidence.
- * If confidence is low, downgrades 'critique' → 'a_confirmer'.
+ * If confidence is low, caps status at 'a_confirmer' (both critique & surveiller).
+ * Rule: low confidence => no alarm — only "A confirmer".
  */
 export function kpiStatusWithConfidence(value, thresholds, invert, confidence) {
   const raw = kpiStatus(value, thresholds, invert);
-  if (raw === 'critique' && confidence && confidence.level === 'low') {
+  if (confidence && confidence.level === 'low' && (raw === 'critique' || raw === 'surveiller')) {
     return 'a_confirmer';
   }
   return raw;
 }
 
 /**
- * Aggregate duplicate insights by alert_type + meter_id.
+ * Aggregate duplicate insights by alert_type + site_id (site-level).
+ * Merges across meters: tracks _meters set, _count, impact sums, worst severity.
  * Returns grouped rows sorted by total impact desc.
  */
 export function groupInsights(alerts) {
   const map = new Map();
   for (const a of alerts) {
-    const key = `${a.alert_type}:${a.meter_id || 0}`;
+    const key = `${a.alert_type}:${a.site_id || 0}`;
     if (!map.has(key)) {
       map.set(key, {
         ...a,
@@ -187,6 +189,7 @@ export function groupInsights(alerts) {
         _totalKwh: a.estimated_impact_kwh || 0,
         _maxSeverity: a.severity,
         _ids: [a.id],
+        _meters: new Set([a.meter_id]),
       });
     } else {
       const g = map.get(key);
@@ -194,6 +197,7 @@ export function groupInsights(alerts) {
       g._totalEur += a.estimated_impact_eur || 0;
       g._totalKwh += a.estimated_impact_kwh || 0;
       g._ids.push(a.id);
+      if (a.meter_id) g._meters.add(a.meter_id);
       // Keep worst severity
       const order = { critical: 3, high: 2, warning: 1, info: 0 };
       if ((order[a.severity] || 0) > (order[g._maxSeverity] || 0)) {
@@ -304,7 +308,7 @@ function ExecutiveSummary({ alerts, kpiData, climate, qualityScore, qualityConf,
       iconColor: topAlert ? 'text-red-500' : 'text-gray-300',
       title: 'Risque principal',
       value: topAlert
-        ? `${topAlert.estimated_impact_eur} EUR/an`
+        ? `${fmtNum(topAlert.estimated_impact_eur, 0)} EUR/an`
         : 'Aucun risque detecte',
       sub: topAlert
         ? ALERT_TYPE_LABELS[topAlert.alert_type] || topAlert.alert_type
@@ -315,7 +319,7 @@ function ExecutiveSummary({ alerts, kpiData, climate, qualityScore, qualityConf,
       icon: Zap,
       iconColor: totalWasteEur > 0 ? 'text-orange-500' : 'text-gray-300',
       title: 'Gaspillage estime',
-      value: totalWasteEur > 0 ? `${totalWasteEur} EUR/an` : 'Non detecte',
+      value: totalWasteEur > 0 ? `${fmtNum(totalWasteEur, 0)} EUR/an` : 'Non detecte',
       sub: wasteAlerts.length > 0
         ? `${wasteAlerts.length} alerte${wasteAlerts.length > 1 ? 's' : ''} (hors horaires, WE, talon)`
         : 'Aucune anomalie de gaspillage',
@@ -343,7 +347,7 @@ function ExecutiveSummary({ alerts, kpiData, climate, qualityScore, qualityConf,
               <div className="flex-1 min-w-0">
                 <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{c.title}</p>
                 <p className="text-lg font-bold text-gray-800 mt-0.5">{c.value}</p>
-                <p className="text-xs text-gray-500 mt-0.5 truncate">{c.sub}</p>
+                <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{c.sub}</p>
                 {c.cta && (
                   <button
                     onClick={c.cta.action}
@@ -499,8 +503,8 @@ function ClimateScatter({ climate }) {
       <ResponsiveContainer width="100%" height={250}>
         <ScatterChart margin={{ top: 5, right: 10, bottom: 5, left: 10 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-          <XAxis dataKey="T" name="Temperature" unit=" degC" tick={{ fontSize: 11 }} type="number" />
-          <YAxis dataKey="kwh" name="Consommation" unit=" kWh" tick={{ fontSize: 11 }} type="number" />
+          <XAxis dataKey="T" name="Temperature" unit=" °C" tick={{ fontSize: 11 }} type="number" />
+          <YAxis dataKey="kwh" name="Conso. journaliere" unit=" kWh/j" tick={{ fontSize: 11 }} type="number" />
           <RTooltip cursor={{ strokeDasharray: '3 3' }} />
           <Scatter data={climate.scatter} fill="#3b82f6" fillOpacity={0.6} r={3} name="Jours" />
           {climate.fit_line && climate.fit_line.length > 0 && (
@@ -509,8 +513,8 @@ function ClimateScatter({ climate }) {
         </ScatterChart>
       </ResponsiveContainer>
       <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
-        {climate.slope_kw_per_c != null && <span>Pente: {climate.slope_kw_per_c.toFixed(1)} kW/degC</span>}
-        {climate.balance_point_c != null && <span>Tb: {climate.balance_point_c.toFixed(1)} degC</span>}
+        {climate.slope_kw_per_c != null && <span>Pente: {climate.slope_kw_per_c.toFixed(1)} (kWh/j)/°C</span>}
+        {climate.balance_point_c != null && <span>Tb: {climate.balance_point_c.toFixed(1)} °C</span>}
         {climate.r_squared != null && <span>R²: {climate.r_squared.toFixed(2)}</span>}
       </div>
     </div>
@@ -859,17 +863,19 @@ export default function MonitoringPage() {
   }), [kpis]);
 
   // Load factor: archetype-aware thresholds
+  const archetype = demoProfile || 'default';
+  const archetypeLabel = PROFILE_OPTIONS.find((p) => p.value === archetype)?.label || 'Tertiaire (defaut)';
+  const isDefaultArchetype = !demoProfile || !LF_THRESHOLDS_BY_ARCHETYPE[demoProfile];
   const lfThresholds = useMemo(() => {
-    const prof = demoProfile || 'default';
-    return LF_THRESHOLDS_BY_ARCHETYPE[prof] || LF_THRESHOLDS_BY_ARCHETYPE.default;
-  }, [demoProfile]);
+    return LF_THRESHOLDS_BY_ARCHETYPE[archetype] || LF_THRESHOLDS_BY_ARCHETYPE.default;
+  }, [archetype]);
 
-  // KPI statuses (confidence-aware)
-  const qualityStatus = kpiStatus(qualityScore, KPI_THRESHOLDS.quality);
-  const riskStatus = kpiStatus(riskScore, KPI_THRESHOLDS.risk, true);
-  const lfStatus = kpiStatus(
+  // KPI statuses (all confidence-aware)
+  const qualityStatus = kpiStatusWithConfidence(qualityScore, KPI_THRESHOLDS.quality, false, qualityConf);
+  const riskStatus = kpiStatusWithConfidence(riskScore, KPI_THRESHOLDS.risk, true, qualityConf);
+  const lfStatus = kpiStatusWithConfidence(
     kpiData.load_factor != null ? kpiData.load_factor * 100 : null,
-    lfThresholds
+    lfThresholds, false, qualityConf
   );
   const climateStatus = kpiStatusWithConfidence(
     climate?.slope_kw_per_c, KPI_THRESHOLDS.climate, true, climateConf
@@ -1059,8 +1065,8 @@ export default function MonitoringPage() {
               icon={Activity}
               title="Load Factor"
               value={kpiData.load_factor != null ? `${fmtNum(kpiData.load_factor * 100)}%` : '-'}
-              sub={`Peak/Avg: ${fmtNum(kpiData.peak_to_average)}x`}
-              tooltip={KPI_TOOLTIPS.loadFactor}
+              sub={`Peak/Avg: ${fmtNum(kpiData.peak_to_average)}x · ${archetypeLabel}`}
+              tooltip={`${KPI_TOOLTIPS.loadFactor}\nProfil: ${archetypeLabel} (OK >= ${lfThresholds.ok}%, Attention >= ${lfThresholds.warn}%)${isDefaultArchetype ? '\n⚠ Profil par defaut — choisissez un profil pour des seuils adaptes.' : ''}`}
               status={lfStatus}
               color="bg-indigo-500"
             />
@@ -1072,6 +1078,7 @@ export default function MonitoringPage() {
               tooltip={KPI_TOOLTIPS.risk}
               status={riskStatus}
               color={riskScore >= 60 ? 'bg-red-500' : riskScore >= 35 ? 'bg-orange-500' : 'bg-green-500'}
+              confidence={qualityConf}
             />
             <StatusKpiCard
               icon={CheckCircle}
@@ -1091,7 +1098,7 @@ export default function MonitoringPage() {
               <StatusKpiCard
                 icon={Thermometer}
                 title="Sensibilite Climatique"
-                value={`${climate.slope_kw_per_c.toFixed(1)} kW/degC`}
+                value={`${climate.slope_kw_per_c.toFixed(1)} (kWh/j)/°C`}
                 sub={`R²: ${climate.r_squared != null ? climate.r_squared.toFixed(2) : '-'} | ${climate.label || 'unknown'}`}
                 tooltip={KPI_TOOLTIPS.climate}
                 status={climateStatus}
@@ -1130,7 +1137,7 @@ export default function MonitoringPage() {
               <CardBody>
                 <h2 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
                   <Thermometer size={18} /> Conso vs Temperature
-                  <span className="text-[10px] text-gray-400 font-normal ml-auto">kWh/jour vs degC</span>
+                  <span className="text-[10px] text-gray-400 font-normal ml-auto">kWh/jour vs °C</span>
                 </h2>
                 <ClimateScatter climate={climate} />
               </CardBody>
@@ -1267,12 +1274,17 @@ export default function MonitoringPage() {
                               <Badge status={stCfg.badge}>{stCfg.label}</Badge>
                             </td>
                             <td className="py-3 pr-4">
-                              <div className="flex items-center gap-1">
+                              <div className="flex items-center gap-1.5 flex-wrap">
                                 <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-xs font-medium whitespace-nowrap">
                                   {ALERT_TYPE_LABELS[a.alert_type] || a.alert_type}
                                 </span>
+                                {a._meters && a._meters.size > 1 && (
+                                  <span className="px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px] font-medium whitespace-nowrap">
+                                    {a._meters.size} compteurs
+                                  </span>
+                                )}
                                 {a._count > 1 && (
-                                  <span className="px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded text-[10px] font-medium">
+                                  <span className="px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded text-[10px] font-medium whitespace-nowrap">
                                     x{a._count}
                                   </span>
                                 )}
@@ -1283,10 +1295,12 @@ export default function MonitoringPage() {
                                 {a._maxSeverity || a.severity}
                               </Badge>
                             </td>
-                            <td className="py-3 pr-4 text-gray-600 max-w-md truncate">{a.explanation}</td>
+                            <td className="py-3 pr-4 text-gray-600 max-w-xs lg:max-w-md">
+                              <span className="line-clamp-2">{a.explanation}</span>
+                            </td>
                             <td className="py-3 pr-4 text-right font-medium">
                               {a._totalEur > 0 ? (
-                                <span className="text-red-600">{a._totalEur} EUR</span>
+                                <span className="text-red-600">{fmtNum(a._totalEur, 0)} EUR</span>
                               ) : '-'}
                             </td>
                             <td className="py-3">

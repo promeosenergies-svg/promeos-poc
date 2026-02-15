@@ -46,8 +46,10 @@ class ClimateEngine:
         Returns:
             dict with correlation, slope, balance point, scatter, fit_line, etc.
         """
-        if not readings or not weather_data:
-            return _empty_result()
+        if not readings:
+            return {**_empty_result(), "reason": "no_meter"}
+        if not weather_data:
+            return {**_empty_result(), "reason": "no_weather"}
 
         # 1. Aggregate readings to daily kWh
         daily_kwh_map = defaultdict(float)
@@ -71,7 +73,7 @@ class ClimateEngine:
         # 3. Match on common dates
         common_dates = sorted(set(daily_kwh_map.keys()) & set(temp_map.keys()))
         if len(common_dates) < 10:
-            return {**_empty_result(), "n_points": len(common_dates)}
+            return {**_empty_result(), "n_points": len(common_dates), "reason": "insufficient_readings"}
 
         daily_kwh = [daily_kwh_map[d] for d in common_dates]
         daily_temp = [temp_map[d] for d in common_dates]
@@ -80,7 +82,7 @@ class ClimateEngine:
         sig = run_signature(daily_kwh, daily_temp)
 
         if sig.get("error"):
-            return {**_empty_result(), "n_points": sig.get("n_points", 0)}
+            return {**_empty_result(), "n_points": sig.get("n_points", 0), "reason": "computation_error"}
 
         # 5. Compute Pearson correlation
         try:

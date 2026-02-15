@@ -140,9 +140,20 @@ describe('kpiStatusWithConfidence', () => {
     expect(status).toBe('a_confirmer');
   });
 
-  it('ok/surveiller unaffected by low confidence', () => {
+  it('ok unaffected by low confidence', () => {
     expect(kpiStatusWithConfidence(1, thresholds, true, { level: 'low' })).toBe('ok');
-    expect(kpiStatusWithConfidence(3, thresholds, true, { level: 'low' })).toBe('surveiller');
+  });
+
+  it('surveiller with low confidence becomes a_confirmer', () => {
+    expect(kpiStatusWithConfidence(3, thresholds, true, { level: 'low' })).toBe('a_confirmer');
+  });
+
+  it('surveiller with high confidence stays surveiller', () => {
+    expect(kpiStatusWithConfidence(3, thresholds, true, { level: 'high' })).toBe('surveiller');
+  });
+
+  it('surveiller with medium confidence stays surveiller', () => {
+    expect(kpiStatusWithConfidence(3, thresholds, true, { level: 'medium' })).toBe('surveiller');
   });
 
   it('works without confidence (fallback)', () => {
@@ -181,13 +192,13 @@ describe('LF_THRESHOLDS_BY_ARCHETYPE', () => {
 });
 
 describe('groupInsights', () => {
-  const mkAlert = (id, type, eur, severity = 'high', meterId = 1) => ({
-    id, alert_type: type, meter_id: meterId,
+  const mkAlert = (id, type, eur, severity = 'high', meterId = 1, siteId = 10) => ({
+    id, alert_type: type, meter_id: meterId, site_id: siteId,
     estimated_impact_eur: eur, estimated_impact_kwh: eur * 5,
     severity, status: 'open', explanation: `Alert ${id}`,
   });
 
-  it('groups duplicates by alert_type + meter_id', () => {
+  it('groups duplicates by alert_type + site_id', () => {
     const alerts = [
       mkAlert(1, 'DEPASSEMENT_PUISSANCE', 500),
       mkAlert(2, 'DEPASSEMENT_PUISSANCE', 300),
@@ -224,12 +235,37 @@ describe('groupInsights', () => {
     expect(groupInsights([])).toEqual([]);
   });
 
-  it('different meter_id = separate groups', () => {
+  it('same type + different meters + same site = merged (site-level)', () => {
     const alerts = [
-      mkAlert(1, 'X', 100, 'high', 1),
-      mkAlert(2, 'X', 200, 'high', 2),
+      mkAlert(1, 'X', 100, 'high', 1, 10),
+      mkAlert(2, 'X', 200, 'critical', 2, 10),
+    ];
+    const grouped = groupInsights(alerts);
+    expect(grouped).toHaveLength(1);
+    expect(grouped[0]._count).toBe(2);
+    expect(grouped[0]._totalEur).toBe(300);
+    expect(grouped[0]._maxSeverity).toBe('critical');
+    expect(grouped[0]._meters.size).toBe(2);
+  });
+
+  it('same type + different sites = separate groups', () => {
+    const alerts = [
+      mkAlert(1, 'X', 100, 'high', 1, 10),
+      mkAlert(2, 'X', 200, 'high', 2, 20),
     ];
     const grouped = groupInsights(alerts);
     expect(grouped).toHaveLength(2);
+  });
+
+  it('tracks unique meters across group', () => {
+    const alerts = [
+      mkAlert(1, 'Y', 100, 'warning', 1, 10),
+      mkAlert(2, 'Y', 50, 'warning', 1, 10),
+      mkAlert(3, 'Y', 200, 'high', 2, 10),
+    ];
+    const grouped = groupInsights(alerts);
+    expect(grouped).toHaveLength(1);
+    expect(grouped[0]._meters.size).toBe(2);
+    expect(grouped[0]._count).toBe(3);
   });
 });
