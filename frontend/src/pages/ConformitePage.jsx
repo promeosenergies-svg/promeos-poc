@@ -171,6 +171,46 @@ export function parseBundleError(bundle) {
   return null;
 }
 
+/**
+ * Compute aggregated BACS v2 summary from bundle.bacs_v2 data.
+ * Exported for testing.
+ */
+export function computeBacsV2Summary(bacsV2Data) {
+  if (!bacsV2Data) return null;
+  const entries = Object.values(bacsV2Data);
+  if (entries.length === 0) return null;
+  const applicable = entries.some(e => e.applicable);
+  const deadlines = entries.map(e => e.deadline).filter(Boolean);
+  const closest = deadlines.length ? deadlines.sort()[0] : null;
+  const maxPutile = Math.max(...entries.map(e => e.putile_kw || 0));
+  const maxThreshold = Math.max(...entries.map(e => e.threshold_kw || 0));
+  const triExemption = entries.some(e => e.tri_exemption);
+  return {
+    applicable,
+    deadline: closest,
+    putile_kw: maxPutile || null,
+    threshold_kw: maxThreshold || null,
+    tier: maxThreshold >= 290 ? 'TIER1' : 'TIER2',
+    tri_exemption: triExemption,
+  };
+}
+
+/**
+ * Compute human-readable scope label.
+ * Exported for testing.
+ */
+export function computeScopeLabel(org, scope, scopedSites, portefeuilles) {
+  if (scope.siteId) {
+    const site = scopedSites[0];
+    return `${org.nom} · Site: ${site?.nom || scope.siteId}`;
+  }
+  if (scope.portefeuilleId) {
+    const pf = portefeuilles?.find(p => p.id === scope.portefeuilleId);
+    return `${org.nom} · Portefeuille: ${pf?.nom || scope.portefeuilleId} (${scopedSites.length} sites)`;
+  }
+  return `${org.nom} · Organisation (${scopedSites.length} sites)`;
+}
+
 export function isOverdue(obligation) {
   if (!obligation.echeance || obligation.statut === 'conforme') return false;
   return new Date(obligation.echeance) < new Date();
@@ -478,7 +518,7 @@ export function sitesToObligations(sitesData, summary) {
   }));
 }
 
-function ObligationCard({ obligation, onCreateAction, onWorkflowAction, onUploadProof, proofFiles, onAuditFinding }) {
+function ObligationCard({ obligation, onCreateAction, onWorkflowAction, onUploadProof, proofFiles, onAuditFinding, bacsV2Summary, onNavigateIntake }) {
   const [expanded, setExpanded] = useState(false);
   const cfg = STATUT_CONFIG[obligation.statut] || STATUT_CONFIG.a_risque;
   const Icon = cfg.icon;
@@ -542,6 +582,50 @@ function ObligationCard({ obligation, onCreateAction, onWorkflowAction, onUpload
             </div>
           )}
         </div>
+
+        {/* BACS v2 detail */}
+        {obligation.code === 'bacs' && bacsV2Summary && (
+          <div className="flex items-center gap-3 mt-2 text-xs flex-wrap">
+            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-medium ${
+              bacsV2Summary.applicable ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'
+            }`}>
+              {bacsV2Summary.applicable ? 'Assujetti BACS' : 'Non assujetti'}
+            </span>
+            {bacsV2Summary.threshold_kw && (
+              <span className="text-gray-600">
+                Seuil: {bacsV2Summary.threshold_kw >= 290 ? '\u2265290 kW' : '\u226570 kW'}
+                {bacsV2Summary.putile_kw ? ` (Putile: ${bacsV2Summary.putile_kw} kW)` : ''}
+              </span>
+            )}
+            {bacsV2Summary.deadline && (
+              <span className={`flex items-center gap-1 ${
+                new Date(bacsV2Summary.deadline) < new Date() ? 'text-red-600 font-semibold' : 'text-gray-600'
+              }`}>
+                <Clock size={12} />
+                Echeance: {bacsV2Summary.deadline}
+              </span>
+            )}
+            {bacsV2Summary.tri_exemption && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">
+                Exemption TRI possible
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* BACS CTA when missing data */}
+        {obligation.code === 'bacs' && !bacsV2Summary && onNavigateIntake && (
+          <div className="mt-2 p-3 bg-blue-50 rounded-lg flex items-center gap-3">
+            <AlertTriangle size={16} className="text-blue-600 shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-blue-700">Donnees BACS incompletes</p>
+              <p className="text-xs text-blue-600">Completez les donnees pour determiner l'applicabilite et l'echeance.</p>
+            </div>
+            <Button size="sm" variant="secondary" onClick={onNavigateIntake}>
+              Completer donnees BACS
+            </Button>
+          </div>
+        )}
 
         {/* Progress bar */}
         <div className="mt-3">
@@ -942,7 +1026,7 @@ function ProofSection({ obligation, files, onUpload }) {
 }
 
 export default function ConformitePage() {
-  const { org, scope, scopedSites } = useScope();
+  const { org, scope, scopedSites, portefeuilles } = useScope();
   const { isExpert } = useExpertMode();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -960,6 +1044,7 @@ export default function ConformitePage() {
   const [intakeQuestions, setIntakeQuestions] = useState([]);
   const [emptyReason, setEmptyReason] = useState(null);
   const [error, setError] = useState(null);
+  const [bundle, setBundle] = useState(null);
 
   const loadData = useCallback(() => {
     setLoading(true);
@@ -967,13 +1052,14 @@ export default function ConformitePage() {
     const scopeParams = buildScopeParams({ orgId: org.id, portefeuilleId: scope.portefeuilleId, siteId: scope.siteId }, scopedSites);
 
     getComplianceBundle(scopeParams)
-      .then((bundle) => {
-        const err = parseBundleError(bundle);
+      .then((b) => {
+        const err = parseBundleError(b);
         if (err) { setError(err); return; }
-        setSummary(bundle.summary);
-        setSitesData(bundle.sites);
+        setBundle(b);
+        setSummary(b.summary);
+        setSitesData(b.sites);
         if (scopedSites.length === 0) setEmptyReason('NO_SITES');
-        else if (bundle.empty_reason_code) setEmptyReason(bundle.empty_reason_code);
+        else if (b.empty_reason_code) setEmptyReason(b.empty_reason_code);
         else setEmptyReason(null);
       })
       .catch((err) => {
@@ -1016,6 +1102,13 @@ export default function ConformitePage() {
       total_impact_eur: 0,
     };
   }, [summary, obligations]);
+
+  const bacsV2Summary = useMemo(() => computeBacsV2Summary(bundle?.bacs_v2), [bundle]);
+
+  const scopeLabel = useMemo(
+    () => computeScopeLabel(org, { siteId: scope.siteId, portefeuilleId: scope.portefeuilleId }, scopedSites, portefeuilles),
+    [org, scope.siteId, scope.portefeuilleId, scopedSites, portefeuilles],
+  );
 
   const sortedObligations = useMemo(() => {
     let list = [...obligations];
@@ -1163,7 +1256,7 @@ export default function ConformitePage() {
     <PageShell
       icon={ShieldCheck}
       title="Conformite reglementaire"
-      subtitle={`${org.nom} · ${scopedSites.length} sites dans le perimetre`}
+      subtitle={scopeLabel}
       actions={
         <>
           <Button variant="secondary" size="sm" onClick={handleRecompute} disabled={recomputing}>
@@ -1181,6 +1274,11 @@ export default function ConformitePage() {
       <div className="flex items-center gap-2 -mt-1 mb-1">
         <DevApiBadge />
         <DevScopeBadge scope={{ orgId: org.id, portefeuilleId: scope.portefeuilleId, siteId: scope.siteId }} scopedSites={scopedSites} />
+        {bundle?.meta?.generated_at && (
+          <span className="text-[10px] font-mono text-gray-400">
+            bundle: {new Date(bundle.meta.generated_at).toLocaleTimeString('fr-FR')}
+          </span>
+        )}
       </div>
 
       {/* Cockpit Tabs */}
@@ -1293,6 +1391,8 @@ export default function ConformitePage() {
                     onUploadProof={handleUploadProof}
                     proofFiles={proofFiles}
                     onAuditFinding={setAuditFindingId}
+                    bacsV2Summary={o.code === 'bacs' ? bacsV2Summary : undefined}
+                    onNavigateIntake={o.code === 'bacs' && scopedSites[0] ? () => { navigate(`/intake/${scopedSites[0].id}`); track('bacs_complete_data'); } : undefined}
                   />
                 ))}
               </div>
