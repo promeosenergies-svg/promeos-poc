@@ -534,6 +534,14 @@ export const getMonitoringKpisCompare = (siteId, mode = 'previous', customStart 
   api.get('/monitoring/kpis/compare', { params: { site_id: siteId, mode, custom_start: customStart, custom_end: customEnd } }).then(r => r.data);
 
 // ========================================
+// Emissions / CO2e (Sprint V9 Decarbonation)
+// ========================================
+
+export const getEmissions = (siteId) => api.get('/monitoring/emissions', { params: { site_id: siteId } }).then(r => r.data);
+export const getEmissionFactors = () => api.get('/monitoring/emission-factors').then(r => r.data);
+export const seedEmissionFactors = () => api.post('/monitoring/emission-factors/seed').then(r => r.data);
+
+// ========================================
 // BACS Expert (Decret n°2020-887)
 // ========================================
 

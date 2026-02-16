@@ -10,7 +10,7 @@ import {
   Activity, AlertTriangle, Zap, BarChart3, CheckCircle, Clock,
   Shield, TrendingUp, ChevronDown, ChevronUp, Eye, PlayCircle,
   Database, RefreshCw, Thermometer, Sun, Info, UserCheck,
-  CheckCircle2, XCircle, ExternalLink,
+  CheckCircle2, XCircle, ExternalLink, Leaf,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -370,7 +370,7 @@ function StatusKpiCard({ icon, title, value, sub, tooltip, status, color, onClic
  * Executive summary v2: top risk, top waste, data confidence — each with CTAs.
  * Confidence downgrade: if qualityConf.level === 'low', risk card shows "(A confirmer)".
  */
-function ExecutiveSummary({ alerts, kpiData, climate, qualityScore, qualityConf, offHoursKwh, onOpenExplorer, onCreateAction, onInsight, onConfidenceDetail }) {
+function ExecutiveSummary({ alerts, kpiData, climate, qualityScore, qualityConf, offHoursKwh, emissions, onOpenExplorer, onCreateAction, onInsight, onConfidenceDetail }) {
   // Top risk: highest EUR impact open alert
   const topAlert = alerts
     .filter((a) => a.status === 'open' && a.estimated_impact_eur)
@@ -426,10 +426,24 @@ function ExecutiveSummary({ alerts, kpiData, climate, qualityScore, qualityConf,
       sub: qualityConf?.reason || 'Données suffisantes',
       ctas: [{ label: 'Pourquoi ?', action: onConfidenceDetail }],
     },
+    {
+      icon: Leaf,
+      iconColor: emissions?.annualized_co2e_tonnes > 0 ? 'text-emerald-600' : 'text-gray-300',
+      title: 'Empreinte CO₂e',
+      value: emissions?.annualized_co2e_tonnes != null
+        ? `${fmtNum(emissions.annualized_co2e_tonnes)} t/an`
+        : 'Non disponible',
+      sub: emissions?.off_hours_co2e_kg > 0
+        ? `dont ${fmtNum(emissions.off_hours_co2e_kg, 0)} kg évitables (hors horaires)`
+        : (emissions?.factor?.source_label || 'Facteur non configuré'),
+      ctas: emissions?.off_hours_co2e_kg > 0
+        ? [{ label: 'Créer action', action: () => onCreateAction({ alert_type: 'CO2E_REDUCTION', estimated_impact_eur: 0 }) }]
+        : [],
+    },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
       {cards.map((c, i) => (
         <Card key={i}>
           <CardBody className="p-4">
@@ -785,7 +799,7 @@ const OFF_HOURS_TABS = [
   { id: 'actions', label: 'Actions' },
 ];
 
-function OffHoursDrawer({ open, onClose, offHoursRatio, offHoursKwh, schedule, onCreateAction }) {
+function OffHoursDrawer({ open, onClose, offHoursRatio, offHoursKwh, schedule, emissions, onCreateAction }) {
   const [tab, setTab] = useState('methode');
   const estimate = computeOffHoursEstimate(offHoursKwh);
   const navTo = useNavigate();
@@ -807,6 +821,9 @@ function OffHoursDrawer({ open, onClose, offHoursRatio, offHoursKwh, schedule, o
               <p className="text-sm text-gray-600">Énergie consommée en dehors des heures d'exploitation définies dans le planning du site.</p>
               <DrawerRow label="Ratio">{offHoursRatio != null ? `${fmtNum(offHoursRatio * 100)}%` : '-'}</DrawerRow>
               <DrawerRow label="kWh (90 jours)">{offHoursKwh != null ? fmtNum(offHoursKwh, 0) : '-'}</DrawerRow>
+              {emissions?.off_hours_co2e_kg > 0 && (
+                <DrawerRow label="CO₂e hors horaires">{fmtNum(emissions.off_hours_co2e_kg, 0)} kgCO₂e</DrawerRow>
+              )}
             </DrawerSection>
             <DrawerSection title="Horaires actuels">
               {schedule ? (
@@ -1304,6 +1321,7 @@ export default function MonitoringPage() {
   const offHoursRatio = kpiData.off_hours_ratio ?? null;
   const offHoursKwh = kpiData.off_hours_kwh ?? null;
   const impact = kpis?.impact || {};
+  const emissions = kpis?.emissions || {};
   const offHoursEstimate = useMemo(() => {
     // Use server-side impact if available, fallback to client-side
     if (impact?.off_hours?.eur_year != null) {
@@ -1514,6 +1532,7 @@ export default function MonitoringPage() {
             qualityScore={qualityScore}
             qualityConf={qualityConf}
             offHoursKwh={offHoursKwh}
+            emissions={emissions}
             onOpenExplorer={() => handleOpenExplorer(null)}
             onCreateAction={(a) => {
               if (a) handleCreateAction(a);
@@ -1558,8 +1577,8 @@ export default function MonitoringPage() {
             </div>
           )}
 
-          {/* KPI Strip — 6 cards */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+          {/* KPI Strip — 7 cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-6">
             <StatusKpiCard
               icon={Zap}
               title="Pmax / P95"
@@ -1621,6 +1640,17 @@ export default function MonitoringPage() {
               color={offHoursRatio != null ? (offHoursRatio <= 0.20 ? 'bg-green-500' : offHoursRatio <= 0.40 ? 'bg-orange-500' : 'bg-red-500') : 'bg-slate-400'}
               confidence={qualityConf}
               onClick={() => setShowOffHoursDrawer(true)}
+            />
+            <StatusKpiCard
+              icon={Leaf}
+              title="CO₂e"
+              value={emissions.annualized_co2e_tonnes != null ? `${fmtNum(emissions.annualized_co2e_tonnes)} t/an` : '-'}
+              sub={emissions.total_co2e_kg != null
+                ? `${fmtNum(emissions.total_co2e_kg, 0)} kg sur ${emissions.days_covered || 90}j${emissions.off_hours_co2e_kg > 0 ? ` · Hors horaires: ${fmtNum(emissions.off_hours_co2e_kg, 0)} kg` : ''}`
+                : 'Facteur non disponible'}
+              tooltip={`Émissions CO₂e estimées sur la période d'analyse.\nFacteur: ${emissions.factor?.kgco2e_per_kwh || '-'} kgCO₂e/kWh\nSource: ${emissions.factor?.source_label || '-'}\nQualité: ${emissions.factor?.quality || '-'}`}
+              status={emissions.annualized_co2e_tonnes != null ? 'ok' : 'no_data'}
+              color="bg-emerald-600"
             />
           </div>
 
@@ -1970,6 +2000,7 @@ export default function MonitoringPage() {
         offHoursRatio={offHoursRatio}
         offHoursKwh={offHoursKwh}
         schedule={schedule}
+        emissions={emissions}
         onCreateAction={(prefill) => {
           setShowOffHoursDrawer(false);
           setActionPrefill(prefill);
