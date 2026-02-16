@@ -297,10 +297,15 @@ const PatrimoineWizard = ({ onClose }) => {
                 <StatCard label="Compteurs" value={summary.compteurs} icon={Zap} color="amber" />
                 <StatCard label="Findings" value={summary.findings_total || 0} icon={AlertTriangle} color="orange" />
                 <StatCard label="Score qualite" value={`${summary.quality_score || 0}%`} icon={ShieldCheck}
-                  color={summary.quality_score >= 80 ? 'green' : summary.quality_score >= 50 ? 'amber' : 'red'} />
+                  color={summary.quality_grade?.color === 'green' ? 'green' : summary.quality_grade?.color === 'amber' ? 'amber' : summary.quality_grade?.color === 'orange' ? 'orange' : 'red'} />
               </div>
 
-              <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3">
+              {/* QA Grade indicator */}
+              {summary.quality_grade && (
+                <QAGradeBadge grade={summary.quality_grade} score={summary.quality_score} />
+              )}
+
+              <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 mt-3">
                 <p className="text-sm text-indigo-700">
                   Cliquez sur "Valider" pour lancer le quality gate (5 regles de controle).
                 </p>
@@ -385,9 +390,13 @@ const PatrimoineWizard = ({ onClose }) => {
                   <Row label="Sites a creer" value={summary.sites} />
                   <Row label="Compteurs a creer" value={summary.compteurs} />
                   <Row label="Problemes bloquants" value={summary.blocking || 0} valueClass={summary.blocking > 0 ? 'text-red-600 font-bold' : 'text-green-600'} />
-                  <Row label="Score qualite" value={`${summary.quality_score || 0}%`} />
+                  <Row label="Score qualite" value={`${summary.quality_score || 0}% — ${summary.quality_grade?.label || ''}`}
+                    valueClass={summary.quality_grade?.color === 'green' ? 'text-green-600' : summary.quality_grade?.color === 'red' ? 'text-red-600' : 'text-amber-600'} />
                   <Row label="Peut etre active" value={summary.can_activate ? 'Oui' : 'Non'}
                     valueClass={summary.can_activate ? 'text-green-600 font-bold' : 'text-red-600 font-bold'} />
+                  {summary.can_auto_activate && (
+                    <Row label="Activation auto" value="Eligible" valueClass="text-green-600" />
+                  )}
                 </div>
               )}
 
@@ -522,6 +531,34 @@ function StatCard({ label, value, icon: Icon, color }) {
       <Icon size={18} className="mx-auto mb-1" />
       <div className="text-xl font-bold">{value}</div>
       <div className="text-[10px] uppercase tracking-wide">{label}</div>
+    </div>
+  );
+}
+
+function QAGradeBadge({ grade, score }) {
+  const COLOR_MAP = {
+    green: { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-700', bar: 'bg-green-500' },
+    amber: { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700', bar: 'bg-amber-500' },
+    orange: { bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-700', bar: 'bg-orange-500' },
+    red: { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700', bar: 'bg-red-500' },
+  };
+  const c = COLOR_MAP[grade.color] || COLOR_MAP.amber;
+  return (
+    <div className={`${c.bg} ${c.border} border rounded-lg p-3`}>
+      <div className="flex items-center justify-between mb-1.5">
+        <div className="flex items-center gap-2">
+          <ShieldCheck size={16} className={c.text} />
+          <span className={`text-sm font-semibold ${c.text}`}>Confiance Patrimoine : {grade.label}</span>
+        </div>
+        <span className={`text-lg font-bold ${c.text}`}>{score}%</span>
+      </div>
+      <div className="w-full bg-gray-200 rounded-full h-2 mb-1.5">
+        <div className={`${c.bar} h-2 rounded-full transition-all`} style={{ width: `${Math.min(score, 100)}%` }} />
+      </div>
+      <p className={`text-xs ${c.text}`}>{grade.message}</p>
+      {grade.gap > 0 && grade.threshold_next && (
+        <p className="text-[10px] text-gray-500 mt-1">+{grade.gap} points pour atteindre le seuil {grade.threshold_next}%</p>
+      )}
     </div>
   );
 }

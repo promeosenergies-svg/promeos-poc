@@ -428,6 +428,23 @@ export const portfolioSync = (portfolioId, file, dryRun = true) => {
     headers: { 'Content-Type': 'multipart/form-data' },
   }).then(r => r.data);
 };
+export const mappingPreview = (headers) => api.post('/patrimoine/mapping/preview', { headers }).then(r => r.data);
+
+// PATRIMOINE CRUD (WORLD CLASS)
+export const patrimoineSites = (params = {}) => api.get('/patrimoine/sites', { params }).then(r => r.data);
+export const patrimoineSiteDetail = (id) => api.get(`/patrimoine/sites/${id}`).then(r => r.data);
+export const patrimoineSiteUpdate = (id, data) => api.patch(`/patrimoine/sites/${id}`, data).then(r => r.data);
+export const patrimoineSiteArchive = (id) => api.post(`/patrimoine/sites/${id}/archive`).then(r => r.data);
+export const patrimoineSiteRestore = (id) => api.post(`/patrimoine/sites/${id}/restore`).then(r => r.data);
+export const patrimoineSiteMerge = (sourceId, targetId) => api.post('/patrimoine/sites/merge', { source_site_id: sourceId, target_site_id: targetId }).then(r => r.data);
+export const patrimoineCompteurs = (params = {}) => api.get('/patrimoine/compteurs', { params }).then(r => r.data);
+export const patrimoineCompteurUpdate = (id, data) => api.patch(`/patrimoine/compteurs/${id}`, data).then(r => r.data);
+export const patrimoineCompteurMove = (id, targetSiteId) => api.post(`/patrimoine/compteurs/${id}/move`, { target_site_id: targetSiteId }).then(r => r.data);
+export const patrimoineCompteurDetach = (id) => api.post(`/patrimoine/compteurs/${id}/detach`).then(r => r.data);
+export const patrimoineContracts = (params = {}) => api.get('/patrimoine/contracts', { params }).then(r => r.data);
+export const patrimoineContractCreate = (data) => api.post('/patrimoine/contracts', data).then(r => r.data);
+export const patrimoineContractUpdate = (id, data) => api.patch(`/patrimoine/contracts/${id}`, data).then(r => r.data);
+export const patrimoineContractDelete = (id) => api.delete(`/patrimoine/contracts/${id}`).then(r => r.data);
 
 // ========================================
 // SMART INTAKE (DIAMANT)
