@@ -146,6 +146,105 @@ def seed_demo_consumption(
     return {"status": "ok", "sites": results, "total": len(results)}
 
 
+# =============================================
+# V10.1 — Availability (data presence check)
+# =============================================
+
+ENERGY_TYPE_ALIASES = {
+    "electricity": "electricity", "elec": "electricity", "electricite": "electricity",
+    "électricité": "electricity", "electric": "electricity",
+    "gas": "gas", "gaz": "gas",
+}
+
+
+def _normalize_energy_type(raw: str) -> str:
+    """Tolerate various energy type spellings."""
+    return ENERGY_TYPE_ALIASES.get(raw.lower().strip(), raw.lower().strip())
+
+
+@router.get("/availability")
+def consumption_availability(
+    site_id: int = Query(..., description="Site ID"),
+    energy_type: str = Query("electricity"),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Check data availability for a site: meters, readings, date range, reason codes."""
+    from models import Meter, MeterReading
+    from models.energy_models import EnergyVector
+    from sqlalchemy import func
+
+    check_site_access(auth, site_id)
+    energy_type = _normalize_energy_type(energy_type)
+    reasons = []
+
+    site = db.query(Site).filter(Site.id == site_id).first()
+    if not site:
+        return {"has_data": False, "reasons": ["no_site"], "energy_types": [], "meters_count": 0}
+
+    # All active meters for this site
+    all_meters = db.query(Meter).filter(Meter.site_id == site_id, Meter.is_active == True).all()
+    if not all_meters:
+        return {"has_data": False, "reasons": ["no_meter"], "energy_types": [], "meters_count": 0,
+                "site_nom": site.nom}
+
+    # Available energy types
+    ev_map = {"electricity": EnergyVector.ELECTRICITY, "gas": EnergyVector.GAS}
+    available_types = list({
+        "electricity" if m.energy_vector == EnergyVector.ELECTRICITY
+        else "gas" if m.energy_vector == EnergyVector.GAS
+        else "other"
+        for m in all_meters
+    })
+
+    # Filter by requested energy type
+    target_ev = ev_map.get(energy_type)
+    matching_meters = [m for m in all_meters if m.energy_vector == target_ev] if target_ev else all_meters
+
+    if not matching_meters:
+        reasons.append("wrong_energy_type")
+        return {
+            "has_data": False, "reasons": reasons, "energy_types": available_types,
+            "meters_count": len(all_meters), "matching_meters": 0,
+            "site_nom": site.nom,
+        }
+
+    meter_ids = [m.id for m in matching_meters]
+
+    # Date range of available readings
+    stats = db.query(
+        func.count(MeterReading.id),
+        func.min(MeterReading.timestamp),
+        func.max(MeterReading.timestamp),
+    ).filter(MeterReading.meter_id.in_(meter_ids)).first()
+
+    readings_count = stats[0] or 0
+    first_ts = stats[1].isoformat() if stats[1] else None
+    last_ts = stats[2].isoformat() if stats[2] else None
+
+    if readings_count == 0:
+        reasons.append("no_readings")
+        return {
+            "has_data": False, "reasons": reasons, "energy_types": available_types,
+            "meters_count": len(matching_meters), "readings_count": 0,
+            "site_nom": site.nom,
+        }
+
+    if readings_count < 48:
+        reasons.append("insufficient_readings")
+
+    return {
+        "has_data": readings_count >= 48,
+        "reasons": reasons,
+        "energy_types": available_types,
+        "meters_count": len(matching_meters),
+        "readings_count": readings_count,
+        "first_ts": first_ts,
+        "last_ts": last_ts,
+        "site_nom": site.nom,
+    }
+
+
 @router.patch("/insights/{insight_id}")
 def patch_consumption_insight(
     insight_id: int,
@@ -180,6 +279,7 @@ def get_tunnel(
 ):
     """Enveloppe de consommation (tunnel P10-P90) pour un site."""
     check_site_access(auth, site_id)
+    energy_type = _normalize_energy_type(energy_type)
     site = db.query(Site).filter(Site.id == site_id).first()
     if not site:
         raise HTTPException(status_code=404, detail="Site non trouve")
@@ -224,6 +324,7 @@ def list_targets(
 ):
     """Liste les objectifs de consommation pour un site."""
     check_site_access(auth, site_id)
+    energy_type = _normalize_energy_type(energy_type)
     return get_targets(db, site_id, energy_type=energy_type, year=year)
 
 
@@ -284,6 +385,7 @@ def targets_progression(
 ):
     """Progression objectifs vs reel avec prevision annuelle."""
     check_site_access(auth, site_id)
+    energy_type = _normalize_energy_type(energy_type)
     return get_progression(db, site_id, energy_type=energy_type, year=year)
 
 
