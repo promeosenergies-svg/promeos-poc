@@ -5,7 +5,7 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   Search, BookOpen, ShieldCheck, Zap, Sun, Receipt, Wind,
-  ChevronDown, ChevronUp, ExternalLink, Filter,
+  ChevronDown, ChevronUp, ExternalLink, Filter, AlertTriangle,
 } from 'lucide-react';
 import { PageShell, Card, CardBody, Badge, Button, TrustBadge, EmptyState } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
@@ -45,11 +45,14 @@ export default function KBExplorerPage() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
+  const [kbError, setKbError] = useState(null);
   const debounceRef = useRef(null);
 
   // Load stats on mount
   useEffect(() => {
-    getKBFullStats().then(setStats).catch(() => {});
+    getKBFullStats().then((s) => { setStats(s); setKbError(null); }).catch(() => {
+      setKbError('kb_unavailable');
+    });
   }, []);
 
   // Search with debounce
@@ -74,8 +77,12 @@ export default function KBExplorerPage() {
 
       const data = await searchKBItems(body);
       setResults(data.results || data || []);
-    } catch {
+      setKbError(null);
+    } catch (err) {
       setResults([]);
+      if (err?.response?.status === 404 || err?.response?.status >= 500) {
+        setKbError('kb_unavailable');
+      }
     }
     setLoading(false);
   }
@@ -96,6 +103,19 @@ export default function KBExplorerPage() {
         </div>
       )}
     >
+
+      {/* KB unavailable fallback banner */}
+      {kbError === 'kb_unavailable' && (
+        <Card className="bg-amber-50 border-amber-200">
+          <CardBody className="flex items-center gap-3 py-3">
+            <AlertTriangle size={20} className="text-amber-600 shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-amber-800">KB locale chargee</p>
+              <p className="text-xs text-amber-600">Le service Knowledge Base n'est pas disponible. Les donnees locales sont affichees.</p>
+            </div>
+          </CardBody>
+        </Card>
+      )}
 
       {/* Search bar */}
       <div className="relative">

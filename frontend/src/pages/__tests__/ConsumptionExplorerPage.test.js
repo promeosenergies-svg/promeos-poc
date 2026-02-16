@@ -1,103 +1,69 @@
 /**
- * PROMEOS — Tests for ConsumptionExplorerPage helpers
- * Covers: stableColor, normalizeIndex100, sigInsights
+ * PROMEOS — Tests for Consumption Explorer helpers
+ * V11: computeGranularity, computeAutoRange, classifyEmptyReason
  */
 import { describe, it, expect } from 'vitest';
-import { stableColor, normalizeIndex100, sigInsights } from '../ConsumptionExplorerPage';
+import { computeGranularity, computeAutoRange, classifyEmptyReason } from '../consumption/helpers';
 
-describe('stableColor', () => {
-  it('returns a valid hsl string', () => {
-    const color = stableColor('site_1');
-    expect(color).toMatch(/^hsl\(\d+,\s*\d+%,\s*\d+%\)$/);
+describe('computeGranularity', () => {
+  it('7 days => 30min', () => {
+    expect(computeGranularity(7)).toBe('30min');
   });
-
-  it('is deterministic', () => {
-    expect(stableColor('abc')).toBe(stableColor('abc'));
+  it('30 days => 1h', () => {
+    expect(computeGranularity(30)).toBe('1h');
   });
-
-  it('different keys produce different colors', () => {
-    expect(stableColor('site_1')).not.toBe(stableColor('site_2'));
+  it('90 days => jour', () => {
+    expect(computeGranularity(90)).toBe('jour');
   });
-});
-
-describe('normalizeIndex100', () => {
-  const data = [
-    { t: '2025-01-01', a: 200, b: 50 },
-    { t: '2025-01-02', a: 400, b: 100 },
-    { t: '2025-01-03', a: 300, b: 75 },
-  ];
-
-  it('first value becomes 100', () => {
-    const result = normalizeIndex100(data, ['a', 'b']);
-    expect(result[0].a).toBe(100);
-    expect(result[0].b).toBe(100);
+  it('365 days => semaine', () => {
+    expect(computeGranularity(365)).toBe('semaine');
   });
-
-  it('second value is proportional', () => {
-    const result = normalizeIndex100(data, ['a']);
-    expect(result[1].a).toBe(200); // 400/200 * 100
+  it('1 day => 30min', () => {
+    expect(computeGranularity(1)).toBe('30min');
   });
-
-  it('preserves temp field', () => {
-    const withTemp = data.map((d, i) => ({ ...d, temp: 10 + i }));
-    const result = normalizeIndex100(withTemp, ['a']);
-    expect(result[0].temp).toBe(10);
-    expect(result[2].temp).toBe(12);
+  it('180 days => jour', () => {
+    expect(computeGranularity(180)).toBe('jour');
   });
-
-  it('preserves temp_env field', () => {
-    const withEnv = data.map((d, i) => ({ ...d, temp_env: [5 + i, 15 + i] }));
-    const result = normalizeIndex100(withEnv, ['a']);
-    expect(result[0].temp_env).toEqual([5, 15]);
-    expect(result[2].temp_env).toEqual([7, 17]);
-  });
-
-  it('returns empty for empty input', () => {
-    expect(normalizeIndex100([], ['a'])).toEqual([]);
+  it('181 days => semaine', () => {
+    expect(computeGranularity(181)).toBe('semaine');
   });
 });
 
-describe('sigInsights', () => {
-  it('returns empty for null', () => {
-    expect(sigInsights(null)).toEqual({});
+describe('computeAutoRange', () => {
+  it('null dates => 90', () => {
+    expect(computeAutoRange(null, null)).toBe(90);
   });
-
-  it('high R² is ok', () => {
-    const ins = sigInsights({ r_squared: 0.92, base_kwh: 150, a_heating: 0.5, b_cooling: 0.2 });
-    expect(ins.r2.status).toBe('ok');
-    expect(ins.r2.phrase).toContain('fiable');
+  it('null firstTs => 90', () => {
+    expect(computeAutoRange(null, '2026-01-15T00:00:00')).toBe(90);
   });
-
-  it('medium R² is warn', () => {
-    const ins = sigInsights({ r_squared: 0.70, base_kwh: 100, a_heating: 1, b_cooling: 0.5 });
-    expect(ins.r2.status).toBe('warn');
+  it('<30 days span => 30', () => {
+    expect(computeAutoRange('2026-01-01T00:00:00', '2026-01-20T00:00:00')).toBe(30);
   });
-
-  it('low R² is crit', () => {
-    const ins = sigInsights({ r_squared: 0.30, base_kwh: 50, a_heating: 0, b_cooling: 0 });
-    expect(ins.r2.status).toBe('crit');
+  it('45 days span => 45 (capped at 60)', () => {
+    expect(computeAutoRange('2026-01-01T00:00:00', '2026-02-15T00:00:00')).toBe(45);
   });
-
-  it('high heating slope is crit', () => {
-    const ins = sigInsights({ r_squared: 0.90, base_kwh: 200, a_heating: 5, b_cooling: 0 });
-    expect(ins.heat.status).toBe('crit');
-    expect(ins.heat.phrase).toContain('Forte');
+  it('120 days span => 90', () => {
+    expect(computeAutoRange('2025-09-01T00:00:00', '2025-12-30T00:00:00')).toBe(90);
   });
-
-  it('moderate cooling slope is warn', () => {
-    const ins = sigInsights({ r_squared: 0.85, base_kwh: 100, a_heating: 0, b_cooling: 2 });
-    expect(ins.cool.status).toBe('warn');
-    expect(ins.cool.phrase).toContain('moderee');
+  it('60 days span => 60', () => {
+    expect(computeAutoRange('2026-01-01T00:00:00', '2026-03-02T00:00:00')).toBe(60);
   });
+});
 
-  it('zero base is warn', () => {
-    const ins = sigInsights({ r_squared: 0.85, base_kwh: 0, a_heating: 0, b_cooling: 0 });
-    expect(ins.base.status).toBe('warn');
+describe('classifyEmptyReason', () => {
+  it('null availability => loading', () => {
+    expect(classifyEmptyReason(null)).toBe('loading');
   });
-
-  it('positive base is ok', () => {
-    const ins = sigInsights({ r_squared: 0.85, base_kwh: 100, a_heating: 0, b_cooling: 0 });
-    expect(ins.base.status).toBe('ok');
-    expect(ins.base.phrase).toContain('100');
+  it('has_data: true => has_data', () => {
+    expect(classifyEmptyReason({ has_data: true })).toBe('has_data');
+  });
+  it('reasons: [no_meter] => no_meter', () => {
+    expect(classifyEmptyReason({ has_data: false, reasons: ['no_meter'] })).toBe('no_meter');
+  });
+  it('empty reasons => unknown', () => {
+    expect(classifyEmptyReason({ has_data: false, reasons: [] })).toBe('unknown');
+  });
+  it('multiple reasons => returns first', () => {
+    expect(classifyEmptyReason({ has_data: false, reasons: ['no_readings', 'insufficient_readings'] })).toBe('no_readings');
   });
 });

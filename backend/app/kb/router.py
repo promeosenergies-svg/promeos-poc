@@ -81,6 +81,12 @@ indexer = KBIndexer()
 service = KBService()
 
 
+@router.get("/ping")
+def kb_ping():
+    """Health check for KB FTS5 engine."""
+    return {"ok": True, "engine": "kb_fts5"}
+
+
 @router.get("/items")
 def list_items(
     domain: Optional[str] = Query(None),
