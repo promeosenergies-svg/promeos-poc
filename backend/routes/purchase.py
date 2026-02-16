@@ -32,6 +32,9 @@ from services.purchase_actions_engine import compute_purchase_actions
 
 router = APIRouter(prefix="/api/purchase", tags=["Achat Energie"])
 
+# ── Energy Gate: ELEC-only (post-ARENH, Brique 3) ──
+ALLOWED_ENERGY_TYPES = {"elec"}
+
 
 # ── Pydantic schemas ──
 
@@ -102,8 +105,15 @@ def get_assumptions(site_id: int, db: Session = Depends(get_db), auth: Optional[
 
 @router.put("/assumptions/{site_id}")
 def put_assumptions(site_id: int, data: AssumptionSetIn, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
-    check_site_access(auth, site_id)
     """Create or update assumptions for a site."""
+    check_site_access(auth, site_id)
+    # Energy Gate: block non-ELEC energy types
+    if data.energy_type not in ALLOWED_ENERGY_TYPES:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Energie '{data.energy_type}' non supportee. "
+                   f"Seule l'electricite (elec) est disponible dans cette version (post-ARENH).",
+        )
     existing = (
         db.query(PurchaseAssumptionSet)
         .filter(PurchaseAssumptionSet.site_id == site_id)
@@ -347,6 +357,11 @@ def compute_portfolio(
             db.refresh(assumption)
 
         energy_type_val = assumption.energy_type.value if assumption.energy_type else "elec"
+
+        # Energy Gate: skip non-ELEC sites in portfolio
+        if energy_type_val not in ALLOWED_ENERGY_TYPES:
+            continue
+
         scenarios = compute_scenarios(
             db, sid,
             volume_kwh_an=assumption.volume_kwh_an,
@@ -411,6 +426,22 @@ def compute_portfolio(
 def compute(site_id: int, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
     """Compute 3 scenarios + recommendation for a site."""
     check_site_access(auth, site_id)
+
+    # Energy Gate: verify existing assumption is ELEC
+    existing_check = (
+        db.query(PurchaseAssumptionSet)
+        .filter(PurchaseAssumptionSet.site_id == site_id)
+        .order_by(PurchaseAssumptionSet.created_at.desc())
+        .first()
+    )
+    if existing_check:
+        et = existing_check.energy_type.value if existing_check.energy_type else "elec"
+        if et not in ALLOWED_ENERGY_TYPES:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Energie '{et}' non supportee. Modifiez les hypotheses vers 'elec' avant de calculer.",
+            )
+
     # Get or create assumptions
     assumption = (
         db.query(PurchaseAssumptionSet)

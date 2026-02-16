@@ -22,7 +22,7 @@ import {
 import {
   ShoppingCart, Calculator, Settings2, CheckCircle2,
   TrendingDown, Shield, Zap, Leaf, AlertTriangle,
-  Building2, Clock, History,
+  Building2, Clock, History, Lock, Info,
 } from 'lucide-react';
 
 const STRATEGY_META = {
@@ -317,14 +317,14 @@ export default function PurchasePage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Energie</label>
-                <select
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                  value={assumptions.energy_type}
-                  onChange={(e) => setAssumptions(prev => ({ ...prev, energy_type: e.target.value }))}
-                >
-                  <option value="elec">Electricite</option>
-                  <option value="gaz">Gaz</option>
-                </select>
+                <div className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2 text-sm flex items-center gap-2 text-gray-700">
+                  <Zap size={14} className="text-blue-500" />
+                  <span className="font-medium">Electricite</span>
+                  <Lock size={12} className="text-gray-400 ml-auto" />
+                </div>
+                <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                  <Info size={10} /> Post-ARENH — elec uniquement
+                </p>
               </div>
               <div className="flex items-end">
                 <button
