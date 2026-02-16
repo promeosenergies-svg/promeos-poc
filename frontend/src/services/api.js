@@ -278,6 +278,33 @@ export const runConsumptionDiagnose = (orgId = null, days = 30) => api.post('/co
 export const seedDemoConsumption = (siteId = null, days = 30) => api.post('/consumption/seed-demo', null, { params: { site_id: siteId, days } }).then(r => r.data);
 
 // ========================================
+// CONSUMPTION EXPLORER (V10 World-Class)
+// ========================================
+
+// Tunnel (envelope P10-P90)
+export const getConsumptionTunnel = (siteId, days = 90, energyType = 'electricity') => api.get('/consumption/tunnel', { params: { site_id: siteId, days, energy_type: energyType } }).then(r => r.data);
+
+// Targets (objectifs & budgets)
+export const getConsumptionTargets = (siteId, energyType = 'electricity', year = null) => api.get('/consumption/targets', { params: { site_id: siteId, energy_type: energyType, year } }).then(r => r.data);
+export const createConsumptionTarget = (data) => api.post('/consumption/targets', data).then(r => r.data);
+export const patchConsumptionTarget = (id, data) => api.patch(`/consumption/targets/${id}`, data).then(r => r.data);
+export const deleteConsumptionTarget = (id) => api.delete(`/consumption/targets/${id}`).then(r => r.data);
+export const getTargetsProgression = (siteId, energyType = 'electricity', year = null) => api.get('/consumption/targets/progression', { params: { site_id: siteId, energy_type: energyType, year } }).then(r => r.data);
+
+// TOU Schedules (grilles HP/HC)
+export const getTOUSchedules = (siteId, meterId = null, activeOnly = true) => api.get('/consumption/tou_schedules', { params: { site_id: siteId, meter_id: meterId, active_only: activeOnly } }).then(r => r.data);
+export const getActiveTOUSchedule = (siteId, meterId = null, refDate = null) => api.get('/consumption/tou_schedules/active', { params: { site_id: siteId, meter_id: meterId, ref_date: refDate } }).then(r => r.data);
+export const createTOUSchedule = (data) => api.post('/consumption/tou_schedules', data).then(r => r.data);
+export const patchTOUSchedule = (id, data) => api.patch(`/consumption/tou_schedules/${id}`, data).then(r => r.data);
+export const deleteTOUSchedule = (id) => api.delete(`/consumption/tou_schedules/${id}`).then(r => r.data);
+
+// HP/HC Ratio
+export const getHPHCRatio = (siteId, meterId = null, days = 30) => api.get('/consumption/hp_hc', { params: { site_id: siteId, meter_id: meterId, days } }).then(r => r.data);
+
+// Gas Summary (beta)
+export const getGasSummary = (siteId, days = 90) => api.get('/consumption/gas/summary', { params: { site_id: siteId, days } }).then(r => r.data);
+
+// ========================================
 // SITE CONFIG (Schedule + Tariff)
 // ========================================
 

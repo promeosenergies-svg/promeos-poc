@@ -36,6 +36,7 @@ import BillIntelPage from './pages/BillIntelPage';
 import KBExplorerPage from './pages/KBExplorerPage';
 import PurchasePage from './pages/PurchasePage';
 import NotificationsPage from './pages/NotificationsPage';
+import ConsumptionExplorerPage from './pages/ConsumptionExplorerPage';
 
 // IAM pages
 import LoginPage from './pages/LoginPage';
@@ -79,6 +80,7 @@ function App() {
                   <Route path="/monitoring" element={<MonitoringPage />} />
                   <Route path="/compliance" element={<CompliancePage />} />
                   <Route path="/diagnostic-conso" element={<ConsumptionDiagPage />} />
+                  <Route path="/consumption-explorer" element={<ConsumptionExplorerPage />} />
                   <Route path="/bill-intel" element={<BillIntelPage />} />
                   <Route path="/achat-energie" element={<PurchasePage />} />
                   <Route path="/kb" element={<KBExplorerPage />} />
@@ -108,6 +110,7 @@ function App() {
                   <Route path="/executive" element={<Navigate to="/cockpit" replace />} />
                   <Route path="/dashboard" element={<Navigate to="/" replace />} />
                   <Route path="/conso" element={<Navigate to="/consommations" replace />} />
+                  <Route path="/explorer" element={<Navigate to="/consumption-explorer" replace />} />
                   <Route path="/imports" element={<Navigate to="/import" replace />} />
                   <Route path="/connexions" element={<Navigate to="/connectors" replace />} />
                   <Route path="/veille" element={<Navigate to="/watchers" replace />} />
