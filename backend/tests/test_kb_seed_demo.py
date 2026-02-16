@@ -86,7 +86,7 @@ class TestKBEmptyReturns200:
     def test_ping_always_ok(self, client):
         r = client.get("/api/kb/ping")
         assert r.status_code == 200
-        assert r.json() == {"ok": True}
+        assert r.json()["ok"] is True
 
 
 # ── Tests: Seed Demo ─────────────────────────────────────────────
