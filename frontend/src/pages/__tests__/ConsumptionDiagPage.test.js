@@ -76,3 +76,26 @@ describe('generateComparisonChart', () => {
     expect(a).toEqual(b);
   });
 });
+
+describe('V9 CO2e: ConsumptionDiagPage includes CO2e features', () => {
+  const { readFileSync } = require('fs');
+  const { resolve } = require('path');
+  const src = readFileSync(resolve(__dirname, '../ConsumptionDiagPage.jsx'), 'utf8');
+
+  it('defines CO2E_FACTOR_KG_PER_KWH constant', () => {
+    expect(src).toContain('CO2E_FACTOR_KG_PER_KWH');
+    expect(src).toContain('0.052');
+  });
+
+  it('has CO2e evitable summary card', () => {
+    expect(src).toContain("'CO₂e évitable'");
+  });
+
+  it('has CO2e column in table header', () => {
+    expect(src).toContain('CO₂e (kg)');
+  });
+
+  it('displays kgCO2e in evidence drawer', () => {
+    expect(src).toContain('kgCO₂e');
+  });
+});

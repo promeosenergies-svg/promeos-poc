@@ -419,6 +419,32 @@ describe('computeConfidence with climate reason codes', () => {
   });
 });
 
+describe('V9 CO2e: MonitoringPage includes Leaf import and CO2e KPI card', () => {
+  const src = readFileSync(resolve(__dirname, '../MonitoringPage.jsx'), 'utf8');
+
+  it('imports Leaf icon from lucide-react', () => {
+    expect(src).toContain('Leaf');
+    expect(src).toMatch(/import\s*\{[^}]*Leaf[^}]*\}\s*from\s*'lucide-react'/);
+  });
+
+  it('has CO2e KPI card with title', () => {
+    expect(src).toContain('title="CO₂e"');
+  });
+
+  it('ExecutiveSummary has Empreinte CO2e card', () => {
+    expect(src).toContain("'Empreinte CO₂e'");
+  });
+
+  it('passes emissions prop to ExecutiveSummary', () => {
+    expect(src).toContain('emissions={emissions}');
+  });
+
+  it('passes emissions prop to OffHoursDrawer', () => {
+    const drawerSection = src.slice(src.indexOf('<OffHoursDrawer'));
+    expect(drawerSection).toContain('emissions={emissions}');
+  });
+});
+
 describe('MonitoringPage: no TDZ on loadSiteActions', () => {
   const src = readFileSync(resolve(__dirname, '../MonitoringPage.jsx'), 'utf8');
 

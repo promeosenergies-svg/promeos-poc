@@ -295,3 +295,59 @@ class TestEmissionsEndpoints:
         data = resp.json()
         assert data["off_hours_co2e_kg"] == round(30000 * 0.052, 2)
         assert data["total_co2e_kg"] == round(100000 * 0.052, 2)
+
+
+# --- Action CO2e field tests ---
+
+class TestActionCO2e:
+    def test_create_action_with_co2e(self, client, db):
+        org, site = _create_org_site(db)
+        resp = client.post("/api/actions", json={
+            "org_id": org.id,
+            "site_id": site.id,
+            "source_type": "manual",
+            "title": "Reduire conso hors horaires",
+            "estimated_gain_eur": 5000,
+            "co2e_savings_est_kg": 1733,
+        })
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["co2e_savings_est_kg"] == 1733
+
+    def test_patch_action_co2e(self, client, db):
+        from models import ActionItem, ActionSourceType, ActionStatus
+        org, site = _create_org_site(db)
+        action = ActionItem(
+            org_id=org.id, site_id=site.id,
+            source_type=ActionSourceType.MANUAL,
+            source_id="test-co2e", source_key="k1",
+            title="Test CO2e patch",
+            priority=3, status=ActionStatus.OPEN,
+        )
+        db.add(action)
+        db.commit()
+        db.refresh(action)
+
+        resp = client.patch(f"/api/actions/{action.id}", json={
+            "co2e_savings_est_kg": 500.5,
+        })
+        assert resp.status_code == 200
+        assert resp.json()["co2e_savings_est_kg"] == 500.5
+
+    def test_action_serialize_includes_co2e(self, client, db):
+        from models import ActionItem, ActionSourceType, ActionStatus
+        org, site = _create_org_site(db)
+        action = ActionItem(
+            org_id=org.id, site_id=site.id,
+            source_type=ActionSourceType.MANUAL,
+            source_id="test-co2e-ser", source_key="k2",
+            title="Test serialize co2e",
+            priority=3, status=ActionStatus.OPEN,
+            co2e_savings_est_kg=250,
+        )
+        db.add(action)
+        db.commit()
+
+        resp = client.get(f"/api/actions/{action.id}")
+        assert resp.status_code == 200
+        assert resp.json()["co2e_savings_est_kg"] == 250
