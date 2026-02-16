@@ -8,6 +8,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useScope } from '../contexts/ScopeContext';
 import ExportNoteDecision from '../components/ExportNoteDecision';
 import ExportPackRFP from '../components/ExportPackRFP';
+import PurchaseErrorBoundary from '../components/PurchaseErrorBoundary';
+import PurchaseDebugDrawer from '../components/PurchaseDebugDrawer';
 import {
   getPurchaseEstimate,
   getPurchaseAssumptions,
@@ -239,6 +241,7 @@ export default function PurchasePage() {
   };
 
   return (
+    <PurchaseErrorBoundary>
     <div className="px-6 py-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -742,5 +745,14 @@ export default function PurchasePage() {
         </div>
       )}
     </div>
+    <PurchaseDebugDrawer
+      assumptions={assumptions}
+      preferences={preferences}
+      scenarios={scenarios}
+      portfolioData={portfolioData}
+      selectedSiteId={selectedSiteId}
+      seedResult={seedResult}
+    />
+    </PurchaseErrorBoundary>
   );
 }
