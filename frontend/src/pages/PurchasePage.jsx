@@ -1,10 +1,13 @@
 /**
- * PROMEOS — Achat Energie V1.1
+ * PROMEOS — Achat Energie V1.1 + Brique 3
  * Simulateur de scenarios d'achat: Fixe / Indexe / Spot
  * V1.1: + Portfolio roll-up, Echeances, Historique tabs.
+ * Brique 3: + Energy Gate, WOW datasets, A4 exports.
  */
 import { useState, useEffect, useCallback } from 'react';
 import { useScope } from '../contexts/ScopeContext';
+import ExportNoteDecision from '../components/ExportNoteDecision';
+import ExportPackRFP from '../components/ExportPackRFP';
 import {
   getPurchaseEstimate,
   getPurchaseAssumptions,
@@ -24,7 +27,7 @@ import {
 import {
   ShoppingCart, Calculator, Settings2, CheckCircle2,
   TrendingDown, Shield, Zap, Leaf, AlertTriangle,
-  Building2, Clock, History, Lock, Info, Database, AlertOctagon,
+  Building2, Clock, History, Lock, Info, Database, AlertOctagon, Printer, FileText,
 } from 'lucide-react';
 
 const STRATEGY_META = {
@@ -96,6 +99,10 @@ export default function PurchasePage() {
   const [selectedRun, setSelectedRun] = useState(null);
   const [seedingWow, setSeedingWow] = useState(null); // 'happy' | 'dirty' | null
   const [seedResult, setSeedResult] = useState(null);
+
+  // Brique 3: Export state
+  const [showNoteDecision, setShowNoteDecision] = useState(false);
+  const [showPackRFP, setShowPackRFP] = useState(false);
 
   // WOW dataset handlers
   const handleSeedWow = async (mode) => {
@@ -495,6 +502,14 @@ export default function PurchasePage() {
               )}
             </div>
           )}
+          {scenarios.length > 0 && (
+            <div className="flex justify-end">
+              <button onClick={() => setShowNoteDecision(true)}
+                className="flex items-center gap-1.5 bg-white border border-blue-200 text-blue-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-50 transition">
+                <Printer size={14} /> Exporter Note de Decision (A4)
+              </button>
+            </div>
+          )}
           {loading && <div className="text-center py-12 text-gray-400">Chargement...</div>}
         </>
       )}
@@ -586,12 +601,40 @@ export default function PurchasePage() {
                   </table>
                 </div>
               )}
+              <div className="flex justify-end mt-4">
+                <button onClick={() => setShowPackRFP(true)}
+                  className="flex items-center gap-1.5 bg-white border border-blue-200 text-blue-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-50 transition">
+                  <FileText size={14} /> Exporter Pack RFP (A4)
+                </button>
+              </div>
             </>
           )}
           {!portfolioData && !portfolioLoading && (
             <div className="text-center py-12 text-gray-400">Cliquez sur "Calculer le portefeuille" pour lancer l'analyse multi-site</div>
           )}
         </div>
+      )}
+
+      {/* ══ Export modals ══ */}
+      {showNoteDecision && (
+        <ExportNoteDecision
+          data={{
+            site_id: selectedSiteId,
+            site_nom: scopedSites.find(s => s.id === selectedSiteId)?.nom,
+            volume_kwh_an: assumptions.volume_kwh_an,
+            horizon_months: assumptions.horizon_months,
+            scenarios,
+          }}
+          onClose={() => setShowNoteDecision(false)}
+        />
+      )}
+      {showPackRFP && portfolioData && (
+        <ExportPackRFP
+          portfolio={portfolioData.portfolio}
+          sites={portfolioData.sites}
+          orgName="PROMEOS"
+          onClose={() => setShowPackRFP(false)}
+        />
       )}
 
       {/* ══ TAB: Echeances (V1.1) ══ */}
