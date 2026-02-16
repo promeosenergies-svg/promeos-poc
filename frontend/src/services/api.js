@@ -346,6 +346,9 @@ export const getFlexMini = (siteId, start, end) =>
 // CONSUMPTION EXPLORER (V10 World-Class)
 // ========================================
 
+// Availability check (V10.1 handshake)
+export const getConsumptionAvailability = (siteId, energyType = 'electricity') => api.get('/consumption/availability', { params: { site_id: siteId, energy_type: energyType } }).then(r => r.data);
+
 // Tunnel (envelope P10-P90)
 export const getConsumptionTunnel = (siteId, days = 90, energyType = 'electricity') => api.get('/consumption/tunnel', { params: { site_id: siteId, days, energy_type: energyType } }).then(r => r.data);
 

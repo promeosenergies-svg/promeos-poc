@@ -1,32 +1,30 @@
 /**
- * PROMEOS - ConsumptionExplorerPage (/consumption-explorer)
- * Sprint V10: Consommations World-Class (Elec + Gaz)
+ * PROMEOS - ConsumptionExplorerPage (/consommations/explorer)
+ * Sprint V10.1: Availability handshake + auto-range + smart empty states
  * Panels: Tunnel (P10-P90), Objectifs/Budgets, HP/HC, Gaz (beta)
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Activity, Target, Clock, Flame, BarChart3, TrendingUp,
   RefreshCw, AlertTriangle, CheckCircle, ChevronDown, ChevronUp,
-  Plus, Trash2, Edit3, Save, X,
+  Plus, Trash2, Save, X, Zap, Database, Upload, Wifi,
 } from 'lucide-react';
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, Legend, LineChart, Line,
+  Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
-import { Card, CardBody, Badge, Button, EmptyState, TrustBadge, Skeleton } from '../ui';
+import { Card, CardBody, Badge, Button, EmptyState, TrustBadge } from '../ui';
 import { SkeletonCard } from '../ui';
 import { useScope } from '../contexts/ScopeContext';
 import { track } from '../services/tracker';
 import {
+  getConsumptionAvailability,
   getConsumptionTunnel,
   getConsumptionTargets,
   createConsumptionTarget,
-  patchConsumptionTarget,
   deleteConsumptionTarget,
   getTargetsProgression,
-  getTOUSchedules,
   getActiveTOUSchedule,
-  createTOUSchedule,
   getHPHCRatio,
   getGasSummary,
 } from '../services/api';
@@ -42,6 +40,19 @@ const TAB_CONFIG = [
   { key: 'gas', label: 'Gaz', icon: Flame, desc: 'Beta' },
 ];
 
+const ENERGY_OPTIONS = [
+  { value: 'electricity', label: 'Electricite' },
+  { value: 'gas', label: 'Gaz' },
+];
+
+const PERIOD_OPTIONS = [
+  { value: 30, label: '30 jours' },
+  { value: 60, label: '60 jours' },
+  { value: 90, label: '90 jours' },
+  { value: 180, label: '6 mois' },
+  { value: 365, label: '1 an' },
+];
+
 const CONFIDENCE_BADGE = {
   high: { label: 'Haute', variant: 'ok' },
   medium: { label: 'Moyenne', variant: 'warn' },
@@ -54,29 +65,179 @@ const ALERT_COLOR = {
   over_budget: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', label: 'Hors budget' },
 };
 
+const REASON_CONFIG = {
+  no_site: {
+    icon: AlertTriangle,
+    title: 'Site introuvable',
+    text: 'Le site selectionne n\'existe pas ou a ete supprime. Verifiez votre selection.',
+    ctaLabel: null,
+  },
+  no_meter: {
+    icon: Wifi,
+    title: 'Aucun compteur configure',
+    text: 'Ce site n\'a pas encore de compteur rattache. Connectez Enedis / GRDF ou ajoutez un compteur manuellement.',
+    ctaLabel: 'Connecter un compteur',
+    ctaPath: '/connectors',
+  },
+  no_readings: {
+    icon: Database,
+    title: 'Compteur present, aucun releve',
+    text: 'Un compteur est configure mais aucune donnee de consommation n\'a ete importee.',
+    ctaLabel: 'Importer des donnees',
+    ctaPath: '/consommations/import',
+  },
+  insufficient_readings: {
+    icon: BarChart3,
+    title: 'Donnees insuffisantes',
+    text: 'Moins de 48 releves disponibles. L\'analyse necessite davantage de donnees pour etre fiable.',
+    ctaLabel: 'Importer des donnees',
+    ctaPath: '/consommations/import',
+  },
+  wrong_energy_type: {
+    icon: Zap,
+    title: 'Pas de donnees pour ce type d\'energie',
+    text: null, // dynamic
+    ctaLabel: null,
+  },
+};
+
+// ========================================
+// Smart Empty State
+// ========================================
+
+function SmartEmptyState({ reasons, energyTypes, onNavigate, onSwitchEnergy }) {
+  if (!reasons?.length) {
+    return (
+      <EmptyState
+        icon={BarChart3}
+        title="Aucune donnee disponible"
+        text="Verifiez la configuration du site ou importez des donnees."
+      />
+    );
+  }
+
+  const primary = reasons[0];
+  const config = REASON_CONFIG[primary] || REASON_CONFIG.no_readings;
+  const Icon = config.icon;
+
+  // Dynamic text for wrong_energy_type
+  let text = config.text;
+  if (primary === 'wrong_energy_type' && energyTypes?.length > 0) {
+    text = `Aucune donnee pour ce vecteur energetique. Types disponibles : ${energyTypes.join(', ')}.`;
+  }
+
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+        <Icon size={32} className="text-gray-400" />
+      </div>
+      <h3 className="text-lg font-semibold text-gray-700 mb-1">{config.title}</h3>
+      <p className="text-sm text-gray-500 mb-6 max-w-md">{text}</p>
+      <div className="flex items-center gap-3">
+        {config.ctaLabel && config.ctaPath && (
+          <Button onClick={() => onNavigate(config.ctaPath)}>
+            {config.ctaLabel}
+          </Button>
+        )}
+        {primary === 'wrong_energy_type' && energyTypes?.length > 0 && (
+          <Button onClick={() => onSwitchEnergy(energyTypes[0])}>
+            Basculer vers {energyTypes[0]}
+          </Button>
+        )}
+      </div>
+      {reasons.length > 1 && (
+        <p className="text-xs text-gray-400 mt-4">
+          Diagnostics : {reasons.join(', ')}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ========================================
+// Availability Skeleton
+// ========================================
+
+function AvailabilitySkeleton() {
+  return (
+    <div className="space-y-4 animate-pulse">
+      <div className="h-10 bg-gray-200 rounded-lg w-full" />
+      <div className="grid grid-cols-3 gap-3">
+        <div className="h-20 bg-gray-200 rounded-lg" />
+        <div className="h-20 bg-gray-200 rounded-lg" />
+        <div className="h-20 bg-gray-200 rounded-lg" />
+      </div>
+      <div className="h-64 bg-gray-200 rounded-lg" />
+    </div>
+  );
+}
+
+// ========================================
+// Filter Bar
+// ========================================
+
+function FilterBar({ energyType, onEnergyChange, days, onDaysChange, availableTypes }) {
+  return (
+    <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex items-center gap-2">
+        <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Energie</label>
+        <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
+          {ENERGY_OPTIONS.map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => onEnergyChange(opt.value)}
+              disabled={availableTypes && !availableTypes.includes(opt.value)}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
+                energyType === opt.value
+                  ? 'bg-white text-blue-700 shadow-sm'
+                  : availableTypes && !availableTypes.includes(opt.value)
+                    ? 'text-gray-300 cursor-not-allowed'
+                    : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Periode</label>
+        <select
+          value={days}
+          onChange={(e) => onDaysChange(Number(e.target.value))}
+          className="text-sm border rounded-lg px-3 py-1.5 bg-white"
+        >
+          {PERIOD_OPTIONS.map(opt => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+      </div>
+    </div>
+  );
+}
+
 // ========================================
 // Tunnel Panel
 // ========================================
 
-function TunnelPanel({ siteId }) {
+function TunnelPanel({ siteId, days, energyType }) {
   const [tunnel, setTunnel] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [days, setDays] = useState(90);
   const [dayType, setDayType] = useState('weekday');
 
   const load = useCallback(async () => {
     if (!siteId) return;
     setLoading(true);
     try {
-      const data = await getConsumptionTunnel(siteId, days);
+      const data = await getConsumptionTunnel(siteId, days, energyType);
       setTunnel(data);
-      track('tunnel_loaded', { site_id: siteId, days });
+      track('tunnel_loaded', { site_id: siteId, days, energy_type: energyType });
     } catch (e) {
       console.error('Tunnel load error:', e);
     } finally {
       setLoading(false);
     }
-  }, [siteId, days]);
+  }, [siteId, days, energyType]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -86,7 +247,7 @@ function TunnelPanel({ siteId }) {
       <EmptyState
         icon={Activity}
         title="Aucune donnee de consommation"
-        description="Importez des releves ou generez des donnees demo pour voir l'enveloppe tunnel."
+        text="Importez des releves ou generez des donnees demo pour voir l'enveloppe tunnel."
       />
     );
   }
@@ -106,22 +267,9 @@ function TunnelPanel({ siteId }) {
           <h3 className="text-lg font-semibold text-gray-800">Enveloppe de consommation</h3>
           <TrustBadge level={conf.variant} label={`Confiance ${conf.label}`} size="sm" />
         </div>
-        <div className="flex items-center gap-2">
-          <select
-            value={days}
-            onChange={(e) => setDays(Number(e.target.value))}
-            className="text-sm border rounded px-2 py-1"
-          >
-            <option value={30}>30 jours</option>
-            <option value={60}>60 jours</option>
-            <option value={90}>90 jours</option>
-            <option value={180}>6 mois</option>
-            <option value={365}>1 an</option>
-          </select>
-          <Button size="sm" variant="ghost" onClick={load}>
-            <RefreshCw size={14} />
-          </Button>
-        </div>
+        <Button size="sm" variant="ghost" onClick={load}>
+          <RefreshCw size={14} />
+        </Button>
       </div>
 
       {/* KPI cards */}
@@ -191,7 +339,7 @@ function TunnelPanel({ siteId }) {
 // Targets Panel (Objectifs & Budgets)
 // ========================================
 
-function TargetsPanel({ siteId }) {
+function TargetsPanel({ siteId, energyType }) {
   const [targets, setTargets] = useState([]);
   const [progression, setProgression] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -204,18 +352,18 @@ function TargetsPanel({ siteId }) {
     setLoading(true);
     try {
       const [t, p] = await Promise.all([
-        getConsumptionTargets(siteId, 'electricity', year),
-        getTargetsProgression(siteId, 'electricity', year),
+        getConsumptionTargets(siteId, energyType, year),
+        getTargetsProgression(siteId, energyType, year),
       ]);
       setTargets(t);
       setProgression(p);
-      track('targets_loaded', { site_id: siteId, year });
+      track('targets_loaded', { site_id: siteId, year, energy_type: energyType });
     } catch (e) {
       console.error('Targets load error:', e);
     } finally {
       setLoading(false);
     }
-  }, [siteId, year]);
+  }, [siteId, year, energyType]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -223,7 +371,7 @@ function TargetsPanel({ siteId }) {
     try {
       await createConsumptionTarget({
         site_id: siteId,
-        energy_type: 'electricity',
+        energy_type: energyType,
         period: 'monthly',
         year,
         month: newTarget.month,
@@ -397,11 +545,10 @@ function TargetsPanel({ siteId }) {
 // HP/HC Panel
 // ========================================
 
-function HPHCPanel({ siteId }) {
+function HPHCPanel({ siteId, days }) {
   const [ratio, setRatio] = useState(null);
   const [schedule, setSchedule] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [days, setDays] = useState(30);
 
   const load = useCallback(async () => {
     if (!siteId) return;
@@ -436,11 +583,6 @@ function HPHCPanel({ siteId }) {
           <h3 className="text-lg font-semibold text-gray-800">Ratio HP / HC</h3>
           {ratio && <TrustBadge level={conf.variant} label={`Confiance ${conf.label}`} size="sm" />}
         </div>
-        <select value={days} onChange={(e) => setDays(Number(e.target.value))} className="text-sm border rounded px-2 py-1">
-          <option value={7}>7 jours</option>
-          <option value={30}>30 jours</option>
-          <option value={90}>90 jours</option>
-        </select>
       </div>
 
       {ratio && ratio.total_kwh > 0 ? (
@@ -535,7 +677,7 @@ function HPHCPanel({ siteId }) {
         <EmptyState
           icon={Clock}
           title="Aucune donnee HP/HC"
-          description="Importez des releves electricite pour voir la repartition HP/HC."
+          text="Importez des releves electricite pour voir la repartition HP/HC."
         />
       )}
     </div>
@@ -546,10 +688,9 @@ function HPHCPanel({ siteId }) {
 // Gas Panel (Beta)
 // ========================================
 
-function GasPanel({ siteId }) {
+function GasPanel({ siteId, days }) {
   const [gas, setGas] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [days, setDays] = useState(90);
 
   const load = useCallback(async () => {
     if (!siteId) return;
@@ -573,7 +714,7 @@ function GasPanel({ siteId }) {
       <EmptyState
         icon={Flame}
         title="Aucun compteur gaz"
-        description="Ajoutez un compteur gaz et importez des releves pour voir le resume."
+        text="Ajoutez un compteur gaz et importez des releves pour voir le resume."
       />
     );
   }
@@ -588,12 +729,6 @@ function GasPanel({ siteId }) {
           <Badge variant="warn">Beta</Badge>
           <TrustBadge level={conf.variant} label={`Confiance ${conf.label}`} size="sm" />
         </div>
-        <select value={days} onChange={(e) => setDays(Number(e.target.value))} className="text-sm border rounded px-2 py-1">
-          <option value={30}>30 jours</option>
-          <option value={90}>90 jours</option>
-          <option value={180}>6 mois</option>
-          <option value={365}>1 an</option>
-        </select>
       </div>
 
       {/* KPI cards */}
@@ -647,6 +782,15 @@ export default function ConsumptionExplorerPage() {
   const { selectedSiteId, sites } = useScope();
   const [siteId, setSiteId] = useState(null);
 
+  // V10.1: Availability handshake
+  const [availability, setAvailability] = useState(null);
+  const [availLoading, setAvailLoading] = useState(false);
+
+  // Filters
+  const [energyType, setEnergyType] = useState('electricity');
+  const [days, setDays] = useState(90);
+
+  // Resolve siteId from scope
   useEffect(() => {
     if (selectedSiteId) {
       setSiteId(selectedSiteId);
@@ -655,53 +799,151 @@ export default function ConsumptionExplorerPage() {
     }
   }, [selectedSiteId, sites]);
 
+  // Availability check on siteId or energyType change
+  const checkAvailability = useCallback(async () => {
+    if (!siteId) return;
+    setAvailLoading(true);
+    try {
+      const data = await getConsumptionAvailability(siteId, energyType);
+      setAvailability(data);
+      track('availability_checked', { site_id: siteId, energy_type: energyType, has_data: data.has_data });
+
+      // Auto-calibrate period from available data range
+      if (data.has_data && data.first_ts && data.last_ts) {
+        const first = new Date(data.first_ts);
+        const last = new Date(data.last_ts);
+        const spanDays = Math.ceil((last - first) / (1000 * 60 * 60 * 24));
+        // Pick best period: use full span up to 365, default 90 if enough
+        if (spanDays < 30) setDays(30);
+        else if (spanDays < 90) setDays(Math.min(spanDays, 60));
+        else setDays(90);
+      }
+
+      // Auto-switch to gas tab if only gas data
+      if (data.has_data && energyType === 'gas' && activeTab === 'tunnel') {
+        setActiveTab('gas');
+      }
+    } catch (e) {
+      console.error('Availability check error:', e);
+      setAvailability(null);
+    } finally {
+      setAvailLoading(false);
+    }
+  }, [siteId, energyType]);
+
+  useEffect(() => { checkAvailability(); }, [checkAvailability]);
+
+  // Navigation helper for CTAs
+  const handleNavigate = useCallback((path) => {
+    window.location.href = path;
+  }, []);
+
+  // Energy switch from empty state CTA
+  const handleSwitchEnergy = useCallback((type) => {
+    setEnergyType(type);
+    if (type === 'gas') setActiveTab('gas');
+    else setActiveTab('tunnel');
+  }, []);
+
+  // Availability info banner
+  const availBanner = useMemo(() => {
+    if (!availability?.has_data) return null;
+    const count = availability.readings_count || 0;
+    const siteName = availability.site_nom || '';
+    const types = availability.energy_types || [];
+    return { count, siteName, types };
+  }, [availability]);
+
+  const hasData = availability?.has_data === true;
+  const showContent = hasData && !availLoading;
+
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
-      {/* Page header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Consommations Explorer</h1>
-          <p className="text-sm text-gray-500 mt-1">Analyse avancee Electricite & Gaz</p>
-        </div>
-        {sites?.length > 1 && (
+    <div className="space-y-5">
+      {/* Site selector (only if multiple sites and not inside ConsommationsPage) */}
+      {sites?.length > 1 && (
+        <div className="flex items-center gap-3">
+          <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Site</label>
           <select
             value={siteId || ''}
             onChange={(e) => setSiteId(Number(e.target.value))}
-            className="text-sm border rounded px-3 py-1.5"
+            className="text-sm border rounded-lg px-3 py-1.5 bg-white"
           >
             {sites.map(s => <option key={s.id} value={s.id}>{s.nom}</option>)}
           </select>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Tab bar */}
-      <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
-        {TAB_CONFIG.map(tab => {
-          const Icon = tab.icon;
-          const active = activeTab === tab.key;
-          return (
-            <button
-              key={tab.key}
-              onClick={() => { setActiveTab(tab.key); track('explorer_tab', { tab: tab.key }); }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition flex-1 justify-center ${
-                active ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <Icon size={16} />
-              <span>{tab.label}</span>
-              {tab.key === 'gas' && <Badge variant="warn" className="text-[10px] px-1 py-0">Beta</Badge>}
-            </button>
-          );
-        })}
-      </div>
+      {/* Filter bar */}
+      <FilterBar
+        energyType={energyType}
+        onEnergyChange={setEnergyType}
+        days={days}
+        onDaysChange={setDays}
+        availableTypes={availability?.energy_types}
+      />
 
-      {/* Panel content */}
-      <div>
-        {activeTab === 'tunnel' && <TunnelPanel siteId={siteId} />}
-        {activeTab === 'targets' && <TargetsPanel siteId={siteId} />}
-        {activeTab === 'hphc' && <HPHCPanel siteId={siteId} />}
-        {activeTab === 'gas' && <GasPanel siteId={siteId} />}
-      </div>
+      {/* Availability info banner */}
+      {availBanner && (
+        <div className="flex items-center gap-4 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5 text-sm">
+          <CheckCircle size={16} className="text-blue-600 shrink-0" />
+          <span className="text-blue-800">
+            <strong>{availBanner.siteName}</strong> — {availBanner.count.toLocaleString()} releves disponibles
+            {availBanner.types.length > 0 && ` (${availBanner.types.join(', ')})`}
+          </span>
+        </div>
+      )}
+
+      {/* Loading skeleton */}
+      {availLoading && <AvailabilitySkeleton />}
+
+      {/* Smart empty state (no data) */}
+      {!availLoading && availability && !hasData && (
+        <SmartEmptyState
+          reasons={availability.reasons}
+          energyTypes={availability.energy_types}
+          onNavigate={handleNavigate}
+          onSwitchEnergy={handleSwitchEnergy}
+        />
+      )}
+
+      {/* Main content (data available) */}
+      {showContent && (
+        <>
+          {/* Tab bar */}
+          <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+            {TAB_CONFIG.map(tab => {
+              const Icon = tab.icon;
+              const active = activeTab === tab.key;
+              // Hide gas tab if electricity, and hphc if gas
+              if (tab.key === 'gas' && energyType !== 'gas') return null;
+              if ((tab.key === 'hphc' || tab.key === 'tunnel' || tab.key === 'targets') && energyType === 'gas') {
+                if (tab.key !== 'gas') return null;
+              }
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => { setActiveTab(tab.key); track('explorer_tab', { tab: tab.key }); }}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition flex-1 justify-center ${
+                    active ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <Icon size={16} />
+                  <span>{tab.label}</span>
+                  {tab.key === 'gas' && <Badge variant="warn" className="text-[10px] px-1 py-0">Beta</Badge>}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Panel content */}
+          <div>
+            {activeTab === 'tunnel' && <TunnelPanel siteId={siteId} days={days} energyType={energyType} />}
+            {activeTab === 'targets' && <TargetsPanel siteId={siteId} energyType={energyType} />}
+            {activeTab === 'hphc' && <HPHCPanel siteId={siteId} days={days} />}
+            {activeTab === 'gas' && <GasPanel siteId={siteId} days={days} />}
+          </div>
+        </>
+      )}
     </div>
   );
 }
