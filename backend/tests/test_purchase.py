@@ -551,3 +551,178 @@ class TestV11API:
         # Verify contracts in DB
         contracts = db_session.query(EnergyContract).all()
         assert len(contracts) >= 2
+
+
+# ========================================
+# Brique 3: Energy Gate tests
+# ========================================
+
+class TestEnergyGate:
+    """Energy Gate: only ELEC energy type is allowed for purchase scenarios."""
+
+    def test_put_assumptions_gaz_rejected(self, client, db_session):
+        """PUT assumptions with energy_type=gaz returns 422."""
+        _, site = _create_org_site(db_session)
+        resp = client.put(f"/api/purchase/assumptions/{site.id}", json={
+            "energy_type": "gaz",
+            "volume_kwh_an": 300000,
+            "horizon_months": 24,
+        })
+        assert resp.status_code == 422
+        assert "non supportee" in resp.json()["detail"]
+        assert "elec" in resp.json()["detail"]
+
+    def test_put_assumptions_elec_accepted(self, client, db_session):
+        """PUT assumptions with energy_type=elec succeeds."""
+        _, site = _create_org_site(db_session)
+        resp = client.put(f"/api/purchase/assumptions/{site.id}", json={
+            "energy_type": "elec",
+            "volume_kwh_an": 500000,
+            "horizon_months": 24,
+        })
+        assert resp.status_code == 200
+        assert resp.json()["status"] in ("created", "updated")
+
+    def test_compute_gaz_assumption_rejected(self, client, db_session):
+        """Compute rejects site with existing GAZ assumption."""
+        _, site = _create_org_site(db_session)
+        # Directly insert a GAZ assumption (bypassing the PUT gate)
+        assumption = PurchaseAssumptionSet(
+            site_id=site.id,
+            energy_type=BillingEnergyType.GAZ,
+            volume_kwh_an=300000,
+        )
+        db_session.add(assumption)
+        db_session.commit()
+
+        resp = client.post(f"/api/purchase/compute/{site.id}")
+        assert resp.status_code == 422
+        assert "non supportee" in resp.json()["detail"]
+
+    def test_compute_elec_succeeds(self, client, db_session):
+        """Compute succeeds for ELEC site."""
+        _, site = _create_org_site(db_session)
+        resp = client.post(f"/api/purchase/compute/{site.id}")
+        assert resp.status_code == 200
+        assert len(resp.json()["scenarios"]) == 3
+
+    def test_portfolio_skips_gaz_sites(self, client, db_session):
+        """Portfolio compute skips GAZ sites and only processes ELEC."""
+        org, site_a, site_b = _create_two_sites(db_session)
+        # Site A: ELEC assumption
+        a_elec = PurchaseAssumptionSet(
+            site_id=site_a.id, energy_type=BillingEnergyType.ELEC,
+            volume_kwh_an=500000, profile_factor=1.0,
+        )
+        # Site B: GAZ assumption (should be skipped)
+        b_gaz = PurchaseAssumptionSet(
+            site_id=site_b.id, energy_type=BillingEnergyType.GAZ,
+            volume_kwh_an=300000, profile_factor=1.0,
+        )
+        db_session.add_all([a_elec, b_gaz])
+        db_session.commit()
+
+        resp = client.post(f"/api/purchase/compute?org_id={org.id}&scope=org")
+        assert resp.status_code == 200
+        data = resp.json()
+        # Only 1 site should be in results (ELEC only)
+        assert len(data["sites"]) == 1
+        assert data["sites"][0]["site_id"] == site_a.id
+
+    def test_allowed_energy_types_constant(self):
+        """ALLOWED_ENERGY_TYPES contains only 'elec'."""
+        from routes.purchase import ALLOWED_ENERGY_TYPES
+        assert ALLOWED_ENERGY_TYPES == {"elec"}
+        assert "gaz" not in ALLOWED_ENERGY_TYPES
+
+    def test_seed_demo_elec_only(self, client, db_session):
+        """Seed demo creates ELEC assumptions for both sites (post-Energy Gate)."""
+        org, site_a = _create_org_site(db_session)
+        site_b = Site(
+            nom="Site B", type=TypeSite.ENTREPOT,
+            adresse="2 rue Test", code_postal="69001", ville="Lyon",
+            surface_m2=5000, portefeuille_id=site_a.portefeuille_id,
+        )
+        db_session.add(site_b)
+        db_session.commit()
+        resp = client.post("/api/purchase/seed-demo")
+        assert resp.status_code == 200
+        # Verify all assumptions are ELEC
+        assumptions = db_session.query(PurchaseAssumptionSet).all()
+        for a in assumptions:
+            assert a.energy_type == BillingEnergyType.ELEC
+
+
+# ========================================
+# Brique 3: WOW multi-site dataset tests
+# ========================================
+
+class TestWowDatasets:
+    """WOW multi-site datasets: happy + dirty modes."""
+
+    def test_seed_wow_happy(self, client, db_session):
+        """Happy dataset creates 15 sites with full scenarios."""
+        resp = client.post("/api/purchase/seed-wow-happy")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["mode"] == "happy"
+        assert data["sites_created"] == 15
+        assert data["assumptions_created"] == 15
+        assert data["scenarios_created"] == 45  # 15 sites * 3 strategies
+        assert data["contracts_created"] == 15
+        assert data["org_id"] is not None
+
+    def test_seed_wow_happy_all_elec(self, client, db_session):
+        """Happy dataset: all assumptions are ELEC (Energy Gate)."""
+        client.post("/api/purchase/seed-wow-happy")
+        assumptions = db_session.query(PurchaseAssumptionSet).all()
+        for a in assumptions:
+            assert a.energy_type == BillingEnergyType.ELEC
+
+    def test_seed_wow_happy_varied_volumes(self, client, db_session):
+        """Happy dataset has varied volumes (small to large sites)."""
+        client.post("/api/purchase/seed-wow-happy")
+        assumptions = db_session.query(PurchaseAssumptionSet).all()
+        volumes = [a.volume_kwh_an for a in assumptions]
+        assert min(volumes) < 500_000  # Small site
+        assert max(volumes) >= 2_000_000  # Large industrial
+
+    def test_seed_wow_dirty(self, client, db_session):
+        """Dirty dataset creates 15 sites with edge cases."""
+        resp = client.post("/api/purchase/seed-wow-dirty")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["mode"] == "dirty"
+        assert data["sites_created"] == 15
+        # 2 sites skipped (orphans) → 13 assumptions
+        assert data["assumptions_created"] == 13
+        assert data["scenarios_created"] == 39  # 13 * 3
+        assert "warnings" in data
+        assert len(data["warnings"]) > 0
+
+    def test_seed_wow_dirty_edge_volumes(self, client, db_session):
+        """Dirty dataset has zero-volume and extreme-volume sites."""
+        client.post("/api/purchase/seed-wow-dirty")
+        assumptions = db_session.query(PurchaseAssumptionSet).all()
+        volumes = [a.volume_kwh_an for a in assumptions]
+        assert 0 in volumes  # Zero-volume site
+        assert 50 in volumes  # Tiny site
+        assert 50_000_000 in volumes  # Absurdly large
+
+    def test_seed_wow_dirty_missing_contracts(self, client, db_session):
+        """Dirty dataset: some sites have no contracts."""
+        client.post("/api/purchase/seed-wow-dirty")
+        data_resp = client.post("/api/purchase/seed-wow-dirty")
+        data = data_resp.json()
+        # contracts_created < sites_created (some missing)
+        assert data["contracts_created"] < data["sites_created"]
+
+    def test_seed_wow_portfolio_compute(self, client, db_session):
+        """Can compute portfolio on WOW happy dataset."""
+        seed_resp = client.post("/api/purchase/seed-wow-happy")
+        org_id = seed_resp.json()["org_id"]
+        resp = client.post(f"/api/purchase/compute?org_id={org_id}&scope=org")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["portfolio"]["sites_count"] == 15
+        assert data["portfolio"]["total_annual_cost_eur"] > 0
