@@ -1,9 +1,9 @@
 /**
  * PROMEOS - ConsumptionExplorerPage (/consommations/explorer)
- * Sprint V10.1: Availability handshake + auto-range + smart empty states
+ * Sprint V11: Unified StickyFilterBar + ContextBanner + availability handshake
  * Panels: Tunnel (P10-P90), Objectifs/Budgets, HP/HC, Gaz (beta)
  */
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Activity, Target, Clock, Flame, BarChart3, TrendingUp,
   RefreshCw, AlertTriangle, CheckCircle, ChevronDown, ChevronUp,
@@ -28,6 +28,9 @@ import {
   getHPHCRatio,
   getGasSummary,
 } from '../services/api';
+import StickyFilterBar from './consumption/StickyFilterBar';
+import ContextBanner from './consumption/ContextBanner';
+import { computeAutoRange } from './consumption/helpers';
 
 // ========================================
 // Constants
@@ -40,18 +43,7 @@ const TAB_CONFIG = [
   { key: 'gas', label: 'Gaz', icon: Flame, desc: 'Beta' },
 ];
 
-const ENERGY_OPTIONS = [
-  { value: 'electricity', label: 'Electricite' },
-  { value: 'gas', label: 'Gaz' },
-];
-
-const PERIOD_OPTIONS = [
-  { value: 30, label: '30 jours' },
-  { value: 60, label: '60 jours' },
-  { value: 90, label: '90 jours' },
-  { value: 180, label: '6 mois' },
-  { value: 365, label: '1 an' },
-];
+// ENERGY_OPTIONS + PERIOD_OPTIONS moved to StickyFilterBar
 
 const CONFIDENCE_BADGE = {
   high: { label: 'Haute', variant: 'ok' },
@@ -172,49 +164,7 @@ function AvailabilitySkeleton() {
   );
 }
 
-// ========================================
-// Filter Bar
-// ========================================
-
-function FilterBar({ energyType, onEnergyChange, days, onDaysChange, availableTypes }) {
-  return (
-    <div className="flex items-center gap-3 flex-wrap">
-      <div className="flex items-center gap-2">
-        <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Energie</label>
-        <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
-          {ENERGY_OPTIONS.map(opt => (
-            <button
-              key={opt.value}
-              onClick={() => onEnergyChange(opt.value)}
-              disabled={availableTypes && !availableTypes.includes(opt.value)}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
-                energyType === opt.value
-                  ? 'bg-white text-blue-700 shadow-sm'
-                  : availableTypes && !availableTypes.includes(opt.value)
-                    ? 'text-gray-300 cursor-not-allowed'
-                    : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="flex items-center gap-2">
-        <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Periode</label>
-        <select
-          value={days}
-          onChange={(e) => onDaysChange(Number(e.target.value))}
-          className="text-sm border rounded-lg px-3 py-1.5 bg-white"
-        >
-          {PERIOD_OPTIONS.map(opt => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
-      </div>
-    </div>
-  );
-}
+// FilterBar + ContextBanner extracted to consumption/StickyFilterBar + consumption/ContextBanner
 
 // ========================================
 // Tunnel Panel
@@ -810,13 +760,7 @@ export default function ConsumptionExplorerPage() {
 
       // Auto-calibrate period from available data range
       if (data.has_data && data.first_ts && data.last_ts) {
-        const first = new Date(data.first_ts);
-        const last = new Date(data.last_ts);
-        const spanDays = Math.ceil((last - first) / (1000 * 60 * 60 * 24));
-        // Pick best period: use full span up to 365, default 90 if enough
-        if (spanDays < 30) setDays(30);
-        else if (spanDays < 90) setDays(Math.min(spanDays, 60));
-        else setDays(90);
+        setDays(computeAutoRange(data.first_ts, data.last_ts));
       }
 
       // Auto-switch to gas tab if only gas data
@@ -845,53 +789,26 @@ export default function ConsumptionExplorerPage() {
     else setActiveTab('tunnel');
   }, []);
 
-  // Availability info banner
-  const availBanner = useMemo(() => {
-    if (!availability?.has_data) return null;
-    const count = availability.readings_count || 0;
-    const siteName = availability.site_nom || '';
-    const types = availability.energy_types || [];
-    return { count, siteName, types };
-  }, [availability]);
-
   const hasData = availability?.has_data === true;
   const showContent = hasData && !availLoading;
 
   return (
     <div className="space-y-5">
-      {/* Site selector (only if multiple sites and not inside ConsommationsPage) */}
-      {sites?.length > 1 && (
-        <div className="flex items-center gap-3">
-          <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Site</label>
-          <select
-            value={siteId || ''}
-            onChange={(e) => setSiteId(Number(e.target.value))}
-            className="text-sm border rounded-lg px-3 py-1.5 bg-white"
-          >
-            {sites.map(s => <option key={s.id} value={s.id}>{s.nom}</option>)}
-          </select>
-        </div>
-      )}
-
-      {/* Filter bar */}
-      <FilterBar
+      {/* Unified sticky filter bar */}
+      <StickyFilterBar
+        siteId={siteId}
+        setSiteId={setSiteId}
+        sites={sites}
         energyType={energyType}
-        onEnergyChange={setEnergyType}
-        days={days}
-        onDaysChange={setDays}
+        setEnergyType={setEnergyType}
         availableTypes={availability?.energy_types}
+        days={days}
+        setDays={setDays}
+        availability={availability}
       />
 
-      {/* Availability info banner */}
-      {availBanner && (
-        <div className="flex items-center gap-4 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5 text-sm">
-          <CheckCircle size={16} className="text-blue-600 shrink-0" />
-          <span className="text-blue-800">
-            <strong>{availBanner.siteName}</strong> — {availBanner.count.toLocaleString()} releves disponibles
-            {availBanner.types.length > 0 && ` (${availBanner.types.join(', ')})`}
-          </span>
-        </div>
-      )}
+      {/* Context banner (site info + date range) */}
+      <ContextBanner availability={availability} />
 
       {/* Loading skeleton */}
       {availLoading && <AvailabilitySkeleton />}
