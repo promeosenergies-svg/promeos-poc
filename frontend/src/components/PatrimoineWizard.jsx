@@ -382,9 +382,15 @@ const PatrimoineWizard = ({ onClose }) => {
                 <StatCard label="Sites" value={summary.sites} icon={Building2} color="indigo" />
                 <StatCard label="Compteurs" value={summary.compteurs} icon={Zap} color="amber" />
                 <StatCard label="Findings" value={summary.findings_total || 0} icon={AlertTriangle} color="orange" />
-                <StatCard label="Score" value={`${summary.quality_score || 0}%`} icon={ShieldCheck}
-                  color={summary.quality_score >= 80 ? 'green' : summary.quality_score >= 50 ? 'amber' : 'red'} />
+                <StatCard label="Score qualite" value={`${summary.quality_score || 0}%`} icon={ShieldCheck}
+                  color={summary.quality_grade?.color === 'green' ? 'green' : summary.quality_grade?.color === 'amber' ? 'amber' : summary.quality_grade?.color === 'orange' ? 'orange' : 'red'} />
               </div>
+
+              {/* QA Grade indicator */}
+              {summary.quality_grade && (
+                <QAGradeBadge grade={summary.quality_grade} score={summary.quality_score} />
+              )}
+
               {mappingInfo && Object.keys(mappingInfo.mapping || {}).length > 0 && (
                 <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-xl">
                   <p className="text-xs font-medium text-blue-700 mb-1.5">Colonnes detectees automatiquement</p>
@@ -511,7 +517,8 @@ const PatrimoineWizard = ({ onClose }) => {
                     <div className="space-y-2">
                       <Row label="Bloquants" value={summary.blocking || 0} vc={summary.blocking > 0 ? 'text-red-600 font-bold' : 'text-green-600 font-bold'} />
                       <Row label="Avertissements" value={summary.warnings || 0} vc="text-amber-600" />
-                      <Row label="Score" value={`${summary.quality_score || 0}%`} vc={summary.quality_score >= 80 ? 'text-green-600 font-bold' : 'text-amber-600 font-bold'} />
+                      <Row label="Score qualite" value={`${summary.quality_score || 0}% — ${summary.quality_grade?.label || ''}`}
+                        vc={summary.quality_grade?.color === 'green' ? 'text-green-600 font-bold' : summary.quality_grade?.color === 'red' ? 'text-red-600 font-bold' : 'text-amber-600 font-bold'} />
                     </div>
                   </div>
                   <div className="mt-3 pt-3 border-t flex items-center justify-between">
@@ -520,6 +527,12 @@ const PatrimoineWizard = ({ onClose }) => {
                       {summary.can_activate ? '✓ Oui' : '✗ Non'}
                     </span>
                   </div>
+                  {summary.can_auto_activate && (
+                    <div className="mt-2 pt-2 border-t flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Activation auto</span>
+                      <span className="text-sm font-bold text-green-600">Eligible</span>
+                    </div>
+                  )}
                 </div>
               )}
               <div className="mb-4">
@@ -670,6 +683,34 @@ function StatCard({ label, value, icon: Icon, color }) {
       <Icon size={18} className="mx-auto mb-1" />
       <div className="text-xl font-bold">{value}</div>
       <div className="text-[10px] uppercase tracking-wide">{label}</div>
+    </div>
+  );
+}
+
+function QAGradeBadge({ grade, score }) {
+  const COLOR_MAP = {
+    green: { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-700', bar: 'bg-green-500' },
+    amber: { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700', bar: 'bg-amber-500' },
+    orange: { bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-700', bar: 'bg-orange-500' },
+    red: { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700', bar: 'bg-red-500' },
+  };
+  const c = COLOR_MAP[grade.color] || COLOR_MAP.amber;
+  return (
+    <div className={`${c.bg} ${c.border} border rounded-lg p-3`}>
+      <div className="flex items-center justify-between mb-1.5">
+        <div className="flex items-center gap-2">
+          <ShieldCheck size={16} className={c.text} />
+          <span className={`text-sm font-semibold ${c.text}`}>Confiance Patrimoine : {grade.label}</span>
+        </div>
+        <span className={`text-lg font-bold ${c.text}`}>{score}%</span>
+      </div>
+      <div className="w-full bg-gray-200 rounded-full h-2 mb-1.5">
+        <div className={`${c.bar} h-2 rounded-full transition-all`} style={{ width: `${Math.min(score, 100)}%` }} />
+      </div>
+      <p className={`text-xs ${c.text}`}>{grade.message}</p>
+      {grade.gap > 0 && grade.threshold_next && (
+        <p className="text-[10px] text-gray-500 mt-1">+{grade.gap} points pour atteindre le seuil {grade.threshold_next}%</p>
+      )}
     </div>
   );
 }

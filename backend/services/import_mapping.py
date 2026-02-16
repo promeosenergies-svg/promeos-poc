@@ -1,11 +1,13 @@
 """
-PROMEOS - Import Mapping Service
+PROMEOS - Import Mapping Service (WORLD CLASS)
 Column synonym detection, normalization, auto-detect delimiter/encoding.
+FR/EN column synonym resolution for CSV/Excel import.
+Maps user-provided headers to canonical column names used by the staging pipeline.
 """
 import io
 import csv
 import re
-from typing import List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional
 
 # ========================================
 # Canonical columns (order matters for template)
@@ -28,31 +30,52 @@ CANONICAL_COLUMNS = [
     {"key": "puissance_kw", "label": "Puissance (kW)", "required": False, "example": "36"},
 ]
 
+# Set of all canonical column keys (used by patrimoine CRUD + staging pipeline)
+CANONICAL_COLUMN_KEYS = {
+    "nom", "adresse", "code_postal", "ville", "surface_m2", "type",
+    "naf_code", "siret", "numero_serie", "meter_id", "type_compteur",
+    "puissance_kw", "region", "nombre_employes",
+    # Contract columns
+    "fournisseur", "energie", "prix_kwh", "date_debut", "date_fin",
+    "preavis_jours", "abonnement_mensuel",
+}
+
 # ========================================
-# Column synonym dictionary
+# Column synonym dictionary (canonical → list of synonyms)
+# Used by normalize_column_name, map_headers, template generation
 # ========================================
 
 _SYNONYMS = {
     # Site fields
-    "nom": ["nom", "name", "site_name", "nom_site", "site", "designation", "libelle", "label"],
+    "nom": ["nom", "name", "site_name", "nom_site", "site", "designation", "libelle", "label", "intitule"],
     "adresse": ["adresse", "address", "addr", "rue", "street", "adresse_site", "adresse_postale"],
-    "code_postal": ["code_postal", "cp", "postal_code", "zip", "zipcode", "zip_code", "code_post", "codepostal"],
+    "code_postal": ["code_postal", "cp", "postal_code", "zip", "zipcode", "zip_code", "code_post", "codepostal", "code"],
     "ville": ["ville", "city", "commune", "localite", "town"],
-    "surface_m2": ["surface_m2", "surface", "area", "superficie", "m2", "surface_totale"],
-    "type": ["type", "type_site", "usage", "categorie", "category", "activite", "site_type"],
+    "region": ["region", "departement", "dept"],
+    "surface_m2": ["surface_m2", "surface", "area", "superficie", "m2", "surface_totale", "area_m2", "sup_m2"],
+    "type": ["type", "type_site", "usage", "categorie", "category", "activite", "site_type", "nature", "typologie"],
     "naf_code": ["naf_code", "naf", "code_naf", "ape", "code_ape"],
     "siren": ["siren", "n_siren", "num_siren"],
-    "siret": ["siret", "n_siret", "num_siret", "siret_site"],
+    "siret": ["siret", "n_siret", "num_siret", "siret_site", "no_siret", "numero_siret"],
+    "nombre_employes": ["nombre_employes", "employes", "effectif", "nb_employes", "employees", "headcount"],
     # Meter / delivery point fields
     "energy_type": ["energy_type", "energie", "energy", "type_energie", "fluide", "fluid", "vecteur"],
     "delivery_code": ["delivery_code", "meter_id", "prm", "pdl", "pce", "point_livraison",
                        "code_prm", "code_pdl", "code_pce", "num_prm", "num_pdl", "num_pce",
-                       "prm_pdl", "prm_pce", "numero_pdl", "numero_prm"],
+                       "prm_pdl", "prm_pce", "numero_pdl", "numero_prm",
+                       "point_de_livraison", "pdl_pce", "identifiant_compteur"],
     "numero_serie": ["numero_serie", "serial", "serial_number", "n_serie", "num_serie",
-                      "compteur", "num_compteur", "numero_compteur"],
+                      "compteur", "num_compteur", "numero_compteur", "no_serie"],
     "type_compteur": ["type_compteur", "meter_type", "type_meter", "compteur_type"],
     "puissance_kw": ["puissance_kw", "puissance", "power", "power_kw", "kw", "kva",
-                      "puissance_souscrite", "subscribed_power"],
+                      "puissance_souscrite", "subscribed_power", "puissance_souscrite_kw"],
+    # Contract-related synonyms
+    "fournisseur": ["fournisseur", "supplier", "supplier_name", "nom_fournisseur", "prestataire"],
+    "prix_kwh": ["prix_kwh", "prix_eur_kwh", "prix_unitaire", "tarif", "tarif_kwh", "price", "unit_price"],
+    "date_debut": ["date_debut", "debut_contrat", "start_date", "debut"],
+    "date_fin": ["date_fin", "fin_contrat", "end_date", "echeance", "fin"],
+    "preavis_jours": ["preavis_jours", "preavis", "notice_days", "notice_period"],
+    "abonnement_mensuel": ["abonnement_mensuel", "abonnement", "fixed_fee", "abo_mensuel"],
 }
 
 # Build reverse lookup: lowered synonym → canonical key
@@ -61,6 +84,59 @@ for canonical, synonyms in _SYNONYMS.items():
     for syn in synonyms:
         _REVERSE_MAP[syn.lower().strip()] = canonical
 
+# Flat synonym dict (synonym → canonical) used by normalize_header
+_FLAT_SYNONYMS: Dict[str, str] = {}
+for _canonical, _syn_list in _SYNONYMS.items():
+    for _syn in _syn_list:
+        _FLAT_SYNONYMS[_syn.lower().strip()] = _canonical
+
+
+# ========================================
+# Type value normalization (WORLD CLASS)
+# ========================================
+
+_TYPE_SITE_SYNONYMS: Dict[str, str] = {
+    # bureau
+    "bureau": "bureau", "bureaux": "bureau", "office": "bureau", "tertiaire": "bureau",
+    # commerce
+    "commerce": "commerce", "magasin": "magasin", "boutique": "commerce",
+    "retail": "commerce", "supermarche": "commerce", "hypermarche": "commerce",
+    # entrepot
+    "entrepot": "entrepot", "logistique": "entrepot", "warehouse": "entrepot",
+    "stockage": "entrepot", "depot": "entrepot",
+    # usine
+    "usine": "usine", "industrie": "usine", "production": "usine",
+    "factory": "usine", "industriel": "usine",
+    # hotel
+    "hotel": "hotel", "hotellerie": "hotel", "hebergement": "hotel",
+    # sante
+    "sante": "sante", "hopital": "sante", "clinique": "sante",
+    "ehpad": "sante", "medico_social": "sante",
+    # enseignement
+    "enseignement": "enseignement", "ecole": "enseignement", "lycee": "enseignement",
+    "college": "enseignement", "universite": "enseignement", "education": "enseignement",
+    # copropriete
+    "copropriete": "copropriete", "copro": "copropriete", "syndic": "copropriete",
+    "residence": "copropriete", "immeuble": "copropriete",
+    # collectivite
+    "collectivite": "collectivite", "mairie": "collectivite",
+    "administration": "collectivite", "public": "collectivite",
+    # logement social
+    "logement_social": "logement_social", "hlm": "logement_social",
+    "social": "logement_social", "bailleur": "logement_social",
+}
+
+_TYPE_COMPTEUR_SYNONYMS: Dict[str, str] = {
+    "electricite": "electricite", "elec": "electricite", "electricity": "electricite",
+    "electrique": "electricite", "courant": "electricite",
+    "gaz": "gaz", "gas": "gaz", "naturel": "gaz",
+    "eau": "eau", "water": "eau",
+}
+
+
+# ========================================
+# Column name normalization (v9 advanced)
+# ========================================
 
 def normalize_column_name(raw: str) -> str:
     """Normalize a raw column header to canonical form.
@@ -83,6 +159,10 @@ def normalize_column_name(raw: str) -> str:
 
     return _REVERSE_MAP.get(cleaned, cleaned)
 
+
+# ========================================
+# Encoding & delimiter detection (v9)
+# ========================================
 
 def detect_delimiter(first_line: str) -> str:
     """Auto-detect CSV delimiter from first line."""
@@ -107,6 +187,10 @@ def detect_encoding(raw_bytes: bytes) -> str:
     return "latin-1"
 
 
+# ========================================
+# Header mapping (v9 template-aware)
+# ========================================
+
 def map_headers(raw_headers: List[str]) -> Tuple[dict, List[dict]]:
     """Map raw CSV/Excel headers to canonical columns.
 
@@ -120,7 +204,7 @@ def map_headers(raw_headers: List[str]) -> Tuple[dict, List[dict]]:
 
     for raw in raw_headers:
         canonical = normalize_column_name(raw)
-        if canonical in {col["key"] for col in CANONICAL_COLUMNS}:
+        if canonical in {col["key"] for col in CANONICAL_COLUMNS} or canonical in CANONICAL_COLUMN_KEYS:
             if canonical in used_canonical:
                 warnings.append({
                     "header": raw,
@@ -220,7 +304,7 @@ def _normalize_compteur_type(raw: str) -> str:
 
 
 # ========================================
-# Template generation
+# Template generation (v9)
 # ========================================
 
 def generate_csv_template() -> bytes:
@@ -322,3 +406,69 @@ def generate_xlsx_template() -> bytes:
     output = io.BytesIO()
     wb.save(output)
     return output.getvalue()
+
+
+# ========================================
+# Public API (WORLD CLASS patrimoine)
+# ========================================
+
+def normalize_header(raw_header: str) -> Optional[str]:
+    """Map a single raw column header to its canonical name.
+
+    Returns None if no match found.
+    """
+    key = raw_header.strip().lower().replace("-", "_").replace(" ", "_")
+    return _FLAT_SYNONYMS.get(key)
+
+
+def normalize_headers(raw_headers: List[str]) -> Tuple[Dict[str, str], List[str]]:
+    """Map a list of raw CSV/Excel headers to canonical columns.
+
+    Returns:
+        (mapping, unmapped) where mapping is {raw_header: canonical_name}
+        and unmapped is the list of headers that couldn't be resolved.
+    """
+    mapping = {}
+    unmapped = []
+    for h in raw_headers:
+        canonical = normalize_header(h)
+        if canonical:
+            mapping[h] = canonical
+        else:
+            unmapped.append(h)
+    return mapping, unmapped
+
+
+def normalize_type_site(raw_value: str) -> Optional[str]:
+    """Normalize a site type value using FR synonyms."""
+    key = raw_value.strip().lower().replace("-", "_").replace(" ", "_")
+    return _TYPE_SITE_SYNONYMS.get(key)
+
+
+def normalize_type_compteur(raw_value: str) -> Optional[str]:
+    """Normalize a compteur type value using FR synonyms."""
+    key = raw_value.strip().lower().replace("-", "_").replace(" ", "_")
+    return _TYPE_COMPTEUR_SYNONYMS.get(key)
+
+
+def get_mapping_report(raw_headers: List[str]) -> dict:
+    """Generate a diagnostic report for header mapping.
+
+    Useful for the PatrimoineWizard to show the user what was recognized.
+    """
+    mapping, unmapped = normalize_headers(raw_headers)
+    canonical_found = set(mapping.values())
+    required = {"nom"}
+    missing_required = required - canonical_found
+    recommended = {"adresse", "code_postal", "ville", "surface_m2", "type"}
+    missing_recommended = recommended - canonical_found
+
+    return {
+        "mapped": mapping,
+        "unmapped": unmapped,
+        "canonical_found": sorted(canonical_found),
+        "missing_required": sorted(missing_required),
+        "missing_recommended": sorted(missing_recommended),
+        "coverage_pct": round(len(mapping) / max(len(raw_headers), 1) * 100, 1),
+        "is_valid": len(missing_required) == 0,
+    }
