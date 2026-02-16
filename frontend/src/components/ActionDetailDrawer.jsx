@@ -389,6 +389,21 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                 </div>
               )}
 
+              {/* CO₂e savings */}
+              {d.co2e_savings_est_kg != null && d.co2e_savings_est_kg > 0 && (
+                <div className="p-3 bg-emerald-50 rounded-lg">
+                  <p className="text-xs text-gray-500 mb-1">CO₂e evite (estimation)</p>
+                  <p className="text-lg font-bold text-emerald-700">
+                    {Math.round(d.co2e_savings_est_kg).toLocaleString()} kgCO₂e
+                    {d.co2e_savings_est_kg >= 1000 && (
+                      <span className="text-sm font-normal text-emerald-500 ml-1">
+                        ({(d.co2e_savings_est_kg / 1000).toFixed(1)} t)
+                      </span>
+                    )}
+                  </p>
+                </div>
+              )}
+
               {d.realized_at && (
                 <p className="text-xs text-gray-500">Date de constatation : {d.realized_at}</p>
               )}

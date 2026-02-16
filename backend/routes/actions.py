@@ -46,6 +46,7 @@ class ActionCreate(BaseModel):
     owner: Optional[str] = None
     notes: Optional[str] = None
     idempotency_key: Optional[str] = None
+    co2e_savings_est_kg: Optional[float] = None
 
 
 class ActionPatch(BaseModel):
@@ -58,6 +59,7 @@ class ActionPatch(BaseModel):
     realized_at: Optional[str] = None
     category: Optional[str] = None
     description: Optional[str] = None
+    co2e_savings_est_kg: Optional[float] = None
 
 
 class CommentCreate(BaseModel):
@@ -110,6 +112,8 @@ def _serialize_action(a: ActionItem) -> dict:
         "realized_gain_eur": a.realized_gain_eur,
         "realized_at": a.realized_at.isoformat() if a.realized_at else None,
         "closed_at": a.closed_at.isoformat() if a.closed_at else None,
+        # V9 Decarbonation
+        "co2e_savings_est_kg": a.co2e_savings_est_kg,
     }
 
 
@@ -226,6 +230,7 @@ def create_action(
         owner=data.owner,
         notes=data.notes,
         idempotency_key=data.idempotency_key,
+        co2e_savings_est_kg=data.co2e_savings_est_kg,
     )
     db.add(item)
     db.commit()
@@ -412,6 +417,9 @@ def patch_action(
 
     if data.description is not None:
         action.description = data.description
+
+    if data.co2e_savings_est_kg is not None:
+        action.co2e_savings_est_kg = data.co2e_savings_est_kg
 
     db.commit()
     db.refresh(action)

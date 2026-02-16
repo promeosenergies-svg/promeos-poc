@@ -65,18 +65,22 @@ export default function CreateActionModal({ open, onClose, onSave, defaultSite =
     setSaving(true);
     try {
       const idemKey = idempotencyKey || prefill?._idempotencyKey || undefined;
+      // Auto-compute CO2e from EUR impact: EUR / price → kWh → kgCO2e
+      const impactEur = Number(form.impact_eur) || 0;
+      const co2eKg = impactEur > 0 ? Math.round((impactEur / 0.15) * 0.052) : undefined;
       const payload = {
         title: form.titre.trim(),
         source_type: sourceType || 'manual',
         source_id: sourceId || undefined,
         site_id: siteId || undefined,
         severity: form.priorite || undefined,
-        estimated_gain_eur: Number(form.impact_eur) || undefined,
+        estimated_gain_eur: impactEur || undefined,
         due_date: form.due_date || undefined,
         owner: form.owner || undefined,
         notes: form.description || undefined,
         rationale: form.description || undefined,
         idempotency_key: idemKey,
+        co2e_savings_est_kg: co2eKg,
       };
       const result = await createAction(payload);
       track('action_create', { type: form.type, site: form.site, backend: true });

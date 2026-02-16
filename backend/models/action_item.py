@@ -91,6 +91,10 @@ class ActionItem(Base, TimestampMixin):
         String(64), nullable=True, unique=True, index=True,
         comment="Cle d'idempotence unique",
     )
+    co2e_savings_est_kg = Column(
+        Float, nullable=True,
+        comment="Economies CO2e estimees en kg (V9 Decarbonation)",
+    )
 
     # Relations
     organisation = relationship("Organisation", backref="action_items")

@@ -37,6 +37,7 @@ function mapBackendAction(a) {
     site_id: a.site_id,
     site_nom: `Site ${a.site_id || '?'}`,
     impact_eur: a.estimated_gain_eur || 0,
+    co2e_kg: a.co2e_savings_est_kg || 0,
     effort: a.severity || 'medium',
     statut: STATUS_TO_FE[a.status] || 'backlog',
     priorite: PRIO_TO_FE[a.priority] || 'medium',
@@ -415,6 +416,7 @@ export default function ActionsPage() {
     in_progress: actions.filter(a => a.statut === 'in_progress').length,
     done: actions.filter(a => a.statut === 'done').length,
     total_impact: actions.reduce((s, a) => s + a.impact_eur, 0),
+    total_co2e_kg: actions.reduce((s, a) => s + (a.co2e_kg || 0), 0),
     overdue: actions.filter(isOverdue).length,
   }), [actions]);
 
@@ -543,7 +545,7 @@ export default function ActionsPage() {
     <PageShell
       icon={ListChecks}
       title="Plan d'actions"
-      subtitle={`${stats.total} actions · ${stats.total_impact.toLocaleString()} EUR d'impact total${stats.overdue > 0 ? ` · ${stats.overdue} en retard` : ''}`}
+      subtitle={`${stats.total} actions · ${stats.total_impact.toLocaleString()} EUR d'impact total${stats.total_co2e_kg > 0 ? ` · ${Math.round(stats.total_co2e_kg).toLocaleString()} kgCO₂e` : ''}${stats.overdue > 0 ? ` · ${stats.overdue} en retard` : ''}`}
       actions={
         <>
           <Button variant="secondary" size="sm" onClick={handleSync} disabled={syncing}>
@@ -718,6 +720,7 @@ export default function ActionsPage() {
                 <Th>Site</Th>
                 <Th sortable sorted={sortCol === 'priorite' ? sortDir : ''} onSort={() => handleSort('priorite')}>Priorité</Th>
                 <Th sortable sorted={sortCol === 'impact_eur' ? sortDir : ''} onSort={() => handleSort('impact_eur')} className="text-right">Impact EUR</Th>
+                <Th className="text-right">CO₂e</Th>
                 <Th sortable sorted={sortCol === 'due_date' ? sortDir : ''} onSort={() => handleSort('due_date')}>Échéance</Th>
                 <Th>Responsable</Th>
                 <Th>Statut</Th>
@@ -741,6 +744,7 @@ export default function ActionsPage() {
                       <Badge status={PRIORITY_BADGE[a.priorite] || 'neutral'}>{PRIORITY_LABEL[a.priorite] || a.priorite}</Badge>
                     </Td>
                     <Td className="text-right font-medium">{a.impact_eur.toLocaleString()} EUR</Td>
+                    <Td className="text-right text-emerald-600 text-sm">{a.co2e_kg > 0 ? `${Math.round(a.co2e_kg).toLocaleString()} kg` : '—'}</Td>
                     <Td className={`text-sm whitespace-nowrap ${overdue ? 'text-red-600 font-semibold' : ''}`}>
                       {a.due_date}
                       {overdue && <span className="ml-1 text-xs bg-red-50 text-red-600 px-1.5 py-0.5 rounded">En retard</span>}
