@@ -5,12 +5,14 @@
  *
  * When authenticated: uses org/scopes from AuthContext.
  * When not authenticated (demo mode): falls back to mock data.
+ * After seed-pack: applyDemoScope() auto-switches to the seeded org/site.
  */
 import { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { mockSites } from '../mocks/sites';
 import { useAuth } from './AuthContext';
 
 const STORAGE_KEY = 'promeos_scope';
+const DEMO_ORGS_KEY = 'promeos_demo_orgs';
 
 const MOCK_ORGS = [
   { id: 1, nom: 'Groupe Casino' },
@@ -42,10 +44,23 @@ function saveScope(scope) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(scope));
 }
 
+function loadDemoOrgs() {
+  try {
+    const raw = localStorage.getItem(DEMO_ORGS_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch { /* ignore */ }
+  return [];
+}
+
+function saveDemoOrgs(orgs) {
+  localStorage.setItem(DEMO_ORGS_KEY, JSON.stringify(orgs));
+}
+
 const ScopeContext = createContext(null);
 
 export function ScopeProvider({ children }) {
   const [scope, setScope] = useState(loadScope);
+  const [demoOrgs, setDemoOrgs] = useState(loadDemoOrgs);
   const auth = useAuth();
 
   const isAuth = auth && auth.isAuthenticated;
@@ -85,12 +100,42 @@ export function ScopeProvider({ children }) {
     const next = { orgId: null, portefeuilleId: null, siteId: null };
     setScope(next);
     localStorage.removeItem(STORAGE_KEY);
+    // Also clear demo orgs on full reset
+    setDemoOrgs([]);
+    localStorage.removeItem(DEMO_ORGS_KEY);
   }, []);
 
-  // When authenticated, use auth orgs; otherwise mock
-  const orgsData = isAuth && auth.orgs && auth.orgs.length > 0
-    ? auth.orgs.map(o => ({ id: o.id, nom: o.nom }))
-    : MOCK_ORGS;
+  /**
+   * applyDemoScope — called after seed-pack to auto-switch to the seeded org.
+   * Registers the org in demoOrgs (persisted) and switches scope to it.
+   */
+  const applyDemoScope = useCallback((orgId, orgNom) => {
+    if (!orgId) return;
+    // Register the org dynamically
+    setDemoOrgs((prev) => {
+      const exists = prev.some((o) => o.id === orgId);
+      const next = exists ? prev : [...prev, { id: orgId, nom: orgNom || `Organisation #${orgId}` }];
+      saveDemoOrgs(next);
+      return next;
+    });
+    // Switch scope to this org
+    const next = { orgId, portefeuilleId: null, siteId: null };
+    setScope(next);
+    saveScope(next);
+  }, []);
+
+  // When authenticated, use auth orgs; otherwise mock + dynamically registered demo orgs
+  const orgsData = useMemo(() => {
+    if (isAuth && auth.orgs && auth.orgs.length > 0) {
+      return auth.orgs.map(o => ({ id: o.id, nom: o.nom }));
+    }
+    // Merge MOCK_ORGS + demoOrgs (dedup by id)
+    const all = [...MOCK_ORGS];
+    for (const d of demoOrgs) {
+      if (!all.some((o) => o.id === d.id)) all.push(d);
+    }
+    return all;
+  }, [isAuth, auth, demoOrgs]);
 
   const org = orgsData.find((o) => o.id === effectiveOrgId) || orgsData[0];
   const portefeuilles = MOCK_PORTEFEUILLES.filter((p) => p.org_id === effectiveOrgId);
@@ -118,7 +163,7 @@ export function ScopeProvider({ children }) {
     scope: { ...scope, orgId: effectiveOrgId },
     org, portefeuille, portefeuilles, scopedSites,
     orgs: orgsData,
-    setOrg, setPortefeuille, setSite, resetScope, clearScope,
+    setOrg, setPortefeuille, setSite, resetScope, clearScope, applyDemoScope,
   };
 
   return <ScopeContext.Provider value={value}>{children}</ScopeContext.Provider>;

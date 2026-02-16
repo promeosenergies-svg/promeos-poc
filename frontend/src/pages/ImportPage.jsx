@@ -32,7 +32,7 @@ function ImportPage() {
   const [seedLoading, setSeedLoading] = useState(false);
   const fileRef = useRef(null);
   const { toast } = useToast();
-  const { clearScope } = useScope();
+  const { clearScope, applyDemoScope } = useScope();
 
   // Demo Packs state
   const [selectedPack, setSelectedPack] = useState('casino');
@@ -46,7 +46,13 @@ function ImportPage() {
 
   const refreshStatus = () => {
     getDemoPackStatus()
-      .then((s) => { setPackStatus(s); setStatusError(false); })
+      .then((s) => {
+        setPackStatus(s); setStatusError(false);
+        // Auto-sync scope with seeded org (e.g. after page refresh)
+        if (s.org_id && s.total_rows > 0) {
+          applyDemoScope(s.org_id, s.org_nom);
+        }
+      })
       .catch(() => { setPackStatus(null); setStatusError(true); });
   };
 
@@ -105,6 +111,10 @@ function ImportPage() {
     try {
       const res = await seedDemoPack(selectedPack, selectedSize, false);
       setPackResult(res);
+      // Auto-switch scope to the seeded org
+      if (res.org_id) {
+        applyDemoScope(res.org_id, res.org_nom);
+      }
       toast(`Pack ${selectedPack} charge : ${res.sites_count} sites en ${res.elapsed_s}s`, 'success');
       refreshStatus();
     } catch (err) {

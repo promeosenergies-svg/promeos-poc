@@ -95,15 +95,24 @@ def seed_demo_pack(request: SeedPackRequest, db: Session = Depends(get_db)):
 
 @router.get("/status-pack")
 def get_demo_pack_status(db: Session = Depends(get_db)):
-    """Status detaille: comptage par table."""
+    """Status detaille: comptage par table + current org/site for scope."""
     from services.demo_seed import SeedOrchestrator
     orch = SeedOrchestrator(db)
     counts = orch.status()
-    return {
+    result = {
         "demo_enabled": DemoState.is_enabled(),
         "counts": counts,
         "total_rows": sum(counts.values()),
     }
+    # Expose current org/site for frontend scope auto-switch
+    org = db.query(Organisation).first()
+    if org:
+        result["org_id"] = org.id
+        result["org_nom"] = org.nom
+        first_site = db.query(Site).filter(Site.actif == True).first()
+        if first_site:
+            result["default_site_id"] = first_site.id
+    return result
 
 
 def _reset_iam_demo(db):
