@@ -7,7 +7,8 @@ import {
   Search, BookOpen, ShieldCheck, Zap, Sun, Receipt, Wind,
   ChevronDown, ChevronUp, ExternalLink, Filter,
 } from 'lucide-react';
-import { Card, CardBody, Badge, Button, TrustBadge } from '../ui';
+import { PageShell, Card, CardBody, Badge, Button, TrustBadge, EmptyState } from '../ui';
+import { SkeletonCard } from '../ui/Skeleton';
 import { searchKBItems, getKBFullStats } from '../services/api';
 
 const DOMAIN_TABS = [
@@ -84,22 +85,17 @@ export default function KBExplorerPage() {
   }
 
   return (
-    <div className="px-6 py-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">Référentiels</h2>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {stats ? `${stats.total_items} items — ` : ''}Règles, grilles, modèles & dictionnaires
-          </p>
+    <PageShell
+      icon={BookOpen}
+      title="Referentiels"
+      subtitle={stats ? `${stats.total_items} items — Regles, grilles, modeles & dictionnaires` : 'Regles, grilles, modeles & dictionnaires'}
+      actions={stats && (
+        <div className="flex items-center gap-2">
+          <Badge status="ok">{stats.by_status?.validated || 0} valides</Badge>
+          <Badge status="neutral">{stats.by_status?.draft || 0} drafts</Badge>
         </div>
-        {stats && (
-          <div className="flex items-center gap-2">
-            <Badge status="ok">{stats.by_status?.validated || 0} valides</Badge>
-            <Badge status="neutral">{stats.by_status?.draft || 0} drafts</Badge>
-          </div>
-        )}
-      </div>
+      )}
+    >
 
       {/* Search bar */}
       <div className="relative">
@@ -206,7 +202,7 @@ export default function KBExplorerPage() {
 
       {/* Footer */}
       <TrustBadge source="PROMEOS KB" period="457 items ingeres" confidence="high" />
-    </div>
+    </PageShell>
   );
 }
 

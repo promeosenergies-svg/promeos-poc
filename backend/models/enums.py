@@ -253,6 +253,8 @@ class ActionSourceType(str, enum.Enum):
     CONSUMPTION = "consumption"
     BILLING = "billing"
     PURCHASE = "purchase"
+    INSIGHT = "insight"       # from monitoring insight/alert
+    MANUAL = "manual"         # manually created by user
 
 
 class ActionStatus(str, enum.Enum):
@@ -351,9 +353,30 @@ class ImportSourceType(str, enum.Enum):
 
 class QualityRuleSeverity(str, enum.Enum):
     """Severite d'un finding de qualite."""
+    CRITICAL = "critical"
     BLOCKING = "blocking"
     WARNING = "warning"
     INFO = "info"
+
+
+class ActivationLogStatus(str, enum.Enum):
+    """Statut d'une tentative d'activation batch."""
+    STARTED = "started"
+    SUCCESS = "success"
+    FAILED = "failed"
+    ROLLED_BACK = "rolled_back"
+
+
+class DeliveryPointStatus(str, enum.Enum):
+    """Statut d'un point de livraison (PRM/PCE)."""
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+
+
+class DeliveryPointEnergyType(str, enum.Enum):
+    """Type d'energie du point de livraison."""
+    ELEC = "elec"
+    GAZ = "gaz"
 
 
 # ========================================
@@ -391,3 +414,36 @@ class WatcherEventStatus(str, enum.Enum):
     REVIEWED = "reviewed"
     APPLIED = "applied"
     DISMISSED = "dismissed"
+
+
+# ========================================
+# Enums BACS Expert (Decret n°2020-887)
+# ========================================
+
+class CvcSystemType(str, enum.Enum):
+    """Type de systeme CVC pour inventaire BACS."""
+    HEATING = "heating"
+    COOLING = "cooling"
+    VENTILATION = "ventilation"
+
+
+class CvcArchitecture(str, enum.Enum):
+    """Architecture d'installation CVC (impacte le calcul Putile)."""
+    CASCADE = "cascade"
+    NETWORK = "network"
+    INDEPENDENT = "independent"
+
+
+class BacsTriggerReason(str, enum.Enum):
+    """Raison declenchante de l'obligation BACS."""
+    THRESHOLD_290 = "threshold_290"
+    THRESHOLD_70 = "threshold_70"
+    RENEWAL = "renewal"
+    NEW_CONSTRUCTION = "new_construction"
+
+
+class InspectionStatus(str, enum.Enum):
+    """Statut d'une inspection quinquennale BACS."""
+    SCHEDULED = "scheduled"
+    COMPLETED = "completed"
+    OVERDUE = "overdue"

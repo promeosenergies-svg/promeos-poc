@@ -19,7 +19,8 @@ from sqlalchemy.orm import Session
 from database import get_db
 from middleware.auth import get_optional_auth, AuthContext
 from services.iam_scope import check_site_access
-from models import Organisation, Site, ConsumptionInsight
+from models import Organisation, Site, ConsumptionInsight, not_deleted
+from models.enums import InsightStatus
 from services.consumption_diagnostic import (
     generate_demo_consumption,
     run_diagnostic,
@@ -34,6 +35,10 @@ from services.tou_service import (
     get_schedules, get_active_schedule, create_schedule, update_schedule,
     delete_schedule, compute_hp_hc_ratio,
 )
+
+
+class InsightPatch(BaseModel):
+    insight_status: Optional[str] = None
 
 router = APIRouter(prefix="/api/consumption", tags=["Consumption Diagnostic"])
 
@@ -90,6 +95,7 @@ def site_insights(site_id: int, db: Session = Depends(get_db), auth: Optional[Au
                 "metrics": json.loads(ci.metrics_json) if ci.metrics_json else {},
                 "period_start": ci.period_start.isoformat() if ci.period_start else None,
                 "period_end": ci.period_end.isoformat() if ci.period_end else None,
+                "insight_status": ci.insight_status.value if ci.insight_status else "open",
             }
             for ci in insights
         ],
@@ -128,7 +134,7 @@ def seed_demo_consumption(
         return {"status": "ok", "sites": [result]}
 
     # Seed all sites
-    sites = db.query(Site).filter(Site.actif == True).all()
+    sites = not_deleted(db.query(Site), Site).filter(Site.actif == True).all()
     if not sites:
         raise HTTPException(status_code=400, detail="Aucun site actif.")
 
@@ -138,6 +144,26 @@ def seed_demo_consumption(
         results.append(r)
 
     return {"status": "ok", "sites": results, "total": len(results)}
+
+
+@router.patch("/insights/{insight_id}")
+def patch_consumption_insight(
+    insight_id: int,
+    data: InsightPatch,
+    db: Session = Depends(get_db),
+):
+    """PATCH /api/consumption/insights/{insight_id} — workflow update (ack, resolved, false_positive)."""
+    ci = db.query(ConsumptionInsight).filter(ConsumptionInsight.id == insight_id).first()
+    if not ci:
+        raise HTTPException(status_code=404, detail="Insight non trouve")
+    if data.insight_status is not None:
+        try:
+            ci.insight_status = InsightStatus(data.insight_status)
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Statut invalide: {data.insight_status}")
+    db.commit()
+    db.refresh(ci)
+    return {"status": "updated", "id": ci.id, "insight_status": ci.insight_status.value}
 
 
 # =============================================
@@ -449,7 +475,7 @@ def gas_summary(
     )
 
     # Aggregate by day
-    daily: Dict[str, float] = defaultdict(float)
+    daily = defaultdict(float)
     for r in readings:
         day_key = r.timestamp.strftime("%Y-%m-%d")
         daily[day_key] += r.value_kwh

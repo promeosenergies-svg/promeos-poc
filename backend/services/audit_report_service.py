@@ -17,6 +17,7 @@ from models import (
     EnergyContract, EnergyInvoice,
     PurchaseScenarioResult, PurchaseRecoStatus,
     EntiteJuridique, Portefeuille,
+    not_deleted,
 )
 
 
@@ -40,8 +41,8 @@ def build_audit_report_data(db: Session, org_id: Optional[int] = None) -> dict:
     org_id = org.id
 
     # Sites
-    total_sites = db.query(Site).filter(Site.actif == True).count()
-    total_surface = db.query(func.sum(Site.surface_m2)).filter(Site.actif == True).scalar() or 0
+    total_sites = not_deleted(db.query(Site), Site).filter(Site.actif == True).count()
+    total_surface = not_deleted(db.query(func.sum(Site.surface_m2)), Site).filter(Site.actif == True).scalar() or 0
 
     # -- Section 1: Conformite --
     compliance = _build_compliance_section(db, org_id)
@@ -102,7 +103,7 @@ def _get_site_ids(db: Session, org_id: int) -> list:
         Portefeuille.entite_juridique_id.in_(ej_ids)).all()]
     if not pf_ids:
         return []
-    return [r[0] for r in db.query(Site.id).filter(
+    return [r[0] for r in not_deleted(db.query(Site.id), Site).filter(
         Site.portefeuille_id.in_(pf_ids), Site.actif == True).all()]
 
 

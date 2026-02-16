@@ -4,7 +4,7 @@ PROMEOS - Routes API pour les Sites
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
-from models import Site, Compteur, Alerte, Consommation, Obligation, Evidence, Batiment, StatutConformite, StatutEvidence, TypeObligation
+from models import Site, Compteur, Alerte, Consommation, Obligation, Evidence, Batiment, StatutConformite, StatutEvidence, TypeObligation, not_deleted
 from routes.schemas import SiteResponse, SiteListResponse, SiteStats, SiteComplianceResponse, BatimentResponse
 from services.compliance_engine import compute_action_recommandee, _ACTION_TEMPLATES
 from middleware.auth import get_optional_auth, AuthContext
@@ -81,7 +81,7 @@ def get_sites(
     """
     Liste tous les sites PROMEOS avec pagination et filtres
     """
-    query = db.query(Site)
+    query = not_deleted(db.query(Site), Site)
 
     # Scope filtering
     if auth and auth.site_ids is not None:
@@ -107,11 +107,11 @@ def get_site(site_id: int, db: Session = Depends(get_db), auth: Optional[AuthCon
     Récupère les détails d'un site spécifique
     """
     check_site_access(auth, site_id)
-    site = db.query(Site).filter(Site.id == site_id).first()
-    
+    site = not_deleted(db.query(Site), Site).filter(Site.id == site_id).first()
+
     if not site:
         raise HTTPException(status_code=404, detail="Site non trouvé")
-    
+
     return site
 
 @router.get("/{site_id}/stats", response_model=SiteStats)

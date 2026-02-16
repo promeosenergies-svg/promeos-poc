@@ -1,7 +1,7 @@
 """
 PROMEOS - Models
 """
-from .base import Base, TimestampMixin
+from .base import Base, TimestampMixin, SoftDeleteMixin, not_deleted
 
 # Enums (tous centralises)
 from .enums import (
@@ -16,9 +16,11 @@ from .enums import (
     ActionSourceType, ActionStatus,
     NotificationSeverity, NotificationStatus, NotificationSourceType,
     UserRole, ScopeLevel, PermissionAction,
-    StagingStatus, ImportSourceType, QualityRuleSeverity,
+    StagingStatus, ImportSourceType, QualityRuleSeverity, ActivationLogStatus,
+    DeliveryPointStatus, DeliveryPointEnergyType,
     IntakeSessionStatus, IntakeMode, IntakeSource,
     WatcherEventStatus,
+    CvcSystemType, CvcArchitecture, BacsTriggerReason, InspectionStatus,
 )
 
 # Hierarchie organisation
@@ -77,6 +79,9 @@ from .purchase_models import (
 # Action Hub (Sprint 10)
 from .action_item import ActionItem, ActionSyncBatch
 
+# Action Detail (Sprint V5.0)
+from .action_detail_models import ActionEvent, ActionComment, ActionEvidence
+
 # Notifications (Sprint 10.2)
 from .notification import NotificationEvent, NotificationBatch, NotificationPreference
 
@@ -87,6 +92,7 @@ from .iam import User, UserOrgRole, UserScope, AuditLog
 from .patrimoine import (
     OrgEntiteLink, PortfolioEntiteLink,
     StagingBatch, StagingSite, StagingCompteur, QualityFinding,
+    ActivationLog, DeliveryPoint,
 )
 
 # Smart Intake (DIAMANT)
@@ -95,6 +101,15 @@ from .intake import IntakeSession, IntakeAnswer, IntakeFieldOverride
 # Consumption World-Class (V10)
 from .consumption_target import ConsumptionTarget
 from .tou_schedule import TOUSchedule
+
+# BACS Expert (Decret n°2020-887)
+from .bacs_models import BacsAsset, BacsCvcSystem, BacsAssessment, BacsInspection
+
+# EMS Consumption Explorer
+from .ems_models import EmsWeatherCache, EmsSavedView, EmsCollection
+
+# Emission Factors (Sprint V9 Decarbonation)
+from .emission_factor import EmissionFactor
 
 # Energy (Consumption & Analytics)
 from .energy_models import (
@@ -105,7 +120,7 @@ from .energy_models import (
 )
 
 __all__ = [
-    "Base", "TimestampMixin",
+    "Base", "TimestampMixin", "SoftDeleteMixin", "not_deleted",
     "Organisation", "EntiteJuridique", "Portefeuille",
     "Site", "Batiment", "Usage",
     "Compteur", "Consommation", "Alerte",
@@ -136,6 +151,8 @@ __all__ = [
     "PurchaseStrategy", "PurchaseRecoStatus",
     # Action Hub (Sprint 10)
     "ActionItem", "ActionSyncBatch", "ActionSourceType", "ActionStatus",
+    # Action Detail (Sprint V5.0)
+    "ActionEvent", "ActionComment", "ActionEvidence",
     # Notifications (Sprint 10.2)
     "NotificationEvent", "NotificationBatch", "NotificationPreference",
     "NotificationSeverity", "NotificationStatus", "NotificationSourceType",
@@ -146,6 +163,7 @@ __all__ = [
     "OrgEntiteLink", "PortfolioEntiteLink",
     "StagingBatch", "StagingSite", "StagingCompteur", "QualityFinding",
     "StagingStatus", "ImportSourceType", "QualityRuleSeverity",
+    "DeliveryPoint", "DeliveryPointStatus", "DeliveryPointEnergyType",
     # Smart Intake (DIAMANT)
     "IntakeSession", "IntakeAnswer", "IntakeFieldOverride",
     "IntakeSessionStatus", "IntakeMode", "IntakeSource",
@@ -153,4 +171,11 @@ __all__ = [
     "WatcherEventStatus",
     # Consumption World-Class (V10)
     "ConsumptionTarget", "TOUSchedule",
+    # BACS Expert (Decret n°2020-887)
+    "BacsAsset", "BacsCvcSystem", "BacsAssessment", "BacsInspection",
+    "CvcSystemType", "CvcArchitecture", "BacsTriggerReason", "InspectionStatus",
+    # EMS Consumption Explorer
+    "EmsWeatherCache", "EmsSavedView", "EmsCollection",
+    # Emission Factors (Sprint V9 Decarbonation)
+    "EmissionFactor",
 ]

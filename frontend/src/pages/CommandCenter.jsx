@@ -1,305 +1,398 @@
 /**
- * PROMEOS - Command Center (/) V3
- * KPI cards + Top 3 actions recommandees + todos + anomalies + trust metadata
+ * PROMEOS - Command Center (/) Phase 6 — Dashboard World-Class
+ * Neutral-first + controlled accents. KPI accent bars, icon pills,
+ * premium priority card, "tout sous controle" state, trust signals.
  */
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ShieldCheck, BadgeEuro, AlertTriangle, ArrowRight, Scan, Clock,
-  Zap, Upload, CheckCircle2, Database, FileText,
+  LayoutDashboard, ArrowRight, Clock, Upload, Scan, RefreshCw,
+  FileText, CheckCircle2, AlertTriangle, ShieldCheck, TrendingDown, Bell,
+  Database,
 } from 'lucide-react';
-import { Card, CardBody, Badge, Button, SkeletonCard, TrustBadge } from '../ui';
+import { Card, CardBody, Badge, Button, SkeletonCard, PageShell, MetricCard, StatusDot, EmptyState, ErrorState } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
-import { mockKpis, mockTodos, mockTopAnomalies } from '../mocks/kpis';
-import { mockObligations } from '../mocks/obligations';
-import { mockActions } from '../mocks/actions';
+import { SEVERITY_TINT, HERO_ACCENTS } from '../ui/colorTokens';
+import {
+  getComplianceBundle, getActionsSummary, getActionsList,
+  getNotificationsSummary,
+} from '../services/api';
 import { useScope } from '../contexts/ScopeContext';
+import { useExpertMode } from '../contexts/ExpertModeContext';
 
 const PRIORITY_RANK = { critical: 4, high: 3, medium: 2, low: 1 };
 
-function KpiCard({ icon: Icon, title, value, sub, badge, badgeStatus, color }) {
-  return (
-    <Card>
-      <CardBody className="flex items-start gap-4">
-        <div className={`p-3 rounded-lg ${color}`}>
-          <Icon size={22} className="text-white" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">{title}</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
-          {sub && <p className="text-sm text-gray-500 mt-0.5">{sub}</p>}
-        </div>
-        {badge && <Badge status={badgeStatus}>{badge}</Badge>}
-      </CardBody>
-    </Card>
-  );
+/* ── normalizeDashboardModel: prevent contradictions ── */
+export function normalizeDashboardModel({ kpis, topActions, alertsCount }) {
+  const norm = { ...kpis };
+  // If 100% conforme, risk must be 0
+  if (norm.pctConf === 100) {
+    norm.risque = 0;
+    norm.nonConformes = 0;
+    norm.aRisque = 0;
+  }
+  // If 0 risk sites, risque EUR must be 0
+  if (norm.nonConformes + norm.aRisque === 0) {
+    norm.risque = 0;
+  }
+  const isAllClear = norm.pctConf === 100 && norm.risque === 0 && alertsCount === 0;
+  const actions = isAllClear ? [] : topActions;
+  return { kpis: norm, topActions: actions, alertsCount, isAllClear };
 }
 
-function TodoItem({ item }) {
-  const priorityColors = {
-    critical: 'border-red-400 bg-red-50',
-    high: 'border-orange-400 bg-orange-50',
-    medium: 'border-yellow-400 bg-yellow-50',
-  };
+function ActionRow({ action, index, onClick }) {
+  const sev = SEVERITY_TINT[action.priorite] || SEVERITY_TINT.neutral;
   return (
-    <div className={`flex items-center gap-3 px-4 py-3 border-l-4 rounded-r-lg ${priorityColors[item.priorite] || 'border-gray-300 bg-gray-50'}`}>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-800 truncate">{item.texte}</p>
-        <p className="text-xs text-gray-500 mt-0.5">{item.site}</p>
-      </div>
-      <div className="flex items-center gap-1 text-xs text-gray-400 whitespace-nowrap">
-        <Clock size={12} />
-        {item.echeance}
-      </div>
-    </div>
-  );
-}
-
-function RecommendedActionCard({ action, index, onClick }) {
-  const bgColors = ['bg-blue-50 border-blue-200', 'bg-amber-50 border-amber-200', 'bg-green-50 border-green-200'];
-  const numColors = ['bg-blue-600', 'bg-amber-600', 'bg-green-600'];
-  return (
-    <div
-      className={`flex items-start gap-3 p-4 rounded-lg border cursor-pointer hover:shadow-sm transition ${bgColors[index] || bgColors[0]}`}
+    <button
+      type="button"
+      className="flex items-center gap-3 w-full px-4 py-3 text-left rounded-lg
+        hover:bg-gray-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
       onClick={onClick}
     >
-      <div className={`w-6 h-6 rounded-full ${numColors[index] || numColors[0]} text-white flex items-center justify-center text-xs font-bold shrink-0`}>
+      <span className="w-6 h-6 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-xs font-bold shrink-0">
         {index + 1}
-      </div>
+      </span>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-gray-900 truncate">{action.titre}</p>
-        <p className="text-xs text-gray-600 mt-0.5">{action.source_label}</p>
-        <div className="flex items-center gap-2 mt-2">
-          {action.impact_eur > 0 && (
-            <span className="text-xs font-medium text-red-700 bg-red-50 px-2 py-0.5 rounded">
-              {action.impact_eur.toLocaleString()} EUR
-            </span>
-          )}
-          <Badge status={action.priorite === 'critical' ? 'crit' : action.priorite === 'high' ? 'warn' : 'info'}>
-            {action.priorite}
-          </Badge>
-        </div>
+        <p className="text-sm font-medium text-gray-900 truncate">{action.titre}</p>
+        <p className="text-xs text-gray-500 mt-0.5">{action.source_label}</p>
       </div>
-      <ArrowRight size={16} className="text-gray-400 mt-1 shrink-0" />
-    </div>
+      <div className="flex items-center gap-2 shrink-0">
+        {action.impact_eur > 0 && (
+          <span className="text-xs font-medium text-gray-600">
+            {action.impact_eur.toLocaleString('fr-FR')} EUR
+          </span>
+        )}
+        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border ${sev.chipBg} ${sev.chipText} ${sev.chipBorder}`}>
+          {sev.label}
+        </span>
+        <ArrowRight size={14} className="text-gray-300" />
+      </div>
+    </button>
   );
 }
 
 export default function CommandCenter() {
   const navigate = useNavigate();
   const { org, scopedSites } = useScope();
+  const { isExpert } = useExpertMode();
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setData({ kpis: mockKpis, todos: mockTodos, anomalies: mockTopAnomalies });
+  const [compliance, setCompliance] = useState(null);
+  const [actionsSummary, setActionsSummary] = useState(null);
+  const [actions, setActions] = useState([]);
+  const [alertsSummary, setAlertsSummary] = useState(null);
+  const [lastSync, setLastSync] = useState(null);
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [compBundle, actSummary, actList, notifSummary] = await Promise.all([
+        getComplianceBundle({ org_id: org.id }).catch(() => null),
+        getActionsSummary(org.id).catch(() => null),
+        getActionsList({ limit: 20, status: 'backlog,planned,in_progress' }).catch(() => []),
+        getNotificationsSummary(org.id).catch(() => null),
+      ]);
+      setCompliance(compBundle);
+      setActionsSummary(actSummary);
+      setActions(Array.isArray(actList) ? actList : actList?.actions || []);
+      setAlertsSummary(notifSummary);
+      setLastSync(new Date());
+    } catch {
+      setError('Impossible de charger le tableau de bord');
+    } finally {
       setLoading(false);
-    }, 300);
-    return () => clearTimeout(t);
-  }, []);
+    }
+  }, [org.id]);
 
-  // Build top 3 recommended actions from obligations + actions backlog
-  const top3Actions = useMemo(() => {
-    const fromObligations = mockObligations
-      .filter(o => o.statut !== 'conforme')
-      .map(o => ({
-        id: `obl-${o.id}`,
-        titre: `${o.regulation}: ${o.description}`,
-        source_label: `Conformite — ${o.sites_concernes - o.sites_conformes} sites non conformes`,
-        impact_eur: o.impact_eur,
-        priorite: o.severity,
-        route: '/conformite',
-      }));
+  useEffect(() => { loadData(); }, [loadData]);
 
-    const fromActions = mockActions
-      .filter(a => a.statut !== 'done')
-      .slice(0, 5)
-      .map(a => ({
+  // Raw KPIs from scope
+  const rawKpis = useMemo(() => {
+    const total = scopedSites.length;
+    const conformes = scopedSites.filter(s => s.statut_conformite === 'conforme').length;
+    const nonConformes = scopedSites.filter(s => s.statut_conformite === 'non_conforme').length;
+    const aRisque = scopedSites.filter(s => s.statut_conformite === 'a_risque').length;
+    const risque = scopedSites.reduce((sum, s) => sum + (s.risque_eur || 0), 0);
+    const pctConf = total > 0 ? Math.round(conformes / total * 100) : 0;
+    const compStatus = nonConformes > 0 ? 'crit' : aRisque > 0 ? 'warn' : total > 0 ? 'ok' : 'neutral';
+    const risqueStatus = risque > 50000 ? 'crit' : risque > 10000 ? 'warn' : 'ok';
+    return { total, conformes, nonConformes, aRisque, risque, pctConf, compStatus, risqueStatus };
+  }, [scopedSites]);
+
+  // Top actions — merge compliance + action plan
+  const rawTopActions = useMemo(() => {
+    const items = [];
+    if (compliance?.sites) {
+      const findings = compliance.sites
+        .flatMap(s => (s.findings || []).filter(f => f.status !== 'conforme').map(f => ({
+          ...f, site_nom: s.site_nom,
+        })))
+        .slice(0, 5);
+      for (const f of findings) {
+        items.push({
+          id: `comp-${f.id || f.rule_id}`,
+          titre: f.description || f.rule_code || 'Non-conformite',
+          source_label: `Conformite — ${f.site_nom}`,
+          impact_eur: f.impact_eur || 0,
+          priorite: f.severity || 'medium',
+          route: '/conformite',
+        });
+      }
+    }
+    for (const a of actions.slice(0, 5)) {
+      items.push({
         id: `act-${a.id}`,
-        titre: a.titre,
-        source_label: `Plan d'action — ${a.site_nom}`,
-        impact_eur: a.impact_eur,
-        priorite: a.priorite,
+        titre: a.titre || a.title || 'Action',
+        source_label: `Plan d'action — ${a.site_nom || ''}`,
+        impact_eur: a.impact_eur || 0,
+        priorite: a.priorite || a.priority || 'medium',
         route: '/actions',
-      }));
-
-    return [...fromObligations, ...fromActions]
+      });
+    }
+    return items
       .sort((a, b) => (PRIORITY_RANK[b.priorite] || 0) - (PRIORITY_RANK[a.priorite] || 0) || b.impact_eur - a.impact_eur)
-      .slice(0, 3);
-  }, []);
+      .slice(0, 5);
+  }, [compliance, actions]);
 
-  // Contextual CTA
+  const rawAlertsCount = useMemo(() => {
+    if (!alertsSummary) return 0;
+    return (alertsSummary.by_severity?.critical || 0) + (alertsSummary.by_severity?.warn || 0);
+  }, [alertsSummary]);
+
+  // Normalized model (no contradictions)
+  const { kpis, topActions, alertsCount, isAllClear } = useMemo(
+    () => normalizeDashboardModel({ kpis: rawKpis, topActions: rawTopActions, alertsCount: rawAlertsCount }),
+    [rawKpis, rawTopActions, rawAlertsCount],
+  );
+
+  // Data coverage
+  const coveragePct = useMemo(() => {
+    return kpis.total > 0 ? Math.round(scopedSites.filter(s => s.conso_kwh_an > 0).length / kpis.total * 100) : 0;
+  }, [scopedSites, kpis.total]);
+
   const hasSites = scopedSites.length > 0;
 
   if (loading) {
     return (
-      <div className="px-6 py-6">
-        <div className="grid grid-cols-3 gap-4 mb-6">
+      <PageShell icon={LayoutDashboard} title="Tableau de bord" subtitle="Chargement...">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <SkeletonCard /><SkeletonCard /><SkeletonCard />
         </div>
-      </div>
+      </PageShell>
     );
   }
 
-  const { kpis, todos, anomalies } = data;
+  if (error) {
+    return (
+      <PageShell icon={LayoutDashboard} title="Tableau de bord" subtitle={`${org.nom} · ${kpis.total} sites`}>
+        <ErrorState title="Erreur de chargement" message={error} onRetry={loadData} />
+      </PageShell>
+    );
+  }
 
   return (
-    <div className="px-6 py-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">Tableau de bord</h2>
-          <p className="text-sm text-gray-500 mt-0.5">Synthèse 2 minutes : conformité, pertes, actions — {org.nom} · {scopedSites.length} sites</p>
-        </div>
+    <PageShell
+      icon={LayoutDashboard}
+      title="Tableau de bord"
+      subtitle={`${org.nom} · ${kpis.total} sites`}
+      actions={
         <div className="flex items-center gap-2">
+          {/* Trust signals — compact */}
+          <div className="hidden sm:flex items-center gap-3 mr-2 text-[11px] text-gray-400">
+            {lastSync && (
+              <span className="flex items-center gap-1">
+                <Clock size={11} />
+                {lastSync.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
+            <span className="flex items-center gap-1" title="Couverture donnees">
+              <Database size={11} />
+              {coveragePct}%
+            </span>
+          </div>
           <Button variant="secondary" size="sm" onClick={() => navigate('/cockpit-2min')}>
-            <FileText size={14} /> Briefing 2 min
+            <FileText size={14} /> Briefing
           </Button>
+          {isExpert && (
+            <Button variant="secondary" size="sm" onClick={loadData}>
+              <RefreshCw size={14} /> Actualiser
+            </Button>
+          )}
           {!hasSites ? (
             <Button onClick={() => navigate('/import')}>
-              <Upload size={16} /> Importer mes sites
+              <Upload size={16} /> Importer
             </Button>
           ) : (
             <Button onClick={() => navigate('/conformite')}>
-              <Scan size={16} /> Lancer un scan
+              <Scan size={16} /> Scanner
             </Button>
           )}
         </div>
-      </div>
-
-      {/* 3 KPI cards */}
-      <div className="grid grid-cols-3 gap-4">
-        <KpiCard
+      }
+    >
+      {/* ── KPI Row: 3 MetricCards with accent bars + icon pills ── */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <MetricCard
+          accent="conformite"
           icon={ShieldCheck}
-          title="Conformite"
-          value={`${kpis.conformite.pct_conforme}%`}
-          sub={`${kpis.conformite.conformes} conformes / ${kpis.conformite.total_sites}`}
-          badge={kpis.conformite.label}
-          badgeStatus={kpis.conformite.color}
-          color="bg-blue-600"
+          label="Conformite"
+          value={`${kpis.pctConf}%`}
+          sub={`${kpis.conformes} / ${kpis.total} sites conformes`}
+          status={kpis.compStatus}
+          onClick={() => navigate('/conformite')}
         />
-        <KpiCard
-          icon={BadgeEuro}
-          title="Risque financier"
-          value={`${(kpis.risque_financier.total_eur / 1000).toFixed(0)}k EUR`}
-          sub={`dont ${(kpis.risque_financier.pertes_conso_eur / 1000).toFixed(0)}k pertes conso`}
-          badge={kpis.risque_financier.total_eur > 20000 ? 'Eleve' : 'Modere'}
-          badgeStatus={kpis.risque_financier.total_eur > 20000 ? 'crit' : 'warn'}
-          color="bg-red-600"
+        <MetricCard
+          accent="risque"
+          icon={TrendingDown}
+          label="Risque financier"
+          value={kpis.risque > 0 ? `${(kpis.risque / 1000).toFixed(0)}k EUR` : '0 EUR'}
+          sub={`${kpis.nonConformes + kpis.aRisque} sites a risque`}
+          status={kpis.risqueStatus}
+          onClick={() => navigate('/actions')}
         />
-        <KpiCard
-          icon={AlertTriangle}
-          title="Action prioritaire"
-          value={kpis.action_prioritaire.texte}
-          sub={`${kpis.action_prioritaire.nb_sites} sites concernes`}
-          badge={kpis.action_prioritaire.priorite}
-          badgeStatus={kpis.action_prioritaire.priorite === 'critical' ? 'crit' : 'warn'}
-          color="bg-amber-600"
+        <MetricCard
+          accent="alertes"
+          icon={Bell}
+          label="Alertes actives"
+          value={alertsCount}
+          sub={alertsSummary ? `dont ${alertsSummary.by_severity?.critical || 0} critiques` : 'Chargement...'}
+          status={alertsCount > 5 ? 'crit' : alertsCount > 0 ? 'warn' : 'ok'}
+          onClick={() => navigate('/notifications')}
         />
       </div>
 
-      {/* Top 3 recommended actions */}
-      <Card>
-        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Zap size={18} className="text-blue-600" />
-            <h3 className="font-semibold text-gray-800">Top 3 actions recommandees</h3>
-          </div>
-          <Button variant="ghost" size="sm" onClick={() => navigate('/actions')}>
-            Voir toutes <ArrowRight size={14} />
-          </Button>
-        </div>
-        <div className="p-4 grid grid-cols-3 gap-3">
-          {top3Actions.map((a, i) => (
-            <RecommendedActionCard key={a.id} action={a} index={i} onClick={() => navigate(a.route)} />
-          ))}
-        </div>
-      </Card>
-
-      {/* Derniere MAJ + Couverture donnees */}
-      <div className="grid grid-cols-2 gap-4">
-        <Card>
-          <CardBody className="flex items-center gap-4">
-            <div className="p-2.5 rounded-lg bg-green-50">
-              <CheckCircle2 size={20} className="text-green-600" />
-            </div>
-            <div className="flex-1">
-              <p className="text-xs text-gray-500 font-medium uppercase">Derniere mise a jour</p>
-              <p className="text-sm font-semibold text-gray-900 mt-0.5">
-                {new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
-              </p>
-              <TrustBadge source="PROMEOS" period="temps reel" confidence="high" className="mt-1" />
-            </div>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody className="flex items-center gap-4">
-            <div className="p-2.5 rounded-lg bg-indigo-50">
-              <Database size={20} className="text-indigo-600" />
-            </div>
-            <div className="flex-1">
-              <p className="text-xs text-gray-500 font-medium uppercase">Couverture donnees</p>
-              <div className="flex items-center gap-3 mt-1">
-                <div className="flex-1">
-                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-indigo-500 rounded-full" style={{ width: '72%' }} />
-                  </div>
-                </div>
-                <span className="text-sm font-bold text-indigo-700">72%</span>
+      {/* ── Top Priority #1 — premium card OR "Tout sous controle" ── */}
+      {isAllClear ? (
+        <div className={`rounded-lg border p-5 ${HERO_ACCENTS.success.bg} ${HERO_ACCENTS.success.border} ${HERO_ACCENTS.success.ring}`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
+                <CheckCircle2 size={20} className="text-emerald-600" />
               </div>
-              <p className="text-xs text-gray-400 mt-1">{scopedSites.length} sites avec donnees / compteurs actifs</p>
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Tout est sous controle</p>
+                <p className="text-xs text-gray-500 mt-0.5">Conformite 100%, aucun risque, aucune alerte active.</p>
+              </div>
             </div>
-          </CardBody>
-        </Card>
-      </div>
+            <Button variant="secondary" size="sm" onClick={() => navigate('/conformite')}>
+              Voir opportunites <ArrowRight size={14} />
+            </Button>
+          </div>
+        </div>
+      ) : topActions.length > 0 && (
+        <div className={`rounded-lg border p-5 ${HERO_ACCENTS.priority.bg} ${HERO_ACCENTS.priority.border} ${HERO_ACCENTS.priority.ring}`}>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
+                <AlertTriangle size={20} className="text-amber-600" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mb-0.5">Action prioritaire</p>
+                <p className="text-sm font-semibold text-gray-900 truncate">{topActions[0].titre}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{topActions[0].source_label}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 shrink-0">
+              {topActions[0].impact_eur > 0 && (
+                <span className="text-sm font-semibold text-gray-700">
+                  {topActions[0].impact_eur.toLocaleString('fr-FR')} EUR
+                </span>
+              )}
+              {(() => {
+                const sev = SEVERITY_TINT[topActions[0].priorite] || SEVERITY_TINT.neutral;
+                return (
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border ${sev.chipBg} ${sev.chipText} ${sev.chipBorder}`}>
+                    {sev.label}
+                  </span>
+                );
+              })()}
+              <Button size="sm" onClick={() => navigate(topActions[0].route)}>
+                Traiter <ArrowRight size={14} />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
-      <div className="grid grid-cols-2 gap-6">
-        {/* A faire cette semaine */}
+      {/* ── Two-column: Actions + Sites ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Ranked actions */}
         <Card>
           <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h3 className="font-semibold text-gray-800">A faire cette semaine</h3>
+            <h3 className="font-semibold text-gray-800">Priorites</h3>
             <Button variant="ghost" size="sm" onClick={() => navigate('/actions')}>
-              Voir tout <ArrowRight size={14} />
+              Tout voir <ArrowRight size={14} />
             </Button>
           </div>
-          <div className="p-3 space-y-2">
-            {todos.map((t) => <TodoItem key={t.id} item={t} />)}
+          <div className="py-1 divide-y divide-gray-50">
+            {topActions.length === 0 ? (
+              <div className="px-5 py-8">
+                <EmptyState icon={CheckCircle2} title="Aucune action en attente" text="Toutes les actions sont a jour." />
+              </div>
+            ) : (
+              topActions.map((a, i) => (
+                <ActionRow key={a.id} action={a} index={i} onClick={() => navigate(a.route)} />
+              ))
+            )}
           </div>
         </Card>
 
-        {/* Top anomalies */}
+        {/* Sites at risk — table with accent on risk column */}
         <Card>
           <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h3 className="font-semibold text-gray-800">Top anomalies</h3>
-            <Button variant="ghost" size="sm" onClick={() => navigate('/diagnostic-conso')}>
-              Voir tout <ArrowRight size={14} />
+            <h3 className="font-semibold text-gray-800">Sites a traiter</h3>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/patrimoine')}>
+              Patrimoine <ArrowRight size={14} />
             </Button>
           </div>
-          <Table>
-            <Thead>
-              <tr>
-                <Th>Site</Th>
-                <Th>Type</Th>
-                <Th>Severite</Th>
-                <Th className="text-right">Perte EUR</Th>
-              </tr>
-            </Thead>
-            <Tbody>
-              {anomalies.slice(0, 8).map((a) => (
-                <Tr key={a.id} onClick={() => navigate(`/sites/${a.site_id}`)}>
-                  <Td className="font-medium">{a.site_nom}</Td>
-                  <Td>
-                    <span className="text-xs px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded">{a.type}</span>
-                  </Td>
-                  <Td><Badge status={a.severity === 'critical' ? 'crit' : a.severity === 'high' ? 'warn' : 'info'}>{a.severity}</Badge></Td>
-                  <Td className="text-right text-red-600 font-medium">{a.perte_eur.toLocaleString()} EUR</Td>
-                </Tr>
-              ))}
-            </Tbody>
-          </Table>
+          {scopedSites.filter(s => s.statut_conformite === 'non_conforme' || s.statut_conformite === 'a_risque').length === 0 ? (
+            <div className="px-5 py-8">
+              <EmptyState icon={CheckCircle2} title="Tous les sites sont conformes" text="Aucun site ne necessite d'intervention." />
+            </div>
+          ) : (
+            <Table>
+              <Thead>
+                <tr>
+                  <Th>Site</Th>
+                  <Th>Statut</Th>
+                  <Th className="text-right">Risque</Th>
+                </tr>
+              </Thead>
+              <Tbody>
+                {scopedSites
+                  .filter(s => s.statut_conformite === 'non_conforme' || s.statut_conformite === 'a_risque')
+                  .sort((a, b) => (b.risque_eur || 0) - (a.risque_eur || 0))
+                  .slice(0, 8)
+                  .map((site) => (
+                    <Tr key={site.id} onClick={() => navigate(`/sites/${site.id}`)} className="group cursor-pointer hover:bg-blue-50/40">
+                      <Td>
+                        <div className="font-medium text-gray-900">{site.nom}</div>
+                        <div className="text-xs text-gray-400">{site.ville}</div>
+                      </Td>
+                      <Td>
+                        <div className="flex items-center gap-1.5">
+                          <StatusDot status={site.statut_conformite === 'non_conforme' ? 'crit' : 'warn'} />
+                          <span className="text-xs text-gray-600">
+                            {site.statut_conformite === 'non_conforme' ? 'Non conforme' : 'A risque'}
+                          </span>
+                        </div>
+                      </Td>
+                      <Td className="text-right text-sm font-medium">
+                        {site.risque_eur > 0 ? (
+                          <span className="text-amber-700">{site.risque_eur.toLocaleString('fr-FR')} EUR</span>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </Td>
+                    </Tr>
+                  ))}
+              </Tbody>
+            </Table>
+          )}
         </Card>
       </div>
-    </div>
+    </PageShell>
   );
 }

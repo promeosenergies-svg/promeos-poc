@@ -1,24 +1,34 @@
 /**
- * PROMEOS - Patrimoine (/patrimoine) V3
- * Scope-filtered table + saved views + bulk actions + premium table + density toggle + trust badge.
+ * PROMEOS - Patrimoine V5 — Premium Command-Center Cockpit
+ * Risk-first table · URL-synced filters · tabbed SiteDrawer · k€/m² formatting.
  */
-import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  Building2, Search, RotateCcw, BookmarkPlus, Download, Star,
-  Plus, ChevronDown, Rows3, Rows4, Upload,
+  Building2, Search, RotateCcw, Download, Star,
+  Plus, Upload, MapPin, ChevronRight,
+  ShieldCheck, AlertTriangle, Ruler, BadgeEuro, Zap,
+  ExternalLink, Eye, Lightbulb, Gauge, TrendingUp,
+  X, ArrowUpDown, SlidersHorizontal, ChevronDown,
 } from 'lucide-react';
-import { Card, Badge, Button, Select, Pagination, EmptyState, TrustBadge } from '../ui';
+import {
+  Card, Badge, Button, Pagination, EmptyState,
+  PageShell, KpiCard, Modal, Input, Drawer, Tabs, Tooltip,
+} from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td, ThCheckbox, TdCheckbox } from '../ui';
 import { useScope } from '../contexts/ScopeContext';
+import { useExpertMode } from '../contexts/ExpertModeContext';
 import CreateActionModal from '../components/CreateActionModal';
 import PatrimoineWizard from '../components/PatrimoineWizard';
 import { track } from '../services/tracker';
+import { fmtEur, fmtEurFull, fmtArea, fmtAreaCompact, fmtKwh, fmtDateFR, pl } from '../utils/format';
 
-const DEFAULT_PAGE_SIZE = 25;
+/* ─── Constants ──────────────────────────────────────────── */
+
+const PAGE_SIZE = 25;
 
 const USAGE_OPTIONS = [
-  { value: '', label: 'Tous les usages' },
+  { value: '', label: 'Usage' },
   { value: 'bureau', label: 'Bureau' }, { value: 'commerce', label: 'Commerce' },
   { value: 'entrepot', label: 'Entrepot' }, { value: 'hotel', label: 'Hotel' },
   { value: 'sante', label: 'Sante' }, { value: 'enseignement', label: 'Enseignement' },
@@ -26,7 +36,7 @@ const USAGE_OPTIONS = [
 ];
 
 const STATUT_OPTIONS = [
-  { value: '', label: 'Tous les statuts' },
+  { value: '', label: 'Statut' },
   { value: 'conforme', label: 'Conforme' }, { value: 'non_conforme', label: 'Non conforme' },
   { value: 'a_risque', label: 'A risque' }, { value: 'a_evaluer', label: 'A evaluer' },
 ];
@@ -38,253 +48,675 @@ const STATUT_BADGE = {
   a_evaluer: { status: 'neutral', label: 'A evaluer' },
 };
 
-// Saved views (localStorage)
-const VIEWS_KEY = 'promeos_saved_views';
-function loadViews() { try { return JSON.parse(localStorage.getItem(VIEWS_KEY) || '[]'); } catch { return []; } }
-function persistViews(v) { localStorage.setItem(VIEWS_KEY, JSON.stringify(v)); }
+const USAGE_COLOR = {
+  bureau: 'bg-blue-50 text-blue-700 ring-blue-200',
+  commerce: 'bg-purple-50 text-purple-700 ring-purple-200',
+  entrepot: 'bg-gray-100 text-gray-700 ring-gray-200',
+  hotel: 'bg-amber-50 text-amber-700 ring-amber-200',
+  sante: 'bg-red-50 text-red-700 ring-red-200',
+  enseignement: 'bg-green-50 text-green-700 ring-green-200',
+  copropriete: 'bg-indigo-50 text-indigo-700 ring-indigo-200',
+  collectivite: 'bg-teal-50 text-teal-700 ring-teal-200',
+};
+
+const PRESET_VIEWS = [
+  { id: 'risk', label: 'Risque (Top)', sort: 'risque_eur', dir: 'desc', filter: {} },
+  { id: 'nc', label: 'Non conformes', sort: 'risque_eur', dir: 'desc', filter: { statut: 'non_conforme' } },
+  { id: 'eval', label: 'A evaluer', sort: 'nom', dir: 'asc', filter: { statut: 'a_evaluer' } },
+];
+
+/* ─── Main Component ─────────────────────────────────────── */
 
 export default function Patrimoine() {
   const navigate = useNavigate();
+  const [sp, setSp] = useSearchParams();
   const { scopedSites } = useScope();
-  const [search, setSearch] = useState('');
-  const [filterUsage, setFilterUsage] = useState('');
-  const [filterStatut, setFilterStatut] = useState('');
+  const { isExpert } = useExpertMode();
+  const searchRef = useRef(null);
+
+  // URL-synced state
+  const search = sp.get('q') || '';
+  const filterUsage = sp.get('usage') || '';
+  const filterStatut = sp.get('statut') || '';
+  const filterAnomalies = sp.get('anomalies') === '1';
+  const sortCol = sp.get('sort') || 'risque_eur';
+  const sortDir = sp.get('dir') || 'desc';
+  const activeView = sp.get('view') || '';
+
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
-  const [sortCol, setSortCol] = useState('');
-  const [sortDir, setSortDir] = useState('');
   const [selected, setSelected] = useState(new Set());
-  const [compact, setCompact] = useState(false);
   const [showActionModal, setShowActionModal] = useState(false);
+  const [actionSite, setActionSite] = useState('');
   const [showWizard, setShowWizard] = useState(false);
-  const [savedViews, setSavedViews] = useState(loadViews);
-  const [showViewMenu, setShowViewMenu] = useState(false);
+  const [drawerSite, setDrawerSite] = useState(null);
   const [favorites, setFavorites] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem('promeos_fav_sites') || '[]')); } catch { return new Set(); }
   });
 
+  // URL param helper — merges params, removes empty values
+  const setParams = useCallback((patch) => {
+    setSp(prev => {
+      const next = new URLSearchParams(prev);
+      Object.entries(patch).forEach(([k, v]) => {
+        if (v === '' || v === null || v === false || v === undefined) next.delete(k);
+        else next.set(k, String(v));
+      });
+      return next;
+    }, { replace: true });
+    setPage(1);
+  }, [setSp]);
+
+  // Keyboard shortcut: "/" to focus search
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
+
+  /* ─── Computed data ─── */
+
+  const stats = useMemo(() => {
+    const t = scopedSites.length;
+    const conformes = scopedSites.filter(s => s.statut_conformite === 'conforme').length;
+    const nc = scopedSites.filter(s => s.statut_conformite === 'non_conforme').length;
+    const aRisque = scopedSites.filter(s => s.statut_conformite === 'a_risque').length;
+    const risque = scopedSites.reduce((a, s) => a + (s.risque_eur || 0), 0);
+    const surface = scopedSites.reduce((a, s) => a + (s.surface_m2 || 0), 0);
+    const anomalies = scopedSites.reduce((a, s) => a + (s.anomalies_count || 0), 0);
+    const withAno = scopedSites.filter(s => (s.anomalies_count || 0) > 0).length;
+    return { total: t, conformes, nc, aRisque, risque, surface, anomalies, withAno };
+  }, [scopedSites]);
+
   const filtered = useMemo(() => {
-    let result = [...scopedSites];
+    let r = [...scopedSites];
     if (search) {
       const q = search.toLowerCase();
-      result = result.filter(s => s.nom.toLowerCase().includes(q) || s.ville.toLowerCase().includes(q) || s.adresse.toLowerCase().includes(q));
+      r = r.filter(s =>
+        s.nom.toLowerCase().includes(q) ||
+        s.ville.toLowerCase().includes(q) ||
+        (s.adresse || '').toLowerCase().includes(q) ||
+        (s.code_postal || '').includes(q)
+      );
     }
-    if (filterUsage) result = result.filter(s => s.usage === filterUsage);
-    if (filterStatut) result = result.filter(s => s.statut_conformite === filterStatut);
+    if (filterUsage) r = r.filter(s => s.usage === filterUsage);
+    if (filterStatut) r = r.filter(s => s.statut_conformite === filterStatut);
+    if (filterAnomalies) r = r.filter(s => (s.anomalies_count || 0) > 0);
     if (sortCol) {
-      result.sort((a, b) => {
-        const va = a[sortCol], vb = b[sortCol];
+      r.sort((a, b) => {
+        const va = a[sortCol] ?? 0, vb = b[sortCol] ?? 0;
         if (typeof va === 'number') return sortDir === 'asc' ? va - vb : vb - va;
         return sortDir === 'asc' ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
       });
     }
-    return result;
-  }, [scopedSites, search, filterUsage, filterStatut, sortCol, sortDir]);
+    return r;
+  }, [scopedSites, search, filterUsage, filterStatut, filterAnomalies, sortCol, sortDir]);
 
   const total = filtered.length;
-  const pageData = filtered.slice((page - 1) * pageSize, page * pageSize);
+  const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const selectedStats = useMemo(() => {
+    if (selected.size === 0) return null;
+    const sites = scopedSites.filter(s => selected.has(s.id));
+    return { count: sites.length, risque: sites.reduce((a, s) => a + (s.risque_eur || 0), 0) };
+  }, [selected, scopedSites]);
+
+  /* ─── Handlers ─── */
 
   function handleSort(col) {
     if (sortCol === col) {
-      setSortDir(d => d === 'asc' ? 'desc' : d === 'desc' ? '' : 'asc');
-      if (sortDir === 'desc') setSortCol('');
-    } else { setSortCol(col); setSortDir('asc'); }
-    setPage(1);
+      const nd = sortDir === 'asc' ? 'desc' : sortDir === 'desc' ? '' : 'asc';
+      setParams({ sort: nd ? col : '', dir: nd, view: '' });
+      if (!nd) setParams({ sort: '', dir: '' });
+    } else {
+      setParams({ sort: col, dir: 'asc', view: '' });
+    }
     track('filter_apply', { action: 'sort', col });
   }
 
   function resetFilters() {
-    setSearch(''); setFilterUsage(''); setFilterStatut(''); setPage(1);
+    setSp({}, { replace: true });
+    setPage(1);
     track('filter_apply', { action: 'reset' });
   }
 
-  function toggleSelect(id) {
-    setSelected(prev => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
-  }
-
-  function toggleSelectAll() {
-    if (selected.size === pageData.length) setSelected(new Set());
-    else setSelected(new Set(pageData.map(s => s.id)));
-  }
-
-  // Saved views
-  function saveCurrentView() {
-    const name = prompt('Nom de la vue:');
-    if (!name) return;
-    const view = { id: Date.now(), name, filters: { search, filterUsage, filterStatut }, sort: { sortCol, sortDir }, pageSize };
-    const next = [...savedViews, view];
-    setSavedViews(next);
-    persistViews(next);
-    track('view_save', { name });
-  }
-
-  function applyView(view) {
-    setSearch(view.filters.search || '');
-    setFilterUsage(view.filters.filterUsage || '');
-    setFilterStatut(view.filters.filterStatut || '');
-    setSortCol(view.sort.sortCol || '');
-    setSortDir(view.sort.sortDir || '');
-    if (view.pageSize) setPageSize(view.pageSize);
+  function applyPreset(view) {
+    const p = { view: view.id, sort: view.sort, dir: view.dir, q: '', usage: '', anomalies: '' };
+    if (view.filter.statut) p.statut = view.filter.statut;
+    else p.statut = '';
+    setSp(p, { replace: true });
     setPage(1);
-    setShowViewMenu(false);
-    track('filter_apply', { action: 'apply_view', name: view.name });
+    track('filter_apply', { action: 'preset', name: view.id });
   }
 
-  function deleteView(viewId) {
-    const next = savedViews.filter(v => v.id !== viewId);
-    setSavedViews(next);
-    persistViews(next);
+  function toggleSelect(id) {
+    setSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  }
+  function toggleSelectAll() {
+    setSelected(selected.size === pageData.length ? new Set() : new Set(pageData.map(s => s.id)));
   }
 
-  // Bulk actions
   function exportCsv() {
     const rows = filtered.filter(s => selected.size === 0 || selected.has(s.id));
-    const header = 'id,nom,ville,usage,statut,risque_eur,surface_m2,anomalies';
-    const csv = [header, ...rows.map(s => `${s.id},${s.nom},${s.ville},${s.usage},${s.statut_conformite},${s.risque_eur},${s.surface_m2},${s.anomalies_count}`)].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'patrimoine.csv'; a.click();
-    URL.revokeObjectURL(url);
+    const h = 'id;nom;adresse;code_postal;ville;usage;statut;risque_eur;surface_m2;anomalies;conso_kwh_an';
+    const csv = [h, ...rows.map(s =>
+      `${s.id};"${s.nom}";"${s.adresse}";${s.code_postal};${s.ville};${s.usage};${s.statut_conformite};${s.risque_eur};${s.surface_m2};${s.anomalies_count};${s.conso_kwh_an}`
+    )].join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'patrimoine.csv'; a.click();
     track('export_csv', { rows: rows.length });
   }
 
   function toggleFavorites() {
-    const next = new Set(favorites);
-    for (const id of selected) { next.has(id) ? next.delete(id) : next.add(id); }
-    setFavorites(next);
-    localStorage.setItem('promeos_fav_sites', JSON.stringify([...next]));
+    const n = new Set(favorites);
+    for (const id of selected) { n.has(id) ? n.delete(id) : n.add(id); }
+    setFavorites(n);
+    localStorage.setItem('promeos_fav_sites', JSON.stringify([...n]));
     setSelected(new Set());
-    track('bulk_action', { action: 'toggle_favorite', count: selected.size });
   }
 
-  const hasFilters = search || filterUsage || filterStatut;
+  const openDrawer = useCallback((site) => { setDrawerSite(site); track('row_click', { site_id: site.id }); }, []);
+  const openActionFromDrawer = useCallback((siteName) => {
+    setDrawerSite(null);
+    setActionSite(siteName);
+    setShowActionModal(true);
+  }, []);
+
+  const hasFilters = search || filterUsage || filterStatut || filterAnomalies;
+  const activeChips = [];
+  if (search) activeChips.push({ label: `"${search}"`, clear: () => setParams({ q: '' }) });
+  if (filterUsage) activeChips.push({ label: USAGE_OPTIONS.find(o => o.value === filterUsage)?.label || filterUsage, clear: () => setParams({ usage: '' }) });
+  if (filterStatut) activeChips.push({ label: STATUT_OPTIONS.find(o => o.value === filterStatut)?.label || filterStatut, clear: () => setParams({ statut: '' }) });
+  if (filterAnomalies) activeChips.push({ label: 'Avec anomalies', clear: () => setParams({ anomalies: '' }) });
+
+  /* ─── Render ─── */
+
+  const isEmptyPatrimoine = scopedSites.length === 0;
+
+  // Dynamic subtitle
+  const subtitle = isEmptyPatrimoine
+    ? 'Importez votre patrimoine pour commencer'
+    : `${pl(stats.total, 'site')} · ${fmtAreaCompact(stats.surface)} · ${stats.conformes} conformes · ${fmtEur(stats.risque)} de risque`;
 
   return (
-    <div className="px-6 py-6 space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">Patrimoine</h2>
-          <p className="text-sm text-gray-500 mt-0.5">{scopedSites.length} sites dans le scope</p>
+    <PageShell
+      icon={Building2}
+      title="Patrimoine"
+      subtitle={subtitle}
+      actions={
+        <>
+          {!isEmptyPatrimoine && <Button variant="secondary" size="sm" onClick={() => setShowActionModal(true)}><Plus size={14} className="mr-1" />Action</Button>}
+          <Button size="sm" onClick={() => setShowWizard(true)}><Upload size={14} className="mr-1" />Importer</Button>
+        </>
+      }
+    >
+
+      {/* ── Welcome empty state ── */}
+      {isEmptyPatrimoine ? (
+        <div className="flex flex-col items-center justify-center py-20">
+          <div className="w-16 h-16 rounded-2xl bg-indigo-100 flex items-center justify-center mb-5">
+            <Building2 size={32} className="text-indigo-600" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Bienvenue sur PROMEOS</h2>
+          <p className="text-gray-500 text-center max-w-md mb-6">
+            Importez votre patrimoine immobilier pour commencer le pilotage energetique. CSV, Excel ou donnees de demonstration.
+          </p>
+          <div className="flex items-center gap-3">
+            <Button size="lg" onClick={() => setShowWizard(true)}><Upload size={16} className="mr-2" />Importer mon patrimoine</Button>
+            <Button variant="secondary" size="lg" onClick={() => setShowWizard(true)}><Zap size={16} className="mr-2" />Demo</Button>
+          </div>
+          <p className="text-xs text-gray-400 mt-3">10 sites demo — prets en 10 secondes</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="secondary" size="sm" onClick={() => setShowWizard(true)}><Upload size={14} className="mr-1" />Importer patrimoine</Button>
-          <Button onClick={() => setShowActionModal(true)}><Plus size={16} /> Creer action</Button>
+      ) : (
+        <div className="space-y-3">
+
+          {/* ── KPI row (compact) ── */}
+          <div className="grid grid-cols-4 gap-3">
+            <KpiCardCompact
+              icon={Building2} color="bg-blue-600"
+              label="Sites actifs" value={stats.total}
+              detail={fmtAreaCompact(stats.surface)}
+              active={!filterStatut && !filterAnomalies && !activeView}
+              onClick={() => setParams({ statut: '', anomalies: '', view: '' })}
+            />
+            <KpiCardCompact
+              icon={ShieldCheck} color="bg-emerald-600"
+              label="Conformes" value={stats.conformes}
+              detail={stats.total > 0 ? `${Math.round(stats.conformes / stats.total * 100)}% du parc` : '—'}
+              active={filterStatut === 'conforme'}
+              onClick={() => setParams({ statut: filterStatut === 'conforme' ? '' : 'conforme', anomalies: '', view: '' })}
+            />
+            <KpiCardCompact
+              icon={AlertTriangle} color="bg-red-600"
+              label="Non conformes" value={stats.nc + stats.aRisque}
+              detail={`${stats.nc} NC · ${stats.aRisque} a risque`}
+              active={filterStatut === 'non_conforme'}
+              onClick={() => setParams({ statut: filterStatut === 'non_conforme' ? '' : 'non_conforme', anomalies: '', view: '' })}
+            />
+            <KpiCardCompact
+              icon={BadgeEuro} color="bg-amber-600"
+              label="Risque financier" value={fmtEur(stats.risque)}
+              detail={`${stats.withAno} ${stats.withAno > 1 ? 'sites' : 'site'} avec anomalies`}
+              active={filterAnomalies}
+              onClick={() => setParams({ anomalies: filterAnomalies ? '' : '1', statut: '', view: '' })}
+            />
+          </div>
+
+          {/* ── Toolbar ── */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Search */}
+            <div className="relative flex-1 min-w-[200px] max-w-sm">
+              <Search size={15} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                ref={searchRef}
+                type="text"
+                placeholder='Rechercher... (appuyez "/")'
+                value={search}
+                onChange={e => setParams({ q: e.target.value || '' })}
+                className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+              />
+            </div>
+
+            {/* Filters */}
+            <FilterSelect options={USAGE_OPTIONS} value={filterUsage} onChange={v => setParams({ usage: v, view: '' })} />
+            <FilterSelect options={STATUT_OPTIONS} value={filterStatut} onChange={v => setParams({ statut: v, view: '' })} />
+
+            {/* Separator */}
+            <div className="w-px h-6 bg-gray-200" />
+
+            {/* Preset views */}
+            {PRESET_VIEWS.map(v => (
+              <button
+                key={v.id}
+                onClick={() => applyPreset(v)}
+                className={`text-xs px-2.5 py-1.5 rounded-md font-medium transition whitespace-nowrap ${
+                  activeView === v.id
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {v.label}
+              </button>
+            ))}
+
+            {/* Sort indicator */}
+            {sortCol && (
+              <Tooltip text={`Tri : ${sortCol} ${sortDir}`}>
+                <span className="text-[10px] text-gray-400 flex items-center gap-1">
+                  <ArrowUpDown size={10} /> {sortDir === 'desc' ? '↓' : '↑'}
+                </span>
+              </Tooltip>
+            )}
+          </div>
+
+          {/* Active filter chips */}
+          {activeChips.length > 0 && (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">Filtres :</span>
+              {activeChips.map((c, i) => (
+                <span key={i} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">
+                  {c.label}
+                  <button onClick={c.clear} className="hover:text-blue-900"><X size={10} /></button>
+                </span>
+              ))}
+              <button onClick={resetFilters} className="text-[10px] text-gray-400 hover:text-gray-600 underline ml-1">Reinitialiser</button>
+              <span className="ml-auto text-xs text-gray-400">{pl(total, 'resultat')}</span>
+            </div>
+          )}
+
+          {/* ── Bulk actions bar ── */}
+          {selectedStats && (
+            <div className="flex items-center gap-3 px-3 py-2 bg-blue-600 text-white rounded-lg text-sm shadow-md">
+              <span className="font-bold">{selectedStats.count}</span>
+              <span className="opacity-80">{selectedStats.count > 1 ? 'sites' : 'site'}</span>
+              {selectedStats.risque > 0 && (
+                <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">{fmtEur(selectedStats.risque)} de risque</span>
+              )}
+              <div className="flex-1" />
+              <Button size="sm" variant="secondary" onClick={() => setShowActionModal(true)} className="!bg-white !text-blue-700 !border-0 hover:!bg-blue-50"><Plus size={13} /> Action</Button>
+              <Button size="sm" variant="secondary" onClick={exportCsv} className="!bg-white/20 !text-white !border-0 hover:!bg-white/30"><Download size={13} /> CSV</Button>
+              <Button size="sm" variant="secondary" onClick={toggleFavorites} className="!bg-white/20 !text-white !border-0 hover:!bg-white/30"><Star size={13} /></Button>
+              <button onClick={() => setSelected(new Set())} className="p-1 rounded hover:bg-white/20"><X size={14} /></button>
+            </div>
+          )}
+
+          {/* ── Table ── */}
+          {total === 0 ? (
+            <EmptyState
+              icon={Search}
+              title="Aucun site ne correspond"
+              text="Essayez d'autres criteres ou reinitialiser les filtres."
+              ctaLabel="Reinitialiser"
+              onCta={resetFilters}
+            />
+          ) : (
+            <Card>
+              <Table compact pinFirst>
+                <Thead sticky>
+                  <tr>
+                    <ThCheckbox checked={selected.size === pageData.length && pageData.length > 0} onChange={toggleSelectAll} />
+                    <Th className="w-10 text-center text-gray-400">#</Th>
+                    <Th sortable sorted={sortCol === 'nom' ? sortDir : ''} onSort={() => handleSort('nom')} pin>Site</Th>
+                    <Th>Usage</Th>
+                    <Th>Conformite</Th>
+                    <Th sortable sorted={sortCol === 'risque_eur' ? sortDir : ''} onSort={() => handleSort('risque_eur')} className="text-right">Risque</Th>
+                    <Th sortable sorted={sortCol === 'surface_m2' ? sortDir : ''} onSort={() => handleSort('surface_m2')} className="text-right">Surface</Th>
+                    {isExpert && <Th sortable sorted={sortCol === 'conso_kwh_an' ? sortDir : ''} onSort={() => handleSort('conso_kwh_an')} className="text-right">Conso</Th>}
+                    <Th sortable sorted={sortCol === 'anomalies_count' ? sortDir : ''} onSort={() => handleSort('anomalies_count')} className="text-right">Anomalies</Th>
+                    <Th className="w-8" />
+                  </tr>
+                </Thead>
+                <Tbody>
+                  {pageData.map((site, idx) => {
+                    const badge = STATUT_BADGE[site.statut_conformite] || STATUT_BADGE.a_evaluer;
+                    const usageColor = USAGE_COLOR[site.usage] || 'bg-gray-100 text-gray-600 ring-gray-200';
+                    const rank = (page - 1) * PAGE_SIZE + idx + 1;
+                    const isFav = favorites.has(site.id);
+                    return (
+                      <Tr key={site.id} selected={selected.has(site.id)} className="group" onClick={() => openDrawer(site)}>
+                        <TdCheckbox checked={selected.has(site.id)} onChange={() => toggleSelect(site.id)} />
+                        <Td className="text-center text-xs text-gray-400 font-mono tabular-nums">{rank}</Td>
+                        <Td pin>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1">
+                              {isFav && <Star size={11} className="text-amber-400 fill-amber-400 shrink-0" />}
+                              <span className="font-medium text-gray-900 truncate text-sm">{site.nom}</span>
+                            </div>
+                            <div className="text-[11px] text-gray-400 truncate leading-tight">{site.adresse}, {site.code_postal} {site.ville}</div>
+                          </div>
+                        </Td>
+                        <Td>
+                          <span className={`capitalize text-[11px] px-2 py-0.5 rounded-md font-medium ring-1 ring-inset ${usageColor}`}>
+                            {site.usage}
+                          </span>
+                        </Td>
+                        <Td><Badge status={badge.status}>{badge.label}</Badge></Td>
+                        <Td className="text-right tabular-nums">
+                          {site.risque_eur > 0
+                            ? <span className={`font-semibold text-sm ${site.risque_eur >= 10000 ? 'text-red-600' : site.risque_eur >= 3000 ? 'text-amber-600' : 'text-gray-700'}`}>{fmtEur(site.risque_eur)}</span>
+                            : <span className="text-gray-300">—</span>}
+                        </Td>
+                        <Td className="text-right text-sm text-gray-600 tabular-nums">{fmtArea(site.surface_m2)}</Td>
+                        {isExpert && <Td className="text-right text-sm text-gray-600 tabular-nums">{fmtKwh(site.conso_kwh_an)}</Td>}
+                        <Td className="text-right">
+                          {site.anomalies_count > 0
+                            ? <Tooltip text={`${site.anomalies_count} anomalie${site.anomalies_count > 1 ? 's' : ''} detectee${site.anomalies_count > 1 ? 's' : ''}`}>
+                                <span className={`inline-flex items-center justify-center min-w-[22px] h-[22px] rounded-full text-[11px] font-bold ${
+                                  site.anomalies_count >= 5 ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
+                                }`}>{site.anomalies_count}</span>
+                              </Tooltip>
+                            : <span className="text-gray-300 text-xs">0</span>}
+                        </Td>
+                        <Td>
+                          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition">
+                            <Tooltip text="Creer action">
+                              <button onClick={(e) => { e.stopPropagation(); openActionFromDrawer(site.nom); }} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-amber-600">
+                                <Lightbulb size={14} />
+                              </button>
+                            </Tooltip>
+                            <ChevronRight size={14} className="text-gray-300" />
+                          </div>
+                        </Td>
+                      </Tr>
+                    );
+                  })}
+                </Tbody>
+              </Table>
+              <div className="flex items-center justify-between px-4 py-2 border-t border-gray-100">
+                <span className="text-xs text-gray-400">{pl(total, 'site')} · Tri : {sortCol || 'defaut'} {sortDir === 'desc' ? '↓' : sortDir === 'asc' ? '↑' : ''}</span>
+                <Pagination page={page} pageSize={PAGE_SIZE} total={total} onChange={setPage} />
+              </div>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* ── Site Detail Drawer (tabbed) ── */}
+      <Drawer open={!!drawerSite} onClose={() => setDrawerSite(null)} title={drawerSite?.nom || 'Site'} wide>
+        {drawerSite && (
+          <SiteDrawerContent
+            site={drawerSite}
+            navigate={navigate}
+            onCreateAction={() => openActionFromDrawer(drawerSite.nom)}
+          />
+        )}
+      </Drawer>
+
+      <CreateActionModal open={showActionModal} onClose={() => { setShowActionModal(false); setActionSite(''); }} onSave={() => {}} defaultSite={actionSite} />
+      {showWizard && <PatrimoineWizard onClose={() => setShowWizard(false)} />}
+    </PageShell>
+  );
+}
+
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ *  Sub-components
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/** Compact KPI card — denser than KpiCard, active ring, click-to-filter */
+function KpiCardCompact({ icon: Icon, color, label, value, detail, active, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`text-left p-3 rounded-xl border bg-white transition-all
+        ${active ? 'ring-2 ring-blue-500 border-blue-200 shadow-sm' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}`}
+    >
+      <div className="flex items-center gap-2.5">
+        <div className={`w-8 h-8 rounded-lg ${color} flex items-center justify-center shrink-0`}>
+          <Icon size={16} className="text-white" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider leading-none">{label}</p>
+          <p className="text-lg font-bold text-gray-900 leading-tight mt-0.5">{value}</p>
+        </div>
+      </div>
+      {detail && <p className="text-[11px] text-gray-400 mt-1 pl-[42px] leading-tight">{detail}</p>}
+    </button>
+  );
+}
+
+/** Compact select (filter dropdown) */
+function FilterSelect({ options, value, onChange }) {
+  return (
+    <select
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      className={`text-xs px-2.5 py-1.5 rounded-lg border bg-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+        value ? 'border-blue-300 text-blue-700 font-medium' : 'border-gray-200 text-gray-600'
+      }`}
+    >
+      {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+    </select>
+  );
+}
+
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ *  SiteDrawer — tabbed, actionable
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+const DRAWER_TABS = [
+  { id: 'resume', label: 'Resume' },
+  { id: 'anomalies', label: 'Anomalies' },
+  { id: 'compteurs', label: 'Compteurs' },
+  { id: 'actions', label: 'Actions' },
+];
+
+function SiteDrawerContent({ site, navigate, onCreateAction }) {
+  const [tab, setTab] = useState('resume');
+  const badge = STATUT_BADGE[site.statut_conformite] || STATUT_BADGE.a_evaluer;
+  const usageColor = USAGE_COLOR[site.usage] || 'bg-gray-100 text-gray-600 ring-gray-200';
+
+  return (
+    <div className="space-y-4">
+      {/* Header: tags + key metrics */}
+      <div>
+        <div className="flex items-center gap-2 mb-2">
+          <span className={`capitalize text-[11px] px-2 py-0.5 rounded-md font-medium ring-1 ring-inset ${usageColor}`}>{site.usage}</span>
+          <Badge status={badge.status}>{badge.label}</Badge>
+          {site.anomalies_count > 0 && (
+            <span className="text-[11px] px-2 py-0.5 rounded-full bg-red-50 text-red-600 font-medium">{site.anomalies_count} anomalie{site.anomalies_count > 1 ? 's' : ''}</span>
+          )}
+        </div>
+        <div className="flex items-start gap-2 text-sm text-gray-500">
+          <MapPin size={13} className="text-gray-400 mt-0.5 shrink-0" />
+          <span>{site.adresse}, {site.code_postal} {site.ville}</span>
+        </div>
+        {/* Metric pills */}
+        <div className="flex items-center gap-3 mt-3">
+          <MetricPill label="Risque" value={fmtEur(site.risque_eur)} warn={site.risque_eur > 0} />
+          <MetricPill label="Surface" value={fmtArea(site.surface_m2)} />
+          <MetricPill label="Compteurs" value={site.nb_compteurs || '—'} />
         </div>
       </div>
 
-      {/* Filters + Saved Views */}
-      <Card className="p-4">
-        <div className="flex items-end gap-3">
-          <div className="flex-1 relative">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text" placeholder="Rechercher par nom, ville, adresse..."
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); track('filter_apply', { field: 'search' }); }}
-              className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <Select options={USAGE_OPTIONS} value={filterUsage} onChange={(e) => { setFilterUsage(e.target.value); setPage(1); track('filter_apply', { field: 'usage', value: e.target.value }); }} />
-          <Select options={STATUT_OPTIONS} value={filterStatut} onChange={(e) => { setFilterStatut(e.target.value); setPage(1); track('filter_apply', { field: 'statut', value: e.target.value }); }} />
-          {hasFilters && <Button variant="ghost" size="sm" onClick={resetFilters}><RotateCcw size={14} /> Reset</Button>}
+      {/* Tabs */}
+      <Tabs tabs={DRAWER_TABS} active={tab} onChange={setTab} />
 
-          <div className="border-l border-gray-200 pl-3 flex items-center gap-1">
-            <button onClick={saveCurrentView} className="p-2 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700" title="Sauvegarder cette vue"><BookmarkPlus size={16} /></button>
-            {savedViews.length > 0 && (
-              <div className="relative">
-                <button onClick={() => setShowViewMenu(!showViewMenu)} className="p-2 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700 flex items-center gap-1 text-xs">
-                  Vues <ChevronDown size={12} />
-                </button>
-                {showViewMenu && (
-                  <div className="absolute right-0 top-full mt-1 w-48 bg-white border rounded-lg shadow-lg z-20 py-1">
-                    {savedViews.map(v => (
-                      <div key={v.id} className="flex items-center justify-between px-3 py-2 hover:bg-gray-50">
-                        <button onClick={() => applyView(v)} className="text-sm text-gray-700 hover:text-blue-600 truncate flex-1 text-left">{v.name}</button>
-                        <button onClick={() => deleteView(v.id)} className="text-gray-400 hover:text-red-500 text-xs ml-2">x</button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+      {/* Tab: Resume */}
+      {tab === 'resume' && (
+        <div className="space-y-4">
+          {/* Conformite block */}
+          <DrawerSection title="Conformite">
+            <DrawerRow label="Statut"><Badge status={badge.status}>{badge.label}</Badge></DrawerRow>
+            <DrawerRow label="Derniere evaluation">{fmtDateFR(site.derniere_evaluation)}</DrawerRow>
+            <DrawerRow label="OPERAT">
+              {site.operat_status
+                ? <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
+                    site.operat_status === 'verified' ? 'bg-green-100 text-green-700' :
+                    site.operat_status === 'submitted' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
+                  }`}>{site.operat_status === 'verified' ? 'Verifie' : site.operat_status === 'submitted' ? 'Soumis' : 'Non demarre'}</span>
+                : '—'}
+            </DrawerRow>
+          </DrawerSection>
+
+          {/* Risk block */}
+          <DrawerSection title="Risque">
+            <DrawerRow label="Risque estime">{fmtEurFull(site.risque_eur)}</DrawerRow>
+            <DrawerRow label="Anomalies">{site.anomalies_count > 0 ? `${site.anomalies_count}` : '0'}</DrawerRow>
+          </DrawerSection>
+
+          {/* Data block */}
+          <DrawerSection title="Donnees">
+            <DrawerRow label="Surface">{fmtArea(site.surface_m2)}</DrawerRow>
+            <DrawerRow label="Conso annuelle">{fmtKwh(site.conso_kwh_an)}</DrawerRow>
+            <DrawerRow label="Compteurs">{site.nb_compteurs || '—'}</DrawerRow>
+          </DrawerSection>
+        </div>
+      )}
+
+      {/* Tab: Anomalies */}
+      {tab === 'anomalies' && (
+        <div>
+          {site.anomalies_count > 0 ? (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <AlertTriangle size={15} className="text-amber-600" />
+                <span className="text-sm font-medium text-amber-800">{site.anomalies_count} anomalie{site.anomalies_count > 1 ? 's' : ''} detectee{site.anomalies_count > 1 ? 's' : ''}</span>
               </div>
-            )}
-            <button onClick={() => setCompact(!compact)} className="p-2 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700" title={compact ? 'Confortable' : 'Compact'}>
-              {compact ? <Rows4 size={16} /> : <Rows3 size={16} />}
-            </button>
-          </div>
-        </div>
-      </Card>
-
-      {/* Bulk actions bar */}
-      {selected.size > 0 && (
-        <div className="flex items-center gap-3 px-4 py-2.5 bg-blue-50 border border-blue-200 rounded-lg text-sm">
-          <span className="font-medium text-blue-700">{selected.size} site(s) selectionne(s)</span>
-          <div className="flex-1" />
-          <Button size="sm" onClick={() => setShowActionModal(true)}><Plus size={14} /> Creer action</Button>
-          <Button size="sm" variant="secondary" onClick={exportCsv}><Download size={14} /> Exporter CSV</Button>
-          <Button size="sm" variant="ghost" onClick={toggleFavorites}><Star size={14} /> Favori</Button>
-          <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>Deselectionner</Button>
+              <p className="text-xs text-amber-700">Consultez la fiche site pour le detail des anomalies et actions correctives.</p>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-400">
+              <ShieldCheck size={28} className="mx-auto mb-2 text-green-400" />
+              <p className="text-sm font-medium text-gray-600">Aucune anomalie</p>
+              <p className="text-xs text-gray-400">Ce site est en bon etat.</p>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Table */}
-      {total === 0 ? (
-        <EmptyState icon={Building2} title="Aucun site trouve" text="Modifiez vos filtres ou importez de nouveaux sites." ctaLabel="Reinitialiser les filtres" onCta={resetFilters} />
-      ) : (
-        <Card>
-          <Table compact={compact} pinFirst>
-            <Thead sticky>
-              <tr>
-                <ThCheckbox
-                  checked={selected.size === pageData.length && pageData.length > 0}
-                  onChange={toggleSelectAll}
-                />
-                <Th sortable sorted={sortCol === 'nom' ? sortDir : ''} onSort={() => handleSort('nom')} pin>Site</Th>
-                <Th sortable sorted={sortCol === 'ville' ? sortDir : ''} onSort={() => handleSort('ville')}>Ville</Th>
-                <Th>Usage</Th>
-                <Th>Conformite</Th>
-                <Th sortable sorted={sortCol === 'risque_eur' ? sortDir : ''} onSort={() => handleSort('risque_eur')} className="text-right">Risque EUR</Th>
-                <Th sortable sorted={sortCol === 'surface_m2' ? sortDir : ''} onSort={() => handleSort('surface_m2')} className="text-right">Surface</Th>
-                <Th sortable sorted={sortCol === 'anomalies_count' ? sortDir : ''} onSort={() => handleSort('anomalies_count')} className="text-right">Anomalies</Th>
-              </tr>
-            </Thead>
-            <Tbody>
-              {pageData.map((site) => {
-                const badge = STATUT_BADGE[site.statut_conformite] || STATUT_BADGE.a_evaluer;
-                const isFav = favorites.has(site.id);
-                return (
-                  <Tr
-                    key={site.id}
-                    selected={selected.has(site.id)}
-                    onClick={() => { track('row_click', { site_id: site.id }); navigate(`/sites/${site.id}`); }}
-                  >
-                    <TdCheckbox checked={selected.has(site.id)} onChange={() => toggleSelect(site.id)} />
-                    <Td pin className="font-medium text-gray-900">
-                      {isFav && <Star size={12} className="inline text-amber-400 mr-1 fill-amber-400" />}
-                      {site.nom}
-                    </Td>
-                    <Td>{site.ville}</Td>
-                    <Td><span className="capitalize text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">{site.usage}</span></Td>
-                    <Td><Badge status={badge.status}>{badge.label}</Badge></Td>
-                    <Td className="text-right font-medium text-red-600">{site.risque_eur > 0 ? `${site.risque_eur.toLocaleString()} EUR` : '-'}</Td>
-                    <Td className="text-right">{site.surface_m2.toLocaleString()} m2</Td>
-                    <Td className="text-right">
-                      {site.anomalies_count > 0 ? <span className={`font-medium ${site.anomalies_count > 4 ? 'text-red-600' : 'text-amber-600'}`}>{site.anomalies_count}</span> : <span className="text-gray-400">0</span>}
-                    </Td>
-                  </Tr>
-                );
-              })}
-            </Tbody>
-          </Table>
-          <div className="flex items-center justify-between px-4 py-2 border-t border-gray-100">
-            <TrustBadge source="PROMEOS" period="donnees demo" confidence="medium" />
-            <Pagination page={page} pageSize={pageSize} total={total} onChange={setPage} />
-          </div>
-        </Card>
+      {/* Tab: Compteurs */}
+      {tab === 'compteurs' && (
+        <div>
+          {site.nb_compteurs > 0 ? (
+            <div className="space-y-2">
+              <p className="text-sm text-gray-600">{site.nb_compteurs} compteur{site.nb_compteurs > 1 ? 's' : ''} associe{site.nb_compteurs > 1 ? 's' : ''} a ce site.</p>
+              <p className="text-xs text-gray-400">Ouvrez la fiche site pour voir le detail de chaque compteur et ses consommations.</p>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-400">
+              <Zap size={28} className="mx-auto mb-2" />
+              <p className="text-sm font-medium text-gray-600">Aucun compteur</p>
+              <p className="text-xs text-gray-400">Ce site n'a pas encore de compteur rattache.</p>
+            </div>
+          )}
+        </div>
       )}
 
-      <CreateActionModal open={showActionModal} onClose={() => setShowActionModal(false)} onSave={() => {}} />
-      {showWizard && <PatrimoineWizard onClose={() => setShowWizard(false)} />}
+      {/* Tab: Actions */}
+      {tab === 'actions' && (
+        <div className="space-y-3">
+          <DrawerActionBtn icon={Eye} color="text-blue-600" title="Voir la fiche site" desc="Details, compteurs, consommations" onClick={() => navigate(`/sites/${site.id}`)} />
+          <DrawerActionBtn icon={ShieldCheck} color="text-green-600" title="Voir la conformite" desc="Decret Tertiaire, BACS, obligations" onClick={() => navigate('/conformite')} />
+          <DrawerActionBtn icon={Lightbulb} color="text-amber-600" title="Creer une action" desc="Correction, amelioration, conformite" onClick={onCreateAction} primary />
+        </div>
+      )}
+
+      {/* Always-visible primary CTA */}
+      <div className="pt-2 border-t border-gray-100">
+        <button
+          onClick={onCreateAction}
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition"
+        >
+          <Lightbulb size={15} /> Creer une action pour ce site
+        </button>
+      </div>
+
+      <div className="text-[10px] text-gray-400 pt-1">
+        Site #{site.id} · {fmtDateFR(site.derniere_evaluation) !== '—' ? `Maj : ${fmtDateFR(site.derniere_evaluation)}` : 'Pas encore evalue'}
+      </div>
     </div>
+  );
+}
+
+/* ── Drawer sub-components ── */
+
+function MetricPill({ label, value, warn }) {
+  return (
+    <div className={`text-center px-3 py-1.5 rounded-lg ${warn ? 'bg-red-50' : 'bg-gray-50'}`}>
+      <p className={`text-sm font-bold ${warn ? 'text-red-600' : 'text-gray-900'}`}>{value}</p>
+      <p className="text-[9px] text-gray-400 uppercase tracking-wider">{label}</p>
+    </div>
+  );
+}
+
+function DrawerSection({ title, children }) {
+  return (
+    <div className="bg-gray-50 rounded-lg p-3 space-y-1.5">
+      <h4 className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{title}</h4>
+      {children}
+    </div>
+  );
+}
+
+function DrawerRow({ label, children }) {
+  return (
+    <div className="flex items-center justify-between text-sm">
+      <span className="text-gray-500">{label}</span>
+      <span className="text-gray-900 font-medium">{children}</span>
+    </div>
+  );
+}
+
+function DrawerActionBtn({ icon: Icon, color, title, desc, onClick, primary }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full flex items-center gap-3 p-3 rounded-lg border text-left transition ${
+        primary ? 'border-blue-200 bg-blue-50 hover:bg-blue-100' : 'border-gray-200 hover:bg-gray-50'
+      }`}
+    >
+      <Icon size={16} className={`${color} shrink-0`} />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-gray-800">{title}</p>
+        <p className="text-[11px] text-gray-500">{desc}</p>
+      </div>
+      {primary ? <ChevronRight size={14} className="text-blue-400" /> : <ExternalLink size={13} className="text-gray-300" />}
+    </button>
   );
 }

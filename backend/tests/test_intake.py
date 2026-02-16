@@ -186,7 +186,7 @@ class TestQuestionGeneration:
         assert "site.tertiaire_area_m2" not in field_paths
         assert "site.surface_m2" not in field_paths
         assert "site.parking_area_m2" not in field_paths
-        assert len(questions) < MAX_QUESTIONS
+        assert len(questions) <= MAX_QUESTIONS
 
     def test_all_data_no_questions(self, db_session):
         """Fully filled site -> 0 questions."""

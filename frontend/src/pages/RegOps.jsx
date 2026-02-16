@@ -10,10 +10,13 @@ import {
   getAiRecommendations,
   getAiDataQuality
 } from '../services/api';
+import { useToast } from '../ui/ToastProvider';
+import { REGOPS_STATUS_LABELS, REGOPS_SEVERITY_LABELS, RULE_LABELS } from '../domain/compliance/complianceLabels.fr';
 
 export default function RegOps() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const [assessment, setAssessment] = useState(null);
   const [aiExplanation, setAiExplanation] = useState(null);
@@ -40,8 +43,8 @@ export default function RegOps() {
       setAiExplanation(explanationData);
       setAiRecommendations(recommendationsData);
       setDataQuality(qualityData);
-    } catch (error) {
-      console.error('Error loading RegOps data:', error);
+    } catch {
+      toast('Erreur lors du chargement des données RegOps', 'error');
     } finally {
       setLoading(false);
     }
@@ -127,7 +130,7 @@ export default function RegOps() {
           </div>
           <div className="text-right">
             <span className={`inline-block px-4 py-2 rounded-full text-sm font-semibold ${getStatusBadgeColor(assessment.global_status)}`}>
-              {assessment.global_status}
+              {REGOPS_STATUS_LABELS[assessment.global_status] || assessment.global_status}
             </span>
             {assessment.next_deadline && (
               <p className="text-sm text-gray-600 mt-2">
@@ -178,15 +181,19 @@ export default function RegOps() {
                   <div key={idx} className="border border-gray-200 rounded-lg p-4">
                     <div className="flex items-start justify-between mb-2">
                       <div>
-                        <h3 className="font-semibold text-gray-800">{finding.regulation}</h3>
-                        <p className="text-sm text-gray-600">{finding.rule_id}</p>
+                        <h3 className="font-semibold text-gray-800">
+                          {RULE_LABELS[finding.rule_id]?.title_fr || finding.regulation}
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          {RULE_LABELS[finding.rule_id]?.why_fr || finding.rule_id}
+                        </p>
                       </div>
                       <div className="flex gap-2">
                         <span className={`px-3 py-1 rounded text-xs font-semibold ${getSeverityBadgeColor(finding.severity)}`}>
-                          {finding.severity}
+                          {REGOPS_SEVERITY_LABELS[finding.severity] || finding.severity}
                         </span>
                         <span className={`px-3 py-1 rounded text-xs font-semibold ${getStatusBadgeColor(finding.status)}`}>
-                          {finding.status}
+                          {REGOPS_STATUS_LABELS[finding.status] || finding.status}
                         </span>
                       </div>
                     </div>

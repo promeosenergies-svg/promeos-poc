@@ -8,7 +8,7 @@ from regops.engine import evaluate_site, persist_assessment
 from regops.scoring import compute_regops_score, load_scoring_profile
 from regops.data_quality import compute_data_quality
 from regops.data_quality_specs import DATA_QUALITY_SPECS
-from models import RegAssessment, Site
+from models import RegAssessment, Site, not_deleted
 
 router = APIRouter(prefix="/api/regops", tags=["RegOps"])
 
@@ -88,7 +88,7 @@ def recompute_assessments(
         return {"recomputed": 1, "site_id": site_id}
     elif scope == "all":
         from regops.engine import evaluate_batch
-        sites = db.query(Site).all()
+        sites = not_deleted(db.query(Site), Site).all()
         summaries = evaluate_batch(db, [s.id for s in sites])
         for summary in summaries:
             persist_assessment(db, summary)

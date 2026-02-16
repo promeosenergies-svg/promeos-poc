@@ -1,6 +1,8 @@
 """
 PROMEOS - Point d'entrée principal de l'API
 """
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
@@ -23,6 +25,10 @@ from routes import (
     admin_users_router,
     patrimoine_router,
     intake_router,
+    bacs_router,
+    ems_router,
+    dev_tools_router,
+    flex_router,
 )
 
 # Import KB router
@@ -80,6 +86,14 @@ app.include_router(auth_router)  # IAM Auth (login, me, refresh, logout, passwor
 app.include_router(admin_users_router)  # IAM Admin (CRUD users, roles, scopes)
 app.include_router(patrimoine_router)  # Patrimoine DIAMANT (staging, quality gate, activation)
 app.include_router(intake_router)  # Smart Intake DIAMANT (questions, answers, before/after)
+app.include_router(bacs_router)  # BACS Expert (Decret n°2020-887)
+app.include_router(ems_router)  # EMS Consumption Explorer
+app.include_router(flex_router)  # Flex Mini V0 (demand-side flexibility)
+app.include_router(dev_tools_router)  # Dev Tools (reset_db)
+
+# Run safe schema migrations (idempotent, no drop)
+from database import engine as _engine, run_migrations as _run_migrations
+_run_migrations(_engine)
 
 # Route racine
 @app.get("/")
@@ -93,6 +107,30 @@ def root():
     }
 
 # Health check
+@app.get("/api/health")
+def api_health():
+    import subprocess, datetime
+    git_sha = "unknown"
+    try:
+        git_sha = subprocess.check_output(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=os.path.dirname(__file__),
+            stderr=subprocess.DEVNULL,
+        ).decode().strip()
+    except Exception:
+        pass
+    return {
+        "ok": True,
+        "version": "1.0.0",
+        "git_sha": git_sha,
+        "time": datetime.datetime.now(datetime.UTC).isoformat(),
+        "engine_versions": {
+            "compliance": "1.0",
+            "bacs": "bacs_v2.0",
+        },
+    }
+
+
 @app.get("/health")
 def health_check():
     return {

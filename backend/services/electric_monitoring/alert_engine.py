@@ -77,6 +77,11 @@ ALERT_DEFS = {
         "severity": "warning",
         "threshold_duplicates": 0,
     },
+    "SENSIBILITE_CLIMATIQUE": {
+        "title": "Sensibilite climatique elevee",
+        "severity": "warning",
+        "threshold_slope": 3.0,
+    },
     "VALEURS_NEGATIVES": {
         "title": "Valeurs negatives detectees",
         "severity": "critical",
@@ -323,3 +328,40 @@ class AlertEngine:
             },
             "created_at": now.isoformat(),
         }
+
+    def evaluate_climate(
+        self,
+        climate: Dict[str, Any],
+        site_id: Optional[int] = None,
+        meter_id: Optional[int] = None,
+    ) -> List[Dict[str, Any]]:
+        """Evaluate climate-specific alerts from ClimateEngine output."""
+        alerts = []
+        now = datetime.utcnow()
+
+        slope = abs(climate.get("slope_kw_per_c") or 0)
+        r2 = climate.get("r_squared") or 0
+        threshold = ALERT_DEFS["SENSIBILITE_CLIMATIQUE"]["threshold_slope"]
+
+        if slope > threshold and r2 > 0.3:
+            label = climate.get("label", "unknown")
+            bp = climate.get("balance_point_c")
+            alerts.append(self._make_alert(
+                "SENSIBILITE_CLIMATIQUE", site_id, meter_id, now,
+                explanation=(
+                    f"Pente climatique {slope:.1f} kWh/degC depasse le seuil de {threshold} kWh/degC. "
+                    f"R²={r2:.2f}, profil: {label}."
+                    + (f" Balance point: {bp:.0f}°C." if bp else "")
+                ),
+                evidence={
+                    "slope_kw_per_c": slope,
+                    "r_squared": r2,
+                    "balance_point_c": bp,
+                    "label": label,
+                },
+                recommended_action=(
+                    "Auditer l'isolation et les systemes CVC pour reduire la sensibilite climatique."
+                ),
+            ))
+
+        return alerts

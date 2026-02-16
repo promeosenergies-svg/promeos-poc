@@ -250,5 +250,5 @@ class TestAlertStructure:
         assert "kb_link" in a
         assert "created_at" in a
 
-    def test_12_alert_types_defined(self):
-        assert len(ALERT_DEFS) == 12
+    def test_13_alert_types_defined(self):
+        assert len(ALERT_DEFS) == 13

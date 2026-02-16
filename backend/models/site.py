@@ -4,11 +4,11 @@ Coeur du domaine : site de consommation énergétique
 """
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, Enum, Boolean, DateTime
 from sqlalchemy.orm import relationship
-from .base import Base, TimestampMixin
+from .base import Base, TimestampMixin, SoftDeleteMixin
 from .enums import TypeSite, StatutConformite, ParkingType, OperatStatus
 
 
-class Site(Base, TimestampMixin):
+class Site(Base, TimestampMixin, SoftDeleteMixin):
     """
     Site de consommation énergétique
     Exemples : Carrefour Paris 15e, Usine Renault Lyon, Bureau EDF Marseille
@@ -61,6 +61,7 @@ class Site(Base, TimestampMixin):
     operat_last_submission_year = Column(Integer, nullable=True, comment="Derniere annee de declaration OPERAT")
     annual_kwh_total = Column(Float, nullable=True, comment="Consommation annuelle totale (kWh)")
     last_energy_update_at = Column(DateTime, nullable=True, comment="Derniere MAJ donnees energie")
+    is_demo = Column(Boolean, default=False, comment="Donnees de demonstration")
 
     # Data lineage
     data_source = Column(String(20), nullable=True, comment="csv, manual, demo, api")
@@ -89,6 +90,13 @@ class Site(Base, TimestampMixin):
     )
     obligations = relationship(
         "Obligation",
+        back_populates="site",
+        cascade="all, delete-orphan",
+    )
+
+    # Delivery Points (PRM/PCE)
+    delivery_points = relationship(
+        "DeliveryPoint",
         back_populates="site",
         cascade="all, delete-orphan",
     )

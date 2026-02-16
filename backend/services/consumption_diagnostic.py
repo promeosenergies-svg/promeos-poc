@@ -785,6 +785,7 @@ def get_insights_summary(db: Session, org_id: int) -> dict:
             "metrics": json.loads(ci.metrics_json) if ci.metrics_json else {},
             "period_start": ci.period_start.isoformat() if ci.period_start else None,
             "period_end": ci.period_end.isoformat() if ci.period_end else None,
+            "insight_status": ci.insight_status.value if ci.insight_status else "open",
         })
 
     sev_order = {"critical": 4, "high": 3, "medium": 2, "low": 1}

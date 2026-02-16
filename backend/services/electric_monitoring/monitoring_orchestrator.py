@@ -14,6 +14,7 @@ from .kpi_engine import KPIEngine
 from .power_engine import PowerEngine
 from .data_quality import DataQualityEngine
 from .alert_engine import AlertEngine
+from .climate_engine import ClimateEngine
 
 
 ENGINE_VERSION = "monitoring_v1.0"
@@ -28,6 +29,7 @@ class MonitoringOrchestrator:
         self.power_engine = PowerEngine()
         self.quality_engine = DataQualityEngine()
         self.alert_engine = AlertEngine()
+        self.climate_engine = ClimateEngine()
 
     def run(self, site_id: int, meter_id: Optional[int] = None,
             days: int = 90, interval_minutes: int = 60,
@@ -105,11 +107,42 @@ class MonitoringOrchestrator:
                 "meter_code": meter.meter_id,
                 "status": "no_data",
                 "kpis": {},
+                "climate": {},
                 "alerts": [],
             }
 
-        # 2. Compute KPIs
-        kpis = self.kpi_engine.compute(readings, interval_minutes)
+        # 1b. Fetch weather data for climate analysis
+        weather_data = []
+        if self.db:
+            try:
+                from services.ems.weather_service import get_weather
+                weather_data = get_weather(
+                    self.db, meter.site_id,
+                    period_start.date(), period_end.date()
+                )
+            except Exception:
+                weather_data = []
+
+        # 1c. Fetch operating schedule for off-hours KPI
+        schedule = None
+        if self.db:
+            try:
+                from models import SiteOperatingSchedule
+                sched = self.db.query(SiteOperatingSchedule).filter_by(
+                    site_id=meter.site_id
+                ).first()
+                if sched:
+                    schedule = {
+                        "open_days": sched.open_days,
+                        "open_time": sched.open_time,
+                        "close_time": sched.close_time,
+                        "is_24_7": sched.is_24_7,
+                    }
+            except Exception:
+                schedule = None
+
+        # 2. Compute KPIs (with schedule for off-hours)
+        kpis = self.kpi_engine.compute(readings, interval_minutes, schedule=schedule)
 
         # 3. Data quality
         quality = self.quality_engine.compute(
@@ -125,6 +158,9 @@ class MonitoringOrchestrator:
             interval_minutes=interval_minutes
         )
 
+        # 4b. Climate analysis
+        climate = self.climate_engine.compute(readings, weather_data, interval_minutes)
+
         # 5. Get previous period KPIs for trend alerts
         previous_kpis = self._get_previous_kpis(meter.id, period_start, days)
 
@@ -135,6 +171,12 @@ class MonitoringOrchestrator:
             site_id=meter.site_id,
             meter_id=meter.id
         )
+
+        # 6b. Climate alerts
+        climate_alerts = self.alert_engine.evaluate_climate(
+            climate, site_id=meter.site_id, meter_id=meter.id
+        )
+        alerts.extend(climate_alerts)
 
         snapshot_id = None
 
@@ -154,6 +196,7 @@ class MonitoringOrchestrator:
             "kpis": kpis,
             "data_quality": quality,
             "power_risk": power_risk,
+            "climate": climate,
             "alerts": alerts,
             "alert_count": len(alerts),
             "snapshot_id": snapshot_id,
@@ -232,7 +275,9 @@ class MonitoringOrchestrator:
     def run_standalone(self, readings: List[Dict[str, Any]],
                        interval_minutes: int = 60,
                        subscribed_power_kva: float = 0,
-                       previous_kpis: Optional[Dict] = None) -> Dict[str, Any]:
+                       previous_kpis: Optional[Dict] = None,
+                       weather_data: Optional[List[Dict]] = None,
+                       schedule: Optional[Dict] = None) -> Dict[str, Any]:
         """
         Run pipeline without DB (for testing / stateless use).
 
@@ -241,30 +286,38 @@ class MonitoringOrchestrator:
             interval_minutes: step size
             subscribed_power_kva: subscribed power
             previous_kpis: previous period KPIs for trend comparison
+            weather_data: optional daily weather for climate analysis
+            schedule: optional operating schedule for off-hours KPI
 
         Returns:
             full analysis result dict
         """
         if not readings:
-            return {"kpis": {}, "data_quality": {}, "power_risk": {}, "alerts": []}
+            return {"kpis": {}, "data_quality": {}, "power_risk": {}, "climate": {}, "alerts": []}
 
-        kpis = self.kpi_engine.compute(readings, interval_minutes)
+        kpis = self.kpi_engine.compute(readings, interval_minutes, schedule=schedule)
         quality = self.quality_engine.compute(readings, interval_minutes)
         power_risk = self.power_engine.compute(
             kpis, readings,
             subscribed_power_kva=subscribed_power_kva,
             interval_minutes=interval_minutes
         )
+        climate = self.climate_engine.compute(
+            readings, weather_data or [], interval_minutes
+        )
         alerts = self.alert_engine.evaluate(
             kpis, power_risk, quality,
             previous_kpis=previous_kpis
         )
+        climate_alerts = self.alert_engine.evaluate_climate(climate)
+        alerts.extend(climate_alerts)
 
         return {
             "readings_count": len(readings),
             "kpis": kpis,
             "data_quality": quality,
             "power_risk": power_risk,
+            "climate": climate,
             "alerts": alerts,
             "alert_count": len(alerts),
         }

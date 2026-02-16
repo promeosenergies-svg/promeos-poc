@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, RefreshCw, Server, Database, Code, Activity } from 'lucide-react';
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = '';  // Vite proxy handles /api/*
 
 function StatusPage() {
   const [status, setStatus] = useState(null);

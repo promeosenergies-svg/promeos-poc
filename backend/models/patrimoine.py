@@ -1,6 +1,6 @@
 """
 PROMEOS — Patrimoine models (DIAMANT)
-N-N link tables + Staging pipeline + Quality findings.
+N-N link tables + Staging pipeline + Quality findings + DeliveryPoint.
 """
 from sqlalchemy import (
     Column, Integer, String, Float, Text, Boolean, Date, DateTime,
@@ -8,8 +8,11 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 
-from .base import Base, TimestampMixin
-from .enums import StagingStatus, ImportSourceType, QualityRuleSeverity
+from .base import Base, TimestampMixin, SoftDeleteMixin
+from .enums import (
+    StagingStatus, ImportSourceType, QualityRuleSeverity, ActivationLogStatus,
+    DeliveryPointStatus, DeliveryPointEnergyType,
+)
 
 
 # ========================================
@@ -138,3 +141,58 @@ class QualityFinding(Base, TimestampMixin):
 
     # Relations
     batch = relationship("StagingBatch", back_populates="findings")
+
+
+# ========================================
+# Activation audit log
+# ========================================
+
+class ActivationLog(Base, TimestampMixin):
+    """Audit trail for batch activation attempts."""
+    __tablename__ = "activation_logs"
+
+    id = Column(Integer, primary_key=True)
+    batch_id = Column(Integer, ForeignKey("staging_batches.id"), nullable=False, index=True)
+    started_at = Column(DateTime, nullable=False)
+    completed_at = Column(DateTime, nullable=True)
+    status = Column(Enum(ActivationLogStatus), nullable=False)
+    error_message = Column(Text, nullable=True)
+    sites_created = Column(Integer, default=0)
+    compteurs_created = Column(Integer, default=0)
+    activation_hash = Column(String(64), nullable=True, index=True)
+    user_id = Column(Integer, nullable=True)
+
+
+# ========================================
+# Delivery Point (PRM/PCE)
+# ========================================
+
+class DeliveryPoint(Base, TimestampMixin, SoftDeleteMixin):
+    """Point de livraison energie (PRM elec / PCE gaz).
+
+    Entite autonome representant un contrat de raccordement reseau.
+    Un DeliveryPoint est lie a un Site et peut etre associe a N Compteurs.
+    """
+    __tablename__ = "delivery_points"
+
+    id = Column(Integer, primary_key=True)
+    code = Column(String(14), nullable=False, index=True, comment="PRM ou PCE (14 digits)")
+    energy_type = Column(
+        Enum(DeliveryPointEnergyType), nullable=True,
+        comment="elec (PRM) ou gaz (PCE)",
+    )
+    site_id = Column(Integer, ForeignKey("sites.id"), nullable=False, index=True)
+    status = Column(
+        Enum(DeliveryPointStatus), default=DeliveryPointStatus.ACTIVE,
+        nullable=False,
+    )
+
+    # Data lineage (coherent with Site/Compteur)
+    data_source = Column(String(20), nullable=True, comment="csv, manual, demo, api")
+    data_source_ref = Column(String(200), nullable=True, comment="Batch ID or filename")
+    imported_at = Column(DateTime, nullable=True)
+    imported_by = Column(Integer, nullable=True)
+
+    # Relations
+    site = relationship("Site", back_populates="delivery_points")
+    compteurs = relationship("Compteur", back_populates="delivery_point")
