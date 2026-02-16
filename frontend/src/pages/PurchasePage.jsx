@@ -1,7 +1,8 @@
 /**
- * PROMEOS — Achat Energie V1.1
+ * PROMEOS — Achat Energie V1.1 + Brique 3
  * Simulateur de scenarios d'achat: Fixe / Indexe / Spot
  * V1.1: + Portfolio roll-up, Echeances, Historique tabs.
+ * Brique 3: + Energy Gate, WOW datasets, A4 exports.
  */
 import { useState, useEffect, useCallback } from 'react';
 import { useScope } from '../contexts/ScopeContext';
@@ -9,6 +10,10 @@ import { useExpertMode } from '../contexts/ExpertModeContext';
 import { PageShell, EmptyState } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
 import { useToast } from '../ui/ToastProvider';
+import ExportNoteDecision from '../components/ExportNoteDecision';
+import ExportPackRFP from '../components/ExportPackRFP';
+import PurchaseErrorBoundary from '../components/PurchaseErrorBoundary';
+import PurchaseDebugDrawer from '../components/PurchaseDebugDrawer';
 import {
   getPurchaseEstimate,
   getPurchaseAssumptions,
@@ -22,11 +27,13 @@ import {
   getPortfolioResults,
   getPurchaseRenewals,
   getPurchaseHistory,
+  seedWowHappy,
+  seedWowDirty,
 } from '../services/api';
 import {
   ShoppingCart, Calculator, Settings2, CheckCircle2,
   TrendingDown, Shield, Zap, Leaf, AlertTriangle,
-  Building2, Clock, History,
+  Building2, Clock, History, Lock, Info, Database, AlertOctagon, Printer, FileText,
 } from 'lucide-react';
 
 const STRATEGY_META = {
@@ -98,6 +105,30 @@ export default function PurchasePage() {
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [selectedRun, setSelectedRun] = useState(null);
+  const [seedingWow, setSeedingWow] = useState(null); // 'happy' | 'dirty' | null
+  const [seedResult, setSeedResult] = useState(null);
+
+  // Brique 3: Export state
+  const [showNoteDecision, setShowNoteDecision] = useState(false);
+  const [showPackRFP, setShowPackRFP] = useState(false);
+
+  // WOW dataset handlers
+  const handleSeedWow = async (mode) => {
+    setSeedingWow(mode);
+    setSeedResult(null);
+    try {
+      const result = mode === 'happy' ? await seedWowHappy() : await seedWowDirty();
+      setSeedResult(result);
+      // Reload portfolio after seeding
+      if (result.org_id) {
+        const data = await computePortfolio(result.org_id);
+        setPortfolioData(data);
+      }
+    } catch (err) {
+      setSeedResult({ error: err.message || 'Erreur lors du chargement' });
+    }
+    setSeedingWow(null);
+  };
 
   // Auto-select first site
   useEffect(() => {
@@ -216,10 +247,11 @@ export default function PurchasePage() {
   };
 
   return (
+    <PurchaseErrorBoundary>
     <PageShell
       icon={ShoppingCart}
-      title="Achats energie"
-      subtitle="Simuler & arbitrer vos strategies d'achat"
+      title="Achats énergie"
+      subtitle="Simuler & arbitrer vos stratégies d'achat"
     >
       {/* Tab bar */}
       <div className="flex border-b border-gray-200">
@@ -315,14 +347,14 @@ export default function PurchasePage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Energie</label>
-                <select
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                  value={assumptions.energy_type}
-                  onChange={(e) => setAssumptions(prev => ({ ...prev, energy_type: e.target.value }))}
-                >
-                  <option value="elec">Electricite</option>
-                  <option value="gaz">Gaz</option>
-                </select>
+                <div className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2 text-sm flex items-center gap-2 text-gray-700">
+                  <Zap size={14} className="text-blue-500" />
+                  <span className="font-medium">Electricite</span>
+                  <Lock size={12} className="text-gray-400 ml-auto" />
+                </div>
+                <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                  <Info size={10} /> Post-ARENH — elec uniquement
+                </p>
               </div>
               <div className="flex items-end">
                 <button
@@ -471,6 +503,14 @@ export default function PurchasePage() {
               )}
             </div>
           )}
+          {scenarios.length > 0 && (
+            <div className="flex justify-end">
+              <button onClick={() => setShowNoteDecision(true)}
+                className="flex items-center gap-1.5 bg-white border border-blue-200 text-blue-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-50 transition">
+                <Printer size={14} /> Exporter Note de Decision (A4)
+              </button>
+            </div>
+          )}
           {loading && <div className="grid grid-cols-1 md:grid-cols-3 gap-4"><SkeletonCard /><SkeletonCard /><SkeletonCard /></div>}
         </>
       )}
@@ -478,7 +518,7 @@ export default function PurchasePage() {
       {/* ══ TAB: Portefeuille (V1.1) ══ */}
       {activeTab === 'portefeuille' && (
         <div className="space-y-6">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-wrap">
             <button onClick={handleComputePortfolio} disabled={portfolioLoading}
               className="bg-blue-600 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-700 transition disabled:opacity-50">
               {portfolioLoading ? 'Calcul...' : 'Calculer le portefeuille'}
@@ -487,7 +527,28 @@ export default function PurchasePage() {
               className="bg-gray-100 text-gray-700 px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-200 transition disabled:opacity-50">
               Charger resultats existants
             </button>
+            <div className="ml-auto flex items-center gap-2">
+              <span className="text-xs text-gray-400 uppercase font-medium">Datasets demo</span>
+              <button onClick={() => handleSeedWow('happy')} disabled={!!seedingWow}
+                className="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-2 rounded-lg text-xs font-medium hover:bg-emerald-100 transition disabled:opacity-50">
+                <Database size={13} />
+                {seedingWow === 'happy' ? 'Chargement...' : '15 sites (happy)'}
+              </button>
+              <button onClick={() => handleSeedWow('dirty')} disabled={!!seedingWow}
+                className="flex items-center gap-1.5 bg-orange-50 text-orange-700 border border-orange-200 px-3 py-2 rounded-lg text-xs font-medium hover:bg-orange-100 transition disabled:opacity-50">
+                <AlertOctagon size={13} />
+                {seedingWow === 'dirty' ? 'Chargement...' : '15 sites (dirty)'}
+              </button>
+            </div>
           </div>
+          {seedResult && (
+            <div className={`rounded-lg p-3 text-sm ${seedResult.error ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'}`}>
+              {seedResult.error
+                ? `Erreur: ${seedResult.error}`
+                : `Dataset "${seedResult.mode}" charge: ${seedResult.sites_created} sites, ${seedResult.scenarios_created} scenarios, ${seedResult.contracts_created} contrats (org: ${seedResult.org_nom})`
+              }
+            </div>
+          )}
           {portfolioData?.portfolio && (
             <>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -541,12 +602,40 @@ export default function PurchasePage() {
                   </table>
                 </div>
               )}
+              <div className="flex justify-end mt-4">
+                <button onClick={() => setShowPackRFP(true)}
+                  className="flex items-center gap-1.5 bg-white border border-blue-200 text-blue-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-50 transition">
+                  <FileText size={14} /> Exporter Pack RFP (A4)
+                </button>
+              </div>
             </>
           )}
           {!portfolioData && !portfolioLoading && (
             <div className="text-center py-12 text-gray-400">Cliquez sur "Calculer le portefeuille" pour lancer l'analyse multi-site</div>
           )}
         </div>
+      )}
+
+      {/* ══ Export modals ══ */}
+      {showNoteDecision && (
+        <ExportNoteDecision
+          data={{
+            site_id: selectedSiteId,
+            site_nom: scopedSites.find(s => s.id === selectedSiteId)?.nom,
+            volume_kwh_an: assumptions.volume_kwh_an,
+            horizon_months: assumptions.horizon_months,
+            scenarios,
+          }}
+          onClose={() => setShowNoteDecision(false)}
+        />
+      )}
+      {showPackRFP && portfolioData && (
+        <ExportPackRFP
+          portfolio={portfolioData.portfolio}
+          sites={portfolioData.sites}
+          orgName="PROMEOS"
+          onClose={() => setShowPackRFP(false)}
+        />
       )}
 
       {/* ══ TAB: Echeances (V1.1) ══ */}
@@ -653,6 +742,15 @@ export default function PurchasePage() {
           )}
         </div>
       )}
+    <PurchaseDebugDrawer
+      assumptions={assumptions}
+      preferences={preferences}
+      scenarios={scenarios}
+      portfolioData={portfolioData}
+      selectedSiteId={selectedSiteId}
+      seedResult={seedResult}
+    />
     </PageShell>
+    </PurchaseErrorBoundary>
   );
 }

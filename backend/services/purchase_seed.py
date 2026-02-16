@@ -47,10 +47,10 @@ def seed_purchase_demo(db: Session) -> dict:
     db.add(assumptions_a)
     db.flush()
 
-    # ── Assumptions site B (gaz, 300k kWh/an) ──
+    # ── Assumptions site B (elec, 300k kWh/an — Energy Gate: ELEC-only) ──
     assumptions_b = PurchaseAssumptionSet(
         site_id=site_b.id,
-        energy_type=BillingEnergyType.GAZ,
+        energy_type=BillingEnergyType.ELEC,
         volume_kwh_an=300_000,
         profile_factor=0.85,
         horizon_months=24,
@@ -86,8 +86,8 @@ def seed_purchase_demo(db: Session) -> dict:
         ))
         scenarios_created += 1
 
-    # ── Site B scenarios (gaz @ 0.09 ref) ──
-    ref_b = 0.09
+    # ── Site B scenarios (elec @ 0.15 ref — smaller site, lower tariff) ──
+    ref_b = 0.15
     for strategy, price_mult, risk, p10_mult, p90_mult, is_reco in [
         (PurchaseStrategy.FIXE,   1.05, 15, 1.0,  1.0,  True),   # Recommended (low risk)
         (PurchaseStrategy.INDEXE, 0.95, 45, 0.85, 1.20, False),
@@ -136,8 +136,8 @@ def seed_purchase_demo(db: Session) -> dict:
     # Contract 2: far expiry (~180 days), auto_renew=True
     contract_far = EnergyContract(
         site_id=site_b.id,
-        energy_type=BillingEnergyType.GAZ,
-        supplier_name="Engie Pro",
+        energy_type=BillingEnergyType.ELEC,
+        supplier_name="Engie Elec Pro",
         start_date=today - timedelta(days=185),
         end_date=today + timedelta(days=180),
         price_ref_eur_per_kwh=0.09,
