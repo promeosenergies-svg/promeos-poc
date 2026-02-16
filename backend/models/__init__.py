@@ -92,6 +92,10 @@ from .patrimoine import (
 # Smart Intake (DIAMANT)
 from .intake import IntakeSession, IntakeAnswer, IntakeFieldOverride
 
+# Consumption World-Class (V10)
+from .consumption_target import ConsumptionTarget
+from .tou_schedule import TOUSchedule
+
 # Energy (Consumption & Analytics)
 from .energy_models import (
     Meter, MeterReading, DataImportJob, UsageProfile, Anomaly, Recommendation,
@@ -147,4 +151,6 @@ __all__ = [
     "IntakeSessionStatus", "IntakeMode", "IntakeSource",
     # Watchers
     "WatcherEventStatus",
+    # Consumption World-Class (V10)
+    "ConsumptionTarget", "TOUSchedule",
 ]
