@@ -323,6 +323,10 @@ export const getPurchaseResults = (siteId) => api.get(`/purchase/results/${siteI
 export const acceptPurchaseResult = (resultId) => api.patch(`/purchase/results/${resultId}/accept`).then(r => r.data);
 export const seedPurchaseDemo = () => api.post('/purchase/seed-demo').then(r => r.data);
 
+// Brique 3: WOW multi-site datasets
+export const seedWowHappy = () => api.post('/purchase/seed-wow-happy').then(r => r.data);
+export const seedWowDirty = () => api.post('/purchase/seed-wow-dirty').then(r => r.data);
+
 // Sprint 8.1: Portfolio, Renewals, History, Actions
 export const computePortfolio = (orgId) => api.post('/purchase/compute', null, { params: { org_id: orgId, scope: 'org' } }).then(r => r.data);
 export const getPortfolioResults = (orgId) => api.get('/purchase/results', { params: { org_id: orgId } }).then(r => r.data);

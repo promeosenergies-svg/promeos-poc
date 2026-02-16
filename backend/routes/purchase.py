@@ -759,3 +759,19 @@ def seed_demo(db: Session = Depends(get_db)):
     """Seed purchase demo data for 2 sites."""
     from services.purchase_seed import seed_purchase_demo
     return seed_purchase_demo(db)
+
+
+# ── Brique 3: WOW multi-site datasets ──
+
+@router.post("/seed-wow-happy")
+def seed_wow_happy_endpoint(db: Session = Depends(get_db)):
+    """Seed 15-site portfolio with clean, realistic data (happy path demo)."""
+    from services.purchase_seed_wow import seed_wow_happy
+    return seed_wow_happy(db)
+
+
+@router.post("/seed-wow-dirty")
+def seed_wow_dirty_endpoint(db: Session = Depends(get_db)):
+    """Seed 15-site portfolio with degraded/edge-case data (dirty demo)."""
+    from services.purchase_seed_wow import seed_wow_dirty
+    return seed_wow_dirty(db)

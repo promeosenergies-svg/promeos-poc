@@ -651,3 +651,78 @@ class TestEnergyGate:
         assumptions = db_session.query(PurchaseAssumptionSet).all()
         for a in assumptions:
             assert a.energy_type == BillingEnergyType.ELEC
+
+
+# ========================================
+# Brique 3: WOW multi-site dataset tests
+# ========================================
+
+class TestWowDatasets:
+    """WOW multi-site datasets: happy + dirty modes."""
+
+    def test_seed_wow_happy(self, client, db_session):
+        """Happy dataset creates 15 sites with full scenarios."""
+        resp = client.post("/api/purchase/seed-wow-happy")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["mode"] == "happy"
+        assert data["sites_created"] == 15
+        assert data["assumptions_created"] == 15
+        assert data["scenarios_created"] == 45  # 15 sites * 3 strategies
+        assert data["contracts_created"] == 15
+        assert data["org_id"] is not None
+
+    def test_seed_wow_happy_all_elec(self, client, db_session):
+        """Happy dataset: all assumptions are ELEC (Energy Gate)."""
+        client.post("/api/purchase/seed-wow-happy")
+        assumptions = db_session.query(PurchaseAssumptionSet).all()
+        for a in assumptions:
+            assert a.energy_type == BillingEnergyType.ELEC
+
+    def test_seed_wow_happy_varied_volumes(self, client, db_session):
+        """Happy dataset has varied volumes (small to large sites)."""
+        client.post("/api/purchase/seed-wow-happy")
+        assumptions = db_session.query(PurchaseAssumptionSet).all()
+        volumes = [a.volume_kwh_an for a in assumptions]
+        assert min(volumes) < 500_000  # Small site
+        assert max(volumes) >= 2_000_000  # Large industrial
+
+    def test_seed_wow_dirty(self, client, db_session):
+        """Dirty dataset creates 15 sites with edge cases."""
+        resp = client.post("/api/purchase/seed-wow-dirty")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["mode"] == "dirty"
+        assert data["sites_created"] == 15
+        # 2 sites skipped (orphans) → 13 assumptions
+        assert data["assumptions_created"] == 13
+        assert data["scenarios_created"] == 39  # 13 * 3
+        assert "warnings" in data
+        assert len(data["warnings"]) > 0
+
+    def test_seed_wow_dirty_edge_volumes(self, client, db_session):
+        """Dirty dataset has zero-volume and extreme-volume sites."""
+        client.post("/api/purchase/seed-wow-dirty")
+        assumptions = db_session.query(PurchaseAssumptionSet).all()
+        volumes = [a.volume_kwh_an for a in assumptions]
+        assert 0 in volumes  # Zero-volume site
+        assert 50 in volumes  # Tiny site
+        assert 50_000_000 in volumes  # Absurdly large
+
+    def test_seed_wow_dirty_missing_contracts(self, client, db_session):
+        """Dirty dataset: some sites have no contracts."""
+        client.post("/api/purchase/seed-wow-dirty")
+        data_resp = client.post("/api/purchase/seed-wow-dirty")
+        data = data_resp.json()
+        # contracts_created < sites_created (some missing)
+        assert data["contracts_created"] < data["sites_created"]
+
+    def test_seed_wow_portfolio_compute(self, client, db_session):
+        """Can compute portfolio on WOW happy dataset."""
+        seed_resp = client.post("/api/purchase/seed-wow-happy")
+        org_id = seed_resp.json()["org_id"]
+        resp = client.post(f"/api/purchase/compute?org_id={org_id}&scope=org")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["portfolio"]["sites_count"] == 15
+        assert data["portfolio"]["total_annual_cost_eur"] > 0
