@@ -232,6 +232,97 @@ def get_progression(
     }
 
 
+def get_progression_v2(
+    db: Session,
+    site_id: int,
+    energy_type: str = "electricity",
+    year: Optional[int] = None,
+) -> Dict[str, Any]:
+    """
+    Targets V2: progression + variance decomposition (top 3 causes) + run-rate.
+
+    Reuses existing detection functions to identify the biggest consumption drivers.
+    """
+    # Start with V1 progression data
+    base = get_progression(db, site_id, energy_type=energy_type, year=year)
+
+    if year is None:
+        year = datetime.utcnow().year
+
+    current_month = datetime.utcnow().month
+
+    # Compute run-rate: annualized from YTD actual
+    ytd_actual = base.get("ytd_actual_kwh", 0)
+    elapsed_fraction = current_month / 12.0
+    run_rate_kwh = round(ytd_actual / max(elapsed_fraction, 0.01), 1) if ytd_actual else 0
+
+    # Variance decomposition: fetch readings and run detectors
+    variance_decomposition = []
+    try:
+        from services.consumption_diagnostic import (
+            _detect_hors_horaires, _detect_base_load, _detect_pointe, _detect_derive,
+        )
+        from services.tou_service import get_active_schedule
+
+        ev_map = {"electricity": EnergyVector.ELECTRICITY, "gas": EnergyVector.GAS}
+        target_ev = ev_map.get(energy_type, EnergyVector.ELECTRICITY)
+
+        meters = db.query(Meter).filter(
+            Meter.site_id == site_id,
+            Meter.is_active == True,
+            Meter.energy_vector == target_ev,
+        ).all()
+
+        if meters:
+            from datetime import timedelta
+            meter_ids = [m.id for m in meters]
+            start_date = datetime(year, 1, 1)
+            end_date = datetime(year, current_month, 28)
+
+            readings = (
+                db.query(MeterReading)
+                .filter(
+                    MeterReading.meter_id.in_(meter_ids),
+                    MeterReading.timestamp >= start_date,
+                    MeterReading.timestamp <= end_date,
+                )
+                .order_by(MeterReading.timestamp)
+                .all()
+            )
+
+            if len(readings) >= 48:
+                # Get TOU schedule for off-hours detection
+                schedule = get_active_schedule(db, site_id)
+                schedule_data = schedule if isinstance(schedule, dict) else None
+
+                detections = [
+                    _detect_hors_horaires(readings, schedule_data),
+                    _detect_base_load(readings, schedule_data),
+                    _detect_pointe(readings),
+                    _detect_derive(readings),
+                ]
+
+                causes = []
+                for d in detections:
+                    if d and d.get("estimated_loss_kwh", 0) > 0:
+                        causes.append({
+                            "type": d.get("type", "unknown"),
+                            "label": d.get("message", "")[:120],
+                            "estimated_loss_kwh": d.get("estimated_loss_kwh", 0),
+                            "severity": d.get("severity", "medium"),
+                        })
+
+                # Sort by impact, take top 3
+                causes.sort(key=lambda c: c["estimated_loss_kwh"], reverse=True)
+                variance_decomposition = causes[:3]
+    except Exception:
+        pass  # Graceful degradation if detectors fail
+
+    base["run_rate_kwh"] = run_rate_kwh
+    base["variance_decomposition"] = variance_decomposition
+    return base
+
+
 def _serialize_target(t: ConsumptionTarget) -> Dict[str, Any]:
     return {
         "id": t.id,

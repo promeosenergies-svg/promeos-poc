@@ -25,6 +25,7 @@ import {
   createConsumptionTarget,
   deleteConsumptionTarget,
   getTargetsProgression,
+  getTargetsProgressionV2,
   getActiveTOUSchedule,
   getHPHCRatio,
   getGasSummary,
@@ -346,7 +347,7 @@ function TargetsPanel({ siteId, energyType }) {
     try {
       const [t, p] = await Promise.all([
         getConsumptionTargets(siteId, energyType, year),
-        getTargetsProgression(siteId, energyType, year),
+        getTargetsProgressionV2(siteId, energyType, year),
       ]);
       setTargets(t);
       setProgression(p);
@@ -429,7 +430,7 @@ function TargetsPanel({ siteId, energyType }) {
               <p className={`text-lg font-bold ${alertConf.text}`}>{progression.progress_pct}%</p>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-4 mt-3 text-center">
+          <div className="grid grid-cols-4 gap-4 mt-3 text-center">
             <div>
               <p className="text-xs text-gray-500">Objectif annuel</p>
               <p className="text-sm font-semibold">{(progression.yearly_target_kwh || 0).toLocaleString()} kWh</p>
@@ -439,13 +440,36 @@ function TargetsPanel({ siteId, energyType }) {
               <p className="text-sm font-semibold">{(progression.ytd_actual_kwh || 0).toLocaleString()} kWh</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500">Prevision annuelle</p>
+              <p className="text-xs text-gray-500">Run-rate annuel</p>
+              <p className={`text-sm font-semibold ${(progression.run_rate_kwh || 0) > (progression.yearly_target_kwh || 0) ? 'text-red-600' : 'text-green-600'}`}>
+                {(progression.run_rate_kwh || 0).toLocaleString()} kWh
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Prevision</p>
               <p className={`text-sm font-semibold ${progression.forecast_vs_target_pct > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                {(progression.forecast_year_kwh || 0).toLocaleString()} kWh
-                <span className="text-xs ml-1">({progression.forecast_vs_target_pct > 0 ? '+' : ''}{progression.forecast_vs_target_pct}%)</span>
+                {progression.forecast_vs_target_pct > 0 ? '+' : ''}{progression.forecast_vs_target_pct}%
               </p>
             </div>
           </div>
+
+          {/* Variance decomposition (top 3 causes) */}
+          {progression.variance_decomposition?.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-gray-200">
+              <p className="text-xs font-semibold text-gray-600 mb-2">Causes principales de l'ecart :</p>
+              <div className="space-y-1.5">
+                {progression.variance_decomposition.map((cause, i) => (
+                  <div key={i} className="flex items-center gap-2 text-xs">
+                    <span className={`w-2 h-2 rounded-full shrink-0 ${
+                      cause.severity === 'critical' ? 'bg-red-500' : cause.severity === 'high' ? 'bg-orange-500' : 'bg-amber-500'
+                    }`} />
+                    <span className="text-gray-700 flex-1">{cause.label}</span>
+                    <span className="font-semibold text-gray-800">{(cause.estimated_loss_kwh || 0).toLocaleString()} kWh/an</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

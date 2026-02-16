@@ -359,6 +359,7 @@ export const createConsumptionTarget = (data) => api.post('/consumption/targets'
 export const patchConsumptionTarget = (id, data) => api.patch(`/consumption/targets/${id}`, data).then(r => r.data);
 export const deleteConsumptionTarget = (id) => api.delete(`/consumption/targets/${id}`).then(r => r.data);
 export const getTargetsProgression = (siteId, energyType = 'electricity', year = null) => api.get('/consumption/targets/progression', { params: { site_id: siteId, energy_type: energyType, year } }).then(r => r.data);
+export const getTargetsProgressionV2 = (siteId, energyType = 'electricity', year = null) => api.get('/consumption/targets/progress_v2', { params: { site_id: siteId, energy_type: energyType, year } }).then(r => r.data);
 
 // TOU Schedules (grilles HP/HC)
 export const getTOUSchedules = (siteId, meterId = null, activeOnly = true) => api.get('/consumption/tou_schedules', { params: { site_id: siteId, meter_id: meterId, active_only: activeOnly } }).then(r => r.data);

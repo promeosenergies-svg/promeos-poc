@@ -29,7 +29,7 @@ from services.consumption_diagnostic import (
 )
 from services.tunnel_service import compute_tunnel, compute_tunnel_v2
 from services.targets_service import (
-    get_targets, create_target, update_target, delete_target, get_progression,
+    get_targets, create_target, update_target, delete_target, get_progression, get_progression_v2,
 )
 from services.tou_service import (
     get_schedules, get_active_schedule, create_schedule, update_schedule,
@@ -411,6 +411,24 @@ def targets_progression(
     check_site_access(auth, site_id)
     energy_type = _normalize_energy_type(energy_type)
     return get_progression(db, site_id, energy_type=energy_type, year=year)
+
+
+# =============================================
+# V11 — Targets V2 (variance decomposition)
+# =============================================
+
+@router.get("/targets/progress_v2")
+def targets_progression_v2(
+    site_id: int = Query(...),
+    energy_type: str = Query("electricity"),
+    year: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Progression V2 : objectifs + decomposition de variance (top 3 causes) + run-rate."""
+    check_site_access(auth, site_id)
+    energy_type = _normalize_energy_type(energy_type)
+    return get_progression_v2(db, site_id, energy_type=energy_type, year=year)
 
 
 # =============================================
