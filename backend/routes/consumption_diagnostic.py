@@ -35,6 +35,7 @@ from services.tou_service import (
     get_schedules, get_active_schedule, create_schedule, update_schedule,
     delete_schedule, compute_hp_hc_ratio, compute_hphc_breakdown_v2,
 )
+from models.tariff_calendar import TariffCalendar
 
 
 class InsightPatch(BaseModel):
@@ -128,7 +129,13 @@ def seed_demo_consumption(
     days: int = Query(30),
     db: Session = Depends(get_db),
 ):
-    """Generate demo consumption data for a site (or all sites if site_id is None)."""
+    """Generate demo consumption data for a site (or all sites if site_id is None).
+    Also seeds TariffCalendar references and gas weather data."""
+    import json, math
+    from datetime import datetime, timedelta
+    from models import Meter, MeterReading
+    from models.energy_models import EnergyVector
+
     if site_id:
         result = generate_demo_consumption(db, site_id, days=days)
         return {"status": "ok", "sites": [result]}
@@ -143,7 +150,77 @@ def seed_demo_consumption(
         r = generate_demo_consumption(db, site.id, days=days)
         results.append(r)
 
-    return {"status": "ok", "sites": results, "total": len(results)}
+    # --- Seed TariffCalendar references (idempotent) ---
+    tariff_seeded = 0
+    existing_names = {t.name for t in db.query(TariffCalendar.name).all()}
+
+    turpe6_windows = json.dumps([
+        {"day_types": ["weekday"], "start": "06:00", "end": "22:00", "period": "HP"},
+        {"day_types": ["weekday"], "start": "22:00", "end": "06:00", "period": "HC"},
+        {"day_types": ["saturday", "sunday"], "start": "00:00", "end": "24:00", "period": "HC"},
+    ])
+    turpe7_windows = json.dumps([
+        {"day_types": ["weekday"], "start": "07:00", "end": "23:00", "period": "HP"},
+        {"day_types": ["weekday"], "start": "23:00", "end": "07:00", "period": "HC"},
+        {"day_types": ["saturday"], "start": "07:00", "end": "14:00", "period": "HP"},
+        {"day_types": ["saturday"], "start": "14:00", "end": "07:00", "period": "HC"},
+        {"day_types": ["sunday"], "start": "00:00", "end": "24:00", "period": "HC"},
+    ])
+
+    if "TURPE 6 HTA" not in existing_names:
+        db.add(TariffCalendar(
+            name="TURPE 6 HTA", version="6.0", effective_from="2024-01-01",
+            region="national", ruleset_json=turpe6_windows, is_active=True,
+            source="CRE", notes="Grille TURPE 6 standard HTA",
+        ))
+        tariff_seeded += 1
+    if "TURPE 7 HTA-nov2025" not in existing_names:
+        db.add(TariffCalendar(
+            name="TURPE 7 HTA-nov2025", version="7.0-beta", effective_from="2025-11-01",
+            region="national", ruleset_json=turpe7_windows, is_active=True,
+            source="CRE", notes="Grille TURPE 7 simulee (projet nov 2025)",
+        ))
+        tariff_seeded += 1
+
+    # --- Seed seasonal gas readings for gas meters ---
+    gas_seeded = 0
+    now = datetime.utcnow()
+    for site in sites:
+        gas_meters = db.query(Meter).filter(
+            Meter.site_id == site.id, Meter.is_active == True,
+            Meter.energy_vector == EnergyVector.GAS,
+        ).all()
+        for meter in gas_meters:
+            # Check if already has enough readings
+            count = db.query(MeterReading).filter(
+                MeterReading.meter_id == meter.id,
+                MeterReading.timestamp >= now - timedelta(days=days),
+            ).count()
+            if count >= days * 12:
+                continue  # Already seeded
+
+            for day_offset in range(days):
+                dt_base = now - timedelta(days=days - day_offset)
+                doy = dt_base.timetuple().tm_yday
+                # DJU-based seasonal pattern
+                t_avg = 12 + 10 * math.sin(2 * math.pi * (doy - 80) / 365)
+                dju = max(0, 18 - t_avg)
+                daily_kwh = 25 + 6 * dju + (math.sin(doy * 3.7) * 3)  # base + heating + noise
+                for h in [0, 4, 8, 12, 16, 20]:  # 6 readings/day (every 4h)
+                    db.add(MeterReading(
+                        meter_id=meter.id,
+                        timestamp=dt_base.replace(hour=h, minute=0, second=0),
+                        value_kwh=round(daily_kwh / 6, 2),
+                    ))
+            gas_seeded += 1
+
+    db.commit()
+
+    return {
+        "status": "ok", "sites": results, "total": len(results),
+        "tariff_calendars_seeded": tariff_seeded,
+        "gas_meters_seeded": gas_seeded,
+    }
 
 
 # =============================================
