@@ -287,6 +287,170 @@ def _empty_hp_hc(site_id: int) -> Dict:
     }
 
 
+def compute_hphc_breakdown_v2(
+    db: Session,
+    site_id: int,
+    days: int = 30,
+    calendar_id: Optional[int] = None,
+    simulate: bool = False,
+) -> Dict[str, Any]:
+    """
+    HP/HC V2: breakdown + heatmap + opportunity + optional simulation.
+
+    calendar_id: use a TariffCalendar instead of the site's TOUSchedule.
+    simulate: if True, also compute with alternate calendar and return comparison.
+    """
+    from collections import defaultdict
+
+    # Resolve windows
+    if calendar_id:
+        from models.tariff_calendar import TariffCalendar
+        cal = db.query(TariffCalendar).filter(TariffCalendar.id == calendar_id).first()
+        if cal:
+            windows = json.loads(cal.ruleset_json) if cal.ruleset_json else DEFAULT_WINDOWS
+            cal_name = cal.name
+            price_hp = 0.18
+            price_hc = 0.13
+            # Try to extract prices from windows
+            for w in windows:
+                if w.get("period") == "HP" and w.get("price_eur_kwh"):
+                    price_hp = w["price_eur_kwh"]
+                if w.get("period") == "HC" and w.get("price_eur_kwh"):
+                    price_hc = w["price_eur_kwh"]
+        else:
+            windows = DEFAULT_WINDOWS
+            cal_name = "Defaut"
+            price_hp, price_hc = 0.18, 0.13
+    else:
+        active = get_active_schedule(db, site_id)
+        if active:
+            windows = active.get("windows", DEFAULT_WINDOWS)
+            cal_name = active.get("name", "Defaut")
+            price_hp = active.get("price_hp_eur_kwh") or 0.18
+            price_hc = active.get("price_hc_eur_kwh") or 0.13
+        else:
+            windows = DEFAULT_WINDOWS
+            cal_name = "TURPE standard"
+            price_hp, price_hc = 0.18, 0.13
+
+    # Fetch readings
+    end_date = datetime.utcnow()
+    start_date = end_date - timedelta(days=days)
+
+    meters = db.query(Meter).filter(
+        Meter.site_id == site_id,
+        Meter.is_active == True,
+        Meter.energy_vector == EnergyVector.ELECTRICITY,
+    ).all()
+
+    if not meters:
+        return _empty_hphc_v2(site_id, cal_name)
+
+    meter_ids = [m.id for m in meters]
+    readings = (
+        db.query(MeterReading)
+        .filter(
+            MeterReading.meter_id.in_(meter_ids),
+            MeterReading.timestamp >= start_date,
+            MeterReading.timestamp <= end_date,
+        )
+        .all()
+    )
+
+    if not readings:
+        return _empty_hphc_v2(site_id, cal_name)
+
+    # Classify + build heatmap
+    hp_kwh = 0.0
+    hc_kwh = 0.0
+    heatmap_data = defaultdict(lambda: {"sum_kwh": 0.0, "count": 0, "period": "HC"})
+
+    for r in readings:
+        period = _classify_period(r.timestamp, windows)
+        if period == "HP":
+            hp_kwh += r.value_kwh
+        else:
+            hc_kwh += r.value_kwh
+
+        # Heatmap: day_of_week (0=Mon) x hour
+        dow = r.timestamp.weekday()
+        hour = r.timestamp.hour
+        key = (dow, hour)
+        heatmap_data[key]["sum_kwh"] += r.value_kwh
+        heatmap_data[key]["count"] += 1
+        heatmap_data[key]["period"] = period
+
+    total_kwh = hp_kwh + hc_kwh
+    hp_ratio = hp_kwh / total_kwh if total_kwh > 0 else 0
+
+    # Build 7x24 heatmap
+    DAY_LABELS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]
+    heatmap = []
+    for dow in range(7):
+        for hour in range(24):
+            cell = heatmap_data.get((dow, hour), {"sum_kwh": 0, "count": 0, "period": "HC"})
+            avg = cell["sum_kwh"] / max(cell["count"], 1)
+            heatmap.append({
+                "day": dow, "day_label": DAY_LABELS[dow],
+                "hour": hour,
+                "avg_kwh": round(avg, 2),
+                "period": cell["period"],
+            })
+
+    # Opportunity: ~15% of HP kWh shiftable
+    shiftable_kwh = round(hp_kwh * 0.15, 1)
+    savings_eur = round(shiftable_kwh * (price_hp - price_hc), 2)
+
+    confidence = "high" if len(readings) >= days * 20 else ("medium" if len(readings) >= days * 10 else "low")
+
+    result = {
+        "site_id": site_id,
+        "calendar_name": cal_name,
+        "days": days,
+        "hp_kwh": round(hp_kwh, 1),
+        "hc_kwh": round(hc_kwh, 1),
+        "total_kwh": round(total_kwh, 1),
+        "hp_ratio": round(hp_ratio, 4),
+        "hp_cost_eur": round(hp_kwh * price_hp, 2),
+        "hc_cost_eur": round(hc_kwh * price_hc, 2),
+        "total_cost_eur": round(hp_kwh * price_hp + hc_kwh * price_hc, 2),
+        "heatmap": heatmap,
+        "opportunity": {
+            "shiftable_kwh": shiftable_kwh,
+            "savings_eur": savings_eur,
+            "price_hp": price_hp,
+            "price_hc": price_hc,
+        },
+        "confidence": confidence,
+        "readings_count": len(readings),
+    }
+
+    # Simulation: compare with default schedule if calendar_id was used
+    if simulate and calendar_id:
+        base = compute_hphc_breakdown_v2(db, site_id, days=days, calendar_id=None, simulate=False)
+        result["simulation"] = {
+            "base_calendar": base.get("calendar_name", "Defaut"),
+            "base_cost_eur": base.get("total_cost_eur", 0),
+            "alt_cost_eur": result["total_cost_eur"],
+            "delta_eur": round(result["total_cost_eur"] - base.get("total_cost_eur", 0), 2),
+        }
+
+    return result
+
+
+def _empty_hphc_v2(site_id, cal_name):
+    DAY_LABELS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]
+    return {
+        "site_id": site_id, "calendar_name": cal_name, "days": 0,
+        "hp_kwh": 0, "hc_kwh": 0, "total_kwh": 0, "hp_ratio": 0,
+        "hp_cost_eur": 0, "hc_cost_eur": 0, "total_cost_eur": 0,
+        "heatmap": [{"day": d, "day_label": DAY_LABELS[d], "hour": h, "avg_kwh": 0, "period": "HC"}
+                    for d in range(7) for h in range(24)],
+        "opportunity": {"shiftable_kwh": 0, "savings_eur": 0, "price_hp": 0.18, "price_hc": 0.13},
+        "confidence": "low", "readings_count": 0,
+    }
+
+
 def _serialize_schedule(s: TOUSchedule) -> Dict[str, Any]:
     try:
         windows = json.loads(s.windows_json) if s.windows_json else []

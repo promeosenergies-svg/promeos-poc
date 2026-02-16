@@ -28,11 +28,13 @@ import {
   getTargetsProgressionV2,
   getActiveTOUSchedule,
   getHPHCRatio,
+  getHPHCBreakdownV2,
   getGasSummary,
 } from '../services/api';
 import StickyFilterBar from './consumption/StickyFilterBar';
 import ContextBanner from './consumption/ContextBanner';
 import EvidenceDrawer from './consumption/EvidenceDrawer';
+import HeatmapChart from './consumption/HeatmapChart';
 import { computeAutoRange } from './consumption/helpers';
 
 // ========================================
@@ -563,7 +565,7 @@ function TargetsPanel({ siteId, energyType }) {
 // ========================================
 
 function HPHCPanel({ siteId, days }) {
-  const [ratio, setRatio] = useState(null);
+  const [breakdown, setBreakdown] = useState(null);
   const [schedule, setSchedule] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -571,11 +573,11 @@ function HPHCPanel({ siteId, days }) {
     if (!siteId) return;
     setLoading(true);
     try {
-      const [r, s] = await Promise.all([
-        getHPHCRatio(siteId, null, days),
+      const [bd, s] = await Promise.all([
+        getHPHCBreakdownV2(siteId, days),
         getActiveTOUSchedule(siteId),
       ]);
-      setRatio(r);
+      setBreakdown(bd);
       setSchedule(s);
       track('hphc_loaded', { site_id: siteId, days });
     } catch (e) {
@@ -589,8 +591,8 @@ function HPHCPanel({ siteId, days }) {
 
   if (loading) return <SkeletonCard rows={4} />;
 
-  const conf = CONFIDENCE_BADGE[ratio?.confidence] || CONFIDENCE_BADGE.low;
-  const hpPct = ratio ? Math.round(ratio.hp_ratio * 100) : 0;
+  const conf = CONFIDENCE_BADGE[breakdown?.confidence] || CONFIDENCE_BADGE.low;
+  const hpPct = breakdown ? Math.round(breakdown.hp_ratio * 100) : 0;
   const hcPct = 100 - hpPct;
 
   return (
@@ -598,17 +600,17 @@ function HPHCPanel({ siteId, days }) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h3 className="text-lg font-semibold text-gray-800">Ratio HP / HC</h3>
-          {ratio && <TrustBadge level={conf.variant} label={`Confiance ${conf.label}`} size="sm" />}
+          {breakdown && <TrustBadge level={conf.variant} label={`Confiance ${conf.label}`} size="sm" />}
         </div>
       </div>
 
-      {ratio && ratio.total_kwh > 0 ? (
+      {breakdown && breakdown.total_kwh > 0 ? (
         <>
           {/* HP/HC bar */}
           <Card>
             <CardBody>
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-sm text-gray-600">Grille : {schedule?.name || 'Par defaut'}</span>
+                <span className="text-sm text-gray-600">Calendrier : {breakdown.calendar_name || schedule?.name || 'Par defaut'}</span>
                 {schedule?.source && <Badge variant="info">{schedule.source}</Badge>}
               </div>
               <div className="w-full h-8 rounded-full overflow-hidden flex">
@@ -627,33 +629,63 @@ function HPHCPanel({ siteId, days }) {
             <Card>
               <CardBody className="py-3 px-4 text-center">
                 <p className="text-xs text-gray-500">HP</p>
-                <p className="text-lg font-bold text-red-600">{ratio.hp_kwh.toLocaleString()} kWh</p>
-                <p className="text-xs text-gray-400">{ratio.hp_cost_eur.toLocaleString()} EUR</p>
+                <p className="text-lg font-bold text-red-600">{breakdown.hp_kwh.toLocaleString()} kWh</p>
+                <p className="text-xs text-gray-400">{breakdown.hp_cost_eur.toLocaleString()} EUR</p>
               </CardBody>
             </Card>
             <Card>
               <CardBody className="py-3 px-4 text-center">
                 <p className="text-xs text-gray-500">HC</p>
-                <p className="text-lg font-bold text-blue-600">{ratio.hc_kwh.toLocaleString()} kWh</p>
-                <p className="text-xs text-gray-400">{ratio.hc_cost_eur.toLocaleString()} EUR</p>
+                <p className="text-lg font-bold text-blue-600">{breakdown.hc_kwh.toLocaleString()} kWh</p>
+                <p className="text-xs text-gray-400">{breakdown.hc_cost_eur.toLocaleString()} EUR</p>
               </CardBody>
             </Card>
             <Card>
               <CardBody className="py-3 px-4 text-center">
                 <p className="text-xs text-gray-500">Total</p>
-                <p className="text-lg font-bold text-gray-800">{ratio.total_kwh.toLocaleString()} kWh</p>
-                <p className="text-xs text-gray-400">{ratio.total_cost_eur.toLocaleString()} EUR</p>
+                <p className="text-lg font-bold text-gray-800">{breakdown.total_kwh.toLocaleString()} kWh</p>
+                <p className="text-xs text-gray-400">{breakdown.total_cost_eur.toLocaleString()} EUR</p>
               </CardBody>
             </Card>
             <Card>
               <CardBody className="py-3 px-4 text-center">
                 <p className="text-xs text-gray-500">Prix HP/HC</p>
                 <p className="text-sm font-semibold text-gray-700">
-                  {schedule?.price_hp_eur_kwh || '—'} / {schedule?.price_hc_eur_kwh || '—'} EUR/kWh
+                  {breakdown.opportunity?.price_hp || '—'} / {breakdown.opportunity?.price_hc || '—'} EUR/kWh
                 </p>
               </CardBody>
             </Card>
           </div>
+
+          {/* Opportunity card */}
+          {breakdown.opportunity?.savings_eur > 0 && (
+            <Card className="bg-green-50 border-green-200">
+              <CardBody className="py-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-semibold text-green-700">Opportunite de report HP → HC</p>
+                    <p className="text-sm text-green-800 mt-0.5">
+                      ~{breakdown.opportunity.shiftable_kwh.toLocaleString()} kWh reportables
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold text-green-700">{breakdown.opportunity.savings_eur} EUR</p>
+                    <p className="text-xs text-green-600">economies potentielles</p>
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+          )}
+
+          {/* Heatmap 7x24 */}
+          {breakdown.heatmap?.length > 0 && (
+            <Card>
+              <CardBody>
+                <h4 className="text-sm font-semibold text-gray-700 mb-3">Carte thermique HP/HC (7j x 24h)</h4>
+                <HeatmapChart data={breakdown.heatmap} />
+              </CardBody>
+            </Card>
+          )}
 
           {/* Schedule windows */}
           {schedule?.windows?.length > 0 && (

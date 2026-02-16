@@ -101,6 +101,7 @@ from .intake import IntakeSession, IntakeAnswer, IntakeFieldOverride
 # Consumption World-Class (V10)
 from .consumption_target import ConsumptionTarget
 from .tou_schedule import TOUSchedule
+from .tariff_calendar import TariffCalendar
 
 # BACS Expert (Decret n°2020-887)
 from .bacs_models import BacsAsset, BacsCvcSystem, BacsAssessment, BacsInspection

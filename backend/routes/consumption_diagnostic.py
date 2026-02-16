@@ -33,7 +33,7 @@ from services.targets_service import (
 )
 from services.tou_service import (
     get_schedules, get_active_schedule, create_schedule, update_schedule,
-    delete_schedule, compute_hp_hc_ratio,
+    delete_schedule, compute_hp_hc_ratio, compute_hphc_breakdown_v2,
 )
 
 
@@ -564,6 +564,24 @@ def get_hp_hc_ratio(
     """Ratio HP/HC avec couts ventiles."""
     check_site_access(auth, site_id)
     return compute_hp_hc_ratio(db, site_id, meter_id=meter_id, days=days)
+
+
+# =============================================
+# V11 — HP/HC V2 (heatmap + opportunity + simulation)
+# =============================================
+
+@router.get("/hphc_breakdown_v2")
+def get_hphc_breakdown_v2(
+    site_id: int = Query(...),
+    days: int = Query(30, ge=1, le=365),
+    calendar_id: Optional[int] = Query(None),
+    simulate: bool = Query(False),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """HP/HC V2 : breakdown + heatmap 7x24 + opportunite + simulation calendrier alternatif."""
+    check_site_access(auth, site_id)
+    return compute_hphc_breakdown_v2(db, site_id, days=days, calendar_id=calendar_id, simulate=simulate)
 
 
 # =============================================

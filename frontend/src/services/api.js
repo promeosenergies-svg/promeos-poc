@@ -370,6 +370,7 @@ export const deleteTOUSchedule = (id) => api.delete(`/consumption/tou_schedules/
 
 // HP/HC Ratio
 export const getHPHCRatio = (siteId, meterId = null, days = 30) => api.get('/consumption/hp_hc', { params: { site_id: siteId, meter_id: meterId, days } }).then(r => r.data);
+export const getHPHCBreakdownV2 = (siteId, days = 30, calendarId = null, simulate = false) => api.get('/consumption/hphc_breakdown_v2', { params: { site_id: siteId, days, calendar_id: calendarId, simulate } }).then(r => r.data);
 
 // Gas Summary (beta)
 export const getGasSummary = (siteId, days = 90) => api.get('/consumption/gas/summary', { params: { site_id: siteId, days } }).then(r => r.data);
