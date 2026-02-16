@@ -227,6 +227,67 @@ def import_invoices_to_staging(db: Session, batch_id: int, metadata: dict) -> di
 
 
 # ========================================
+# QA Scoring Thresholds
+# ========================================
+
+# Gating thresholds for quality score (0-100)
+QA_THRESHOLD_EXCELLENT = 85   # Green — auto-activable
+QA_THRESHOLD_BON = 70         # Amber — activable with review
+QA_THRESHOLD_MOYEN = 50       # Orange — requires corrections
+
+QA_GRADES = {
+    "excellent": {"min": QA_THRESHOLD_EXCELLENT, "label": "Excellent", "color": "green",
+                  "message": "Donnees de haute qualite, activation automatique possible."},
+    "bon": {"min": QA_THRESHOLD_BON, "label": "Bon", "color": "amber",
+            "message": "Quelques avertissements mineurs. Activation possible apres revue."},
+    "moyen": {"min": QA_THRESHOLD_MOYEN, "label": "Moyen", "color": "orange",
+              "message": "Corrections recommandees avant activation."},
+    "insuffisant": {"min": 0, "label": "Insuffisant", "color": "red",
+                    "message": "Donnees degradees. Corrections obligatoires."},
+}
+
+
+def compute_quality_grade(score: float) -> dict:
+    """Compute QA grade from quality score.
+
+    Returns: {grade, label, color, message, threshold_next, gap}
+    """
+    if score >= QA_THRESHOLD_EXCELLENT:
+        grade = "excellent"
+    elif score >= QA_THRESHOLD_BON:
+        grade = "bon"
+    elif score >= QA_THRESHOLD_MOYEN:
+        grade = "moyen"
+    else:
+        grade = "insuffisant"
+
+    info = QA_GRADES[grade]
+
+    # Next threshold to reach (for progress display)
+    if grade == "excellent":
+        threshold_next = None
+        gap = 0.0
+    elif grade == "bon":
+        threshold_next = QA_THRESHOLD_EXCELLENT
+        gap = round(QA_THRESHOLD_EXCELLENT - score, 1)
+    elif grade == "moyen":
+        threshold_next = QA_THRESHOLD_BON
+        gap = round(QA_THRESHOLD_BON - score, 1)
+    else:
+        threshold_next = QA_THRESHOLD_MOYEN
+        gap = round(QA_THRESHOLD_MOYEN - score, 1)
+
+    return {
+        "grade": grade,
+        "label": info["label"],
+        "color": info["color"],
+        "message": info["message"],
+        "threshold_next": threshold_next,
+        "gap": gap,
+    }
+
+
+# ========================================
 # Summary & Quality Gate
 # ========================================
 
@@ -252,12 +313,16 @@ def get_staging_summary(db: Session, batch_id: int) -> dict:
 
     blocking = sum(1 for f in findings if f.severity == QualityRuleSeverity.BLOCKING and not f.resolved)
     warnings = sum(1 for f in findings if f.severity == QualityRuleSeverity.WARNING and not f.resolved)
+    info_count = sum(1 for f in findings if f.severity == QualityRuleSeverity.INFO and not f.resolved)
     total_findings = len(findings)
 
     # Quality score: 100 if no findings, decremented by severity
     max_issues = max(sites_count + compteurs_count, 1)
-    quality_score = max(0.0, 100.0 - (blocking * 20 + warnings * 5) / max_issues * 100)
+    quality_score = max(0.0, 100.0 - (blocking * 20 + warnings * 5 + info_count * 1) / max_issues * 100)
     quality_score = round(min(100.0, quality_score), 1)
+
+    # QA grade with thresholds
+    grade_info = compute_quality_grade(quality_score)
 
     return {
         "batch_id": batch_id,
@@ -268,8 +333,11 @@ def get_staging_summary(db: Session, batch_id: int) -> dict:
         "findings_total": total_findings,
         "blocking": blocking,
         "warnings": warnings,
+        "info": info_count,
         "quality_score": quality_score,
+        "quality_grade": grade_info,
         "can_activate": blocking == 0,
+        "can_auto_activate": blocking == 0 and quality_score >= QA_THRESHOLD_EXCELLENT,
     }
 
 
