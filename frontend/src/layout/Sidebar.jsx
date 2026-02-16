@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Building2, ShieldCheck, FileText,
   Zap, ListChecks, Activity, Settings, HelpCircle,
   BarChart3, Import, Users, Receipt, BookOpen, ShoppingCart,
-  Search, Link2, Eye, Bell, Lock,
+  Search, Link2, Eye, Bell, Lock, Compass,
 } from 'lucide-react';
 import { getNotificationsSummary, getMonitoringAlerts } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -18,6 +18,7 @@ const ROUTE_MODULE_MAP = {
   '/actions': 'actions',
   '/patrimoine': 'patrimoine',
   '/consommations': 'consommations',
+  '/consumption-explorer': 'consommations',
   '/diagnostic-conso': 'diagnostic',
   '/bill-intel': 'billing',
   '/achat-energie': 'purchase',
@@ -44,6 +45,7 @@ const NAV_EXECUTION = [
 const NAV_ANALYSE = [
   { to: '/patrimoine',       icon: Building2,    label: 'Patrimoine' },
   { to: '/consommations',    icon: Zap,          label: 'Consommations' },
+  { to: '/consumption-explorer', icon: Compass, label: 'Explorer conso' },
   { to: '/diagnostic-conso', icon: Search,       label: 'Diagnostic' },
   { to: '/bill-intel',       icon: Receipt,      label: 'Facturation' },
   { to: '/achat-energie',    icon: ShoppingCart,  label: 'Achats énergie' },

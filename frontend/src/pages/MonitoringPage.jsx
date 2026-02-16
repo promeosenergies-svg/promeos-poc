@@ -7,8 +7,9 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Activity, AlertTriangle, Zap, BarChart3, CheckCircle, Clock,
   Shield, TrendingUp, ChevronDown, ChevronUp, Eye, PlayCircle,
-  Database, RefreshCw,
+  Database, RefreshCw, ExternalLink,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
@@ -347,6 +348,13 @@ export default function MonitoringPage() {
               </option>
             ))}
           </select>
+          <Link
+            to="/consumption-explorer"
+            className="flex items-center gap-1 px-3 py-2 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition"
+          >
+            <ExternalLink size={14} />
+            Explorer
+          </Link>
           <Button variant="secondary" size="sm" onClick={handleRun} disabled={loading}>
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
             {loading ? 'Analyse...' : 'Lancer Analyse'}

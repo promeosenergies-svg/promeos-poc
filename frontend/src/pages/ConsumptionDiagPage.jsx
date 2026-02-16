@@ -9,7 +9,8 @@ import {
   seedDemoConsumption,
 } from '../services/api';
 import { Card, CardBody, Badge, Button } from '../ui';
-import { Clock, Zap, ChevronDown, ChevronUp, Settings } from 'lucide-react';
+import { Clock, Zap, ChevronDown, ChevronUp, Settings, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { track } from '../services/tracker';
 
 const SEVERITY_COLORS = {
@@ -227,6 +228,13 @@ export default function ConsumptionDiagPage() {
           <p className="text-sm text-gray-500 mt-0.5">Détection automatique : horaires, talon, pointes, dérives</p>
         </div>
         <div className="flex gap-2">
+          <Link
+            to="/consumption-explorer"
+            className="flex items-center gap-1 px-3 py-2 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition"
+          >
+            <ExternalLink size={14} />
+            Explorer
+          </Link>
           <Button variant="secondary" size="sm" onClick={handleSeedDemo} disabled={seeding}>
             {seeding ? 'Generation...' : 'Generer conso demo'}
           </Button>
