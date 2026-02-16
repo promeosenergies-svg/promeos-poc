@@ -132,6 +132,16 @@ def get_monitoring_kpis(
     except Exception as e:
         impact_data["error"] = str(e)[:200]
 
+    # Compute CO2e emissions
+    emissions_data = {}
+    try:
+        from services.emissions_service import compute_emissions_summary
+        emissions_data = compute_emissions_summary(
+            db, site_id, snapshot.kpis_json or {}
+        )
+    except Exception as e:
+        emissions_data = {"error": str(e)[:200]}
+
     return {
         "snapshot_id": snapshot.id,
         "site_id": snapshot.site_id,
@@ -145,6 +155,7 @@ def get_monitoring_kpis(
         "climate": climate_data,
         "schedule": schedule_data,
         "impact": impact_data,
+        "emissions": emissions_data,
         "engine_version": snapshot.engine_version,
         "created_at": snapshot.created_at.isoformat(),
     }
@@ -616,3 +627,94 @@ def generate_monitoring_demo(request: MonitoringDemoRequest, db: Session = Depen
         "weather_days": len(weather_days),
         "period": f"{start.date()} - {now.date()}",
     }
+
+
+# --- 8. GET /api/monitoring/emissions ---
+
+@router.get("/emissions")
+def get_emissions(
+    site_id: int = Query(...),
+    meter_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Get CO2e emissions summary for a site based on latest monitoring snapshot."""
+    if auth and auth.site_ids is not None and site_id not in auth.site_ids:
+        raise HTTPException(status_code=403, detail="Site not in auth scope")
+
+    query = db.query(MonitoringSnapshot).filter_by(site_id=site_id)
+    if meter_id:
+        query = query.filter_by(meter_id=meter_id)
+    snapshot = query.order_by(MonitoringSnapshot.created_at.desc()).first()
+    if not snapshot:
+        raise HTTPException(status_code=404, detail="No monitoring snapshot found. Run analysis first.")
+
+    from services.emissions_service import compute_emissions_summary
+    emissions = compute_emissions_summary(db, site_id, snapshot.kpis_json or {})
+
+    return {
+        "site_id": site_id,
+        "snapshot_id": snapshot.id,
+        "period": f"{snapshot.period_start.date()} - {snapshot.period_end.date()}",
+        **emissions,
+    }
+
+
+# --- 9. GET /api/monitoring/emission-factors ---
+
+@router.get("/emission-factors")
+def list_emission_factors(
+    energy_type: Optional[str] = None,
+    region: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
+    """List available emission factors."""
+    from models import EmissionFactor
+
+    query = db.query(EmissionFactor)
+    if energy_type:
+        query = query.filter_by(energy_type=energy_type)
+    if region:
+        query = query.filter_by(region=region)
+
+    factors = query.order_by(EmissionFactor.created_at.desc()).all()
+    return [
+        {
+            "id": f.id,
+            "energy_type": f.energy_type,
+            "region": f.region,
+            "kgco2e_per_kwh": f.kgco2e_per_kwh,
+            "source_label": f.source_label,
+            "quality": f.quality,
+            "valid_from": f.valid_from.isoformat() if f.valid_from else None,
+            "valid_to": f.valid_to.isoformat() if f.valid_to else None,
+        }
+        for f in factors
+    ]
+
+
+# --- 10. POST /api/monitoring/emission-factors/seed ---
+
+@router.post("/emission-factors/seed")
+def seed_emission_factors(db: Session = Depends(get_db)):
+    """Seed default FR emission factor for demo."""
+    from models import EmissionFactor
+
+    existing = db.query(EmissionFactor).filter_by(
+        energy_type="electricity", region="FR"
+    ).first()
+    if existing:
+        return {"status": "already_exists", "id": existing.id}
+
+    factor = EmissionFactor(
+        energy_type="electricity",
+        region="FR",
+        kgco2e_per_kwh=0.052,
+        source_label="Facteur demo POC (base ADEME 2024)",
+        quality="demo",
+    )
+    db.add(factor)
+    db.commit()
+    db.refresh(factor)
+
+    return {"status": "created", "id": factor.id, "kgco2e_per_kwh": factor.kgco2e_per_kwh}

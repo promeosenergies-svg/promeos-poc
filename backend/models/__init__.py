@@ -104,6 +104,9 @@ from .bacs_models import BacsAsset, BacsCvcSystem, BacsAssessment, BacsInspectio
 # EMS Consumption Explorer
 from .ems_models import EmsWeatherCache, EmsSavedView, EmsCollection
 
+# Emission Factors (Sprint V9 Decarbonation)
+from .emission_factor import EmissionFactor
+
 # Energy (Consumption & Analytics)
 from .energy_models import (
     Meter, MeterReading, DataImportJob, UsageProfile, Anomaly, Recommendation,
@@ -167,4 +170,6 @@ __all__ = [
     "CvcSystemType", "CvcArchitecture", "BacsTriggerReason", "InspectionStatus",
     # EMS Consumption Explorer
     "EmsWeatherCache", "EmsSavedView", "EmsCollection",
+    # Emission Factors (Sprint V9 Decarbonation)
+    "EmissionFactor",
 ]
