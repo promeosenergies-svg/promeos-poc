@@ -27,7 +27,7 @@ from services.consumption_diagnostic import (
     run_diagnostic_org,
     get_insights_summary,
 )
-from services.tunnel_service import compute_tunnel
+from services.tunnel_service import compute_tunnel, compute_tunnel_v2
 from services.targets_service import (
     get_targets, create_target, update_target, delete_target, get_progression,
 )
@@ -284,6 +284,30 @@ def get_tunnel(
     if not site:
         raise HTTPException(status_code=404, detail="Site non trouve")
     return compute_tunnel(db, site_id, days=days, energy_type=energy_type)
+
+
+# =============================================
+# V11 — Tunnel V2 (energy + power mode)
+# =============================================
+
+@router.get("/tunnel_v2")
+def get_tunnel_v2(
+    site_id: int = Query(..., description="Site ID"),
+    days: int = Query(90, ge=7, le=365),
+    energy_type: str = Query("electricity"),
+    mode: str = Query("energy", description="energy (kWh) or power (kW)"),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Tunnel V2: enveloppe quantile P10-P90 en mode energie (kWh) ou puissance (kW)."""
+    check_site_access(auth, site_id)
+    energy_type = _normalize_energy_type(energy_type)
+    if mode not in ("energy", "power"):
+        raise HTTPException(status_code=400, detail="mode must be 'energy' or 'power'")
+    site = db.query(Site).filter(Site.id == site_id).first()
+    if not site:
+        raise HTTPException(status_code=404, detail="Site non trouve")
+    return compute_tunnel_v2(db, site_id, days=days, energy_type=energy_type, mode=mode)
 
 
 # =============================================

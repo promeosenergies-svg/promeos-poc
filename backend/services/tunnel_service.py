@@ -182,6 +182,145 @@ def _compute_confidence(readings_count: int, days: int) -> Tuple[float, str]:
         return round(ratio * 50, 1), "low"
 
 
+def compute_tunnel_v2(
+    db: Session,
+    site_id: int,
+    days: int = 90,
+    interval_minutes: int = 60,
+    energy_type: str = "electricity",
+    mode: str = "energy",
+) -> Dict[str, Any]:
+    """
+    Tunnel V2: supports both energy (kWh) and power (kW) modes.
+
+    mode='energy':  quantiles on raw value_kwh
+    mode='power':   quantiles on value_kwh / hours_per_interval (kW)
+
+    Returns same structure as V1 plus: mode, unit, reference_band_method, sample_size.
+    """
+    end_date = datetime.utcnow()
+    start_date = end_date - timedelta(days=days)
+
+    meters = db.query(Meter).filter(
+        Meter.site_id == site_id,
+        Meter.is_active == True,
+    ).all()
+
+    if energy_type == "electricity":
+        from models.energy_models import EnergyVector
+        meters = [m for m in meters if m.energy_vector == EnergyVector.ELECTRICITY]
+    elif energy_type == "gas":
+        from models.energy_models import EnergyVector
+        meters = [m for m in meters if m.energy_vector == EnergyVector.GAS]
+
+    unit = "kW" if mode == "power" else "kWh"
+    if not meters:
+        return _empty_tunnel_v2(site_id, energy_type, days, mode, unit)
+
+    meter_ids = [m.id for m in meters]
+
+    readings = (
+        db.query(MeterReading)
+        .filter(
+            MeterReading.meter_id.in_(meter_ids),
+            MeterReading.timestamp >= start_date,
+            MeterReading.timestamp <= end_date,
+        )
+        .order_by(MeterReading.timestamp)
+        .all()
+    )
+
+    if len(readings) < 48:
+        return _empty_tunnel_v2(site_id, energy_type, days, mode, unit, readings_count=len(readings))
+
+    hours_per_interval = interval_minutes / 60.0
+    buckets: Dict[str, Dict[int, List[float]]] = {
+        "weekday": defaultdict(list),
+        "weekend": defaultdict(list),
+    }
+
+    for r in readings:
+        day_type = _classify_day_type(r.timestamp)
+        hour = r.timestamp.hour
+        if mode == "power":
+            val = r.value_kwh / hours_per_interval if hours_per_interval > 0 else r.value_kwh
+        else:
+            val = r.value_kwh
+        buckets[day_type][hour].append(val)
+
+    envelope = {}
+    for day_type in ("weekday", "weekend"):
+        slots = []
+        for h in range(24):
+            vals = buckets[day_type].get(h, [])
+            if vals:
+                slots.append({
+                    "hour": h,
+                    "p10": round(_percentile(vals, 10), 2),
+                    "p25": round(_percentile(vals, 25), 2),
+                    "p50": round(_percentile(vals, 50), 2),
+                    "p75": round(_percentile(vals, 75), 2),
+                    "p90": round(_percentile(vals, 90), 2),
+                    "count": len(vals),
+                })
+            else:
+                slots.append({"hour": h, "p10": 0, "p25": 0, "p50": 0, "p75": 0, "p90": 0, "count": 0})
+        envelope[day_type] = slots
+
+    # Count outside readings (last 7 days)
+    recent_start = end_date - timedelta(days=7)
+    outside_count = 0
+    total_evaluated = 0
+
+    for r in readings:
+        if r.timestamp < recent_start:
+            continue
+        day_type = _classify_day_type(r.timestamp)
+        hour = r.timestamp.hour
+        if mode == "power":
+            val = r.value_kwh / hours_per_interval if hours_per_interval > 0 else r.value_kwh
+        else:
+            val = r.value_kwh
+
+        slot = envelope[day_type][hour]
+        if slot["count"] > 0:
+            total_evaluated += 1
+            if val < slot["p10"] or val > slot["p90"]:
+                outside_count += 1
+
+    outside_pct = round(outside_count / max(total_evaluated, 1) * 100, 1)
+    confidence_score, confidence = _compute_confidence(len(readings), days)
+
+    return {
+        "site_id": site_id,
+        "energy_type": energy_type,
+        "days": days,
+        "mode": mode,
+        "unit": unit,
+        "readings_count": len(readings),
+        "sample_size": len(readings),
+        "reference_band_method": "percentile_hourly",
+        "envelope": envelope,
+        "outside_pct": outside_pct,
+        "outside_count": outside_count,
+        "total_evaluated": total_evaluated,
+        "confidence": confidence,
+        "confidence_score": confidence_score,
+    }
+
+
+def _empty_tunnel_v2(site_id, energy_type, days, mode, unit, readings_count=0):
+    empty_slots = [{"hour": h, "p10": 0, "p25": 0, "p50": 0, "p75": 0, "p90": 0, "count": 0} for h in range(24)]
+    return {
+        "site_id": site_id, "energy_type": energy_type, "days": days,
+        "mode": mode, "unit": unit, "readings_count": readings_count,
+        "sample_size": readings_count, "reference_band_method": "percentile_hourly",
+        "envelope": {"weekday": list(empty_slots), "weekend": [dict(s) for s in empty_slots]},
+        "outside_pct": 0, "outside_count": 0, "total_evaluated": 0,
+        "confidence": "low", "confidence_score": 0,
+    }
+
+
 def _empty_tunnel(site_id: int, energy_type: str, days: int, readings_count: int = 0) -> Dict:
     return {
         "site_id": site_id,

@@ -20,6 +20,7 @@ import { track } from '../services/tracker';
 import {
   getConsumptionAvailability,
   getConsumptionTunnel,
+  getConsumptionTunnelV2,
   getConsumptionTargets,
   createConsumptionTarget,
   deleteConsumptionTarget,
@@ -30,6 +31,7 @@ import {
 } from '../services/api';
 import StickyFilterBar from './consumption/StickyFilterBar';
 import ContextBanner from './consumption/ContextBanner';
+import EvidenceDrawer from './consumption/EvidenceDrawer';
 import { computeAutoRange } from './consumption/helpers';
 
 // ========================================
@@ -174,20 +176,22 @@ function TunnelPanel({ siteId, days, energyType }) {
   const [tunnel, setTunnel] = useState(null);
   const [loading, setLoading] = useState(false);
   const [dayType, setDayType] = useState('weekday');
+  const [mode, setMode] = useState('energy');
+  const [selectedSlot, setSelectedSlot] = useState(null);
 
   const load = useCallback(async () => {
     if (!siteId) return;
     setLoading(true);
     try {
-      const data = await getConsumptionTunnel(siteId, days, energyType);
+      const data = await getConsumptionTunnelV2(siteId, days, energyType, mode);
       setTunnel(data);
-      track('tunnel_loaded', { site_id: siteId, days, energy_type: energyType });
+      track('tunnel_loaded', { site_id: siteId, days, energy_type: energyType, mode });
     } catch (e) {
       console.error('Tunnel load error:', e);
     } finally {
       setLoading(false);
     }
-  }, [siteId, days, energyType]);
+  }, [siteId, days, energyType, mode]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -203,11 +207,20 @@ function TunnelPanel({ siteId, days, energyType }) {
   }
 
   const conf = CONFIDENCE_BADGE[tunnel.confidence] || CONFIDENCE_BADGE.low;
+  const unit = tunnel.unit || (mode === 'power' ? 'kW' : 'kWh');
   const envelope = tunnel.envelope?.[dayType] || [];
   const chartData = envelope.map(s => ({
     hour: `${s.hour}h`,
+    hourNum: s.hour,
     p10: s.p10, p25: s.p25, p50: s.p50, p75: s.p75, p90: s.p90,
   }));
+
+  const handleChartClick = (data) => {
+    if (data?.activePayload?.[0]?.payload) {
+      const point = data.activePayload[0].payload;
+      setSelectedSlot({ hour: point.hourNum, dayType });
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -246,31 +259,47 @@ function TunnelPanel({ siteId, days, energyType }) {
         </Card>
       </div>
 
-      {/* Day type selector */}
-      <div className="flex gap-2">
-        <button
-          className={`px-3 py-1 rounded-full text-sm font-medium transition ${dayType === 'weekday' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-          onClick={() => setDayType('weekday')}
-        >
-          Semaine
-        </button>
-        <button
-          className={`px-3 py-1 rounded-full text-sm font-medium transition ${dayType === 'weekend' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-          onClick={() => setDayType('weekend')}
-        >
-          Week-end
-        </button>
+      {/* Mode toggle (kWh / kW) + Day type selector */}
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex gap-2">
+          <button
+            className={`px-3 py-1 rounded-full text-sm font-medium transition ${dayType === 'weekday' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+            onClick={() => setDayType('weekday')}
+          >
+            Semaine
+          </button>
+          <button
+            className={`px-3 py-1 rounded-full text-sm font-medium transition ${dayType === 'weekend' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+            onClick={() => setDayType('weekend')}
+          >
+            Week-end
+          </button>
+        </div>
+        <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
+          <button
+            onClick={() => setMode('energy')}
+            className={`px-3 py-1 rounded-md text-xs font-medium transition ${mode === 'energy' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
+          >
+            kWh
+          </button>
+          <button
+            onClick={() => setMode('power')}
+            className={`px-3 py-1 rounded-md text-xs font-medium transition ${mode === 'power' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
+          >
+            kW
+          </button>
+        </div>
       </div>
 
       {/* Tunnel chart */}
       <Card>
         <CardBody>
           <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={chartData}>
+            <AreaChart data={chartData} onClick={handleChartClick} style={{ cursor: 'pointer' }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="hour" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} label={{ value: 'kW', angle: -90, position: 'insideLeft', style: { fontSize: 11 } }} />
-              <Tooltip formatter={(v) => `${v} kW`} />
+              <YAxis tick={{ fontSize: 11 }} label={{ value: unit, angle: -90, position: 'insideLeft', style: { fontSize: 11 } }} />
+              <Tooltip formatter={(v) => `${v} ${unit}`} />
               <Area type="monotone" dataKey="p90" stroke="#ef4444" fill="#fecaca" fillOpacity={0.3} name="P90" />
               <Area type="monotone" dataKey="p75" stroke="#f59e0b" fill="#fde68a" fillOpacity={0.3} name="P75" />
               <Area type="monotone" dataKey="p50" stroke="#3b82f6" fill="#93c5fd" fillOpacity={0.5} name="P50 (mediane)" />
@@ -279,8 +308,22 @@ function TunnelPanel({ siteId, days, energyType }) {
               <Legend />
             </AreaChart>
           </ResponsiveContainer>
+          <p className="text-xs text-gray-400 mt-1 text-center">Cliquez sur un creneau pour ouvrir l'analyse detaillee</p>
         </CardBody>
       </Card>
+
+      {/* Evidence drawer */}
+      {selectedSlot && (
+        <EvidenceDrawer
+          slot={selectedSlot}
+          tunnelData={tunnel}
+          onClose={() => setSelectedSlot(null)}
+          onCreateAction={(ctx) => {
+            track('evidence_action', ctx);
+            setSelectedSlot(null);
+          }}
+        />
+      )}
     </div>
   );
 }

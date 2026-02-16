@@ -1,0 +1,153 @@
+/**
+ * PROMEOS — EvidenceDrawer (Consumption Explorer)
+ * Reusable drawer with 3 tabs: Preuve / Methode / Actions
+ * Opened when user clicks a zone on Tunnel chart.
+ */
+import { useState } from 'react';
+import { X, BarChart3, BookOpen, Zap } from 'lucide-react';
+import { Badge, Button, TrustBadge } from '../../ui';
+
+const TABS = [
+  { key: 'evidence', label: 'Preuve', icon: BarChart3 },
+  { key: 'method', label: 'Methode', icon: BookOpen },
+  { key: 'actions', label: 'Actions', icon: Zap },
+];
+
+export default function EvidenceDrawer({ slot, tunnelData, onClose, onCreateAction }) {
+  const [tab, setTab] = useState('evidence');
+
+  if (!slot) return null;
+
+  const { hour, dayType } = slot;
+  const envelope = tunnelData?.envelope?.[dayType] || [];
+  const point = envelope.find(s => s.hour === hour) || {};
+
+  return (
+    <div className="fixed inset-y-0 right-0 w-full max-w-md bg-white shadow-xl z-50 flex flex-col border-l border-gray-200">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+        <div>
+          <h3 className="text-sm font-semibold text-gray-800">
+            Analyse — {hour}h ({dayType === 'weekday' ? 'Semaine' : 'Week-end'})
+          </h3>
+          <p className="text-xs text-gray-500">
+            {tunnelData?.readings_count?.toLocaleString()} releves • {tunnelData?.unit || 'kW'}
+          </p>
+        </div>
+        <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600">
+          <X size={18} />
+        </button>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex border-b border-gray-100">
+        {TABS.map(t => {
+          const Icon = t.icon;
+          return (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition ${
+                tab === t.key ? 'text-blue-700 border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <Icon size={14} />
+              {t.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {tab === 'evidence' && (
+          <>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-gray-50 rounded-lg p-3 text-center">
+                <p className="text-xs text-gray-500">P10</p>
+                <p className="text-lg font-bold text-gray-700">{point.p10}</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3 text-center">
+                <p className="text-xs text-gray-500">P90</p>
+                <p className="text-lg font-bold text-gray-700">{point.p90}</p>
+              </div>
+              <div className="bg-blue-50 rounded-lg p-3 text-center">
+                <p className="text-xs text-blue-600">Mediane (P50)</p>
+                <p className="text-lg font-bold text-blue-700">{point.p50}</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3 text-center">
+                <p className="text-xs text-gray-500">Echantillon</p>
+                <p className="text-lg font-bold text-gray-700">{point.count}</p>
+              </div>
+            </div>
+            <div className="bg-amber-50 rounded-lg p-3">
+              <p className="text-xs font-medium text-amber-700">Bande normale</p>
+              <p className="text-sm text-amber-800 mt-1">
+                Entre {point.p10} et {point.p90} {tunnelData?.unit || 'kW'} — {point.count} observations a cette heure.
+              </p>
+            </div>
+          </>
+        )}
+
+        {tab === 'method' && (
+          <>
+            <div className="space-y-3">
+              <div>
+                <p className="text-xs font-semibold text-gray-600 uppercase mb-1">Methode</p>
+                <p className="text-sm text-gray-700">
+                  Enveloppe quantile par creneau horaire. Les bandes P10-P90 definissent
+                  la plage de consommation "normale" basee sur {tunnelData?.days || 90} jours d'historique.
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-600 uppercase mb-1">Mode</p>
+                <Badge status="info">{tunnelData?.mode === 'power' ? 'Puissance (kW)' : 'Energie (kWh)'}</Badge>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-600 uppercase mb-1">Confiance</p>
+                <TrustBadge
+                  source={`${tunnelData?.sample_size || tunnelData?.readings_count || 0} points`}
+                  confidence={tunnelData?.confidence || 'low'}
+                />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-600 uppercase mb-1">Reference</p>
+                <p className="text-sm text-gray-600">{tunnelData?.reference_band_method || 'percentile_hourly'}</p>
+              </div>
+            </div>
+          </>
+        )}
+
+        {tab === 'actions' && (
+          <div className="space-y-3">
+            <p className="text-sm text-gray-600">
+              Si la consommation a {hour}h est regulierement hors bande, creez une action corrective.
+            </p>
+            <Button
+              onClick={() => onCreateAction?.({
+                sourceType: 'tunnel_anomaly',
+                hour,
+                dayType,
+                p10: point.p10,
+                p90: point.p90,
+                p50: point.p50,
+              })}
+              className="w-full"
+            >
+              <Zap size={14} className="mr-1.5" />
+              Creer une action corrective
+            </Button>
+            <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-500 space-y-1">
+              <p>Suggestions :</p>
+              <ul className="list-disc list-inside space-y-0.5">
+                <li>Verifier la programmation CVC a {hour}h</li>
+                <li>Comparer avec les horaires d'occupation</li>
+                <li>Identifier les equipements actifs hors plage</li>
+              </ul>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

@@ -351,6 +351,7 @@ export const getConsumptionAvailability = (siteId, energyType = 'electricity') =
 
 // Tunnel (envelope P10-P90)
 export const getConsumptionTunnel = (siteId, days = 90, energyType = 'electricity') => api.get('/consumption/tunnel', { params: { site_id: siteId, days, energy_type: energyType } }).then(r => r.data);
+export const getConsumptionTunnelV2 = (siteId, days = 90, energyType = 'electricity', mode = 'energy') => api.get('/consumption/tunnel_v2', { params: { site_id: siteId, days, energy_type: energyType, mode } }).then(r => r.data);
 
 // Targets (objectifs & budgets)
 export const getConsumptionTargets = (siteId, energyType = 'electricity', year = null) => api.get('/consumption/targets', { params: { site_id: siteId, energy_type: energyType, year } }).then(r => r.data);
