@@ -374,6 +374,7 @@ export const getHPHCBreakdownV2 = (siteId, days = 30, calendarId = null, simulat
 
 // Gas Summary (beta)
 export const getGasSummary = (siteId, days = 90) => api.get('/consumption/gas/summary', { params: { site_id: siteId, days } }).then(r => r.data);
+export const getGasWeatherNormalized = (siteId, days = 90) => api.get('/consumption/gas/weather_normalized', { params: { site_id: siteId, days } }).then(r => r.data);
 
 // ========================================
 // SITE CONFIG (Schedule + Tariff)

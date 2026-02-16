@@ -663,3 +663,20 @@ def gas_summary(
         "summer_base_kwh": round(summer_base, 1),
         "confidence": confidence,
     }
+
+
+# =============================================
+# V11 — Gas Weather Normalized (DJU)
+# =============================================
+
+@router.get("/gas/weather_normalized")
+def gas_weather_normalized(
+    site_id: int = Query(...),
+    days: int = Query(90, ge=7, le=365),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Conso gaz normalisee meteo : modele DJU + alertes (fuite, derive, chauffage precoce)."""
+    check_site_access(auth, site_id)
+    from services.gas_weather_service import compute_weather_normalized
+    return compute_weather_normalized(db, site_id, days=days)
