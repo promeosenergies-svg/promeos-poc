@@ -24,9 +24,12 @@ import CreateActionModal from '../components/CreateActionModal';
 import { fmtEur, fmtKwh, fmtDateFR } from '../utils/format';
 import { SEVERITY_TINT } from '../ui/colorTokens';
 import {
-  Zap, ChevronDown, ChevronUp, Settings, Info,
+  Zap, ChevronDown, ChevronUp, Settings, Info, Leaf,
   ExternalLink, UserCheck, CheckCircle2, XCircle, BarChart3,
 } from 'lucide-react';
+
+// Default emission factor (France electricity mix, ADEME 2024)
+const CO2E_FACTOR_KG_PER_KWH = 0.052;
 
 // ---- Constants ----
 
@@ -165,6 +168,10 @@ function DiagHeader({ insights, summary, customPrice, onPriceChange }) {
               <p className="text-xs text-gray-400">Excès kWh</p>
               <p className="text-lg font-bold text-orange-600">{fmtKwh(Math.round(totalKwh))}</p>
             </div>
+            <div className="text-right">
+              <p className="text-xs text-gray-400">CO₂e évitable</p>
+              <p className="text-lg font-bold text-emerald-600">{Math.round(totalKwh * CO2E_FACTOR_KG_PER_KWH).toLocaleString('fr-FR')} kg</p>
+            </div>
           </div>
         </div>
       </CardBody>
@@ -179,15 +186,17 @@ function SummaryCards({ summary, customPrice }) {
     ? recalcLosses(summary.total_loss_kwh, customPrice, defaultPrice)
     : Math.round(summary.total_loss_eur || 0);
 
+  const totalCo2eKg = Math.round((summary.total_loss_kwh || 0) * CO2E_FACTOR_KG_PER_KWH);
   const cards = [
     { label: 'Insights detectes', value: summary.total_insights, color: 'text-blue-700', bg: 'bg-blue-50' },
     { label: 'Sites analyses', value: summary.sites_with_insights, color: 'text-indigo-700', bg: 'bg-indigo-50' },
     { label: 'Pertes estimées', value: fmtEur(lossEur), color: 'text-red-700', bg: 'bg-red-50' },
     { label: 'Pertes kWh', value: fmtKwh(Math.round(summary.total_loss_kwh || 0)), color: 'text-orange-700', bg: 'bg-orange-50' },
+    { label: 'CO₂e évitable', value: `${totalCo2eKg.toLocaleString('fr-FR')} kg`, color: 'text-emerald-700', bg: 'bg-emerald-50' },
   ];
 
   return (
-    <div className="grid grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-5 gap-4 mb-6">
       {cards.map((c) => (
         <Card key={c.label}>
           <CardBody className={c.bg}>
@@ -264,6 +273,9 @@ function InsightRow({ insight, onRowClick, onCreateAction }) {
       </td>
       <td className="py-3 px-4 text-sm text-right text-orange-600">
         {insight.estimated_loss_kwh ? fmtKwh(Math.round(insight.estimated_loss_kwh)) : '—'}
+      </td>
+      <td className="py-3 px-4 text-sm text-right text-emerald-600">
+        {insight.estimated_loss_kwh ? `${Math.round(insight.estimated_loss_kwh * CO2E_FACTOR_KG_PER_KWH).toLocaleString('fr-FR')}` : '—'}
       </td>
       <td className="py-3 px-4 text-sm text-center">
         <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusCfg.color}`}>{statusCfg.label}</span>
@@ -547,6 +559,7 @@ function EvidenceTab({ insight }) {
           <p className="text-xs text-gray-500 mt-1">
             Écart : +{Math.round(insight.estimated_loss_kwh).toLocaleString('fr-FR')} kWh
             {insight.estimated_loss_eur > 0 && ` (${fmtEur(Math.round(insight.estimated_loss_eur))})`}
+            {' · '}{Math.round(insight.estimated_loss_kwh * CO2E_FACTOR_KG_PER_KWH).toLocaleString('fr-FR')} kgCO₂e
           </p>
         )}
       </div>
@@ -769,6 +782,7 @@ export default function ConsumptionDiagPage() {
                     <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Message</th>
                     <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase">Perte (EUR)</th>
                     <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase">Perte (kWh)</th>
+                    <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase">CO₂e (kg)</th>
                     <th className="text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase">Statut</th>
                     <th className="text-center py-3 px-1 text-xs font-medium text-gray-500 uppercase w-10"></th>
                   </tr>
