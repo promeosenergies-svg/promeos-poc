@@ -16,6 +16,7 @@ from services.patrimoine_service import (
     get_staging_summary, run_quality_gate, apply_fix, activate_batch,
     get_diff_plan, compute_content_hash, abandon_batch,
 )
+from services.import_mapping import get_mapping_report
 
 router = APIRouter(prefix="/api/patrimoine", tags=["Patrimoine"])
 
@@ -289,3 +290,17 @@ def _parse_excel_to_staging(db: Session, batch_id: int, content: bytes) -> dict:
 
     csv_bytes = output.getvalue().encode("utf-8")
     return import_csv_to_staging(db, batch_id, csv_bytes)
+
+
+# ========================================
+# Mapping preview (header recognition)
+# ========================================
+
+class MappingPreviewRequest(BaseModel):
+    headers: list
+
+
+@router.post("/mapping/preview")
+def mapping_preview(body: MappingPreviewRequest):
+    """Preview how CSV/Excel headers will be mapped to canonical columns."""
+    return get_mapping_report(body.headers)

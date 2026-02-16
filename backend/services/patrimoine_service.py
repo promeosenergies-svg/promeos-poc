@@ -18,6 +18,7 @@ from models import (
 )
 from services.onboarding_service import create_site_from_data, provision_site
 from services.quality_rules import run_all_rules
+from services.import_mapping import normalize_header, normalize_type_site, normalize_type_compteur
 
 
 # ========================================
@@ -71,7 +72,19 @@ def import_csv_to_staging(db: Session, batch_id: int, file_content: bytes) -> di
     first_line = text.split("\n")[0]
     delimiter = ";" if ";" in first_line else ","
 
-    reader = csv.DictReader(io.StringIO(text), delimiter=delimiter)
+    # Normalize headers via import_mapping (FR/EN synonyms)
+    raw_reader = csv.reader(io.StringIO(text), delimiter=delimiter)
+    raw_headers = next(raw_reader, [])
+    canonical_headers = []
+    for h in raw_headers:
+        mapped = normalize_header(h)
+        canonical_headers.append(mapped if mapped else h.strip().lower())
+
+    reader = csv.DictReader(
+        io.StringIO(text), delimiter=delimiter,
+        fieldnames=canonical_headers,
+    )
+    next(reader)  # skip original header row
 
     sites_created = 0
     compteurs_created = 0
@@ -96,7 +109,7 @@ def import_csv_to_staging(db: Session, batch_id: int, file_content: bytes) -> di
                     batch_id=batch_id,
                     row_number=row_num,
                     nom=nom,
-                    type_site=(row.get("type") or "").strip() or None,
+                    type_site=normalize_type_site((row.get("type") or "").strip()) or (row.get("type") or "").strip() or None,
                     adresse=(row.get("adresse") or "").strip() or None,
                     code_postal=(row.get("code_postal") or "").strip() or None,
                     ville=(row.get("ville") or "").strip() or None,
@@ -124,7 +137,7 @@ def import_csv_to_staging(db: Session, batch_id: int, file_content: bytes) -> di
                     row_number=row_num,
                     numero_serie=numero_serie or None,
                     meter_id=meter_id or None,
-                    type_compteur=(row.get("type_compteur") or "").strip() or None,
+                    type_compteur=normalize_type_compteur((row.get("type_compteur") or "").strip()) or (row.get("type_compteur") or "").strip() or None,
                     puissance_kw=puissance,
                 )
                 db.add(sc)
