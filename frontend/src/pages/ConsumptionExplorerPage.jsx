@@ -44,6 +44,7 @@ import { computeInsights } from './consumption/insightRules';
 import useExplorerMotor from './consumption/useExplorerMotor';
 import useExplorerURL from './consumption/useExplorerURL';
 import useExplorerPresets from './consumption/useExplorerPresets';
+import useExplorerMode from './consumption/useExplorerMode';
 import PortfolioPanel from './consumption/PortfolioPanel';
 import OverviewRow, { computeOverviewData } from './consumption/OverviewRow';
 import { MAX_SITES } from './consumption/types';
@@ -964,6 +965,9 @@ function GasPanel({ siteId, days }) {
 export default function ConsumptionExplorerPage() {
   const { selectedSiteId, scopedSites } = useScope();
 
+  // ── UI mode (Classic / Expert) — localStorage only, never in URL ───────
+  const { uiMode, isClassic, toggleUiMode } = useExplorerMode();
+
   // ── URL state (bidirectional sync) ─────────────────────────────────────
   const { urlState, setUrlParams } = useExplorerURL();
 
@@ -1112,8 +1116,20 @@ export default function ConsumptionExplorerPage() {
 
   return (
     <div className="space-y-5">
-      {/* Unified sticky filter bar (v3: period pills + date range + Save/Reset/Copy) */}
+      {/* UI Mode toggle — persisted in localStorage, never in URL */}
+      <div className="flex justify-end">
+        <button
+          onClick={toggleUiMode}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition text-gray-600 border-gray-200 bg-white hover:bg-gray-50"
+          title={isClassic ? 'Passer en mode Expert (contrôles avancés)' : 'Passer en mode Classique (vue standard)'}
+        >
+          {isClassic ? '⚙ Mode Expert' : '← Mode Classique'}
+        </button>
+      </div>
+
+      {/* Unified sticky filter bar */}
       <StickyFilterBar
+        uiMode={uiMode}
         siteIds={siteIds}
         setSiteIds={setSiteIds}
         siteId={siteId}
