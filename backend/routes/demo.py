@@ -112,6 +112,7 @@ def get_demo_pack_status(db: Session = Depends(get_db)):
         first_site = db.query(Site).filter(Site.actif == True).first()
         if first_site:
             result["default_site_id"] = first_site.id
+            result["default_site_name"] = first_site.nom
     return result
 
 

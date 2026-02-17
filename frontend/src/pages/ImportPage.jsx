@@ -32,7 +32,7 @@ function ImportPage() {
   const [seedLoading, setSeedLoading] = useState(false);
   const fileRef = useRef(null);
   const { toast } = useToast();
-  const { clearScope, applyDemoScope } = useScope();
+  const { clearScope, applyDemoScope, org } = useScope();
 
   // Demo Packs state
   const [selectedPack, setSelectedPack] = useState('casino');
@@ -181,6 +181,18 @@ function ImportPage() {
 
           {statusError && (
             <p className="text-xs text-amber-600 mb-2">Statut demo indisponible — reset manuel possible.</p>
+          )}
+
+          {/* Active scope indicator */}
+          {org && totalRows > 0 && (
+            <p className="text-xs text-indigo-600 mb-2">
+              Contexte actif : <strong>{org.nom}</strong>
+              {packStatus?.org_nom && org.nom !== packStatus.org_nom && (
+                <span className="text-amber-600 ml-2">
+                  (pack charge : {packStatus.org_nom})
+                </span>
+              )}
+            </p>
           )}
 
           {/* Pack selector */}

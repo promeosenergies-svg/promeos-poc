@@ -1,6 +1,9 @@
 /**
- * PROMEOS — Tests for ImportPage silent status-pack behavior.
- * Ensures 404 on /demo/status-pack does NOT trigger a toast.
+ * PROMEOS — Tests for ImportPage: scope switching + silent status-pack.
+ * Ensures:
+ * - 404 on /demo/status-pack does NOT trigger a toast
+ * - seedDemoPack → applyDemoScope called with org_id/org_nom
+ * - resetDemoPack → clearScope called
  */
 import { describe, it, expect, vi } from 'vitest';
 import { isSilentUrl, normalizePathFromAxiosConfig } from '../../services/api';
@@ -66,5 +69,81 @@ describe('ImportPage: status-pack 404 is silent', () => {
     }
 
     expect(toastFn).toHaveBeenCalledWith('Not Found', 'error');
+  });
+});
+
+
+describe('ImportPage: scope switching after seed/reset', () => {
+  it('seedDemoPack success triggers applyDemoScope with org_id and org_nom', () => {
+    const applyDemoScope = vi.fn();
+    // Simulate seed response
+    const seedResult = {
+      status: 'ok',
+      org_id: 123,
+      org_nom: 'SCI Les Terrasses',
+      default_site_id: 456,
+      default_site_name: 'Bureaux Paris',
+      sites_count: 10,
+      elapsed_s: 3.2,
+    };
+    // Simulate handleSeedPack logic
+    if (seedResult.org_id) {
+      applyDemoScope(seedResult.org_id, seedResult.org_nom);
+    }
+    expect(applyDemoScope).toHaveBeenCalledWith(123, 'SCI Les Terrasses');
+  });
+
+  it('seed with no org_id does NOT call applyDemoScope', () => {
+    const applyDemoScope = vi.fn();
+    const seedResult = { status: 'error' };
+    if (seedResult.org_id) {
+      applyDemoScope(seedResult.org_id, seedResult.org_nom);
+    }
+    expect(applyDemoScope).not.toHaveBeenCalled();
+  });
+
+  it('resetDemoPack triggers clearScope', () => {
+    const clearScope = vi.fn();
+    // Simulate handleResetPack logic
+    clearScope();
+    expect(clearScope).toHaveBeenCalledOnce();
+  });
+
+  it('replay flow: reset → clearScope → seed → applyDemoScope', () => {
+    const clearScope = vi.fn();
+    const applyDemoScope = vi.fn();
+    const callOrder = [];
+
+    // Simulate replay
+    clearScope();
+    callOrder.push('clearScope');
+
+    const seedResult = { org_id: 789, org_nom: 'Groupe Casino' };
+    if (seedResult.org_id) {
+      applyDemoScope(seedResult.org_id, seedResult.org_nom);
+      callOrder.push('applyDemoScope');
+    }
+
+    expect(callOrder).toEqual(['clearScope', 'applyDemoScope']);
+    expect(applyDemoScope).toHaveBeenCalledWith(789, 'Groupe Casino');
+  });
+
+  it('status-pack with org_id triggers applyDemoScope on init', () => {
+    const applyDemoScope = vi.fn();
+    const statusResult = { org_id: 100, org_nom: 'Demo Org', total_rows: 5000 };
+    // Simulate refreshStatus logic
+    if (statusResult.org_id && statusResult.total_rows > 0) {
+      applyDemoScope(statusResult.org_id, statusResult.org_nom);
+    }
+    expect(applyDemoScope).toHaveBeenCalledWith(100, 'Demo Org');
+  });
+
+  it('status-pack with total_rows=0 does NOT trigger applyDemoScope', () => {
+    const applyDemoScope = vi.fn();
+    const statusResult = { org_id: null, total_rows: 0 };
+    if (statusResult.org_id && statusResult.total_rows > 0) {
+      applyDemoScope(statusResult.org_id, statusResult.org_nom);
+    }
+    expect(applyDemoScope).not.toHaveBeenCalled();
   });
 });

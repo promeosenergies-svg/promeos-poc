@@ -58,6 +58,7 @@ class SeedOrchestrator:
         result["sites_count"] = len(master["sites"])
         result["meters_count"] = len(master["meters"])
         result["default_site_id"] = master["sites"][0].id if master["sites"] else None
+        result["default_site_name"] = master["sites"][0].nom if master["sites"] else None
 
         # 2. Weather
         from .gen_weather import generate_weather

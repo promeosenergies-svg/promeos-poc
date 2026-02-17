@@ -305,3 +305,60 @@ class TestSoftReset:
         assert db_session.query(EmsWeatherCache).count() == 0
         assert db_session.query(ConsumptionInsight).count() == 0
         assert db_session.query(PurchaseScenarioResult).count() == 0
+
+
+class TestScopeInSeedResult:
+    """Verify seed-pack returns org_id, default_site_id, names for scope auto-switch."""
+
+    def test_casino_seed_returns_org_id(self, db_session):
+        result = _seed(db_session, "casino", "S")
+        assert result["org_id"] is not None
+        assert isinstance(result["org_id"], int)
+
+    def test_casino_seed_returns_org_nom(self, db_session):
+        result = _seed(db_session, "casino", "S")
+        assert result["org_nom"] == "Groupe Casino"
+
+    def test_casino_seed_returns_default_site_id(self, db_session):
+        result = _seed(db_session, "casino", "S")
+        assert result["default_site_id"] is not None
+        assert isinstance(result["default_site_id"], int)
+        # Verify the site actually exists
+        site = db_session.query(Site).filter(Site.id == result["default_site_id"]).first()
+        assert site is not None
+
+    def test_casino_seed_returns_default_site_name(self, db_session):
+        result = _seed(db_session, "casino", "S")
+        assert result["default_site_name"] is not None
+        assert len(result["default_site_name"]) > 0
+
+    def test_tertiaire_seed_returns_sci_org(self, db_session):
+        result = _seed(db_session, "tertiaire", "S")
+        assert result["org_nom"] == "SCI Les Terrasses"
+        assert result["org_id"] is not None
+        assert result["default_site_id"] is not None
+        assert result["default_site_name"] is not None
+
+    def test_status_pack_returns_org_after_seed(self, db_session):
+        """status-pack should expose org_id + default_site_id after seed."""
+        from services.demo_seed import SeedOrchestrator
+        orch = SeedOrchestrator(db_session)
+        seed_result = orch.seed(pack="tertiaire", size="S", rng_seed=42, days=30)
+
+        # Simulate what status-pack endpoint does
+        org = db_session.query(Organisation).first()
+        first_site = db_session.query(Site).filter(Site.actif == True).first()
+        assert org is not None
+        assert org.id == seed_result["org_id"]
+        assert first_site is not None
+        assert first_site.id == seed_result["default_site_id"]
+
+    def test_status_pack_empty_after_reset(self, db_session):
+        """After soft reset, org query returns None."""
+        from services.demo_seed import SeedOrchestrator
+        orch = SeedOrchestrator(db_session)
+        orch.seed(pack="casino", size="S", rng_seed=42, days=30)
+        orch.reset(mode="soft")
+
+        org = db_session.query(Organisation).first()
+        assert org is None  # All demo orgs deleted
