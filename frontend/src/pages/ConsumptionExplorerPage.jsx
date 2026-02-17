@@ -44,6 +44,9 @@ import { computeInsights } from './consumption/insightRules';
 import useExplorerMotor from './consumption/useExplorerMotor';
 import useExplorerURL from './consumption/useExplorerURL';
 import useExplorerPresets from './consumption/useExplorerPresets';
+import PortfolioPanel from './consumption/PortfolioPanel';
+import OverviewRow, { computeOverviewData } from './consumption/OverviewRow';
+import { MAX_SITES } from './consumption/types';
 
 // ========================================
 // Constants
@@ -989,6 +992,24 @@ export default function ConsumptionExplorerPage() {
     loading,
   } = motor;
 
+  // ── Portfolio mode (V12-A): all sites, aggregated view ────────────────
+  const [isPortfolioMode, setIsPortfolioMode] = useState(false);
+
+  const handleTogglePortfolio = useCallback(() => {
+    const next = !isPortfolioMode;
+    setIsPortfolioMode(next);
+    if (next) {
+      // Select all available sites when entering portfolio mode
+      const allIds = sites.map(s => s.id);
+      setSiteIds(allIds);
+      setMode('agrege'); // only agrege is valid in portfolio
+    } else {
+      // Return to single/first site when leaving portfolio
+      const firstSiteId = selectedSiteId || (sites.length ? sites[0].id : null);
+      setSiteIds(firstSiteId ? [firstSiteId] : []);
+    }
+  }, [isPortfolioMode, sites, selectedSiteId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Custom date range (V11.1-A) ────────────────────────────────────────
   const [startDate, setStartDate] = useState(urlState.startDate || null);
   const [endDate, setEndDate] = useState(urlState.endDate || null);
@@ -1112,6 +1133,8 @@ export default function ConsumptionExplorerPage() {
         unit={unit}
         setUnit={setUnit}
         availability={availability}
+        isPortfolioMode={isPortfolioMode}
+        onTogglePortfolio={sites.length > 1 ? handleTogglePortfolio : undefined}
         onReset={handleReset}
         onCopyLink={() => { try { navigator.clipboard.writeText(window.location.href); } catch {} }}
         onSave={handleSavePreset}
@@ -1136,9 +1159,31 @@ export default function ConsumptionExplorerPage() {
         />
       )}
 
-      {/* Main content (data available) */}
-      {showContent && (
+      {/* Portfolio mode — shown instead of tab panels */}
+      {isPortfolioMode && (loading || (availability && hasData) || !loading) && (
         <>
+          {/* OverviewRow (aggregate) */}
+          {motor.primaryTunnel && (
+            <OverviewRow
+              data={computeOverviewData(motor.primaryTunnel)}
+              unit={unit}
+            />
+          )}
+          <PortfolioPanel motor={motor} sites={sites} unit={unit} />
+        </>
+      )}
+
+      {/* Main content (data available, non-portfolio) */}
+      {!isPortfolioMode && showContent && (
+        <>
+          {/* OverviewRow — KPI summary above tabs */}
+          {motor.primaryTunnel && (
+            <OverviewRow
+              data={computeOverviewData(motor.primaryTunnel)}
+              unit={unit}
+            />
+          )}
+
           {/* Tab bar */}
           <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
             {TAB_CONFIG.map(tab => {
@@ -1190,6 +1235,26 @@ export default function ConsumptionExplorerPage() {
             {activeTab === 'gas' && <GasPanel siteId={siteId} days={days} />}
           </div>
         </>
+      )}
+
+      {/* Blocked state: too many sites in comparatif (guard) */}
+      {!isPortfolioMode && !loading && siteIds.length > MAX_SITES && (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="w-14 h-14 rounded-full bg-amber-50 flex items-center justify-center mb-4">
+            <BarChart3 size={28} className="text-amber-500" />
+          </div>
+          <h3 className="text-base font-semibold text-gray-700 mb-1">Trop de sites sélectionnés</h3>
+          <p className="text-sm text-gray-500 mb-4 max-w-sm">
+            Le mode comparatif supporte jusqu'à {MAX_SITES} sites simultanément.
+            Passez en mode Portfolio pour visualiser tous vos sites.
+          </p>
+          <button
+            onClick={handleTogglePortfolio}
+            className="px-4 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+          >
+            Passer en mode Portfolio
+          </button>
+        </div>
       )}
     </div>
   );

@@ -1,7 +1,13 @@
 /**
- * PROMEOS — StickyFilterBar v3 (Consumption Explorer)
- * Unified sticky bar: multi-site chips + mode + unit + period pills
- *   + custom date range + energy toggle + Save/Reset/Copy actions + presets
+ * PROMEOS — StickyFilterBar v4 (Sprint V12)
+ * Unified sticky bar: multi-site chips (selected only) + site search + Portfolio mode
+ *   + mode + unit + period pills + custom date range + energy toggle + Save/Reset/Copy actions
+ *
+ * V12 changes:
+ *   - Chips now show only SELECTED sites (not all available) → fixes overflow with 36+ sites
+ *   - "+" button opens SiteSearchDropdown to add up to MAX_SITES_COMPARATIF=5
+ *   - Portfolio toggle: shown when sites > 5 or user explicitly requests it
+ *   - In Portfolio mode: Superpose/Empile/Sépare modes are disabled
  *
  * Props (all optional / backward-compat):
  *   siteIds, setSiteIds         multi-site (new)
@@ -15,6 +21,8 @@
  *   mode, setMode               agrege|superpose|empile|separe
  *   unit, setUnit               kwh|kw|eur
  *   availability                data quality metadata
+ *   isPortfolioMode             boolean — Portfolio mode active
+ *   onTogglePortfolio()         toggle Portfolio mode
  *   onSave(name, state)         save named preset callback
  *   onReset()                   reset to defaults callback
  *   onCopyLink()                copy shareable URL callback
@@ -22,8 +30,8 @@
  *   onLoadPreset(name)          load preset callback
  *   onDeletePreset(name)        delete preset callback
  */
-import { useState } from 'react';
-import { X, Zap, Flame, Save, RotateCcw, Link, ChevronDown, Trash2 } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { X, Zap, Flame, Save, RotateCcw, Link, ChevronDown, Trash2, Plus, LayoutGrid } from 'lucide-react';
 import { TrustBadge } from '../../ui';
 import { computeGranularity, colorForSite } from './helpers';
 import { MODE_LABELS, UNIT_LABELS, MAX_SITES } from './types';
@@ -44,6 +52,7 @@ const PERIOD_PILLS = [
 
 const GRAN_LABELS = { '30min': '30 min', '1h': '1 heure', jour: 'Jour', semaine: 'Semaine' };
 
+// In Portfolio mode, only Agrege is meaningful
 const MODE_ORDER = ['agrege', 'superpose', 'empile', 'separe'];
 const UNIT_ORDER = ['kwh', 'kw', 'eur'];
 
@@ -54,6 +63,51 @@ function ytdStart() {
 /** Today as ISO string */
 function todayISO() {
   return new Date().toISOString().split('T')[0];
+}
+
+// ── Site Search Dropdown ──────────────────────────────────────────────────────
+function SiteSearchDropdown({ sites, selectedIds, onAdd, onClose }) {
+  const [query, setQuery] = useState('');
+  const inputRef = useRef(null);
+
+  useEffect(() => { inputRef.current?.focus(); }, []);
+
+  const available = sites.filter(
+    s => !selectedIds.includes(s.id) &&
+      s.nom.toLowerCase().includes(query.toLowerCase())
+  );
+
+  return (
+    <div className="absolute top-full left-0 mt-1 w-60 bg-white rounded-lg shadow-lg border border-gray-200 z-40 py-1">
+      <div className="px-2 py-1.5 border-b border-gray-100">
+        <input
+          ref={inputRef}
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder="Rechercher un site..."
+          className="w-full text-xs border border-gray-200 rounded-md px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-400"
+        />
+      </div>
+      <div className="max-h-52 overflow-y-auto">
+        {available.length === 0 && (
+          <p className="text-xs text-gray-400 text-center py-3">Aucun site disponible</p>
+        )}
+        {available.map((s, idx) => {
+          const color = colorForSite(s.id, idx);
+          return (
+            <button
+              key={s.id}
+              onClick={() => { onAdd(s.id); onClose(); }}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 text-left"
+            >
+              <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+              <span className="truncate">{s.nom}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 export default function StickyFilterBar({
@@ -83,6 +137,9 @@ export default function StickyFilterBar({
   setUnit,
   // Data quality
   availability,
+  // Portfolio mode (V12)
+  isPortfolioMode = false,
+  onTogglePortfolio,
   // Action callbacks
   onSave,
   onReset,
@@ -96,6 +153,21 @@ export default function StickyFilterBar({
   const [presetName, setPresetName] = useState('');
   const [showPresets, setShowPresets] = useState(false);
   const [showCustomDates, setShowCustomDates] = useState(!!(startDate || endDate));
+  const [showAddSite, setShowAddSite] = useState(false);
+
+  const addRef = useRef(null);
+
+  // Close site search on outside click
+  useEffect(() => {
+    if (!showAddSite) return;
+    const handler = (e) => {
+      if (addRef.current && !addRef.current.contains(e.target)) {
+        setShowAddSite(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showAddSite]);
 
   const gran = computeGranularity(days);
   const confidence = availability?.has_data
@@ -112,10 +184,11 @@ export default function StickyFilterBar({
       return;
     }
     if (effectiveSiteIds.includes(id)) {
+      // Don't remove last remaining site
       if (effectiveSiteIds.length > 1) {
         setSiteIds(effectiveSiteIds.filter(s => s !== id));
       }
-    } else if (effectiveSiteIds.length < MAX_SITES) {
+    } else if (!isPortfolioMode && effectiveSiteIds.length < MAX_SITES) {
       setSiteIds([...effectiveSiteIds, id]);
     }
   };
@@ -126,13 +199,11 @@ export default function StickyFilterBar({
 
   const handlePillClick = (value) => {
     if (value === 'ytd') {
-      // YTD: clear days, set start=Jan-1, end=today
       if (setStartDate) setStartDate(ytdStart());
       if (setEndDate) setEndDate(todayISO());
-      if (setDays) setDays(365); // fallback days value
+      if (setDays) setDays(365);
       setShowCustomDates(false);
     } else {
-      // Clear custom range when switching to quick pill
       if (setStartDate) setStartDate(null);
       if (setEndDate) setEndDate(null);
       if (setDays) setDays(value);
@@ -149,48 +220,97 @@ export default function StickyFilterBar({
 
   const handleCopyLink = () => {
     if (onCopyLink) onCopyLink();
-    else {
-      try { navigator.clipboard.writeText(window.location.href); } catch {}
-    }
+    else { try { navigator.clipboard.writeText(window.location.href); } catch {} }
   };
+
+  // Modes available in current context
+  const availableModes = isPortfolioMode
+    ? ['agrege']  // Portfolio: aggregation only
+    : MODE_ORDER;
 
   return (
     <div className="sticky top-0 z-20 bg-white/95 backdrop-blur border-b border-gray-100 -mx-4 px-4 py-2.5 md:-mx-6 md:px-6 space-y-2">
 
-      {/* Row 1: Site chips + Energy toggle + Period pills + Granularity + Trust badge */}
+      {/* Row 1: Site chips (selected only) + add button + Portfolio toggle + Energy + Period + Gran + Trust */}
       <div className="flex items-center gap-3 flex-wrap">
 
-        {/* Multi-site chips */}
-        {isMultiMode ? (
-          <div className="flex flex-wrap gap-1.5">
-            {sites.map((s, idx) => {
-              const selected = effectiveSiteIds.includes(s.id);
-              const color = colorForSite(s.id, idx);
-              return (
+        {/* Multi-site: selected chips + add button */}
+        {isMultiMode && !isPortfolioMode && (
+          <div className="flex items-center gap-1.5">
+            {/* Only render SELECTED site chips */}
+            <div className="flex gap-1.5 overflow-x-auto max-w-xs" style={{ scrollbarWidth: 'thin' }}>
+              {effectiveSiteIds.map((id, idx) => {
+                const site = sites.find(s => s.id === id);
+                const color = colorForSite(id, idx);
+                return (
+                  <button
+                    key={id}
+                    onClick={() => toggleSite(id)}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border text-white border-transparent shrink-0 transition"
+                    style={{ backgroundColor: color, borderColor: color }}
+                    title={effectiveSiteIds.length > 1 ? `Retirer ${site?.nom || id}` : site?.nom || String(id)}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-white/60 shrink-0" />
+                    <span className="max-w-[120px] truncate">{site?.nom || id}</span>
+                    {effectiveSiteIds.length > 1 && (
+                      <X size={10} className="opacity-70 shrink-0" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* "+" add site button (only if < MAX_SITES) */}
+            {effectiveSiteIds.length < MAX_SITES && (
+              <div className="relative" ref={addRef}>
                 <button
-                  key={s.id}
-                  onClick={() => toggleSite(s.id)}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition ${
-                    selected
-                      ? 'text-white border-transparent'
-                      : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
-                  }`}
-                  style={selected ? { backgroundColor: color, borderColor: color } : {}}
-                  title={selected && effectiveSiteIds.length > 1 ? 'Retirer' : s.nom}
+                  onClick={() => setShowAddSite(v => !v)}
+                  className="flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition"
+                  title="Ajouter un site"
                 >
-                  <span
-                    className="w-2 h-2 rounded-full shrink-0"
-                    style={{ backgroundColor: selected ? 'rgba(255,255,255,0.6)' : color }}
-                  />
-                  {s.nom}
-                  {selected && effectiveSiteIds.length > 1 && (
-                    <X size={10} className="opacity-70" />
-                  )}
+                  <Plus size={12} />
                 </button>
-              );
-            })}
+                {showAddSite && (
+                  <SiteSearchDropdown
+                    sites={sites}
+                    selectedIds={effectiveSiteIds}
+                    onAdd={(id) => { toggleSite(id); }}
+                    onClose={() => setShowAddSite(false)}
+                  />
+                )}
+              </div>
+            )}
           </div>
-        ) : sites.length > 1 ? (
+        )}
+
+        {/* Portfolio mode: show label instead of chips */}
+        {isMultiMode && isPortfolioMode && (
+          <div className="flex items-center gap-2 px-3 py-1 bg-indigo-50 border border-indigo-200 rounded-full">
+            <LayoutGrid size={12} className="text-indigo-600" />
+            <span className="text-xs font-medium text-indigo-700">
+              Portfolio — {sites.length} sites
+            </span>
+          </div>
+        )}
+
+        {/* Portfolio toggle button (shown when multi-site available) */}
+        {isMultiMode && onTogglePortfolio && (
+          <button
+            onClick={onTogglePortfolio}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition ${
+              isPortfolioMode
+                ? 'bg-indigo-600 text-white border-indigo-600'
+                : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300 hover:text-indigo-600'
+            }`}
+            title={isPortfolioMode ? 'Quitter le mode Portfolio' : 'Passer en mode Portfolio (tous les sites)'}
+          >
+            <LayoutGrid size={11} />
+            Portfolio
+          </button>
+        )}
+
+        {/* Legacy single-site select (when setSiteIds not provided) */}
+        {!isMultiMode && sites.length > 1 && (
           <select
             value={siteId || effectiveSiteIds[0] || ''}
             onChange={(e) => setSiteId ? setSiteId(Number(e.target.value)) : toggleSite(Number(e.target.value))}
@@ -198,7 +318,7 @@ export default function StickyFilterBar({
           >
             {sites.map(s => <option key={s.id} value={s.id}>{s.nom}</option>)}
           </select>
-        ) : null}
+        )}
 
         {/* Energy toggle */}
         <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
@@ -302,19 +422,25 @@ export default function StickyFilterBar({
         </div>
       )}
 
-      {/* Row 2: Mode pills (only for multi-site) + Unit toggle (always) */}
+      {/* Row 2: Mode pills + Unit toggle */}
       {(setMode || setUnit) && (
         <div className="flex items-center gap-3 flex-wrap">
-          {/* Mode pills — visible only when multi-site selected */}
-          {setMode && effectiveSiteIds.length > 1 && (
+          {/* Mode pills — shown when multi-site or portfolio */}
+          {setMode && (effectiveSiteIds.length > 1 || isPortfolioMode) && (
             <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
-              {MODE_ORDER.map(m => (
+              {availableModes.map(m => (
                 <button
                   key={m}
                   onClick={() => setMode(m)}
+                  disabled={isPortfolioMode && m !== 'agrege'}
                   className={`px-3 py-1 rounded-md text-xs font-medium transition ${
-                    mode === m ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                    mode === m
+                      ? 'bg-white text-blue-700 shadow-sm'
+                      : isPortfolioMode && m !== 'agrege'
+                        ? 'text-gray-300 cursor-not-allowed'
+                        : 'text-gray-600 hover:text-gray-900'
                   }`}
+                  title={isPortfolioMode && m !== 'agrege' ? 'Non disponible en mode Portfolio' : undefined}
                 >
                   {MODE_LABELS[m]}
                 </button>
