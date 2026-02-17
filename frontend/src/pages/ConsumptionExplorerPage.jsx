@@ -35,6 +35,8 @@ import EvidenceDrawer from './consumption/EvidenceDrawer';
 import HeatmapChart from './consumption/HeatmapChart';
 import ExplorerChart from './consumption/ExplorerChart';
 import LayerToggle from './consumption/LayerToggle';
+import TunnelLayer from './consumption/layers/TunnelLayer';
+import ObjectivesLayer from './consumption/layers/ObjectivesLayer';
 import { computeAutoRange } from './consumption/helpers';
 import useExplorerMotor from './consumption/useExplorerMotor';
 import useExplorerURL from './consumption/useExplorerURL';
@@ -314,20 +316,8 @@ function TunnelPanel({ siteId, days, energyType }) {
                 height={300}
                 onSlotClick={handleChartClick}
               >
-                {/* P10-P90 envelope layers */}
-                {showP10P90 && (
-                  <>
-                    <Area type="monotone" dataKey="p90" stroke="#ef4444" fill="#fecaca" fillOpacity={0.25} name="P90" />
-                    <Area type="monotone" dataKey="p10" stroke="#6b7280" fill="#e5e7eb" fillOpacity={0.25} name="P10" />
-                  </>
-                )}
-                {showP25P75 && (
-                  <>
-                    <Area type="monotone" dataKey="p75" stroke="#f59e0b" fill="#fde68a" fillOpacity={0.3} name="P75" />
-                    <Area type="monotone" dataKey="p25" stroke="#10b981" fill="#6ee7b7" fillOpacity={0.3} name="P25" />
-                  </>
-                )}
-                <Area type="monotone" dataKey="p50" stroke="#3b82f6" fill="#93c5fd" fillOpacity={0.5} name="P50 (mediane)" />
+                {/* Composable TunnelLayer (P10-P25-P50-P75-P90) */}
+                <TunnelLayer visible={showP10P90} opacity={showP25P75 ? 0.2 : 0.3} />
               </ExplorerChart>
               <p className="text-xs text-gray-400 mt-1 text-center">Cliquez sur un creneau pour ouvrir l'analyse detaillee</p>
             </div>
@@ -528,21 +518,30 @@ function TargetsPanel({ siteId, energyType }) {
         </Card>
       )}
 
-      {/* Bar chart */}
+      {/* Bar chart with ObjectivesLayer overlay */}
       {chartData.length > 0 && (
         <Card>
           <CardBody>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} label={{ value: 'kWh', angle: -90, position: 'insideLeft', style: { fontSize: 11 } }} />
-                <Tooltip formatter={(v) => v != null ? `${v.toLocaleString()} kWh` : 'N/A'} />
-                <Legend />
-                <Bar dataKey="objectif" fill="#93c5fd" name="Objectif" />
-                <Bar dataKey="reel" fill="#3b82f6" name="Reel" />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="flex gap-4">
+              <div className="flex-1 min-w-0">
+                <ExplorerChart
+                  data={chartData}
+                  xKey="name"
+                  valueKey="reel"
+                  mode="agrege"
+                  unit="kwh"
+                  height={250}
+                >
+                  <Bar dataKey="objectif" fill="#93c5fd" name="Objectif" />
+                  <Bar dataKey="reel" fill="#3b82f6" name="Reel" />
+                  <ObjectivesLayer targets={targets} visible unit="kwh" />
+                </ExplorerChart>
+              </div>
+              <LayerToggle
+                layers={{ objectifs: true }}
+                onToggle={() => {}}
+              />
+            </div>
           </CardBody>
         </Card>
       )}
