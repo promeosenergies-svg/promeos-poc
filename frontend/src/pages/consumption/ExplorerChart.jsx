@@ -19,6 +19,7 @@
  *   children     — layer components (TunnelLayer, ObjectivesLayer, etc.)
  */
 import { useMemo } from 'react';
+import { BarChart3 } from 'lucide-react';
 import {
   ComposedChart,
   Area, Bar, Line, ReferenceLine,
@@ -58,6 +59,21 @@ function SummaryRow({ summaryData }) {
       {parts.map((p, i) => (
         <span key={i}>{p}</span>
       ))}
+    </div>
+  );
+}
+
+/** Shown when fewer than 2 valid data points are available */
+function InsufficientDataPlaceholder({ count = 0 }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-12 text-center">
+      <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center mb-3">
+        <BarChart3 size={24} className="text-amber-400" />
+      </div>
+      <p className="text-sm font-medium text-gray-600">Données insuffisantes pour tracer le graphique</p>
+      <p className="text-xs text-gray-400 mt-1">
+        {count} point{count !== 1 ? 's' : ''} valide{count !== 1 ? 's' : ''} — 2 minimum requis
+      </p>
     </div>
   );
 }
@@ -110,6 +126,19 @@ export default function ExplorerChart({
 
   const showBrushBar = showBrush && stableData.length > 20;
 
+  // ── ChartRenderGuard: validate points before rendering ──
+  const validPoints = stableData.filter(p => p[valueKey] != null && !isNaN(p[valueKey]));
+  if (validPoints.length < 2 && mode !== 'superpose' && mode !== 'empile') {
+    return <InsufficientDataPlaceholder count={validPoints.length} />;
+  }
+
+  // Safe Y domain with padding to prevent flat-line chart (when all values equal)
+  const ys = validPoints.map(p => p[valueKey]).filter(Number.isFinite);
+  const yMin = ys.length ? Math.min(...ys) : 0;
+  const yMax = ys.length ? Math.max(...ys) : 1;
+  const pad = yMin === yMax ? Math.max(1, Math.abs(yMin) * 0.05) : 0;
+  const yDomain = [Math.max(0, yMin - pad), yMax + pad];
+
   if (mode === 'separe' && siteIds.length > 1) {
     return (
       <>
@@ -136,8 +165,9 @@ export default function ExplorerChart({
           <YAxis
             tick={{ fontSize: 11 }}
             label={{ value: yLabel, angle: -90, position: 'insideLeft', style: { fontSize: 11 } }}
+            domain={yDomain}
           />
-          <Tooltip formatter={(v, name) => v != null ? [`${v} ${yLabel}`, name] : ['N/A', name]} />
+          <Tooltip formatter={(v, name) => (v != null && !isNaN(v)) ? [`${Number(v).toLocaleString('fr-FR')} ${yLabel}`, name] : ['N/A', name]} />
           <Legend />
 
           {/* Core series by mode */}

@@ -21,7 +21,7 @@ import { SkeletonCard } from '../ui';
 import { useScope } from '../contexts/ScopeContext';
 import { track } from '../services/tracker';
 import {
-  getConsumptionTunnel,
+  getConsumptionTunnel, getConsumptionTunnelV2,
   getConsumptionTargets,
   createConsumptionTarget,
   deleteConsumptionTarget,
@@ -48,12 +48,15 @@ import useExplorerMode from './consumption/useExplorerMode';
 import PortfolioPanel from './consumption/PortfolioPanel';
 import OverviewRow, { computeOverviewData } from './consumption/OverviewRow';
 import { MAX_SITES } from './consumption/types';
+import TimeseriesPanel from './consumption/TimeseriesPanel';
+import ExplorerDebugPanel from './consumption/ExplorerDebugPanel';
 
 // ========================================
 // Constants
 // ========================================
 
 const TAB_CONFIG = [
+  { key: 'timeseries', label: 'Consommation', icon: BarChart3, desc: 'Série temporelle' },
   { key: 'tunnel', label: 'Tunnel', icon: Activity, desc: 'Enveloppe P10-P90' },
   { key: 'targets', label: 'Objectifs', icon: Target, desc: 'Budgets & progression' },
   { key: 'hphc', label: 'HP/HC', icon: Clock, desc: 'Grille tarifaire' },
@@ -1034,7 +1037,7 @@ export default function ConsumptionExplorerPage() {
   }, [siteIds, energyType, days, mode, unit]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Tab state (persisted in URL) ───────────────────────────────────────
-  const [activeTab, setActiveTab] = useState(urlState.tab);
+  const [activeTab, setActiveTab] = useState(urlState.tab || 'timeseries');
   const switchTab = (tab) => {
     setActiveTab(tab);
     setUrlParams({ tab });
@@ -1179,6 +1182,14 @@ export default function ConsumptionExplorerPage() {
         </div>
       )}
 
+      {/* Debug panel — visible only when ?debug=1 in URL */}
+      {new URLSearchParams(window.location.search).has('debug') && (
+        <ExplorerDebugPanel
+          params={{ siteIds, energyType, days, unit, mode, startDate, endDate }}
+          availability={availability}
+        />
+      )}
+
       {/* Context banner (site info + date range) */}
       <ContextBanner availability={availability} />
 
@@ -1212,7 +1223,7 @@ export default function ConsumptionExplorerPage() {
       {/* Main content (data available, non-portfolio) */}
       {!isPortfolioMode && showContent && (
         <>
-          {/* OverviewRow — KPI summary above tabs */}
+          {/* OverviewRow — KPI summary above content */}
           {motor.primaryTunnel && (
             <OverviewRow
               data={computeOverviewData(motor.primaryTunnel)}
@@ -1220,56 +1231,89 @@ export default function ConsumptionExplorerPage() {
             />
           )}
 
-          {/* Tab bar */}
-          <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
-            {TAB_CONFIG.map(tab => {
-              const Icon = tab.icon;
-              const active = activeTab === tab.key;
-              if (tab.key === 'gas' && energyType !== 'gas') return null;
-              if ((tab.key === 'hphc' || tab.key === 'tunnel' || tab.key === 'targets') && energyType === 'gas') {
-                if (tab.key !== 'gas') return null;
-              }
-              return (
-                <button
-                  key={tab.key}
-                  onClick={() => switchTab(tab.key)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition flex-1 justify-center ${
-                    active ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  <Icon size={16} />
-                  <span>{tab.label}</span>
-                  {tab.key === 'gas' && <Badge variant="warn" className="text-[10px] px-1 py-0">Beta</Badge>}
-                </button>
-              );
-            })}
-          </div>
+          {isClassic ? (
+            /* ── Classic mode: timeseries chart only, no tabs ── */
+            <TimeseriesPanel
+              siteIds={siteIds}
+              energyType={energyType}
+              days={days}
+              startDate={startDate}
+              endDate={endDate}
+              unit={unit}
+              mode={mode}
+              sites={sites}
+              availability={availability}
+              onNavigate={handleNavigate}
+            />
+          ) : (
+            /* ── Expert mode: full tab bar + all panels ── */
+            <>
+              {/* Tab bar */}
+              <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+                {TAB_CONFIG.map(tab => {
+                  const Icon = tab.icon;
+                  const active = activeTab === tab.key;
+                  if (tab.key === 'gas' && energyType !== 'gas') return null;
+                  if ((tab.key === 'hphc' || tab.key === 'tunnel' || tab.key === 'targets') && energyType === 'gas') {
+                    return null;
+                  }
+                  return (
+                    <button
+                      key={tab.key}
+                      onClick={() => switchTab(tab.key)}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition flex-1 justify-center ${
+                        active ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      <Icon size={16} />
+                      <span>{tab.label}</span>
+                      {tab.key === 'gas' && <Badge variant="warn" className="text-[10px] px-1 py-0">Beta</Badge>}
+                    </button>
+                  );
+                })}
+              </div>
 
-          {/* InsightsStrip — auto-generated badges from Motor data */}
-          <InsightsStrip
-            insights={computeInsights({
-              primaryTunnel: motor.primaryTunnel,
-              primaryHphc: motor.primaryHphc,
-              primaryGas: motor.primaryGas,
-              primaryWeather: motor.primaryWeather,
-              primaryProgression: motor.primaryProgression,
-            }, mode, unit)}
-          />
-
-          {/* Panel content — panels use primarySiteId for backward compat */}
-          <div>
-            {activeTab === 'tunnel' && (
-              <TunnelPanel
-                siteId={siteId}
-                days={days}
-                energyType={energyType}
-                showSignature={layers.signature}
+              {/* InsightsStrip — auto-generated badges from Motor data */}
+              <InsightsStrip
+                insights={computeInsights({
+                  primaryTunnel: motor.primaryTunnel,
+                  primaryHphc: motor.primaryHphc,
+                  primaryGas: motor.primaryGas,
+                  primaryWeather: motor.primaryWeather,
+                  primaryProgression: motor.primaryProgression,
+                }, mode, unit)}
               />
-            )}
-            {activeTab === 'targets' && <TargetsPanel siteId={siteId} energyType={energyType} />}
-            {activeTab === 'hphc' && <HPHCPanel siteId={siteId} days={days} />}
-            {activeTab === 'gas' && <GasPanel siteId={siteId} days={days} />}
-          </div>
+
+              {/* Panel content */}
+              <div>
+                {activeTab === 'timeseries' && (
+                  <TimeseriesPanel
+                    siteIds={siteIds}
+                    energyType={energyType}
+                    days={days}
+                    startDate={startDate}
+                    endDate={endDate}
+                    unit={unit}
+                    mode={mode}
+                    sites={sites}
+                    availability={availability}
+                    onNavigate={handleNavigate}
+                  />
+                )}
+                {activeTab === 'tunnel' && (
+                  <TunnelPanel
+                    siteId={siteId}
+                    days={days}
+                    energyType={energyType}
+                    showSignature={layers.signature}
+                  />
+                )}
+                {activeTab === 'targets' && <TargetsPanel siteId={siteId} energyType={energyType} />}
+                {activeTab === 'hphc' && <HPHCPanel siteId={siteId} days={days} />}
+                {activeTab === 'gas' && <GasPanel siteId={siteId} days={days} />}
+              </div>
+            </>
+          )}
         </>
       )}
 
