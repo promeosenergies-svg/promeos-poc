@@ -3,7 +3,7 @@
  * Upload CSV + apercu + validation + import + Demo Packs
  */
 import { useState, useRef, useEffect } from 'react';
-import { Upload, FileText, CheckCircle, AlertTriangle, Download, Trash2, Database, Package, RotateCcw, Loader2 } from 'lucide-react';
+import { Upload, FileText, CheckCircle, AlertTriangle, Download, Trash2, Database, Package, RotateCcw, Loader2, RefreshCw } from 'lucide-react';
 import { importSitesStandalone, seedDemo, seedDemoPack, getDemoPackStatus, resetDemoPack } from '../services/api';
 import { PageShell, Card, CardBody, Badge, Button, EmptyState, Modal } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
@@ -32,7 +32,7 @@ function ImportPage() {
   const [seedLoading, setSeedLoading] = useState(false);
   const fileRef = useRef(null);
   const { toast } = useToast();
-  const { clearScope, applyDemoScope, org } = useScope();
+  const { clearScope, applyDemoScope, org, scope, scopeLabel } = useScope();
 
   // Demo Packs state
   const [selectedPack, setSelectedPack] = useState('casino');
@@ -43,6 +43,16 @@ function ImportPage() {
   const [resetLoading, setResetLoading] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
   const [statusError, setStatusError] = useState(false);
+
+  const packDef = DEMO_PACKS.find(p => p.key === selectedPack);
+  const totalRows = packStatus?.total_rows || 0;
+
+  // Mismatch: backend has a loaded pack for a different org than current scope
+  const syncInProgress = !!(
+    packStatus?.org_id &&
+    scope?.orgId &&
+    packStatus.org_id !== scope.orgId
+  );
 
   const refreshStatus = () => {
     getDemoPackStatus()
@@ -57,6 +67,13 @@ function ImportPage() {
   };
 
   useEffect(() => { refreshStatus(); }, []);
+
+  // Auto-silently sync scope when mismatch is detected
+  useEffect(() => {
+    if (syncInProgress && packStatus?.org_id && packStatus?.org_nom) {
+      applyDemoScope({ orgId: packStatus.org_id, orgNom: packStatus.org_nom });
+    }
+  }, [packStatus?.org_id, scope?.orgId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleFileChange = (e) => {
     const f = e.target.files[0];
@@ -105,12 +122,15 @@ function ImportPage() {
     setSeedLoading(false);
   };
 
-  const handleSeedPack = async () => {
+  /**
+   * Shared seed logic — called by handleSeedPack and handleReplay.
+   * @param {string} successToast  — toast message on success
+   */
+  const performSeed = async (successToast) => {
     setPackLoading(true);
     setPackResult(null);
     try {
-      // reset=true : always wipe existing demo data before seeding a new pack
-      // (prevents unique-constraint conflicts when switching between Casino ↔ SCI)
+      // reset=true: always wipe existing demo data before seeding a new pack
       const res = await seedDemoPack(selectedPack, selectedSize, true);
       setPackResult(res);
       // Switch global scope to the seeded org immediately
@@ -122,7 +142,7 @@ function ImportPage() {
           defaultSiteName: res.default_site_name,
         });
       }
-      toast(`Pack ${packDef?.label || selectedPack} charge — ${res.sites_count} sites en ${res.elapsed_s}s`, 'success');
+      toast(successToast, 'success');
       refreshStatus();
     } catch (err) {
       const status = err.response?.status;
@@ -137,6 +157,14 @@ function ImportPage() {
     setPackLoading(false);
   };
 
+  /** First load or switching packs */
+  const handleSeedPack = () =>
+    performSeed('Démo chargée — contexte appliqué à toute l\'application.');
+
+  /** Re-seed the same pack (reset + replay) */
+  const handleReplay = () =>
+    performSeed('Démo relancée — contexte mis à jour.');
+
   const handleResetPack = async () => {
     setShowResetModal(false);
     setResetLoading(true);
@@ -144,7 +172,7 @@ function ImportPage() {
       await resetDemoPack('hard', true);
       setPackResult(null);
       clearScope();
-      toast('Donnees demo supprimees', 'success');
+      toast('Démo réinitialisée — retour à un contexte neutre.', 'success');
       refreshStatus();
     } catch (err) {
       toast(err.response?.data?.detail || 'Erreur lors du reset', 'error');
@@ -159,9 +187,6 @@ function ImportPage() {
     setError(null);
     if (fileRef.current) fileRef.current.value = '';
   };
-
-  const packDef = DEMO_PACKS.find(p => p.key === selectedPack);
-  const totalRows = packStatus?.total_rows || 0;
 
   return (
     <PageShell
@@ -197,23 +222,36 @@ function ImportPage() {
             <p className="text-xs text-amber-600 mb-2">Statut demo indisponible — reset manuel possible.</p>
           )}
 
-          {/* Active scope + selected pack — always visible for clarity */}
-          <div className="flex flex-wrap gap-x-6 gap-y-1 mb-2 text-xs">
+          {/* Status row — always visible for clarity */}
+          <div className="flex flex-wrap gap-x-6 gap-y-1 mb-3 text-xs">
             <p className="text-indigo-700">
               <span className="text-indigo-400 font-semibold">Contexte actif :</span>{' '}
               {org ? (
                 <strong>{org.nom}</strong>
               ) : (
-                <span className="text-gray-400 italic">Aucun (scope vide)</span>
+                <span className="text-gray-400 italic">Aucun</span>
               )}
             </p>
             <p className="text-indigo-700">
-              <span className="text-indigo-400 font-semibold">Pack selectionne :</span>{' '}
+              <span className="text-indigo-400 font-semibold">Portée :</span>{' '}
+              <strong>{scopeLabel}</strong>
+            </p>
+            <p className="text-indigo-700">
+              <span className="text-indigo-400 font-semibold">Pack chargé :</span>{' '}
+              {packStatus?.org_nom ? (
+                <strong>{packStatus.org_nom}</strong>
+              ) : (
+                <span className="text-gray-400 italic">Aucun</span>
+              )}
+            </p>
+            <p className="text-indigo-700">
+              <span className="text-indigo-400 font-semibold">Pack à charger :</span>{' '}
               <strong>{packDef?.label || selectedPack}</strong>
             </p>
-            {org && packStatus?.org_nom && org.nom !== packStatus.org_nom && (
-              <p className="text-amber-600">
-                Pack charge : <strong>{packStatus.org_nom}</strong> — contexte non synchronise
+            {syncInProgress && (
+              <p className="text-amber-600 flex items-center gap-1">
+                <Loader2 size={12} className="animate-spin" />
+                Synchronisation du contexte…
               </p>
             )}
           </div>
@@ -237,7 +275,7 @@ function ImportPage() {
           </div>
 
           {/* Size selector + actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="flex gap-1 bg-white rounded-lg p-0.5 border border-gray-200">
               {packDef && Object.entries(packDef.sizes).map(([sz, label]) => (
                 <button
@@ -254,20 +292,24 @@ function ImportPage() {
               ))}
             </div>
 
-            <Button onClick={handleSeedPack} disabled={packLoading}>
+            <Button onClick={handleSeedPack} disabled={packLoading || resetLoading}>
               {packLoading ? (
                 <><Loader2 size={14} className="mr-1.5 animate-spin" />Chargement...</>
               ) : (
-                <><Database size={14} className="mr-1.5" />Charger demo</>
+                <><Database size={14} className="mr-1.5" />Charger la démo</>
               )}
             </Button>
 
-            <Button variant="secondary" onClick={() => setShowResetModal(true)} disabled={resetLoading}>
+            <Button variant="secondary" onClick={() => setShowResetModal(true)} disabled={resetLoading || packLoading}>
               {resetLoading ? (
                 <><Loader2 size={14} className="mr-1.5 animate-spin" />Reset...</>
               ) : (
                 <><RotateCcw size={14} className="mr-1.5" />Reset</>
               )}
+            </Button>
+
+            <Button variant="secondary" onClick={handleReplay} disabled={packLoading || resetLoading}>
+              <RefreshCw size={14} className="mr-1.5" />Reset + relancer
             </Button>
           </div>
 

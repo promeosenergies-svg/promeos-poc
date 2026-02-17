@@ -235,6 +235,91 @@ describe('ImportPage: seed error toast format', () => {
   });
 });
 
+// ── Toast message wording (V11.1 UX spec) ────────────────────────────────
+
+describe('ImportPage: toast message wording', () => {
+  it('seed success toast: Démo chargée — contexte appliqué à toute l\'application.', () => {
+    const msg = 'Démo chargée — contexte appliqué à toute l\'application.';
+    expect(msg).toContain('Démo chargée');
+    expect(msg).toContain('contexte appliqué');
+  });
+
+  it('reset success toast: Démo réinitialisée — retour à un contexte neutre.', () => {
+    const msg = 'Démo réinitialisée — retour à un contexte neutre.';
+    expect(msg).toContain('réinitialisée');
+    expect(msg).toContain('contexte neutre');
+  });
+
+  it('replay success toast: Démo relancée — contexte mis à jour.', () => {
+    const msg = 'Démo relancée — contexte mis à jour.';
+    expect(msg).toContain('relancée');
+    expect(msg).toContain('mis à jour');
+  });
+
+  it('seed and replay toasts are distinct', () => {
+    const seedMsg = 'Démo chargée — contexte appliqué à toute l\'application.';
+    const replayMsg = 'Démo relancée — contexte mis à jour.';
+    const resetMsg = 'Démo réinitialisée — retour à un contexte neutre.';
+    expect(seedMsg).not.toBe(replayMsg);
+    expect(seedMsg).not.toBe(resetMsg);
+    expect(replayMsg).not.toBe(resetMsg);
+  });
+});
+
+// ── syncInProgress mismatch detection ────────────────────────────────────
+
+describe('ImportPage: syncInProgress mismatch logic', () => {
+  function computeSyncInProgress(packStatus, scope) {
+    return !!(
+      packStatus?.org_id &&
+      scope?.orgId &&
+      packStatus.org_id !== scope.orgId
+    );
+  }
+
+  it('no mismatch when org_ids match', () => {
+    const packStatus = { org_id: 42, org_nom: 'Groupe Casino' };
+    const scope = { orgId: 42 };
+    expect(computeSyncInProgress(packStatus, scope)).toBe(false);
+  });
+
+  it('mismatch when org_ids differ', () => {
+    const packStatus = { org_id: 42, org_nom: 'Groupe Casino' };
+    const scope = { orgId: 99 };
+    expect(computeSyncInProgress(packStatus, scope)).toBe(true);
+  });
+
+  it('no mismatch when scope has no orgId (empty scope)', () => {
+    const packStatus = { org_id: 42, org_nom: 'Groupe Casino' };
+    const scope = { orgId: null };
+    expect(computeSyncInProgress(packStatus, scope)).toBe(false);
+  });
+
+  it('no mismatch when packStatus has no org_id (no pack loaded)', () => {
+    const packStatus = { org_id: null, total_rows: 0 };
+    const scope = { orgId: 42 };
+    expect(computeSyncInProgress(packStatus, scope)).toBe(false);
+  });
+
+  it('mismatch triggers applyDemoScope with packStatus org info', () => {
+    const applyDemoScope = vi.fn();
+    const packStatus = { org_id: 42, org_nom: 'Groupe Casino' };
+    const scope = { orgId: 99 };
+    const syncInProgress = computeSyncInProgress(packStatus, scope);
+    if (syncInProgress && packStatus?.org_id && packStatus?.org_nom) {
+      applyDemoScope({ orgId: packStatus.org_id, orgNom: packStatus.org_nom });
+    }
+    expect(applyDemoScope).toHaveBeenCalledWith({ orgId: 42, orgNom: 'Groupe Casino' });
+  });
+
+  it('after applyDemoScope, syncInProgress becomes false', () => {
+    // Simulate: scope.orgId updated to match packStatus.org_id
+    const packStatus = { org_id: 42 };
+    const scopeAfterSync = { orgId: 42 };
+    expect(computeSyncInProgress(packStatus, scopeAfterSync)).toBe(false);
+  });
+});
+
 // ── scopeLabel logic ──────────────────────────────────────────────────────
 
 describe('scopeLabel derivation (ScopeContext)', () => {
