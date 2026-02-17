@@ -37,7 +37,10 @@ import ExplorerChart from './consumption/ExplorerChart';
 import LayerToggle from './consumption/LayerToggle';
 import TunnelLayer from './consumption/layers/TunnelLayer';
 import ObjectivesLayer from './consumption/layers/ObjectivesLayer';
+import SignatureLayer from './consumption/layers/SignatureLayer';
+import InsightsStrip from './consumption/InsightsStrip';
 import { computeAutoRange } from './consumption/helpers';
+import { computeInsights } from './consumption/insightRules';
 import useExplorerMotor from './consumption/useExplorerMotor';
 import useExplorerURL from './consumption/useExplorerURL';
 
@@ -179,7 +182,7 @@ function AvailabilitySkeleton() {
 // Tunnel Panel
 // ========================================
 
-function TunnelPanel({ siteId, days, energyType }) {
+function TunnelPanel({ siteId, days, energyType, showSignature = false }) {
   const [tunnel, setTunnel] = useState(null);
   const [loading, setLoading] = useState(false);
   const [dayType, setDayType] = useState('weekday');
@@ -318,16 +321,19 @@ function TunnelPanel({ siteId, days, energyType }) {
               >
                 {/* Composable TunnelLayer (P10-P25-P50-P75-P90) */}
                 <TunnelLayer visible={showP10P90} opacity={showP25P75 ? 0.2 : 0.3} />
+                {/* Signature overlay (rolling 7-period mean) */}
+                <SignatureLayer visible={showSignature} />
               </ExplorerChart>
               <p className="text-xs text-gray-400 mt-1 text-center">Cliquez sur un creneau pour ouvrir l'analyse detaillee</p>
             </div>
 
             {/* Layer toggle sidebar */}
             <LayerToggle
-              layers={{ tunnel: showP10P90, talon: showP25P75 }}
+              layers={{ tunnel: showP10P90, talon: showP25P75, signature: showSignature }}
               onToggle={(key) => {
                 if (key === 'tunnel') setShowP10P90(v => !v);
                 if (key === 'talon') setShowP25P75(v => !v);
+                // signature is controlled by Motor layers (toggleLayer in parent)
               }}
             />
           </div>
@@ -1082,9 +1088,27 @@ export default function ConsumptionExplorerPage() {
             })}
           </div>
 
+          {/* InsightsStrip — auto-generated badges from Motor data */}
+          <InsightsStrip
+            insights={computeInsights({
+              primaryTunnel: motor.primaryTunnel,
+              primaryHphc: motor.primaryHphc,
+              primaryGas: motor.primaryGas,
+              primaryWeather: motor.primaryWeather,
+              primaryProgression: motor.primaryProgression,
+            }, mode, unit)}
+          />
+
           {/* Panel content — panels use primarySiteId for backward compat */}
           <div>
-            {activeTab === 'tunnel' && <TunnelPanel siteId={siteId} days={days} energyType={energyType} />}
+            {activeTab === 'tunnel' && (
+              <TunnelPanel
+                siteId={siteId}
+                days={days}
+                energyType={energyType}
+                showSignature={layers.signature}
+              />
+            )}
             {activeTab === 'targets' && <TargetsPanel siteId={siteId} energyType={energyType} />}
             {activeTab === 'hphc' && <HPHCPanel siteId={siteId} days={days} />}
             {activeTab === 'gas' && <GasPanel siteId={siteId} days={days} />}
