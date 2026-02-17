@@ -14,14 +14,39 @@ const api = axios.create({
 });
 
 // Auth interceptors
+// NOTE: demo paths (/demo/*) are scope-exempt — do NOT inject org_id / site_id
+// headers or query params on these endpoints. Use isDemoPath() to guard any
+// future scope injection.
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('promeos_token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
+  // Scope injection guard: if a scope interceptor is added, it must skip isDemoPath() URLs
+  // (no scope injection currently — token only)
   return config;
 });
 
 // Silent URL patterns — passive checks that should never trigger toasts
 const SILENT_URLS = ['/demo/status-pack'];
+
+/**
+ * Demo-path guard: /demo/* endpoints must NEVER receive scope injection
+ * (org_id / site_id headers or query params) from a request interceptor.
+ * If a scope interceptor is ever added, it MUST call isDemoPath() first.
+ *
+ * @param {string} url — raw URL string or path (with or without baseURL prefix)
+ * @returns {boolean}
+ */
+export function isDemoPath(url) {
+  if (!url) return false;
+  // Strip protocol + host + query string to get bare path
+  let path = url;
+  try {
+    if (/^https?:\/\//i.test(url)) path = new URL(url).pathname;
+  } catch { /* keep as-is */ }
+  path = path.split('?')[0].split('#')[0];
+  // Match /demo/* or /api/demo/*
+  return /\/demo\//.test(path);
+}
 
 /**
  * Normalize an Axios config into a clean pathname for matching.

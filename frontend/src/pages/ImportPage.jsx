@@ -50,7 +50,7 @@ function ImportPage() {
         setPackStatus(s); setStatusError(false);
         // Auto-sync scope with seeded org (e.g. after page refresh)
         if (s.org_id && s.total_rows > 0) {
-          applyDemoScope(s.org_id, s.org_nom);
+          applyDemoScope({ orgId: s.org_id, orgNom: s.org_nom });
         }
       })
       .catch(() => { setPackStatus(null); setStatusError(true); });
@@ -109,16 +109,30 @@ function ImportPage() {
     setPackLoading(true);
     setPackResult(null);
     try {
-      const res = await seedDemoPack(selectedPack, selectedSize, false);
+      // reset=true : always wipe existing demo data before seeding a new pack
+      // (prevents unique-constraint conflicts when switching between Casino ↔ SCI)
+      const res = await seedDemoPack(selectedPack, selectedSize, true);
       setPackResult(res);
-      // Auto-switch scope to the seeded org
+      // Switch global scope to the seeded org immediately
       if (res.org_id) {
-        applyDemoScope(res.org_id, res.org_nom);
+        applyDemoScope({
+          orgId: res.org_id,
+          orgNom: res.org_nom,
+          defaultSiteId: res.default_site_id,
+          defaultSiteName: res.default_site_name,
+        });
       }
-      toast(`Pack ${selectedPack} charge : ${res.sites_count} sites en ${res.elapsed_s}s`, 'success');
+      toast(`Pack ${packDef?.label || selectedPack} charge — ${res.sites_count} sites en ${res.elapsed_s}s`, 'success');
       refreshStatus();
     } catch (err) {
-      toast(err.response?.data?.detail || 'Erreur lors du chargement du pack', 'error');
+      const status = err.response?.status;
+      const detail = err.response?.data?.detail || err.message || 'Erreur inconnue';
+      toast(
+        status
+          ? `Echec du chargement (HTTP\u00a0${status}) — ${detail}`
+          : `Echec du chargement — ${detail}`,
+        'error',
+      );
     }
     setPackLoading(false);
   };
@@ -183,17 +197,26 @@ function ImportPage() {
             <p className="text-xs text-amber-600 mb-2">Statut demo indisponible — reset manuel possible.</p>
           )}
 
-          {/* Active scope indicator */}
-          {org && totalRows > 0 && (
-            <p className="text-xs text-indigo-600 mb-2">
-              Contexte actif : <strong>{org.nom}</strong>
-              {packStatus?.org_nom && org.nom !== packStatus.org_nom && (
-                <span className="text-amber-600 ml-2">
-                  (pack charge : {packStatus.org_nom})
-                </span>
+          {/* Active scope + selected pack — always visible for clarity */}
+          <div className="flex flex-wrap gap-x-6 gap-y-1 mb-2 text-xs">
+            <p className="text-indigo-700">
+              <span className="text-indigo-400 font-semibold">Contexte actif :</span>{' '}
+              {org ? (
+                <strong>{org.nom}</strong>
+              ) : (
+                <span className="text-gray-400 italic">Aucun (scope vide)</span>
               )}
             </p>
-          )}
+            <p className="text-indigo-700">
+              <span className="text-indigo-400 font-semibold">Pack selectionne :</span>{' '}
+              <strong>{packDef?.label || selectedPack}</strong>
+            </p>
+            {org && packStatus?.org_nom && org.nom !== packStatus.org_nom && (
+              <p className="text-amber-600">
+                Pack charge : <strong>{packStatus.org_nom}</strong> — contexte non synchronise
+              </p>
+            )}
+          </div>
 
           {/* Pack selector */}
           <div className="flex flex-wrap gap-3 mb-4">

@@ -7,7 +7,7 @@ import { Building2, ChevronDown, X, Briefcase } from 'lucide-react';
 import { useScope } from '../contexts/ScopeContext';
 
 export default function ScopeSwitcher() {
-  const { scope, org, portefeuille, portefeuilles, orgs, scopedSites, setOrg, setPortefeuille, resetScope } = useScope();
+  const { scope, org, portefeuille, portefeuilles, orgs, scopedSites, scopeLabel, setOrg, setPortefeuille, resetScope } = useScope();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -32,7 +32,7 @@ export default function ScopeSwitcher() {
             <span>{portefeuille.nom}</span>
           </>
         )}
-        <span className="text-blue-400 text-xs">{scopedSites.length} sites</span>
+        <span className="text-blue-400 text-xs">{scopeLabel}</span>
         <ChevronDown size={14} className={`transition ${open ? 'rotate-180' : ''}`} />
       </button>
 

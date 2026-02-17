@@ -107,9 +107,11 @@ export function ScopeProvider({ children }) {
 
   /**
    * applyDemoScope — called after seed-pack to auto-switch to the seeded org.
-   * Registers the org in demoOrgs (persisted) and switches scope to it.
+   * Accepts an object: { orgId, orgNom, defaultSiteId?, defaultSiteName? }
+   * Always sets siteId=null ("Tous les sites") for a clean multi-site demo context.
+   * Registers the org in demoOrgs (persisted) and switches scope atomically.
    */
-  const applyDemoScope = useCallback((orgId, orgNom) => {
+  const applyDemoScope = useCallback(({ orgId, orgNom, defaultSiteId = null, defaultSiteName = null } = {}) => {
     if (!orgId) return;
     // Register the org dynamically
     setDemoOrgs((prev) => {
@@ -118,10 +120,12 @@ export function ScopeProvider({ children }) {
       saveDemoOrgs(next);
       return next;
     });
-    // Switch scope to this org
+    // Switch scope: always siteId=null => "Tous les sites" in demo mode
     const next = { orgId, portefeuilleId: null, siteId: null };
     setScope(next);
     saveScope(next);
+    // eslint-disable-next-line no-unused-expressions
+    void defaultSiteId; void defaultSiteName; // reserved for future use
   }, []);
 
   // When authenticated, use auth orgs; otherwise mock + dynamically registered demo orgs
@@ -159,10 +163,26 @@ export function ScopeProvider({ children }) {
     return sites;
   }, [effectiveOrgId, scope.portefeuilleId, scope.siteId]);
 
+  /**
+   * scopeLabel — human-readable label for the current site selection.
+   * "Tous les sites" when no specific site is selected (siteId=null).
+   * "Site : <nom>" when a specific site is selected.
+   */
+  const scopeLabel = useMemo(() => {
+    if (!scope.siteId) return 'Tous les sites';
+    const site = scopedSites.find(s => s.id === scope.siteId);
+    return site ? `Site\u00a0: ${site.nom}` : 'Tous les sites';
+  }, [scope.siteId, scopedSites]);
+
+  /** selectedSiteId — convenience alias for scope.siteId */
+  const selectedSiteId = scope.siteId;
+
   const value = {
     scope: { ...scope, orgId: effectiveOrgId },
     org, portefeuille, portefeuilles, scopedSites,
     orgs: orgsData,
+    selectedSiteId,
+    scopeLabel,
     setOrg, setPortefeuille, setSite, resetScope, clearScope, applyDemoScope,
   };
 
