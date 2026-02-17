@@ -128,7 +128,13 @@ export default function ExplorerChart({
 
   // ── ChartRenderGuard: validate points before rendering ──
   const validPoints = stableData.filter(p => p[valueKey] != null && !isNaN(p[valueKey]));
-  if (validPoints.length < 2 && mode !== 'superpose' && mode !== 'empile') {
+
+  // For superpose/empile, also check per-site keys to avoid blank overlays
+  const hasAnySiteData = (mode === 'superpose' || mode === 'empile')
+    ? siteIds.some(sid => stableData.some(p => p[`kwh_${sid}`] != null && !isNaN(p[`kwh_${sid}`])))
+    : false;
+
+  if (validPoints.length < 2 && !hasAnySiteData) {
     return <InsufficientDataPlaceholder count={validPoints.length} />;
   }
 

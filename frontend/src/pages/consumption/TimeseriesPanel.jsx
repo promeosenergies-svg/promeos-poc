@@ -1,5 +1,5 @@
 /**
- * PROMEOS — TimeseriesPanel (Sprint V14.3)
+ * PROMEOS — TimeseriesPanel (Sprint V14.3 / V15)
  * Premium timeseries chart — dates on X-axis, consumption over time.
  * This is the DEFAULT view in Classic mode and the first Expert tab.
  *
@@ -7,24 +7,60 @@
  * Handles all states: loading / empty / insufficient / error / ready
  *
  * Props:
- *   siteIds      {number[]}
- *   energyType   {string}    'electricity' | 'gas'
- *   days         {number|string}
- *   startDate    {string|null}
- *   endDate      {string|null}
- *   unit         {string}    'kwh' | 'kw' | 'eur'
- *   mode         {string}    'agrege' | 'superpose' | 'empile' | 'separe'
- *   sites        {object[]}  [{id, nom}]
- *   siteColors   {object}    { siteId: color }
- *   availability {object}    from useExplorerMotor
+ *   siteIds        {number[]}
+ *   energyType     {string}    'electricity' | 'gas'
+ *   days           {number|string}
+ *   startDate      {string|null}
+ *   endDate        {string|null}
+ *   unit           {string}    'kwh' | 'kw' | 'eur'
+ *   mode           {string}    'agrege' | 'superpose' | 'empile' | 'separe'
+ *   sites          {object[]}  [{id, nom}]
+ *   siteColors     {object}    { siteId: color }
+ *   availability   {object}    from useExplorerMotor
+ *   onNavigate     {fn}        navigate to path
+ *   onRetry        {fn}        optional — retry on error (defaults to reload)
+ *   onExtendPeriod {fn}        optional — extend period to 12 months
  */
 import { Database, BarChart3, AlertTriangle, RefreshCw, Zap } from 'lucide-react';
 import { Button, SkeletonCard } from '../../ui';
 import ExplorerChart from './ExplorerChart';
+import ExplorerDebugPanel from './ExplorerDebugPanel';
 import useEmsTimeseries from './useEmsTimeseries';
 import { colorForSite } from './helpers';
 
 const UNIT_LABELS = { kwh: 'kWh', kw: 'kW', eur: 'EUR' };
+
+const GRAN_LABELS = {
+  daily: 'Journalière',
+  monthly: 'Mensuelle',
+  hourly: 'Horaire',
+  '15min': '15 min',
+  '30min': '30 min',
+};
+
+// ── DataCoverageBadge ──────────────────────────────────────────────────────────
+
+function DataCoverageBadge({ meta, siteCount, qualityPct }) {
+  const parts = [
+    siteCount > 1 ? `${siteCount} sites` : null,
+    meta?.n_meters ? `${meta.n_meters}\u00a0compteur${meta.n_meters > 1 ? 's' : ''}` : null,
+    meta?.n_points ? `${meta.n_points.toLocaleString('fr-FR')}\u00a0points` : null,
+    meta?.granularity ? `Granularité\u00a0: ${GRAN_LABELS[meta.granularity] || meta.granularity}` : null,
+    qualityPct != null ? `Qualité\u00a0: ${qualityPct}\u00a0%` : null,
+    'Source\u00a0: EMS',
+  ].filter(Boolean);
+
+  if (!parts.length) return null;
+
+  return (
+    <div
+      className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-gray-400 px-1 select-none"
+      aria-label="Couverture des données"
+    >
+      {parts.map((p, i) => <span key={i}>{p}</span>)}
+    </div>
+  );
+}
 
 // ── Insufficient data placeholder ─────────────────────────────────────────────
 
@@ -65,32 +101,65 @@ function ErrorState({ message, onRetry }) {
   );
 }
 
-// ── Empty state by reason ──────────────────────────────────────────────────────
+// ── Empty state by reason (enhanced V15-C) ────────────────────────────────────
 
-function EmptyByReason({ availability, onNavigate }) {
+function EmptyByReason({ availability, onNavigate, onExtendPeriod }) {
   const reasons = availability?.reasons || [];
   const primary = reasons[0];
+  const firstTs = availability?.first_ts;
+  const lastTs = availability?.last_ts;
 
-  const CONFIGS = {
-    no_site: { icon: AlertTriangle, title: 'Site introuvable', text: 'Vérifiez votre sélection.' },
-    no_meter: { icon: Zap, title: 'Aucun compteur configuré', text: 'Connectez un compteur pour voir les consommations.', cta: 'Connecter', path: '/connectors' },
-    no_readings: { icon: Database, title: 'Aucun relevé disponible', text: 'Importez des données de consommation.', cta: 'Importer', path: '/consommations/import' },
-    insufficient_readings: { icon: BarChart3, title: 'Données insuffisantes', text: 'Moins de 48 relevés. Importez davantage.', cta: 'Importer', path: '/consommations/import' },
-    wrong_energy_type: { icon: Zap, title: 'Énergie non disponible', text: 'Basculez vers un autre type d\'énergie.' },
-  };
+  // Build smart causes list
+  const causes = [];
+  if (primary === 'no_site') {
+    causes.push({ icon: AlertTriangle, text: 'Site introuvable — vérifiez votre sélection.' });
+  }
+  if (primary === 'no_meter') {
+    causes.push({ icon: Zap, text: 'Aucun compteur configuré sur ce site.', cta: 'Connecter', path: '/connectors' });
+  }
+  if (primary === 'no_readings' || primary === 'insufficient_readings') {
+    causes.push({ icon: Database, text: 'Peu de relevés importés sur cette période.', cta: 'Importer', path: '/consommations/import' });
+  }
+  if (primary === 'wrong_energy_type') {
+    causes.push({ icon: Zap, text: 'Aucune donnée pour ce type d\'énergie sur ce site.' });
+  }
+  if (firstTs && lastTs) {
+    const from = new Date(firstTs).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+    const to   = new Date(lastTs).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+    causes.push({
+      icon: BarChart3,
+      text: `Données disponibles\u00a0: ${from} → ${to}`,
+      cta: onExtendPeriod ? 'Étendre à 12 mois' : null,
+      onCta: onExtendPeriod,
+    });
+  }
+  if (!causes.length) {
+    causes.push({ icon: Database, text: 'Configurez un site et importez des relevés.', cta: 'Importer', path: '/consommations/import' });
+  }
 
-  const cfg = CONFIGS[primary] || { icon: Database, title: 'Aucune donnée', text: 'Configurez un site et importez des relevés.' };
-  const Icon = cfg.icon;
+  const FirstIcon = causes[0]?.icon || Database;
 
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
       <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-        <Icon size={28} className="text-gray-400" />
+        <FirstIcon size={28} className="text-gray-400" />
       </div>
-      <h3 className="text-base font-semibold text-gray-700 mb-1">{cfg.title}</h3>
-      <p className="text-sm text-gray-500 mb-4 max-w-sm">{cfg.text}</p>
-      {cfg.cta && onNavigate && (
-        <Button size="sm" onClick={() => onNavigate(cfg.path)}>{cfg.cta}</Button>
+      <h3 className="text-base font-semibold text-gray-700 mb-2">Aucune donnée sur cette période</h3>
+
+      {causes.length > 0 && (
+        <div className="space-y-2 mb-4">
+          {causes.map((c, i) => (
+            <div key={i} className="flex items-center justify-center gap-2">
+              <p className="text-sm text-gray-500 max-w-sm">{c.text}</p>
+              {c.cta && c.onCta && (
+                <Button size="sm" variant="ghost" onClick={c.onCta}>{c.cta}</Button>
+              )}
+              {c.cta && c.path && onNavigate && (
+                <Button size="sm" variant="ghost" onClick={() => onNavigate(c.path)}>{c.cta}</Button>
+              )}
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
@@ -110,8 +179,10 @@ export default function TimeseriesPanel({
   siteColors = {},
   availability = null,
   onNavigate,
+  onRetry,
+  onExtendPeriod,
 }) {
-  const { status, chartData, seriesData, meta, granularity, error } = useEmsTimeseries({
+  const tsState = useEmsTimeseries({
     siteIds,
     energyType,
     days,
@@ -120,6 +191,21 @@ export default function TimeseriesPanel({
     unit,
     mode,
   });
+
+  const { status, chartData, seriesData, meta, granularity, error, debugInfo } = tsState;
+
+  // Debug panel — shown in ALL states when ?debug=1
+  const isDebug = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('debug');
+  const debugPanel = isDebug ? (
+    <ExplorerDebugPanel
+      params={{ siteIds, energyType, days, unit, mode, startDate, endDate }}
+      tsState={{ status, meta, granularity, error, debugInfo }}
+      availability={availability}
+    />
+  ) : null;
+
+  // Effective retry handler
+  const handleRetry = onRetry || (() => window.location.reload());
 
   // Build siteColors map for multi-series overlay
   const effectiveSiteColors = { ...siteColors };
@@ -136,27 +222,35 @@ export default function TimeseriesPanel({
 
   // ── Loading ──
   if (status === 'loading') {
-    return <SkeletonCard rows={6} />;
+    return <>{debugPanel}<SkeletonCard rows={6} /></>;
   }
 
   // ── Error ──
   if (status === 'error') {
-    return <ErrorState message={error} />;
+    return <>{debugPanel}<ErrorState message={error} onRetry={handleRetry} /></>;
   }
 
   // ── Empty (no data from API) ──
   if (status === 'empty') {
-    return <EmptyByReason availability={availability} onNavigate={onNavigate} />;
+    return (
+      <>
+        {debugPanel}
+        <EmptyByReason
+          availability={availability}
+          onNavigate={onNavigate}
+          onExtendPeriod={onExtendPeriod}
+        />
+      </>
+    );
   }
 
   // ── Insufficient points (< 2) ──
   const validPoints = chartData.filter(p => p.value != null && !isNaN(p.value));
   if (validPoints.length < 2) {
-    return <InsufficientPoints count={validPoints.length} />;
+    return <>{debugPanel}<InsufficientPoints count={validPoints.length} /></>;
   }
 
   // ── Ready: render chart ──
-  const unitLabel = UNIT_LABELS[unit] || 'kWh';
   const n_points = meta?.n_points ?? chartData.length;
   const n_meters = meta?.n_meters ?? null;
   const qualityPct = availability?.readings_count
@@ -171,30 +265,41 @@ export default function TimeseriesPanel({
 
   return (
     <div className="space-y-2">
-      {/* Chart */}
-      <ExplorerChart
-        data={chartData}
-        xKey="date"
-        valueKey={overlayValueKeys.length ? overlayValueKeys[0] : 'value'}
-        mode={chartMode}
-        unit={unit}
-        siteIds={chartSiteIds}
-        siteColors={effectiveSiteColors}
-        height={360}
-        showBrush
-        summaryData={{
-          points: n_points,
-          series: seriesData.length,
-          meters: n_meters,
-          source: 'EMS',
-          quality: qualityPct,
-        }}
+      {debugPanel}
+
+      {/* DataCoverageBadge — compact coverage line above chart */}
+      <DataCoverageBadge
+        meta={meta}
+        siteCount={siteIds.length}
+        qualityPct={qualityPct}
       />
 
-      {/* Granularity info */}
+      {/* Chart — min-height wrapper prevents height=0 blank rendering */}
+      <div className="min-h-[320px] w-full">
+        <ExplorerChart
+          data={chartData}
+          xKey="date"
+          valueKey={overlayValueKeys.length ? overlayValueKeys[0] : 'value'}
+          mode={chartMode}
+          unit={unit}
+          siteIds={chartSiteIds}
+          siteColors={effectiveSiteColors}
+          height={360}
+          showBrush
+          summaryData={{
+            points: n_points,
+            series: seriesData.length,
+            meters: n_meters,
+            source: 'EMS',
+            quality: qualityPct,
+          }}
+        />
+      </div>
+
+      {/* Granularity + date range info */}
       {granularity && (
         <p className="text-xs text-gray-400 text-right">
-          Granularité\u00a0: {granularity === 'daily' ? 'Journalière' : granularity === 'monthly' ? 'Mensuelle' : granularity === 'hourly' ? 'Horaire' : granularity}
+          Granularité{'\u00a0'}: {GRAN_LABELS[granularity] || granularity}
           {meta?.date_from && meta?.date_to && (
             <span className="ml-2">
               · {new Date(meta.date_from).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: '2-digit' })}

@@ -49,7 +49,6 @@ import PortfolioPanel from './consumption/PortfolioPanel';
 import OverviewRow, { computeOverviewData } from './consumption/OverviewRow';
 import { MAX_SITES } from './consumption/types';
 import TimeseriesPanel from './consumption/TimeseriesPanel';
-import ExplorerDebugPanel from './consumption/ExplorerDebugPanel';
 
 // ========================================
 // Constants
@@ -1182,14 +1181,6 @@ export default function ConsumptionExplorerPage() {
         </div>
       )}
 
-      {/* Debug panel — visible only when ?debug=1 in URL */}
-      {new URLSearchParams(window.location.search).has('debug') && (
-        <ExplorerDebugPanel
-          params={{ siteIds, energyType, days, unit, mode, startDate, endDate }}
-          availability={availability}
-        />
-      )}
-
       {/* Context banner (site info + date range) */}
       <ContextBanner availability={availability} />
 
@@ -1244,6 +1235,7 @@ export default function ConsumptionExplorerPage() {
               sites={sites}
               availability={availability}
               onNavigate={handleNavigate}
+              onExtendPeriod={() => setDays(365)}
             />
           ) : (
             /* ── Expert mode: full tab bar + all panels ── */
@@ -1298,6 +1290,7 @@ export default function ConsumptionExplorerPage() {
                     sites={sites}
                     availability={availability}
                     onNavigate={handleNavigate}
+                    onExtendPeriod={() => setDays(365)}
                   />
                 )}
                 {activeTab === 'tunnel' && (
