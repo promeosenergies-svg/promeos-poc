@@ -1,15 +1,20 @@
 /**
- * PROMEOS — StickyFilterBar v4 (Sprint V12)
- * Unified sticky bar: multi-site chips (selected only) + site search + Portfolio mode
- *   + mode + unit + period pills + custom date range + energy toggle + Save/Reset/Copy actions
+ * PROMEOS — StickyFilterBar v5 (Sprint V13)
+ * Unified sticky bar supporting Classic and Expert UI modes.
  *
- * V12 changes:
- *   - Chips now show only SELECTED sites (not all available) → fixes overflow with 36+ sites
- *   - "+" button opens SiteSearchDropdown to add up to MAX_SITES_COMPARATIF=5
- *   - Portfolio toggle: shown when sites > 5 or user explicitly requests it
- *   - In Portfolio mode: Superpose/Empile/Sépare modes are disabled
+ * Classic mode (default):
+ *   Row 1 : Sites (chips + add) • Énergie • Période • Granularité
+ *   Row 2 : Mode pills (Agrège/Superpose/Empile/Sépare) • Unité pills (kWh/kW/EUR)
+ *   Row 3 : Actions (Enregistrer / Effacer / Copier le lien / Presets)
+ *   Row 4 : Résumé contexte (toujours visible)
+ *   [opt]  : Plage de dates personnalisée (collapsible)
+ *
+ * Expert mode:
+ *   Same as Classic but Row 2 mode pills only shown for multi-site/portfolio
+ *   (preserves V4 / Sprint V12 behavior exactly).
  *
  * Props (all optional / backward-compat):
+ *   uiMode                      'classic' | 'expert' (default: 'classic')
  *   siteIds, setSiteIds         multi-site (new)
  *   siteId, setSiteId           legacy single-site fallback
  *   sites                       [{id, nom}] available sites
@@ -35,9 +40,10 @@ import { X, Zap, Flame, Save, RotateCcw, Link, ChevronDown, Trash2, Plus, Layout
 import { TrustBadge } from '../../ui';
 import { computeGranularity, colorForSite } from './helpers';
 import { MODE_LABELS, UNIT_LABELS, MAX_SITES } from './types';
+import InfoTooltip from './InfoTooltip';
 
 const ENERGY_OPTIONS = [
-  { value: 'electricity', label: 'Electricite', icon: Zap },
+  { value: 'electricity', label: 'Électricité', icon: Zap },
   { value: 'gas', label: 'Gaz', icon: Flame },
 ];
 
@@ -55,6 +61,19 @@ const GRAN_LABELS = { '30min': '30 min', '1h': '1 heure', jour: 'Jour', semaine:
 // In Portfolio mode, only Agrege is meaningful
 const MODE_ORDER = ['agrege', 'superpose', 'empile', 'separe'];
 const UNIT_ORDER = ['kwh', 'kw', 'eur'];
+
+const MODE_TOOLTIPS = {
+  agrege:   'Somme de tous les sites sur une seule courbe.',
+  superpose:'Courbe de chaque site superposée, même axe Y.',
+  empile:   'Courbe de chaque site empilée (aires cumulées).',
+  separe:   'Un sous-graphique par site, axe indépendant.',
+};
+
+const UNIT_TOOLTIPS = {
+  kwh: 'Énergie consommée en kilowatt-heure.',
+  kw:  'Puissance instantanée en kilowatt.',
+  eur: 'Coût estimé en euros (tarif réglementé).',
+};
 
 /** Compute YTD start (Jan 1 of current year) as ISO string */
 function ytdStart() {
@@ -110,7 +129,85 @@ function SiteSearchDropdown({ sites, selectedIds, onAdd, onClose }) {
   );
 }
 
+// ── Mode pills sub-component ──────────────────────────────────────────────────
+function ModePills({ mode, setMode, isPortfolioMode, availableModes, showTooltips = false }) {
+  return (
+    <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
+      {availableModes.map(m => (
+        <button
+          key={m}
+          onClick={() => setMode(m)}
+          disabled={isPortfolioMode && m !== 'agrege'}
+          className={`flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium transition ${
+            mode === m
+              ? 'bg-white text-blue-700 shadow-sm'
+              : isPortfolioMode && m !== 'agrege'
+                ? 'text-gray-300 cursor-not-allowed'
+                : 'text-gray-600 hover:text-gray-900'
+          }`}
+          title={isPortfolioMode && m !== 'agrege' ? 'Non disponible en mode Portfolio' : undefined}
+        >
+          {MODE_LABELS[m]}
+          {showTooltips && MODE_TOOLTIPS[m] && (
+            <InfoTooltip text={MODE_TOOLTIPS[m]} />
+          )}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ── Unit pills sub-component ──────────────────────────────────────────────────
+function UnitPills({ unit, setUnit, showTooltips = false }) {
+  return (
+    <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
+      {UNIT_ORDER.map(u => (
+        <button
+          key={u}
+          onClick={() => setUnit(u)}
+          className={`flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium transition ${
+            unit === u ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          {UNIT_LABELS[u]}
+          {showTooltips && UNIT_TOOLTIPS[u] && (
+            <InfoTooltip text={UNIT_TOOLTIPS[u]} />
+          )}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ── Résumé contexte (Row 4, Classic mode only) ────────────────────────────────
+function ResumeContexte({ days, gran, nSites, availability }) {
+  const meters = availability?.meters_count ?? null;
+  const source = availability?.source ?? null;
+  const quality = availability?.readings_count
+    ? Math.min(100, Math.round(availability.readings_count / 500 * 100))
+    : null;
+
+  const parts = [
+    days === 'ytd' ? 'YTD' : `${days} j`,
+    GRAN_LABELS[gran] || gran,
+    `${nSites} site${nSites > 1 ? 's' : ''}`,
+    meters != null ? `${meters} compteur${meters > 1 ? 's' : ''}` : '— compteur',
+    source ? `Source\u00a0: ${source}` : null,
+    quality != null ? `Qualité\u00a0: ${quality}\u00a0%` : null,
+  ].filter(Boolean);
+
+  return (
+    <div className="text-[10px] text-gray-400 flex flex-wrap gap-x-3 gap-y-0.5 pt-0.5 border-t border-gray-50">
+      {parts.map((p, i) => (
+        <span key={i}>{p}</span>
+      ))}
+    </div>
+  );
+}
+
 export default function StickyFilterBar({
+  // UI mode
+  uiMode = 'classic',
   // Multi-site (new)
   siteIds = [],
   setSiteIds,
@@ -130,7 +227,7 @@ export default function StickyFilterBar({
   setStartDate,
   endDate,
   setEndDate,
-  // Mode + Unit (new)
+  // Mode + Unit
   mode,
   setMode,
   unit,
@@ -149,6 +246,8 @@ export default function StickyFilterBar({
   onLoadPreset,
   onDeletePreset,
 }) {
+  const isClassic = uiMode === 'classic';
+
   const [showSaveInput, setShowSaveInput] = useState(false);
   const [presetName, setPresetName] = useState('');
   const [showPresets, setShowPresets] = useState(false);
@@ -224,9 +323,10 @@ export default function StickyFilterBar({
   };
 
   // Modes available in current context
-  const availableModes = isPortfolioMode
-    ? ['agrege']  // Portfolio: aggregation only
-    : MODE_ORDER;
+  const availableModes = isPortfolioMode ? ['agrege'] : MODE_ORDER;
+
+  // In Classic mode: always show mode pills. In Expert: only for multi-site / portfolio.
+  const showModePills = setMode && (isClassic || effectiveSiteIds.length > 1 || isPortfolioMode);
 
   return (
     <div className="sticky top-0 z-20 bg-white/95 backdrop-blur border-b border-gray-100 -mx-4 px-4 py-2.5 md:-mx-6 md:px-6 space-y-2">
@@ -295,18 +395,21 @@ export default function StickyFilterBar({
 
         {/* Portfolio toggle button (shown when multi-site available) */}
         {isMultiMode && onTogglePortfolio && (
-          <button
-            onClick={onTogglePortfolio}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition ${
-              isPortfolioMode
-                ? 'bg-indigo-600 text-white border-indigo-600'
-                : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300 hover:text-indigo-600'
-            }`}
-            title={isPortfolioMode ? 'Quitter le mode Portfolio' : 'Passer en mode Portfolio (tous les sites)'}
-          >
-            <LayoutGrid size={11} />
-            Portfolio
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={onTogglePortfolio}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition ${
+                isPortfolioMode
+                  ? 'bg-indigo-600 text-white border-indigo-600'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300 hover:text-indigo-600'
+              }`}
+              title={isPortfolioMode ? 'Quitter le mode Portfolio' : 'Passer en mode Portfolio (tous les sites)'}
+            >
+              <LayoutGrid size={11} />
+              Portfolio
+            </button>
+            <InfoTooltip text="Portfolio : vue agrégée de tous les sites. Mode Agrégé uniquement." />
+          </div>
         )}
 
         {/* Legacy single-site select (when setSiteIds not provided) */}
@@ -375,14 +478,14 @@ export default function StickyFilterBar({
 
         {/* Granularity badge (auto, read-only) */}
         <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 rounded-lg text-xs font-medium text-gray-600">
-          Granularite : {GRAN_LABELS[gran] || gran}
+          Granularité&nbsp;: {GRAN_LABELS[gran] || gran}
         </span>
 
         {/* Data quality badge (right-aligned) */}
         {confidence && (
           <div className="ml-auto">
             <TrustBadge
-              source={`${(availability.readings_count || 0).toLocaleString()} releves`}
+              source={`${(availability.readings_count || 0).toLocaleString()} relevés`}
               confidence={confidence}
             />
           </div>
@@ -422,52 +525,29 @@ export default function StickyFilterBar({
         </div>
       )}
 
-      {/* Row 2: Mode pills + Unit toggle */}
-      {(setMode || setUnit) && (
+      {/* Row 2: Mode pills + Unit toggle (Classic: always shown; Expert: multi-site/portfolio only) */}
+      {(showModePills || setUnit) && (
         <div className="flex items-center gap-3 flex-wrap">
-          {/* Mode pills — shown when multi-site or portfolio */}
-          {setMode && (effectiveSiteIds.length > 1 || isPortfolioMode) && (
-            <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
-              {availableModes.map(m => (
-                <button
-                  key={m}
-                  onClick={() => setMode(m)}
-                  disabled={isPortfolioMode && m !== 'agrege'}
-                  className={`px-3 py-1 rounded-md text-xs font-medium transition ${
-                    mode === m
-                      ? 'bg-white text-blue-700 shadow-sm'
-                      : isPortfolioMode && m !== 'agrege'
-                        ? 'text-gray-300 cursor-not-allowed'
-                        : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                  title={isPortfolioMode && m !== 'agrege' ? 'Non disponible en mode Portfolio' : undefined}
-                >
-                  {MODE_LABELS[m]}
-                </button>
-              ))}
-            </div>
+          {showModePills && (
+            <ModePills
+              mode={mode}
+              setMode={setMode}
+              isPortfolioMode={isPortfolioMode}
+              availableModes={availableModes}
+              showTooltips={isClassic}
+            />
           )}
-
-          {/* Unit toggle */}
           {setUnit && (
-            <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
-              {UNIT_ORDER.map(u => (
-                <button
-                  key={u}
-                  onClick={() => setUnit(u)}
-                  className={`px-3 py-1 rounded-md text-xs font-medium transition ${
-                    unit === u ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  {UNIT_LABELS[u]}
-                </button>
-              ))}
-            </div>
+            <UnitPills
+              unit={unit}
+              setUnit={setUnit}
+              showTooltips={isClassic}
+            />
           )}
         </div>
       )}
 
-      {/* Row 3: Actions (Save / Reset / Copy) + Presets */}
+      {/* Row 3: Actions (Enregistrer / Effacer / Copier le lien / Presets) */}
       {(onSave || onReset || onCopyLink) && (
         <div className="flex items-center gap-2 flex-wrap">
 
@@ -551,7 +631,7 @@ export default function StickyFilterBar({
             <button
               onClick={onReset}
               className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
-              title="Reinitialiser les filtres"
+              title="Réinitialiser les filtres"
             >
               <RotateCcw size={12} />
               Effacer
@@ -568,6 +648,16 @@ export default function StickyFilterBar({
             Copier le lien
           </button>
         </div>
+      )}
+
+      {/* Row 4: Résumé contexte (Classic mode only) */}
+      {isClassic && (
+        <ResumeContexte
+          days={days}
+          gran={gran}
+          nSites={effectiveSiteIds.length || sites.length}
+          availability={availability}
+        />
       )}
     </div>
   );

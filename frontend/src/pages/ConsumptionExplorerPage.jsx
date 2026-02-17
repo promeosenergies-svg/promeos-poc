@@ -8,7 +8,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Activity, Target, Clock, Flame, BarChart3,
   RefreshCw, AlertTriangle, CheckCircle,
-  Plus, Trash2, Save, X, Zap, Database, Wifi,
+  Plus, Trash2, Save, X, Zap, Database, Wifi, Info,
 } from 'lucide-react';
 import {
   AreaChart, Area, BarChart, Bar, ComposedChart, Line,
@@ -998,8 +998,10 @@ export default function ConsumptionExplorerPage() {
 
   // ── Portfolio mode (V12-A): all sites, aggregated view ────────────────
   const [isPortfolioMode, setIsPortfolioMode] = useState(false);
+  const [portfolioBannerDismissed, setPortfolioBannerDismissed] = useState(false);
 
   const handleTogglePortfolio = useCallback(() => {
+    setPortfolioBannerDismissed(false); // show banner again on each entry
     const next = !isPortfolioMode;
     setIsPortfolioMode(next);
     if (next) {
@@ -1158,6 +1160,24 @@ export default function ConsumptionExplorerPage() {
         onLoadPreset={handleLoadPreset}
         onDeletePreset={deletePreset}
       />
+
+      {/* Portfolio info banner — non-blocking, dismissible */}
+      {isPortfolioMode && !portfolioBannerDismissed && (
+        <div className="flex items-start gap-2 px-3 py-2 bg-indigo-50 border border-indigo-200 rounded-lg text-xs text-indigo-700">
+          <Info size={14} className="shrink-0 mt-0.5 text-indigo-500" />
+          <span className="flex-1">
+            <strong>Mode Portfolio</strong> — vue agrégée multi-sites (mode Agrégé uniquement).
+            Chaque site contribue à l&apos;enveloppe globale. Pour comparer des sites individuellement, quittez le Portfolio.
+          </span>
+          <button
+            onClick={() => setPortfolioBannerDismissed(true)}
+            className="shrink-0 text-indigo-400 hover:text-indigo-600"
+            aria-label="Fermer la bannière Portfolio"
+          >
+            <X size={13} />
+          </button>
+        </div>
+      )}
 
       {/* Context banner (site info + date range) */}
       <ContextBanner availability={availability} />
