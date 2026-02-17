@@ -975,6 +975,18 @@ export default function ConsumptionExplorerPage() {
     loading,
   } = motor;
 
+  // ── Custom date range (V11.1-A) ────────────────────────────────────────
+  const [startDate, setStartDate] = useState(urlState.startDate || null);
+  const [endDate, setEndDate] = useState(urlState.endDate || null);
+
+  // Sync custom dates → URL
+  useEffect(() => {
+    setUrlParams({
+      start: startDate || null,
+      end: endDate || null,
+    });
+  }, [startDate, endDate]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Sync Motor state → URL ─────────────────────────────────────────────
   useEffect(() => {
     setUrlParams({ sites: siteIds, energy: energyType, days, mode, unit });
@@ -1010,6 +1022,19 @@ export default function ConsumptionExplorerPage() {
     }
   }, [selectedSiteId, sites]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Reset to defaults (V11.1-A) ────────────────────────────────────────
+  const handleReset = useCallback(() => {
+    const firstSiteId = selectedSiteId || (sites.length ? sites[0].id : null);
+    setSiteIds(firstSiteId ? [firstSiteId] : []);
+    setEnergyType('electricity');
+    setDays(30);
+    setMode('agrege');
+    setUnit('kwh');
+    setStartDate(null);
+    setEndDate(null);
+    setUrlParams({ sites: firstSiteId ? [firstSiteId] : [], energy: 'electricity', days: 30, mode: 'agrege', unit: 'kwh', start: null, end: null });
+  }, [selectedSiteId, sites]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Navigation helpers ─────────────────────────────────────────────────
   const handleNavigate = useCallback((path) => { window.location.href = path; }, []);
   const handleSwitchEnergy = useCallback((type) => {
@@ -1025,7 +1050,7 @@ export default function ConsumptionExplorerPage() {
 
   return (
     <div className="space-y-5">
-      {/* Unified sticky filter bar (v2: multi-site chips + mode + unit) */}
+      {/* Unified sticky filter bar (v3: period pills + date range + Save/Reset/Copy) */}
       <StickyFilterBar
         siteIds={siteIds}
         setSiteIds={setSiteIds}
@@ -1037,11 +1062,17 @@ export default function ConsumptionExplorerPage() {
         availableTypes={availability?.energy_types}
         days={days}
         setDays={setDays}
+        startDate={startDate}
+        setStartDate={setStartDate}
+        endDate={endDate}
+        setEndDate={setEndDate}
         mode={mode}
         setMode={setMode}
         unit={unit}
         setUnit={setUnit}
         availability={availability}
+        onReset={handleReset}
+        onCopyLink={() => { try { navigator.clipboard.writeText(window.location.href); } catch {} }}
       />
 
       {/* Context banner (site info + date range) */}
