@@ -33,6 +33,8 @@ import StickyFilterBar from './consumption/StickyFilterBar';
 import ContextBanner from './consumption/ContextBanner';
 import EvidenceDrawer from './consumption/EvidenceDrawer';
 import HeatmapChart from './consumption/HeatmapChart';
+import ExplorerChart from './consumption/ExplorerChart';
+import LayerToggle from './consumption/LayerToggle';
 import { computeAutoRange } from './consumption/helpers';
 import useExplorerMotor from './consumption/useExplorerMotor';
 import useExplorerURL from './consumption/useExplorerURL';
@@ -181,6 +183,9 @@ function TunnelPanel({ siteId, days, energyType }) {
   const [dayType, setDayType] = useState('weekday');
   const [mode, setMode] = useState('energy');
   const [selectedSlot, setSelectedSlot] = useState(null);
+  // Layer toggles local to TunnelPanel (tunnel layer on by default)
+  const [showP10P90, setShowP10P90] = useState(true);
+  const [showP25P75, setShowP25P75] = useState(true);
 
   const load = useCallback(async () => {
     if (!siteId) return;
@@ -294,24 +299,48 @@ function TunnelPanel({ siteId, days, energyType }) {
         </div>
       </div>
 
-      {/* Tunnel chart */}
+      {/* Tunnel chart + LayerToggle sidebar */}
       <Card>
         <CardBody>
-          <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={chartData} onClick={handleChartClick} style={{ cursor: 'pointer' }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="hour" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} label={{ value: unit, angle: -90, position: 'insideLeft', style: { fontSize: 11 } }} />
-              <Tooltip formatter={(v) => `${v} ${unit}`} />
-              <Area type="monotone" dataKey="p90" stroke="#ef4444" fill="#fecaca" fillOpacity={0.3} name="P90" />
-              <Area type="monotone" dataKey="p75" stroke="#f59e0b" fill="#fde68a" fillOpacity={0.3} name="P75" />
-              <Area type="monotone" dataKey="p50" stroke="#3b82f6" fill="#93c5fd" fillOpacity={0.5} name="P50 (mediane)" />
-              <Area type="monotone" dataKey="p25" stroke="#10b981" fill="#6ee7b7" fillOpacity={0.3} name="P25" />
-              <Area type="monotone" dataKey="p10" stroke="#6b7280" fill="#e5e7eb" fillOpacity={0.3} name="P10" />
-              <Legend />
-            </AreaChart>
-          </ResponsiveContainer>
-          <p className="text-xs text-gray-400 mt-1 text-center">Cliquez sur un creneau pour ouvrir l'analyse detaillee</p>
+          <div className="flex gap-4">
+            {/* Chart (composable) */}
+            <div className="flex-1 min-w-0">
+              <ExplorerChart
+                data={chartData}
+                xKey="hour"
+                valueKey="p50"
+                mode="agrege"
+                unit={mode === 'power' ? 'kw' : 'kwh'}
+                height={300}
+                onSlotClick={handleChartClick}
+              >
+                {/* P10-P90 envelope layers */}
+                {showP10P90 && (
+                  <>
+                    <Area type="monotone" dataKey="p90" stroke="#ef4444" fill="#fecaca" fillOpacity={0.25} name="P90" />
+                    <Area type="monotone" dataKey="p10" stroke="#6b7280" fill="#e5e7eb" fillOpacity={0.25} name="P10" />
+                  </>
+                )}
+                {showP25P75 && (
+                  <>
+                    <Area type="monotone" dataKey="p75" stroke="#f59e0b" fill="#fde68a" fillOpacity={0.3} name="P75" />
+                    <Area type="monotone" dataKey="p25" stroke="#10b981" fill="#6ee7b7" fillOpacity={0.3} name="P25" />
+                  </>
+                )}
+                <Area type="monotone" dataKey="p50" stroke="#3b82f6" fill="#93c5fd" fillOpacity={0.5} name="P50 (mediane)" />
+              </ExplorerChart>
+              <p className="text-xs text-gray-400 mt-1 text-center">Cliquez sur un creneau pour ouvrir l'analyse detaillee</p>
+            </div>
+
+            {/* Layer toggle sidebar */}
+            <LayerToggle
+              layers={{ tunnel: showP10P90, talon: showP25P75 }}
+              onToggle={(key) => {
+                if (key === 'tunnel') setShowP10P90(v => !v);
+                if (key === 'talon') setShowP25P75(v => !v);
+              }}
+            />
+          </div>
         </CardBody>
       </Card>
 
