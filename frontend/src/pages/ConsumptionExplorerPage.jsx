@@ -43,6 +43,7 @@ import { computeAutoRange } from './consumption/helpers';
 import { computeInsights } from './consumption/insightRules';
 import useExplorerMotor from './consumption/useExplorerMotor';
 import useExplorerURL from './consumption/useExplorerURL';
+import useExplorerPresets from './consumption/useExplorerPresets';
 
 // ========================================
 // Constants
@@ -1048,6 +1049,33 @@ export default function ConsumptionExplorerPage() {
     setUrlParams({ sites: firstSiteId ? [firstSiteId] : [], energy: 'electricity', days: 30, mode: 'agrege', unit: 'kwh', start: null, end: null });
   }, [selectedSiteId, sites]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Presets (V11.1-C) ──────────────────────────────────────────────────
+  const { presets, savePreset, loadPreset, deletePreset } = useExplorerPresets();
+
+  const handleSavePreset = useCallback((name) => {
+    savePreset(name, {
+      siteIds,
+      energy: energyType,
+      days,
+      mode,
+      unit,
+      startDate,
+      endDate,
+    });
+  }, [siteIds, energyType, days, mode, unit, startDate, endDate]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleLoadPreset = useCallback((name) => {
+    const state = loadPreset(name);
+    if (!state) return;
+    if (state.siteIds) setSiteIds(state.siteIds);
+    if (state.energy) setEnergyType(state.energy);
+    if (state.days) setDays(state.days);
+    if (state.mode) setMode(state.mode);
+    if (state.unit) setUnit(state.unit);
+    if (state.startDate !== undefined) setStartDate(state.startDate);
+    if (state.endDate !== undefined) setEndDate(state.endDate);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Navigation helpers ─────────────────────────────────────────────────
   const handleNavigate = useCallback((path) => { window.location.href = path; }, []);
   const handleSwitchEnergy = useCallback((type) => {
@@ -1086,6 +1114,10 @@ export default function ConsumptionExplorerPage() {
         availability={availability}
         onReset={handleReset}
         onCopyLink={() => { try { navigator.clipboard.writeText(window.location.href); } catch {} }}
+        onSave={handleSavePreset}
+        savedPresets={presets}
+        onLoadPreset={handleLoadPreset}
+        onDeletePreset={deletePreset}
       />
 
       {/* Context banner (site info + date range) */}
