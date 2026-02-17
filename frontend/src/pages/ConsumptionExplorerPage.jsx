@@ -1,13 +1,14 @@
 /**
  * PROMEOS - ConsumptionExplorerPage (/consommations/explorer)
- * Sprint V11: Unified StickyFilterBar + ContextBanner + availability handshake
+ * Sprint V11 WoW: Motor + Layers architecture
+ * Motor: useExplorerMotor (data engine) + useExplorerURL (URL state sync)
  * Panels: Tunnel (P10-P90), Objectifs/Budgets, HP/HC, Gaz (beta)
  */
 import { useState, useEffect, useCallback } from 'react';
 import {
-  Activity, Target, Clock, Flame, BarChart3, TrendingUp,
-  RefreshCw, AlertTriangle, CheckCircle, ChevronDown, ChevronUp,
-  Plus, Trash2, Save, X, Zap, Database, Upload, Wifi,
+  Activity, Target, Clock, Flame, BarChart3,
+  RefreshCw, AlertTriangle, CheckCircle,
+  Plus, Trash2, Save, X, Zap, Database, Wifi,
 } from 'lucide-react';
 import {
   AreaChart, Area, BarChart, Bar, ComposedChart, Line,
@@ -20,25 +21,21 @@ import { SkeletonCard } from '../ui';
 import { useScope } from '../contexts/ScopeContext';
 import { track } from '../services/tracker';
 import {
-  getConsumptionAvailability,
   getConsumptionTunnel,
-  getConsumptionTunnelV2,
   getConsumptionTargets,
   createConsumptionTarget,
   deleteConsumptionTarget,
   getTargetsProgression,
-  getTargetsProgressionV2,
   getActiveTOUSchedule,
   getHPHCRatio,
-  getHPHCBreakdownV2,
-  getGasSummary,
-  getGasWeatherNormalized,
 } from '../services/api';
 import StickyFilterBar from './consumption/StickyFilterBar';
 import ContextBanner from './consumption/ContextBanner';
 import EvidenceDrawer from './consumption/EvidenceDrawer';
 import HeatmapChart from './consumption/HeatmapChart';
 import { computeAutoRange } from './consumption/helpers';
+import useExplorerMotor from './consumption/useExplorerMotor';
+import useExplorerURL from './consumption/useExplorerURL';
 
 // ========================================
 // Constants
@@ -914,82 +911,102 @@ function GasPanel({ siteId, days }) {
 // ========================================
 
 export default function ConsumptionExplorerPage() {
-  const [activeTab, setActiveTab] = useState('tunnel');
-  const { selectedSiteId, sites } = useScope();
-  const [siteId, setSiteId] = useState(null);
+  const { selectedSiteId, scopedSites } = useScope();
 
-  // V10.1: Availability handshake
-  const [availability, setAvailability] = useState(null);
-  const [availLoading, setAvailLoading] = useState(false);
+  // ── URL state (bidirectional sync) ─────────────────────────────────────
+  const { urlState, setUrlParams } = useExplorerURL();
 
-  // Filters
-  const [energyType, setEnergyType] = useState('electricity');
-  const [days, setDays] = useState(90);
+  // ── Resolve initial site IDs from URL or scope ─────────────────────────
+  const sites = scopedSites || [];
+  const initialSiteIds = (() => {
+    if (urlState.siteIds.length) return urlState.siteIds;
+    if (selectedSiteId) return [selectedSiteId];
+    if (sites.length) return [sites[0].id];
+    return [];
+  })();
 
-  // Resolve siteId from scope
+  // ── Motor (data engine) ────────────────────────────────────────────────
+  const motor = useExplorerMotor({
+    initialSiteIds,
+    initialEnergy: urlState.energy,
+    initialDays: urlState.days,
+  });
+
+  const {
+    state: { siteIds, energyType, days, mode, unit, layers },
+    setSiteIds, setEnergyType, setDays, setMode, setUnit, toggleLayer,
+    mergedAvailability,
+    primarySiteId,
+    primaryAvailability,
+    loading,
+  } = motor;
+
+  // ── Sync Motor state → URL ─────────────────────────────────────────────
   useEffect(() => {
-    if (selectedSiteId) {
-      setSiteId(selectedSiteId);
-    } else if (sites?.length > 0) {
-      setSiteId(sites[0].id);
+    setUrlParams({ sites: siteIds, energy: energyType, days, mode, unit });
+  }, [siteIds, energyType, days, mode, unit]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Tab state (persisted in URL) ───────────────────────────────────────
+  const [activeTab, setActiveTab] = useState(urlState.tab);
+  const switchTab = (tab) => {
+    setActiveTab(tab);
+    setUrlParams({ tab });
+    track('explorer_tab', { tab });
+  };
+
+  // ── Auto-calibrate period from availability ────────────────────────────
+  useEffect(() => {
+    const avail = primaryAvailability;
+    if (avail?.has_data && avail.first_ts && avail.last_ts) {
+      const autoDays = computeAutoRange(avail.first_ts, avail.last_ts);
+      if (autoDays !== days) setDays(autoDays);
     }
-  }, [selectedSiteId, sites]);
-
-  // Availability check on siteId or energyType change
-  const checkAvailability = useCallback(async () => {
-    if (!siteId) return;
-    setAvailLoading(true);
-    try {
-      const data = await getConsumptionAvailability(siteId, energyType);
-      setAvailability(data);
-      track('availability_checked', { site_id: siteId, energy_type: energyType, has_data: data.has_data });
-
-      // Auto-calibrate period from available data range
-      if (data.has_data && data.first_ts && data.last_ts) {
-        setDays(computeAutoRange(data.first_ts, data.last_ts));
-      }
-
-      // Auto-switch to gas tab if only gas data
-      if (data.has_data && energyType === 'gas' && activeTab === 'tunnel') {
-        setActiveTab('gas');
-      }
-    } catch (e) {
-      console.error('Availability check error:', e);
-      setAvailability(null);
-    } finally {
-      setAvailLoading(false);
+    // Auto-switch tab for gas-only
+    if (avail?.has_data && energyType === 'gas' && activeTab === 'tunnel') {
+      setActiveTab('gas');
     }
-  }, [siteId, energyType]);
+  }, [primaryAvailability]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { checkAvailability(); }, [checkAvailability]);
+  // ── Initialize siteIds when scope resolves ─────────────────────────────
+  useEffect(() => {
+    if (!siteIds.length && selectedSiteId) {
+      setSiteIds([selectedSiteId]);
+    } else if (!siteIds.length && sites.length) {
+      setSiteIds([sites[0].id]);
+    }
+  }, [selectedSiteId, sites]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Navigation helper for CTAs
-  const handleNavigate = useCallback((path) => {
-    window.location.href = path;
-  }, []);
-
-  // Energy switch from empty state CTA
+  // ── Navigation helpers ─────────────────────────────────────────────────
+  const handleNavigate = useCallback((path) => { window.location.href = path; }, []);
   const handleSwitchEnergy = useCallback((type) => {
     setEnergyType(type);
-    if (type === 'gas') setActiveTab('gas');
-    else setActiveTab('tunnel');
-  }, []);
+    if (type === 'gas') switchTab('gas');
+    else switchTab('tunnel');
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const availability = mergedAvailability || primaryAvailability;
   const hasData = availability?.has_data === true;
-  const showContent = hasData && !availLoading;
+  const showContent = hasData && !loading;
+  const siteId = primarySiteId; // backward compat for panels
 
   return (
     <div className="space-y-5">
-      {/* Unified sticky filter bar */}
+      {/* Unified sticky filter bar (v2: multi-site chips + mode + unit) */}
       <StickyFilterBar
+        siteIds={siteIds}
+        setSiteIds={setSiteIds}
         siteId={siteId}
-        setSiteId={setSiteId}
+        setSiteId={(id) => setSiteIds([id])}
         sites={sites}
         energyType={energyType}
         setEnergyType={setEnergyType}
         availableTypes={availability?.energy_types}
         days={days}
         setDays={setDays}
+        mode={mode}
+        setMode={setMode}
+        unit={unit}
+        setUnit={setUnit}
         availability={availability}
       />
 
@@ -997,10 +1014,10 @@ export default function ConsumptionExplorerPage() {
       <ContextBanner availability={availability} />
 
       {/* Loading skeleton */}
-      {availLoading && <AvailabilitySkeleton />}
+      {loading && <AvailabilitySkeleton />}
 
       {/* Smart empty state (no data) */}
-      {!availLoading && availability && !hasData && (
+      {!loading && availability && !hasData && (
         <SmartEmptyState
           reasons={availability.reasons}
           energyTypes={availability.energy_types}
@@ -1017,7 +1034,6 @@ export default function ConsumptionExplorerPage() {
             {TAB_CONFIG.map(tab => {
               const Icon = tab.icon;
               const active = activeTab === tab.key;
-              // Hide gas tab if electricity, and hphc if gas
               if (tab.key === 'gas' && energyType !== 'gas') return null;
               if ((tab.key === 'hphc' || tab.key === 'tunnel' || tab.key === 'targets') && energyType === 'gas') {
                 if (tab.key !== 'gas') return null;
@@ -1025,7 +1041,7 @@ export default function ConsumptionExplorerPage() {
               return (
                 <button
                   key={tab.key}
-                  onClick={() => { setActiveTab(tab.key); track('explorer_tab', { tab: tab.key }); }}
+                  onClick={() => switchTab(tab.key)}
                   className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition flex-1 justify-center ${
                     active ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
                   }`}
@@ -1038,7 +1054,7 @@ export default function ConsumptionExplorerPage() {
             })}
           </div>
 
-          {/* Panel content */}
+          {/* Panel content — panels use primarySiteId for backward compat */}
           <div>
             {activeTab === 'tunnel' && <TunnelPanel siteId={siteId} days={days} energyType={energyType} />}
             {activeTab === 'targets' && <TargetsPanel siteId={siteId} energyType={energyType} />}

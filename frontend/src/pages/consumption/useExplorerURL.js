@@ -1,0 +1,63 @@
+/**
+ * PROMEOS — useExplorerURL
+ * Bidirectional URL state sync for the Consumption Explorer.
+ * Uses react-router-dom's useSearchParams.
+ *
+ * URL params:
+ *   sites  — comma-separated site IDs   e.g. "12,34"
+ *   energy — 'electricity' | 'gas'
+ *   days   — period in days             e.g. "90"
+ *   mode   — 'agrege' | 'superpose' | 'empile' | 'separe'
+ *   unit   — 'kwh' | 'kw' | 'eur'
+ *   tab    — active panel tab key
+ */
+import { useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
+
+const DEFAULTS = {
+  energy: 'electricity',
+  days: 90,
+  mode: 'agrege',
+  unit: 'kwh',
+  tab: 'tunnel',
+};
+
+export default function useExplorerURL() {
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  /**
+   * Read current URL state (falls back to DEFAULTS when params absent).
+   */
+  const urlState = {
+    siteIds: searchParams.get('sites')
+      ? searchParams.get('sites').split(',').map(Number).filter(Boolean)
+      : [],
+    energy: searchParams.get('energy') || DEFAULTS.energy,
+    days: searchParams.has('days') ? Number(searchParams.get('days')) : DEFAULTS.days,
+    mode: searchParams.get('mode') || DEFAULTS.mode,
+    unit: searchParams.get('unit') || DEFAULTS.unit,
+    tab: searchParams.get('tab') || DEFAULTS.tab,
+  };
+
+  /**
+   * Update one or more URL params without losing the rest.
+   * @param {Record<string, string|number|number[]>} updates
+   */
+  const setUrlParams = useCallback((updates) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      for (const [key, value] of Object.entries(updates)) {
+        if (value === null || value === undefined) {
+          next.delete(key);
+        } else if (Array.isArray(value)) {
+          next.set(key, value.join(','));
+        } else {
+          next.set(key, String(value));
+        }
+      }
+      return next;
+    }, { replace: true }); // replace to avoid polluting browser history on every filter change
+  }, [setSearchParams]);
+
+  return { urlState, setUrlParams };
+}
