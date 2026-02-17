@@ -7,9 +7,10 @@
  * When not authenticated (demo mode): falls back to mock data.
  * After seed-pack: applyDemoScope() auto-switches to the seeded org/site.
  */
-import { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
 import { mockSites } from '../mocks/sites';
 import { useAuth } from './AuthContext';
+import { getSites, setApiScope } from '../services/api';
 
 const STORAGE_KEY = 'promeos_scope';
 const DEMO_ORGS_KEY = 'promeos_demo_orgs';
@@ -67,6 +68,24 @@ export function ScopeProvider({ children }) {
 
   // When authenticated, override orgId from auth context
   const effectiveOrgId = isAuth && auth.org ? auth.org.id : scope.orgId;
+
+  // ── Real sites from API (replaces mockSites when available) ───────────
+  const [apiSites, setApiSites] = useState([]);
+
+  useEffect(() => {
+    if (!effectiveOrgId) { setApiSites([]); return; }
+    getSites({ org_id: effectiveOrgId, limit: 200 })
+      .then(data => {
+        const list = Array.isArray(data) ? data : (data.sites || data.items || []);
+        setApiSites(list);
+      })
+      .catch(() => setApiSites([]));
+  }, [effectiveOrgId]);
+
+  // ── Sync scope → axios interceptor (called on every scope change) ──────
+  useEffect(() => {
+    setApiScope({ orgId: effectiveOrgId ?? null, siteId: scope.siteId ?? null });
+  }, [effectiveOrgId, scope.siteId]);
 
   const setOrg = useCallback((orgId) => {
     const next = { orgId, portefeuilleId: null, siteId: null };
@@ -147,21 +166,28 @@ export function ScopeProvider({ children }) {
     ? MOCK_PORTEFEUILLES.find((p) => p.id === scope.portefeuilleId)
     : null;
 
-  // Filter sites by scope
+  // Filter sites by scope — real API sites take priority over mock fallback
   const scopedSites = useMemo(() => {
-    let sites = mockSites.filter((s) => {
-      const pfId = sitePortefeuille(s);
-      const pf = MOCK_PORTEFEUILLES.find((p) => p.id === pfId);
-      return pf && pf.org_id === effectiveOrgId;
-    });
-    if (scope.portefeuilleId) {
-      sites = sites.filter((s) => sitePortefeuille(s) === scope.portefeuilleId);
+    let sites;
+    if (apiSites.length > 0) {
+      // Real API sites are already org-scoped by the server
+      sites = apiSites;
+    } else {
+      // Fallback: filter mock sites by org (used in offline / unauthenticated mode)
+      sites = mockSites.filter((s) => {
+        const pfId = sitePortefeuille(s);
+        const pf = MOCK_PORTEFEUILLES.find((p) => p.id === pfId);
+        return pf && pf.org_id === effectiveOrgId;
+      });
+      if (scope.portefeuilleId) {
+        sites = sites.filter((s) => sitePortefeuille(s) === scope.portefeuilleId);
+      }
     }
     if (scope.siteId) {
       sites = sites.filter((s) => s.id === scope.siteId);
     }
     return sites;
-  }, [effectiveOrgId, scope.portefeuilleId, scope.siteId]);
+  }, [apiSites, effectiveOrgId, scope.portefeuilleId, scope.siteId]);
 
   /**
    * scopeLabel — human-readable label for the current site selection.
@@ -177,10 +203,24 @@ export function ScopeProvider({ children }) {
   /** selectedSiteId — convenience alias for scope.siteId */
   const selectedSiteId = scope.siteId;
 
+  /** orgSites — all sites for the current org, without siteId filter (used by site picker) */
+  const orgSites = useMemo(() => {
+    if (apiSites.length > 0) return apiSites;
+    return mockSites.filter((s) => {
+      const pfId = sitePortefeuille(s);
+      const pf = MOCK_PORTEFEUILLES.find((p) => p.id === pfId);
+      return pf && pf.org_id === effectiveOrgId;
+    });
+  }, [apiSites, effectiveOrgId]);
+
+  /** sitesCount — total sites for current org (from API or mock fallback) */
+  const sitesCount = orgSites.length;
+
   const value = {
     scope: { ...scope, orgId: effectiveOrgId },
-    org, portefeuille, portefeuilles, scopedSites,
+    org, portefeuille, portefeuilles, scopedSites, orgSites,
     orgs: orgsData,
+    sitesCount,
     selectedSiteId,
     scopeLabel,
     setOrg, setPortefeuille, setSite, resetScope, clearScope, applyDemoScope,

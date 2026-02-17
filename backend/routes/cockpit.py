@@ -2,51 +2,97 @@
 PROMEOS - Routes API Cockpit & Portefeuilles
 Endpoints pour le cockpit exécutif et la gestion des portefeuilles
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from database import get_db
 from models import (
-    Organisation, Portefeuille, Site, Alerte,
+    Organisation, Portefeuille, EntiteJuridique, Site, Alerte,
     StatutConformite, not_deleted,
 )
 
 router = APIRouter(prefix="/api", tags=["Cockpit"])
 
 
+def _get_org_id(request: Request) -> int | None:
+    """Extract X-Org-Id from request headers (injected by frontend scope interceptor)."""
+    raw = request.headers.get("X-Org-Id")
+    if raw:
+        try:
+            return int(raw)
+        except ValueError:
+            pass
+    return None
+
+
+def _sites_for_org(db: Session, org_id: int | None):
+    """Base query for non-deleted sites filtered by org_id via the join chain."""
+    q = (
+        not_deleted(db.query(Site), Site)
+        .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
+        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+    )
+    if org_id is not None:
+        q = q.filter(EntiteJuridique.organisation_id == org_id)
+    return q
+
+
 @router.get("/cockpit")
-def get_cockpit(db: Session = Depends(get_db)):
+def get_cockpit(request: Request, db: Session = Depends(get_db)):
     """
     GET /api/cockpit
-    Statistiques globales pour le cockpit exécutif
+    Statistiques globales pour le cockpit exécutif.
+    Respects X-Org-Id header: returns stats scoped to the requested organisation.
     """
-    # Organisation
-    org = db.query(Organisation).first()
+    org_id = _get_org_id(request)
+
+    # Resolve organisation — prefer X-Org-Id, fallback to first org
+    if org_id is not None:
+        org = db.query(Organisation).filter(Organisation.id == org_id).first()
+    else:
+        org = db.query(Organisation).first()
+
     if not org:
         raise HTTPException(status_code=404, detail="Organisation non trouvée")
 
-    # Stats sites (exclude soft-deleted)
-    q_sites = not_deleted(db.query(Site), Site)
+    # Use resolved org_id for all site queries
+    effective_org_id = org.id
+
+    # Stats sites (exclude soft-deleted, scoped to org)
+    q_sites = _sites_for_org(db, effective_org_id)
     total_sites = q_sites.count()
     sites_actifs = q_sites.filter(Site.actif == True).count()
 
     # Stats conformite
-    sites_tertiaire_ko = q_sites.filter(
+    sites_tertiaire_ko = _sites_for_org(db, effective_org_id).filter(
         Site.statut_decret_tertiaire == "non_conforme"
     ).count()
 
-    sites_bacs_ko = q_sites.filter(
+    sites_bacs_ko = _sites_for_org(db, effective_org_id).filter(
         Site.statut_bacs == "non_conforme"
     ).count()
 
     # Risque financier total
-    risque_total = not_deleted(db.query(func.sum(Site.risque_financier_euro)), Site).scalar() or 0
+    risque_total = (
+        _sites_for_org(db, effective_org_id)
+        .with_entities(func.sum(Site.risque_financier_euro))
+        .scalar() or 0
+    )
 
     # Avancement moyen decret tertiaire
-    avg_avancement = not_deleted(db.query(func.avg(Site.avancement_decret_pct)), Site).scalar() or 0
+    avg_avancement = (
+        _sites_for_org(db, effective_org_id)
+        .with_entities(func.avg(Site.avancement_decret_pct))
+        .scalar() or 0
+    )
 
-    # Alertes actives
-    alertes_actives = db.query(Alerte).filter(Alerte.resolue == False).count()
+    # Alertes actives — scoped to org's sites
+    site_ids = [s.id for s in _sites_for_org(db, effective_org_id).with_entities(Site.id).all()]
+    alertes_actives = (
+        db.query(Alerte)
+        .filter(Alerte.resolue == False, Alerte.site_id.in_(site_ids))
+        .count()
+    ) if site_ids else 0
 
     return {
         "organisation": {
@@ -67,12 +113,21 @@ def get_cockpit(db: Session = Depends(get_db)):
 
 
 @router.get("/portefeuilles")
-def get_portefeuilles(db: Session = Depends(get_db)):
+def get_portefeuilles(request: Request, db: Session = Depends(get_db)):
     """
     GET /api/portefeuilles
-    Liste des portefeuilles avec stats
+    Liste des portefeuilles avec stats, scoped to X-Org-Id.
     """
-    portefeuilles = not_deleted(db.query(Portefeuille), Portefeuille).all()
+    org_id = _get_org_id(request)
+
+    q = (
+        not_deleted(db.query(Portefeuille), Portefeuille)
+        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+    )
+    if org_id is not None:
+        q = q.filter(EntiteJuridique.organisation_id == org_id)
+
+    portefeuilles = q.all()
 
     result = []
     for p in portefeuilles:

@@ -13,15 +13,34 @@ const api = axios.create({
   },
 });
 
-// Auth interceptors
-// NOTE: demo paths (/demo/*) are scope-exempt — do NOT inject org_id / site_id
-// headers or query params on these endpoints. Use isDemoPath() to guard any
-// future scope injection.
+// ── Scope state (module-level, updated by ScopeContext) ──────────────────
+// Holds the current org/site scope for injection into API headers.
+let _apiScope = { orgId: null, siteId: null };
+
+/**
+ * setApiScope — called by ScopeContext on every scope change (and on boot).
+ * Enables all API requests to carry X-Org-Id / X-Site-Id without prop drilling.
+ * @param {{ orgId: number|null, siteId: number|null }} scope
+ */
+export function setApiScope({ orgId = null, siteId = null } = {}) {
+  _apiScope = { orgId: orgId ?? null, siteId: siteId ?? null };
+}
+
+// Auth + Scope request interceptor
+// NOTE: demo paths (/demo/*) are scope-exempt — we NEVER inject org/site headers there.
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('promeos_token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
-  // Scope injection guard: if a scope interceptor is added, it must skip isDemoPath() URLs
-  // (no scope injection currently — token only)
+
+  // Scope injection: skip /demo/* endpoints
+  if (!isDemoPath(config.url)) {
+    if (_apiScope.orgId != null) {
+      config.headers['X-Org-Id'] = String(_apiScope.orgId);
+    }
+    if (_apiScope.siteId != null) {
+      config.headers['X-Site-Id'] = String(_apiScope.siteId);
+    }
+  }
   return config;
 });
 

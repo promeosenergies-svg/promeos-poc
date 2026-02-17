@@ -1,10 +1,10 @@
 """
 PROMEOS - Routes API pour les Sites
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from database import get_db
-from models import Site, Compteur, Alerte, Consommation, Obligation, Evidence, Batiment, StatutConformite, StatutEvidence, TypeObligation, not_deleted
+from models import Site, Portefeuille, EntiteJuridique, Compteur, Alerte, Consommation, Obligation, Evidence, Batiment, StatutConformite, StatutEvidence, TypeObligation, not_deleted
 from routes.schemas import SiteResponse, SiteListResponse, SiteStats, SiteComplianceResponse, BatimentResponse
 from services.compliance_engine import compute_action_recommandee, _ACTION_TEMPLATES
 from middleware.auth import get_optional_auth, AuthContext
@@ -13,6 +13,17 @@ from pydantic import BaseModel
 from typing import List, Optional
 from sqlalchemy import func
 from datetime import datetime, timedelta
+
+
+def _get_org_id_from_request(request: Request) -> int | None:
+    """Extract X-Org-Id header value as int, or None."""
+    raw = request.headers.get("X-Org-Id")
+    if raw:
+        try:
+            return int(raw)
+        except ValueError:
+            pass
+    return None
 
 router = APIRouter(prefix="/api/sites", tags=["Sites"])
 
@@ -71,31 +82,45 @@ def create_site(req: SiteCreateRequest, db: Session = Depends(get_db)):
 
 @router.get("", response_model=SiteListResponse)
 def get_sites(
+    request: Request,
     skip: int = 0,
     limit: int = 100,
+    org_id: Optional[int] = None,
     ville: Optional[str] = None,
     type: Optional[str] = None,
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """
-    Liste tous les sites PROMEOS avec pagination et filtres
+    Liste les sites PROMEOS avec pagination et filtres.
+    Scope: org_id query param OR X-Org-Id header (header takes priority when both present).
     """
     query = not_deleted(db.query(Site), Site)
 
-    # Scope filtering
-    if auth and auth.site_ids is not None:
+    # Org scope: X-Org-Id header > org_id query param > auth token
+    header_org_id = _get_org_id_from_request(request)
+    effective_org_id = header_org_id or org_id
+
+    if effective_org_id is not None:
+        query = (
+            query
+            .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
+            .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+            .filter(EntiteJuridique.organisation_id == effective_org_id)
+        )
+    elif auth and auth.site_ids is not None:
+        # Fallback: JWT-scoped site list (authenticated mode without X-Org-Id)
         query = query.filter(Site.id.in_(auth.site_ids))
 
-    # Filtres
+    # Additional filters
     if ville:
         query = query.filter(Site.ville.ilike(f"%{ville}%"))
     if type:
         query = query.filter(Site.type == type)
-    
+
     total = query.count()
     sites = query.offset(skip).limit(limit).all()
-    
+
     return {
         "total": total,
         "sites": sites
