@@ -16,7 +16,7 @@ import { HERO_ACCENTS } from '../ui/colorTokens';
 
 const Cockpit = () => {
   const navigate = useNavigate();
-  const { org, portefeuille, portefeuilles, scopedSites } = useScope();
+  const { org, portefeuille, portefeuilles, scopedSites, sitesCount } = useScope();
   const { isExpert } = useExpertMode();
   const [showMaturiteModal, setShowMaturiteModal] = useState(false);
   const [siteSort, setSiteSort] = useState({ col: '', dir: '' });
@@ -134,7 +134,7 @@ const Cockpit = () => {
     <PageShell
       icon={FileText}
       title="Vue executive"
-      subtitle={`${scopeLabel} · ${kpis.total} site${kpis.total > 1 ? 's' : ''}`}
+      subtitle={`${scopeLabel} · ${sitesCount} site${sitesCount !== 1 ? 's' : ''}`}
     >
       {/* ── KPIs with accents ── */}
       <div className={`grid gap-4 ${isSingleSite ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-2 lg:grid-cols-4'}`}>

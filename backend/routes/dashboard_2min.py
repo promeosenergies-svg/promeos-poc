@@ -4,13 +4,14 @@ GET /api/dashboard/2min - Vue synthetique en 3 blocs pour un prospect
 """
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from database import get_db
 from middleware.auth import get_optional_auth, AuthContext
 from models import (
+    Portefeuille, EntiteJuridique,
     Organisation, Site, Obligation, Compteur, ComplianceFinding,
     ConsumptionInsight, StatutConformite, TypeObligation,
     EnergyInvoice, BillingInsight, BillingInvoiceStatus,
@@ -23,8 +24,33 @@ from models import (
 router = APIRouter(prefix="/api/dashboard", tags=["Dashboard 2min"])
 
 
+def _get_org_id_from_header(request: Request) -> Optional[int]:
+    """Extract X-Org-Id header value as int, or None."""
+    raw = request.headers.get("X-Org-Id")
+    if raw:
+        try:
+            return int(raw)
+        except ValueError:
+            pass
+    return None
+
+
+def _sites_for_org_query(db: Session, org_id: int):
+    """Base query: non-deleted sites scoped to org_id via join chain."""
+    return (
+        not_deleted(db.query(Site), Site)
+        .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
+        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+        .filter(EntiteJuridique.organisation_id == org_id)
+    )
+
+
 @router.get("/2min")
-def get_dashboard_2min(db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
+def get_dashboard_2min(
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """
     Retourne un JSON minimal pour le cockpit "2 minutes":
     - conformite_status: etat global conformite
@@ -32,11 +58,18 @@ def get_dashboard_2min(db: Session = Depends(get_db), auth: Optional[AuthContext
     - action_1: action prioritaire (#1)
     - organisation: nom + type
     - completude: % de remplissage du patrimoine
+
+    Scope: X-Org-Id header > auth.org_id > last-created org (fallback).
     """
-    if auth:
+    header_org_id = _get_org_id_from_header(request)
+
+    if header_org_id:
+        org = db.query(Organisation).filter(Organisation.id == header_org_id).first()
+    elif auth:
         org = db.query(Organisation).filter(Organisation.id == auth.org_id).first()
     else:
-        org = db.query(Organisation).first()
+        org = db.query(Organisation).order_by(Organisation.id.desc()).first()
+
     if not org:
         return {
             "has_data": False,
@@ -47,13 +80,22 @@ def get_dashboard_2min(db: Session = Depends(get_db), auth: Optional[AuthContext
             "completude": _empty_completude(),
         }
 
-    # Stats sites
-    total_sites = not_deleted(db.query(Site), Site).count()
-    sites_actifs = not_deleted(db.query(Site), Site).filter(Site.actif == True).count()
-    total_compteurs = not_deleted(db.query(Compteur), Compteur).count()
+    # Stats sites — scoped to org
+    q_sites = _sites_for_org_query(db, org.id)
+    total_sites = q_sites.count()
+    sites_actifs = q_sites.filter(Site.actif == True).count()
+    site_ids = [s.id for s in q_sites.with_entities(Site.id).all()]
+    total_compteurs = (
+        not_deleted(db.query(Compteur), Compteur)
+        .filter(Compteur.site_id.in_(site_ids))
+        .count()
+    ) if site_ids else 0
 
-    # Conformite globale
-    obligations = db.query(Obligation).all()
+    # Conformite globale — scoped to org's sites
+    obligations = (
+        db.query(Obligation).filter(Obligation.site_id.in_(site_ids)).all()
+        if site_ids else []
+    )
     if obligations:
         nb_conforme = sum(1 for o in obligations if o.statut == StatutConformite.CONFORME)
         nb_non_conforme = sum(1 for o in obligations if o.statut == StatutConformite.NON_CONFORME)
@@ -91,10 +133,22 @@ def get_dashboard_2min(db: Session = Depends(get_db), auth: Optional[AuthContext
             "non_conformes": 0,
         }
 
-    # Risque financier (base: obligations) + pertes estimees (insights conso) + billing
-    risque_total = not_deleted(db.query(func.sum(Site.risque_financier_euro)), Site).scalar() or 0
-    pertes_conso = db.query(func.sum(ConsumptionInsight.estimated_loss_eur)).scalar() or 0
-    pertes_billing = db.query(func.sum(BillingInsight.estimated_loss_eur)).scalar() or 0
+    # Risque financier — scoped to org's sites
+    risque_total = (
+        _sites_for_org_query(db, org.id)
+        .with_entities(func.sum(Site.risque_financier_euro))
+        .scalar() or 0
+    )
+    pertes_conso = (
+        db.query(func.sum(ConsumptionInsight.estimated_loss_eur))
+        .filter(ConsumptionInsight.site_id.in_(site_ids))
+        .scalar() or 0
+    ) if site_ids else 0
+    pertes_billing = (
+        db.query(func.sum(BillingInsight.estimated_loss_eur))
+        .filter(BillingInsight.site_id.in_(site_ids))
+        .scalar() or 0
+    ) if site_ids else 0
 
     # Action prioritaire #1
     action_1 = _get_top_action(db, obligations)
@@ -102,8 +156,11 @@ def get_dashboard_2min(db: Session = Depends(get_db), auth: Optional[AuthContext
     # Completude du patrimoine
     completude = _compute_completude(total_sites, total_compteurs, org)
 
-    # ComplianceFinding-based summary (Sprint 4)
-    findings = db.query(ComplianceFinding).all()
+    # ComplianceFinding-based summary (Sprint 4) — scoped
+    findings = (
+        db.query(ComplianceFinding).filter(ComplianceFinding.site_id.in_(site_ids)).all()
+        if site_ids else []
+    )
     nok_findings = [f for f in findings if f.status == "NOK"]
     unknown_findings = [f for f in findings if f.status == "UNKNOWN"]
 

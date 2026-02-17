@@ -110,9 +110,18 @@ class SeedOrchestrator:
         # 9. Superuser
         self._create_superuser(master["org"])
 
-        # Enable demo mode
+        # Enable demo mode and register current org in DemoState (single source of truth)
         from services.demo_state import DemoState
         DemoState.enable()
+        DemoState.set_demo_org(
+            org_id=master["org"].id,
+            org_nom=master["org"].nom,
+            pack=pack,
+            size=size,
+            sites_count=len(master["sites"]),
+            default_site_id=result.get("default_site_id"),
+            default_site_name=result.get("default_site_name"),
+        )
 
         self.db.commit()
 
@@ -120,18 +129,48 @@ class SeedOrchestrator:
         result["status"] = "ok"
         return result
 
-    def status(self) -> dict:
-        """Get current demo data status (counts per table)."""
+    def status(self, org_id: int = None) -> dict:
+        """Get current demo data status (counts per table).
+
+        Args:
+            org_id: if provided, filter site/meter/reading counts to that org only.
+                    Falls back to DemoState.get_demo_org_id() if None.
+        """
         from models import (
-            Organisation, Site, Meter, MeterReading, MonitoringSnapshot,
+            Organisation, Site, Portefeuille, EntiteJuridique,
+            Meter, MeterReading, MonitoringSnapshot,
             MonitoringAlert, EnergyInvoice, ActionItem, ComplianceFinding,
             ConsumptionInsight, PurchaseScenarioResult, EmsWeatherCache,
         )
+        from services.demo_state import DemoState
+
+        effective_org_id = org_id or DemoState.get_demo_org_id()
 
         counts = {}
+
+        # Organisation count (global — may be more than one if reseeded)
+        try:
+            counts["organisations"] = self.db.query(Organisation).count()
+        except Exception:
+            counts["organisations"] = 0
+
+        # Site count — scoped to org when possible
+        try:
+            if effective_org_id is not None:
+                counts["sites"] = (
+                    self.db.query(Site)
+                    .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
+                    .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+                    .filter(EntiteJuridique.organisation_id == effective_org_id)
+                    .count()
+                )
+            else:
+                counts["sites"] = self.db.query(Site).count()
+        except Exception:
+            counts["sites"] = 0
+
+        # Other counts (global for status panel — not critical for scope correctness)
         for label, model in [
-            ("organisations", Organisation),
-            ("sites", Site),
             ("meters", Meter),
             ("readings", MeterReading),
             ("weather_days", EmsWeatherCache),
@@ -315,6 +354,7 @@ class SeedOrchestrator:
         if remaining == 0:
             from services.demo_state import DemoState
             DemoState.disable()
+            DemoState.clear_demo_org()
 
         return {"status": "ok", "mode": mode, "deleted": deleted}
 

@@ -95,24 +95,57 @@ def seed_demo_pack(request: SeedPackRequest, db: Session = Depends(get_db)):
 
 @router.get("/status-pack")
 def get_demo_pack_status(db: Session = Depends(get_db)):
-    """Status detaille: comptage par table + current org/site for scope."""
+    """Status détaillé: comptage par table + current org/site for scope.
+
+    Uses DemoState to resolve the correct org — not Organisation.first() which
+    would return a stale/wrong org when multiple seeds have been run.
+    Returns sites_count scoped to the seeded org.
+    """
     from services.demo_seed import SeedOrchestrator
+    ctx = DemoState.get_demo_context()
+    org_id = ctx.get("org_id")
+
+    # Resolve org: prefer DemoState tracking; fallback to last-created org
+    if org_id:
+        org = db.query(Organisation).filter(Organisation.id == org_id).first()
+    else:
+        org = db.query(Organisation).order_by(Organisation.id.desc()).first()
+
     orch = SeedOrchestrator(db)
-    counts = orch.status()
+    counts = orch.status(org_id=org.id if org else None)
+
     result = {
         "demo_enabled": DemoState.is_enabled(),
         "counts": counts,
         "total_rows": sum(counts.values()),
+        "pack": ctx.get("pack"),
+        "size": ctx.get("size"),
     }
-    # Expose current org/site for frontend scope auto-switch
-    org = db.query(Organisation).first()
+
     if org:
         result["org_id"] = org.id
         result["org_nom"] = org.nom
-        first_site = db.query(Site).filter(Site.actif == True).first()
-        if first_site:
-            result["default_site_id"] = first_site.id
-            result["default_site_name"] = first_site.nom
+        # sites_count is already scoped to org (from orch.status(org_id=...))
+        result["sites_count"] = counts.get("sites", 0)
+
+        # default_site: use DemoState-registered; fallback to first active site of this org
+        dsid = ctx.get("default_site_id")
+        if dsid:
+            result["default_site_id"] = dsid
+            result["default_site_name"] = ctx.get("default_site_name")
+        else:
+            from models import Portefeuille, EntiteJuridique
+            first_site = (
+                db.query(Site)
+                .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
+                .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+                .filter(EntiteJuridique.organisation_id == org.id, Site.actif == True)
+                .first()
+            )
+            if first_site:
+                result["default_site_id"] = first_site.id
+                result["default_site_name"] = first_site.nom
+
     return result
 
 

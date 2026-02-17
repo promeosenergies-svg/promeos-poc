@@ -1,5 +1,44 @@
 # DEVLOG PROMEOS
 
+## Fix Ultime — Cohérence Demo Pack + Scope Global (2026-02-17)
+
+**Objectif** : Seed S(10) → exactement 10 sites visibles sur TOUTES les pages. Scope org+site appliqué globalement via X-Org-Id/X-Site-Id.
+
+### Causes racines (diagnostic Phase 0)
+
+- `DemoState` ne trackait pas l'org_id → `Organisation.first()` retournait Casino (36 sites) même après seed Tertiaire (10 sites)
+- `orchestrator.status()` comptait TOUS les sites sans filtre org
+- `dashboard_2min.py` utilisait `Organisation.first()` + comptait tout sans filtre
+- `ScopeContext.scopedSites` tombait sur `mockSites` (60 entrées Casino) au lieu de l'API réelle
+
+### Commits
+
+#### Fix-A — DemoState + orchestrator + demo.py
+- `demo_state.py` : Extended singleton — `_current_org_id`, `set_demo_org()`, `clear_demo_org()`, `get_demo_org_id()`, `get_demo_context()`
+- `orchestrator.py` : `status(org_id)` filtre les sites via join chain `Site→Portefeuille→EntiteJuridique→Organisation`. `seed()` appelle `DemoState.set_demo_org()`. `reset()` appelle `DemoState.clear_demo_org()`
+- `demo.py` `/status-pack` : Remplace `Organisation.first()` par `DemoState.get_demo_context()` lookup ; retourne `sites_count`, `pack`, `size` scopés
+
+#### Fix-B — dashboard_2min scope filtering
+- `dashboard_2min.py` : `_get_org_id_from_header()`, `_sites_for_org_query()` (join chain)
+- Tous les compteurs (total_sites, obligations, risque_total, pertes_conso, pertes_billing, findings) scopés via X-Org-Id
+
+#### Fix-C — ScopeSummary + N sites unifié
+- `ScopeSummary.jsx` : Nouveau composant — source unique pour "N sites". Affiche `org.nom — Tous les sites (N)` ou `org.nom — Site : <nom>`
+- `CommandCenter.jsx` : Subtitle utilise `sitesCount` (= `orgSites.length`) au lieu de `kpis.total = scopedSites.length`
+- `Cockpit.jsx` : Subtitle utilise `sitesCount`
+- `ConformitePage.jsx` : Error state subtitle utilise `sitesCount`
+
+### Checklist de cohérence
+- [x] Seed S Tertiaire → 10 sites dans `DemoState`, `status-pack`, dashboard, conformité, executive
+- [x] Seed M Tertiaire → 20 sites partout
+- [x] Reset → 0 sites, DemoState clear
+- [x] Sélection site individuel → header = "Site : …", pages = "N sites total"
+- [x] Refresh page → scope persisté, N correct
+- [x] X-Org-Id injecté par axios interceptor sur toutes les requêtes
+- [x] Zéro régression sur les tests existants
+
+---
+
 ## Sprint V13 — Parity Lock + Classic UI (2026-02-17)
 
 **Objectif** : Rendre le Consumption Explorer "best-in-class" tout en garantissant zéro régression sur les fonctionnalités historiques.

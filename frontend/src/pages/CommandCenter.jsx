@@ -73,7 +73,7 @@ function ActionRow({ action, index, onClick }) {
 
 export default function CommandCenter() {
   const navigate = useNavigate();
-  const { org, scopedSites } = useScope();
+  const { org, scopedSites, sitesCount } = useScope();
   const { isExpert } = useExpertMode();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -186,7 +186,7 @@ export default function CommandCenter() {
 
   if (error) {
     return (
-      <PageShell icon={LayoutDashboard} title="Tableau de bord" subtitle={`${org.nom} · ${kpis.total} sites`}>
+      <PageShell icon={LayoutDashboard} title="Tableau de bord" subtitle={`${org.nom} · ${sitesCount} site${sitesCount !== 1 ? 's' : ''}`}>
         <ErrorState title="Erreur de chargement" message={error} onRetry={loadData} />
       </PageShell>
     );
@@ -196,7 +196,7 @@ export default function CommandCenter() {
     <PageShell
       icon={LayoutDashboard}
       title="Tableau de bord"
-      subtitle={`${org.nom} · ${kpis.total} sites`}
+      subtitle={`${org.nom} · ${sitesCount} site${sitesCount !== 1 ? 's' : ''}`}
       actions={
         <div className="flex items-center gap-2">
           {/* Trust signals — compact */}

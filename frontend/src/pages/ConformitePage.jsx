@@ -1065,7 +1065,7 @@ function ProofSection({ obligation, files, onUpload }) {
 }
 
 export default function ConformitePage() {
-  const { org, scope, scopedSites, portefeuilles } = useScope();
+  const { org, scope, scopedSites, portefeuilles, sitesCount } = useScope();
   const { isExpert } = useExpertMode();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -1269,7 +1269,7 @@ export default function ConformitePage() {
 
     return (
       <PageShell icon={ShieldCheck} title="Conformité réglementaire"
-                 subtitle={`${org.nom} · ${scopedSites.length} sites`}>
+                 subtitle={`${org.nom} · ${sitesCount} site${sitesCount !== 1 ? 's' : ''}`}>
         <ErrorState
           title="Erreur de chargement"
           message={error.message || 'Données de conformité indisponibles'}
