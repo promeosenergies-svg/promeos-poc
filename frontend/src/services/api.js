@@ -254,7 +254,12 @@ export const getKBItemsList = (params = {}) => api.get(`${KB_BASE}/items`, { par
 export const getKBItemDetail = (itemId) => api.get(`${KB_BASE}/items/${itemId}`).then(r => r.data);
 export const searchKBItems = (body) => api.post(`${KB_BASE}/search`, body).then(r => r.data);
 export const applyKB = (body) => api.post(`${KB_BASE}/apply`, body).then(r => r.data);
-export const getKBFullStats = () => api.get(`${KB_BASE}/stats`).then(r => r.data);
+export const getKBFullStats = () => api.get(`${KB_BASE}/stats`).then(r => {
+  const d = r.data;
+  // app/kb/router.py returns { kb: { total_items, by_status, by_domain, ... }, index: {...} }
+  // Normalize to flat shape expected by KBExplorerPage (stats.total_items, stats.by_status, ...)
+  return d && d.kb ? { ...d.kb } : d;
+});
 
 // ========================================
 // ENERGY (Import & Analysis)
