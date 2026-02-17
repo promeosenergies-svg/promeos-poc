@@ -318,6 +318,15 @@ function TunnelPanel({ siteId, days, energyType, showSignature = false }) {
                 unit={mode === 'power' ? 'kw' : 'kwh'}
                 height={300}
                 onSlotClick={handleChartClick}
+                summaryData={{
+                  points: chartData.length,
+                  series: 1,
+                  meters: tunnel.meters_count,
+                  source: tunnel.source,
+                  quality: tunnel.readings_count
+                    ? Math.round(Math.min(100, tunnel.readings_count / 500 * 100))
+                    : null,
+                }}
               >
                 {/* Composable TunnelLayer (P10-P25-P50-P75-P90) */}
                 <TunnelLayer visible={showP10P90} opacity={showP25P75 ? 0.2 : 0.3} />
@@ -537,6 +546,10 @@ function TargetsPanel({ siteId, energyType }) {
                   mode="agrege"
                   unit="kwh"
                   height={250}
+                  summaryData={{
+                    points: chartData.length,
+                    series: targets.length,
+                  }}
                 >
                   <Bar dataKey="objectif" fill="#93c5fd" name="Objectif" />
                   <Bar dataKey="reel" fill="#3b82f6" name="Reel" />
