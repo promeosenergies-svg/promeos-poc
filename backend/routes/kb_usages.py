@@ -348,6 +348,120 @@ def get_kb_stats(db: Session = Depends(get_db)):
     )
 
 
+# ── V11.1: POST /search (body-based FTS search) ──────────────────────────
+
+class KBSearchBody(BaseModel):
+    q: str = "*"
+    domain: Optional[str] = None
+    type: Optional[str] = None
+    include_drafts: bool = False
+    limit: int = 50
+
+
+@router.post("/search")
+def search_kb_post(body: KBSearchBody, db: Session = Depends(get_db)):
+    """POST full-text search — accepts JSON body with q, domain, type, include_drafts, limit.
+    Resolves the frontend 405 (backend only had GET /search).
+    """
+    results = []
+    search_term = f"%{body.q}%" if body.q and body.q != "*" else "%"
+    statuses = [KBStatus.VALIDATED]
+    if body.include_drafts:
+        statuses = [KBStatus.VALIDATED, KBStatus.DRAFT]
+
+    # Archetypes
+    if not body.type or body.type == "archetype":
+        q = db.query(KBArchetype).filter(KBArchetype.status.in_(statuses))
+        if body.q and body.q != "*":
+            q = q.filter(
+                KBArchetype.title.ilike(search_term) |
+                KBArchetype.description.ilike(search_term) |
+                KBArchetype.code.ilike(search_term)
+            )
+        for a in q.limit(body.limit).all():
+            results.append({
+                "type": "archetype", "code": a.code, "title": a.title,
+                "description": a.description,
+                "confidence": a.confidence.value if a.confidence else "medium",
+                "status": a.status.value if a.status else "validated",
+            })
+
+    # Rules
+    if not body.type or body.type == "rule":
+        q = db.query(KBAnomalyRule).filter(KBAnomalyRule.status.in_(statuses))
+        if body.q and body.q != "*":
+            q = q.filter(
+                KBAnomalyRule.title.ilike(search_term) |
+                KBAnomalyRule.description.ilike(search_term) |
+                KBAnomalyRule.code.ilike(search_term)
+            )
+        for r in q.limit(body.limit).all():
+            results.append({
+                "type": "rule", "code": r.code, "title": r.title,
+                "description": r.description,
+                "confidence": r.confidence.value if r.confidence else "medium",
+                "status": r.status.value if r.status else "validated",
+            })
+
+    # Recommendations
+    if not body.type or body.type == "recommendation":
+        q = db.query(KBRecommendation).filter(KBRecommendation.status.in_(statuses))
+        if body.q and body.q != "*":
+            q = q.filter(
+                KBRecommendation.title.ilike(search_term) |
+                KBRecommendation.description.ilike(search_term) |
+                KBRecommendation.code.ilike(search_term)
+            )
+        for r in q.limit(body.limit).all():
+            results.append({
+                "type": "recommendation", "code": r.code, "title": r.title,
+                "description": r.description,
+                "confidence": r.confidence.value if r.confidence else "medium",
+                "status": r.status.value if r.status else "validated",
+            })
+
+    trimmed = results[:body.limit]
+    return {"results": trimmed, "total": len(trimmed)}
+
+
+# ── V11.1: GET /stats (rich stats shape expected by KBExplorerPage) ────────
+
+@router.get("/stats")
+def get_kb_full_stats(db: Session = Depends(get_db)):
+    """Full KB statistics — resolves the frontend 404 (backend only had /usages-stats).
+    Returns total_items, by_status, by_domain, individual counts, and version info.
+    """
+    archetypes_val = db.query(KBArchetype).filter_by(status=KBStatus.VALIDATED).count()
+    archetypes_draft = db.query(KBArchetype).filter_by(status=KBStatus.DRAFT).count()
+    rules_val = db.query(KBAnomalyRule).filter_by(status=KBStatus.VALIDATED).count()
+    rules_draft = db.query(KBAnomalyRule).filter_by(status=KBStatus.DRAFT).count()
+    recos_val = db.query(KBRecommendation).filter_by(status=KBStatus.VALIDATED).count()
+    recos_draft = db.query(KBRecommendation).filter_by(status=KBStatus.DRAFT).count()
+    naf_count = db.query(KBMappingCode).count()
+
+    kb_version = db.query(KBVersion).filter_by(is_active=True).first()
+
+    total_validated = archetypes_val + rules_val + recos_val
+    total_draft = archetypes_draft + rules_draft + recos_draft
+
+    return {
+        "total_items": total_validated + total_draft,
+        "by_status": {
+            "validated": total_validated,
+            "draft": total_draft,
+        },
+        # by_domain: domain column not yet on KB models; empty dict avoids frontend runtime errors
+        "by_domain": {},
+        "archetypes_count": archetypes_val,
+        "rules_count": rules_val,
+        "recommendations_count": recos_val,
+        "naf_mappings_count": naf_count,
+        "kb_version": kb_version.version if kb_version else None,
+        "kb_doc_id": kb_version.doc_id if kb_version else None,
+        "kb_sha256": kb_version.source_sha256 if kb_version else None,
+    }
+
+
 class SeedDemoResponse(BaseModel):
     status: str
     archetypes_seeded: int
