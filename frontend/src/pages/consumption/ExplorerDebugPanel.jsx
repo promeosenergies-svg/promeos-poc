@@ -32,7 +32,7 @@ function Section({ title, children }) {
   );
 }
 
-export default function ExplorerDebugPanel({ params = {}, tsState = {}, availability = null }) {
+export default function ExplorerDebugPanel({ params = {}, tsState = {}, availability = null, scope = null }) {
   const [collapsed, setCollapsed] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -48,6 +48,7 @@ export default function ExplorerDebugPanel({ params = {}, tsState = {}, availabi
 
   const handleCopy = () => {
     const payload = JSON.stringify({
+      scope,
       params,
       tsState: { status, meta, granularity, error, debugInfo },
       availability: avail,
@@ -85,6 +86,16 @@ export default function ExplorerDebugPanel({ params = {}, tsState = {}, availabi
 
       {!collapsed && (
         <div className="px-4 py-3 space-y-0 overflow-x-auto max-h-96 overflow-y-auto">
+          {/* Scope (V16-A) */}
+          {scope && (
+            <Section title="Scope global">
+              <Row label="orgId" value={scope.orgId} />
+              <Row label="selectedSiteId" value={scope.selectedSiteId} />
+              <Row label="scopeLabel" value={scope.scopeLabel} />
+              <Row label="sitesCount" value={scope.sitesCount} />
+            </Section>
+          )}
+
           {/* Query params */}
           <Section title="Paramètres requête">
             <Row label="siteIds" value={siteIds?.join(', ') || '(vide)'} />

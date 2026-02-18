@@ -27,6 +27,7 @@ import ExplorerChart from './ExplorerChart';
 import ExplorerDebugPanel from './ExplorerDebugPanel';
 import useEmsTimeseries from './useEmsTimeseries';
 import { colorForSite } from './helpers';
+import { useScope } from '../../contexts/ScopeContext';
 
 const UNIT_LABELS = { kwh: 'kWh', kw: 'kW', eur: 'EUR' };
 
@@ -101,15 +102,30 @@ function ErrorState({ message, onRetry }) {
   );
 }
 
-// ── Empty state by reason (enhanced V15-C) ────────────────────────────────────
+// ── Empty state by reason (enhanced V16-B) ────────────────────────────────────
 
-function EmptyByReason({ availability, onNavigate, onExtendPeriod }) {
+function EmptyByReason({ availability, noSiteSelected, onNavigate, onExtendPeriod }) {
   const reasons = availability?.reasons || [];
   const primary = reasons[0];
   const firstTs = availability?.first_ts;
   const lastTs = availability?.last_ts;
 
-  // Build smart causes list
+  // V16-B: no site selected = first-priority reason
+  if (noSiteSelected) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center mb-4">
+          <BarChart3 size={28} className="text-blue-400" />
+        </div>
+        <h3 className="text-base font-semibold text-gray-700 mb-1">Aucun site sélectionné</h3>
+        <p className="text-sm text-gray-500 max-w-xs">
+          Sélectionnez un ou plusieurs sites dans la barre de filtres pour afficher les courbes de consommation.
+        </p>
+      </div>
+    );
+  }
+
+  // Build smart causes list from availability data
   const causes = [];
   if (primary === 'no_site') {
     causes.push({ icon: AlertTriangle, text: 'Site introuvable — vérifiez votre sélection.' });
@@ -165,6 +181,19 @@ function EmptyByReason({ availability, onNavigate, onExtendPeriod }) {
   );
 }
 
+// ── ChartFrame: guaranteed height wrapper for ALL states ──────────────────────
+
+function ChartFrame({ children, minHeight = 360 }) {
+  return (
+    <div
+      className="w-full rounded-xl border border-gray-100 bg-white"
+      style={{ minHeight }}
+    >
+      {children}
+    </div>
+  );
+}
+
 // ── Main component ─────────────────────────────────────────────────────────────
 
 export default function TimeseriesPanel({
@@ -194,6 +223,9 @@ export default function TimeseriesPanel({
 
   const { status, chartData, seriesData, meta, granularity, error, debugInfo } = tsState;
 
+  // Scope for debug overlay (V16-A)
+  const { scope: globalScope, selectedSiteId, scopeLabel, sitesCount } = useScope();
+
   // Debug panel — shown in ALL states when ?debug=1
   const isDebug = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('debug');
   const debugPanel = isDebug ? (
@@ -201,6 +233,7 @@ export default function TimeseriesPanel({
       params={{ siteIds, energyType, days, unit, mode, startDate, endDate }}
       tsState={{ status, meta, granularity, error, debugInfo }}
       availability={availability}
+      scope={{ orgId: globalScope?.orgId, selectedSiteId, scopeLabel, sitesCount }}
     />
   ) : null;
 
@@ -222,32 +255,48 @@ export default function TimeseriesPanel({
 
   // ── Loading ──
   if (status === 'loading') {
-    return <>{debugPanel}<SkeletonCard rows={6} /></>;
+    return (
+      <ChartFrame>
+        {debugPanel}
+        <div className="p-4"><SkeletonCard rows={6} /></div>
+      </ChartFrame>
+    );
   }
 
   // ── Error ──
   if (status === 'error') {
-    return <>{debugPanel}<ErrorState message={error} onRetry={handleRetry} /></>;
+    return (
+      <ChartFrame>
+        {debugPanel}
+        <ErrorState message={error} onRetry={handleRetry} />
+      </ChartFrame>
+    );
   }
 
-  // ── Empty (no data from API) ──
+  // ── Empty (no data from API or no site selected) ──
   if (status === 'empty') {
     return (
-      <>
+      <ChartFrame>
         {debugPanel}
         <EmptyByReason
           availability={availability}
+          noSiteSelected={!siteIds.length}
           onNavigate={onNavigate}
           onExtendPeriod={onExtendPeriod}
         />
-      </>
+      </ChartFrame>
     );
   }
 
   // ── Insufficient points (< 2) ──
   const validPoints = chartData.filter(p => p.value != null && !isNaN(p.value));
   if (validPoints.length < 2) {
-    return <>{debugPanel}<InsufficientPoints count={validPoints.length} /></>;
+    return (
+      <ChartFrame>
+        {debugPanel}
+        <InsufficientPoints count={validPoints.length} />
+      </ChartFrame>
+    );
   }
 
   // ── Ready: render chart ──
@@ -264,18 +313,18 @@ export default function TimeseriesPanel({
     : siteIds.slice(0, 1);
 
   return (
-    <div className="space-y-2">
-      {debugPanel}
+    <ChartFrame>
+      <div className="space-y-2 p-3">
+        {debugPanel}
 
-      {/* DataCoverageBadge — compact coverage line above chart */}
-      <DataCoverageBadge
-        meta={meta}
-        siteCount={siteIds.length}
-        qualityPct={qualityPct}
-      />
+        {/* DataCoverageBadge — compact coverage line above chart */}
+        <DataCoverageBadge
+          meta={meta}
+          siteCount={siteIds.length}
+          qualityPct={qualityPct}
+        />
 
-      {/* Chart — min-height wrapper prevents height=0 blank rendering */}
-      <div className="min-h-[320px] w-full">
+        {/* Chart */}
         <ExplorerChart
           data={chartData}
           xKey="date"
@@ -294,21 +343,21 @@ export default function TimeseriesPanel({
             quality: qualityPct,
           }}
         />
-      </div>
 
-      {/* Granularity + date range info */}
-      {granularity && (
-        <p className="text-xs text-gray-400 text-right">
-          Granularité{'\u00a0'}: {GRAN_LABELS[granularity] || granularity}
-          {meta?.date_from && meta?.date_to && (
-            <span className="ml-2">
-              · {new Date(meta.date_from).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: '2-digit' })}
-              {' '}→{' '}
-              {new Date(meta.date_to).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: '2-digit' })}
-            </span>
-          )}
-        </p>
-      )}
-    </div>
+        {/* Granularity + date range info */}
+        {granularity && (
+          <p className="text-xs text-gray-400 text-right">
+            Granularité{'\u00a0'}: {GRAN_LABELS[granularity] || granularity}
+            {meta?.date_from && meta?.date_to && (
+              <span className="ml-2">
+                · {new Date(meta.date_from).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: '2-digit' })}
+                {' '}→{' '}
+                {new Date(meta.date_to).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: '2-digit' })}
+              </span>
+            )}
+          </p>
+        )}
+      </div>
+    </ChartFrame>
   );
 }

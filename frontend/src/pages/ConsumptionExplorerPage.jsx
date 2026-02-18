@@ -1187,8 +1187,8 @@ export default function ConsumptionExplorerPage() {
       {/* Loading skeleton */}
       {loading && <AvailabilitySkeleton />}
 
-      {/* Smart empty state (no data) */}
-      {!loading && availability && !hasData && (
+      {/* Smart empty state — only for non-timeseries Expert tabs (Classic + timeseries tab use TimeseriesPanel's own states) */}
+      {!loading && availability && !hasData && !isClassic && activeTab !== 'timeseries' && (
         <SmartEmptyState
           reasons={availability.reasons}
           energyTypes={availability.energy_types}
@@ -1211,11 +1211,11 @@ export default function ConsumptionExplorerPage() {
         </>
       )}
 
-      {/* Main content (data available, non-portfolio) */}
-      {!isPortfolioMode && showContent && (
+      {/* Main content — non-portfolio, within site limit */}
+      {!isPortfolioMode && siteIds.length <= MAX_SITES && (
         <>
-          {/* OverviewRow — KPI summary above content */}
-          {motor.primaryTunnel && (
+          {/* OverviewRow — only when real data is ready */}
+          {showContent && motor.primaryTunnel && (
             <OverviewRow
               data={computeOverviewData(motor.primaryTunnel)}
               unit={unit}
@@ -1223,7 +1223,7 @@ export default function ConsumptionExplorerPage() {
           )}
 
           {isClassic ? (
-            /* ── Classic mode: timeseries chart only, no tabs ── */
+            /* ── Classic mode: TimeseriesPanel ALWAYS rendered (handles own loading/empty/error) ── */
             <TimeseriesPanel
               siteIds={siteIds}
               energyType={energyType}
@@ -1238,9 +1238,9 @@ export default function ConsumptionExplorerPage() {
               onExtendPeriod={() => setDays(365)}
             />
           ) : (
-            /* ── Expert mode: full tab bar + all panels ── */
+            /* ── Expert mode: tab bar always visible + panel routing ── */
             <>
-              {/* Tab bar */}
+              {/* Tab bar — always visible regardless of data state */}
               <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
                 {TAB_CONFIG.map(tab => {
                   const Icon = tab.icon;
@@ -1265,19 +1265,22 @@ export default function ConsumptionExplorerPage() {
                 })}
               </div>
 
-              {/* InsightsStrip — auto-generated badges from Motor data */}
-              <InsightsStrip
-                insights={computeInsights({
-                  primaryTunnel: motor.primaryTunnel,
-                  primaryHphc: motor.primaryHphc,
-                  primaryGas: motor.primaryGas,
-                  primaryWeather: motor.primaryWeather,
-                  primaryProgression: motor.primaryProgression,
-                }, mode, unit)}
-              />
+              {/* InsightsStrip — only when data ready */}
+              {showContent && (
+                <InsightsStrip
+                  insights={computeInsights({
+                    primaryTunnel: motor.primaryTunnel,
+                    primaryHphc: motor.primaryHphc,
+                    primaryGas: motor.primaryGas,
+                    primaryWeather: motor.primaryWeather,
+                    primaryProgression: motor.primaryProgression,
+                  }, mode, unit)}
+                />
+              )}
 
               {/* Panel content */}
               <div>
+                {/* TimeseriesPanel: ALWAYS rendered on timeseries tab — handles own loading/empty/error */}
                 {activeTab === 'timeseries' && (
                   <TimeseriesPanel
                     siteIds={siteIds}
@@ -1293,7 +1296,8 @@ export default function ConsumptionExplorerPage() {
                     onExtendPeriod={() => setDays(365)}
                   />
                 )}
-                {activeTab === 'tunnel' && (
+                {/* Other panels: require showContent (depend on Motor availability data) */}
+                {activeTab === 'tunnel' && showContent && (
                   <TunnelPanel
                     siteId={siteId}
                     days={days}
@@ -1301,9 +1305,9 @@ export default function ConsumptionExplorerPage() {
                     showSignature={layers.signature}
                   />
                 )}
-                {activeTab === 'targets' && <TargetsPanel siteId={siteId} energyType={energyType} />}
-                {activeTab === 'hphc' && <HPHCPanel siteId={siteId} days={days} />}
-                {activeTab === 'gas' && <GasPanel siteId={siteId} days={days} />}
+                {activeTab === 'targets' && showContent && <TargetsPanel siteId={siteId} energyType={energyType} />}
+                {activeTab === 'hphc' && showContent && <HPHCPanel siteId={siteId} days={days} />}
+                {activeTab === 'gas' && showContent && <GasPanel siteId={siteId} days={days} />}
               </div>
             </>
           )}
