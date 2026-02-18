@@ -1,5 +1,43 @@
 # DEVLOG PROMEOS
 
+## Sprint V15 — No-Blank Chart + Scope Cohérence + UX Premium (2026-02-17)
+
+**Objectif** : Corriger 3 défauts post-V14.3 : debug panel toujours vide, scope Diagnostic incohérent, UX Explorer "top monde".
+
+### Commits
+
+#### V15-A — Explorer "No-Blank Chart" + instrumentation
+- `TimeseriesPanel.jsx` : `ExplorerDebugPanel` déplacé dans `TimeseriesPanel` (accès au `tsState` de `useEmsTimeseries`). Rendu dans TOUS les états (loading/error/empty/insufficient/ready) quand `?debug=1`.
+- `TimeseriesPanel.jsx` : Ajout `min-h-[320px]` wrapper → zéro hauteur=0 impossible.
+- `TimeseriesPanel.jsx` : Prop `onRetry` (optionnel, défaut `window.location.reload()`).
+- `ExplorerChart.jsx` : Fix `ChartRenderGuard` modes superpose/empile — `hasAnySiteData` vérifie les clés `kwh_<siteId>` avant d'afficher placeholder.
+- `ConsumptionExplorerPage.jsx` : Suppression du panel debug standalone (5 lignes) + suppression import `ExplorerDebugPanel`. Prop `onExtendPeriod={() => setDays(365)}` passée aux deux usages de `TimeseriesPanel`.
+
+#### V15-B — Cohérence de scope Diagnostic
+- `ConsumptionDiagPage.jsx` : Import `useScope` + déstructuration `{ selectedSiteId, scopeLabel, sitesCount }`.
+- Helper exporté `computeSummaryFromInsights(insights)` : recalcule `total_insights`, `sites_with_insights`, `total_loss_kwh`, `total_loss_eur`, `by_type` à partir d'un tableau filtré.
+- `filteredInsights` (useMemo) : si `selectedSiteId` → filtre `summary.insights` côté client ; sinon tout.
+- `displayedSummary` (useMemo) : `computeSummaryFromInsights(filteredInsights)`.
+- `DiagHeader` / `SummaryCards` / `ByTypeBreakdown` utilisent maintenant `displayedSummary` + `filteredInsights`.
+- Badge scope : "Périmètre : <scopeLabel>" + badge "Vue filtrée" si site sélectionné.
+- Bannière amber (non-bloquante) quand `hasMismatch = isSiteScoped && allInsights.uniqueSites > 1`.
+
+#### V15-C — UX "top monde" (inclus dans V15-A/B)
+- `TimeseriesPanel.jsx` : `DataCoverageBadge` inline — N sites · N compteurs · N points · Granularité · Qualité · Source: EMS.
+- `TimeseriesPanel.jsx` : `EmptyByReason` enrichi — liste de causes intelligentes, plage de dates si `availability.first_ts`/`last_ts`, CTA "Étendre à 12 mois" via `onExtendPeriod`.
+
+#### V15-D — Tests (10 nouveaux) + DEVLOG
+- `__tests__/V15Scope.test.js` (NEW) : 10 tests purs — filteredInsights (4), hasMismatch (4), computeSummaryFromInsights (6), GRAN_LABELS (6), DataCoverageBadge parts (6).
+- DEVLOG.md : cette entrée.
+
+### Résultats
+- `?debug=1` sur Explorer → debug panel affiche status, n_points, granularity réels.
+- Diagnostic "Bureau Paris #01" sélectionné → uniquement ses insights, badge scope + bannière amber si multi-sites.
+- EmptyByReason : CTA "Étendre à 12 mois" quand dates disponibles hors période.
+- ≥662 tests verts, zéro régression.
+
+---
+
 ## Fix Ultime — Cohérence Demo Pack + Scope Global (2026-02-17)
 
 **Objectif** : Seed S(10) → exactement 10 sites visibles sur TOUTES les pages. Scope org+site appliqué globalement via X-Org-Id/X-Site-Id.
