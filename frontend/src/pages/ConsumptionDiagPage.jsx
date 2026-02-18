@@ -16,6 +16,7 @@ import {
   patchConsumptionInsight,
   getFlexMini,
 } from '../services/api';
+import { useScope } from '../contexts/ScopeContext';
 import { Card, CardBody, Badge, Button, PageShell, Drawer, Tooltip, Tabs } from '../ui';
 import { useToast } from '../ui/ToastProvider';
 import { useExpertMode } from '../contexts/ExpertModeContext';
@@ -69,6 +70,17 @@ const DRAWER_TABS = [
 
 export function recalcLosses(kWh, customPrice, defaultPrice = 0.15) {
   return Math.round((kWh || 0) * (customPrice ?? defaultPrice));
+}
+
+export function computeSummaryFromInsights(insights) {
+  if (!insights?.length) return { total_insights: 0, sites_with_insights: 0, total_loss_kwh: 0, total_loss_eur: 0, by_type: {} };
+  return {
+    total_insights: insights.length,
+    sites_with_insights: new Set(insights.map(i => i.site_id).filter(Boolean)).size,
+    total_loss_kwh: insights.reduce((s, i) => s + (i.estimated_loss_kwh || 0), 0),
+    total_loss_eur: insights.reduce((s, i) => s + (i.estimated_loss_eur || 0), 0),
+    by_type: insights.reduce((acc, i) => ({ ...acc, [i.type]: (acc[i.type] || 0) + 1 }), {}),
+  };
 }
 
 export function generateComparisonChart(insight) {
@@ -576,6 +588,7 @@ export default function ConsumptionDiagPage() {
   const navigate = useNavigate();
   const { isExpert } = useExpertMode();
   const { toast } = useToast();
+  const { selectedSiteId, scopeLabel, sitesCount } = useScope();
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [diagnosing, setDiagnosing] = useState(false);
@@ -698,7 +711,23 @@ export default function ConsumptionDiagPage() {
   }, [toast]);
 
   const insights = summary?.insights || [];
-  const filtered = filterType ? insights.filter((i) => i.type === filterType) : insights;
+
+  // V15-B: scope-aware filtering
+  const filteredInsights = useMemo(() => {
+    if (!insights.length) return [];
+    if (selectedSiteId) return insights.filter(i => i.site_id === selectedSiteId);
+    return insights;
+  }, [insights, selectedSiteId]);
+
+  const displayedSummary = useMemo(
+    () => computeSummaryFromInsights(filteredInsights),
+    [filteredInsights],
+  );
+
+  const isSiteScoped = Boolean(selectedSiteId);
+  const hasMismatch = isSiteScoped && new Set(insights.map(i => i.site_id)).size > 1;
+
+  const filtered = filterType ? filteredInsights.filter((i) => i.type === filterType) : filteredInsights;
 
   return (
     <PageShell
@@ -718,13 +747,33 @@ export default function ConsumptionDiagPage() {
       }
     >
 
+      {/* V15-B: Scope badge */}
+      <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
+        <span>Périmètre :</span>
+        <span className="font-medium text-gray-700">{scopeLabel}</span>
+        {isSiteScoped && (
+          <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium">Vue filtrée</span>
+        )}
+      </div>
+
+      {/* V15-B: Scope mismatch banner */}
+      {hasMismatch && (
+        <div className="flex items-start gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 mb-2">
+          <Info size={14} className="shrink-0 mt-0.5" />
+          <span className="flex-1">
+            Diagnostic lancé sur <strong>{sitesCount} site{sitesCount !== 1 ? 's' : ''}</strong>.
+            Vue filtrée sur <strong>{scopeLabel}</strong> ({filteredInsights.length} insight{filteredInsights.length !== 1 ? 's' : ''}).
+          </span>
+        </div>
+      )}
+
       {message && (
         <div className="p-3 bg-blue-50 text-blue-800 rounded-lg text-sm">{message}</div>
       )}
 
       {loading ? (
         <div className="text-center py-16 text-gray-400">Chargement...</div>
-      ) : !summary || summary.total_insights === 0 ? (
+      ) : !summary || filteredInsights.length === 0 ? (
         <Card>
           <CardBody className="text-center py-12">
             <Zap size={32} className="mx-auto text-gray-300 mb-4" />
@@ -745,14 +794,14 @@ export default function ConsumptionDiagPage() {
       ) : (
         <>
           <DiagHeader
-            insights={insights}
-            summary={summary}
+            insights={filteredInsights}
+            summary={displayedSummary}
             customPrice={customPrice}
             onPriceChange={setCustomPrice}
           />
 
-          <SummaryCards summary={summary} customPrice={customPrice} />
-          <ByTypeBreakdown byType={summary.by_type} />
+          <SummaryCards summary={displayedSummary} customPrice={customPrice} />
+          <ByTypeBreakdown byType={displayedSummary.by_type} />
 
           {/* Filters */}
           <div className="flex items-center gap-3">
