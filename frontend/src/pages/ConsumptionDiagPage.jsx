@@ -72,6 +72,12 @@ export function recalcLosses(kWh, customPrice, defaultPrice = 0.15) {
   return Math.round((kWh || 0) * (customPrice ?? defaultPrice));
 }
 
+/** normalizeId — converts site_id to string for safe comparison (API may return number or string) */
+export function normalizeId(x) {
+  if (x == null) return null;
+  return String(x);
+}
+
 export function computeSummaryFromInsights(insights) {
   if (!insights?.length) return { total_insights: 0, sites_with_insights: 0, total_loss_kwh: 0, total_loss_eur: 0, by_type: {} };
   return {
@@ -715,7 +721,8 @@ export default function ConsumptionDiagPage() {
   // V15-B: scope-aware filtering
   const filteredInsights = useMemo(() => {
     if (!insights.length) return [];
-    if (selectedSiteId) return insights.filter(i => i.site_id === selectedSiteId);
+    // V16-D: normalizeId prevents type mismatch (API number vs store number/string)
+    if (selectedSiteId) return insights.filter(i => normalizeId(i.site_id) === normalizeId(selectedSiteId));
     return insights;
   }, [insights, selectedSiteId]);
 

@@ -1,5 +1,42 @@
 # DEVLOG PROMEOS
 
+## Sprint V16 — Consommations "World-Class" + Scope Coherence (2026-02-18)
+
+**Objectif** : Plus jamais d'écran blanc sur Consommations/Explorer. Garantie d'un rendu dans tous les cas (courbe / skeleton / raison claire + CTA). Cohérence parfaite du scope entre Explorer, Diagnostic et Monitoring.
+
+### Root Cause "Blank Chart" (V16-A)
+
+La cause première de la zone chart blanche : `showContent = hasData && !loading` bloquait `TimeseriesPanel` quand `availability.has_data=false`. **TimeseriesPanel n'était jamais monté** → aucun placeholder, aucun message, zone blanche.
+
+### Commits
+
+#### V16-A — Root-cause fix + ChartFrame + DebugPanel scope
+- `ConsumptionExplorerPage.jsx` : TimeseriesPanel sorti du gate `showContent` → rendu garanti en Classic et sur le tab timeseries Expert. Tab bar toujours visible en Expert.
+- `TimeseriesPanel.jsx` : `ChartFrame` (min-h-[360px]) wrap TOUS les états → impossible d'avoir hauteur=0. Nouveau prop `noSiteSelected` → message "Aucun site sélectionné" au lieu de zone vide.
+- `TimeseriesPanel.jsx` : Import `useScope` → scope transmis au DebugPanel.
+- `ExplorerDebugPanel.jsx` : Section "Scope global" (orgId, selectedSiteId, scopeLabel, sitesCount) visible via `?debug=1`. Copier diagnostic inclut le scope.
+- **Garantie absolue** : loading→SkeletonCard, error→ErrorState+Réessayer, empty(no site)→message explicite, empty(API)→EmptyByReason+CTA, insufficient→InsufficientPoints, ready→chart.
+
+#### V16-B/C — EmptyByReason enrichi (inclus dans V16-A)
+- `EmptyByReason` : cas `noSiteSelected` → message "Aucun site sélectionné — sélectionnez un site dans la barre de filtres".
+- CTA contextuels selon raison : no_meter→Connecter, no_readings→Importer, hors période→Étendre à 12 mois.
+
+#### V16-D — Scope coherence
+- `ConsumptionDiagPage.jsx` : Export `normalizeId(x)` → `String(x)`. Filtre `filteredInsights` utilise `normalizeId` → plus de mismatch string/number entre API et store.
+- Audit MonitoringPage : scope via `scope.siteId` correct ✓. ConsumptionExplorerPage : scope via `selectedSiteId + scopedSites` correct ✓.
+
+#### V16-E — Tests + QA
+- `__tests__/V16BlankChart.test.js` (NEW) : 34 tests purs — normalizeId (6), filteredInsights (4), computeSummaryFromInsights (3), MODE_MAP (5), formatDate FR (4), TimeseriesPanel state machine (8), hasMismatch (4).
+- `docs/qa-v16.md` (NEW) : Checklist manuelle complète (Explorer/Diagnostic/Monitoring/Régression).
+
+### Résultats
+- **718 tests verts**, zéro régression (+34 nouveaux).
+- Zone chart : impossible d'être blanche — garantie par `ChartFrame` + state machine exhaustive.
+- `?debug=1` : scope global visible dans le panel terminal.
+- Scope Explorer/Diagnostic/Monitoring : source unique `useScope()`, filtre robuste avec normalizeId.
+
+---
+
 ## Sprint V15 — No-Blank Chart + Scope Cohérence + UX Premium (2026-02-17)
 
 **Objectif** : Corriger 3 défauts post-V14.3 : debug panel toujours vide, scope Diagnostic incohérent, UX Explorer "top monde".
