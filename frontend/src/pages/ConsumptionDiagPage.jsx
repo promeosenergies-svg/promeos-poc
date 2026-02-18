@@ -17,6 +17,7 @@ import {
   getFlexMini,
 } from '../services/api';
 import { useScope } from '../contexts/ScopeContext';
+import { normalizeId } from './consumption/helpers';
 import { Card, CardBody, Badge, Button, PageShell, Drawer, Tooltip, Tabs } from '../ui';
 import { useToast } from '../ui/ToastProvider';
 import { useExpertMode } from '../contexts/ExpertModeContext';
@@ -72,11 +73,8 @@ export function recalcLosses(kWh, customPrice, defaultPrice = 0.15) {
   return Math.round((kWh || 0) * (customPrice ?? defaultPrice));
 }
 
-/** normalizeId — converts site_id to string for safe comparison (API may return number or string) */
-export function normalizeId(x) {
-  if (x == null) return null;
-  return String(x);
-}
+// normalizeId is defined in helpers.js and re-exported here for backward compat
+export { normalizeId } from './consumption/helpers';
 
 export function computeSummaryFromInsights(insights) {
   if (!insights?.length) return { total_insights: 0, sites_with_insights: 0, total_loss_kwh: 0, total_loss_eur: 0, by_type: {} };
@@ -206,8 +204,8 @@ function SummaryCards({ summary, customPrice }) {
 
   const totalCo2eKg = Math.round((summary.total_loss_kwh || 0) * CO2E_FACTOR_KG_PER_KWH);
   const cards = [
-    { label: 'Insights detectes', value: summary.total_insights, color: 'text-blue-700', bg: 'bg-blue-50' },
-    { label: 'Sites analyses', value: summary.sites_with_insights, color: 'text-indigo-700', bg: 'bg-indigo-50' },
+    { label: 'Insights détectés', value: summary.total_insights, color: 'text-blue-700', bg: 'bg-blue-50' },
+    { label: 'Sites analysés', value: summary.sites_with_insights, color: 'text-indigo-700', bg: 'bg-indigo-50' },
     { label: 'Pertes estimées', value: fmtEur(lossEur), color: 'text-red-700', bg: 'bg-red-50' },
     { label: 'Pertes kWh', value: fmtKwh(Math.round(summary.total_loss_kwh || 0)), color: 'text-orange-700', bg: 'bg-orange-50' },
     { label: 'CO₂e évitable', value: `${totalCo2eKg.toLocaleString('fr-FR')} kg`, color: 'text-emerald-700', bg: 'bg-emerald-50' },

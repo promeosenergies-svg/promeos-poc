@@ -31,7 +31,7 @@ export default function LoginPage() {
           {/* Logo */}
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold text-blue-600 tracking-tight">PROMEOS</h1>
-            <p className="text-sm text-gray-400 mt-1">Cockpit energetique</p>
+            <p className="text-sm text-gray-400 mt-1">Cockpit énergétique</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -77,7 +77,7 @@ export default function LoginPage() {
 
           {/* Demo hint */}
           <div className="mt-6 pt-4 border-t border-gray-100 text-center">
-            <p className="text-xs text-gray-400">Demo: sophie@atlas.demo / demo2024</p>
+            <p className="text-xs text-gray-400">Démo : sophie@atlas.demo / demo2024</p>
           </div>
         </div>
       </div>

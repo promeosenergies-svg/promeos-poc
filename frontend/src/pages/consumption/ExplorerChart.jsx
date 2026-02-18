@@ -155,8 +155,9 @@ export default function ExplorerChart({
           valueKey={valueKey}
           unit={unit}
           height={height}
-          children={children}
-        />
+        >
+          {children}
+        </SepareGrid>
         <SummaryRow summaryData={summaryData} />
       </>
     );

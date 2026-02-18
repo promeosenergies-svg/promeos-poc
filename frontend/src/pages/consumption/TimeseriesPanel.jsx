@@ -21,6 +21,7 @@
  *   onRetry        {fn}        optional — retry on error (defaults to reload)
  *   onExtendPeriod {fn}        optional — extend period to 12 months
  */
+import { useEffect } from 'react';
 import { Database, BarChart3, AlertTriangle, RefreshCw, Zap } from 'lucide-react';
 import { Button, SkeletonCard } from '../../ui';
 import ExplorerChart from './ExplorerChart';
@@ -65,7 +66,7 @@ function DataCoverageBadge({ meta, siteCount, qualityPct }) {
 
 // ── Insufficient data placeholder ─────────────────────────────────────────────
 
-function InsufficientPoints({ count }) {
+function InsufficientPoints({ count, onGenerateDemo }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
       <div className="w-14 h-14 rounded-full bg-amber-50 flex items-center justify-center mb-4">
@@ -78,6 +79,12 @@ function InsufficientPoints({ count }) {
         {count} point{count !== 1 ? 's' : ''} disponible{count !== 1 ? 's' : ''}.
         Élargissez la période ou importez davantage de données.
       </p>
+      {onGenerateDemo && (
+        <Button size="sm" variant="outline" onClick={onGenerateDemo} className="mt-3">
+          <Zap size={12} className="mr-1.5" />
+          Générer conso démo
+        </Button>
+      )}
     </div>
   );
 }
@@ -104,13 +111,13 @@ function ErrorState({ message, onRetry }) {
 
 // ── Empty state by reason (enhanced V16-B) ────────────────────────────────────
 
-function EmptyByReason({ availability, noSiteSelected, onNavigate, onExtendPeriod }) {
+function EmptyByReason({ availability, noSiteSelected, onNavigate, onExtendPeriod, onSelectAll, onGenerateDemo }) {
   const reasons = availability?.reasons || [];
   const primary = reasons[0];
   const firstTs = availability?.first_ts;
   const lastTs = availability?.last_ts;
 
-  // V16-B: no site selected = first-priority reason
+  // V16-B / V17-C: no site selected = first-priority reason
   if (noSiteSelected) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -118,9 +125,14 @@ function EmptyByReason({ availability, noSiteSelected, onNavigate, onExtendPerio
           <BarChart3 size={28} className="text-blue-400" />
         </div>
         <h3 className="text-base font-semibold text-gray-700 mb-1">Aucun site sélectionné</h3>
-        <p className="text-sm text-gray-500 max-w-xs">
+        <p className="text-sm text-gray-500 max-w-xs mb-3">
           Sélectionnez un ou plusieurs sites dans la barre de filtres pour afficher les courbes de consommation.
         </p>
+        {onSelectAll && (
+          <Button size="sm" onClick={onSelectAll}>
+            Tout sélectionner
+          </Button>
+        )}
       </div>
     );
   }
@@ -177,6 +189,13 @@ function EmptyByReason({ availability, noSiteSelected, onNavigate, onExtendPerio
           ))}
         </div>
       )}
+      {/* V20-D: Demo generation CTA when no real data */}
+      {onGenerateDemo && (
+        <Button size="sm" variant="outline" onClick={onGenerateDemo}>
+          <Zap size={12} className="mr-1.5" />
+          Générer conso démo
+        </Button>
+      )}
     </div>
   );
 }
@@ -207,9 +226,13 @@ export default function TimeseriesPanel({
   sites = [],
   siteColors = {},
   availability = null,
+  granularityOverride = null,  // V21-C: user-selected granularity or null for auto
   onNavigate,
   onRetry,
   onExtendPeriod,
+  onSelectAll,
+  onGenerateDemo,  // V20-D: optional — triggers demo data generation + refetch
+  onMeta,          // V22-B: optional — called with meta object when data arrives
 }) {
   const tsState = useEmsTimeseries({
     siteIds,
@@ -219,23 +242,18 @@ export default function TimeseriesPanel({
     endDate,
     unit,
     mode,
+    granularityOverride,
   });
 
   const { status, chartData, seriesData, meta, granularity, error, debugInfo } = tsState;
 
+  // V22-B: report meta (sampling_minutes, available_granularities) upward for pill filtering
+  useEffect(() => {
+    if (meta && onMeta) onMeta(meta);
+  }, [meta, onMeta]);
+
   // Scope for debug overlay (V16-A)
   const { scope: globalScope, selectedSiteId, scopeLabel, sitesCount } = useScope();
-
-  // Debug panel — shown in ALL states when ?debug=1
-  const isDebug = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('debug');
-  const debugPanel = isDebug ? (
-    <ExplorerDebugPanel
-      params={{ siteIds, energyType, days, unit, mode, startDate, endDate }}
-      tsState={{ status, meta, granularity, error, debugInfo }}
-      availability={availability}
-      scope={{ orgId: globalScope?.orgId, selectedSiteId, scopeLabel, sitesCount }}
-    />
-  ) : null;
 
   // Effective retry handler
   const handleRetry = onRetry || (() => window.location.reload());
@@ -248,10 +266,28 @@ export default function TimeseriesPanel({
     }
   });
 
-  // Compute per-site value keys for overlay mode (key = "site_<id>")
-  const overlayValueKeys = seriesData
-    .filter(s => s.key && s.key !== 'agg')
-    .map(s => s.key);
+  // V20-B (RC1 fix): overlayValueKeys only for genuine multi-series; 'total'/'agg'/'others' are
+  // aggregate series — their value is always in chartData[i].value, not chartData[i][key].
+  const overlayValueKeys = seriesData.length <= 1
+    ? []
+    : seriesData
+        .filter(s => s.key && s.key !== 'agg' && s.key !== 'total' && s.key !== 'others')
+        .map(s => s.key);
+
+  // V20-B (RC3 fix): effectiveValueKey must match what ExplorerChart will use
+  const effectiveValueKey = overlayValueKeys.length ? overlayValueKeys[0] : 'value';
+
+  // Debug panel — shown in ALL states when ?debug=1 (after overlayValueKeys so chartMeta is available)
+  const isDebug = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('debug');
+  const debugPanel = isDebug ? (
+    <ExplorerDebugPanel
+      params={{ siteIds, energyType, days, unit, mode, startDate, endDate }}
+      tsState={{ status, meta, granularity, error, debugInfo }}
+      availability={availability}
+      scope={{ orgId: globalScope?.orgId, selectedSiteId, scopeLabel, sitesCount }}
+      chartMeta={{ overlayValueKeys, effectiveValueKey }}
+    />
+  ) : null;
 
   // ── Loading ──
   if (status === 'loading') {
@@ -283,18 +319,21 @@ export default function TimeseriesPanel({
           noSiteSelected={!siteIds.length}
           onNavigate={onNavigate}
           onExtendPeriod={onExtendPeriod}
+          onSelectAll={onSelectAll}
+          onGenerateDemo={onGenerateDemo}
         />
       </ChartFrame>
     );
   }
 
   // ── Insufficient points (< 2) ──
-  const validPoints = chartData.filter(p => p.value != null && !isNaN(p.value));
+  // V20-B (RC3 fix): use effectiveValueKey to match ExplorerChart's perspective
+  const validPoints = chartData.filter(p => p[effectiveValueKey] != null && !isNaN(p[effectiveValueKey]));
   if (validPoints.length < 2) {
     return (
       <ChartFrame>
         {debugPanel}
-        <InsufficientPoints count={validPoints.length} />
+        <InsufficientPoints count={validPoints.length} onGenerateDemo={onGenerateDemo} />
       </ChartFrame>
     );
   }

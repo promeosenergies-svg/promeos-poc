@@ -22,7 +22,7 @@ const DEFAULTS = {
   days: 90,
   mode: 'agrege',
   unit: 'kwh',
-  tab: 'tunnel',
+  tab: 'timeseries', // V19: timeseries is the primary chart view
 };
 
 export default function useExplorerURL() {

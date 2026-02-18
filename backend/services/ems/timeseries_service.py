@@ -118,7 +118,7 @@ def query_timeseries(
     if not meters:
         return {
             "series": [],
-            "meta": _meta(granularity, 0, 0, date_from, date_to, metric),
+            "meta": _meta(granularity, 0, 0, date_from, date_to, metric, series=[]),
         }
 
     meter_id_list = [m.id for m in meters]
@@ -178,7 +178,7 @@ def query_timeseries(
     availability = _compute_availability(series, expected, granularity)
     return {
         "series": series,
-        "meta": _meta(granularity, n_points, len(meters), date_from, date_to, metric),
+        "meta": _meta(granularity, n_points, len(meters), date_from, date_to, metric, series=series),
         "availability": availability,
     }
 
@@ -186,7 +186,47 @@ def query_timeseries(
 # -------------------------------------------------------------------
 # Internal helpers
 # -------------------------------------------------------------------
-def _meta(granularity, n_points, n_meters, date_from, date_to, metric):
+
+# Sampling interval in minutes for each granularity key
+_SAMPLING_MINUTES = {
+    "15min": 15,
+    "30min": 30,
+    "hourly": 60,
+    "daily": 1440,
+    "monthly": 43200,
+}
+
+# Granularities ordered from finest to coarsest
+_GRANULARITY_ORDER = ["15min", "30min", "hourly", "daily", "monthly"]
+
+
+def _available_granularities(sampling_minutes: int, span_days: int) -> List[str]:
+    """Return granularities that are (a) >= data frequency and (b) <= period / 2 points."""
+    result = []
+    for g in _GRANULARITY_ORDER:
+        g_minutes = _SAMPLING_MINUTES[g]
+        # Must not be finer than the actual data resolution
+        if g_minutes < sampling_minutes:
+            continue
+        # Coarse guard: monthly needs at least 30 days
+        if g == "monthly" and span_days < 30:
+            continue
+        # Fine guard: sub-hourly requires at most 14 days to stay under cap
+        if g in ("15min", "30min") and span_days > 14:
+            continue
+        result.append(g)
+    return result
+
+
+def _meta(granularity, n_points, n_meters, date_from, date_to, metric, series=None):
+    sampling_minutes = _SAMPLING_MINUTES.get(granularity, 60)
+    span_days = max((date_to - date_from).days, 1)
+    available = _available_granularities(sampling_minutes, span_days)
+    # valid_count: points with non-null value in the aggregate series
+    valid_count = 0
+    if series:
+        for s in series:
+            valid_count = max(valid_count, sum(1 for p in s.get("data", []) if p.get("v") is not None))
     return {
         "granularity": granularity,
         "metric": metric,
@@ -194,6 +234,9 @@ def _meta(granularity, n_points, n_meters, date_from, date_to, metric):
         "n_meters": n_meters,
         "date_from": date_from.isoformat(),
         "date_to": date_to.isoformat(),
+        "sampling_minutes": sampling_minutes,
+        "available_granularities": available,
+        "valid_count": valid_count,
     }
 
 

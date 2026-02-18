@@ -22,7 +22,7 @@ const SEVERITY_STATUS = { critical: 'crit', warn: 'warn', info: 'info' };
 const SEVERITY_LABEL = { critical: 'Critique', warn: 'Attention', info: 'Info' };
 
 const SOURCE_LABELS = {
-  compliance: 'Conformite',
+  compliance: 'Conformité',
   billing: 'Facturation',
   purchase: 'Achats',
   consumption: 'Consommation',
@@ -32,14 +32,14 @@ const SOURCE_LABELS = {
 const STATUS_LABELS = {
   new: 'Nouveau',
   read: 'Lu',
-  dismissed: 'Ignore',
+  dismissed: 'Ignoré',
 };
 
 const TRIAGE_TABS = [
   { id: 'all', label: 'Toutes' },
   { id: 'new', label: 'Nouvelles' },
   { id: 'read', label: 'Lues' },
-  { id: 'dismissed', label: 'Ignorees' },
+  { id: 'dismissed', label: 'Ignorées' },
 ];
 
 export default function NotificationsPage() {
@@ -266,7 +266,7 @@ export default function NotificationsPage() {
 
         {selected.size > 0 && (
           <div className="flex items-center gap-2 ml-auto">
-            <span className="text-xs text-gray-500">{selected.size} selectionnee(s)</span>
+            <span className="text-xs text-gray-500">{selected.size} sélectionnée(s)</span>
             <Button variant="secondary" size="sm" onClick={() => handleBulkAction('read')}>
               <Eye size={14} /> Marquer lues
             </Button>
@@ -283,10 +283,10 @@ export default function NotificationsPage() {
           icon={Bell}
           title={searchQuery.trim() || filterSource ? 'Aucune alerte pour ces filtres' : 'Aucune alerte'}
           text={searchQuery.trim() || filterSource
-            ? 'Modifiez vos filtres ou reinitialiser la vue.'
-            : 'Synchronisez pour detecter les alertes depuis toutes les briques.'
+            ? 'Modifiez vos filtres ou réinitialiser la vue.'
+            : 'Synchronisez pour détecter les alertes depuis toutes les briques.'
           }
-          ctaLabel={searchQuery.trim() || filterSource ? 'Reinitialiser' : 'Synchroniser'}
+          ctaLabel={searchQuery.trim() || filterSource ? 'Réinitialiser' : 'Synchroniser'}
           onCta={searchQuery.trim() || filterSource
             ? () => { setSearchQuery(''); setFilterSource(''); }
             : handleSync

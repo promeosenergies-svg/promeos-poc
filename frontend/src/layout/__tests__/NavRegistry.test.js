@@ -93,7 +93,7 @@ describe('NAV_SECTIONS', () => {
       'Piloter',
       'Exécuter',
       'Analyser',
-      'Marche & Factures',
+      'Marché & Factures',
       'Donnees',
       'Administration',
     ]);

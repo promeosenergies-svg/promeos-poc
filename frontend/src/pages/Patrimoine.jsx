@@ -8,14 +8,15 @@ import {
   Building2, Search, RotateCcw, Download, Star,
   Plus, Upload, MapPin, ChevronRight,
   ShieldCheck, AlertTriangle, Ruler, BadgeEuro, Zap,
-  ExternalLink, Eye, Lightbulb, Gauge, TrendingUp,
+  ExternalLink, Eye, Lightbulb, Gauge,
   X, ArrowUpDown, SlidersHorizontal, ChevronDown,
 } from 'lucide-react';
 import {
   Card, Badge, Button, Pagination, EmptyState,
-  PageShell, KpiCard, Modal, Input, Drawer, Tabs, Tooltip,
+  PageShell, KpiCardCompact, Modal, Input, Drawer, Tabs, Tooltip,
 } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td, ThCheckbox, TdCheckbox } from '../ui';
+import { SkeletonCard, SkeletonTable } from '../ui/Skeleton';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import CreateActionModal from '../components/CreateActionModal';
@@ -70,7 +71,7 @@ const PRESET_VIEWS = [
 export default function Patrimoine() {
   const navigate = useNavigate();
   const [sp, setSp] = useSearchParams();
-  const { scopedSites } = useScope();
+  const { scopedSites, sitesLoading } = useScope();
   const { isExpert } = useExpertMode();
   const searchRef = useRef(null);
 
@@ -235,6 +236,18 @@ export default function Patrimoine() {
 
   /* ─── Render ─── */
 
+  // Etat chargement
+  if (sitesLoading) {
+    return (
+      <PageShell icon={Building2} title="Patrimoine" subtitle="Chargement...">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <SkeletonCard /><SkeletonCard /><SkeletonCard /><SkeletonCard />
+        </div>
+        <SkeletonTable rows={8} cols={6} />
+      </PageShell>
+    );
+  }
+
   const isEmptyPatrimoine = scopedSites.length === 0;
 
   // Dynamic subtitle
@@ -257,20 +270,18 @@ export default function Patrimoine() {
 
       {/* ── Welcome empty state ── */}
       {isEmptyPatrimoine ? (
-        <div className="flex flex-col items-center justify-center py-20">
-          <div className="w-16 h-16 rounded-2xl bg-indigo-100 flex items-center justify-center mb-5">
-            <Building2 size={32} className="text-indigo-600" />
-          </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Bienvenue sur PROMEOS</h2>
-          <p className="text-gray-500 text-center max-w-md mb-6">
-            Importez votre patrimoine immobilier pour commencer le pilotage energetique. CSV, Excel ou donnees de demonstration.
-          </p>
-          <div className="flex items-center gap-3">
-            <Button size="lg" onClick={() => setShowWizard(true)}><Upload size={16} className="mr-2" />Importer mon patrimoine</Button>
-            <Button variant="secondary" size="lg" onClick={() => setShowWizard(true)}><Zap size={16} className="mr-2" />Demo</Button>
-          </div>
-          <p className="text-xs text-gray-400 mt-3">10 sites demo — prets en 10 secondes</p>
-        </div>
+        <EmptyState
+          icon={Building2}
+          title="Bienvenue sur PROMEOS"
+          text="Importez votre patrimoine immobilier pour commencer le pilotage énergétique. CSV, Excel ou données de démonstration."
+          ctaLabel="Importer mon patrimoine"
+          onCta={() => setShowWizard(true)}
+          actions={
+            <Button variant="secondary" size="lg" onClick={() => setShowWizard(true)}>
+              <Zap size={16} className="mr-2" />Demo
+            </Button>
+          }
+        />
       ) : (
         <div className="space-y-3">
 
@@ -402,7 +413,7 @@ export default function Patrimoine() {
                     <Th className="w-10 text-center text-gray-400">#</Th>
                     <Th sortable sorted={sortCol === 'nom' ? sortDir : ''} onSort={() => handleSort('nom')} pin>Site</Th>
                     <Th>Usage</Th>
-                    <Th>Conformite</Th>
+                    <Th>Conformité</Th>
                     <Th sortable sorted={sortCol === 'risque_eur' ? sortDir : ''} onSort={() => handleSort('risque_eur')} className="text-right">Risque</Th>
                     <Th sortable sorted={sortCol === 'surface_m2' ? sortDir : ''} onSort={() => handleSort('surface_m2')} className="text-right">Surface</Th>
                     {isExpert && <Th sortable sorted={sortCol === 'conso_kwh_an' ? sortDir : ''} onSort={() => handleSort('conso_kwh_an')} className="text-right">Conso</Th>}
@@ -444,7 +455,7 @@ export default function Patrimoine() {
                         {isExpert && <Td className="text-right text-sm text-gray-600 tabular-nums">{fmtKwh(site.conso_kwh_an)}</Td>}
                         <Td className="text-right">
                           {site.anomalies_count > 0
-                            ? <Tooltip text={`${site.anomalies_count} anomalie${site.anomalies_count > 1 ? 's' : ''} detectee${site.anomalies_count > 1 ? 's' : ''}`}>
+                            ? <Tooltip text={`${site.anomalies_count} anomalie${site.anomalies_count > 1 ? 's' : ''} détectée${site.anomalies_count > 1 ? 's' : ''}`}>
                                 <span className={`inline-flex items-center justify-center min-w-[22px] h-[22px] rounded-full text-[11px] font-bold ${
                                   site.anomalies_count >= 5 ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
                                 }`}>{site.anomalies_count}</span>
@@ -496,28 +507,6 @@ export default function Patrimoine() {
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  *  Sub-components
  * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-
-/** Compact KPI card — denser than KpiCard, active ring, click-to-filter */
-function KpiCardCompact({ icon: Icon, color, label, value, detail, active, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`text-left p-3 rounded-xl border bg-white transition-all
-        ${active ? 'ring-2 ring-blue-500 border-blue-200 shadow-sm' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}`}
-    >
-      <div className="flex items-center gap-2.5">
-        <div className={`w-8 h-8 rounded-lg ${color} flex items-center justify-center shrink-0`}>
-          <Icon size={16} className="text-white" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider leading-none">{label}</p>
-          <p className="text-lg font-bold text-gray-900 leading-tight mt-0.5">{value}</p>
-        </div>
-      </div>
-      {detail && <p className="text-[11px] text-gray-400 mt-1 pl-[42px] leading-tight">{detail}</p>}
-    </button>
-  );
-}
 
 /** Compact select (filter dropdown) */
 function FilterSelect({ options, value, onChange }) {
@@ -581,7 +570,7 @@ function SiteDrawerContent({ site, navigate, onCreateAction }) {
       {tab === 'resume' && (
         <div className="space-y-4">
           {/* Conformite block */}
-          <DrawerSection title="Conformite">
+          <DrawerSection title="Conformité">
             <DrawerRow label="Statut"><Badge status={badge.status}>{badge.label}</Badge></DrawerRow>
             <DrawerRow label="Derniere evaluation">{fmtDateFR(site.derniere_evaluation)}</DrawerRow>
             <DrawerRow label="OPERAT">
@@ -601,7 +590,7 @@ function SiteDrawerContent({ site, navigate, onCreateAction }) {
           </DrawerSection>
 
           {/* Data block */}
-          <DrawerSection title="Donnees">
+          <DrawerSection title="Données">
             <DrawerRow label="Surface">{fmtArea(site.surface_m2)}</DrawerRow>
             <DrawerRow label="Conso annuelle">{fmtKwh(site.conso_kwh_an)}</DrawerRow>
             <DrawerRow label="Compteurs">{site.nb_compteurs || '—'}</DrawerRow>
@@ -616,9 +605,9 @@ function SiteDrawerContent({ site, navigate, onCreateAction }) {
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-2">
               <div className="flex items-center gap-2">
                 <AlertTriangle size={15} className="text-amber-600" />
-                <span className="text-sm font-medium text-amber-800">{site.anomalies_count} anomalie{site.anomalies_count > 1 ? 's' : ''} detectee{site.anomalies_count > 1 ? 's' : ''}</span>
+                <span className="text-sm font-medium text-amber-800">{site.anomalies_count} anomalie{site.anomalies_count > 1 ? 's' : ''} détectée{site.anomalies_count > 1 ? 's' : ''}</span>
               </div>
-              <p className="text-xs text-amber-700">Consultez la fiche site pour le detail des anomalies et actions correctives.</p>
+              <p className="text-xs text-amber-700">Consultez la fiche site pour le détail des anomalies et actions correctives.</p>
             </div>
           ) : (
             <div className="text-center py-8 text-gray-400">
@@ -652,8 +641,8 @@ function SiteDrawerContent({ site, navigate, onCreateAction }) {
       {tab === 'actions' && (
         <div className="space-y-3">
           <DrawerActionBtn icon={Eye} color="text-blue-600" title="Voir la fiche site" desc="Details, compteurs, consommations" onClick={() => navigate(`/sites/${site.id}`)} />
-          <DrawerActionBtn icon={ShieldCheck} color="text-green-600" title="Voir la conformite" desc="Decret Tertiaire, BACS, obligations" onClick={() => navigate('/conformite')} />
-          <DrawerActionBtn icon={Lightbulb} color="text-amber-600" title="Creer une action" desc="Correction, amelioration, conformite" onClick={onCreateAction} primary />
+          <DrawerActionBtn icon={ShieldCheck} color="text-green-600" title="Voir la conformité" desc="Décret Tertiaire, BACS, obligations" onClick={() => navigate('/conformite')} />
+          <DrawerActionBtn icon={Lightbulb} color="text-amber-600" title="Créer une action" desc="Correction, amélioration, conformité" onClick={onCreateAction} primary />
         </div>
       )}
 

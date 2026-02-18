@@ -14,7 +14,7 @@ export { default as Modal } from './Modal';
 
 // Design System V1 — Sprint WOW DIAMANT
 export { default as PageShell } from './PageShell';
-export { default as KpiCard } from './KpiCard';
+export { default as KpiCard, KpiCardCompact } from './KpiCard';
 export { default as FilterBar } from './FilterBar';
 export { default as Toggle } from './Toggle';
 export { default as Tooltip } from './Tooltip';
@@ -31,3 +31,6 @@ export { KPI_ACCENTS, SEVERITY_TINT, ACCENT_BAR, HERO_ACCENTS } from './colorTok
 
 // Design System V4 — Scope coherence
 export { default as ScopeSummary } from './ScopeSummary';
+
+// Design System V5 — Conventions & UX standardisation
+export { LAYOUT, TYPO, LABELS_FR } from './conventions';

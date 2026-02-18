@@ -3,7 +3,7 @@
  * Covers: computePosition helper for all 4 directions.
  */
 import { describe, it, expect } from 'vitest';
-import { computePosition } from '../TooltipPortal';
+import { computePosition, clampCoords, TOOLTIP_DELAY_MS } from '../TooltipPortal';
 
 const OFFSET = 8;
 
@@ -47,5 +47,36 @@ describe('computePosition', () => {
     const pos = computePosition(null);
     expect(pos.top).toBe(0);
     expect(pos.left).toBe(0);
+  });
+});
+
+// ── Sprint WOW 6.6 additions ──────────────────────────────────────────────────
+
+describe('TOOLTIP_DELAY_MS', () => {
+  it('hover delay is between 80ms and 200ms (anti-flicker range)', () => {
+    expect(TOOLTIP_DELAY_MS).toBeGreaterThanOrEqual(80);
+    expect(TOOLTIP_DELAY_MS).toBeLessThanOrEqual(200);
+  });
+});
+
+describe('clampCoords', () => {
+  it('left is clamped when tooltip would overflow right edge of viewport', () => {
+    const coords  = { top: 100, left: 1100, transform: 'translateY(-50%)' };
+    const clamped = clampCoords(coords, 1024, 768);
+    expect(clamped.left).toBeLessThanOrEqual(1024 - 180 - 4);
+  });
+
+  it('top is clamped when tooltip would overflow bottom edge of viewport', () => {
+    const coords  = { top: 760, left: 72, transform: 'translateY(-50%)' };
+    const clamped = clampCoords(coords, 1024, 768);
+    expect(clamped.top).toBeLessThanOrEqual(768 - 28 - 4);
+  });
+
+  it('coords already within viewport are returned unchanged', () => {
+    const coords  = { top: 100, left: 72, transform: 'translateY(-50%)' };
+    const clamped = clampCoords(coords, 1024, 768);
+    expect(clamped.left).toBe(72);
+    expect(clamped.top).toBe(100);
+    expect(clamped.transform).toBe('translateY(-50%)');
   });
 });

@@ -195,7 +195,7 @@ export default function CompliancePage() {
     ]).then(([s, st]) => {
       setSummary(s);
       setSites(st);
-    }).catch(() => toast('Erreur lors du chargement de la conformite', 'error'))
+    }).catch(() => toast('Erreur lors du chargement de la conformité', 'error'))
       .finally(() => setLoading(false));
   };
 
@@ -219,10 +219,10 @@ export default function CompliancePage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <ShieldCheck size={24} className="text-blue-600" />
-            Conformite reglementaire
+            Conformité réglementaire
           </h1>
           <p className="text-gray-500 text-sm mt-1">
-            Evaluation multi-sites — Decret Tertiaire, BACS, Loi APER
+            Évaluation multi-sites — Décret Tertiaire, BACS, Loi APER
           </p>
         </div>
         <button

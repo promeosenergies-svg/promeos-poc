@@ -57,3 +57,14 @@ export function fmtDateFR(v) {
   if (!v) return '—';
   return new Date(v).toLocaleDateString(FR, { day: 'numeric', month: 'short', year: 'numeric' });
 }
+
+/**
+ * Format a percentage value (0–100) with FR locale.
+ * Uses Intl.NumberFormat which produces a proper non-breaking space: "24 %"
+ * @param {number} value — a value between 0 and 100
+ * @returns {string} e.g. "24 %"
+ */
+export function formatPercentFR(value) {
+  if (value == null || Number.isNaN(Number(value))) return '—';
+  return new Intl.NumberFormat(FR, { style: 'percent', maximumFractionDigits: 0 }).format(Number(value) / 100);
+}

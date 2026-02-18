@@ -1065,7 +1065,7 @@ function ProofSection({ obligation, files, onUpload }) {
 }
 
 export default function ConformitePage() {
-  const { org, scope, scopedSites, portefeuilles, sitesCount } = useScope();
+  const { org, scope, scopedSites, portefeuilles, sitesCount, sitesLoading } = useScope();
   const { isExpert } = useExpertMode();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -1086,6 +1086,7 @@ export default function ConformitePage() {
   const [bundle, setBundle] = useState(null);
 
   const loadData = useCallback(() => {
+    if (sitesLoading) return; // V18-B: wait for scope to be ready before fetching
     setLoading(true);
     setError(null);
     const scopeParams = buildScopeParams({ orgId: org.id, portefeuilleId: scope.portefeuilleId, siteId: scope.siteId }, scopedSites);
@@ -1112,7 +1113,7 @@ export default function ConformitePage() {
         setError(base);
       })
       .finally(() => setLoading(false));
-  }, [org.id, scope.portefeuilleId, scope.siteId, scopedSites]);
+  }, [org.id, scope.portefeuilleId, scope.siteId, scopedSites, sitesLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { loadData(); }, [loadData]);
 

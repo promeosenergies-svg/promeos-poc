@@ -177,7 +177,7 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
 
   return (
     <div
-      className="flex flex-col w-52 h-screen bg-white/80 backdrop-blur-sm border-r border-slate-200/60 shrink-0 overflow-hidden"
+      className="flex flex-col w-52 h-screen bg-white/80 backdrop-blur-sm border-r border-slate-200/60 shrink-0"
       role="navigation"
       aria-label={`Module ${mod.label}`}
     >

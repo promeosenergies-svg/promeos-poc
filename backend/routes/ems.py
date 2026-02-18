@@ -3,14 +3,53 @@ PROMEOS - EMS Consumption Explorer Routes
 Timeseries, weather, energy signature, saved views, collections, demo data.
 """
 from fastapi import APIRouter, Depends, HTTPException, Query
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 import json
 
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
 from database import get_db
 
 router = APIRouter(prefix="/api/ems", tags=["EMS Explorer"])
+
+
+# -------------------------------------------------------------------
+# V19-E: Pydantic response models for /timeseries (OpenAPI schema)
+# -------------------------------------------------------------------
+class TimeseriesDataPoint(BaseModel):
+    t: str
+    v: Optional[float] = None
+    quality: Optional[float] = None
+    estimated_pct: Optional[float] = None
+
+class TimeseriesSeries(BaseModel):
+    key: str
+    label: str
+    data: List[TimeseriesDataPoint]
+
+class TimeseriesMeta(BaseModel):
+    granularity: str
+    metric: str
+    n_points: int
+    n_meters: int
+    date_from: Optional[str] = None
+    date_to: Optional[str] = None
+    sampling_minutes: Optional[int] = None
+    available_granularities: Optional[List[str]] = None
+    valid_count: Optional[int] = None
+
+class TimeseriesAvailability(BaseModel):
+    key: str
+    expected_points: Optional[int] = None
+    actual_points: Optional[int] = None
+    coverage_pct: Optional[float] = None
+    gaps: List = []
+
+class TimeseriesResponse(BaseModel):
+    series: List[TimeseriesSeries]
+    meta: TimeseriesMeta
+    availability: List[TimeseriesAvailability] = []
 
 
 @router.get("/health")
@@ -211,7 +250,7 @@ def schedule_suggest(
 # -------------------------------------------------------------------
 # Timeseries
 # -------------------------------------------------------------------
-@router.get("/timeseries")
+@router.get("/timeseries", response_model=TimeseriesResponse)
 def get_timeseries(
     site_ids: str = Query(..., description="Comma-separated site IDs"),
     date_from: str = Query(...),
@@ -724,6 +763,50 @@ def generate_ems_demo(
         "period": f"{start_date.date()} - {(start_date + __import__('datetime').timedelta(days=days)).date()}",
         "sites": site_reports,
     }
+
+
+# -------------------------------------------------------------------
+# V20-C: Per-site timeseries demo generator
+# -------------------------------------------------------------------
+class TimeseriesDemoResponse(BaseModel):
+    site_id: int
+    meter_id: str
+    n_readings: int
+    date_from: str
+    date_to: str
+    status: str
+
+
+@router.post("/demo/generate_timeseries", response_model=TimeseriesDemoResponse)
+def generate_timeseries_demo(
+    site_id: int = Query(..., description="Site ID to generate demo timeseries for"),
+    days: int = Query(default=90, ge=7, le=365),
+    anomaly: bool = Query(default=True),
+    energy_vector: str = Query(default="electricity", description="Energy vector: electricity|gas|heat|water"),
+    db: Session = Depends(get_db),
+):
+    """Generate synthetic consumption (MeterReading) for a specific site.
+    Supports electricity (hourly, bureau pattern) and gas (daily, seasonal pattern).
+    Writes rows queryable by GET /api/ems/timeseries immediately after this call.
+    """
+    if energy_vector == "gas":
+        from services.consumption_diagnostic import generate_demo_gas_consumption
+        result = generate_demo_gas_consumption(db, site_id, days=days, anomaly=anomaly)
+    else:
+        from services.consumption_diagnostic import generate_demo_consumption
+        result = generate_demo_consumption(db, site_id, days=days, anomaly=anomaly)
+
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+
+    return TimeseriesDemoResponse(
+        site_id=site_id,
+        meter_id=str(result.get("meter_id", "")),
+        n_readings=result.get("readings_count", 0),
+        date_from=result.get("period_start", ""),
+        date_to=result.get("period_end", ""),
+        status="ok",
+    )
 
 
 @router.post("/demo/purge")

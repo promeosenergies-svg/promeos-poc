@@ -6,6 +6,7 @@ POST /api/demo/seed-pack - Seed complet par pack (casino, tertiaire)
 POST /api/demo/reset-pack - Reset des donnees demo
 GET /api/demo/status-pack - Status detaille des donnees demo
 GET /api/demo/packs - Liste des packs disponibles
+GET /api/demo/manifest - Source de verite: org, portefeuilles, sites, compteurs
 GET /api/demo/templates, GET /api/demo/templates/{template_id}
 """
 import random
@@ -147,6 +148,65 @@ def get_demo_pack_status(db: Session = Depends(get_db)):
                 result["default_site_name"] = first_site.nom
 
     return result
+
+
+@router.get("/manifest")
+def get_demo_manifest(db: Session = Depends(get_db)):
+    """Source de verite de la demo: org, portefeuilles, sites, compteurs.
+
+    Returns the canonical state after seed — live counts from DB.
+    Used by the frontend to guarantee consistency across all views.
+    """
+    ctx = DemoState.get_demo_context()
+    org_id = ctx.get("org_id")
+
+    if not org_id:
+        raise HTTPException(status_code=404, detail="No demo seeded")
+
+    org = db.query(Organisation).filter(Organisation.id == org_id).first()
+    if not org:
+        raise HTTPException(status_code=404, detail="Org not found in DB")
+
+    entites = db.query(EntiteJuridique).filter(
+        EntiteJuridique.organisation_id == org.id
+    ).all()
+
+    portefeuilles = []
+    total_sites = 0
+    total_compteurs = 0
+    all_site_ids = []
+
+    for ej in entites:
+        for p in db.query(Portefeuille).filter(
+            Portefeuille.entite_juridique_id == ej.id
+        ).all():
+            sites = db.query(Site).filter(Site.portefeuille_id == p.id).all()
+            compteurs_count = (
+                db.query(Compteur).filter(Compteur.site_id.in_([s.id for s in sites])).count()
+                if sites else 0
+            )
+            total_sites += len(sites)
+            total_compteurs += compteurs_count
+            site_ids = [s.id for s in sites]
+            all_site_ids.extend(site_ids)
+            portefeuilles.append({
+                "id": p.id,
+                "nom": p.nom,
+                "entite_juridique_id": ej.id,
+                "sites_count": len(sites),
+                "site_ids": site_ids,
+            })
+
+    return {
+        "org_id": org.id,
+        "org_nom": org.nom,
+        "pack": ctx.get("pack"),
+        "size": ctx.get("size"),
+        "portefeuilles": portefeuilles,
+        "total_sites": total_sites,
+        "total_compteurs": total_compteurs,
+        "all_site_ids": all_site_ids,
+    }
 
 
 def _reset_iam_demo(db):

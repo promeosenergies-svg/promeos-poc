@@ -38,7 +38,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { X, Zap, Flame, Save, RotateCcw, Link, ChevronDown, Trash2, Plus, LayoutGrid } from 'lucide-react';
 import { TrustBadge } from '../../ui';
-import { computeGranularity, colorForSite } from './helpers';
+import { computeGranularity, colorForSite, getAvailableGranularities } from './helpers';
 import { MODE_LABELS, UNIT_LABELS, MAX_SITES } from './types';
 import InfoTooltip from './InfoTooltip';
 
@@ -234,6 +234,8 @@ export default function StickyFilterBar({
   setUnit,
   // Data quality
   availability,
+  // Loading state (V19 — from sitesLoading in ScopeContext)
+  sitesLoading = false,
   // Portfolio mode (V12)
   isPortfolioMode = false,
   onTogglePortfolio,
@@ -245,6 +247,10 @@ export default function StickyFilterBar({
   savedPresets = [],
   onLoadPreset,
   onDeletePreset,
+  // Granularity selector (V21-C + V22-B)
+  granularity = 'auto',
+  setGranularity,
+  samplingMinutes = null,  // V22-B: actual meter reading interval for intersection
 }) {
   const isClassic = uiMode === 'classic';
 
@@ -275,7 +281,8 @@ export default function StickyFilterBar({
 
   // Resolve effective selected site IDs (multi or single legacy)
   const effectiveSiteIds = siteIds.length > 0 ? siteIds : (siteId ? [siteId] : []);
-  const isMultiMode = sites.length > 1 && setSiteIds;
+  // V19: always multi-mode when setSiteIds is provided (even with 0 or 1 sites)
+  const isMultiMode = Boolean(setSiteIds);
 
   const toggleSite = (id) => {
     if (!setSiteIds) {
@@ -334,34 +341,41 @@ export default function StickyFilterBar({
       {/* Row 1: Site chips (selected only) + add button + Portfolio toggle + Energy + Period + Gran + Trust */}
       <div className="flex items-center gap-3 flex-wrap">
 
-        {/* Multi-site: selected chips + add button */}
-        {isMultiMode && !isPortfolioMode && (
+        {/* V19: Site section — ALWAYS visible when setSiteIds is provided */}
+        {setSiteIds && !isPortfolioMode && (
           <div className="flex items-center gap-1.5">
-            {/* Only render SELECTED site chips */}
-            <div className="flex gap-1.5 overflow-x-auto max-w-xs" style={{ scrollbarWidth: 'thin' }}>
-              {effectiveSiteIds.map((id, idx) => {
-                const site = sites.find(s => s.id === id);
-                const color = colorForSite(id, idx);
-                return (
-                  <button
-                    key={id}
-                    onClick={() => toggleSite(id)}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border text-white border-transparent shrink-0 transition"
-                    style={{ backgroundColor: color, borderColor: color }}
-                    title={effectiveSiteIds.length > 1 ? `Retirer ${site?.nom || id}` : site?.nom || String(id)}
-                  >
-                    <span className="w-2 h-2 rounded-full bg-white/60 shrink-0" />
-                    <span className="max-w-[120px] truncate">{site?.nom || id}</span>
-                    {effectiveSiteIds.length > 1 && (
-                      <X size={10} className="opacity-70 shrink-0" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+            {effectiveSiteIds.length > 0 ? (
+              /* Selected site chips */
+              <div className="flex gap-1.5 overflow-x-auto max-w-xs" style={{ scrollbarWidth: 'thin' }}>
+                {effectiveSiteIds.map((id, idx) => {
+                  const site = sites.find(s => s.id === id);
+                  const color = colorForSite(id, idx);
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => toggleSite(id)}
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border text-white border-transparent shrink-0 transition"
+                      style={{ backgroundColor: color, borderColor: color }}
+                      title={effectiveSiteIds.length > 1 ? `Retirer ${site?.nom || id}` : site?.nom || String(id)}
+                    >
+                      <span className="w-2 h-2 rounded-full bg-white/60 shrink-0" />
+                      <span className="max-w-[120px] truncate">{site?.nom || id}</span>
+                      {effectiveSiteIds.length > 1 && (
+                        <X size={10} className="opacity-70 shrink-0" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              /* Placeholder: loading or no sites yet */
+              <span className="text-xs text-gray-400 italic px-1 py-1">
+                {sitesLoading ? 'Chargement\u2026' : 'S\u00e9lectionner des sites\u2026'}
+              </span>
+            )}
 
-            {/* "+" add site button (only if < MAX_SITES) */}
-            {effectiveSiteIds.length < MAX_SITES && (
+            {/* "+" add site button — only when more sites exist to add */}
+            {effectiveSiteIds.length < MAX_SITES && sites.length > effectiveSiteIds.length && (
               <div className="relative" ref={addRef}>
                 <button
                   onClick={() => setShowAddSite(v => !v)}
@@ -413,7 +427,7 @@ export default function StickyFilterBar({
         )}
 
         {/* Legacy single-site select (when setSiteIds not provided) */}
-        {!isMultiMode && sites.length > 1 && (
+        {!setSiteIds && sites.length > 1 && (
           <select
             value={siteId || effectiveSiteIds[0] || ''}
             onChange={(e) => setSiteId ? setSiteId(Number(e.target.value)) : toggleSite(Number(e.target.value))}
@@ -476,10 +490,31 @@ export default function StickyFilterBar({
           </button>
         </div>
 
-        {/* Granularity badge (auto, read-only) */}
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 rounded-lg text-xs font-medium text-gray-600">
-          Granularité&nbsp;: {GRAN_LABELS[gran] || gran}
-        </span>
+        {/* Granularity selector (V21-C) — pills when setGranularity provided, badge otherwise */}
+        {setGranularity ? (
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-gray-500 shrink-0">Granularité :</span>
+            <div className="flex rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+              {getAvailableGranularities(days, samplingMinutes).map((g) => (
+                <button
+                  key={g.key}
+                  onClick={() => setGranularity(g.key)}
+                  className={`px-2 py-1 text-xs font-medium transition-colors duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                    granularity === g.key
+                      ? 'bg-white text-blue-700 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  {g.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 rounded-lg text-xs font-medium text-gray-600">
+            Granularité&nbsp;: {GRAN_LABELS[gran] || gran}
+          </span>
+        )}
 
         {/* Data quality badge (right-aligned) */}
         {confidence && (

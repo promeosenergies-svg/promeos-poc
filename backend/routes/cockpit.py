@@ -5,11 +5,14 @@ Endpoints pour le cockpit exécutif et la gestion des portefeuilles
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from typing import Optional
 from database import get_db
 from models import (
     Organisation, Portefeuille, EntiteJuridique, Site, Alerte,
     StatutConformite, not_deleted,
 )
+from middleware.auth import get_optional_auth, AuthContext
+from services.scope_utils import get_scope_org_id
 
 router = APIRouter(prefix="/api", tags=["Cockpit"])
 
@@ -38,16 +41,20 @@ def _sites_for_org(db: Session, org_id: int | None):
 
 
 @router.get("/cockpit")
-def get_cockpit(request: Request, db: Session = Depends(get_db)):
+def get_cockpit(
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """
     GET /api/cockpit
     Statistiques globales pour le cockpit exécutif.
-    Respects X-Org-Id header: returns stats scoped to the requested organisation.
+    Scope priority: auth.org_id > X-Org-Id header > DemoState > last org.
     """
-    org_id = _get_org_id(request)
+    # V18-E: canonical scope resolution (auth > header > demo fallback)
+    org_id = get_scope_org_id(request, auth)
 
-    # Resolve organisation — prefer X-Org-Id header, then DemoState, then most-recent org
-    # Never use Organisation.first() which may return a stale/wrong org (e.g. Casino when Tertiaire is loaded)
+    # Resolve organisation — canonical priority then demo fallback
     if org_id is not None:
         org = db.query(Organisation).filter(Organisation.id == org_id).first()
     else:

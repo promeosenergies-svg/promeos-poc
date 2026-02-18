@@ -187,11 +187,11 @@ export default function BillIntelPage() {
         <Card>
           <CardBody className="text-center py-12">
             <FileText size={40} className="text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">Aucune facture importee</h3>
-            <p className="text-sm text-gray-500 mb-6">Importez des factures CSV ou generez des donnees demo pour commencer.</p>
+            <h3 className="text-lg font-semibold text-gray-700 mb-2">Aucune facture importée</h3>
+            <p className="text-sm text-gray-500 mb-6">Importez des factures CSV ou générez des données démo pour commencer.</p>
             <div className="flex items-center justify-center gap-3">
               <Button onClick={handleSeedDemo} disabled={seeding}>
-                <Zap size={14} /> {seeding ? 'Generation...' : 'Generer demo (5 factures)'}
+                <Zap size={14} /> {seeding ? 'Génération...' : 'Générer démo (5 factures)'}
               </Button>
               <label className="inline-flex items-center gap-2 cursor-pointer">
                 <Button variant="secondary" as="span">
@@ -209,7 +209,7 @@ export default function BillIntelPage() {
         <div>
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-gray-700">
-              Anomalies detectees ({insights.length})
+              Anomalies détectées ({insights.length})
             </h3>
             <div className="flex items-center gap-1">
               {INSIGHT_FILTER_OPTIONS.map((opt) => (
@@ -322,7 +322,7 @@ export default function BillIntelPage() {
               </table>
             </div>
             <div className="px-4 py-2 border-t border-gray-100">
-              <TrustBadge source="PROMEOS Bill Intel" period="donnees importees" confidence="medium" />
+              <TrustBadge source="PROMEOS Bill Intel" period="données importées" confidence="medium" />
             </div>
           </Card>
         </div>

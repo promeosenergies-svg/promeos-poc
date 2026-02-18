@@ -18,7 +18,7 @@ export default function ConsommationsPage() {
     <PageShell
       icon={Zap}
       title="Consommations"
-      subtitle="Explorer, importer & analyser vos donnees energie"
+      subtitle="Explorer, importer & analyser vos données énergie"
     >
       {/* Tab bar */}
       <div className="flex gap-2 -mt-2">

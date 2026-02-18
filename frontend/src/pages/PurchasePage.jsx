@@ -64,7 +64,7 @@ function riskLevel(score) {
 const TABS = [
   { key: 'simulation', label: 'Simulation', icon: Calculator },
   { key: 'portefeuille', label: 'Portefeuille', icon: Building2 },
-  { key: 'echeances', label: 'Echeances', icon: Clock },
+  { key: 'echeances', label: 'Échéances', icon: Clock },
   { key: 'historique', label: 'Historique', icon: History },
 ];
 
@@ -163,7 +163,7 @@ export default function PurchasePage() {
       setScenarios(results.scenarios || []);
       setAcceptedId(null);
     } catch {
-      toast('Erreur lors du chargement des donnees du site', 'error');
+      toast('Erreur lors du chargement des données du site', 'error');
     }
     setLoading(false);
   }, []);
@@ -525,7 +525,7 @@ export default function PurchasePage() {
             </button>
             <button onClick={handleLoadPortfolio} disabled={portfolioLoading}
               className="bg-gray-100 text-gray-700 px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-200 transition disabled:opacity-50">
-              Charger resultats existants
+              Charger résultats existants
             </button>
             <div className="ml-auto flex items-center gap-2">
               <span className="text-xs text-gray-400 uppercase font-medium">Datasets demo</span>

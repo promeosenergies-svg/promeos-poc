@@ -8,7 +8,7 @@ import { useScope } from '../contexts/ScopeContext';
 
 export default function ScopeSwitcher() {
   const {
-    scope, org, portefeuille, portefeuilles, orgs, orgSites, scopeLabel,
+    scope, org, portefeuille, portefeuilles, orgs, orgSites, scopeLabel, sitesLoading,
     setOrg, setPortefeuille, setSite, resetScope,
   } = useScope();
   const [open, setOpen] = useState(false);
@@ -37,7 +37,7 @@ export default function ScopeSwitcher() {
             <span>{portefeuille.nom}</span>
           </>
         )}
-        <span className="text-blue-400 text-xs">{scopeLabel}</span>
+        <span className="text-blue-400 text-xs">{sitesLoading ? 'Chargement\u2026' : scopeLabel}</span>
         <ChevronDown size={14} className={`transition ${open ? 'rotate-180' : ''}`} />
       </button>
 

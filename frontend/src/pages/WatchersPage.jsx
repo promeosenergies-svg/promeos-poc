@@ -52,7 +52,7 @@ export default function WatchersPage() {
       setWatchers(watchersData.watchers || []);
       setEvents(eventsData.events || []);
     } catch {
-      toast('Erreur lors du chargement des donnees de veille', 'error');
+      toast('Erreur lors du chargement des données de veille', 'error');
     } finally {
       setLoading(false);
     }
@@ -63,7 +63,7 @@ export default function WatchersPage() {
       setRunResults(prev => ({ ...prev, [watcherName]: { loading: true } }));
       const result = await runWatcher(watcherName);
       setRunResults(prev => ({ ...prev, [watcherName]: result }));
-      toast(`${watcherName}: ${result.new_events} nouveaux evenements`, 'success');
+      toast(`${watcherName}: ${result.new_events} nouveaux événements`, 'success');
       setTimeout(() => loadData(), 1000);
     } catch (error) {
       setRunResults(prev => ({ ...prev, [watcherName]: { error: error.message } }));
@@ -76,7 +76,7 @@ export default function WatchersPage() {
       await reviewRegEvent(eventId, decision, reviewNotes);
       setReviewModal(null);
       setReviewNotes('');
-      toast(`Evenement ${decision === 'apply' ? 'applique' : 'ignore'}`, 'success');
+      toast(`Événement ${decision === 'apply' ? 'appliqué' : 'ignoré'}`, 'success');
       loadData();
     } catch {
       toast('Erreur lors de la revision', 'error');
@@ -98,7 +98,7 @@ export default function WatchersPage() {
     <PageShell
       icon={Eye}
       title="Veille"
-      subtitle="Reglementaire & marche : alertes et syntheses"
+      subtitle="Réglementaire & marché : alertes et synthèses"
       actions={
         <Button variant="secondary" onClick={loadData}>
           <RefreshCw size={14} className="mr-1.5" /> Actualiser
@@ -109,7 +109,7 @@ export default function WatchersPage() {
       <div>
         <h2 className="text-base font-semibold text-gray-800 mb-3">Watchers Actifs</h2>
         {watchers.length === 0 ? (
-          <EmptyState icon={Eye} title="Aucun watcher configure" text="Configurez vos sources de veille reglementaire." />
+          <EmptyState icon={Eye} title="Aucun watcher configuré" text="Configurez vos sources de veille réglementaire." />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {watchers.map((watcher) => (
@@ -122,7 +122,7 @@ export default function WatchersPage() {
                     <div className={`text-xs mb-3 rounded-lg px-3 py-2 ${runResults[watcher.name].error ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
                       {runResults[watcher.name].error
                         ? `Erreur: ${runResults[watcher.name].error}`
-                        : `${runResults[watcher.name].new_events} nouveaux evenements`
+                        : `${runResults[watcher.name].new_events} nouveaux événements`
                       }
                     </div>
                   )}
@@ -149,7 +149,7 @@ export default function WatchersPage() {
       {/* Events Section */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-semibold text-gray-800">Evenements Reglementaires</h2>
+          <h2 className="text-base font-semibold text-gray-800">Événements Réglementaires</h2>
           <select
             value={filterSource}
             onChange={(e) => setFilterSource(e.target.value)}
@@ -170,7 +170,7 @@ export default function WatchersPage() {
 
         <div className="mt-4">
           {events.length === 0 ? (
-            <EmptyState icon={Eye} title="Aucun evenement" text="Executez un watcher pour detecter les evenements reglementaires." />
+            <EmptyState icon={Eye} title="Aucun événement" text="Exécutez un watcher pour détecter les événements réglementaires." />
           ) : (
             <Card>
               <div className="divide-y divide-gray-100">
@@ -249,13 +249,13 @@ export default function WatchersPage() {
           <h3 className="text-sm font-semibold text-yellow-800 mb-1">Stockage Minimal</h3>
           <p className="text-sm text-gray-700">
             Les watchers stockent uniquement un hash de contenu + snippet de 500 caracteres maximum.
-            Aucune copie massive de contenu reglementaire n'est effectuee (conformite droits d'auteur).
+            Aucune copie massive de contenu réglementaire n'est effectuée (conformité droits d'auteur).
           </p>
         </CardBody>
       </Card>
 
       {/* Review Modal */}
-      <Modal open={!!reviewModal} onClose={() => setReviewModal(null)} title="Reviser l'evenement">
+      <Modal open={!!reviewModal} onClose={() => setReviewModal(null)} title="Réviser l'événement">
         {reviewModal && (
           <div className="space-y-4">
             <p className="text-sm text-gray-600">{reviewModal.title}</p>

@@ -122,7 +122,7 @@ function StatusPage() {
         <div className="bg-white rounded-lg shadow p-4">
           <div className="flex items-center gap-2 mb-1">
             <Database size={16} className="text-purple-500" />
-            <span className="text-sm text-gray-500">Base de donnees</span>
+            <span className="text-sm text-gray-500">Base de données</span>
           </div>
           <p className="text-2xl font-bold">{backendOk ? 'SQLite' : '-'}</p>
         </div>

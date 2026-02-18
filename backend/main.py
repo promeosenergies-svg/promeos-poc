@@ -7,6 +7,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
+from middleware.request_context import RequestContextMiddleware
+from services.json_logger import setup_logging
+
+# Structured JSON logging
+setup_logging()
+
 # Import des routes
 from routes import (
     sites_router, compteurs_router, consommations_router, alertes_router,
@@ -44,6 +50,9 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# Request context middleware (request_id + timing) — must be added before CORS
+app.add_middleware(RequestContextMiddleware)
+
 # Configuration CORS
 app.add_middleware(
     CORSMiddleware,
@@ -51,6 +60,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Request-Id", "X-Response-Time"],
 )
 
 # Enregistrer les routes

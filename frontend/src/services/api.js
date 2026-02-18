@@ -3,6 +3,7 @@
  * Gestion des appels vers le backend FastAPI
  */
 import axios from 'axios';
+import { logger } from './logger';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -12,6 +13,19 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+// ── Request tracing (ring buffer for DevPanel) ──────────────────────────
+let _lastRequests = [];
+const MAX_REQUESTS = 20;
+
+function genRequestId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+/** @returns {Array} Last 20 API requests for DevPanel */
+export function getLastRequests() {
+  return _lastRequests;
+}
 
 // ── Scope state (module-level, updated by ScopeContext) ──────────────────
 // Holds the current org/site scope for injection into API headers.
@@ -26,11 +40,16 @@ export function setApiScope({ orgId = null, siteId = null } = {}) {
   _apiScope = { orgId: orgId ?? null, siteId: siteId ?? null };
 }
 
-// Auth + Scope request interceptor
+// Auth + Scope + Request-Id interceptor
 // NOTE: demo paths (/demo/*) are scope-exempt — we NEVER inject org/site headers there.
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('promeos_token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
+
+  // Request tracing
+  config._requestId = genRequestId();
+  config._startTime = Date.now();
+  config.headers['X-Request-Id'] = config._requestId;
 
   // Scope injection: skip /demo/* endpoints
   if (!isDemoPath(config.url)) {
@@ -101,10 +120,43 @@ export const isSilentUrl = (urlOrConfig) => {
 };
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Track successful request
+    const duration = Date.now() - (response.config._startTime || Date.now());
+    const entry = {
+      id: response.config._requestId,
+      url: response.config.url,
+      method: response.config.method?.toUpperCase(),
+      status: response.status,
+      duration,
+      ts: Date.now(),
+    };
+    _lastRequests = [..._lastRequests, entry].slice(-MAX_REQUESTS);
+    return response;
+  },
   (error) => {
     const cfg = error.config || {};
     const isSilent = cfg.silent || isSilentUrl(cfg);
+
+    // Track failed request
+    const duration = Date.now() - (cfg._startTime || Date.now());
+    const errEntry = {
+      id: cfg._requestId,
+      url: cfg.url,
+      method: cfg.method?.toUpperCase(),
+      status: error.response?.status || 0,
+      duration,
+      ts: Date.now(),
+      error: true,
+    };
+    _lastRequests = [..._lastRequests, errEntry].slice(-MAX_REQUESTS);
+
+    if (!isSilent) {
+      logger.warn('API', `${cfg.method?.toUpperCase() || '?'} ${cfg.url || '?'} failed`, {
+        status: error.response?.status,
+        requestId: cfg._requestId,
+      });
+    }
 
     if (!isSilent && error.response?.status === 401 && !cfg.url?.includes('/auth/')) {
       localStorage.removeItem('promeos_token');
@@ -193,6 +245,7 @@ export const seedDemoPack = (pack, size, reset = false) =>
 export const getDemoPackStatus = () => api.get('/demo/status-pack', { silent: true }).then(r => r.data);
 export const resetDemoPack = (mode = 'soft', confirm = false) =>
   api.post('/demo/reset-pack', { mode, confirm }).then(r => r.data);
+export const getDemoManifest = () => api.get('/demo/manifest', { silent: true }).then(r => r.data);
 
 // ========================================
 // GUIDANCE (Action Plan + Readiness)

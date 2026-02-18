@@ -11,7 +11,7 @@ const ROLE_LABELS = {
   dsi_admin: 'DSI / Admin',
   daf: 'DAF',
   acheteur: 'Acheteur',
-  resp_conformite: 'Resp. Conformite',
+  resp_conformite: 'Resp. Conformité',
   energy_manager: 'Energy Manager',
   resp_immobilier: 'Resp. Immobilier',
   resp_site: 'Resp. Site',
@@ -189,7 +189,7 @@ export default function AdminUsersPage() {
               <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">Chargement...</td></tr>
             ) : filtered.length === 0 ? (
               <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">
-                {search ? 'Aucun resultat pour cette recherche' : 'Aucun utilisateur'}
+                {search ? 'Aucun résultat pour cette recherche' : 'Aucun utilisateur'}
               </td></tr>
             ) : (
               filtered.map((u) => (

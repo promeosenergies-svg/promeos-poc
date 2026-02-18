@@ -4,11 +4,12 @@
  * Motor: useExplorerMotor (data engine) + useExplorerURL (URL state sync)
  * Panels: Tunnel (P10-P90), Objectifs/Budgets, HP/HC, Gaz (beta)
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Activity, Target, Clock, Flame, BarChart3,
   RefreshCw, AlertTriangle, CheckCircle,
   Plus, Trash2, Save, X, Zap, Database, Wifi, Info,
+  Grid3x3, Cloud, Lightbulb,
 } from 'lucide-react';
 import {
   AreaChart, Area, BarChart, Bar, ComposedChart, Line,
@@ -28,6 +29,10 @@ import {
   getTargetsProgression,
   getActiveTOUSchedule,
   getHPHCRatio,
+  getTargetsProgressionV2,
+  getHPHCBreakdownV2,
+  getGasSummary,
+  getGasWeatherNormalized,
 } from '../services/api';
 import StickyFilterBar from './consumption/StickyFilterBar';
 import ContextBanner from './consumption/ContextBanner';
@@ -49,6 +54,9 @@ import PortfolioPanel from './consumption/PortfolioPanel';
 import OverviewRow, { computeOverviewData } from './consumption/OverviewRow';
 import { MAX_SITES } from './consumption/types';
 import TimeseriesPanel from './consumption/TimeseriesPanel';
+import SignaturePanel from './consumption/SignaturePanel';
+import MeteoPanel from './consumption/MeteoPanel';
+import InsightsPanel from './consumption/InsightsPanel';
 
 // ========================================
 // Constants
@@ -56,6 +64,9 @@ import TimeseriesPanel from './consumption/TimeseriesPanel';
 
 const TAB_CONFIG = [
   { key: 'timeseries', label: 'Consommation', icon: BarChart3, desc: 'Série temporelle' },
+  { key: 'insights',   label: 'Insights',     icon: Lightbulb, desc: 'P05 / P95 / anomalies' },
+  { key: 'signature',  label: 'Signature',    icon: Grid3x3, desc: 'Empreinte horaire-hebdo' },
+  { key: 'meteo',      label: 'Météo',        icon: Cloud, desc: 'Influence climatique' },
   { key: 'tunnel', label: 'Tunnel', icon: Activity, desc: 'Enveloppe P10-P90' },
   { key: 'targets', label: 'Objectifs', icon: Target, desc: 'Budgets & progression' },
   { key: 'hphc', label: 'HP/HC', icon: Clock, desc: 'Grille tarifaire' },
@@ -80,7 +91,7 @@ const REASON_CONFIG = {
   no_site: {
     icon: AlertTriangle,
     title: 'Site introuvable',
-    text: 'Le site selectionne n\'existe pas ou a ete supprime. Verifiez votre selection.',
+    text: 'Le site sélectionné n\'existe pas ou a été supprimé. Vérifiez votre sélection.',
     ctaLabel: null,
   },
   no_meter: {
@@ -94,19 +105,19 @@ const REASON_CONFIG = {
     icon: Database,
     title: 'Compteur present, aucun releve',
     text: 'Un compteur est configure mais aucune donnee de consommation n\'a ete importee.',
-    ctaLabel: 'Importer des donnees',
+    ctaLabel: 'Importer des données',
     ctaPath: '/consommations/import',
   },
   insufficient_readings: {
     icon: BarChart3,
-    title: 'Donnees insuffisantes',
-    text: 'Moins de 48 releves disponibles. L\'analyse necessite davantage de donnees pour etre fiable.',
-    ctaLabel: 'Importer des donnees',
+    title: 'Données insuffisantes',
+    text: 'Moins de 48 relevés disponibles. L\'analyse nécessite davantage de données pour être fiable.',
+    ctaLabel: 'Importer des données',
     ctaPath: '/consommations/import',
   },
   wrong_energy_type: {
     icon: Zap,
-    title: 'Pas de donnees pour ce type d\'energie',
+    title: 'Pas de données pour ce type d\'énergie',
     text: null, // dynamic
     ctaLabel: null,
   },
@@ -122,7 +133,7 @@ function SmartEmptyState({ reasons, energyTypes, onNavigate, onSwitchEnergy }) {
       <EmptyState
         icon={BarChart3}
         title="Aucune donnee disponible"
-        text="Verifiez la configuration du site ou importez des donnees."
+        text="Vérifiez la configuration du site ou importez des données."
       />
     );
   }
@@ -134,7 +145,7 @@ function SmartEmptyState({ reasons, energyTypes, onNavigate, onSwitchEnergy }) {
   // Dynamic text for wrong_energy_type
   let text = config.text;
   if (primary === 'wrong_energy_type' && energyTypes?.length > 0) {
-    text = `Aucune donnee pour ce vecteur energetique. Types disponibles : ${energyTypes.join(', ')}.`;
+    text = `Aucune donnée pour ce vecteur énergétique. Types disponibles : ${energyTypes.join(', ')}.`;
   }
 
   return (
@@ -221,7 +232,7 @@ function TunnelPanel({ siteId, days, energyType, showSignature = false }) {
       <EmptyState
         icon={Activity}
         title="Aucune donnee de consommation"
-        text="Importez des releves ou generez des donnees demo pour voir l'enveloppe tunnel."
+        text="Importez des relevés ou générez des données démo pour voir l'enveloppe tunnel."
       />
     );
   }
@@ -780,7 +791,7 @@ function HPHCPanel({ siteId, days }) {
         <EmptyState
           icon={Clock}
           title="Aucune donnee HP/HC"
-          text="Importez des releves electricite pour voir la repartition HP/HC."
+          text="Importez des relevés électricité pour voir la répartition HP/HC."
         />
       )}
     </div>
@@ -791,7 +802,7 @@ function HPHCPanel({ siteId, days }) {
 // Gas Panel (Beta)
 // ========================================
 
-function GasPanel({ siteId, days }) {
+function GasPanel({ siteId, days, onGenerateDemo }) {
   const [gas, setGas] = useState(null);
   const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -819,11 +830,21 @@ function GasPanel({ siteId, days }) {
   if (loading) return <SkeletonCard rows={4} />;
   if (!gas || gas.readings_count === 0) {
     return (
-      <EmptyState
-        icon={Flame}
-        title="Aucun compteur gaz"
-        text="Ajoutez un compteur gaz et importez des releves pour voir le resume."
-      />
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="w-14 h-14 rounded-full bg-orange-50 flex items-center justify-center mb-4">
+          <Flame size={28} className="text-orange-400" />
+        </div>
+        <h3 className="text-base font-semibold text-gray-700 mb-1">Aucun compteur gaz</h3>
+        <p className="text-sm text-gray-500 max-w-xs mb-4">
+          Ajoutez un compteur gaz et importez des relevés pour voir le résumé.
+        </p>
+        {onGenerateDemo && (
+          <Button size="sm" variant="outline" onClick={onGenerateDemo}>
+            <Flame size={12} className="mr-1.5 text-orange-500" />
+            Générer conso démo Gaz
+          </Button>
+        )}
+      </div>
     );
   }
 
@@ -965,7 +986,7 @@ function GasPanel({ siteId, days }) {
 // ========================================
 
 export default function ConsumptionExplorerPage() {
-  const { selectedSiteId, scopedSites } = useScope();
+  const { selectedSiteId, scopedSites, orgSites, scope, sitesLoading } = useScope();
 
   // ── UI mode (Classic / Expert) — localStorage only, never in URL ───────
   const { uiMode, isClassic, toggleUiMode } = useExplorerMode();
@@ -973,8 +994,20 @@ export default function ConsumptionExplorerPage() {
   // ── URL state (bidirectional sync) ─────────────────────────────────────
   const { urlState, setUrlParams } = useExplorerURL();
 
+  // ── Site list for picker: use full org list (orgSites), not filtered scopedSites ──
+  // scopedSites is filtered by scope.siteId, which limits the picker to 1 site when a
+  // site is selected. orgSites always returns all sites for the org.
+  const sites = orgSites || [];
+
+  // Stable key for org-sites set (changes when org switches or sites load)
+  const orgSiteIdsKey = useMemo(
+    () => orgSites.map(s => s.id).sort().join(','),
+    [orgSites],
+  );
+
   // ── Resolve initial site IDs from URL or scope ─────────────────────────
-  const sites = scopedSites || [];
+  // Note: motor.state.siteIds is only initialized once (useState in useExplorerMotor).
+  // The org-change effect below (using orgSiteIdsKey) handles subsequent updates.
   const initialSiteIds = (() => {
     if (urlState.siteIds.length) return urlState.siteIds;
     if (selectedSiteId) return [selectedSiteId];
@@ -1056,14 +1089,30 @@ export default function ConsumptionExplorerPage() {
     }
   }, [primaryAvailability]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Initialize siteIds when scope resolves ─────────────────────────────
+  // ── Validate + reset siteIds on org change or initial site load ─────────
+  // Fires when: (a) org changes → orgSiteIdsKey changes → stale IDs detected
+  //             (b) sites load from empty → auto-select fires
+  //             (c) selectedSiteId changes → re-validates
   useEffect(() => {
-    if (!siteIds.length && selectedSiteId) {
-      setSiteIds([selectedSiteId]);
-    } else if (!siteIds.length && sites.length) {
-      setSiteIds([sites[0].id]);
-    }
-  }, [selectedSiteId, sites]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!orgSites.length) return; // Sites not yet loaded — wait
+    const orgSiteIdsSet = new Set(orgSites.map(s => s.id));
+    setSiteIds(prev => {
+      // Keep IDs that exist in the current org
+      const valid = prev.filter(id => orgSiteIdsSet.has(Number(id)));
+      if (valid.length > 0) {
+        // Already valid — return prev ref if no IDs were dropped (avoids re-render)
+        return valid.length === prev.length ? prev : valid;
+      }
+      // No valid IDs → auto-select
+      if (selectedSiteId && orgSiteIdsSet.has(Number(selectedSiteId))) {
+        return [Number(selectedSiteId)];
+      }
+      // "Tous les sites": select all if N ≤ 5, else just first
+      return orgSites.length <= 5
+        ? orgSites.map(s => s.id)
+        : [orgSites[0].id];
+    });
+  }, [orgSiteIdsKey, selectedSiteId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Reset to defaults (V11.1-A) ────────────────────────────────────────
   const handleReset = useCallback(() => {
@@ -1077,6 +1126,28 @@ export default function ConsumptionExplorerPage() {
     setEndDate(null);
     setUrlParams({ sites: firstSiteId ? [firstSiteId] : [], energy: 'electricity', days: 30, mode: 'agrege', unit: 'kwh', start: null, end: null });
   }, [selectedSiteId, sites]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── V21-C: Granularity override (user-selectable pills) ─────────────────
+  const [granularity, setGranularity] = useState('auto');
+  // ── V22-B: Sampling minutes from backend meta (for data-frequency intersection) ──
+  const [samplingMinutes, setSamplingMinutes] = useState(null);
+  const handleMeta = useCallback((m) => {
+    if (m?.sampling_minutes != null) setSamplingMinutes(m.sampling_minutes);
+  }, []);
+
+  // ── V20-D / V21-F: Demo generation — generates MeterReading data for site, then forces refetch ──
+  // Supports energy_vector param (V21-F: gas demo CTA)
+  const [refreshKey, setRefreshKey] = useState(0);
+  const handleGenerateDemo = useCallback(async () => {
+    if (!siteIds.length) return;
+    try {
+      const ev = energyType === 'gas' ? 'gas' : 'electricity';
+      await fetch(`/api/ems/demo/generate_timeseries?site_id=${siteIds[0]}&days=90&energy_vector=${ev}`, { method: 'POST' });
+      setRefreshKey(k => k + 1); // force TimeseriesPanel to remount → fresh fetch
+    } catch (e) {
+      console.error('[V21] Demo generation failed', e);
+    }
+  }, [siteIds, energyType]);
 
   // ── Presets (V11.1-C) ──────────────────────────────────────────────────
   const { presets, savePreset, loadPreset, deletePreset } = useExplorerPresets();
@@ -1110,8 +1181,8 @@ export default function ConsumptionExplorerPage() {
   const handleSwitchEnergy = useCallback((type) => {
     setEnergyType(type);
     if (type === 'gas') switchTab('gas');
-    else switchTab('tunnel');
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    else if (activeTab === 'gas') switchTab('timeseries'); // V19: only leave gas tab when on it
+  }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const availability = mergedAvailability || primaryAvailability;
   const hasData = availability?.has_data === true;
@@ -1161,6 +1232,10 @@ export default function ConsumptionExplorerPage() {
         savedPresets={presets}
         onLoadPreset={handleLoadPreset}
         onDeletePreset={deletePreset}
+        sitesLoading={sitesLoading}
+        granularity={granularity}
+        setGranularity={setGranularity}
+        samplingMinutes={samplingMinutes}
       />
 
       {/* Portfolio info banner — non-blocking, dismissible */}
@@ -1225,6 +1300,7 @@ export default function ConsumptionExplorerPage() {
           {isClassic ? (
             /* ── Classic mode: TimeseriesPanel ALWAYS rendered (handles own loading/empty/error) ── */
             <TimeseriesPanel
+              key={refreshKey}
               siteIds={siteIds}
               energyType={energyType}
               days={days}
@@ -1234,8 +1310,12 @@ export default function ConsumptionExplorerPage() {
               mode={mode}
               sites={sites}
               availability={availability}
+              granularityOverride={granularity === 'auto' ? null : granularity}
               onNavigate={handleNavigate}
               onExtendPeriod={() => setDays(365)}
+              onSelectAll={sites.length ? () => setSiteIds(sites.map(s => s.id)) : undefined}
+              onGenerateDemo={siteIds.length ? handleGenerateDemo : undefined}
+              onMeta={handleMeta}
             />
           ) : (
             /* ── Expert mode: tab bar always visible + panel routing ── */
@@ -1283,6 +1363,7 @@ export default function ConsumptionExplorerPage() {
                 {/* TimeseriesPanel: ALWAYS rendered on timeseries tab — handles own loading/empty/error */}
                 {activeTab === 'timeseries' && (
                   <TimeseriesPanel
+                    key={refreshKey}
                     siteIds={siteIds}
                     energyType={energyType}
                     days={days}
@@ -1292,9 +1373,24 @@ export default function ConsumptionExplorerPage() {
                     mode={mode}
                     sites={sites}
                     availability={availability}
+                    granularityOverride={granularity === 'auto' ? null : granularity}
                     onNavigate={handleNavigate}
                     onExtendPeriod={() => setDays(365)}
+                    onSelectAll={sites.length ? () => setSiteIds(sites.map(s => s.id)) : undefined}
+                    onGenerateDemo={siteIds.length ? handleGenerateDemo : undefined}
+                    onMeta={handleMeta}
                   />
+                )}
+                {/* Insights: statistical analysis — own data fetch, no Motor dependency */}
+                {activeTab === 'insights' && (
+                  <InsightsPanel siteIds={siteIds} energyType={energyType} days={days} />
+                )}
+                {/* Signature + Météo: use own data fetch, no Motor dependency */}
+                {activeTab === 'signature' && (
+                  <SignaturePanel siteIds={siteIds} energyType={energyType} />
+                )}
+                {activeTab === 'meteo' && (
+                  <MeteoPanel siteIds={siteIds} energyType={energyType} days={days} />
                 )}
                 {/* Other panels: require showContent (depend on Motor availability data) */}
                 {activeTab === 'tunnel' && showContent && (
@@ -1307,7 +1403,7 @@ export default function ConsumptionExplorerPage() {
                 )}
                 {activeTab === 'targets' && showContent && <TargetsPanel siteId={siteId} energyType={energyType} />}
                 {activeTab === 'hphc' && showContent && <HPHCPanel siteId={siteId} days={days} />}
-                {activeTab === 'gas' && showContent && <GasPanel siteId={siteId} days={days} />}
+                {activeTab === 'gas' && showContent && <GasPanel siteId={siteId} days={days} onGenerateDemo={siteIds.length ? handleGenerateDemo : undefined} />}
               </div>
             </>
           )}

@@ -30,7 +30,6 @@ const ConsommationsKBTab = lazy(() => import('./pages/ConsommationsUsages').then
 const MonitoringPage = lazy(() => import('./pages/MonitoringPage'));
 const StatusPage = lazy(() => import('./pages/StatusPage'));
 const ImportPage = lazy(() => import('./pages/ImportPage'));
-const Cockpit2MinPage = lazy(() => import('./pages/Cockpit2MinPage'));
 const SegmentationPage = lazy(() => import('./pages/SegmentationPage'));
 const CompliancePage = lazy(() => import('./pages/CompliancePage'));
 const ConsumptionDiagPage = lazy(() => import('./pages/ConsumptionDiagPage'));
@@ -88,7 +87,8 @@ function App() {
 
                   {/* Existing pages */}
                   <Route path="/dashboard-legacy" element={<PageSuspense><Dashboard onUpgradeClick={() => setShowUpgradeWizard(true)} /></PageSuspense>} />
-                  <Route path="/cockpit-2min" element={<PageSuspense><Cockpit2MinPage onUpgradeClick={() => setShowUpgradeWizard(true)} /></PageSuspense>} />
+                  {/* /cockpit-2min redirige vers la vue exécutive canonique */}
+                  <Route path="/cockpit-2min" element={<Navigate to="/cockpit" replace />} />
                   <Route path="/cockpit" element={<PageSuspense><Cockpit /></PageSuspense>} />
                   <Route path="/sites-legacy/:id" element={<PageSuspense><SiteDetail /></PageSuspense>} />
                   <Route path="/action-plan" element={<PageSuspense><ActionPlan /></PageSuspense>} />

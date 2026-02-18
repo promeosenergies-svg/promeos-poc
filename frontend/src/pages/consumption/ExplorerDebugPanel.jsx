@@ -32,7 +32,7 @@ function Section({ title, children }) {
   );
 }
 
-export default function ExplorerDebugPanel({ params = {}, tsState = {}, availability = null, scope = null }) {
+export default function ExplorerDebugPanel({ params = {}, tsState = {}, availability = null, scope = null, chartMeta = null }) {
   const [collapsed, setCollapsed] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -118,6 +118,14 @@ export default function ExplorerDebugPanel({ params = {}, tsState = {}, availabi
             <Row label="error" value={error} />
           </Section>
 
+          {/* Chart mapping (V20-A) */}
+          {chartMeta && (
+            <Section title="Mapping chartData (V20)">
+              <Row label="effectiveValueKey" value={chartMeta.effectiveValueKey} />
+              <Row label="overlayValueKeys" value={chartMeta.overlayValueKeys?.join(', ') || '(none — single series)'} />
+            </Section>
+          )}
+
           {/* Debug info from hook */}
           {debugInfo && (
             <Section title="API debug">
@@ -128,6 +136,18 @@ export default function ExplorerDebugPanel({ params = {}, tsState = {}, availabi
               <Row label="pointsCount" value={debugInfo.pointsCount} />
               <Row label="yMin" value={debugInfo.yMin} />
               <Row label="yMax" value={debugInfo.yMax} />
+            </Section>
+          )}
+
+          {/* Validity breakdown (V20-A) */}
+          {debugInfo && (debugInfo.validCount != null) && (
+            <Section title="Validité points (V20)">
+              <Row label="validCount" value={debugInfo.validCount} />
+              <Row label="zerosCount" value={debugInfo.zerosCount} />
+              <Row label="nullsCount" value={debugInfo.nullsCount} />
+              <Row label="nanCount" value={debugInfo.nanCount} />
+              <Row label="samplePoints[0]" value={debugInfo.samplePoints?.[0] ? JSON.stringify(debugInfo.samplePoints[0]) : null} />
+              <Row label="samplePoints[1]" value={debugInfo.samplePoints?.[1] ? JSON.stringify(debugInfo.samplePoints[1]) : null} />
             </Section>
           )}
 

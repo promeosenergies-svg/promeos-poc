@@ -16,7 +16,7 @@ const ROLE_LABELS = {
   dsi_admin: 'DSI / Admin',
   daf: 'DAF',
   acheteur: 'Acheteur',
-  resp_conformite: 'Resp. Conformite',
+  resp_conformite: 'Resp. Conformité',
   energy_manager: 'Energy Manager',
   resp_immobilier: 'Resp. Immobilier',
   resp_site: 'Resp. Site',
@@ -66,12 +66,12 @@ function WizardExpress({ users, roles, onDone }) {
     <div className="bg-white rounded-xl border border-gray-200 p-6">
       <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
         <Shield size={20} className="text-blue-600" />
-        Wizard Express — Assigner un role
+        Wizard Express — Assigner un rôle
       </h2>
 
       {/* Step indicator */}
       <div className="flex items-center gap-2 mb-6 text-sm">
-        {['Utilisateur', 'Scope', 'Role', 'Confirmer'].map((label, i) => (
+        {['Utilisateur', 'Périmètre', 'Rôle', 'Confirmer'].map((label, i) => (
           <div key={label} className="flex items-center gap-1">
             <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold
               ${step > i + 1 ? 'bg-green-100 text-green-700' : step === i + 1 ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-400'}`}>
@@ -297,7 +297,7 @@ export default function AdminAssignmentsPage() {
     setLoading(true);
     Promise.all([getAdminUsers(), getAdminRoles()])
       .then(([u, r]) => { setUsers(u); setRoles(r); })
-      .catch(() => toast('Erreur lors du chargement des donnees', 'error'))
+      .catch(() => toast('Erreur lors du chargement des données', 'error'))
       .finally(() => setLoading(false));
   };
 
@@ -305,7 +305,7 @@ export default function AdminAssignmentsPage() {
 
   if (!hasPermission('admin')) {
     return (
-      <PageShell icon={Users} title="Assignments">
+      <PageShell icon={Users} title="Affectations">
         <EmptyState icon={Shield} title="Acces refuse" text="Vous n'avez pas les droits d'administration." />
       </PageShell>
     );
@@ -313,7 +313,7 @@ export default function AdminAssignmentsPage() {
 
   if (loading) {
     return (
-      <PageShell icon={Users} title="Assignments" subtitle="Chargement...">
+      <PageShell icon={Users} title="Affectations" subtitle="Chargement...">
         <SkeletonCard /><SkeletonCard />
       </PageShell>
     );
@@ -322,7 +322,7 @@ export default function AdminAssignmentsPage() {
   return (
     <PageShell
       icon={Users}
-      title="Assignments"
+      title="Affectations"
       subtitle={`${users.length} utilisateurs configures`}
       actions={
         <Button variant="secondary" onClick={load}>

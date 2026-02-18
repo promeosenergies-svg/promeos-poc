@@ -58,3 +58,12 @@ htmlcov/
 # Build
 build/
 *.egg-info/
+
+# Ruff / Mypy
+.ruff_cache/
+.mypy_cache/
+
+# Playwright
+playwright-report/
+test-results/
+e2e/node_modules/

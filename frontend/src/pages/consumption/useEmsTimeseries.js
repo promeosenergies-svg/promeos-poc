@@ -28,7 +28,10 @@ export const MODE_MAP = {
 
 export function formatDate(isoStr, granularity) {
   if (!isoStr) return '';
-  const d = new Date(isoStr);
+  // V20-B (RC2): normalize "YYYY-MM-DD HH:MM:SS" (space) to ISO 8601 "YYYY-MM-DDTHH:MM:SS"
+  // Some browsers fail to parse space-separated datetime strings.
+  const normalized = typeof isoStr === 'string' ? isoStr.replace(' ', 'T') : isoStr;
+  const d = new Date(normalized);
   if (isNaN(d.getTime())) return isoStr;
 
   if (granularity === 'monthly') {
@@ -101,6 +104,7 @@ export default function useEmsTimeseries({
   endDate = null,
   unit = 'kwh',
   mode = 'agrege',
+  granularityOverride = null,  // V21-C: user-selected granularity ('30min'|'hourly'|'daily'|'monthly') or null for auto
 } = {}) {
   const [state, setState] = useState({
     status: 'loading',
@@ -127,27 +131,33 @@ export default function useEmsTimeseries({
       try {
         const { dateFrom, dateTo } = computeDateRange(days, startDate, endDate);
 
-        // 1. Get suggested granularity
+        // 1. Get granularity: use override if provided, else auto-suggest
         let granularity = 'daily';
-        try {
-          const suggestion = await getEmsTimeseriesSuggest(
-            dateFrom.toISOString(),
-            dateTo.toISOString(),
-          );
-          granularity = suggestion?.granularity || 'daily';
-        } catch {
-          // fallback to daily
+        if (granularityOverride && granularityOverride !== 'auto') {
+          granularity = granularityOverride;
+        } else {
+          try {
+            const suggestion = await getEmsTimeseriesSuggest(
+              dateFrom.toISOString(),
+              dateTo.toISOString(),
+            );
+            granularity = suggestion?.granularity || 'daily';
+          } catch {
+            // fallback to daily
+          }
         }
 
         // 2. Build params
         const emsMode = MODE_MAP[mode] || 'aggregate';
+        // V19-D: EUR is display-only; API only accepts 'kwh' | 'kw'
+        const apiMetric = unit === 'eur' ? 'kwh' : unit;
         const params = {
           site_ids: siteIds.join(','),
           date_from: dateFrom.toISOString(),
           date_to: dateTo.toISOString(),
           granularity,
           mode: emsMode,
-          metric: unit,
+          metric: apiMetric,
           energy_vector: energyType,
         };
 
@@ -162,9 +172,16 @@ export default function useEmsTimeseries({
         const chartData = seriesToChartData(series, granularity);
 
         // Compute debug info
-        const allValues = chartData.map(p => p.value).filter(v => v != null && !isNaN(v));
-        const yMin = allValues.length ? Math.min(...allValues) : null;
-        const yMax = allValues.length ? Math.max(...allValues) : null;
+        const rawValues = chartData.map(p => p.value);
+        const allValidValues = rawValues.filter(v => v != null && !isNaN(v));
+        const yMin = allValidValues.length ? Math.min(...allValidValues) : null;
+        const yMax = allValidValues.length ? Math.max(...allValidValues) : null;
+
+        // V20-A: validity breakdown for debug
+        const validCount = allValidValues.length;
+        const zerosCount = rawValues.filter(v => v === 0).length;
+        const nullsCount = rawValues.filter(v => v === null || v === undefined).length;
+        const nanCount = rawValues.filter(v => v != null && typeof v === 'number' && isNaN(v)).length;
 
         const debugInfo = {
           endpoint: '/api/ems/timeseries',
@@ -172,6 +189,11 @@ export default function useEmsTimeseries({
           responseMs,
           seriesCount: series.length,
           pointsCount: chartData.length,
+          validCount,       // V20-A: non-null, non-NaN values
+          zerosCount,       // V20-A: 0 values (valid! must not be dropped)
+          nullsCount,       // V20-A: null/undefined values
+          nanCount,         // V20-A: NaN values
+          samplePoints: chartData.slice(0, 5),  // V20-A: first 5 raw points for inspection
           yMin,
           yMax,
           xRange: chartData.length
@@ -203,7 +225,7 @@ export default function useEmsTimeseries({
 
     fetchData();
     return () => { cancelled = true; };
-  }, [siteIds.join(','), energyType, days, startDate, endDate, unit, mode]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [siteIds.join(','), energyType, days, startDate, endDate, unit, mode, granularityOverride]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return state;
 }

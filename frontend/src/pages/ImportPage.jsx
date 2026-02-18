@@ -58,12 +58,15 @@ function ImportPage() {
     getDemoPackStatus()
       .then((s) => {
         setPackStatus(s); setStatusError(false);
-        // Auto-sync scope with seeded org (e.g. after page refresh)
-        if (s.org_id && s.total_rows > 0) {
-          applyDemoScope({ orgId: s.org_id, orgNom: s.org_nom });
-        }
+        // Auto-sync scope is handled by the syncInProgress useEffect below.
+        // Do NOT call applyDemoScope here — it triggers setApiSites([]) and
+        // can cause a race that empties orgSites right after a successful seed.
       })
-      .catch(() => { setPackStatus(null); setStatusError(true); });
+      .catch(() => {
+        // Do NOT reset packStatus to null — the optimistic value set after
+        // seed must survive a transient status-pack fetch failure.
+        setStatusError(true);
+      });
   };
 
   useEffect(() => { refreshStatus(); }, []);
@@ -133,6 +136,20 @@ function ImportPage() {
       // reset=true: always wipe existing demo data before seeding a new pack
       const res = await seedDemoPack(selectedPack, selectedSize, true);
       setPackResult(res);
+
+      // Optimistic packStatus update — don't wait for refreshStatus() to confirm.
+      // This guarantees "Pack chargé: <org_nom>" is shown immediately after seed,
+      // even if the subsequent getDemoPackStatus() call is delayed or fails.
+      if (res.org_id) {
+        setPackStatus({
+          org_id: res.org_id,
+          org_nom: res.org_nom,
+          pack: res.pack,
+          size: res.size,
+          total_rows: res.total_rows ?? 0,
+        });
+      }
+
       // Switch global scope to the seeded org immediately
       if (res.org_id) {
         applyDemoScope({
@@ -143,7 +160,7 @@ function ImportPage() {
         });
       }
       toast(successToast, 'success');
-      refreshStatus();
+      refreshStatus(); // Async refresh — confirms/enriches packStatus from backend
     } catch (err) {
       const status = err.response?.status;
       const detail = err.response?.data?.detail || err.message || 'Erreur inconnue';
@@ -215,7 +232,7 @@ function ImportPage() {
             )}
           </div>
           <p className="text-sm text-indigo-700 mb-4">
-            Charger un jeu de donnees complet : sites, compteurs, releves 90j, meteo, conformite, monitoring, factures, actions, achat.
+            Charger un jeu de données complet : sites, compteurs, relevés 90j, météo, conformité, monitoring, factures, actions, achat.
           </p>
 
           {statusError && (
@@ -258,20 +275,29 @@ function ImportPage() {
 
           {/* Pack selector */}
           <div className="flex flex-wrap gap-3 mb-4">
-            {DEMO_PACKS.map(p => (
-              <button
-                key={p.key}
-                onClick={() => setSelectedPack(p.key)}
-                className={`flex-1 min-w-[200px] p-3 rounded-lg border-2 text-left transition ${
-                  selectedPack === p.key
-                    ? 'border-indigo-500 bg-white shadow-sm'
-                    : 'border-transparent bg-white/50 hover:border-indigo-200'
-                }`}
-              >
-                <p className="font-medium text-gray-800 text-sm">{p.label}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{p.description}</p>
-              </button>
-            ))}
+            {DEMO_PACKS.map(p => {
+              const isLoaded = packStatus?.pack === p.key;
+              const isSelected = selectedPack === p.key;
+              return (
+                <button
+                  key={p.key}
+                  onClick={() => setSelectedPack(p.key)}
+                  className={`flex-1 min-w-[200px] p-3 rounded-lg border-2 text-left transition ${
+                    isSelected
+                      ? 'border-indigo-500 bg-white shadow-sm'
+                      : 'border-transparent bg-white/50 hover:border-indigo-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-gray-800 text-sm">{p.label}</p>
+                    {isLoaded && (
+                      <Badge status="success">Chargé</Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-0.5">{p.description}</p>
+                </button>
+              );
+            })}
           </div>
 
           {/* Size selector + actions */}
@@ -524,10 +550,10 @@ function ImportPage() {
       {/* Confirmation modal for hard reset */}
       <Modal open={showResetModal} onClose={() => setShowResetModal(false)} title="Confirmer la suppression">
         <p className="text-sm text-gray-600 mb-2">
-          Cette action va supprimer <strong>toutes les donnees demo</strong> (sites, compteurs, releves, factures, alertes, actions).
+          Cette action va supprimer <strong>toutes les données démo</strong> (sites, compteurs, relevés, factures, alertes, actions).
         </p>
         <p className="text-sm text-red-600 mb-4">
-          Les donnees importees manuellement ne seront pas affectees (reset soft).
+          Les données importées manuellement ne seront pas affectées (reset soft).
         </p>
         <div className="flex justify-end gap-3">
           <Button variant="secondary" onClick={() => setShowResetModal(false)}>Annuler</Button>

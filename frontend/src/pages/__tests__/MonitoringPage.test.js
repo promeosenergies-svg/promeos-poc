@@ -469,3 +469,49 @@ describe('MonitoringPage: no TDZ on loadSiteActions', () => {
     expect(matches).toHaveLength(1);
   });
 });
+
+// ── QW1 guard: MonitoringPage accent & cleanup ──────────────────────────────
+
+describe('QW1 guard — MonitoringPage accents FR', () => {
+  const src = readFileSync(resolve(__dirname, '../MonitoringPage.jsx'), 'utf8');
+
+  it('PROFILE_OPTIONS: École avec accent', () => {
+    expect(src).toContain("label: 'École'");
+    expect(src).not.toContain("label: 'Ecole'");
+  });
+
+  it('PROFILE_OPTIONS: Hôpital avec accent', () => {
+    expect(src).toContain("label: 'Hôpital'");
+    expect(src).not.toContain("label: 'Hopital'");
+  });
+
+  it('Résolu / Résoudre / Résolus avec accents', () => {
+    expect(src).not.toMatch(/['"]Resolu['"]/);
+    expect(src).not.toMatch(/['"]Resolus['"]/);
+    expect(src).not.toMatch(/>Resoudre</);
+  });
+
+  it('Sévérité avec accents dans le thead', () => {
+    expect(src).toContain('Sévérité');
+    expect(src).not.toMatch(/>Severite</);
+  });
+
+  it('détecter avec accent dans empty state', () => {
+    expect(src).toContain('détecter');
+    expect(src).not.toContain('detecter les anomalies');
+  });
+
+  it('résolution avec accent dans toast', () => {
+    expect(src).toContain('résolution');
+    expect(src).not.toContain("la resolution'");
+  });
+
+  it('défaut avec accent dans archetype fallback', () => {
+    expect(src).toContain("(défaut)");
+    expect(src).not.toContain("(defaut)");
+  });
+
+  it('useMemo inutile sur mockSites supprimé', () => {
+    expect(src).not.toMatch(/useMemo\(\(\)\s*=>\s*mockSites/);
+  });
+});

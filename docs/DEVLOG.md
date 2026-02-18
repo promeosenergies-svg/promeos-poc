@@ -1,5 +1,201 @@
 # DEVLOG PROMEOS
 
+## Sprint V22 — Consommations Expert : Analyse & Insights (2026-02-18)
+
+**Objectif** : InsightsPanel complet (6 KPIs), granularité data-driven (intersection période × fréquence de relève), métadonnées backend enrichies, vérification gaz end-to-end.
+
+### Phase 0 — Audit (findings)
+
+1. **Signature + Météo tabs** : DÉJÀ câblés dans TAB_CONFIG (lignes 62-63) et rendus (lignes 1371-1375). Aucune correction nécessaire.
+2. **InsightsPanel** : ABSENT. `InsightsStrip` (bandeau étroit) existe mais aucun onglet "Insights" complet. Stop-condition #3 exige cet onglet.
+3. **normalizeId** : CLEAN — défini dans `helpers.js:15`, ré-exporté dans `ConsumptionDiagPage.jsx:76`. Aucun crash.
+4. **backend `_meta()`** : INCOMPLET — ne renvoie pas `sampling_minutes`, `available_granularities`, ni `valid_count`. Le modèle Pydantic `TimeseriesMeta` doit être étendu.
+5. **`getAvailableGranularities(days)`** : PÉRIODE-ONLY — pas de croisement avec la fréquence de relève réelle.
+
+### Commits V22
+
+| Commit | Fichier | Action |
+|--------|---------|--------|
+| V22-A | `consumption/InsightsPanel.jsx` | NOUVEAU — P05/P95/load-factor/anomalies (6 KPI-cards) |
+| V22-A | `ConsumptionExplorerPage.jsx` | Ajout onglet 'insights' dans TAB_CONFIG + rendu panel |
+| V22-B | `timeseries_service.py` `_meta()` | Ajout `sampling_minutes`, `available_granularities`, `valid_count` |
+| V22-B | `ems.py` `TimeseriesMeta` | Pydantic fields optionnels correspondants |
+| V22-B | `consumption/helpers.js` | `getAvailableGranularities(days, samplingMinutes)` — intersection |
+| V22-C | `__tests__/V22ConsommationsExpert.test.js` | NOUVEAU — suite de tests purs |
+| V22-D | Gas demo | Vérification fréquence + end-to-end |
+| V22-E | `docs/qa-consommations-v22.md` | NOUVEAU — checklist QA |
+
+### Résultat attendu
+
+- ≥ 854 + N tests verts (854 = résultat Sprint Cockpit)
+- Build propre, 0 erreur
+
+---
+
+## Sprint V20 — Consommations World-Class : Audit complet + Fix E2E (2026-02-18)
+
+**Objectif** : Éliminer le bug "0 points valides (min 2)" visible alors que le badge affichait "1 compteur / 90 points / source EMS". Trois root causes composées.
+
+### Root Causes (3)
+
+1. **RC1 — `overlayValueKeys` incluait `'total'`** (`TimeseriesPanel.jsx`) : le filtre `s.key !== 'agg'` ne bloquait pas `key="total"` renvoyé par le backend en mode agrégé → `valueKey="total"` envoyé à ExplorerChart → `p["total"]` undefined sur tous les points → "0 points valides" dans le chart, mais le badge rendait via `p.value` (correctement peuplé) → les deux visibles simultanément.
+2. **RC2 — Timestamps espace** (`useEmsTimeseries.js`) : le backend renvoie `"YYYY-MM-DD HH:MM:00"` (espace, pas T) pour les granularités sub-horaires. `new Date("2025-01-01 10:15:00")` peut produire Invalid Date sur certains navigateurs.
+3. **RC3 — `validPoints` guard incohérent** (`TimeseriesPanel.jsx`) : le guard utilisait `p.value` mais ExplorerChart utilisait `p[valueKey]`. Divergence quand `valueKey !== 'value'`.
+
+### Fixes
+
+- **V20-A** — `useEmsTimeseries.js` + `TimeseriesPanel.jsx` + `ExplorerDebugPanel.jsx` : Enrichissement du debug panel avec `validCount`, `zerosCount`, `nullsCount`, `nanCount`, `samplePoints`, `effectiveValueKey`.
+- **V20-B** — Fix RC1 : `overlayValueKeys = seriesData.length <= 1 ? [] : seriesData.filter(s => !['agg','total','others'].includes(s.key)).map(s => s.key)`. Fix RC2 : `.replace(' ', 'T')` avant `new Date()`. Fix RC3 : `effectiveValueKey` utilisé de façon cohérente dans le guard et le chart.
+- **V20-C** — `backend/routes/ems.py` : `POST /api/ems/demo/generate_timeseries` (wraps `generate_demo_consumption`).
+- **V20-D** — `TimeseriesPanel.jsx` : CTA "Générer conso démo" dans les états Empty et Insufficient. `ConsumptionExplorerPage.jsx` : `handleGenerateDemo` + `refreshKey`.
+- **V20-E** — `V20TimeseriesFix.test.js` : 15 tests purs (4 describe blocks + bonus MODE_MAP).
+- **V20-F** — `docs/qa-consommations.md` + DEVLOG.
+
+### Résultat
+
+- **804+ tests verts** (789 → 804, +15)
+- Build propre, 0 erreur
+
+---
+
+## Sprint V19 — ConsumptionExplorer "Jamais blanc, jamais muet" (2026-02-18)
+
+**Objectif** : Éliminer les six root causes derrière "Aucun site sélectionné / courbes invisibles / dead-end" sur l'Explorer.
+
+### Root Causes (6)
+
+1. **RC1 — Default tab 'tunnel'** (`useExplorerURL.js`) : les utilisateurs atterrissaient sur la vue P10-P90 au lieu de la série temporelle.
+2. **RC2 — Site selector hidden** (`StickyFilterBar.jsx`) : `isMultiMode = sites.length > 1 && setSiteIds` → chips UI disparaissait avec 0 ou 1 site / pendant le chargement.
+3. **RC3 — sitesLoading manquant dans Explorer** (`ConsumptionExplorerPage.jsx`) : V18 avait ajouté `sitesLoading` à ScopeContext mais pas à ExplorerPage.
+4. **RC4 — `metric='eur'` envoyé à l'API** (`useEmsTimeseries.js`) : le backend n'accepte que 'kwh' | 'kw'; 'eur' est display-only.
+5. **RC5 — Pas de `response_model` Pydantic** (`backend/routes/ems.py`) : OpenAPI affichait `{}` ou "string" pour le timeseries.
+6. **RC6 — `handleSwitchEnergy` always resets to 'tunnel'** (`ConsumptionExplorerPage.jsx`) : `else switchTab('tunnel')` perdait l'onglet Timeseries lors d'un switch d'énergie.
+
+### Fixes
+
+- **V19-A** — `useExplorerURL.js` : `DEFAULTS.tab = 'timeseries'` + `ConsumptionExplorerPage.jsx` : `handleSwitchEnergy` ne quitte plus l'onglet actif sauf si on était sur 'gas'.
+- **V19-B** — `StickyFilterBar.jsx` : `isMultiMode = Boolean(setSiteIds)` + section site toujours visible avec placeholder "Chargement…" / "Sélectionner des sites…".
+- **V19-C** — `ConsumptionExplorerPage.jsx` : `sitesLoading` extrait de `useScope()` et passé à `StickyFilterBar`.
+- **V19-D** — `useEmsTimeseries.js` : `const apiMetric = unit === 'eur' ? 'kwh' : unit`.
+- **V19-E** — `backend/routes/ems.py` : modèles Pydantic `TimeseriesResponse` + `response_model=TimeseriesResponse` sur la route.
+- **V19-F** — `V19ExplorerFix.test.js` : 18 tests purs (4 describe blocks).
+
+### Résultat
+
+- **789 tests verts** (771 → 789, +18)
+- Build propre, 0 erreur
+
+---
+
+## Sprint V18 — Demo Scope Coherence: zéro 0-site / zéro fantôme Casino (2026-02-18)
+
+**Objectif** : Éliminer les trois root causes derrière l'affichage "0 site" et les "36 sites Casino" fantômes après un seed "SCI Les Terrasses — Tertiaire S=10".
+
+### Root Causes (3)
+
+1. **RC1 — Pas de `sitesLoading`** : `orgSites = []` entre le mount et la résolution de `getSites()`. Les pages voyaient un tableau vide et affichaient EmptyState.
+2. **RC2 — Double-clear dans `applyDemoScope`** : `setApiSites([])` dans `applyDemoScope` + le `useEffect` sur `effectiveOrgId` → double fenêtre "0 sites".
+3. **RC3 — Pas de guard anti-stale** : deux requêtes concurrentes lors d'un switch rapide d'org → la plus ancienne (Casino, 36 sites) pouvait écraser la plus récente (Tertiaire, 10 sites).
+
+### Fixes
+
+**V18-A — ScopeContext** :
+- `sitesLoading` state (bool) + `_fetchId = useRef(0)` (requestId guard)
+- `useEffect` `getSites` : `setSitesLoading(true)` → `const myId = ++_fetchId.current` → si `myId !== _fetchId.current` → ignorer la réponse stale
+- Suppression de `setApiSites([])` dans `applyDemoScope` (le `useEffect` gère déjà le clear)
+- `sitesLoading` exporté dans le context value
+
+**V18-B — Pages** :
+- `Cockpit.jsx`, `ConformitePage.jsx`, `MonitoringPage.jsx` : guard `if (sitesLoading) return <Loader2 skeleton>` avant toute logique vide
+- `ConformitePage` : `sitesLoading` ajouté aux deps du `useCallback loadData`
+
+**V18-C — Header** :
+- `ScopeSwitcher.jsx` : affiche "Chargement…" dans la pill scope
+- `ScopeSummary.jsx` : retourne label italique `{org.nom} — Chargement…` pendant `sitesLoading`
+
+**V18-D — ScopeDebugPanel** :
+- Nouveau composant `ScopeDebugPanel.jsx` (dev-only, `?debug=1`)
+- Panel flottant bas-droite : orgId, org.nom, sitesLoading, orgSites.length, sitesCount, selectedSiteId, scopeLabel
+- Monté dans `AppShell.jsx`
+
+**V18-E — Backend** :
+- `backend/services/scope_utils.py` (NEW) : `get_scope_org_id(request, auth)` — priorité canonique auth.org_id > X-Org-Id > None
+- `backend/routes/cockpit.py` : utilise `get_scope_org_id()` + `get_optional_auth`
+- `backend/routes/consumption_diagnostic.py` : utilise `get_scope_org_id(request, auth) or org_id`
+
+### Tests
+
+- `V18DemoScope.test.js` (NEW) : 17 tests purs — transitions sitesLoading, requestId guard, getEffectiveSiteIds, ScopeSummary loading label
+- **Total : 771 tests verts** (754 → 771)
+- Build : clean, 0 erreur
+
+---
+
+## Sprint V17 — Consumption Explorer Site Selection Fix (2026-02-18)
+
+**Objectif** : Corriger définitivement "0 site sélectionné" dans l'Explorer alors que le header indique "SCI Les Terrasses — Tous les sites". Normaliser les IDs site (number/string). Garantir les états vides avec CTAs.
+
+### Root Causes
+
+1. **`scopedSites` vs `orgSites`** : le picker utilisait `scopedSites` (filtré par `scope.siteId`) → limité à 1 site quand un scope était sélectionné. Remplacé par `orgSites` (liste complète de l'org).
+2. **Sites stale après changement d'org** : l'effet de récupération ne se déclenchait que quand `siteIds.length === 0` → les IDs Casino persistaient dans l'URL après passage en Tertiaire.
+3. **Mismatch number/string** : `scope.siteId` peut être un `number` ou une `string` (localStorage) ; `ScopeContext` comparait `s.id === scope.siteId` sans coercion de type.
+
+### Fixes
+
+**V17-A — ConsumptionExplorerPage** :
+- Import `orgSites` + `scope` depuis `useScope()`
+- `const sites = orgSites || []` (était `scopedSites`)
+- Memo `orgSiteIdsKey` (`orgSites.map(s=>s.id).sort().join(',')`)
+- Nouvel effet org-aware : `setSiteIds(prev => ...)` valide les IDs courants contre l'org ; auto-sélection N≤5 → tous / N>5 → premier
+
+**V17-B — normalizeId** :
+- Ajout de `normalizeId(x) → String(x)` dans `consumption/helpers.js`
+- `ConsumptionDiagPage.jsx` : re-exporte depuis helpers (suppression de la définition locale)
+- `ScopeContext.jsx` : `String(s.id) === String(scope.siteId)` dans le filtre sites
+
+**V17-C — EmptyState CTA** :
+- `TimeseriesPanel.jsx` : prop `onSelectAll` + bouton "Tout sélectionner" dans l'état `noSiteSelected`
+- `ConsumptionExplorerPage.jsx` : passage de `onSelectAll={() => setSiteIds(sites.map(s=>s.id))}`
+- Nouveau fichier `docs/qa-consumption-v17.md`
+
+**V17-D — Tests** :
+- `__tests__/V17SiteSelection.test.js` : 24 tests purs — normalizeId (5), validation org-change (7), auto-select threshold (4), URL parsing (4), ScopeContext filter (4)
+
+### Résultat
+
+- **754 tests verts** (730 → 754, +24)
+- Build propre
+
+---
+
+## Fix DemoPack — "Pack chargé: Aucun" + sites vides (2026-02-18)
+
+**Objectif** : Corriger la régression post-seed : "Pack chargé: Aucun" s'affichait malgré un seed réussi. Le sélecteur de sites restait vide. La card Casino semblait active quand Tertiaire était chargé.
+
+### Root Causes
+
+1. **`refreshStatus()` catch** : `.catch(() => { setPackStatus(null); ... })` réinitialisait `packStatus` à `null` en cas d'échec réseau transitoire, effaçant la valeur correcte.
+2. **Double `applyDemoScope`** : `refreshStatus().then()` appelait `applyDemoScope()` même si le scope était déjà correct → `setApiSites([])` déclenché deux fois → course condition → `orgSites` restait vide.
+3. **Pas de mise à jour optimiste** : après le seed, `packStatus` restait `null` jusqu'à la fin (async) de `getDemoPackStatus()`.
+
+### Fixes
+
+- `ImportPage.jsx` — `refreshStatus()` : suppression de l'appel `applyDemoScope` (géré par l'effet `syncInProgress`). Le catch ne fait plus `setPackStatus(null)` — uniquement `setStatusError(true)`.
+- `ImportPage.jsx` — `performSeed()` : ajout d'un `setPackStatus` **optimiste** immédiatement après le seed (depuis `res.org_id/org_nom/pack/size`), avant `refreshStatus()`. "Pack chargé: SCI Les Terrasses" s'affiche instantanément.
+- `ImportPage.jsx` — Pack cards : badge **"Chargé"** (status success) affiché sur la card dont la clé correspond à `packStatus?.pack`. Casino n'a plus de badge quand Tertiaire est chargé.
+
+### Tests
+
+- `ImportPage.test.js` : +12 tests purs — optimistic update (5), isLoaded badge (4), catch ne reset pas (3).
+
+### Résultat
+
+- **730 tests verts** (718 → 730, +12)
+- Build propre
+
+---
+
 ## Sprint V16 — Consommations "World-Class" + Scope Coherence (2026-02-18)
 
 **Objectif** : Plus jamais d'écran blanc sur Consommations/Explorer. Garantie d'un rendu dans tous les cas (courbe / skeleton / raison claire + CTA). Cohérence parfaite du scope entre Explorer, Diagnostic et Monitoring.

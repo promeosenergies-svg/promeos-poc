@@ -13,7 +13,7 @@ import { searchKBItems, getKBFullStats } from '../services/api';
 
 const DOMAIN_TABS = [
   { key: null, label: 'Tout', icon: BookOpen },
-  { key: 'reglementaire', label: 'Reglementaire', icon: ShieldCheck },
+  { key: 'reglementaire', label: 'Réglementaire', icon: ShieldCheck },
   { key: 'usages', label: 'Usages', icon: Zap },
   { key: 'acc', label: 'ACC', icon: Sun },
   { key: 'facturation', label: 'Facturation', icon: Receipt },
@@ -110,8 +110,8 @@ export default function KBExplorerPage() {
           <CardBody className="flex items-center gap-3 py-3">
             <AlertTriangle size={20} className="text-amber-600 shrink-0" />
             <div>
-              <p className="text-sm font-medium text-amber-800">KB locale chargee</p>
-              <p className="text-xs text-amber-600">Le service Knowledge Base n'est pas disponible. Les donnees locales sont affichees.</p>
+              <p className="text-sm font-medium text-amber-800">KB locale chargée</p>
+              <p className="text-xs text-amber-600">Le service Knowledge Base n'est pas disponible. Les données locales sont affichées.</p>
             </div>
           </CardBody>
         </Card>
@@ -124,7 +124,7 @@ export default function KBExplorerPage() {
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Rechercher : BACS 290 kW, decret tertiaire, autoconsommation..."
+          placeholder="Rechercher : BACS 290 kW, décret tertiaire, autoconsommation..."
           className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm"
         />
       </div>
@@ -177,14 +177,14 @@ export default function KBExplorerPage() {
         <Card>
           <CardBody className="text-center py-8">
             <BookOpen size={32} className="text-gray-300 mx-auto mb-3" />
-            <p className="text-sm text-gray-500">Aucun resultat pour "{query}"</p>
+            <p className="text-sm text-gray-500">Aucun résultat pour "{query}"</p>
           </CardBody>
         </Card>
       )}
 
       {!loading && results.length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs text-gray-400">{results.length} resultats</p>
+          <p className="text-xs text-gray-400">{results.length} résultats</p>
           {results.map((item) => (
             <KBItemCard
               key={item.id}
@@ -203,10 +203,10 @@ export default function KBExplorerPage() {
             <BookOpen size={40} className="text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-700 mb-2">Explorez la base de connaissances</h3>
             <p className="text-sm text-gray-500 mb-4">
-              Recherchez par mot-cle ou filtrez par domaine pour decouvrir les regles, obligations et recommandations.
+              Recherchez par mot-clé ou filtrez par domaine pour découvrir les règles, obligations et recommandations.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-2">
-              {['BACS 290 kW', 'decret tertiaire', 'autoconsommation', 'OPERAT', 'flexibilite', 'ARENH'].map((q) => (
+              {['BACS 290 kW', 'décret tertiaire', 'autoconsommation', 'OPERAT', 'flexibilité', 'ARENH'].map((q) => (
                 <button
                   key={q}
                   onClick={() => setQuery(q)}

@@ -309,6 +309,99 @@ def generate_demo_consumption(
     }
 
 
+def generate_demo_gas_consumption(
+    db: Session, site_id: int, days: int = 90, anomaly: bool = True
+) -> dict:
+    """Generate synthetic daily gas consumption data for a site.
+
+    Creates a gas Meter + MeterReadings with seasonal heating pattern:
+    - Winter (Nov–Mar): high gas consumption (×1.8)
+    - Summer (Jun–Aug): low gas consumption (~20% of base)
+    - Base: 300 kWh/day (proportional to surface), ±15% noise
+
+    Returns: {meter_id, readings_count, period_start, period_end, anomaly_days}
+    """
+    from models.energy_models import EnergyVector, FrequencyType
+
+    site = db.query(Site).filter(Site.id == site_id).first()
+    if not site:
+        return {"error": "Site not found"}
+
+    # Gas meter (per site, separate from electricity)
+    existing = (
+        db.query(Meter)
+        .filter(Meter.site_id == site_id, Meter.energy_vector == EnergyVector.GAS)
+        .first()
+    )
+    if existing:
+        meter = existing
+    else:
+        meter = Meter(
+            meter_id=f"GAZ-DEMO-{site_id:04d}",
+            name=f"Compteur Gaz - {site.nom}",
+            site_id=site_id,
+            energy_vector=EnergyVector.GAS,
+            subscribed_power_kva=None,
+            is_active=True,
+        )
+        db.add(meter)
+        db.flush()
+
+    # Delete existing gas readings for this meter
+    db.query(MeterReading).filter(MeterReading.meter_id == meter.id).delete()
+
+    now = datetime.utcnow().replace(hour=12, minute=0, second=0, microsecond=0)
+    start = now - timedelta(days=days)
+
+    surface = site.surface_m2 or 1000
+    # Base gas consumption proportional to surface (kWh/day)
+    base_kwh_day = surface * 0.30  # ~300 kWh/day for 1000 m2
+
+    # Anomaly days: unexpected high gas consumption
+    anomaly_days = set()
+    if anomaly:
+        nb_anomaly = random.randint(2, 4)
+        all_days = list(range(days))
+        anomaly_days = set(random.sample(all_days, min(nb_anomaly, len(all_days))))
+
+    readings = []
+    for day_idx in range(days):
+        ts = start + timedelta(days=day_idx)
+        month = ts.month
+
+        # Seasonal heating factor (sine-wave approximation)
+        # Peak in Jan (month=1), trough in Jul (month=7)
+        seasonal = 1.0 + 0.8 * math.cos(2 * math.pi * (month - 1) / 12)
+        # Clamp: summer min = 0.2 × base, winter max = 1.8 × base
+        seasonal = max(0.2, min(1.8, seasonal))
+
+        # Anomaly: unexpected spike (equipment fault or heating override)
+        anomaly_factor = 2.0 if day_idx in anomaly_days else 1.0
+
+        noise = random.gauss(0, 0.07)  # ±7% noise
+        kwh = max(0, base_kwh_day * seasonal * anomaly_factor * (1 + noise))
+
+        readings.append(MeterReading(
+            meter_id=meter.id,
+            timestamp=ts,
+            frequency=FrequencyType.DAILY,
+            value_kwh=round(kwh, 1),
+            quality_score=0.92,
+        ))
+
+    db.bulk_save_objects(readings)
+    db.commit()
+
+    return {
+        "meter_id": meter.id,
+        "meter_name": meter.name,
+        "readings_count": len(readings),
+        "period_start": start.isoformat(),
+        "period_end": now.isoformat(),
+        "anomaly_days": len(anomaly_days),
+    }
+
+
 # ========================================
 # Diagnostic calculations (V1.1 — robust)
 # ========================================

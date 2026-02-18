@@ -5,8 +5,9 @@ import { PageShell, EmptyState, Tooltip } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
 import { useToast } from '../ui/ToastProvider';
 import { useExpertMode } from '../contexts/ExpertModeContext';
+import { useScope } from '../contexts/ScopeContext';
 import {
-  getSites, getMeters, createMeter, uploadConsumptionData,
+  getMeters, createMeter, uploadConsumptionData,
   runAnalysis, getAnalysisSummary, generateDemoEnergy,
   getKBStats, getKBArchetypes, getKBRules, getKBRecommendations, reloadKB,
   seedDemoKB, pingKB
@@ -15,8 +16,9 @@ import {
 // ---- Import Wizard (7 steps) ----
 export function ImportWizard() {
   const { toast } = useToast();
+  const { orgSites } = useScope();
   const [step, setStep] = useState(1);
-  const [sites, setSites] = useState([]);
+  const sites = orgSites;
   const [selectedSite, setSelectedSite] = useState(null);
   const [meterName, setMeterName] = useState('Compteur Principal');
   const [file, setFile] = useState(null);
@@ -27,10 +29,6 @@ export function ImportWizard() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [useDemo, setUseDemo] = useState(false);
-
-  useEffect(() => {
-    getSites({ limit: 200 }).then(data => setSites(data.sites || [])).catch(() => toast('Erreur lors du chargement des sites', 'error'));
-  }, []);
 
   const handleImport = async () => {
     setLoading(true);
@@ -130,7 +128,7 @@ export function ImportWizard() {
       {/* Step 2: Data source */}
       {step === 2 && (
         <div>
-          <h3 className="text-lg font-semibold mb-4">2. Source des donnees</h3>
+          <h3 className="text-lg font-semibold mb-4">2. Source des données</h3>
           <p className="text-sm text-gray-600 mb-4">Site: <strong>{selectedSite?.nom}</strong></p>
           <div className="grid grid-cols-2 gap-4">
             <button
@@ -146,7 +144,7 @@ export function ImportWizard() {
               className="p-6 border-2 rounded-lg hover:border-green-400 transition text-center"
             >
               <Database className="mx-auto mb-2 text-green-500" size={32} />
-              <div className="font-semibold">Donnees de demo</div>
+              <div className="font-semibold">Données de démo</div>
               <div className="text-sm text-gray-500 mt-1">365j synthetiques</div>
             </button>
           </div>
@@ -244,7 +242,7 @@ export function ImportWizard() {
           <h3 className="text-lg font-semibold mb-4">6. Import termine</h3>
           <div className="bg-green-50 border border-green-200 rounded p-4 space-y-2 text-sm">
             <div className="flex items-center gap-2 text-green-700 font-semibold">
-              <CheckCircle size={18} /> Import reussi
+              <CheckCircle size={18} /> Import réussi
             </div>
             <p><strong>Lignes importees:</strong> {importResult.rows_imported?.toLocaleString()}</p>
             {importResult.rows_skipped > 0 && <p><strong>Ignorees:</strong> {importResult.rows_skipped}</p>}
@@ -261,7 +259,7 @@ export function ImportWizard() {
       {/* Step 7: Analysis results */}
       {step === 7 && analysisResult && (
         <div>
-          <h3 className="text-lg font-semibold mb-4">7. Resultats de l'analyse</h3>
+          <h3 className="text-lg font-semibold mb-4">7. Résultats de l'analyse</h3>
           <AnalysisResultView
             result={analysisResult}
             siteId={selectedSite?.id}
@@ -341,7 +339,7 @@ function AnalysisResultView({ result, siteId, dateFrom, dateTo }) {
     if (dateTo) params.set('date_to', dateTo);
     const qs = params.toString();
     navigate(`/consommations/explorer${qs ? '?' + qs : ''}`);
-    toast('Analyse terminee — retrouvez vos donnees dans l\'Explorer', 'success');
+    toast('Analyse terminée — retrouvez vos données dans l\'Explorer', 'success');
   };
 
   return (
@@ -349,7 +347,7 @@ function AnalysisResultView({ result, siteId, dateFrom, dateTo }) {
       {/* Archetype */}
       <div className={`border rounded-lg p-4 ${archNotDetermined ? 'bg-amber-50 border-amber-200' : 'bg-blue-50 border-blue-200'}`}>
         <h4 className={`font-semibold flex items-center gap-2 ${archNotDetermined ? 'text-amber-800' : 'text-blue-800'}`}>
-          <BarChart3 size={18} /> Archetype detecte
+          <BarChart3 size={18} /> Archétype détecté
         </h4>
         <div className="mt-2 grid grid-cols-3 gap-4 text-sm">
           <div>
@@ -398,10 +396,10 @@ function AnalysisResultView({ result, siteId, dateFrom, dateTo }) {
                     onClick={() => navigate('/patrimoine')}
                     className="flex items-center gap-1.5 px-3 py-1.5 border border-amber-300 text-amber-700 rounded text-xs font-medium hover:bg-amber-50 transition"
                   >
-                    <SlidersHorizontal size={12} /> Completer les donnees site
+                    <SlidersHorizontal size={12} /> Compléter les données site
                   </button>
                   <button
-                    onClick={() => { toast('Relancez l\'analyse apres avoir corrige les donnees', 'info'); }}
+                    onClick={() => { toast('Relancez l\'analyse après avoir corrigé les données', 'info'); }}
                     className="flex items-center gap-1.5 px-3 py-1.5 border border-amber-300 text-amber-700 rounded text-xs font-medium hover:bg-amber-50 transition"
                   >
                     <RotateCcw size={12} /> Relancer l'analyse
@@ -483,7 +481,7 @@ function AnalysisResultView({ result, siteId, dateFrom, dateTo }) {
       {/* Anomalies */}
       <div>
         <h4 className="font-semibold text-red-700 flex items-center gap-2 mb-3">
-          <AlertTriangle size={18} /> Anomalies detectees ({result.anomalies?.length || 0})
+          <AlertTriangle size={18} /> Anomalies détectées ({result.anomalies?.length || 0})
         </h4>
         {result.anomalies?.length > 0 ? (
           <div className="space-y-2">
@@ -511,12 +509,12 @@ function AnalysisResultView({ result, siteId, dateFrom, dateTo }) {
           /* E) Zero empty screen — next actions when no anomalies */
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">
             <div className="flex items-center gap-2 text-green-700 font-medium text-sm mb-3">
-              <CheckCircle size={16} /> Aucune anomalie detectee — votre site est dans les normes KB
+              <CheckCircle size={16} /> Aucune anomalie détectée — votre site est dans les normes KB
             </div>
             <p className="text-xs text-green-600 mb-3">Prochaines actions pour affiner le diagnostic :</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {[
-                { icon: Link2, label: 'Connecter un compteur temps reel', desc: 'Donnees plus fines pour detection continue', to: '/connectors' },
+                { icon: Link2, label: 'Connecter un compteur temps reel', desc: 'Données plus fines pour détection continue', to: '/connectors' },
                 { icon: SlidersHorizontal, label: 'Affiner les seuils KB', desc: 'Ajuster les regles a votre contexte', to: '/consommations/kb' },
                 { icon: GitCompareArrows, label: 'Comparer avec d\'autres sites', desc: 'Benchmark inter-sites en mode overlay', to: '/consommations/explorer' },
               ].map((action, i) => (
@@ -737,7 +735,7 @@ export function KBAdminPanel() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
             {[
               { icon: Upload, title: '1. Seeder la KB', desc: 'Chargez les archetypes, regles et recommandations de reference' },
-              { icon: BarChart3, title: '2. Importer vos donnees', desc: 'Import CSV/XLSX ou generation de donnees demo par site' },
+              { icon: BarChart3, title: '2. Importer vos données', desc: 'Import CSV/XLSX ou génération de données démo par site' },
               { icon: Lightbulb, title: '3. Lancer l\'analyse', desc: 'Detection automatique d\'anomalies et recommandations KB-driven' },
             ].map((s, i) => (
               <div key={i} className="flex items-start gap-2.5 p-3 bg-gray-50 rounded-lg border border-gray-100">

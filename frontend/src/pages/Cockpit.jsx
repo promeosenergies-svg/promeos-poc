@@ -1,22 +1,47 @@
 /**
- * PROMEOS — Vue Executive (/cockpit) Phase 6
- * Hero band "Plan d'action", accent MetricCards, mode 1 site insights.
+ * PROMEOS — Vue exécutive (/cockpit) Cockpit V2
+ * Résumé exécutif + KPIs décideur + Briefing + Risques + Opportunités.
+ * EssentialsRow + données relégués en bas.
  */
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   FileText, ArrowRight, Search, ShieldCheck, TrendingDown, AlertTriangle,
-  Building2, Clock, Zap,
+  Building2, Zap, Loader2,
 } from 'lucide-react';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
-import { Badge, Button, Card, CardBody, PageShell, Progress, Modal, Pagination, MetricCard, StatusDot, Tabs, EmptyState, ScopeSummary } from '../ui';
+import { Button, Card, CardBody, PageShell, Progress, Modal, Pagination, StatusDot, Tabs, EmptyState, ScopeSummary } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
-import { HERO_ACCENTS } from '../ui/colorTokens';
+import { KPI_ACCENTS } from '../ui/colorTokens';
+// Cockpit V2 — model + sub-components
+import {
+  buildWatchlist, buildTopSites, buildOpportunities, checkConsistency, buildBriefing,
+  buildTodayActions, buildExecutiveSummary, buildExecutiveKpis,
+} from '../models/dashboardEssentials';
+import EssentialsRow from './cockpit/EssentialsRow';
+import WatchlistCard from './cockpit/WatchlistCard';
+import OpportunitiesCard from './cockpit/OpportunitiesCard';
+import TopSitesCard from './cockpit/TopSitesCard';
+import ModuleLaunchers from './cockpit/ModuleLaunchers';
+import BriefingHeroCard from './cockpit/BriefingHeroCard';
+import ExecutiveSummaryCard from './cockpit/ExecutiveSummaryCard';
+import ExecutiveKpiRow from './cockpit/ExecutiveKpiRow';
+
+// ── Consistency banner (inline — too small for its own file) ─────────────────
+function ConsistencyBanner({ issues }) {
+  if (!issues?.length) return null;
+  return (
+    <div className="flex items-start gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+      <AlertTriangle size={13} className="shrink-0 mt-0.5" />
+      <span>{issues[0].label} — synchronisation recommandée.</span>
+    </div>
+  );
+}
 
 const Cockpit = () => {
   const navigate = useNavigate();
-  const { org, portefeuille, portefeuilles, scopedSites, sitesCount } = useScope();
+  const { org, portefeuille, portefeuilles, scopedSites, sitesCount, sitesLoading } = useScope();
   const { isExpert } = useExpertMode();
   const [showMaturiteModal, setShowMaturiteModal] = useState(false);
   const [siteSort, setSiteSort] = useState({ col: '', dir: '' });
@@ -51,6 +76,16 @@ const Cockpit = () => {
 
   const isSingleSite = scopedSites.length === 1;
   const singleSite = isSingleSite ? scopedSites[0] : null;
+
+  // Cockpit V2 — derived model data (no extra API calls)
+  const watchlist         = useMemo(() => buildWatchlist(kpis, scopedSites),                          [kpis, scopedSites]);         // eslint-disable-line react-hooks/exhaustive-deps
+  const briefing          = useMemo(() => buildBriefing(kpis, watchlist),                             [kpis, watchlist]);           // eslint-disable-line react-hooks/exhaustive-deps
+  const consistency       = useMemo(() => checkConsistency(kpis),                                     [kpis]);                     // eslint-disable-line react-hooks/exhaustive-deps
+  const opportunities     = useMemo(() => buildOpportunities(kpis, scopedSites, { isExpert }),        [kpis, scopedSites, isExpert]); // eslint-disable-line react-hooks/exhaustive-deps
+  const topSites          = useMemo(() => buildTopSites(scopedSites),                                 [scopedSites]);              // eslint-disable-line react-hooks/exhaustive-deps
+  const executiveSummary  = useMemo(() => buildExecutiveSummary(kpis, topSites),                      [kpis, topSites]);           // eslint-disable-line react-hooks/exhaustive-deps
+  const executiveKpis     = useMemo(() => buildExecutiveKpis(kpis, scopedSites),                      [kpis, scopedSites]);        // eslint-disable-line react-hooks/exhaustive-deps
+  const todayActions      = useMemo(() => buildTodayActions(kpis, watchlist, opportunities),          [kpis, watchlist, opportunities]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const scopeLabel = portefeuille
     ? `${org.nom} / ${portefeuille.nom}`
@@ -122,101 +157,83 @@ const Cockpit = () => {
   const getStatusInfo = (statut) => {
     const map = {
       conforme: { dot: 'ok', label: 'Conforme' },
-      derogation: { dot: 'info', label: 'Derogation' },
-      a_risque: { dot: 'warn', label: 'A risque' },
+      derogation: { dot: 'info', label: 'Dérogation' },
+      a_risque: { dot: 'warn', label: 'À risque' },
       non_conforme: { dot: 'crit', label: 'Non conforme' },
-      a_evaluer: { dot: 'neutral', label: 'A evaluer' },
+      a_evaluer: { dot: 'neutral', label: 'À évaluer' },
     };
-    return map[statut] || { dot: 'neutral', label: statut || 'Non defini' };
+    return map[statut] || { dot: 'neutral', label: statut || 'Non défini' };
   };
+
+  // V18-B: guard — don't show empty state while sites are loading
+  if (sitesLoading) {
+    return (
+      <PageShell icon={FileText} title="Vue exécutive" subtitle={<ScopeSummary />}>
+        <div className="p-8 flex items-center justify-center text-gray-400 text-sm gap-2">
+          <Loader2 size={16} className="animate-spin" />
+          Synchronisation du périmètre…
+        </div>
+      </PageShell>
+    );
+  }
 
   return (
     <PageShell
       icon={FileText}
-      title="Vue executive"
+      title="Vue exécutive"
       subtitle={<ScopeSummary />}
     >
-      {/* ── KPIs with accents ── */}
-      <div className={`grid gap-4 ${isSingleSite ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-2 lg:grid-cols-4'}`}>
-        {!isSingleSite && (
-          <MetricCard
-            accent="sites"
-            icon={Building2}
-            label="Sites actifs"
-            value={kpis.total}
-            sub="dans le perimetre"
-          />
-        )}
-        <MetricCard
-          accent="conformite"
-          icon={ShieldCheck}
-          label="Conformite"
-          value={`${kpis.total > 0 ? Math.round(kpis.conformes / kpis.total * 100) : 0}%`}
-          sub={`${kpis.conformes} conformes / ${kpis.total}`}
-          status={kpis.compStatus}
-          onClick={() => navigate('/conformite')}
-        />
-        <MetricCard
-          accent="risque"
-          icon={TrendingDown}
-          label="Risque financier"
-          value={kpis.risqueTotal > 0 ? `${(kpis.risqueTotal / 1000).toFixed(0)}k EUR` : '0 EUR'}
-          sub={`${kpis.nonConformes + kpis.aRisque} sites concernes`}
-          status={kpis.risqueStatus}
-          onClick={() => navigate('/actions')}
-        />
+      {/* ── Résumé exécutif (Cockpit V2) ── */}
+      <ExecutiveSummaryCard bullets={executiveSummary} onNavigate={navigate} />
 
-        {/* Maturite — accent card with progress ring */}
-        <Card
-          className="cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all overflow-hidden"
-          onClick={() => setShowMaturiteModal(true)}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowMaturiteModal(true); } }}
-          aria-label="Detail maturite de pilotage"
-        >
-          <div className="flex">
-            <div className="w-[3px] shrink-0 bg-blue-400 rounded-l-lg" />
-            <CardBody className="flex-1">
-              <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">Maturite</p>
-              <div className="flex items-center gap-3">
-                <div className="relative w-14 h-14">
-                  <svg viewBox="0 0 36 36" className="w-14 h-14 -rotate-90">
-                    <circle cx="18" cy="18" r="15.5" fill="none" stroke="#e5e7eb" strokeWidth="3" />
-                    <circle
-                      cx="18" cy="18" r="15.5" fill="none" stroke="#3b82f6" strokeWidth="3"
-                      strokeDasharray={`${kpis.readinessScore * 0.975} 100`}
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-gray-900">
-                    {kpis.readinessScore}%
-                  </span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-500">Donnees + conformite + actions</p>
-                </div>
-              </div>
-            </CardBody>
-          </div>
-        </Card>
-      </div>
+      {/* ── KPIs décideur 4 tuiles (Cockpit V2) ── */}
+      <ExecutiveKpiRow kpis={executiveKpis} onNavigate={navigate} />
 
-      {/* ── Hero Band: Plan d'action priorise ── */}
+      {/* ── Briefing du jour ── */}
+      <BriefingHeroCard briefing={briefing} onNavigate={navigate} />
+
+      {/* ── Avertissement cohérence données ── */}
+      {!consistency.ok && <ConsistencyBanner issues={consistency.issues} />}
+
+      <WatchlistCard
+        watchlist={watchlist}
+        consistency={consistency}
+        onNavigate={navigate}
+      />
+
+      {isExpert && opportunities.length > 0 && (
+        <OpportunitiesCard opportunities={opportunities} onNavigate={navigate} />
+      )}
+
+      {!isSingleSite && (
+        <TopSitesCard topSites={topSites} onNavigate={navigate} />
+      )}
+
+      <ModuleLaunchers kpis={kpis} isExpert={isExpert} onNavigate={navigate} />
+
+      {/* ── Données & connexions (relégué) ── */}
+      <EssentialsRow
+        kpis={kpis}
+        sites={scopedSites}
+        onOpenMaturite={() => setShowMaturiteModal(true)}
+        onNavigate={navigate}
+      />
+
+      {/* ── Risque résiduel : plan d'action ── */}
       {(kpis.nonConformes + kpis.aRisque) > 0 && (
-        <div className={`rounded-lg border p-5 ${HERO_ACCENTS.executive.bg} ${HERO_ACCENTS.executive.border} ${HERO_ACCENTS.executive.ring}`}>
+        <div className="rounded-lg border p-5 bg-amber-50 border-amber-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-indigo-100 flex items-center justify-center">
-                <AlertTriangle size={18} className="text-indigo-600" />
+              <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${KPI_ACCENTS.alertes.iconBg}`}>
+                <AlertTriangle size={18} className={KPI_ACCENTS.alertes.iconText} />
               </div>
               <div>
                 <p className="text-sm font-semibold text-gray-900">
-                  {kpis.nonConformes + kpis.aRisque} site{(kpis.nonConformes + kpis.aRisque) > 1 ? 's' : ''} non conforme{(kpis.nonConformes + kpis.aRisque) > 1 ? 's' : ''} ou a risque
+                  {kpis.nonConformes + kpis.aRisque} site{(kpis.nonConformes + kpis.aRisque) > 1 ? 's' : ''} non conforme{(kpis.nonConformes + kpis.aRisque) > 1 ? 's' : ''} ou à risque
                 </p>
                 {kpis.risqueTotal > 0 && (
                   <p className="text-xs text-gray-500 mt-0.5">
-                    Risque estime : {(kpis.risqueTotal / 1000).toFixed(0)}k EUR
+                    Risque estimé : {(kpis.risqueTotal / 1000).toFixed(0)}k€
                   </p>
                 )}
               </div>
@@ -266,7 +283,7 @@ const Cockpit = () => {
               <div>
                 <p className="text-[10px] text-gray-500 font-medium uppercase">Consommation</p>
                 <p className="text-sm font-medium text-gray-900 mt-0.5">
-                  {singleSite.conso_kwh_an > 0 ? `${singleSite.conso_kwh_an.toLocaleString('fr-FR')} kWh/an` : 'Non renseignee'}
+                  {singleSite.conso_kwh_an > 0 ? `${singleSite.conso_kwh_an.toLocaleString('fr-FR')} kWh/an` : 'Non renseignée'}
                 </p>
               </div>
             </CardBody>
@@ -292,7 +309,7 @@ const Cockpit = () => {
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder="Rechercher un site..."
+                placeholder="Rechercher un site…"
                 value={siteSearch}
                 onChange={(e) => { setSiteSearch(e.target.value); setSitePage(1); }}
                 className="w-full pl-9 pr-3 py-1.5 border border-gray-300 rounded-lg text-sm placeholder:text-gray-400
@@ -305,8 +322,8 @@ const Cockpit = () => {
             <div className="py-12">
               <EmptyState
                 icon={Search}
-                title="Aucun site trouve"
-                text={siteSearch ? 'Essayez un autre terme de recherche.' : 'Aucun site dans ce perimetre.'}
+                title="Aucun site trouvé"
+                text={siteSearch ? 'Essayez un autre terme de recherche.' : 'Aucun site dans ce périmètre.'}
                 ctaLabel={siteSearch ? 'Effacer' : undefined}
                 onCta={siteSearch ? () => setSiteSearch('') : undefined}
               />
@@ -319,7 +336,7 @@ const Cockpit = () => {
                     <Th sortable sorted={siteSort.col === 'nom' ? siteSort.dir : ''} onSort={() => handleSiteSort('nom')}>Site</Th>
                     <Th sortable sorted={siteSort.col === 'ville' ? siteSort.dir : ''} onSort={() => handleSiteSort('ville')}>Ville</Th>
                     <Th sortable sorted={siteSort.col === 'surface_m2' ? siteSort.dir : ''} onSort={() => handleSiteSort('surface_m2')}>Surface</Th>
-                    <Th sortable sorted={siteSort.col === 'statut_conformite' ? siteSort.dir : ''} onSort={() => handleSiteSort('statut_conformite')}>Conformite</Th>
+                    <Th sortable sorted={siteSort.col === 'statut_conformite' ? siteSort.dir : ''} onSort={() => handleSiteSort('statut_conformite')}>Conformité</Th>
                     <Th sortable sorted={siteSort.col === 'risque_eur' ? siteSort.dir : ''} onSort={() => handleSiteSort('risque_eur')} className="text-right">Risque</Th>
                     {isExpert && <Th sortable sorted={siteSort.col === 'conso_kwh_an' ? siteSort.dir : ''} onSort={() => handleSiteSort('conso_kwh_an')} className="text-right">Conso kWh/an</Th>}
                     <Th className="w-10" />
@@ -370,19 +387,19 @@ const Cockpit = () => {
         </Card>
       )}
 
-      {/* Maturite de pilotage — detail modal */}
-      <Modal open={showMaturiteModal} onClose={() => setShowMaturiteModal(false)} title="Maturite de pilotage">
+      {/* Maturité de pilotage — détail modal */}
+      <Modal open={showMaturiteModal} onClose={() => setShowMaturiteModal(false)} title="Maturité de pilotage">
         <div className="space-y-5">
           <p className="text-sm text-gray-600">
-            Pourcentage de sites avec donnees a jour, obligations suivies et plan d'action actif (pondere).
+            Pourcentage de sites avec données à jour, obligations suivies et plan d'action actif (pondéré).
           </p>
 
           <div className="text-center">
             <div className="relative w-24 h-24 mx-auto">
               <svg viewBox="0 0 36 36" className="w-24 h-24 -rotate-90">
-                <circle cx="18" cy="18" r="15.5" fill="none" stroke="#e5e7eb" strokeWidth="2.5" />
+                <circle cx="18" cy="18" r="15.5" fill="none" className="stroke-gray-200" strokeWidth="2.5" />
                 <circle
-                  cx="18" cy="18" r="15.5" fill="none" stroke="#3b82f6" strokeWidth="2.5"
+                  cx="18" cy="18" r="15.5" fill="none" className="stroke-blue-500" strokeWidth="2.5"
                   strokeDasharray={`${kpis.readinessScore * 0.975} 100`}
                   strokeLinecap="round"
                 />
@@ -391,22 +408,22 @@ const Cockpit = () => {
                 {kpis.readinessScore}%
               </span>
             </div>
-            <p className="text-xs text-gray-400 mt-2">Score global perimetre</p>
+            <p className="text-xs text-gray-400 mt-2">Score global périmètre</p>
           </div>
 
           <div className="space-y-4">
             <div>
               <div className="flex items-center justify-between text-sm text-gray-700 mb-1">
-                <span>Couverture donnees</span>
+                <span>Couverture données</span>
                 <span className="text-xs text-gray-400">poids : 30%</span>
               </div>
               <Progress value={kpis.couvertureDonnees} color="blue" size="sm" />
-              <p className="text-xs text-gray-400 mt-0.5">{kpis.couvertureDonnees}% des sites avec consommation renseignee</p>
+              <p className="text-xs text-gray-400 mt-0.5">{kpis.couvertureDonnees}% des sites avec consommation renseignée</p>
             </div>
 
             <div>
               <div className="flex items-center justify-between text-sm text-gray-700 mb-1">
-                <span>Suivi conformite</span>
+                <span>Suivi conformité</span>
                 <span className="text-xs text-gray-400">poids : 40%</span>
               </div>
               <Progress value={kpis.suiviConformite} color="blue" size="sm" />

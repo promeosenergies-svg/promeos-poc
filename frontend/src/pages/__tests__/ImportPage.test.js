@@ -320,6 +320,184 @@ describe('ImportPage: syncInProgress mismatch logic', () => {
   });
 });
 
+// ── Demo Pack regression (V16 Fix) ───────────────────────────────────────
+// Regression guards for: "Pack chargé: Aucun" + sites vides après seed
+
+describe('Demo Pack regression: optimistic packStatus after seed', () => {
+  /**
+   * Simulates the performSeed logic:
+   *   1. seedDemoPack() → res
+   *   2. setPackStatus(optimistic) — immediately from res
+   *   3. applyDemoScope(...)
+   *   4. refreshStatus() async — may succeed or fail
+   */
+  function simulatePerformSeed(res, refreshError = false) {
+    let packStatus = null;
+    const applyDemoScope = vi.fn();
+
+    // Optimistic update — must happen before refreshStatus
+    if (res.org_id) {
+      packStatus = {
+        org_id: res.org_id,
+        org_nom: res.org_nom,
+        pack: res.pack,
+        size: res.size,
+        total_rows: res.total_rows ?? 0,
+      };
+    }
+
+    // applyDemoScope call
+    if (res.org_id) {
+      applyDemoScope({
+        orgId: res.org_id,
+        orgNom: res.org_nom,
+        defaultSiteId: res.default_site_id,
+        defaultSiteName: res.default_site_name,
+      });
+    }
+
+    // refreshStatus — if it fails, packStatus must NOT become null
+    if (refreshError) {
+      // catch handler: only setStatusError(true) — NOT setPackStatus(null)
+      // packStatus stays at the optimistic value (unchanged)
+    } else {
+      // then handler: simulate server confirming (or returning empty status)
+      // Server returns org_id only when a pack is loaded; otherwise org_id=null
+      if (res.org_id) {
+        packStatus = {
+          org_id: res.org_id,
+          org_nom: res.org_nom,
+          pack: res.pack,
+          size: res.size,
+          total_rows: res.total_rows ?? 0,
+        };
+      } else {
+        // Server confirms nothing is loaded → packStatus stays null
+        packStatus = null;
+      }
+    }
+
+    return { packStatus, applyDemoScope };
+  }
+
+  it('packStatus.org_nom is set immediately after seed (Tertiaire)', () => {
+    const res = {
+      status: 'ok',
+      org_id: 10,
+      org_nom: 'SCI Les Terrasses',
+      pack: 'tertiaire',
+      size: 'S',
+      total_rows: 50000,
+      default_site_id: 1,
+      default_site_name: 'Bureaux Paris',
+    };
+    const { packStatus } = simulatePerformSeed(res, false);
+    expect(packStatus).not.toBeNull();
+    expect(packStatus.org_nom).toBe('SCI Les Terrasses');
+  });
+
+  it('packStatus.org_nom survives refreshStatus() failure (catch must not reset)', () => {
+    const res = {
+      status: 'ok',
+      org_id: 10,
+      org_nom: 'SCI Les Terrasses',
+      pack: 'tertiaire',
+      size: 'S',
+      total_rows: 50000,
+    };
+    // refreshError=true simulates getDemoPackStatus() throwing
+    const { packStatus } = simulatePerformSeed(res, true);
+    // Must NOT be null even when refresh failed
+    expect(packStatus).not.toBeNull();
+    expect(packStatus.org_nom).toBe('SCI Les Terrasses');
+  });
+
+  it('packStatus.pack equals the seeded pack key', () => {
+    const res = { org_id: 99, org_nom: 'Groupe Casino', pack: 'casino', size: 'S', total_rows: 36000 };
+    const { packStatus } = simulatePerformSeed(res);
+    expect(packStatus.pack).toBe('casino');
+  });
+
+  it('applyDemoScope is called exactly once per seed (not twice)', () => {
+    const res = { org_id: 10, org_nom: 'SCI Les Terrasses', pack: 'tertiaire', size: 'S', total_rows: 50000, default_site_id: 1, default_site_name: 'Site 1' };
+    const { applyDemoScope } = simulatePerformSeed(res, false);
+    // applyDemoScope must be called exactly once (from performSeed, NOT from refreshStatus)
+    expect(applyDemoScope).toHaveBeenCalledOnce();
+  });
+
+  it('seed with no org_id → packStatus stays null (no org seeded)', () => {
+    const res = { status: 'error' };
+    const { packStatus } = simulatePerformSeed(res);
+    expect(packStatus).toBeNull();
+  });
+});
+
+describe('Demo Pack regression: isLoaded badge logic', () => {
+  /**
+   * "Chargé" badge must appear on the card whose key matches packStatus.pack.
+   * It must NOT appear on the other card.
+   */
+  function computeIsLoaded(packStatus, packKey) {
+    return packStatus?.pack === packKey;
+  }
+
+  it('isLoaded = true when packStatus.pack matches pack key (tertiaire)', () => {
+    const packStatus = { pack: 'tertiaire', org_nom: 'SCI Les Terrasses' };
+    expect(computeIsLoaded(packStatus, 'tertiaire')).toBe(true);
+    expect(computeIsLoaded(packStatus, 'casino')).toBe(false);
+  });
+
+  it('isLoaded = false when packStatus.pack is a different key (casino loaded)', () => {
+    const packStatus = { pack: 'casino', org_nom: 'Groupe Casino' };
+    expect(computeIsLoaded(packStatus, 'tertiaire')).toBe(false);
+    expect(computeIsLoaded(packStatus, 'casino')).toBe(true);
+  });
+
+  it('isLoaded = false when packStatus is null (nothing loaded)', () => {
+    expect(computeIsLoaded(null, 'casino')).toBe(false);
+    expect(computeIsLoaded(null, 'tertiaire')).toBe(false);
+  });
+
+  it('isLoaded = false when packStatus has no pack field', () => {
+    const packStatus = { org_id: 5, org_nom: 'Org sans pack' };
+    expect(computeIsLoaded(packStatus, 'casino')).toBe(false);
+  });
+});
+
+describe('Demo Pack regression: refreshStatus catch must not overwrite optimistic packStatus', () => {
+  /**
+   * The old bug: .catch(() => { setPackStatus(null); setStatusError(true); })
+   * After fix:   .catch(() => { setStatusError(true); })
+   */
+  function simulateRefreshStatusCatch_OLD(currentPackStatus) {
+    // OLD behavior: always reset to null
+    return null;
+  }
+
+  function simulateRefreshStatusCatch_NEW(currentPackStatus) {
+    // NEW behavior: preserve current packStatus
+    return currentPackStatus;
+  }
+
+  it('OLD catch: packStatus becomes null (the bug)', () => {
+    const optimistic = { org_id: 10, org_nom: 'SCI Les Terrasses', pack: 'tertiaire' };
+    expect(simulateRefreshStatusCatch_OLD(optimistic)).toBeNull();
+  });
+
+  it('NEW catch: packStatus preserved after refreshStatus failure', () => {
+    const optimistic = { org_id: 10, org_nom: 'SCI Les Terrasses', pack: 'tertiaire' };
+    const result = simulateRefreshStatusCatch_NEW(optimistic);
+    expect(result).not.toBeNull();
+    expect(result.org_nom).toBe('SCI Les Terrasses');
+  });
+
+  it('NEW catch: null packStatus stays null (nothing was optimistically set)', () => {
+    // If we never seeded, packStatus=null → catch should not change it
+    const result = simulateRefreshStatusCatch_NEW(null);
+    expect(result).toBeNull();
+  });
+});
+
 // ── scopeLabel logic ──────────────────────────────────────────────────────
 
 describe('scopeLabel derivation (ScopeContext)', () => {

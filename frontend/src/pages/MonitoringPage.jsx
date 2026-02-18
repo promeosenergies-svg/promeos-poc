@@ -10,7 +10,7 @@ import {
   Activity, AlertTriangle, Zap, BarChart3, CheckCircle, Clock,
   Shield, TrendingUp, ChevronDown, ChevronUp, Eye, PlayCircle,
   Database, RefreshCw, Thermometer, Sun, Info, UserCheck,
-  CheckCircle2, XCircle, ExternalLink, Leaf,
+  CheckCircle2, XCircle, ExternalLink, Leaf, Loader2,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
@@ -107,8 +107,8 @@ const PROFILE_OPTIONS = [
   { value: 'hotel', label: 'Hotel' },
   { value: 'retail', label: 'Commerce' },
   { value: 'warehouse', label: 'Logistique' },
-  { value: 'school', label: 'Ecole' },
-  { value: 'hospital', label: 'Hopital' },
+  { value: 'school', label: 'École' },
+  { value: 'hospital', label: 'Hôpital' },
 ];
 
 // --- Exported helpers (testable) ---
@@ -1038,7 +1038,7 @@ function InsightDrawer({ alert, open, onClose, onAck, onResolve, onCreateAction,
                 </div>
               </div>
             ) : (
-              <p className="text-sm text-gray-400 text-center py-6">Aucune action recommandee.</p>
+              <p className="text-sm text-gray-400 text-center py-6">Aucune action recommandée.</p>
             )}
           </div>
         )}
@@ -1074,7 +1074,7 @@ function InsightDrawer({ alert, open, onClose, onAck, onResolve, onCreateAction,
                 onClick={() => onResolve(alert.id)}
                 className="flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-lg border border-green-200 text-sm font-medium text-green-700 hover:bg-green-50 transition"
               >
-                <CheckCircle2 size={14} /> Resolu
+                <CheckCircle2 size={14} /> Résolu
               </button>
             )}
           </div>
@@ -1092,7 +1092,7 @@ function InsightDrawer({ alert, open, onClose, onAck, onResolve, onCreateAction,
 // --- Main component ---
 
 export default function MonitoringPage() {
-  const { scope, scopedSites, setSite } = useScope();
+  const { scope, scopedSites, setSite, sitesLoading } = useScope();
   const { isExpert } = useExpertMode();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -1232,13 +1232,13 @@ export default function MonitoringPage() {
 
   const handleResolve = async (id) => {
     try {
-      await resolveMonitoringAlert(id, 'Resolu depuis UI');
+      await resolveMonitoringAlert(id, 'Résolu depuis UI');
       track('monitoring_resolve', { alert_id: id });
       setAlerts((prev) => prev.map((a) =>
         a.id === id ? { ...a, status: 'resolved' } : a
       ));
       if (drawerAlert?.id === id) setDrawerAlert((d) => ({ ...d, status: 'resolved' }));
-    } catch { toast('Erreur lors de la resolution', 'error'); }
+    } catch { toast('Erreur lors de la résolution', 'error'); }
   };
 
   const openInsightDrawer = (alert) => {
@@ -1359,7 +1359,7 @@ export default function MonitoringPage() {
 
   const openCount = alerts.filter((a) => a.status === 'open').length;
 
-  const allOrgSites = useMemo(() => mockSites, []);
+  const allOrgSites = mockSites;
 
   // Confidence
   const climateConf = useMemo(() => computeConfidence({
@@ -1374,7 +1374,7 @@ export default function MonitoringPage() {
 
   // Load factor: archetype-aware thresholds
   const archetype = demoProfile || 'default';
-  const archetypeLabel = PROFILE_OPTIONS.find((p) => p.value === archetype)?.label || 'Tertiaire (defaut)';
+  const archetypeLabel = PROFILE_OPTIONS.find((p) => p.value === archetype)?.label || 'Tertiaire (défaut)';
   const isDefaultArchetype = !demoProfile || !LF_THRESHOLDS_BY_ARCHETYPE[demoProfile];
   const lfThresholds = useMemo(() => {
     return LF_THRESHOLDS_BY_ARCHETYPE[archetype] || LF_THRESHOLDS_BY_ARCHETYPE.default;
@@ -1390,6 +1390,18 @@ export default function MonitoringPage() {
   const climateStatus = kpiStatusWithConfidence(
     climate?.slope_kw_per_c, KPI_THRESHOLDS.climate, true, climateConf
   );
+
+  // V18-B: guard — don't show empty state while sites are loading
+  if (sitesLoading) {
+    return (
+      <PageShell icon={Activity} title="Performance Électrique" subtitle="Synchronisation du périmètre…">
+        <div className="p-8 flex items-center justify-center text-gray-400 text-sm gap-2">
+          <Loader2 size={16} className="animate-spin" />
+          Synchronisation du périmètre…
+        </div>
+      </PageShell>
+    );
+  }
 
   // --- No site selected ---
 
@@ -1461,7 +1473,7 @@ export default function MonitoringPage() {
             ))}
           </select>
           <Link
-            to="/consumption-explorer"
+            to="/consommations/explorer"
             className="flex items-center gap-1 px-3 py-2 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition"
           >
             <ExternalLink size={14} />
@@ -1793,7 +1805,7 @@ export default function MonitoringPage() {
                     { key: 'all', label: 'Tous' },
                     { key: 'open', label: 'Ouverts' },
                     { key: 'ack', label: 'En cours' },
-                    { key: 'resolved', label: 'Resolus' },
+                    { key: 'resolved', label: 'Résolus' },
                   ].map((tab) => (
                     <button
                       key={tab.key}
@@ -1835,7 +1847,7 @@ export default function MonitoringPage() {
                   <AlertTriangle size={28} className="mx-auto text-gray-200 mb-2" />
                   <p className="text-sm text-gray-400">
                     {alerts.length === 0
-                      ? 'Aucune alerte. Lancez une analyse pour detecter les anomalies.'
+                      ? 'Aucune alerte. Lancez une analyse pour détecter les anomalies.'
                       : 'Aucune alerte pour ce filtre.'}
                   </p>
                   {alerts.length === 0 && (
@@ -1851,7 +1863,7 @@ export default function MonitoringPage() {
                       <tr className="border-b text-left text-gray-500">
                         <th className="pb-2 pr-4">Statut</th>
                         <th className="pb-2 pr-4">Type</th>
-                        <th className="pb-2 pr-4">Severite</th>
+                        <th className="pb-2 pr-4">Sévérité</th>
                         <th className="pb-2 pr-4">Explication</th>
                         <th className="pb-2 pr-4 text-right">Impact (EUR)</th>
                         <th className="pb-2">Actions</th>
@@ -1908,7 +1920,7 @@ export default function MonitoringPage() {
                                   <Button size="sm" variant="secondary" onClick={() => handleAck(a.id)}>Acquitter</Button>
                                 )}
                                 {(a.status === 'open' || a.status === 'ack') && (
-                                  <Button size="sm" variant="primary" onClick={() => handleResolve(a.id)}>Resoudre</Button>
+                                  <Button size="sm" variant="primary" onClick={() => handleResolve(a.id)}>Résoudre</Button>
                                 )}
                               </div>
                             </td>

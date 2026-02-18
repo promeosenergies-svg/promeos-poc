@@ -27,6 +27,7 @@ from services.consumption_diagnostic import (
     run_diagnostic_org,
     get_insights_summary,
 )
+from services.scope_utils import get_scope_org_id
 from services.tunnel_service import compute_tunnel, compute_tunnel_v2
 from services.targets_service import (
     get_targets, create_target, update_target, delete_target, get_progression, get_progression_v2,
@@ -63,13 +64,10 @@ def consumption_insights(
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Aggregate consumption insights for an organisation.
-    Scope priority: auth token > org_id query param > X-Org-Id header > DemoState > last org.
+    Scope priority: auth token > X-Org-Id header > org_id query param > DemoState > last org.
     """
-    if auth:
-        org_id = auth.org_id
-    # Fallback chain: query param → X-Org-Id header → DemoState → most-recent org
-    if org_id is None:
-        org_id = _get_header_org_id(request)
+    # V18-E: canonical priority via scope_utils (auth > X-Org-Id header), then query param
+    org_id = get_scope_org_id(request, auth) or org_id
     if org_id is None:
         from services.demo_state import DemoState
         org_id = DemoState.get_demo_org_id()

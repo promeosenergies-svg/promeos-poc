@@ -13,9 +13,18 @@
 import { useScope } from '../contexts/ScopeContext';
 
 export default function ScopeSummary({ showCount = true, className = '' }) {
-  const { org, scopeLabel, sitesCount, selectedSiteId } = useScope();
+  const { org, scopeLabel, sitesCount, selectedSiteId, sitesLoading } = useScope();
 
   if (!org) return null;
+
+  // V18-C: show loading indicator while sites are being fetched
+  if (sitesLoading) {
+    return (
+      <span className={`font-medium text-gray-400 italic ${className}`}>
+        {org.nom} — Chargement\u2026
+      </span>
+    );
+  }
 
   const label = selectedSiteId
     ? `${org.nom} — ${scopeLabel}`

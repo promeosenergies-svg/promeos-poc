@@ -24,7 +24,7 @@ import {
 
 const API = 'http://127.0.0.1:8000';
 
-// Badge conformite (shared style)
+// Badge conformité (shared style)
 const STATUT_CONFIG = {
   conforme: { label: 'Conforme', bg: 'bg-green-100', text: 'text-green-800', icon: ShieldCheck },
   derogation: { label: 'Derogation', bg: 'bg-blue-100', text: 'text-blue-800', icon: ShieldOff },
@@ -88,7 +88,7 @@ const SiteDetail = () => {
     setError(null);
     Promise.all([
       fetch(`${API}/api/sites/${id}/compliance`).then(r => {
-        if (!r.ok) throw new Error(`Site ${id} non trouve`);
+        if (!r.ok) throw new Error(`Site ${id} non trouvé`);
         return r.json();
       }),
       fetch(`${API}/api/sites/${id}/guardrails`).then(r => r.json()).catch(() => null),
@@ -134,8 +134,8 @@ const SiteDetail = () => {
     })[0] || 'a_risque';
 
   const tabs = [
-    { key: 'conformite', label: 'Conformite', icon: ShieldCheck },
-    { key: 'donnees', label: 'Donnees', icon: FileText },
+    { key: 'conformite', label: 'Conformité', icon: ShieldCheck },
+    { key: 'donnees', label: 'Données', icon: FileText },
     { key: 'alertes', label: 'Alertes', icon: AlertTriangle },
   ];
 
@@ -212,13 +212,13 @@ const SiteDetail = () => {
           </div>
           <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Conformite globale */}
+              {/* Conformité globale */}
               <div className="flex flex-col">
-                <span className="text-sm text-gray-500 mb-2">Conformite globale</span>
+                <span className="text-sm text-gray-500 mb-2">Conformité globale</span>
                 <div className="flex items-center gap-3">
                   <Badge statut={worstStatut} />
                   <div className="flex gap-2">
-                    <span className="text-xs text-gray-500">Decret:</span>
+                    <span className="text-xs text-gray-500">Décret:</span>
                     <Badge statut={site.statut_decret_tertiaire} />
                   </div>
                 </div>
@@ -308,11 +308,11 @@ const SiteDetail = () => {
             </nav>
           </div>
 
-          {/* Tab: Conformite */}
+          {/* Tab: Conformité */}
           {activeTab === 'conformite' && (
             <div className="p-6">
               {/* Explanations */}
-              <h3 className="text-base font-semibold text-gray-800 mb-4">Diagnostic conformite</h3>
+              <h3 className="text-base font-semibold text-gray-800 mb-4">Diagnostic conformité</h3>
               <div className="space-y-3 mb-8">
                 {explanations.map((exp, i) => (
                   <div key={i} className="flex items-start gap-3 bg-gray-50 rounded-lg p-4">
@@ -331,7 +331,7 @@ const SiteDetail = () => {
               </div>
 
               {/* Obligations table */}
-              <h3 className="text-base font-semibold text-gray-800 mb-4">Obligations reglementaires</h3>
+              <h3 className="text-base font-semibold text-gray-800 mb-4">Obligations réglementaires</h3>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
@@ -403,11 +403,11 @@ const SiteDetail = () => {
             </div>
           )}
 
-          {/* Tab: Donnees (Evidences) */}
+          {/* Tab: Données (Evidences) */}
           {activeTab === 'donnees' && (
             <div className="p-6">
               <h3 className="text-base font-semibold text-gray-800 mb-4">
-                Preuves de conformite ({evidences.length})
+                Preuves de conformité ({evidences.length})
               </h3>
               {evidences.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -452,8 +452,8 @@ const SiteDetail = () => {
                 <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-lg px-4 py-3 mb-4">
                   <AlertTriangle size={18} className="text-red-500" />
                   <div>
-                    <span className="text-sm font-medium text-red-800">Anomalie de facturation detectee</span>
-                    <p className="text-xs text-red-600 mt-0.5">Une incoherence a ete identifiee sur les factures de ce site.</p>
+                    <span className="text-sm font-medium text-red-800">Anomalie de facturation détectée</span>
+                    <p className="text-xs text-red-600 mt-0.5">Une incohérence a été identifiée sur les factures de ce site.</p>
                   </div>
                 </div>
               )}

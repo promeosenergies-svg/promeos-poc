@@ -65,3 +65,28 @@ export default function KpiCard({
     </Card>
   );
 }
+
+/**
+ * KpiCardCompact — denser variant with active ring and click-to-filter.
+ * Promoted from Patrimoine.jsx inline to shared design system.
+ */
+export function KpiCardCompact({ icon: Icon, color, label, value, detail, active, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`text-left p-3 rounded-xl border bg-white transition-all
+        ${active ? 'ring-2 ring-blue-500 border-blue-200 shadow-sm' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}`}
+    >
+      <div className="flex items-center gap-2.5">
+        <div className={`w-8 h-8 rounded-lg ${color} flex items-center justify-center shrink-0`}>
+          <Icon size={16} className="text-white" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider leading-none">{label}</p>
+          <p className="text-lg font-bold text-gray-900 leading-tight mt-0.5">{value}</p>
+        </div>
+      </div>
+      {detail && <p className="text-[11px] text-gray-400 mt-1 pl-[42px] leading-tight">{detail}</p>}
+    </button>
+  );
+}

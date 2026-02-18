@@ -295,7 +295,7 @@ export default function PurchaseAssistantPage() {
           </button>
         ) : (
           <div className="text-sm text-green-600 font-medium flex items-center gap-1">
-            <CheckCircle2 size={16} /> Analyse terminee
+            <CheckCircle2 size={16} /> Analyse terminée
           </div>
         )}
       </div>
@@ -472,7 +472,7 @@ function StepConsumption({ wizard, setWizard, sitesData, isDemo }) {
       {sitesData.anomalies?.length > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
           <div className="flex items-center gap-2 text-sm font-medium text-amber-700 mb-2">
-            <AlertTriangle size={16} /> {sitesData.anomalies.length} anomalie(s) de facturation detectee(s)
+            <AlertTriangle size={16} /> {sitesData.anomalies.length} anomalie(s) de facturation détectée(s)
           </div>
           <ul className="space-y-1">
             {sitesData.anomalies.slice(0, 3).map((a, i) => (
@@ -828,7 +828,7 @@ function StepResults({ engineOutput, scoredOffers, recommendation, computing, on
   }
 
   if (!engineOutput || scoredOffers.length === 0) {
-    return <EmptyState icon={BarChart3} title="Aucun resultat" description="Revenez a l'etape Offres et avancez pour lancer le calcul." />;
+    return <EmptyState icon={BarChart3} title="Aucun résultat" description="Revenez à l'étape Offres et avancez pour lancer le calcul." />;
   }
 
   const bestId = recommendation?.bestOfferId;
@@ -836,7 +836,7 @@ function StepResults({ engineOutput, scoredOffers, recommendation, computing, on
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-800">Resultats — Corridor de prix & TCO</h3>
+        <h3 className="text-lg font-semibold text-gray-800">Résultats — Corridor de prix & TCO</h3>
         <button onClick={onRecompute}
           className="text-xs text-blue-600 hover:underline">
           Recalculer

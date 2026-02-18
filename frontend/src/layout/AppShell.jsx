@@ -8,6 +8,7 @@ import { Search, LogOut, ChevronDown, Building2, Command } from 'lucide-react';
 import Sidebar from './Sidebar';
 import Breadcrumb from './Breadcrumb';
 import ScopeSwitcher from './ScopeSwitcher';
+import DevPanel from './DevPanel';
 import CommandPalette from '../ui/CommandPalette';
 import { ToastProvider } from '../ui/ToastProvider';
 import { Toggle } from '../ui';
@@ -191,6 +192,9 @@ export default function AppShell() {
 
       {/* Command Palette overlay */}
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+
+      {/* Dev Panel — dev-only, visible when ?debug */}
+      <DevPanel />
     </div>
   );
 }

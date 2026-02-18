@@ -199,10 +199,13 @@ def get_dashboard_2min(
         import json as _json
         top_insight = (
             db.query(ConsumptionInsight)
-            .filter(ConsumptionInsight.estimated_loss_eur > 0)
+            .filter(
+                ConsumptionInsight.site_id.in_(site_ids),
+                ConsumptionInsight.estimated_loss_eur > 0,
+            )
             .order_by(ConsumptionInsight.estimated_loss_eur.desc())
             .first()
-        )
+        ) if site_ids else None
         if top_insight and top_insight.recommended_actions_json:
             rec = _json.loads(top_insight.recommended_actions_json)
             if rec:
@@ -234,8 +237,8 @@ def get_dashboard_2min(
             "total_compteurs": total_compteurs,
             "total_obligations": len(obligations),
         },
-        "billing": _billing_summary(db),
-        "achat": _purchase_summary(db),
+        "billing": _billing_summary(db, site_ids),
+        "achat": _purchase_summary(db, site_ids),
         "action_hub": _action_hub_summary(db, org.id),
         "alerts": _notifications_summary(db, org.id),
     }
@@ -306,20 +309,27 @@ def _empty_completude() -> dict:
     }
 
 
-def _purchase_summary(db: Session) -> dict:
-    """Achat energie summary for dashboard 2min. V1.1: +gain_potentiel_eur, +prochain_renouvellement."""
+def _purchase_summary(db: Session, site_ids: list) -> dict:
+    """Achat energie summary for dashboard 2min. Scoped to site_ids."""
     from datetime import date as _date
-    from models import EnergyContract
+    from models import EnergyContract, PurchaseAssumptionSet
 
-    total_results = db.query(PurchaseScenarioResult).count()
+    if not site_ids:
+        return None
+
+    q_base = (
+        db.query(PurchaseScenarioResult)
+        .join(PurchaseAssumptionSet, PurchaseAssumptionSet.id == PurchaseScenarioResult.assumption_set_id)
+        .filter(PurchaseAssumptionSet.site_id.in_(site_ids))
+    )
+
+    total_results = q_base.count()
     if total_results == 0:
         return None
 
-    recommended = (
-        db.query(PurchaseScenarioResult)
-        .filter(PurchaseScenarioResult.is_recommended == True)
-        .first()
-    )
+    recommended = q_base.filter(
+        PurchaseScenarioResult.is_recommended == True
+    ).first()
 
     base = {
         "total_scenarios": total_results,
@@ -336,10 +346,12 @@ def _purchase_summary(db: Session) -> dict:
             "reco_status": recommended.reco_status.value if recommended.reco_status else None,
         }
 
-    # V1.1: gain_potentiel_eur
+    # V1.1: gain_potentiel_eur — scoped
     draft_recos = (
         db.query(PurchaseScenarioResult)
+        .join(PurchaseAssumptionSet, PurchaseAssumptionSet.id == PurchaseScenarioResult.assumption_set_id)
         .filter(
+            PurchaseAssumptionSet.site_id.in_(site_ids),
             PurchaseScenarioResult.is_recommended == True,
             PurchaseScenarioResult.reco_status == PurchaseRecoStatus.DRAFT,
         )
@@ -352,11 +364,15 @@ def _purchase_summary(db: Session) -> dict:
     )
     base["gain_potentiel_eur"] = round(gain, 2)
 
-    # V1.1: prochain_renouvellement
+    # V1.1: prochain_renouvellement — scoped
     today = _date.today()
     next_contract = (
         db.query(EnergyContract)
-        .filter(EnergyContract.end_date.isnot(None), EnergyContract.end_date >= today)
+        .filter(
+            EnergyContract.site_id.in_(site_ids),
+            EnergyContract.end_date.isnot(None),
+            EnergyContract.end_date >= today,
+        )
         .order_by(EnergyContract.end_date.asc())
         .first()
     )
@@ -375,14 +391,32 @@ def _purchase_summary(db: Session) -> dict:
     return base
 
 
-def _billing_summary(db: Session) -> dict:
-    """Billing intelligence summary for dashboard 2min."""
-    total_invoices = db.query(EnergyInvoice).count()
+def _billing_summary(db: Session, site_ids: list) -> dict:
+    """Billing intelligence summary for dashboard 2min. Scoped to site_ids."""
+    if not site_ids:
+        return None
+    total_invoices = (
+        db.query(EnergyInvoice)
+        .filter(EnergyInvoice.site_id.in_(site_ids))
+        .count()
+    )
     if total_invoices == 0:
         return None
-    total_eur = db.query(func.sum(EnergyInvoice.total_eur)).scalar() or 0
-    anomalies_count = db.query(BillingInsight).count()
-    total_loss = db.query(func.sum(BillingInsight.estimated_loss_eur)).scalar() or 0
+    total_eur = (
+        db.query(func.sum(EnergyInvoice.total_eur))
+        .filter(EnergyInvoice.site_id.in_(site_ids))
+        .scalar() or 0
+    )
+    anomalies_count = (
+        db.query(BillingInsight)
+        .filter(BillingInsight.site_id.in_(site_ids))
+        .count()
+    )
+    total_loss = (
+        db.query(func.sum(BillingInsight.estimated_loss_eur))
+        .filter(BillingInsight.site_id.in_(site_ids))
+        .scalar() or 0
+    )
     return {
         "total_invoices": total_invoices,
         "total_eur": round(total_eur, 2),

@@ -27,7 +27,7 @@ const TABS = [
   { id: 'resume', label: 'Resume' },
   { id: 'conso', label: 'Consommation' },
   { id: 'factures', label: 'Factures' },
-  { id: 'conformite', label: 'Conformite' },
+  { id: 'conformite', label: 'Conformité' },
   { id: 'actions', label: 'Actions' },
 ];
 
@@ -88,7 +88,7 @@ function TabResume({ site }) {
               {site.statut_conformite === 'non_conforme'
                 ? 'Declarer vos consommations sur OPERAT avant le 30/09/2026'
                 : site.statut_conformite === 'a_risque'
-                  ? 'Planifier la mise en conformite BACS pour ce site'
+                  ? 'Planifier la mise en conformité BACS pour ce site'
                   : 'Maintenir la surveillance et optimiser la consommation'
               }
             </p>
@@ -100,10 +100,10 @@ function TabResume({ site }) {
       {/* Right: anomalies list */}
       <Card>
         <div className="px-5 py-3 border-b border-gray-100">
-          <h3 className="font-semibold text-gray-800">Anomalies detectees</h3>
+          <h3 className="font-semibold text-gray-800">Anomalies détectées</h3>
         </div>
         {site.anomalies_count === 0 ? (
-          <EmptyState title="Aucune anomalie" text="Ce site ne presente aucune anomalie detectee." />
+          <EmptyState title="Aucune anomalie" text="Ce site ne presente aucune anomalie détectée." />
         ) : (
           <Table>
             <Thead>
@@ -172,7 +172,7 @@ function TabConformite({ site }) {
         <Card>
           <CardBody className="text-center py-8">
             <BookOpen size={28} className="text-blue-300 mx-auto mb-2 animate-pulse" />
-            <p className="text-sm text-gray-400">Evaluation reglementaire en cours pour {site.nom}...</p>
+            <p className="text-sm text-gray-400">Évaluation réglementaire en cours pour {site.nom}...</p>
           </CardBody>
         </Card>
       </div>
@@ -327,7 +327,7 @@ function TabConformite({ site }) {
           <CardBody className="py-3">
             <div className="flex items-center gap-2 mb-2">
               <AlertTriangle size={14} className="text-amber-500" />
-              <p className="text-xs font-semibold text-amber-700">Donnees manquantes</p>
+              <p className="text-xs font-semibold text-amber-700">Données manquantes</p>
             </div>
             <div className="flex flex-wrap gap-2">
               {missing.map((f) => (
@@ -399,7 +399,7 @@ export default function Site360() {
           </Button>
           <Button variant="outline" onClick={() => setShowIntake(true)}>
             <ClipboardCheck size={14} className="mr-1" />
-            Completer les donnees
+            Compléter les données
           </Button>
           <Button variant="secondary" onClick={() => navigate(`/regops/${site.id}`)}>
             Evaluation RegOps

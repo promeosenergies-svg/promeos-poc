@@ -73,7 +73,7 @@ class RSSWatcher(Watcher):
                     try:
                         # Simple ISO format attempt
                         published_at = datetime.fromisoformat(pub_date_str.replace("Z", ""))
-                    except:
+                    except (ValueError, TypeError):
                         pass
 
                 # Compute normalized dedup key

@@ -7,7 +7,7 @@
  * When not authenticated (demo mode): falls back to mock data.
  * After seed-pack: applyDemoScope() auto-switches to the seeded org/site.
  */
-import { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { mockSites } from '../mocks/sites';
 import { useAuth } from './AuthContext';
 import { getSites, setApiScope } from '../services/api';
@@ -71,6 +71,8 @@ export function ScopeProvider({ children }) {
 
   // ── Real sites from API (replaces mockSites when available) ───────────
   const [apiSites, setApiSites] = useState([]);
+  const [sitesLoading, setSitesLoading] = useState(false); // V18: loading indicator
+  const _fetchId = useRef(0); // V18: requestId guard — ignore stale responses
 
   // ── IMPORTANT: setApiScope MUST run BEFORE getSites so X-Org-Id header ──
   // ── is correct when the sites request is made (React runs effects in order) ─
@@ -79,15 +81,26 @@ export function ScopeProvider({ children }) {
   }, [effectiveOrgId, scope.siteId]);
 
   useEffect(() => {
-    // Clear stale sites immediately — prevents showing previous org's data
+    // V18-A (RC1+RC3): sitesLoading indicator + requestId guard to reject stale responses
     setApiSites([]);
-    if (!effectiveOrgId) return;
+    if (!effectiveOrgId) {
+      setSitesLoading(false);
+      return;
+    }
+    setSitesLoading(true);
+    const myId = ++_fetchId.current;
     getSites({ org_id: effectiveOrgId, limit: 200 })
       .then(data => {
+        if (myId !== _fetchId.current) return; // stale response — ignore
         const list = Array.isArray(data) ? data : (data.sites || data.items || []);
         setApiSites(list);
+        setSitesLoading(false);
       })
-      .catch(() => setApiSites([]));
+      .catch(() => {
+        if (myId !== _fetchId.current) return;
+        setApiSites([]);
+        setSitesLoading(false);
+      });
   }, [effectiveOrgId]);
 
   const setOrg = useCallback((orgId) => {
@@ -135,8 +148,8 @@ export function ScopeProvider({ children }) {
    */
   const applyDemoScope = useCallback(({ orgId, orgNom, defaultSiteId = null, defaultSiteName = null } = {}) => {
     if (!orgId) return;
-    // Clear stale sites immediately so no previous org's count is displayed
-    setApiSites([]);
+    // V18-A (RC2): removed redundant setApiSites([]) — the useEffect on effectiveOrgId
+    // already clears + re-fetches sites atomically after setScope() triggers.
     // Register the org dynamically
     setDemoOrgs((prev) => {
       const exists = prev.some((o) => o.id === orgId);
@@ -192,7 +205,8 @@ export function ScopeProvider({ children }) {
       sites = [];
     }
     if (scope.siteId) {
-      sites = sites.filter((s) => s.id === scope.siteId);
+      // Use String() coercion to handle number/string mismatch (e.g. localStorage → string)
+      sites = sites.filter((s) => String(s.id) === String(scope.siteId));
     }
     return sites;
   }, [apiSites, effectiveOrgId, scope.portefeuilleId, scope.siteId]);
@@ -231,6 +245,7 @@ export function ScopeProvider({ children }) {
     org, portefeuille, portefeuilles, scopedSites, orgSites,
     orgs: orgsData,
     sitesCount,
+    sitesLoading, // V18: exposed for pages to show skeleton during fetch
     selectedSiteId,
     scopeLabel,
     setOrg, setPortefeuille, setSite, resetScope, clearScope, applyDemoScope,

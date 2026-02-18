@@ -113,7 +113,7 @@ export default function AdminAuditLogPage() {
     <PageShell
       icon={ClipboardList}
       title="Audit Log"
-      subtitle={`${total} evenement${total !== 1 ? 's' : ''} traces`}
+      subtitle={`${total} événement${total !== 1 ? 's' : ''} tracés`}
     >
 
       {/* Filters */}
@@ -164,7 +164,7 @@ export default function AdminAuditLogPage() {
           <div className="p-6 text-center text-gray-400">Chargement...</div>
         ) : filtered.length === 0 ? (
           <div className="p-6 text-center text-gray-400">
-            {searchText || actionFilter || resourceFilter ? 'Aucun resultat pour ces filtres' : 'Aucun evenement'}
+            {searchText || actionFilter || resourceFilter ? 'Aucun résultat pour ces filtres' : 'Aucun événement'}
           </div>
         ) : (
           filtered.map((e) => (

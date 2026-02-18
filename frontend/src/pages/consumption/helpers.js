@@ -2,7 +2,20 @@
  * PROMEOS — Consumption Explorer helpers (pure, testable)
  * V11: computeGranularity, computeAutoRange, classifyEmptyReason
  * WoW: aggregateSeries, convertUnit, colorForSite
+ * V17: normalizeId
  */
+
+/**
+ * Normalize a site/org ID to string for type-safe comparisons.
+ * Prevents number/string mismatch (e.g. scope.siteId=5 vs "5" from localStorage).
+ * Returns null for null/undefined.
+ * @param {any} x
+ * @returns {string|null}
+ */
+export function normalizeId(x) {
+  if (x == null) return null;
+  return String(x);
+}
 
 /**
  * Auto-granularity from period length.
@@ -127,4 +140,45 @@ export function interpretClimateSensitivity(slope, r2) {
   if (r2 < 0.3) return { level: 'low', label: 'Correlation faible' };
   if (slope < 5) return { level: 'medium', label: 'Sensibilite moderee' };
   return { level: 'high', label: 'Forte sensibilite climatique' };
+}
+
+// Sampling interval in minutes for each granularity key (must match backend)
+const GRANULARITY_MINUTES = {
+  '30min': 30,
+  'hourly': 60,
+  'daily': 1440,
+  'monthly': 43200,
+};
+
+/**
+ * Available granularity options — intersection of:
+ *   (a) period-based constraints (too fine for long periods)
+ *   (b) data-frequency constraints (can't be finer than actual readings)
+ *
+ * @param {number}       days             — selected period length
+ * @param {number|null}  samplingMinutes  — actual meter reading interval from backend meta
+ *                                          (null = unknown → period-only filtering)
+ * @returns {Array<{ key: string, label: string }>}
+ */
+export function getAvailableGranularities(days, samplingMinutes = null) {
+  const all = [
+    { key: 'auto',    label: 'Auto' },
+    { key: '30min',   label: '30 min', maxDays: 14 },
+    { key: 'hourly',  label: '1 h',    maxDays: 60 },
+    { key: 'daily',   label: '1 j',    minDays: 7 },
+    { key: 'monthly', label: 'Mois',   minDays: 30 },
+  ];
+  return all.filter((g) => {
+    if (g.key === 'auto') return true;
+    // Period-based constraint
+    const periodOk =
+      (!g.minDays || days >= g.minDays) && (!g.maxDays || days <= g.maxDays);
+    if (!periodOk) return false;
+    // Data-frequency constraint: granularity must not be finer than actual readings
+    if (samplingMinutes != null) {
+      const gMinutes = GRANULARITY_MINUTES[g.key];
+      if (gMinutes != null && gMinutes < samplingMinutes) return false;
+    }
+    return true;
+  });
 }

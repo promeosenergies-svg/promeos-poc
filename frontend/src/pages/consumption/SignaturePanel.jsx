@@ -1,0 +1,138 @@
+/**
+ * PROMEOS — SignaturePanel (Sprint V21)
+ * Heatmap weekday × hour showing average kWh consumption pattern.
+ * Uses its own useEmsTimeseries call (hourly, 90 days) — independent of main granularity.
+ * Reuses HeatmapChart from consumption/HeatmapChart.jsx.
+ *
+ * Props:
+ *   siteIds     — selected site IDs
+ *   energyType  — 'electricity' | 'gas'
+ */
+import { useMemo } from 'react';
+import useEmsTimeseries from './useEmsTimeseries';
+import HeatmapChart from './HeatmapChart';
+import { BarChart3 } from 'lucide-react';
+
+// French weekday index: 0=Mon, 1=Tue, ..., 5=Sat, 6=Sun
+// JS getDay(): 0=Sun, 1=Mon, ..., 6=Sat → convert: frDay = (jsDay + 6) % 7
+function toFrDay(jsDay) {
+  return (jsDay + 6) % 7;
+}
+
+// HP = Heures Pleines (peak), HC = Heures Creuses (off-peak)
+// Simplified French standard: HP on weekdays 6h-22h, HC otherwise
+function getHpHc(frDay, hour) {
+  const isWeekend = frDay >= 5; // Sam=5, Dim=6
+  if (isWeekend) return 'HC';
+  return hour >= 6 && hour < 22 ? 'HP' : 'HC';
+}
+
+/**
+ * Aggregate raw series data into HeatmapChart format.
+ * @param {Array} seriesData — raw series from useEmsTimeseries
+ * @returns {Array<{day, hour, avg_kwh, period}>} — 7×24 cells (only non-zero)
+ */
+export function aggregateToHeatmap(seriesData) {
+  if (!seriesData?.length || !seriesData[0]?.data?.length) return [];
+
+  const matrix = {}; // `${frDay}-${hour}` → { sum, count }
+
+  for (const point of seriesData[0].data) {
+    if (point.v == null || isNaN(point.v)) continue;
+
+    // Normalize ISO string (some backends return "YYYY-MM-DD HH:MM:SS")
+    const normalized = typeof point.t === 'string' ? point.t.replace(' ', 'T') : point.t;
+    const d = new Date(normalized);
+    if (isNaN(d.getTime())) continue;
+
+    const frDay = toFrDay(d.getDay());
+    const hour = d.getHours();
+    const key = `${frDay}-${hour}`;
+
+    if (!matrix[key]) matrix[key] = { sum: 0, count: 0 };
+    matrix[key].sum += point.v;
+    matrix[key].count += 1;
+  }
+
+  const cells = [];
+  for (const [key, { sum, count }] of Object.entries(matrix)) {
+    const [frDay, hour] = key.split('-').map(Number);
+    const avg_kwh = count > 0 ? Math.round((sum / count) * 100) / 100 : 0;
+    cells.push({
+      day: frDay,
+      hour,
+      avg_kwh,
+      period: getHpHc(frDay, hour),
+    });
+  }
+
+  return cells;
+}
+
+export default function SignaturePanel({ siteIds = [], energyType = 'electricity' }) {
+  const { status, seriesData, meta } = useEmsTimeseries({
+    siteIds,
+    energyType,
+    days: 90,
+    granularityOverride: 'hourly',
+  });
+
+  const heatmapData = useMemo(() => aggregateToHeatmap(seriesData), [seriesData]);
+
+  // Loading state
+  if (status === 'loading') {
+    return (
+      <div className="space-y-2 animate-pulse">
+        {[...Array(7)].map((_, i) => (
+          <div key={i} className="flex gap-1">
+            <div className="w-10 h-6 bg-gray-100 rounded" />
+            {[...Array(24)].map((_, j) => (
+              <div key={j} className="w-7 h-6 bg-gray-100 rounded" />
+            ))}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // Empty or insufficient data
+  if (status === 'empty' || heatmapData.length < 48) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center mb-4">
+          <BarChart3 size={28} className="text-blue-400" />
+        </div>
+        <h3 className="text-base font-semibold text-gray-700 mb-1">
+          Données insuffisantes pour la signature
+        </h3>
+        <p className="text-sm text-gray-500 max-w-xs">
+          La signature horaire nécessite au moins 48 heures de données. Importez ou générez des données pour ce site.
+        </p>
+      </div>
+    );
+  }
+
+  const totalPoints = meta?.n_points || heatmapData.length;
+
+  return (
+    <div className="space-y-3">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-gray-800">Signature de consommation</h3>
+          <p className="text-xs text-gray-500">Moyenne kWh par créneau horaire (90 derniers jours)</p>
+        </div>
+        <span className="text-xs text-gray-400">{totalPoints.toLocaleString('fr-FR')} points</span>
+      </div>
+
+      {/* Heatmap */}
+      <HeatmapChart data={heatmapData} unit="kWh" />
+
+      {/* Legend note */}
+      <p className="text-[11px] text-gray-400">
+        HP = Heures Pleines (lun–ven 6h–22h) · HC = Heures Creuses (nuits + week-end)
+        · Intensité = conso moyenne par créneau
+      </p>
+    </div>
+  );
+}

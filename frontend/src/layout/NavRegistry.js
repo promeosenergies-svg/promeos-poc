@@ -165,7 +165,7 @@ export const NAV_SECTIONS = [
     order: 1,
     items: [
       { to: '/',              icon: LayoutDashboard, label: 'Tableau de bord', keywords: ['dashboard', 'accueil', 'home', 'tableau'] },
-      { to: '/cockpit',       icon: FileText,        label: 'Vue executive', keywords: ['synthese', 'executive', 'brief'] },
+      { to: '/cockpit',       icon: FileText,        label: 'Vue exécutive', keywords: ['synthese', 'executive', 'brief'] },
       { to: '/notifications', icon: Bell,            label: 'Alertes', badgeKey: 'alerts', keywords: ['alertes', 'notifications'] },
     ],
   },
@@ -195,12 +195,12 @@ export const NAV_SECTIONS = [
   {
     key: 'marche',
     module: 'marche',
-    label: 'Marche & Factures',
+    label: 'Marché & Factures',
     expertOnly: true,
     order: 4,
     items: [
       { to: '/bill-intel',      icon: Receipt,      label: 'Facturation', keywords: ['factures', 'billing', 'invoices'] },
-      { to: '/achat-energie',   icon: ShoppingCart,  label: 'Achats energie', keywords: ['achat', 'purchase', 'scenarios', 'strategie'] },
+      { to: '/achat-energie',   icon: ShoppingCart,  label: 'Achats énergie', keywords: ['achat', 'purchase', 'scenarios', 'strategie'] },
       { to: '/achat-assistant', icon: Target,        label: 'Assistant Achat', keywords: ['assistant', 'wizard', 'rfp', 'arenh', 'corridor'] },
     ],
   },
@@ -227,9 +227,9 @@ export const NAV_SECTIONS = [
     order: 6,
     items: [
       { to: '/admin/users',       icon: Lock,        label: 'Utilisateurs', requireAdmin: true, expertOnly: true, keywords: ['users', 'comptes'] },
-      { to: '/admin/roles',       icon: ShieldCheck, label: 'Roles', requireAdmin: true, expertOnly: true, keywords: ['roles', 'permissions'] },
-      { to: '/admin/assignments', icon: Users,       label: 'Assignments', requireAdmin: true, expertOnly: true, keywords: ['assignments', 'scopes'] },
-      { to: '/admin/audit',       icon: FileText,    label: 'Audit Log', requireAdmin: true, expertOnly: true, keywords: ['audit', 'log', 'historique'] },
+      { to: '/admin/roles',       icon: ShieldCheck, label: 'Rôles', requireAdmin: true, expertOnly: true, keywords: ['roles', 'permissions'] },
+      { to: '/admin/assignments', icon: Users,       label: 'Affectations', requireAdmin: true, expertOnly: true, keywords: ['assignments', 'affectations', 'scopes'] },
+      { to: '/admin/audit',       icon: FileText,    label: 'Journal d\'audit', requireAdmin: true, expertOnly: true, keywords: ['audit', 'log', 'historique'] },
     ],
   },
 ];

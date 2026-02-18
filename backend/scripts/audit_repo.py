@@ -20,7 +20,7 @@ def count_py(directory):
                 try:
                     with open(os.path.join(root, f), encoding='utf-8', errors='ignore') as fh:
                         loc += sum(1 for line in fh if line.strip())
-                except:
+                except Exception:
                     pass
     return count, loc
 
@@ -116,7 +116,7 @@ if main_db.exists():
         try:
             count = conn.execute(f"SELECT COUNT(*) FROM [{t[0]}]").fetchone()[0]
             print(f"    {t[0]:30s} -> {count:5d} rows")
-        except:
+        except Exception:
             print(f"    {t[0]:30s} -> (error reading)")
     conn.close()
 
@@ -155,7 +155,7 @@ for root, dirs, files in os.walk(ROOT):
                     rel = os.path.relpath(fpath, ROOT)
                     if endpoints > 0:
                         routers_found.append((rel, endpoints))
-            except:
+            except Exception:
                 pass
 
 for r, e in sorted(routers_found):

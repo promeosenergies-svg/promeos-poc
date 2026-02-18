@@ -15,7 +15,7 @@ const ROLE_LABELS = {
   dsi_admin: 'DSI / Admin',
   daf: 'DAF',
   acheteur: 'Acheteur',
-  resp_conformite: 'Resp. Conformite',
+  resp_conformite: 'Resp. Conformité',
   energy_manager: 'Energy Manager',
   resp_immobilier: 'Resp. Immobilier',
   resp_site: 'Resp. Site',
@@ -87,15 +87,15 @@ export default function AdminRolesPage() {
 
   if (!hasPermission('admin')) {
     return (
-      <PageShell icon={Shield} title="Roles & Permissions">
-        <EmptyState icon={Shield} title="Acces refuse" text="Vous n'avez pas les droits d'administration." />
+      <PageShell icon={Shield} title="Rôles & Permissions">
+        <EmptyState icon={Shield} title="Accès refusé" text="Vous n'avez pas les droits d'administration." />
       </PageShell>
     );
   }
 
   if (loading) {
     return (
-      <PageShell icon={Shield} title="Roles & Permissions" subtitle="Chargement...">
+      <PageShell icon={Shield} title="Rôles & Permissions" subtitle="Chargement...">
         <SkeletonCard />
       </PageShell>
     );
@@ -106,8 +106,8 @@ export default function AdminRolesPage() {
   return (
     <PageShell
       icon={Shield}
-      title="Roles & Permissions"
-      subtitle="11 roles systeme — lecture seule (non-modifiables)"
+      title="Rôles & Permissions"
+      subtitle="11 rôles système — lecture seule (non-modifiables)"
     >
       <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
         <table className="w-full text-sm">
@@ -141,7 +141,7 @@ export default function AdminRolesPage() {
       </div>
 
       <p className="mt-4 text-xs text-gray-400">
-        Les roles systeme sont fixes et ne peuvent pas etre modifies. Le perimetre d'acces (scope) est configure par utilisateur via les Assignments.
+        Les rôles système sont fixes et ne peuvent pas être modifiés. Le périmètre d'accès (scope) est configuré par utilisateur via les Assignments.
       </p>
     </PageShell>
   );

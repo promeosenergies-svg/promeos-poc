@@ -1,61 +1,64 @@
 /**
- * PROMEOS - Dashboard Legacy
- * Vue d'ensemble des 120 sites — refactored with Design System V1.
+ * PROMEOS - Tableau de bord
+ * Vue d'ensemble multi-sites — Design System V5.
  */
-import { useEffect, useState } from 'react';
-import { getSites, getAlertes, getOnboardingStatus } from '../services/api';
-import { Flame, Building2, AlertTriangle, TrendingUp, Upload } from 'lucide-react';
-import { PageShell, KpiCard, Badge, Card, CardBody, Button, EmptyState } from '../ui';
+import { useEffect, useState, useCallback } from 'react';
+import { getAlertes } from '../services/api';
+import { Flame, Building2, AlertTriangle, TrendingUp } from 'lucide-react';
+import { PageShell, KpiCard, Badge, Card, CardBody, EmptyState } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
+import ErrorState from '../ui/ErrorState';
 import { SkeletonCard } from '../ui/Skeleton';
 import { useToast } from '../ui/ToastProvider';
+import { useScope } from '../contexts/ScopeContext';
 
 function Dashboard({ onUpgradeClick }) {
   const { toast } = useToast();
-  const [sites, setSites] = useState([]);
+  const { orgSites, sitesCount, org, sitesLoading } = useScope();
   const [alertes, setAlertes] = useState([]);
-  const [stats, setStats] = useState({
-    totalSites: 0,
-    sitesActifs: 0,
-    alertesActives: 0,
-  });
-  const [orgName, setOrgName] = useState(null);
+  const [alertesCount, setAlertesCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  const fetchAlertes = useCallback(() => {
+    setLoading(true);
+    setError(false);
+    getAlertes({ resolue: false, limit: 50 })
+      .then((data) => {
+        setAlertes(data.alertes);
+        setAlertesCount(data.total);
+        setLoading(false);
+      })
+      .catch(() => {
+        toast('Erreur lors du chargement du tableau de bord', 'error');
+        setError(true);
+        setLoading(false);
+      });
+  }, [toast]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [sitesData, alertesData, onboardingData] = await Promise.all([
-          getSites({ limit: 120 }),
-          getAlertes({ resolue: false, limit: 50 }),
-          getOnboardingStatus().catch(() => null),
-        ]);
-        setSites(sitesData.sites);
-        setAlertes(alertesData.alertes);
+    fetchAlertes();
+  }, [fetchAlertes]);
 
-        setStats({
-          totalSites: sitesData.total,
-          sitesActifs: sitesData.sites.filter(s => s.actif).length,
-          alertesActives: alertesData.total,
-        });
+  const orgName = org?.nom;
+  const sitesActifs = orgSites.filter(s => s.actif).length;
 
-        if (onboardingData?.organisation_nom) {
-          setOrgName(onboardingData.organisation_nom);
-        }
-
-        setLoading(false);
-      } catch {
-        toast('Erreur lors du chargement du dashboard', 'error');
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  if (loading) {
+  // Etat erreur
+  if (error && !loading) {
     return (
-      <PageShell icon={Flame} title="Dashboard" subtitle="Chargement...">
+      <PageShell icon={Flame} title="Tableau de bord" subtitle="Erreur de chargement">
+        <ErrorState
+          message="Impossible de charger les données du tableau de bord."
+          onRetry={fetchAlertes}
+        />
+      </PageShell>
+    );
+  }
+
+  // Etat chargement
+  if (loading || sitesLoading) {
+    return (
+      <PageShell icon={Flame} title="Tableau de bord" subtitle="Chargement...">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <SkeletonCard />
           <SkeletonCard />
@@ -68,47 +71,47 @@ function Dashboard({ onUpgradeClick }) {
   return (
     <PageShell
       icon={Flame}
-      title={orgName ? `${orgName} — Dashboard` : 'PROMEOS Dashboard'}
-      subtitle="Gestion energetique multi-sites"
+      title={orgName ? `${orgName} — Tableau de bord` : 'PROMEOS — Tableau de bord'}
+      subtitle="Gestion énergétique multi-sites"
       actions={
-        <Badge status="warning">Legacy — utiliser Centre de Commande</Badge>
+        <Badge status="warning">Historique — utiliser Centre de Commande</Badge>
       }
     >
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <KpiCard
           icon={Building2}
-          title="Total Sites"
-          value={stats.totalSites}
+          title="Sites total"
+          value={sitesCount}
           color="bg-blue-600"
         />
         <KpiCard
           icon={TrendingUp}
-          title="Sites Actifs"
-          value={stats.sitesActifs}
+          title="Sites actifs"
+          value={sitesActifs}
           color="bg-emerald-600"
         />
         <KpiCard
           icon={AlertTriangle}
-          title="Alertes Actives"
-          value={stats.alertesActives}
+          title="Alertes actives"
+          value={alertesCount}
           color="bg-red-600"
         />
       </div>
 
       {/* CTA si 0 sites */}
-      {stats.totalSites === 0 && (
+      {sitesCount === 0 && (
         <EmptyState
           icon={Building2}
-          title="Aucun site enregistre"
-          text="Importez vos sites pour commencer a suivre votre consommation energetique et votre conformite reglementaire."
+          title="Aucun site enregistré"
+          text="Importez vos sites pour commencer à suivre votre consommation énergétique et votre conformité réglementaire."
           ctaLabel="Importer mes sites"
           onCta={onUpgradeClick}
         />
       )}
 
       {/* Sites table */}
-      {stats.totalSites > 0 && (
+      {sitesCount > 0 && (
         <Card>
           <CardBody>
             <h2 className="text-lg font-bold text-gray-900 mb-4">Sites PROMEOS</h2>
@@ -119,11 +122,11 @@ function Dashboard({ onUpgradeClick }) {
                   <Th>Type</Th>
                   <Th>Ville</Th>
                   <Th>Region</Th>
-                  <Th>Status</Th>
+                  <Th>Statut</Th>
                 </Tr>
               </Thead>
               <Tbody>
-                {sites.slice(0, 10).map((site) => (
+                {orgSites.slice(0, 10).map((site) => (
                   <Tr key={site.id}>
                     <Td className="font-medium">{site.nom}</Td>
                     <Td><Badge status="info">{site.type}</Badge></Td>
@@ -149,7 +152,7 @@ function Dashboard({ onUpgradeClick }) {
           <CardBody>
             <h2 className="text-lg font-bold text-red-600 mb-4">
               <AlertTriangle size={18} className="inline mr-2" />
-              Alertes Actives
+              Alertes actives
             </h2>
             <div className="space-y-3">
               {alertes.slice(0, 5).map((alerte) => (

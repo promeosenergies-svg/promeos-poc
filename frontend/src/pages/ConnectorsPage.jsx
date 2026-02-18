@@ -101,8 +101,8 @@ export default function ConnectorsPage() {
       {connectors.length === 0 ? (
         <EmptyState
           icon={Link2}
-          title="Aucun connecteur configure"
-          text="Les connecteurs permettent de synchroniser automatiquement les donnees depuis Enedis, RTE, PVGIS et Meteo-France."
+          title="Aucun connecteur configuré"
+          text="Les connecteurs permettent de synchroniser automatiquement les données depuis Enedis, RTE, PVGIS et Météo-France."
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
