@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
-import { Badge, Button, Card, CardBody, PageShell, Progress, Modal, Pagination, MetricCard, StatusDot, Tabs, EmptyState } from '../ui';
+import { Badge, Button, Card, CardBody, PageShell, Progress, Modal, Pagination, MetricCard, StatusDot, Tabs, EmptyState, ScopeSummary } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { HERO_ACCENTS } from '../ui/colorTokens';
 
@@ -134,7 +134,7 @@ const Cockpit = () => {
     <PageShell
       icon={FileText}
       title="Vue executive"
-      subtitle={`${scopeLabel} · ${sitesCount} site${sitesCount !== 1 ? 's' : ''}`}
+      subtitle={<ScopeSummary />}
     >
       {/* ── KPIs with accents ── */}
       <div className={`grid gap-4 ${isSingleSite ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-2 lg:grid-cols-4'}`}>

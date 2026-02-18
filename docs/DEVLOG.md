@@ -38,6 +38,50 @@
 
 ---
 
+## Sprint Fix-Ultime — Cohérence Scope Demo Pack (2026-02-18)
+
+**Objectif** : Corriger le bug "36 sites" — charger SCI Les Terrasses (Tertiaire S=10 sites) affichait "36 sites" partout (Dashboard, Vue Executive, Conformité). Source unique de vérité pour l'affichage "N sites".
+
+### Root Cause Chain
+
+1. `ScopeContext` : ordre d'effets React inversé — `getSites` s'exécutait **avant** `setApiScope`, backend recevait `X-Org-Id=1` (Casino) → 36 sites Casino retournés.
+2. Fallback `mockSites` dans `orgSites` : quand `effectiveOrgId=1` et `apiSites=[]`, renvoyait 36 sites Casino.
+3. `cockpit.py` : fallback `Organisation.first()` → Casino (id=1) quand pas de header.
+4. `consumption_diagnostic.py` : idem, pas de lecture du header `X-Org-Id`.
+
+### Fixes déployés
+
+#### Phase 1-FE — ScopeContext.jsx (critique)
+- **Inversion ordre effects** : `setApiScope` en 1er (header mis à jour avant l'appel API), `getSites` en 2ème.
+- `setApiSites([])` au début de l'effet `getSites` pour nettoyer les données périmées immédiatement.
+- **Guard mockSites** : `orgSites` retourne `[]` quand `effectiveOrgId` est défini (même si `apiSites` est vide = chargement en cours) → empêche l'affichage des 36 sites Casino en fallback.
+- Même guard dans `scopedSites`.
+- `applyDemoScope` vide `apiSites` immédiatement avant le changement de scope.
+
+#### Phase 2-BE — cockpit.py + consumption_diagnostic.py
+- `cockpit.py` : fallback DemoState → `Organisation.order_by(id.desc()).first()` (plus récent) à la place de `.first()`.
+- `consumption_diagnostic.py` : import `Request`, helper `_get_header_org_id`, chaîne de fallback `X-Org-Id` header → `DemoState` → org la plus récente.
+
+#### Phase 3-FE — ConsumptionDiagPage.jsx
+- Passe `org?.id ?? null` explicitement à `getConsumptionInsights()`.
+
+#### Phase 4-FE — ScopeSummary component + pages
+- `ScopeSummary.jsx` (NEW) : composant unifié "Nom Org · N sites / chargement… / Site : X". Source unique de vérité.
+- `ui/index.js` : export `ScopeSummary`.
+- `CommandCenter.jsx` : remplace subtitle manuel par `<ScopeSummary />`.
+- `Cockpit.jsx` : idem.
+
+#### Phase 5 — Tests
+- `__tests__/DemoScopeUltime.test.js` : 6 nouveaux tests (guard mockSites + ordre d'effets).
+
+### Résultats
+- Seed Tertiaire S=10 → "SCI Les Terrasses · 10 sites" affiché partout.
+- Seed Casino S=36 → "Groupe Casino · 36 sites" correct.
+- Changement de scope org → affichage se met à jour immédiatement sans données périmées.
+- **684 tests verts**, zéro régression.
+
+---
+
 ## Fix Ultime — Cohérence Demo Pack + Scope Global (2026-02-17)
 
 **Objectif** : Seed S(10) → exactement 10 sites visibles sur TOUTES les pages. Scope org+site appliqué globalement via X-Org-Id/X-Site-Id.

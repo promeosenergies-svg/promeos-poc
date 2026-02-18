@@ -46,11 +46,17 @@ def get_cockpit(request: Request, db: Session = Depends(get_db)):
     """
     org_id = _get_org_id(request)
 
-    # Resolve organisation — prefer X-Org-Id, fallback to first org
+    # Resolve organisation — prefer X-Org-Id header, then DemoState, then most-recent org
+    # Never use Organisation.first() which may return a stale/wrong org (e.g. Casino when Tertiaire is loaded)
     if org_id is not None:
         org = db.query(Organisation).filter(Organisation.id == org_id).first()
     else:
-        org = db.query(Organisation).first()
+        from services.demo_state import DemoState
+        demo_org_id = DemoState.get_demo_org_id()
+        if demo_org_id:
+            org = db.query(Organisation).filter(Organisation.id == demo_org_id).first()
+        else:
+            org = db.query(Organisation).order_by(Organisation.id.desc()).first()
 
     if not org:
         raise HTTPException(status_code=404, detail="Organisation non trouvée")

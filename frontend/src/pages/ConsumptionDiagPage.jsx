@@ -588,7 +588,7 @@ export default function ConsumptionDiagPage() {
   const navigate = useNavigate();
   const { isExpert } = useExpertMode();
   const { toast } = useToast();
-  const { selectedSiteId, scopeLabel, sitesCount } = useScope();
+  const { org, selectedSiteId, scopeLabel, sitesCount } = useScope();
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [diagnosing, setDiagnosing] = useState(false);
@@ -609,7 +609,7 @@ export default function ConsumptionDiagPage() {
   const load = async () => {
     setLoading(true);
     try {
-      const data = await getConsumptionInsights();
+      const data = await getConsumptionInsights(org?.id ?? null);
       setSummary(data);
     } catch {
       toast('Erreur lors du chargement du diagnostic', 'error');

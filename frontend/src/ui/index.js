@@ -28,3 +28,6 @@ export { default as MetricCard, StatusDot } from './MetricCard';
 
 // Design System V3 — Phase 6 Color Tokens
 export { KPI_ACCENTS, SEVERITY_TINT, ACCENT_BAR, HERO_ACCENTS } from './colorTokens';
+
+// Design System V4 — Scope coherence
+export { default as ScopeSummary } from './ScopeSummary';

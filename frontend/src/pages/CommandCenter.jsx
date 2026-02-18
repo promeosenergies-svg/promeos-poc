@@ -10,7 +10,7 @@ import {
   FileText, CheckCircle2, AlertTriangle, ShieldCheck, TrendingDown, Bell,
   Database,
 } from 'lucide-react';
-import { Card, CardBody, Badge, Button, SkeletonCard, PageShell, MetricCard, StatusDot, EmptyState, ErrorState } from '../ui';
+import { Card, CardBody, Badge, Button, SkeletonCard, PageShell, MetricCard, StatusDot, EmptyState, ErrorState, ScopeSummary } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { SEVERITY_TINT, HERO_ACCENTS } from '../ui/colorTokens';
 import {
@@ -186,7 +186,7 @@ export default function CommandCenter() {
 
   if (error) {
     return (
-      <PageShell icon={LayoutDashboard} title="Tableau de bord" subtitle={`${org.nom} · ${sitesCount} site${sitesCount !== 1 ? 's' : ''}`}>
+      <PageShell icon={LayoutDashboard} title="Tableau de bord" subtitle={<ScopeSummary />}>
         <ErrorState title="Erreur de chargement" message={error} onRetry={loadData} />
       </PageShell>
     );
@@ -196,7 +196,7 @@ export default function CommandCenter() {
     <PageShell
       icon={LayoutDashboard}
       title="Tableau de bord"
-      subtitle={`${org.nom} · ${sitesCount} site${sitesCount !== 1 ? 's' : ''}`}
+      subtitle={<ScopeSummary />}
       actions={
         <div className="flex items-center gap-2">
           {/* Trust signals — compact */}

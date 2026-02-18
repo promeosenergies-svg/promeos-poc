@@ -12,7 +12,7 @@ GET /api/consumption/gas/summary — resume gaz
 """
 from typing import Optional, List
 from datetime import date
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -44,17 +44,37 @@ class InsightPatch(BaseModel):
 router = APIRouter(prefix="/api/consumption", tags=["Consumption Diagnostic"])
 
 
+def _get_header_org_id(request: Request) -> Optional[int]:
+    """Extract X-Org-Id header as int, or None."""
+    raw = request.headers.get("X-Org-Id")
+    if raw:
+        try:
+            return int(raw)
+        except ValueError:
+            pass
+    return None
+
+
 @router.get("/insights")
 def consumption_insights(
+    request: Request,
     org_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """Aggregate consumption insights for an organisation."""
+    """Aggregate consumption insights for an organisation.
+    Scope priority: auth token > org_id query param > X-Org-Id header > DemoState > last org.
+    """
     if auth:
         org_id = auth.org_id
+    # Fallback chain: query param → X-Org-Id header → DemoState → most-recent org
     if org_id is None:
-        org = db.query(Organisation).first()
+        org_id = _get_header_org_id(request)
+    if org_id is None:
+        from services.demo_state import DemoState
+        org_id = DemoState.get_demo_org_id()
+    if org_id is None:
+        org = db.query(Organisation).order_by(Organisation.id.desc()).first()
         if not org:
             return {
                 "total_insights": 0, "by_type": {},

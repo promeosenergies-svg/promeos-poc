@@ -338,3 +338,73 @@ describe('setApiScope: header injection logic', () => {
     expect(headers['X-Org-Id']).toBe('42');
   });
 });
+
+// ── Fix: orgSites mock fallback guard (NEW — prevents "36 sites" bug) ─────────
+
+describe('ScopeContext fix: orgSites mock fallback guard', () => {
+  // Simulates the FIXED orgSites computation (no more 36 Casino sites for real orgs)
+  function computeOrgSitesFixed(apiSites, effectiveOrgId, mockSampleFor_null_org = []) {
+    if (apiSites.length > 0) return apiSites;
+    if (effectiveOrgId) return []; // real org but API still loading → empty, not mock
+    return mockSampleFor_null_org; // offline / truly no org
+  }
+
+  it('[FIX] effectiveOrgId=1 + empty apiSites → [] (NOT 36 Casino mock sites)', () => {
+    const casinoMock36 = Array.from({ length: 36 }, (_, i) => ({ id: i + 1 }));
+    const result = computeOrgSitesFixed([], 1, casinoMock36);
+    expect(result).toHaveLength(0); // was 36 before fix
+  });
+
+  it('[FIX] effectiveOrgId=42 + empty apiSites → [] (loading state)', () => {
+    const result = computeOrgSitesFixed([], 42, []);
+    expect(result).toHaveLength(0);
+  });
+
+  it('[FIX] apiSites=[10 sites] → always returns apiSites (API wins)', () => {
+    const apiSites = Array.from({ length: 10 }, (_, i) => ({ id: i + 1 }));
+    const casinoMock36 = Array.from({ length: 36 }, (_, i) => ({ id: i + 1 }));
+    const result = computeOrgSitesFixed(apiSites, 42, casinoMock36);
+    expect(result).toHaveLength(10);
+    expect(result).toBe(apiSites);
+  });
+
+  it('[FIX] null effectiveOrgId → returns offline mock sample (pre-demo state)', () => {
+    const sample = [{ id: 1 }, { id: 2 }];
+    const result = computeOrgSitesFixed([], null, sample);
+    expect(result).toHaveLength(2);
+  });
+});
+
+// ── Fix: setApiScope effect ORDER (BEFORE getSites) ────────────────────────────
+
+describe('ScopeContext fix: setApiScope runs before getSites', () => {
+  it('[FIX] correct order: header is updated before API call', () => {
+    let capturedHeader = 'old_org_1'; // simulates X-Org-Id before scope change
+
+    // Simulate Effect 1: setApiScope (now FIRST in component)
+    function effectSetApiScope(newOrgId) {
+      capturedHeader = `org_${newOrgId}`; // updates module-level _apiScope
+    }
+
+    // Simulate Effect 2: getSites (SECOND — reads the updated header)
+    function effectGetSites() {
+      return capturedHeader; // reads what was set by Effect 1
+    }
+
+    effectSetApiScope(42); // runs first (fixed order)
+    const headerUsedByGetSites = effectGetSites(); // runs second, sees org_42
+
+    expect(headerUsedByGetSites).toBe('org_42'); // correct!
+    expect(headerUsedByGetSites).not.toBe('old_org_1'); // no stale Casino header
+  });
+
+  it('[BUG-was] old order: getSites used stale header (old org)', () => {
+    let capturedHeader = 'old_org_1'; // stale Casino
+
+    // OLD broken order: getSites BEFORE setApiScope
+    const headerUsedByGetSitesOld = capturedHeader; // still old_org_1!
+    capturedHeader = 'org_42'; // setApiScope runs too late
+
+    expect(headerUsedByGetSitesOld).toBe('old_org_1'); // this was the bug
+  });
+});

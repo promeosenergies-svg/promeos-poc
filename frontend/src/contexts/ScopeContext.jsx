@@ -72,8 +72,16 @@ export function ScopeProvider({ children }) {
   // ── Real sites from API (replaces mockSites when available) ───────────
   const [apiSites, setApiSites] = useState([]);
 
+  // ── IMPORTANT: setApiScope MUST run BEFORE getSites so X-Org-Id header ──
+  // ── is correct when the sites request is made (React runs effects in order) ─
   useEffect(() => {
-    if (!effectiveOrgId) { setApiSites([]); return; }
+    setApiScope({ orgId: effectiveOrgId ?? null, siteId: scope.siteId ?? null });
+  }, [effectiveOrgId, scope.siteId]);
+
+  useEffect(() => {
+    // Clear stale sites immediately — prevents showing previous org's data
+    setApiSites([]);
+    if (!effectiveOrgId) return;
     getSites({ org_id: effectiveOrgId, limit: 200 })
       .then(data => {
         const list = Array.isArray(data) ? data : (data.sites || data.items || []);
@@ -81,11 +89,6 @@ export function ScopeProvider({ children }) {
       })
       .catch(() => setApiSites([]));
   }, [effectiveOrgId]);
-
-  // ── Sync scope → axios interceptor (called on every scope change) ──────
-  useEffect(() => {
-    setApiScope({ orgId: effectiveOrgId ?? null, siteId: scope.siteId ?? null });
-  }, [effectiveOrgId, scope.siteId]);
 
   const setOrg = useCallback((orgId) => {
     const next = { orgId, portefeuilleId: null, siteId: null };
@@ -132,6 +135,8 @@ export function ScopeProvider({ children }) {
    */
   const applyDemoScope = useCallback(({ orgId, orgNom, defaultSiteId = null, defaultSiteName = null } = {}) => {
     if (!orgId) return;
+    // Clear stale sites immediately so no previous org's count is displayed
+    setApiSites([]);
     // Register the org dynamically
     setDemoOrgs((prev) => {
       const exists = prev.some((o) => o.id === orgId);
@@ -172,16 +177,19 @@ export function ScopeProvider({ children }) {
     if (apiSites.length > 0) {
       // Real API sites are already org-scoped by the server
       sites = apiSites;
-    } else {
-      // Fallback: filter mock sites by org (used in offline / unauthenticated mode)
-      sites = mockSites.filter((s) => {
+    } else if (!effectiveOrgId) {
+      // Truly no org configured (offline/pre-demo): show a small mock sample
+      sites = mockSites.slice(0, 10).filter((s) => {
         const pfId = sitePortefeuille(s);
         const pf = MOCK_PORTEFEUILLES.find((p) => p.id === pfId);
-        return pf && pf.org_id === effectiveOrgId;
+        return pf && pf.org_id === 1; // offline sample from Casino
       });
       if (scope.portefeuilleId) {
         sites = sites.filter((s) => sitePortefeuille(s) === scope.portefeuilleId);
       }
+    } else {
+      // Real org configured but API still loading → empty list (no stale mock data)
+      sites = [];
     }
     if (scope.siteId) {
       sites = sites.filter((s) => s.id === scope.siteId);
@@ -206,10 +214,12 @@ export function ScopeProvider({ children }) {
   /** orgSites — all sites for the current org, without siteId filter (used by site picker) */
   const orgSites = useMemo(() => {
     if (apiSites.length > 0) return apiSites;
-    return mockSites.filter((s) => {
+    // Only use mock fallback when no real org is configured (offline/pre-demo)
+    if (effectiveOrgId) return []; // real org loading → return [] to avoid stale mock count
+    return mockSites.slice(0, 10).filter((s) => {
       const pfId = sitePortefeuille(s);
       const pf = MOCK_PORTEFEUILLES.find((p) => p.id === pfId);
-      return pf && pf.org_id === effectiveOrgId;
+      return pf && pf.org_id === 1; // offline sample
     });
   }, [apiSites, effectiveOrgId]);
 
