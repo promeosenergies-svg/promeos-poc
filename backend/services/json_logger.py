@@ -18,7 +18,7 @@ class JsonFormatter(logging.Formatter):
             "message": record.getMessage(),
         }
         # Inject extra fields from middleware / app code
-        for key in ("request_id", "method", "path", "status", "duration_ms"):
+        for key in ("request_id", "method", "path", "status", "duration_ms", "threshold_ms"):
             val = getattr(record, key, None)
             if val is not None:
                 log_entry[key] = val

@@ -12,7 +12,17 @@ export default class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, errorInfo) {
+    // Collect page + orgId context for structured debugging
+    const page = window.location.pathname;
+    let orgId = null;
+    try {
+      const scope = JSON.parse(localStorage.getItem('promeos_scope') || '{}');
+      orgId = scope.orgId ?? null;
+    } catch { /* ignore */ }
+
     logger.error('ErrorBoundary', error.message, {
+      page,
+      orgId,
       stack: error.stack,
       componentStack: errorInfo?.componentStack,
     });
@@ -27,12 +37,20 @@ export default class ErrorBoundary extends Component {
           <p className="text-gray-500 text-sm mb-4 max-w-md">
             {this.state.error?.message || 'Erreur inattendue.'}
           </p>
-          <button
-            onClick={() => { this.setState({ hasError: false, error: null }); window.location.href = '/'; }}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition"
-          >
-            Retour a l'accueil
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => this.setState({ hasError: false, error: null })}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition"
+            >
+              Reessayer
+            </button>
+            <button
+              onClick={() => { this.setState({ hasError: false, error: null }); window.location.href = '/'; }}
+              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300 transition"
+            >
+              Retour a l'accueil
+            </button>
+          </div>
         </div>
       );
     }

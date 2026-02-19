@@ -14,6 +14,67 @@ const api = axios.create({
   },
 });
 
+// ── GET dedup + short-lived cache ────────────────────────────────────────
+// Eliminates duplicate concurrent GET requests (React StrictMode double-mount)
+// and caches responses for a short TTL (tab switching in Expert mode).
+const _getCache = new Map();
+const GET_CACHE_TTL_MS = 5000; // 5 seconds
+
+function _cacheKey(url, params) {
+  if (!params || Object.keys(params).length === 0) return url;
+  const sorted = JSON.stringify(params, Object.keys(params).sort());
+  return `${url}|${sorted}`;
+}
+
+/**
+ * Cached GET — deduplicates in-flight requests and caches responses.
+ * - Same request in-flight → returns same Promise (no duplicate network call)
+ * - Same request completed within TTL → returns cached data
+ * - Otherwise → fresh fetch
+ * @param {string} url
+ * @param {object} [config] — axios config (params, headers, etc.)
+ * @returns {Promise<import('axios').AxiosResponse>}
+ */
+function _cachedGet(url, config = {}) {
+  const key = _cacheKey(url, config.params);
+  const now = Date.now();
+  const entry = _getCache.get(key);
+
+  if (entry) {
+    if (entry.inflight) return entry.promise; // dedup in-flight
+    if (now - entry.ts < GET_CACHE_TTL_MS) {  // cache hit
+      return Promise.resolve({ data: entry.data, status: 200, _cached: true });
+    }
+  }
+
+  const promise = api.get(url, config).then(response => {
+    _getCache.set(key, { data: response.data, ts: Date.now(), inflight: false });
+    return response;
+  }).catch(err => {
+    _getCache.delete(key);
+    throw err;
+  });
+
+  _getCache.set(key, { promise, inflight: true });
+  return promise;
+}
+
+/** Clear the GET cache (for tests or after mutations). */
+export function clearApiCache() { _getCache.clear(); }
+
+/** @returns {number} Current cache size (for DevPanel / tests). */
+export function getApiCacheSize() { return _getCache.size; }
+
+// Periodic cleanup of expired entries
+if (typeof setInterval !== 'undefined') {
+  setInterval(() => {
+    const now = Date.now();
+    for (const [key, entry] of _getCache) {
+      if (!entry.inflight && now - entry.ts > GET_CACHE_TTL_MS) _getCache.delete(key);
+    }
+  }, GET_CACHE_TTL_MS * 2);
+}
+
 // ── Request tracing (ring buffer for DevPanel) ──────────────────────────
 let _lastRequests = [];
 const MAX_REQUESTS = 20;
@@ -132,6 +193,16 @@ api.interceptors.response.use(
       ts: Date.now(),
     };
     _lastRequests = [..._lastRequests, entry].slice(-MAX_REQUESTS);
+
+    // Structured DEV logging: page, orgId, endpoint, ms
+    if (import.meta.env.DEV) {
+      console.log(
+        `%c[API] %c${entry.method} %c${entry.url} %c${entry.status} %c${duration}ms`,
+        'color:#6b7280', 'color:#2563eb', 'color:#059669', 'color:#6b7280', duration > 300 ? 'color:#ef4444;font-weight:bold' : 'color:#6b7280',
+        { page: window.location.pathname, orgId: _apiScope.orgId, endpoint: entry.url, ms: duration, requestId: entry.id },
+      );
+    }
+
     return response;
   },
   (error) => {
@@ -153,6 +224,10 @@ api.interceptors.response.use(
 
     if (!isSilent) {
       logger.warn('API', `${cfg.method?.toUpperCase() || '?'} ${cfg.url || '?'} failed`, {
+        page: window.location.pathname,
+        orgId: _apiScope.orgId,
+        endpoint: cfg.url,
+        ms: duration,
         status: error.response?.status,
         requestId: cfg._requestId,
       });
@@ -175,7 +250,7 @@ api.interceptors.response.use(
 // ========================================
 
 export const getSites = async (params = {}) => {
-  const response = await api.get('/sites', { params });
+  const response = await _cachedGet('/sites', { params });
   return response.data;
 };
 
@@ -412,7 +487,7 @@ export const getSegmentationProfile = () => api.get('/segmentation/profile').the
 
 export const getComplianceSummary = (params = {}) => api.get('/compliance/summary', { params }).then(r => r.data);
 export const getComplianceSites = (params = {}) => api.get('/compliance/sites', { params }).then(r => r.data);
-export const getComplianceBundle = (params = {}) => api.get('/compliance/bundle', { params }).then(r => r.data);
+export const getComplianceBundle = (params = {}) => _cachedGet('/compliance/bundle', { params }).then(r => r.data);
 export const recomputeComplianceRules = (orgId = null) => api.post('/compliance/recompute-rules', null, { params: { org_id: orgId } }).then(r => r.data);
 export const getComplianceRules = () => api.get('/compliance/rules').then(r => r.data);
 
@@ -449,19 +524,19 @@ export const getFlexMini = (siteId, start, end) =>
 // ========================================
 
 // Availability check (V10.1 handshake)
-export const getConsumptionAvailability = (siteId, energyType = 'electricity') => api.get('/consumption/availability', { params: { site_id: siteId, energy_type: energyType } }).then(r => r.data);
+export const getConsumptionAvailability = (siteId, energyType = 'electricity') => _cachedGet('/consumption/availability', { params: { site_id: siteId, energy_type: energyType } }).then(r => r.data);
 
 // Tunnel (envelope P10-P90)
 export const getConsumptionTunnel = (siteId, days = 90, energyType = 'electricity') => api.get('/consumption/tunnel', { params: { site_id: siteId, days, energy_type: energyType } }).then(r => r.data);
-export const getConsumptionTunnelV2 = (siteId, days = 90, energyType = 'electricity', mode = 'energy') => api.get('/consumption/tunnel_v2', { params: { site_id: siteId, days, energy_type: energyType, mode } }).then(r => r.data);
+export const getConsumptionTunnelV2 = (siteId, days = 90, energyType = 'electricity', mode = 'energy') => _cachedGet('/consumption/tunnel_v2', { params: { site_id: siteId, days, energy_type: energyType, mode } }).then(r => r.data);
 
 // Targets (objectifs & budgets)
-export const getConsumptionTargets = (siteId, energyType = 'electricity', year = null) => api.get('/consumption/targets', { params: { site_id: siteId, energy_type: energyType, year } }).then(r => r.data);
+export const getConsumptionTargets = (siteId, energyType = 'electricity', year = null) => _cachedGet('/consumption/targets', { params: { site_id: siteId, energy_type: energyType, year } }).then(r => r.data);
 export const createConsumptionTarget = (data) => api.post('/consumption/targets', data).then(r => r.data);
 export const patchConsumptionTarget = (id, data) => api.patch(`/consumption/targets/${id}`, data).then(r => r.data);
 export const deleteConsumptionTarget = (id) => api.delete(`/consumption/targets/${id}`).then(r => r.data);
 export const getTargetsProgression = (siteId, energyType = 'electricity', year = null) => api.get('/consumption/targets/progression', { params: { site_id: siteId, energy_type: energyType, year } }).then(r => r.data);
-export const getTargetsProgressionV2 = (siteId, energyType = 'electricity', year = null) => api.get('/consumption/targets/progress_v2', { params: { site_id: siteId, energy_type: energyType, year } }).then(r => r.data);
+export const getTargetsProgressionV2 = (siteId, energyType = 'electricity', year = null) => _cachedGet('/consumption/targets/progress_v2', { params: { site_id: siteId, energy_type: energyType, year } }).then(r => r.data);
 
 // TOU Schedules (grilles HP/HC)
 export const getTOUSchedules = (siteId, meterId = null, activeOnly = true) => api.get('/consumption/tou_schedules', { params: { site_id: siteId, meter_id: meterId, active_only: activeOnly } }).then(r => r.data);
@@ -472,11 +547,11 @@ export const deleteTOUSchedule = (id) => api.delete(`/consumption/tou_schedules/
 
 // HP/HC Ratio
 export const getHPHCRatio = (siteId, meterId = null, days = 30) => api.get('/consumption/hp_hc', { params: { site_id: siteId, meter_id: meterId, days } }).then(r => r.data);
-export const getHPHCBreakdownV2 = (siteId, days = 30, calendarId = null, simulate = false) => api.get('/consumption/hphc_breakdown_v2', { params: { site_id: siteId, days, calendar_id: calendarId, simulate } }).then(r => r.data);
+export const getHPHCBreakdownV2 = (siteId, days = 30, calendarId = null, simulate = false) => _cachedGet('/consumption/hphc_breakdown_v2', { params: { site_id: siteId, days, calendar_id: calendarId, simulate } }).then(r => r.data);
 
 // Gas Summary (beta)
-export const getGasSummary = (siteId, days = 90) => api.get('/consumption/gas/summary', { params: { site_id: siteId, days } }).then(r => r.data);
-export const getGasWeatherNormalized = (siteId, days = 90) => api.get('/consumption/gas/weather_normalized', { params: { site_id: siteId, days } }).then(r => r.data);
+export const getGasSummary = (siteId, days = 90) => _cachedGet('/consumption/gas/summary', { params: { site_id: siteId, days } }).then(r => r.data);
+export const getGasWeatherNormalized = (siteId, days = 90) => _cachedGet('/consumption/gas/weather_normalized', { params: { site_id: siteId, days } }).then(r => r.data);
 
 // ========================================
 // SITE CONFIG (Schedule + Tariff)
@@ -541,8 +616,8 @@ export const getPurchaseActions = (orgId = null) => api.get('/purchase/actions',
 
 export const createAction = (data) => api.post('/actions', data).then(r => r.data);
 export const syncActions = (orgId = null) => api.post('/actions/sync', null, { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);
-export const getActionsList = (params = {}) => api.get('/actions/list', { params }).then(r => r.data);
-export const getActionsSummary = (orgId = null) => api.get('/actions/summary', { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);
+export const getActionsList = (params = {}) => _cachedGet('/actions/list', { params }).then(r => r.data);
+export const getActionsSummary = (orgId = null) => _cachedGet('/actions/summary', { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);
 export const patchAction = (id, data) => api.patch(`/actions/${id}`, data).then(r => r.data);
 export const getActionBatches = (orgId = null) => api.get('/actions/batches', { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);
 export const exportActionsCSV = (params = {}) => api.get('/actions/export.csv', { params, responseType: 'blob' });
@@ -569,7 +644,7 @@ export const downloadAuditPDF = (orgId = null) => api.get('/reports/audit.pdf', 
 
 export const syncNotifications = (orgId = null) => api.post('/notifications/sync', null, { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);
 export const getNotificationsList = (params = {}) => api.get('/notifications/list', { params }).then(r => r.data);
-export const getNotificationsSummary = (orgId = null) => api.get('/notifications/summary', { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);
+export const getNotificationsSummary = (orgId = null) => _cachedGet('/notifications/summary', { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);
 export const patchNotification = (id, data) => api.patch(`/notifications/${id}`, data).then(r => r.data);
 export const getNotificationPreferences = (orgId = null) => api.get('/notifications/preferences', { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);
 export const putNotificationPreferences = (data, orgId = null) => api.put('/notifications/preferences', data, { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);
@@ -720,8 +795,8 @@ export const getBacsOpsPanel = (siteId) => api.get(`/regops/bacs/site/${siteId}/
 // EMS Consumption Explorer
 // ========================================
 
-export const getEmsTimeseries = (params) => api.get('/ems/timeseries', { params }).then(r => r.data);
-export const getEmsTimeseriesSuggest = (dateFrom, dateTo) => api.get('/ems/timeseries/suggest', { params: { date_from: dateFrom, date_to: dateTo } }).then(r => r.data);
+export const getEmsTimeseries = (params) => _cachedGet('/ems/timeseries', { params }).then(r => r.data);
+export const getEmsTimeseriesSuggest = (dateFrom, dateTo) => _cachedGet('/ems/timeseries/suggest', { params: { date_from: dateFrom, date_to: dateTo } }).then(r => r.data);
 export const getEmsWeather = (siteId, dateFrom, dateTo) => api.get('/ems/weather', { params: { site_id: siteId, date_from: dateFrom, date_to: dateTo } }).then(r => r.data);
 export const getEmsWeatherMulti = (siteIds, dateFrom, dateTo) => api.get('/ems/weather', { params: { site_ids: siteIds.join(','), date_from: dateFrom, date_to: dateTo } }).then(r => r.data);
 export const runEmsSignature = (siteId, dateFrom, dateTo, meterIds = null) => api.post('/ems/signature/run', null, { params: { site_id: siteId, date_from: dateFrom, date_to: dateTo, meter_ids: meterIds } }).then(r => r.data);

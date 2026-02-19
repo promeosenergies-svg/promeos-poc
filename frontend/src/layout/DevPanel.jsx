@@ -8,16 +8,17 @@ import { useState, useMemo } from 'react';
 import { Bug, X } from 'lucide-react';
 import { useScope } from '../contexts/ScopeContext';
 import { getLastRequests } from '../services/api';
+import { getRenderTimings } from '../hooks/useRenderTiming';
 
-const TABS = ['Scope', 'API', 'Cache', 'Env'];
+const TABS = ['Scope', 'API', 'Perf', 'Cache', 'Env'];
 
 function ScopeTab() {
   const { scope, org, orgSites, sitesLoading, sitesCount, scopeLabel, selectedSiteId } = useScope();
+  const siteIds = orgSites.map(s => s.id);
   const rows = [
     ['orgId', scope?.orgId ?? 'null'],
     ['org.nom', org?.nom ?? 'null'],
     ['sitesLoading', String(sitesLoading)],
-    ['orgSites.length', orgSites.length],
     ['sitesCount', sitesCount],
     ['selectedSiteId', selectedSiteId ?? 'null'],
     ['scopeLabel', scopeLabel],
@@ -30,6 +31,15 @@ function ScopeTab() {
           <span className="text-green-300 truncate max-w-[55%] text-right">{String(v)}</span>
         </div>
       ))}
+      {/* siteIds collapsible list */}
+      <details className="mt-1">
+        <summary className="text-gray-400 cursor-pointer leading-5">
+          siteIds <span className="text-green-300">[{siteIds.length}]</span>
+        </summary>
+        <div className="text-green-300 text-[10px] leading-4 mt-0.5 max-h-24 overflow-y-auto break-all">
+          {siteIds.length > 0 ? siteIds.join(', ') : 'aucun'}
+        </div>
+      </details>
     </div>
   );
 }
@@ -49,6 +59,28 @@ function ApiTab() {
           <span className="text-gray-400">{r.method || '?'}</span>
           <span className="text-green-300 truncate flex-1">{r.url}</span>
           <span className="text-gray-500 shrink-0">{r.duration}ms</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PerfTab() {
+  const timings = getRenderTimings();
+  if (timings.length === 0) {
+    return <p className="text-gray-500 text-[10px]">Aucune mesure de rendu</p>;
+  }
+  return (
+    <div className="space-y-1 max-h-52 overflow-y-auto">
+      {[...timings].reverse().map((t, i) => (
+        <div key={i} className="flex items-center gap-2 text-[10px] leading-4">
+          <span className={t.duration > 100 ? 'text-yellow-400' : 'text-green-400'}>
+            {t.duration}ms
+          </span>
+          <span className="text-green-300 truncate flex-1">{t.component}</span>
+          <span className="text-gray-500 shrink-0">
+            {new Date(t.ts).toLocaleTimeString()}
+          </span>
         </div>
       ))}
     </div>
@@ -104,7 +136,7 @@ function EnvTab() {
   );
 }
 
-const TAB_COMPONENTS = { Scope: ScopeTab, API: ApiTab, Cache: CacheTab, Env: EnvTab };
+const TAB_COMPONENTS = { Scope: ScopeTab, API: ApiTab, Perf: PerfTab, Cache: CacheTab, Env: EnvTab };
 
 export default function DevPanel() {
   const [open, setOpen] = useState(false);

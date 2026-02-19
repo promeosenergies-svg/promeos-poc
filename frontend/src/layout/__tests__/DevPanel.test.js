@@ -29,6 +29,11 @@ describe('DevPanel source guards', () => {
     expect(src).toContain('selectedSiteId');
   });
 
+  it('has siteIds collapsible list in Scope tab', () => {
+    expect(src).toContain('siteIds');
+    expect(src).toContain('orgSites.map');
+  });
+
   it('has API tab that calls getLastRequests()', () => {
     expect(src).toContain('getLastRequests()');
   });

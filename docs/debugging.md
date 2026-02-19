@@ -5,7 +5,7 @@
 Ajouter `?debug` dans l'URL pour activer le DevPanel (bouton flottant en bas a droite).
 
 **Onglets :**
-- **Scope** : orgId, org.nom, sitesLoading, sitesCount, selectedSiteId, scopeLabel
+- **Scope** : orgId, org.nom, sitesLoading, sitesCount, selectedSiteId, scopeLabel, siteIds (liste depliable)
 - **API** : 20 derniers appels (url, method, status, duration ms, request_id)
 - **Cache** : cles `promeos_*` dans localStorage avec taille
 - **Env** : MODE, VITE_API_URL, VITE_SENTRY_DSN (masque)
@@ -16,8 +16,14 @@ Le logger frontend ecrit dans la console avec un format structure :
 
 ```
 [Dashboard] Fetch alertes failed { status: 500 }
-[ErrorBoundary] Something went wrong { stack: "...", componentStack: "..." }
-[API] GET /sites failed { status: 500, requestId: "m1abc2def3" }
+[ErrorBoundary] Something went wrong { page: "/cockpit", orgId: 3, stack: "..." }
+[API] GET /sites failed { page: "/patrimoine", orgId: 3, endpoint: "/sites", ms: 412, status: 500, requestId: "m1abc2def3" }
+```
+
+En mode DEV, chaque reponse API est loguee avec contexte structure :
+
+```text
+[API] GET /sites 200 12ms  { page: "/cockpit", orgId: 3, endpoint: "/sites", ms: 12, requestId: "m1abc2def3" }
 ```
 
 **Tags courants :** `Dashboard`, `API`, `ErrorBoundary`, `ScopeContext`
@@ -95,4 +101,5 @@ Le logger frontend envoie automatiquement les logs `error` et `warn` a Sentry.
 - [ ] Verifier le token : est-il expire ? (401 dans le DevPanel)
 - [ ] Tester avec un autre pack demo (DemoBanner > Changer de pack)
 - [ ] Reproduire en mode Expert (toggle dans le header) pour voir les debug info
+- [ ] Si ErrorBoundary visible, cliquer "Reessayer" avant d'escalader
 - [ ] Si ErrorState visible, noter le trace_id et le hint

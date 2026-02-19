@@ -6,6 +6,8 @@ import time
 import uuid
 import logging
 
+from perf_config import PERF_THRESHOLDS
+
 logger = logging.getLogger("promeos.request")
 
 
@@ -48,6 +50,20 @@ class RequestContextMiddleware:
         duration_ms = round((time.perf_counter() - start) * 1000, 1)
         method = scope.get("method", "?")
         path = scope.get("path", "?")
+
+        if duration_ms > PERF_THRESHOLDS["slow_request_ms"]:
+            logger.warning(
+                "slow_request",
+                extra={
+                    "request_id": request_id,
+                    "method": method,
+                    "path": path,
+                    "status": status_code,
+                    "duration_ms": duration_ms,
+                    "threshold_ms": PERF_THRESHOLDS["slow_request_ms"],
+                },
+            )
+
         logger.info(
             "request",
             extra={
