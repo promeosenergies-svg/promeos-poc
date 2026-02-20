@@ -15,16 +15,11 @@
  *   buildDashboardEssentials(sites, opts)       → aggregated result object
  */
 import { formatPercentFR } from '../utils/format';
-
-// ── Severity ranking (lower = more urgent) ─────────────────────────────────
-
-const SEVERITY_RANK = {
-  critical: 0,
-  high:     1,
-  warn:     2,
-  medium:   3,
-  info:     4,
-};
+import {
+  RISK_THRESHOLDS, COVERAGE_THRESHOLDS, CONFORMITY_THRESHOLDS,
+  MATURITY_THRESHOLDS, READINESS_WEIGHTS, ACTIONS_SCORE, getRiskStatus,
+  SEVERITY_RANK,
+} from '../lib/constants';
 
 // ── buildWatchlist ──────────────────────────────────────────────────────────
 
@@ -79,7 +74,7 @@ export function buildWatchlist(kpis, sites = []) {
   }
 
   // 4. Low data coverage — medium (only if N >= 3 and not already covered by #3)
-  if (kpis.couvertureDonnees < 50 && kpis.total >= 3 && sitesWithoutData.length === 0) {
+  if (kpis.couvertureDonnees < COVERAGE_THRESHOLDS.warn && kpis.total >= 3 && sitesWithoutData.length === 0) {
     items.push({
       id: 'low_coverage',
       label: `Couverture données insuffisante : ${formatPercentFR(kpis.couvertureDonnees)}`,
@@ -108,7 +103,7 @@ export function checkConsistency(kpis) {
 
   // Case 1: All conformes but very low data coverage → suspicious
   const conformeRate = kpis.total > 0 ? kpis.conformes / kpis.total : 0;
-  if (conformeRate === 1 && kpis.couvertureDonnees < 30 && kpis.total > 0) {
+  if (conformeRate === 1 && kpis.couvertureDonnees < COVERAGE_THRESHOLDS.suspicious && kpis.total > 0) {
     issues.push({
       code: 'all_conformes_low_data',
       label: 'Conformité complète détectée mais peu de données — vérifiez la synchronisation',
@@ -188,7 +183,7 @@ export function buildOpportunities(kpis, sites = [], { isExpert = false } = {}) 
   const items = [];
 
   // 1. Incomplete data coverage
-  if (kpis.couvertureDonnees < 80 && kpis.total > 0) {
+  if (kpis.couvertureDonnees < COVERAGE_THRESHOLDS.opportunity && kpis.total > 0) {
     const missingSites = kpis.total - Math.round(kpis.couvertureDonnees * kpis.total / 100);
     items.push({
       id: 'complete_data',
@@ -212,7 +207,7 @@ export function buildOpportunities(kpis, sites = [], { isExpert = false } = {}) 
   }
 
   // 3. High financial risk
-  if (kpis.risqueTotal > 10000) {
+  if (kpis.risqueTotal > RISK_THRESHOLDS.org.warn) {
     const kEur = (kpis.risqueTotal / 1000).toFixed(0);
     items.push({
       id: 'optimize_subscriptions',
@@ -264,7 +259,7 @@ export function buildBriefing(kpis, watchlist = []) {
   }
 
   // 3. Low data coverage → warn (only when meaningful)
-  if (kpis.couvertureDonnees < 80 && kpis.total > 0) {
+  if (kpis.couvertureDonnees < COVERAGE_THRESHOLDS.opportunity && kpis.total > 0) {
     const missing = kpis.total - Math.round(kpis.couvertureDonnees * kpis.total / 100);
     bullets.push({
       id: 'coverage',
@@ -335,7 +330,7 @@ export function buildExecutiveSummary(kpis, topSites = {}) {
   // 1. Positive — what's going well
   if (total === 0) {
     bullets.push({ id: 'no_sites', type: 'warn', label: 'Aucun site dans le périmètre', sub: 'Importez votre patrimoine pour démarrer' });
-  } else if (pctConf >= 80 && nonConformes === 0) {
+  } else if (pctConf >= CONFORMITY_THRESHOLDS.positive && nonConformes === 0) {
     bullets.push({
       id: 'conforme_ok',
       type: 'positive',
@@ -345,7 +340,7 @@ export function buildExecutiveSummary(kpis, topSites = {}) {
   } else {
     bullets.push({
       id: 'conforme_partial',
-      type: pctConf >= 50 ? 'warn' : 'negative',
+      type: pctConf >= CONFORMITY_THRESHOLDS.warn ? 'warn' : 'negative',
       label: `${formatPercentFR(pctConf)} des sites en conformité`,
       sub: `${conformes} sur ${total} sites`,
     });
@@ -373,7 +368,7 @@ export function buildExecutiveSummary(kpis, topSites = {}) {
   }
 
   // 3. Opportunity — data coverage or cost optimisation
-  if (couvertureDonnees < 80 && total > 0) {
+  if (couvertureDonnees < COVERAGE_THRESHOLDS.opportunity && total > 0) {
     const missingSites = total - Math.round(couvertureDonnees * total / 100);
     bullets.push({
       id: 'coverage_exec',
@@ -382,7 +377,7 @@ export function buildExecutiveSummary(kpis, topSites = {}) {
       sub: 'Importer les relevés pour affiner le score de maturité',
       path: '/consommations/import',
     });
-  } else if (risqueTotal > 10000) {
+  } else if (risqueTotal > RISK_THRESHOLDS.org.warn) {
     bullets.push({
       id: 'cost_exec',
       type: 'opportunity',
@@ -410,9 +405,9 @@ export function buildExecutiveKpis(kpis, sites = []) {
   const { total, conformes, nonConformes, aRisque, risqueTotal, couvertureDonnees } = kpis;
   const pctConf = total > 0 ? Math.round(conformes / total * 100) : 0;
   // Maturité score (mirrors Cockpit useMemo)
-  const actionsActives = (nonConformes + aRisque) > 0 ? 55 : 80;
+  const actionsActives = (nonConformes + aRisque) > 0 ? ACTIONS_SCORE.withIssues : ACTIONS_SCORE.noIssues;
   const readinessScore = total > 0
-    ? Math.round(couvertureDonnees * 0.3 + pctConf * 0.4 + actionsActives * 0.3)
+    ? Math.round(couvertureDonnees * READINESS_WEIGHTS.data + pctConf * READINESS_WEIGHTS.conformity + actionsActives * READINESS_WEIGHTS.actions)
     : 0;
   const sitesWithData = sites.filter(s => s.conso_kwh_an > 0).length;
 
@@ -432,7 +427,7 @@ export function buildExecutiveKpis(kpis, sites = []) {
       label: 'Risque financier',
       value: risqueTotal > 0 ? `${Math.round(risqueTotal / 1000)} k€` : '0 €',
       sub: `${nonConformes + aRisque} site${(nonConformes + aRisque) !== 1 ? 's' : ''} concerné${(nonConformes + aRisque) !== 1 ? 's' : ''}`,
-      status: risqueTotal > 50000 ? 'crit' : risqueTotal > 10000 ? 'warn' : 'ok',
+      status: getRiskStatus(risqueTotal),
       path: '/actions',
     },
     {
@@ -441,7 +436,7 @@ export function buildExecutiveKpis(kpis, sites = []) {
       label: 'Maturité',
       value: total > 0 ? formatPercentFR(readinessScore) : '—',
       sub: 'Données · conformité · actions',
-      status: readinessScore < 40 ? 'crit' : readinessScore < 70 ? 'warn' : 'ok',
+      status: readinessScore < MATURITY_THRESHOLDS.crit ? 'crit' : readinessScore < MATURITY_THRESHOLDS.warn ? 'warn' : 'ok',
     },
     {
       id: 'couverture',
@@ -449,7 +444,7 @@ export function buildExecutiveKpis(kpis, sites = []) {
       label: 'Couverture données',
       value: total > 0 ? formatPercentFR(couvertureDonnees) : '—',
       sub: `${sitesWithData} site${sitesWithData !== 1 ? 's' : ''} avec données`,
-      status: couvertureDonnees < 50 ? 'warn' : 'ok',
+      status: couvertureDonnees < COVERAGE_THRESHOLDS.warn ? 'warn' : 'ok',
       path: '/consommations/import',
     },
   ];

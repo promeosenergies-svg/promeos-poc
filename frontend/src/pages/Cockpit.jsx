@@ -30,6 +30,7 @@ import BriefingHeroCard from './cockpit/BriefingHeroCard';
 import ExecutiveSummaryCard from './cockpit/ExecutiveSummaryCard';
 import ExecutiveKpiRow from './cockpit/ExecutiveKpiRow';
 import ImpactDecisionPanel from './cockpit/ImpactDecisionPanel';
+import { RISK_THRESHOLDS, READINESS_WEIGHTS, ACTIONS_SCORE, getRiskStatus, getStatusBadgeProps } from '../lib/constants';
 
 // ── Consistency banner (inline — too small for its own file) ─────────────────
 function ConsistencyBanner({ issues }) {
@@ -68,13 +69,13 @@ const Cockpit = () => {
       ? Math.round(conformes / total * 100)
       : 0;
     const actionsActives = total > 0
-      ? Math.round(sites.filter(s => s.statut_conformite === 'non_conforme' || s.statut_conformite === 'a_risque').length > 0 ? 55 : 80)
+      ? Math.round(sites.filter(s => s.statut_conformite === 'non_conforme' || s.statut_conformite === 'a_risque').length > 0 ? ACTIONS_SCORE.withIssues : ACTIONS_SCORE.noIssues)
       : 0;
     const readinessScore = total > 0
-      ? Math.round(couvertureDonnees * 0.3 + suiviConformite * 0.4 + actionsActives * 0.3)
+      ? Math.round(couvertureDonnees * READINESS_WEIGHTS.data + suiviConformite * READINESS_WEIGHTS.conformity + actionsActives * READINESS_WEIGHTS.actions)
       : 0;
     const compStatus = nonConformes > 0 ? 'crit' : aRisque > 0 ? 'warn' : total > 0 ? 'ok' : 'neutral';
-    const risqueStatus = risqueTotal > 50000 ? 'crit' : risqueTotal > 10000 ? 'warn' : 'ok';
+    const risqueStatus = getRiskStatus(risqueTotal);
     return { total, conformes, nonConformes, aRisque, risqueTotal, readinessScore, couvertureDonnees, suiviConformite, actionsActives, compStatus, risqueStatus };
   }, [scopedSites]);
 
@@ -159,14 +160,8 @@ const Cockpit = () => {
   }
 
   const getStatusInfo = (statut) => {
-    const map = {
-      conforme: { dot: 'ok', label: 'Conforme' },
-      derogation: { dot: 'info', label: 'Dérogation' },
-      a_risque: { dot: 'warn', label: 'À risque' },
-      non_conforme: { dot: 'crit', label: 'Non conforme' },
-      a_evaluer: { dot: 'neutral', label: 'À évaluer' },
-    };
-    return map[statut] || { dot: 'neutral', label: statut || 'Non défini' };
+    const { variant, label } = getStatusBadgeProps(statut);
+    return { dot: variant, label };
   };
 
   // V18-B: guard — don't show empty state while sites are loading
@@ -422,7 +417,7 @@ const Cockpit = () => {
             <div>
               <div className="flex items-center justify-between text-sm text-gray-700 mb-1">
                 <span>Couverture données</span>
-                <span className="text-xs text-gray-400">poids : 30%</span>
+                <span className="text-xs text-gray-400">poids : {Math.round(READINESS_WEIGHTS.data * 100)}%</span>
               </div>
               <Progress value={kpis.couvertureDonnees} color="blue" size="sm" />
               <p className="text-xs text-gray-400 mt-0.5">{kpis.couvertureDonnees}% des sites avec consommation renseignée</p>
@@ -431,7 +426,7 @@ const Cockpit = () => {
             <div>
               <div className="flex items-center justify-between text-sm text-gray-700 mb-1">
                 <span>Suivi conformité</span>
-                <span className="text-xs text-gray-400">poids : 40%</span>
+                <span className="text-xs text-gray-400">poids : {Math.round(READINESS_WEIGHTS.conformity * 100)}%</span>
               </div>
               <Progress value={kpis.suiviConformite} color="blue" size="sm" />
               <p className="text-xs text-gray-400 mt-0.5">{kpis.suiviConformite}% des sites conformes</p>
@@ -440,7 +435,7 @@ const Cockpit = () => {
             <div>
               <div className="flex items-center justify-between text-sm text-gray-700 mb-1">
                 <span>Actions actives</span>
-                <span className="text-xs text-gray-400">poids : 30%</span>
+                <span className="text-xs text-gray-400">poids : {Math.round(READINESS_WEIGHTS.actions * 100)}%</span>
               </div>
               <Progress value={kpis.actionsActives} color="blue" size="sm" />
               <p className="text-xs text-gray-400 mt-0.5">{kpis.actionsActives}% taux d'actions en cours</p>
