@@ -11,15 +11,16 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ShieldAlert, Receipt, TrendingUp, ArrowRight, Info, Loader2, Zap,
+  ShieldAlert, Receipt, TrendingUp, ArrowRight, Info, Loader2, Zap, ShoppingCart,
 } from 'lucide-react';
 import { Card, CardBody, Badge, Tooltip, Button } from '../../ui';
 import { KPI_ACCENTS } from '../../ui/colorTokens';
 import { fmtEur } from '../../utils/format';
-import { getBillingSummary } from '../../services/api';
+import { getBillingSummary, getPurchaseRenewals, patrimoineContracts } from '../../services/api';
 import { computeImpactKpis, computeRecommendation } from '../../models/impactDecisionModel';
 import { computeActionableLevers } from '../../models/leverEngineModel';
 import { buildLeverDeepLink } from '../../models/leverActionModel';
+import { normalizePurchaseSignals, isPurchaseAvailable } from '../../models/purchaseSignalsContract';
 
 // ── KPI tile (inline — small enough) ─────────────────────────────────────────
 
@@ -72,6 +73,7 @@ function ImpactKpiTile({ icon: Icon, label, value, available, tooltip, accent, o
 export default function ImpactDecisionPanel({ kpis }) {
   const navigate = useNavigate();
   const [billingSummary, setBillingSummary] = useState(null);
+  const [purchaseSignals, setPurchaseSignals] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -84,6 +86,24 @@ export default function ImpactDecisionPanel({ kpis }) {
     return () => { cancelled = true; };
   }, []);
 
+  // V36 — Fetch purchase signals (renewals + contracts)
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([
+      getPurchaseRenewals().catch(() => ({ total: 0, renewals: [] })),
+      patrimoineContracts().catch(() => ({ total: 0, contracts: [] })),
+    ]).then(([renewals, contracts]) => {
+      if (!cancelled) {
+        setPurchaseSignals(normalizePurchaseSignals({
+          renewals,
+          contracts,
+          totalSites: kpis?.total ?? 0,
+        }));
+      }
+    });
+    return () => { cancelled = true; };
+  }, [kpis?.total]);
+
   const impact = useMemo(
     () => computeImpactKpis(kpis, billingSummary || {}),
     [kpis, billingSummary],
@@ -94,10 +114,10 @@ export default function ImpactDecisionPanel({ kpis }) {
     [impact, kpis],
   );
 
-  // V33 — Levier Engine
+  // V33 — Levier Engine (V36: + purchaseSignals)
   const levers = useMemo(
-    () => computeActionableLevers({ kpis, billingSummary: billingSummary || {} }),
-    [kpis, billingSummary],
+    () => computeActionableLevers({ kpis, billingSummary: billingSummary || {}, purchaseSignals }),
+    [kpis, billingSummary, purchaseSignals],
   );
 
   const handleDrillDown = (type) => {
@@ -193,6 +213,53 @@ export default function ImpactDecisionPanel({ kpis }) {
         />
       </div>
 
+      {/* ── Achats d'energie V36 ── */}
+      <div className="rounded-lg border border-gray-200 bg-white p-4" data-testid="purchase-section">
+        <div className="flex items-center gap-2 mb-3">
+          <ShoppingCart size={16} className="text-blue-500 shrink-0" />
+          <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+            Achats d&apos;energie
+          </h4>
+          <Tooltip content="Signaux d\u00e9riv\u00e9s des contrats renseign\u00e9s \u2014 heuristique V1">
+            <Info size={12} className="text-gray-400 cursor-help" />
+          </Tooltip>
+        </div>
+        {isPurchaseAvailable(purchaseSignals) ? (
+          <div className="grid grid-cols-3 gap-3">
+            <button
+              onClick={() => navigate('/achat-energie?filter=renewal')}
+              className="text-left p-2 rounded-md hover:bg-gray-50 transition-colors"
+              aria-label="Voir les contrats \u00e0 renouveler"
+            >
+              <p className="text-lg font-bold text-gray-900">{purchaseSignals.expiringSoonCount}</p>
+              <p className="text-[10px] text-gray-500">Contrats \u2264 90j</p>
+            </button>
+            <div className="p-2">
+              <p className="text-lg font-bold text-gray-900">{purchaseSignals.coverageContractsPct}\u202f%</p>
+              <p className="text-[10px] text-gray-500">Couverture contrats</p>
+            </div>
+            <button
+              onClick={() => navigate('/achat-energie?filter=missing')}
+              className="text-left p-2 rounded-md hover:bg-gray-50 transition-colors"
+              aria-label="Voir les sites sans contrat"
+            >
+              <p className="text-lg font-bold text-gray-900">{purchaseSignals.missingContractsCount}</p>
+              <p className="text-[10px] text-gray-500">Sites sans contrat</p>
+            </button>
+          </div>
+        ) : (
+          <div className="text-center py-2">
+            <p className="text-sm text-gray-400">Donn\u00e9es manquantes</p>
+            <p className="text-xs text-gray-400 mt-1">
+              Renseignez vos contrats \u00e9nergie dans{' '}
+              <button onClick={() => navigate('/patrimoine')} className="text-blue-500 underline">
+                Patrimoine
+              </button>
+            </p>
+          </div>
+        )}
+      </div>
+
       {/* ── Leviers activables V33 + CTA V34 ── */}
       <div className="rounded-lg border border-gray-200 bg-gray-50/50 p-4" data-testid="levers-section">
         {levers.totalLevers > 0 ? (
@@ -209,6 +276,7 @@ export default function ImpactDecisionPanel({ kpis }) {
                   levers.leversByType.conformite > 0 && `${levers.leversByType.conformite} conformit\u00e9`,
                   levers.leversByType.facturation > 0 && `${levers.leversByType.facturation} facturation`,
                   levers.leversByType.optimisation > 0 && `${levers.leversByType.optimisation} optimisation`,
+                  levers.leversByType.achat > 0 && `${levers.leversByType.achat} achat`,
                 ].filter(Boolean).join(' \u2022 ')}
               </span>
             </div>

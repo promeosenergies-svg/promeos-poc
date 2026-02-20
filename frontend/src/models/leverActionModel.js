@@ -78,6 +78,33 @@ export const LEVER_ACTION_TEMPLATES = {
     due_days: 180,
     priority: 3,
   },
+  // V36 — Achat d'energie
+  'lev-achat-renew': {
+    source_type: 'lever_engine',
+    severity: 'high',
+    rationale: [
+      'Contrats energie arrivent a echeance dans les 90 prochains jours',
+      'Risque de reconduction tacite a des conditions defavorables',
+      'Negociation anticipee recommandee pour optimiser les conditions',
+    ],
+    proof_expected: 'Contrat de fourniture actuel / avenants / echeancier',
+    proof_owner: 'Direction des achats ou responsable energie',
+    due_days: 30,
+    priority: 1,
+  },
+  'lev-achat-data': {
+    source_type: 'lever_engine',
+    severity: 'medium',
+    rationale: [
+      'Sites identifies sans information contractuelle dans le referentiel',
+      'Impossible d\'evaluer l\'exposition ou les echeances sans ces donnees',
+      'Prerequis pour activer le suivi renouvellement et les alertes',
+    ],
+    proof_expected: 'Contrat ou attestation fournisseur par site',
+    proof_owner: 'Direction des achats ou gestionnaire patrimoine',
+    due_days: 60,
+    priority: 2,
+  },
 };
 
 // ── Fallback template ────────────────────────────────────────────────────────
