@@ -31,10 +31,13 @@ export default function ProofDepositCTA({
     proofHint: hint || 'Preuve OPERAT — Décret tertiaire',
   });
 
-  // Override domain in the generated link if custom domain provided
-  const finalLink = domain !== 'reglementaire'
+  // Override domain in the generated link and add status=draft for pre-filtering
+  let finalLink = domain !== 'reglementaire'
     ? link.replace(/domain=[^&]*/, `domain=${encodeURIComponent(domain)}`)
     : link;
+  if (!finalLink.includes('status=')) {
+    finalLink += '&status=draft';
+  }
 
   return (
     <Button

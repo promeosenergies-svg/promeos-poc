@@ -230,3 +230,73 @@ describe('GUARD no new backend API', () => {
     expect(code).toContain('navigate(finalLink)');
   });
 });
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 7. ProofDepositCTA adds status=draft to the link
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('ProofDepositCTA status=draft param', () => {
+  it('source appends status=draft to the link', () => {
+    const code = src('pages/tertiaire/components/ProofDepositCTA.jsx');
+    expect(code).toContain("status=draft");
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 8. GUARD: KBExplorerPage proof context banner
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('GUARD KBExplorerPage proof context banner', () => {
+  const code = src('pages/KBExplorerPage.jsx');
+
+  it('has proofContext state', () => {
+    expect(code).toContain('proofContext');
+  });
+
+  it('has statusFilter state for URL-driven filtering', () => {
+    expect(code).toContain('statusFilter');
+  });
+
+  it('reads status from URL search params', () => {
+    expect(code).toContain("searchParams.get('status')");
+  });
+
+  it('builds proofContext when context=proof', () => {
+    expect(code).toContain("=== 'proof'");
+    expect(code).toContain('setProofContext');
+  });
+
+  it('renders proof-context-banner with data-testid', () => {
+    expect(code).toContain('data-testid="proof-context-banner"');
+  });
+
+  it('banner shows Preuve attendue label', () => {
+    expect(code).toContain('Preuve attendue');
+  });
+
+  it('banner shows domain label with Tertiaire OPERAT formatting', () => {
+    expect(code).toContain('Tertiaire OPERAT');
+  });
+
+  it('banner displays proofContext.hint', () => {
+    expect(code).toContain('proofContext.hint');
+  });
+
+  it('has clearProofContext function', () => {
+    expect(code).toContain('clearProofContext');
+  });
+
+  it('Effacer filtres button calls clearProofContext', () => {
+    expect(code).toContain('Effacer filtres');
+    expect(code).toContain('onClick={clearProofContext}');
+  });
+
+  it('loadDocs passes statusFilter to API params', () => {
+    // statusFilter should be included in the API call params
+    expect(code).toContain('if (statusFilter) params.status = statusFilter');
+  });
+
+  it('docs tab reloads when statusFilter changes', () => {
+    expect(code).toMatch(/\[activeTab,\s*domain,\s*statusFilter\]/);
+  });
+});

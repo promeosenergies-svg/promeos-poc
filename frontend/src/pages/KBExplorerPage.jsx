@@ -1,5 +1,5 @@
 /**
- * PROMEOS - M\u00e9mobox (/kb) — V38
+ * PROMEOS - Mémobox (/kb) — V38
  * FTS5 search KB items + Documents tab (upload, lifecycle badges)
  * Deep-link support: /kb?context=proof&domain=X&hint=Y
  */
@@ -8,7 +8,7 @@ import { useSearchParams } from 'react-router-dom';
 import {
   Search, BookOpen, ShieldCheck, Zap, Sun, Receipt, Wind,
   ChevronDown, ChevronUp, ExternalLink, Filter, AlertTriangle,
-  Upload, FileText, CheckCircle,
+  Upload, FileText, CheckCircle, X,
 } from 'lucide-react';
 import { PageShell, Card, CardBody, Badge, Button, TrustBadge, EmptyState } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
@@ -17,7 +17,7 @@ import { DOC_STATUS_LABELS, DOC_STATUS_BADGE } from '../models/proofLinkModel';
 
 const DOMAIN_TABS = [
   { key: null, label: 'Tout', icon: BookOpen },
-  { key: 'reglementaire', label: 'R\u00e9glementaire', icon: ShieldCheck },
+  { key: 'reglementaire', label: 'Réglementaire', icon: ShieldCheck },
   { key: 'usages', label: 'Usages', icon: Zap },
   { key: 'acc', label: 'ACC', icon: Sun },
   { key: 'facturation', label: 'Facturation', icon: Receipt },
@@ -59,12 +59,27 @@ export default function KBExplorerPage() {
   const [docsLoading, setDocsLoading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState(null);
 
-  // V38: Deep-link from proof context
+  // V39.1: Proof context banner state
+  const [proofContext, setProofContext] = useState(null);
+  const [statusFilter, setStatusFilter] = useState(null);
+
+  // V38+V39.1: Deep-link from proof context
   useEffect(() => {
     const urlDomain = searchParams.get('domain');
     if (urlDomain) setDomain(urlDomain);
     const urlHint = searchParams.get('hint');
     if (urlHint) setQuery(urlHint);
+    const urlStatus = searchParams.get('status');
+    if (urlStatus) setStatusFilter(urlStatus);
+    // V39.1: Build proof context for banner
+    if (searchParams.get('context') === 'proof') {
+      setProofContext({
+        hint: urlHint || null,
+        domain: urlDomain || null,
+        lever: searchParams.get('lever') || null,
+        status: urlStatus || null,
+      });
+    }
   }, []);
 
   // Load stats on mount
@@ -87,7 +102,7 @@ export default function KBExplorerPage() {
   // V38: Load docs when switching to docs tab
   useEffect(() => {
     if (activeTab === 'docs') loadDocs();
-  }, [activeTab, domain]);
+  }, [activeTab, domain, statusFilter]);
 
   async function doSearch() {
     setLoading(true);
@@ -117,6 +132,7 @@ export default function KBExplorerPage() {
     try {
       const params = {};
       if (domain) params.domain = domain;
+      if (statusFilter) params.status = statusFilter;
       const data = await getKBDocs(params);
       setDocs(data.docs || []);
     } catch {
@@ -132,9 +148,9 @@ export default function KBExplorerPage() {
     try {
       const result = await uploadKBDoc(f, f.name, domain);
       if (result.status === 'already_exists') {
-        setUploadMsg({ type: 'info', text: 'Document d\u00e9j\u00e0 pr\u00e9sent (contenu identique)' });
+        setUploadMsg({ type: 'info', text: 'Document déjà présent (contenu identique)' });
       } else {
-        setUploadMsg({ type: 'ok', text: `Document ing\u00e9r\u00e9 : ${result.doc_id} (${result.nb_chunks} chunks)` });
+        setUploadMsg({ type: 'ok', text: `Document ingéré : ${result.doc_id} (${result.nb_chunks} chunks)` });
       }
       loadDocs();
     } catch (err) {
@@ -153,6 +169,15 @@ export default function KBExplorerPage() {
     }
   }
 
+  // V39.1: Clear proof context filters
+  function clearProofContext() {
+    setProofContext(null);
+    setDomain(null);
+    setStatusFilter(null);
+    setQuery('');
+    setActiveTab('items');
+  }
+
   function toggleExpand(id) {
     setExpandedId(expandedId === id ? null : id);
   }
@@ -160,8 +185,8 @@ export default function KBExplorerPage() {
   return (
     <PageShell
       icon={BookOpen}
-      title="M\u00e9mobox"
-      subtitle={stats ? `${stats.total_items} items \u2014 R\u00e8gles, documents & preuves` : 'R\u00e8gles, documents & preuves'}
+      title="Mémobox"
+      subtitle={stats ? `${stats.total_items} items — Règles, documents & preuves` : 'Règles, documents & preuves'}
       actions={stats && (
         <div className="flex items-center gap-2">
           <Badge status="ok">{stats.by_status?.validated || 0} validés</Badge>
@@ -181,6 +206,35 @@ export default function KBExplorerPage() {
             </div>
           </CardBody>
         </Card>
+      )}
+
+      {/* V39.1: Proof context banner */}
+      {proofContext && (
+        <div
+          className="flex items-center gap-3 px-4 py-2.5 rounded-lg border border-indigo-200 bg-indigo-50/60"
+          data-testid="proof-context-banner"
+        >
+          <Upload size={16} className="text-indigo-500 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium text-indigo-800">
+              Preuve attendue
+              {proofContext.domain && (
+                <span className="text-indigo-500 font-normal"> — Domaine : {proofContext.domain.replace('conformite/', 'Conformité / ').replace('tertiaire-operat', 'Tertiaire OPERAT')}</span>
+              )}
+            </p>
+            {proofContext.hint && (
+              <p className="text-[11px] text-indigo-600 truncate mt-0.5">{proofContext.hint}</p>
+            )}
+          </div>
+          <button
+            onClick={clearProofContext}
+            className="flex items-center gap-1 text-[11px] text-indigo-600 hover:text-indigo-800 shrink-0"
+            aria-label="Effacer les filtres de preuve"
+          >
+            <X size={12} />
+            Effacer filtres
+          </button>
+        </div>
       )}
 
       {/* V38: Tab switcher — Items vs Documents */}
@@ -217,7 +271,7 @@ export default function KBExplorerPage() {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Rechercher : BACS 290 kW, d\u00e9cret tertiaire, autoconsommation..."
+              placeholder="Rechercher : BACS 290 kW, décret tertiaire, autoconsommation..."
               className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm"
             />
           </div>
@@ -299,7 +353,7 @@ export default function KBExplorerPage() {
                   Recherchez par mot-clé ou filtrez par domaine pour découvrir les règles, obligations et recommandations.
                 </p>
                 <div className="flex flex-wrap items-center justify-center gap-2">
-                  {['BACS 290 kW', 'd\u00e9cret tertiaire', 'autoconsommation', 'OPERAT', 'flexibilit\u00e9', 'ARENH'].map((q) => (
+                  {['BACS 290 kW', 'décret tertiaire', 'autoconsommation', 'OPERAT', 'flexibilité', 'ARENH'].map((q) => (
                     <button
                       key={q}
                       onClick={() => setQuery(q)}
@@ -389,7 +443,7 @@ export default function KBExplorerPage() {
       )}
 
       {/* Footer */}
-      <TrustBadge source="PROMEOS M\u00e9mobox" period="457 items ingeres" confidence="high" />
+      <TrustBadge source="PROMEOS Mémobox" period="457 items ingeres" confidence="high" />
     </PageShell>
   );
 }
@@ -405,7 +459,7 @@ const NEXT_STATUS = {
 const NEXT_STATUS_LABEL = {
   draft: 'Soumettre en revue',
   review: 'Valider',
-  validated: 'Marquer d\u00e9cisionnel',
+  validated: 'Marquer décisionnel',
 };
 
 function DocCard({ doc, onStatusChange }) {

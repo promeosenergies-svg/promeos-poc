@@ -283,3 +283,32 @@ describe('GUARD KBExplorerPage Memobox', () => {
     expect(source).toMatch(/uploadKBDoc/);
   });
 });
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 11. GUARD: No \\u00e9 escapes in visible UI strings (Mémobox header fix)
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('GUARD UTF-8 Mémobox — no unicode escapes in visible strings', () => {
+  it('KBExplorerPage title uses actual UTF-8 Mémobox, not \\u00e9 escape', () => {
+    const source = src('pages/KBExplorerPage.jsx');
+    expect(source).toContain('title="Mémobox"');
+    expect(source).not.toContain('title="M\\u00e9mobox"');
+  });
+
+  it('KBExplorerPage subtitle uses actual UTF-8 Règles, not \\u00e8 escape', () => {
+    const source = src('pages/KBExplorerPage.jsx');
+    expect(source).toContain('Règles, documents & preuves');
+  });
+
+  it('NavRegistry label uses actual UTF-8 Mémobox', () => {
+    const source = src('layout/NavRegistry.js');
+    expect(source).toContain("label: 'Mémobox'");
+  });
+
+  it('proofLinkModel DOC_STATUS_LABELS uses actual UTF-8 accented chars', () => {
+    const source = src('models/proofLinkModel.js');
+    expect(source).toContain("'Validé'");
+    expect(source).toContain("'Décisionnel'");
+    expect(source).toContain("'Obsolète'");
+  });
+});

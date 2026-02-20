@@ -21,9 +21,9 @@
 export const DOC_STATUS_LABELS = Object.freeze({
   draft: 'Brouillon',
   review: 'En revue',
-  validated: 'Valid\u00e9',
-  decisional: 'D\u00e9cisionnel',
-  deprecated: 'Obsol\u00e8te',
+  validated: 'Validé',
+  decisional: 'Décisionnel',
+  deprecated: 'Obsolète',
 });
 
 /**
