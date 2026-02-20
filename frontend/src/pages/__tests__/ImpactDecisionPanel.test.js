@@ -350,9 +350,9 @@ describe('V33: Leviers activables', () => {
     expect(panelSrc).toContain('\\u2022');
   });
 
-  it('contient le CTA "Voir les leviers" vers /command-center?filter=leviers', () => {
-    expect(panelSrc).toContain('Voir les leviers');
-    expect(panelSrc).toContain("/command-center?filter=leviers");
+  it('contient un CTA action par levier (V34: deep-link)', () => {
+    expect(panelSrc).toContain('buildLeverDeepLink');
+    expect(panelSrc).toContain('er une action');
   });
 
   it('affiche "Aucun levier detecte (V1)" quand totalLevers = 0', () => {
@@ -374,5 +374,56 @@ describe('V33: Leviers activables', () => {
   it('aucune nouvelle API ajoutee (contrainte V33)', () => {
     const apiImports = panelSrc.match(/from '\.\.\/\.\.\/services\/api'/g) || [];
     expect(apiImports).toHaveLength(1);
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TEST 8: V34 — Lever → Action CTA
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('V34: Lever CTA deep-link', () => {
+  const panelSrc = readSrc('pages/cockpit/ImpactDecisionPanel.jsx');
+
+  it('importe buildLeverDeepLink depuis leverActionModel', () => {
+    expect(panelSrc).toContain("from '../../models/leverActionModel'");
+    expect(panelSrc).toContain('buildLeverDeepLink');
+  });
+
+  it('affiche chaque levier individuellement (topLevers.map)', () => {
+    expect(panelSrc).toContain('levers.topLevers.map');
+  });
+
+  it('utilise lever.actionKey comme key React', () => {
+    expect(panelSrc).toContain('key={lever.actionKey}');
+  });
+
+  it('affiche le label du levier', () => {
+    expect(panelSrc).toContain('lever.label');
+  });
+
+  it('affiche l\'impact estime en euros si disponible', () => {
+    expect(panelSrc).toContain('lever.impactEur');
+    expect(panelSrc).toContain("toLocaleString('fr-FR')");
+  });
+
+  it('CTA "Creer une action" avec navigate vers deep-link', () => {
+    expect(panelSrc).toContain('buildLeverDeepLink(lever)');
+    expect(panelSrc).toContain('er une action');
+  });
+
+  it('chaque CTA a un aria-label accessible', () => {
+    expect(panelSrc).toMatch(/aria-label=.*action pour/);
+  });
+
+  it('la liste a un data-testid', () => {
+    expect(panelSrc).toContain('data-testid="levers-list"');
+  });
+
+  it('le leverEngineModel a des actionKey sur chaque levier', () => {
+    const engineSrc = readSrc('models/leverEngineModel.js');
+    expect(engineSrc).toContain("actionKey: 'lev-conf-nc'");
+    expect(engineSrc).toContain("actionKey: 'lev-conf-ar'");
+    expect(engineSrc).toContain("actionKey: 'lev-fact-anom'");
+    expect(engineSrc).toContain("actionKey: 'lev-optim-ener'");
   });
 });

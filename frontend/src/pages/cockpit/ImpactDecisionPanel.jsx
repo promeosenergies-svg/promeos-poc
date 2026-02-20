@@ -19,6 +19,7 @@ import { fmtEur } from '../../utils/format';
 import { getBillingSummary } from '../../services/api';
 import { computeImpactKpis, computeRecommendation } from '../../models/impactDecisionModel';
 import { computeActionableLevers } from '../../models/leverEngineModel';
+import { buildLeverDeepLink } from '../../models/leverActionModel';
 
 // ── KPI tile (inline — small enough) ─────────────────────────────────────────
 
@@ -192,33 +193,51 @@ export default function ImpactDecisionPanel({ kpis }) {
         />
       </div>
 
-      {/* ── Leviers activables V33 ── */}
+      {/* ── Leviers activables V33 + CTA V34 ── */}
       <div className="rounded-lg border border-gray-200 bg-gray-50/50 p-4" data-testid="levers-section">
         {levers.totalLevers > 0 ? (
-          <div className="flex items-center justify-between gap-4">
-            <div className="min-w-0 flex-1">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Zap size={16} className="text-amber-500 shrink-0" />
                 <p className="text-sm font-semibold text-gray-900">
                   {levers.totalLevers} levier{levers.totalLevers > 1 ? 's' : ''} activable{levers.totalLevers > 1 ? 's' : ''}
                 </p>
               </div>
-              <p className="text-xs text-gray-500 mt-1 ml-6">
+              <span className="text-xs text-gray-400">
                 {[
                   levers.leversByType.conformite > 0 && `${levers.leversByType.conformite} conformit\u00e9`,
                   levers.leversByType.facturation > 0 && `${levers.leversByType.facturation} facturation`,
                   levers.leversByType.optimisation > 0 && `${levers.leversByType.optimisation} optimisation`,
                 ].filter(Boolean).join(' \u2022 ')}
-              </p>
+              </span>
             </div>
-            <Button
-              size="sm"
-              variant="secondary"
-              className="shrink-0"
-              onClick={() => navigate('/command-center?filter=leviers')}
-            >
-              Voir les leviers <ArrowRight size={14} />
-            </Button>
+            <div className="space-y-2" data-testid="levers-list">
+              {levers.topLevers.map((lever) => (
+                <div
+                  key={lever.actionKey}
+                  className="flex items-center justify-between gap-3 rounded-md border border-gray-100 bg-white px-3 py-2"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium text-gray-800 truncate">{lever.label}</p>
+                    {lever.impactEur != null && (
+                      <p className="text-[11px] text-gray-400">
+                        Impact estim\u00e9 : {lever.impactEur.toLocaleString('fr-FR')} \u20ac
+                      </p>
+                    )}
+                  </div>
+                  <Button
+                    size="xs"
+                    variant="secondary"
+                    className="shrink-0 text-xs"
+                    onClick={() => navigate(buildLeverDeepLink(lever))}
+                    aria-label={`Cr\u00e9er une action pour : ${lever.label}`}
+                  >
+                    Cr\u00e9er une action <ArrowRight size={12} />
+                  </Button>
+                </div>
+              ))}
+            </div>
           </div>
         ) : (
           <p className="text-sm text-gray-400 text-center py-1">Aucun levier d\u00e9tect\u00e9 (V1)</p>

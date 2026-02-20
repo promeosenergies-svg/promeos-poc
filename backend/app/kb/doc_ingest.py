@@ -43,6 +43,20 @@ def _extract_text_from_html(html: str) -> str:
         return text
 
 
+def _extract_text_from_pdf(file_path: str) -> str:
+    """Extract text from a PDF file using pymupdf. Returns markdown-style text."""
+    import pymupdf  # lazy import — only needed for PDF ingestion
+
+    doc = pymupdf.open(file_path)
+    pages = []
+    for i, page in enumerate(doc):
+        text = page.get_text("text")
+        if text.strip():
+            pages.append(f"## Page {i + 1}\n\n{text.strip()}")
+    doc.close()
+    return "\n\n---\n\n".join(pages)
+
+
 def _chunk_text(text: str, max_words: int = MAX_CHUNK_WORDS, overlap: int = CHUNK_OVERLAP_WORDS) -> List[Dict[str, Any]]:
     """Split text into overlapping chunks."""
     words = text.split()
@@ -119,10 +133,15 @@ def ingest_document(
         }
 
     # Extract text
-    source_type = "html" if path.suffix.lower() in (".html", ".htm") else "txt"
-    if source_type == "html":
+    suffix = path.suffix.lower()
+    if suffix == ".pdf":
+        source_type = "pdf"
+        extracted_text = _extract_text_from_pdf(str(path))
+    elif suffix in (".html", ".htm"):
+        source_type = "html"
         extracted_text = _extract_text_from_html(raw_content)
     else:
+        source_type = "txt"
         extracted_text = raw_content
 
     # Chunk

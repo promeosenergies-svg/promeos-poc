@@ -24,6 +24,9 @@ python-multipart==0.0.6
 # PDF Generation
 reportlab==4.1.0
 
+# PDF Extraction (KB ingestion)
+pymupdf>=1.24.0
+
 # Excel parsing (Patrimoine wizard)
 openpyxl>=3.1.0
 
