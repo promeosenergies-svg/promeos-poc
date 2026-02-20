@@ -12,6 +12,7 @@ import { PageShell, Card, CardBody, Button, Input, Select, Badge } from '../../u
 import {
   createTertiaireEfa, addTertiaireBuilding, addTertiaireResponsibility,
 } from '../../services/api';
+import ProofDepositCTA from './components/ProofDepositCTA';
 
 const STEPS = [
   { key: 'nom', label: 'Identification', icon: Building2, description: 'Nom et type de l\'EFA' },
@@ -268,6 +269,29 @@ export default function TertiaireWizardPage() {
                     <span className="text-xs font-medium text-gray-900">{value}</span>
                   </div>
                 ))}
+              </div>
+
+              {/* Preuves (optionnel) — ne bloque pas la création */}
+              <div className="mt-4 p-3 rounded-lg border border-dashed border-amber-300 bg-amber-50/50">
+                <p className="text-xs text-amber-700 font-medium mb-2">
+                  Preuves (optionnel)
+                </p>
+                <p className="text-[11px] text-amber-600 mb-2">
+                  Vous pouvez déposer des justificatifs OPERAT (attestation, dossier de modulation…) dans la Mémobox.
+                  Cette étape est facultative et peut être réalisée ultérieurement.
+                </p>
+                <ProofDepositCTA
+                  hint={[
+                    `EFA:${form.nom || '(nouveau)'}`,
+                    'Étape:Confirmation',
+                    `Rôle:${ROLES.find((r) => r.value === form.role_assujetti)?.label || form.role_assujetti}`,
+                    `Surface:${form.surface_m2 || '?'} m²`,
+                    `Usage:${form.usage_label || '?'}`,
+                  ].join(' | ')}
+                  label="Déposer une preuve dans la Mémobox"
+                  variant="secondary"
+                  size="xs"
+                />
               </div>
             </div>
           )}

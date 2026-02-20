@@ -13,7 +13,7 @@ import {
   getTertiaireEfa, runTertiaireControls, precheckTertiaireDeclaration,
   exportTertiairePack,
 } from '../../services/api';
-import { buildProofLink } from '../../models/proofLinkModel';
+import ProofDepositCTA from './components/ProofDepositCTA';
 
 const SEVERITY_VARIANTS = {
   critical: 'crit',
@@ -226,27 +226,26 @@ export default function TertiaireEfaDetailPage() {
         {/* Preuves + Memobox */}
         <Card>
           <CardBody>
-            <div className="flex items-center gap-2 mb-3">
-              <FileText size={16} className="text-gray-500" />
-              <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                Preuves documentaires ({(efa.proofs || []).length})
-              </h4>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <FileText size={16} className="text-gray-500" />
+                <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                  Preuves documentaires ({(efa.proofs || []).length})
+                </h4>
+              </div>
+              <ProofDepositCTA
+                hint={[
+                  `EFA:${efa.nom}`,
+                  `efa_id:${efa.id}`,
+                  (efa.responsibilities || []).length > 0
+                    ? `Responsable:${efa.responsibilities[0].entity_value || efa.responsibilities[0].role}`
+                    : null,
+                  totalSurface > 0 ? `Surface:${Math.round(totalSurface)} m²` : null,
+                ].filter(Boolean).join(' | ')}
+              />
             </div>
             {(efa.proofs || []).length === 0 ? (
-              <div>
-                <p className="text-sm text-gray-400 mb-2">Aucune preuve déposée</p>
-                <Button
-                  size="xs"
-                  variant="secondary"
-                  onClick={() => navigate(buildProofLink({
-                    type: 'conformite',
-                    actionKey: 'lev-tertiaire-efa',
-                    proofHint: 'Attestation OPERAT ou dossier de modulation',
-                  }))}
-                >
-                  Déposer une preuve
-                </Button>
-              </div>
+              <p className="text-sm text-gray-400">Aucune preuve déposée</p>
             ) : (
               <div className="space-y-2">
                 {(efa.proofs || []).map((p) => (

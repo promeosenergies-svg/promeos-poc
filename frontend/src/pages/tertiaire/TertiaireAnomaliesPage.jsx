@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { PageShell, Card, CardBody, Button, Badge } from '../../ui';
 import { getTertiaireIssues, updateTertiaireIssue } from '../../services/api';
+import ProofDepositCTA from './components/ProofDepositCTA';
 
 const SEVERITY_VARIANTS = {
   critical: 'crit',
@@ -214,6 +215,15 @@ export default function TertiaireAnomaliesPage() {
                           Marquer résolue
                         </Button>
                       )}
+                      <ProofDepositCTA
+                        hint={[
+                          `EFA:${issue.efa_nom || `#${issue.efa_id}`}`,
+                          `efa_id:${issue.efa_id}`,
+                          `Issue:${issue.code}`,
+                          `Sévérité:${SEVERITY_LABELS[issue.severity] || issue.severity}`,
+                        ].join(' | ')}
+                        label="Déposer la preuve"
+                      />
                     </div>
                   </div>
                 </CardBody>
