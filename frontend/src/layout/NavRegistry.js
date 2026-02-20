@@ -19,6 +19,9 @@ export const ROUTE_MODULE_MAP = {
   '/cockpit': 'cockpit',
   '/notifications': 'cockpit',
   '/conformite': 'operations',
+  '/conformite/tertiaire': 'operations',
+  '/conformite/tertiaire/wizard': 'operations',
+  '/conformite/tertiaire/anomalies': 'operations',
   '/actions': 'operations',
   '/consommations': 'analyse',
   '/consommations/explorer': 'analyse',
@@ -177,6 +180,7 @@ export const NAV_SECTIONS = [
     order: 2,
     items: [
       { to: '/conformite', icon: ShieldCheck, label: 'Conformité', keywords: ['compliance', 'reglementation', 'decret'] },
+      { to: '/conformite/tertiaire', icon: Building2, label: 'Tertiaire / OPERAT', keywords: ['tertiaire', 'operat', 'efa', 'decret', 'declaration'] },
       { to: '/actions',    icon: ListChecks,  label: "Plan d'actions", keywords: ['actions', 'plan', 'todo'] },
     ],
   },

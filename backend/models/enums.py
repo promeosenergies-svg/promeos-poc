@@ -447,3 +447,56 @@ class InspectionStatus(str, enum.Enum):
     SCHEDULED = "scheduled"
     COMPLETED = "completed"
     OVERDUE = "overdue"
+
+
+# ========================================
+# Enums Tertiaire / OPERAT (V39)
+# ========================================
+
+class EfaStatut(str, enum.Enum):
+    """Statut d'une EFA (Entite Fonctionnelle Assujettie)."""
+    ACTIVE = "active"
+    CLOSED = "closed"
+    DRAFT = "draft"
+
+
+class EfaRole(str, enum.Enum):
+    """Role de l'assujetti dans l'EFA."""
+    PROPRIETAIRE = "proprietaire"
+    LOCATAIRE = "locataire"
+    MANDATAIRE = "mandataire"
+
+
+class DeclarationStatus(str, enum.Enum):
+    """Statut d'une declaration annuelle OPERAT."""
+    DRAFT = "draft"
+    PRECHECKED = "prechecked"
+    EXPORTED = "exported"
+    SUBMITTED_SIMULATED = "submitted_simulated"
+
+
+class PerimeterEventType(str, enum.Enum):
+    """Type d'evenement de perimetre EFA."""
+    CHANGEMENT_OCCUPANT = "changement_occupant"
+    VACANCE = "vacance"
+    RENOVATION_MAJEURE = "renovation_majeure"
+    SCISSION = "scission"
+    FUSION = "fusion"
+    CHANGEMENT_USAGE = "changement_usage"
+    AUTRE = "autre"
+
+
+class DataQualityIssueSeverity(str, enum.Enum):
+    """Severite d'une issue qualite tertiaire."""
+    CRITICAL = "critical"
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+
+class DataQualityIssueStatus(str, enum.Enum):
+    """Statut workflow d'une issue qualite tertiaire."""
+    OPEN = "open"
+    ACK = "ack"
+    RESOLVED = "resolved"
+    FALSE_POSITIVE = "false_positive"

@@ -45,6 +45,10 @@ const AdminAssignmentsPage = lazy(() => import('./pages/AdminAssignmentsPage'));
 const AdminAuditLogPage = lazy(() => import('./pages/AdminAuditLogPage'));
 const ConsumptionExplorerPage = lazy(() => import('./pages/ConsumptionExplorerPage'));
 const ActivationPage = lazy(() => import('./pages/ActivationPage'));
+const TertiaireDashboardPage = lazy(() => import('./pages/tertiaire/TertiaireDashboardPage'));
+const TertiaireWizardPage = lazy(() => import('./pages/tertiaire/TertiaireWizardPage'));
+const TertiaireEfaDetailPage = lazy(() => import('./pages/tertiaire/TertiaireEfaDetailPage'));
+const TertiaireAnomaliesPage = lazy(() => import('./pages/tertiaire/TertiaireAnomaliesPage'));
 
 function PageSuspense({ children }) {
   return (
@@ -85,6 +89,10 @@ function App() {
                   <Route path="/sites/:id" element={<PageSuspense><Site360 /></PageSuspense>} />
                   <Route path="/actions" element={<PageSuspense><ActionsPage /></PageSuspense>} />
                   <Route path="/conformite" element={<PageSuspense><ConformitePage /></PageSuspense>} />
+                  <Route path="/conformite/tertiaire" element={<PageSuspense><TertiaireDashboardPage /></PageSuspense>} />
+                  <Route path="/conformite/tertiaire/wizard" element={<PageSuspense><TertiaireWizardPage /></PageSuspense>} />
+                  <Route path="/conformite/tertiaire/efa/:id" element={<PageSuspense><TertiaireEfaDetailPage /></PageSuspense>} />
+                  <Route path="/conformite/tertiaire/anomalies" element={<PageSuspense><TertiaireAnomaliesPage /></PageSuspense>} />
 
                   {/* Existing pages */}
                   <Route path="/dashboard-legacy" element={<PageSuspense><Dashboard onUpgradeClick={() => setShowUpgradeWizard(true)} /></PageSuspense>} />

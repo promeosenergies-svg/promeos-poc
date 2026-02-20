@@ -1,0 +1,227 @@
+/**
+ * PROMEOS V39 — Anomalies Tertiaire / OPERAT
+ * Route: /conformite/tertiaire/anomalies
+ */
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  AlertTriangle, ShieldAlert, CheckCircle2, Loader2, Filter,
+  Building2, ArrowRight,
+} from 'lucide-react';
+import { PageShell, Card, CardBody, Button, Badge } from '../../ui';
+import { getTertiaireIssues, updateTertiaireIssue } from '../../services/api';
+
+const SEVERITY_VARIANTS = {
+  critical: 'crit',
+  high: 'risque',
+  medium: 'warn',
+  low: 'neutral',
+};
+
+const SEVERITY_LABELS = {
+  critical: 'Critique',
+  high: 'Haute',
+  medium: 'Moyenne',
+  low: 'Basse',
+};
+
+const STATUS_LABELS = {
+  open: 'Ouverte',
+  ack: 'Prise en compte',
+  resolved: 'Résolue',
+  false_positive: 'Faux positif',
+};
+
+const STATUS_VARIANTS = {
+  open: 'risque',
+  ack: 'warn',
+  resolved: 'ok',
+  false_positive: 'neutral',
+};
+
+export default function TertiaireAnomaliesPage() {
+  const navigate = useNavigate();
+  const [issues, setIssues] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filterSeverity, setFilterSeverity] = useState('');
+  const [filterStatus, setFilterStatus] = useState('open');
+
+  const fetchIssues = () => {
+    setLoading(true);
+    const params = {};
+    if (filterSeverity) params.severity = filterSeverity;
+    if (filterStatus) params.status = filterStatus;
+    getTertiaireIssues(params)
+      .then((data) => setIssues(data.issues || []))
+      .catch(() => setIssues([]))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { fetchIssues(); }, [filterSeverity, filterStatus]);
+
+  const handleStatusChange = async (issueId, newStatus) => {
+    await updateTertiaireIssue(issueId, { status: newStatus });
+    fetchIssues();
+  };
+
+  const severityCounts = issues.reduce((acc, i) => {
+    acc[i.severity] = (acc[i.severity] || 0) + 1;
+    return acc;
+  }, {});
+
+  return (
+    <PageShell
+      title="Anomalies Tertiaire"
+      subtitle="Qualité des données EFA — Décret tertiaire"
+      backPath="/conformite/tertiaire"
+    >
+      {/* Filtres */}
+      <Card>
+        <CardBody className="p-4">
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Filter size={14} className="text-gray-400" />
+              <span className="text-xs font-semibold text-gray-500 uppercase">Filtres</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-gray-500">Sévérité</label>
+              <select
+                value={filterSeverity}
+                onChange={(e) => setFilterSeverity(e.target.value)}
+                className="text-xs border border-gray-200 rounded px-2 py-1 bg-white"
+              >
+                <option value="">Toutes</option>
+                <option value="critical">Critique</option>
+                <option value="high">Haute</option>
+                <option value="medium">Moyenne</option>
+                <option value="low">Basse</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-gray-500">Statut</label>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="text-xs border border-gray-200 rounded px-2 py-1 bg-white"
+              >
+                <option value="">Tous</option>
+                <option value="open">Ouvertes</option>
+                <option value="ack">Prises en compte</option>
+                <option value="resolved">Résolues</option>
+                <option value="false_positive">Faux positifs</option>
+              </select>
+            </div>
+          </div>
+        </CardBody>
+      </Card>
+
+      {/* Compteurs sévérité */}
+      {!loading && issues.length > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+          {['critical', 'high', 'medium', 'low'].map((sev) => (
+            <Card key={sev}>
+              <CardBody className="p-3 text-center">
+                <p className="text-lg font-bold text-gray-900">{severityCounts[sev] || 0}</p>
+                <p className="text-xs text-gray-500">{SEVERITY_LABELS[sev]}</p>
+              </CardBody>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Liste des anomalies */}
+      <div className="mt-4">
+        {loading ? (
+          <Card>
+            <CardBody className="flex items-center justify-center gap-2 py-16 text-gray-400">
+              <Loader2 size={20} className="animate-spin" />
+              <span className="text-sm">Chargement des anomalies…</span>
+            </CardBody>
+          </Card>
+        ) : issues.length === 0 ? (
+          <Card>
+            <CardBody className="text-center py-12">
+              <CheckCircle2 size={32} className="text-emerald-400 mx-auto mb-3" />
+              <p className="text-sm text-gray-500">Aucune anomalie trouvée avec ces filtres</p>
+            </CardBody>
+          </Card>
+        ) : (
+          <div className="space-y-3">
+            {issues.map((issue) => (
+              <Card key={issue.id}>
+                <CardBody className="p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      {/* En-tête : sévérité + code + EFA */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant={SEVERITY_VARIANTS[issue.severity] || 'neutral'} size="xs">
+                          {SEVERITY_LABELS[issue.severity] || issue.severity}
+                        </Badge>
+                        <Badge variant={STATUS_VARIANTS[issue.status] || 'neutral'} size="xs">
+                          {STATUS_LABELS[issue.status] || issue.status}
+                        </Badge>
+                        <span className="text-xs text-gray-400 font-mono">{issue.code}</span>
+                        {issue.year && (
+                          <span className="text-xs text-gray-400">Année {issue.year}</span>
+                        )}
+                      </div>
+
+                      {/* Message */}
+                      <p className="text-sm text-gray-900 mt-2 font-medium">{issue.message_fr}</p>
+
+                      {/* Impact */}
+                      {issue.impact_fr && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          <ShieldAlert size={12} className="inline mr-1 text-amber-500" />
+                          {issue.impact_fr}
+                        </p>
+                      )}
+
+                      {/* Action recommandée */}
+                      {issue.action_fr && (
+                        <p className="text-xs text-indigo-600 mt-1">
+                          <ArrowRight size={12} className="inline mr-1" />
+                          {issue.action_fr}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex flex-col gap-1 shrink-0">
+                      <Button
+                        size="xs"
+                        variant="secondary"
+                        onClick={() => navigate(`/conformite/tertiaire/efa/${issue.efa_id}`)}
+                      >
+                        <Building2 size={12} />
+                        Voir EFA
+                      </Button>
+                      {issue.status === 'open' && (
+                        <Button
+                          size="xs"
+                          variant="secondary"
+                          onClick={() => handleStatusChange(issue.id, 'ack')}
+                        >
+                          Prendre en compte
+                        </Button>
+                      )}
+                      {issue.status === 'ack' && (
+                        <Button
+                          size="xs"
+                          variant="secondary"
+                          onClick={() => handleStatusChange(issue.id, 'resolved')}
+                        >
+                          Marquer résolue
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </CardBody>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    </PageShell>
+  );
+}

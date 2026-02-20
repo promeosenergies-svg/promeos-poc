@@ -39,6 +39,8 @@ def run_migrations(engine):
     _add_unique_site_portefeuille_siret_index(engine)
     _add_unique_batiment_site_nom_index(engine)
     _add_dp_compteur_cascade_trigger(engine)
+    # V39 — Tertiaire / OPERAT
+    _create_tertiaire_tables(engine)
 
 
 def _add_soft_delete_columns(engine):
@@ -409,3 +411,163 @@ def _add_dp_compteur_cascade_trigger(engine):
             logger.info("migration: created trigger %s", trigger_name)
         except Exception as e:
             logger.warning("migration: could not create trigger %s: %s", trigger_name, e)
+
+
+# ========================================
+# V39 — Tertiaire / OPERAT tables
+# ========================================
+
+_TERTIAIRE_TABLES = {
+    "tertiaire_efa": """
+        CREATE TABLE IF NOT EXISTS "tertiaire_efa" (
+            "id" INTEGER PRIMARY KEY,
+            "org_id" INTEGER NOT NULL REFERENCES "organisations"("id"),
+            "site_id" INTEGER REFERENCES "sites"("id"),
+            "nom" VARCHAR(300) NOT NULL,
+            "statut" VARCHAR(20) NOT NULL DEFAULT 'draft',
+            "role_assujetti" VARCHAR(30) NOT NULL DEFAULT 'proprietaire',
+            "reporting_start" DATE,
+            "reporting_end" DATE,
+            "closed_at" DATETIME,
+            "notes" TEXT,
+            "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            "updated_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            "deleted_at" DATETIME,
+            "deleted_by" VARCHAR(200),
+            "delete_reason" VARCHAR(500)
+        )
+    """,
+    "tertiaire_efa_link": """
+        CREATE TABLE IF NOT EXISTS "tertiaire_efa_link" (
+            "id" INTEGER PRIMARY KEY,
+            "child_efa_id" INTEGER NOT NULL REFERENCES "tertiaire_efa"("id"),
+            "parent_efa_id" INTEGER NOT NULL REFERENCES "tertiaire_efa"("id"),
+            "reason" VARCHAR(100) NOT NULL,
+            "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            "updated_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+    """,
+    "tertiaire_efa_building": """
+        CREATE TABLE IF NOT EXISTS "tertiaire_efa_building" (
+            "id" INTEGER PRIMARY KEY,
+            "efa_id" INTEGER NOT NULL REFERENCES "tertiaire_efa"("id"),
+            "building_id" INTEGER REFERENCES "batiments"("id"),
+            "usage_label" VARCHAR(200),
+            "surface_m2" REAL,
+            "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            "updated_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+    """,
+    "tertiaire_responsibility": """
+        CREATE TABLE IF NOT EXISTS "tertiaire_responsibility" (
+            "id" INTEGER PRIMARY KEY,
+            "efa_id" INTEGER NOT NULL REFERENCES "tertiaire_efa"("id"),
+            "role" VARCHAR(30) NOT NULL,
+            "entity_type" VARCHAR(100),
+            "entity_value" VARCHAR(300),
+            "contact_email" VARCHAR(300),
+            "scope_json" TEXT,
+            "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            "updated_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+    """,
+    "tertiaire_perimeter_event": """
+        CREATE TABLE IF NOT EXISTS "tertiaire_perimeter_event" (
+            "id" INTEGER PRIMARY KEY,
+            "efa_id" INTEGER NOT NULL REFERENCES "tertiaire_efa"("id"),
+            "type" VARCHAR(50) NOT NULL,
+            "effective_date" DATE NOT NULL,
+            "description" TEXT,
+            "justification" TEXT,
+            "attachments_json" TEXT,
+            "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            "updated_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+    """,
+    "tertiaire_declaration": """
+        CREATE TABLE IF NOT EXISTS "tertiaire_declaration" (
+            "id" INTEGER PRIMARY KEY,
+            "efa_id" INTEGER NOT NULL REFERENCES "tertiaire_efa"("id"),
+            "year" INTEGER NOT NULL,
+            "status" VARCHAR(30) NOT NULL DEFAULT 'draft',
+            "checklist_json" TEXT,
+            "exported_pack_path" VARCHAR(500),
+            "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            "updated_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+    """,
+    "tertiaire_proof_artifact": """
+        CREATE TABLE IF NOT EXISTS "tertiaire_proof_artifact" (
+            "id" INTEGER PRIMARY KEY,
+            "efa_id" INTEGER NOT NULL REFERENCES "tertiaire_efa"("id"),
+            "type" VARCHAR(100) NOT NULL,
+            "file_path" VARCHAR(500),
+            "kb_doc_id" VARCHAR(200),
+            "owner_role" VARCHAR(30),
+            "valid_from" DATE,
+            "valid_to" DATE,
+            "tags_json" TEXT,
+            "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            "updated_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+    """,
+    "tertiaire_data_quality_issue": """
+        CREATE TABLE IF NOT EXISTS "tertiaire_data_quality_issue" (
+            "id" INTEGER PRIMARY KEY,
+            "efa_id" INTEGER NOT NULL REFERENCES "tertiaire_efa"("id"),
+            "year" INTEGER,
+            "code" VARCHAR(100) NOT NULL,
+            "severity" VARCHAR(20) NOT NULL,
+            "message_fr" TEXT NOT NULL,
+            "impact_fr" TEXT,
+            "action_fr" TEXT,
+            "status" VARCHAR(30) NOT NULL DEFAULT 'open',
+            "proof_required_json" TEXT,
+            "proof_owner_role" VARCHAR(100),
+            "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            "updated_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+    """,
+}
+
+_TERTIAIRE_INDEXES = [
+    'CREATE INDEX IF NOT EXISTS "ix_tertiaire_efa_org_id" ON "tertiaire_efa" ("org_id")',
+    'CREATE INDEX IF NOT EXISTS "ix_tertiaire_efa_site_id" ON "tertiaire_efa" ("site_id")',
+    'CREATE INDEX IF NOT EXISTS "ix_tertiaire_efa_statut" ON "tertiaire_efa" ("statut")',
+    'CREATE INDEX IF NOT EXISTS "ix_tertiaire_efa_deleted_at" ON "tertiaire_efa" ("deleted_at")',
+    'CREATE INDEX IF NOT EXISTS "ix_tertiaire_efa_building_efa_id" ON "tertiaire_efa_building" ("efa_id")',
+    'CREATE INDEX IF NOT EXISTS "ix_tertiaire_responsibility_efa_id" ON "tertiaire_responsibility" ("efa_id")',
+    'CREATE INDEX IF NOT EXISTS "ix_tertiaire_perimeter_event_efa_id" ON "tertiaire_perimeter_event" ("efa_id")',
+    'CREATE INDEX IF NOT EXISTS "ix_tertiaire_declaration_efa_id" ON "tertiaire_declaration" ("efa_id")',
+    'CREATE INDEX IF NOT EXISTS "ix_tertiaire_proof_artifact_efa_id" ON "tertiaire_proof_artifact" ("efa_id")',
+    'CREATE INDEX IF NOT EXISTS "ix_tertiaire_dq_issue_efa_id" ON "tertiaire_data_quality_issue" ("efa_id")',
+    'CREATE UNIQUE INDEX IF NOT EXISTS "uq_tertiaire_declaration_efa_year" ON "tertiaire_declaration" ("efa_id", "year")',
+]
+
+
+def _create_tertiaire_tables(engine):
+    """V39: Create tertiaire/OPERAT tables if they do not exist. Idempotent."""
+    insp = inspect(engine)
+    created = 0
+
+    with engine.begin() as conn:
+        for table_name, ddl in _TERTIAIRE_TABLES.items():
+            if insp.has_table(table_name):
+                continue
+            try:
+                conn.execute(text(ddl))
+                created += 1
+                logger.info("migration: created table %s", table_name)
+            except Exception as e:
+                logger.warning("migration: could not create table %s: %s", table_name, e)
+
+        for idx_sql in _TERTIAIRE_INDEXES:
+            try:
+                conn.execute(text(idx_sql))
+            except Exception:
+                pass
+
+    if created > 0:
+        logger.info("migration: V39 tertiaire — %d table(s) created", created)
+    else:
+        logger.debug("migration: V39 tertiaire tables already present — no changes")

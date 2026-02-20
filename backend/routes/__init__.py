@@ -35,6 +35,7 @@ from .bacs import router as bacs_router
 from .ems import router as ems_router
 from .dev_tools import router as dev_tools_router
 from .flex import router as flex_router
+from .tertiaire import router as tertiaire_router
 
 __all__ = [
     "sites_router",
@@ -71,4 +72,5 @@ __all__ = [
     "ems_router",
     "dev_tools_router",
     "flex_router",
+    "tertiaire_router",
 ]

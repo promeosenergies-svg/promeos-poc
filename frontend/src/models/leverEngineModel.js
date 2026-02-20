@@ -165,6 +165,25 @@ export function computeActionableLevers({ kpis = {}, billingSummary = {}, compli
     }
   }
 
+  // ── Tertiaire / OPERAT V39 ─────────────────────────────────────────────────
+  const tertiaireIssues = kpis._tertiaireIssues ?? 0;
+  const tertiaireCritical = kpis._tertiaireCritical ?? 0;
+  if (tertiaireIssues > 0) {
+    const severityLabel = tertiaireCritical > 0
+      ? ` (${tertiaireCritical} critique${tertiaireCritical > 1 ? 's' : ''})`
+      : '';
+    levers.push({
+      type: 'conformite',
+      actionKey: 'lev-tertiaire-efa',
+      label: `Corriger ${tertiaireIssues} anomalie${tertiaireIssues > 1 ? 's' : ''} Décret tertiaire${severityLabel}`,
+      impactEur: risqueTotal > 0 && totalRisqueSites > 0
+        ? Math.round(risqueTotal * (tertiaireIssues / (totalRisqueSites + tertiaireIssues)))
+        : null,
+      ctaPath: '/conformite/tertiaire/anomalies',
+      proofHint: 'Attestation OPERAT ou dossier de modulation — Estimation V1',
+    });
+  }
+
   // ── Activation donnees V37 ──────────────────────────────────────────────────
   const activatedCount = computeActivatedCount({ kpis, billingSummary, purchaseSignals });
   if ((kpis.total ?? 0) > 0 && activatedCount < ACTIVATION_THRESHOLD) {

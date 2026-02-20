@@ -840,4 +840,44 @@ export const generateEmsDemo = (portfolioSize = 12, days = 365, seed = 123, forc
   api.post('/ems/demo/generate', null, { params: { portfolio_size: portfolioSize, days, seed, force } }).then(r => r.data);
 export const purgeEmsDemo = () => api.post('/ems/demo/purge').then(r => r.data);
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Tertiaire / OPERAT V39
+// ═══════════════════════════════════════════════════════════════════════════
+const TERT_BASE = '/tertiaire';
+
+export const getTertiaireEfas = (params = {}) =>
+  api.get(`${TERT_BASE}/efa`, { params }).then(r => r.data);
+export const createTertiaireEfa = (body) =>
+  api.post(`${TERT_BASE}/efa`, body).then(r => r.data);
+export const getTertiaireEfa = (efaId) =>
+  api.get(`${TERT_BASE}/efa/${efaId}`).then(r => r.data);
+export const updateTertiaireEfa = (efaId, body) =>
+  api.patch(`${TERT_BASE}/efa/${efaId}`, body).then(r => r.data);
+export const deleteTertiaireEfa = (efaId) =>
+  api.delete(`${TERT_BASE}/efa/${efaId}`).then(r => r.data);
+
+export const addTertiaireBuilding = (efaId, body) =>
+  api.post(`${TERT_BASE}/efa/${efaId}/buildings`, body).then(r => r.data);
+export const addTertiaireResponsibility = (efaId, body) =>
+  api.post(`${TERT_BASE}/efa/${efaId}/responsibilities`, body).then(r => r.data);
+export const addTertiaireEvent = (efaId, body) =>
+  api.post(`${TERT_BASE}/efa/${efaId}/events`, body).then(r => r.data);
+export const addTertiaireEfaLink = (efaId, body) =>
+  api.post(`${TERT_BASE}/efa/${efaId}/links`, body).then(r => r.data);
+
+export const runTertiaireControls = (efaId, year = null) =>
+  api.post(`${TERT_BASE}/efa/${efaId}/controls`, null, { params: year ? { year } : {} }).then(r => r.data);
+export const precheckTertiaireDeclaration = (efaId, year) =>
+  api.post(`${TERT_BASE}/efa/${efaId}/precheck`, null, { params: { year } }).then(r => r.data);
+export const exportTertiairePack = (efaId, year) =>
+  api.post(`${TERT_BASE}/efa/${efaId}/export-pack`, null, { params: { year } }).then(r => r.data);
+
+export const getTertiaireIssues = (params = {}) =>
+  api.get(`${TERT_BASE}/issues`, { params }).then(r => r.data);
+export const updateTertiaireIssue = (issueId, body) =>
+  api.patch(`${TERT_BASE}/issues/${issueId}`, body).then(r => r.data);
+
+export const getTertiaireDashboard = (orgId = null) =>
+  api.get(`${TERT_BASE}/dashboard`, { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);
+
 export default api;

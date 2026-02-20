@@ -105,6 +105,20 @@ export const LEVER_ACTION_TEMPLATES = {
     due_days: 60,
     priority: 2,
   },
+  // V39 — Tertiaire / OPERAT
+  'lev-tertiaire-efa': {
+    source_type: 'lever_engine',
+    severity: 'high',
+    rationale: [
+      'Anomalies detectees sur les EFA (Entites Fonctionnelles Assujetties) au Decret tertiaire',
+      'Donnees manquantes ou incoherences bloquant la declaration OPERAT',
+      'Correction prioritaire avant echeance de declaration',
+    ],
+    proof_expected: 'Attestation OPERAT, dossier de modulation, ou justificatif de surface',
+    proof_owner: 'Responsable conformite ou Energy Manager',
+    due_days: 90,
+    priority: 1,
+  },
   // V37 — Activation donnees
   'lev-data-cover': {
     source_type: 'lever_engine',

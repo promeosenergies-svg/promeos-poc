@@ -21,6 +21,8 @@ from .enums import (
     IntakeSessionStatus, IntakeMode, IntakeSource,
     WatcherEventStatus,
     CvcSystemType, CvcArchitecture, BacsTriggerReason, InspectionStatus,
+    EfaStatut, EfaRole, DeclarationStatus, PerimeterEventType,
+    DataQualityIssueSeverity, DataQualityIssueStatus,
 )
 
 # Hierarchie organisation
@@ -112,6 +114,13 @@ from .ems_models import EmsWeatherCache, EmsSavedView, EmsCollection
 # Emission Factors (Sprint V9 Decarbonation)
 from .emission_factor import EmissionFactor
 
+# Tertiaire / OPERAT (V39)
+from .tertiaire import (
+    TertiaireEfa, TertiaireEfaLink, TertiaireEfaBuilding,
+    TertiaireResponsibility, TertiairePerimeterEvent,
+    TertiaireDeclaration, TertiaireProofArtifact, TertiaireDataQualityIssue,
+)
+
 # Energy (Consumption & Analytics)
 from .energy_models import (
     Meter, MeterReading, DataImportJob, UsageProfile, Anomaly, Recommendation,
@@ -179,4 +188,10 @@ __all__ = [
     "EmsWeatherCache", "EmsSavedView", "EmsCollection",
     # Emission Factors (Sprint V9 Decarbonation)
     "EmissionFactor",
+    # Tertiaire / OPERAT (V39)
+    "TertiaireEfa", "TertiaireEfaLink", "TertiaireEfaBuilding",
+    "TertiaireResponsibility", "TertiairePerimeterEvent",
+    "TertiaireDeclaration", "TertiaireProofArtifact", "TertiaireDataQualityIssue",
+    "EfaStatut", "EfaRole", "DeclarationStatus", "PerimeterEventType",
+    "DataQualityIssueSeverity", "DataQualityIssueStatus",
 ]

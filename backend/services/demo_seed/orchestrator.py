@@ -107,7 +107,12 @@ class SeedOrchestrator:
         purchase = generate_purchase(self.db, master["sites"], rng)
         result["purchase"] = purchase
 
-        # 9. Superuser
+        # 9. Tertiaire / OPERAT (EFA, buildings, responsibilities, issues)
+        from .gen_tertiaire import generate_tertiaire
+        tertiaire = generate_tertiaire(self.db, master["org"], master["sites"], rng)
+        result["tertiaire"] = tertiaire
+
+        # 10. Superuser
         self._create_superuser(master["org"])
 
         # Enable demo mode and register current org in DemoState (single source of truth)
@@ -209,11 +214,27 @@ class SeedOrchestrator:
             PurchaseAssumptionSet, PurchaseScenarioResult,
             EmsWeatherCache, SiteOperatingSchedule,
         )
+        from models.tertiaire import (
+            TertiaireDataQualityIssue, TertiaireProofArtifact,
+            TertiaireDeclaration, TertiairePerimeterEvent,
+            TertiaireResponsibility, TertiaireEfaBuilding,
+            TertiaireEfaLink, TertiaireEfa,
+        )
 
         deleted = {}
 
         # FK-safe deletion order (leaves first, roots last)
         delete_order = [
+            # Tertiaire V39 (leaves of tertiaire_efa)
+            ("tertiaire_quality_issues", TertiaireDataQualityIssue),
+            ("tertiaire_proofs", TertiaireProofArtifact),
+            ("tertiaire_declarations", TertiaireDeclaration),
+            ("tertiaire_events", TertiairePerimeterEvent),
+            ("tertiaire_responsibilities", TertiaireResponsibility),
+            ("tertiaire_buildings", TertiaireEfaBuilding),
+            ("tertiaire_links", TertiaireEfaLink),
+            ("tertiaire_efas", TertiaireEfa),
+            # Purchase
             ("purchase_scenarios", PurchaseScenarioResult),
             ("purchase_assumptions", PurchaseAssumptionSet),
             ("action_items", ActionItem),

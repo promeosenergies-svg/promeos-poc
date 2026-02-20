@@ -1,0 +1,397 @@
+/**
+ * PROMEOS V39 — Fiche détaillée EFA
+ * Route: /conformite/tertiaire/efa/:id
+ */
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import {
+  Building2, AlertTriangle, CheckCircle2, Clock, FileText, Download,
+  Loader2, ArrowRight, ShieldAlert, Users, Calendar, Zap, Link2,
+} from 'lucide-react';
+import { PageShell, Card, CardBody, Button, Badge, Tooltip } from '../../ui';
+import {
+  getTertiaireEfa, runTertiaireControls, precheckTertiaireDeclaration,
+  exportTertiairePack,
+} from '../../services/api';
+import { buildProofLink } from '../../models/proofLinkModel';
+
+const SEVERITY_VARIANTS = {
+  critical: 'crit',
+  high: 'risque',
+  medium: 'warn',
+  low: 'neutral',
+};
+
+const STATUS_LABELS = {
+  active: 'Active',
+  draft: 'Brouillon',
+  closed: 'Fermée',
+};
+
+export default function TertiaireEfaDetailPage() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [efa, setEfa] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [controlsRunning, setControlsRunning] = useState(false);
+  const [precheckResult, setPrecheckResult] = useState(null);
+  const [exporting, setExporting] = useState(false);
+
+  const fetchEfa = () => {
+    setLoading(true);
+    getTertiaireEfa(id)
+      .then(setEfa)
+      .catch(() => setEfa(null))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { fetchEfa(); }, [id]);
+
+  const handleRunControls = async () => {
+    setControlsRunning(true);
+    try {
+      await runTertiaireControls(id, new Date().getFullYear());
+      fetchEfa();
+    } finally {
+      setControlsRunning(false);
+    }
+  };
+
+  const handlePrecheck = async () => {
+    const year = new Date().getFullYear();
+    const result = await precheckTertiaireDeclaration(id, year);
+    setPrecheckResult(result);
+  };
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const year = new Date().getFullYear();
+      await exportTertiairePack(id, year);
+      fetchEfa();
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <PageShell title="Fiche EFA" subtitle="Chargement…" backPath="/conformite/tertiaire">
+        <div className="flex items-center justify-center gap-2 py-16 text-gray-400">
+          <Loader2 size={20} className="animate-spin" />
+        </div>
+      </PageShell>
+    );
+  }
+
+  if (!efa) {
+    return (
+      <PageShell title="EFA introuvable" backPath="/conformite/tertiaire">
+        <Card><CardBody className="text-center py-8 text-gray-400">EFA non trouvée</CardBody></Card>
+      </PageShell>
+    );
+  }
+
+  const totalSurface = (efa.buildings || []).reduce((s, b) => s + (b.surface_m2 || 0), 0);
+  const qualif = efa.qualification || {};
+
+  return (
+    <PageShell
+      title={efa.nom}
+      subtitle={`EFA #${efa.id} — ${STATUS_LABELS[efa.statut] || efa.statut}`}
+      backPath="/conformite/tertiaire"
+    >
+      {/* Status card (feu tricolore) */}
+      <Card>
+        <CardBody className="p-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                qualif.status === 'complete' ? 'bg-emerald-100' :
+                qualif.status === 'partielle' ? 'bg-amber-100' : 'bg-red-100'
+              }`}>
+                {qualif.status === 'complete' ? (
+                  <CheckCircle2 size={24} className="text-emerald-600" />
+                ) : qualif.status === 'partielle' ? (
+                  <AlertTriangle size={24} className="text-amber-600" />
+                ) : (
+                  <ShieldAlert size={24} className="text-red-600" />
+                )}
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900">
+                  Complétude : {qualif.completeness_pct ?? 0}%
+                </p>
+                <p className="text-xs text-gray-500 mt-0.5">{qualif.explanation}</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button size="xs" variant="secondary" onClick={handleRunControls} disabled={controlsRunning}>
+                {controlsRunning ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
+                Contrôles
+              </Button>
+              <Button size="xs" variant="secondary" onClick={handlePrecheck}>
+                <CheckCircle2 size={14} /> Pré-vérification
+              </Button>
+            </div>
+          </div>
+        </CardBody>
+      </Card>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+        {/* Bâtiments */}
+        <Card>
+          <CardBody>
+            <div className="flex items-center gap-2 mb-3">
+              <Building2 size={16} className="text-gray-500" />
+              <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                Bâtiments ({(efa.buildings || []).length})
+              </h4>
+            </div>
+            {(efa.buildings || []).length === 0 ? (
+              <p className="text-sm text-gray-400">Aucun bâtiment associé</p>
+            ) : (
+              <div className="space-y-2">
+                {(efa.buildings || []).map((b) => (
+                  <div key={b.id} className="flex justify-between text-sm border-b border-gray-100 pb-2">
+                    <span className="text-gray-700">{b.usage_label || 'Usage non défini'}</span>
+                    <span className="font-medium text-gray-900">{b.surface_m2 ? `${Math.round(b.surface_m2)} m²` : '—'}</span>
+                  </div>
+                ))}
+                <div className="flex justify-between text-sm font-semibold pt-1">
+                  <span className="text-gray-700">Total</span>
+                  <span className="text-gray-900">{Math.round(totalSurface)} m²</span>
+                </div>
+              </div>
+            )}
+          </CardBody>
+        </Card>
+
+        {/* Responsables */}
+        <Card>
+          <CardBody>
+            <div className="flex items-center gap-2 mb-3">
+              <Users size={16} className="text-gray-500" />
+              <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                Responsables ({(efa.responsibilities || []).length})
+              </h4>
+            </div>
+            {(efa.responsibilities || []).length === 0 ? (
+              <p className="text-sm text-gray-400">Aucun responsable défini</p>
+            ) : (
+              <div className="space-y-2">
+                {(efa.responsibilities || []).map((r) => (
+                  <div key={r.id} className="text-sm border-b border-gray-100 pb-2">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="neutral" size="xs">{r.role}</Badge>
+                      <span className="text-gray-700">{r.entity_value || '—'}</span>
+                    </div>
+                    {r.contact_email && (
+                      <p className="text-xs text-gray-400 mt-0.5">{r.contact_email}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardBody>
+        </Card>
+
+        {/* Événements périmètre */}
+        <Card>
+          <CardBody>
+            <div className="flex items-center gap-2 mb-3">
+              <Calendar size={16} className="text-gray-500" />
+              <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                Événements périmètre ({(efa.events || []).length})
+              </h4>
+            </div>
+            {(efa.events || []).length === 0 ? (
+              <p className="text-sm text-gray-400">Aucun événement</p>
+            ) : (
+              <div className="space-y-2">
+                {(efa.events || []).map((e) => (
+                  <div key={e.id} className="flex items-start gap-2 text-sm border-b border-gray-100 pb-2">
+                    <Clock size={14} className="text-gray-400 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-gray-700">{e.description || e.type}</p>
+                      <p className="text-xs text-gray-400">{e.effective_date}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardBody>
+        </Card>
+
+        {/* Preuves + Memobox */}
+        <Card>
+          <CardBody>
+            <div className="flex items-center gap-2 mb-3">
+              <FileText size={16} className="text-gray-500" />
+              <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                Preuves documentaires ({(efa.proofs || []).length})
+              </h4>
+            </div>
+            {(efa.proofs || []).length === 0 ? (
+              <div>
+                <p className="text-sm text-gray-400 mb-2">Aucune preuve déposée</p>
+                <Button
+                  size="xs"
+                  variant="secondary"
+                  onClick={() => navigate(buildProofLink({
+                    type: 'conformite',
+                    actionKey: 'lev-tertiaire-efa',
+                    proofHint: 'Attestation OPERAT ou dossier de modulation',
+                  }))}
+                >
+                  Déposer une preuve
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {(efa.proofs || []).map((p) => (
+                  <div key={p.id} className="flex items-center gap-2 text-sm border-b border-gray-100 pb-2">
+                    <FileText size={14} className="text-gray-400 shrink-0" />
+                    <span className="text-gray-700 truncate">{p.type}</span>
+                    {p.kb_doc_id && <Badge variant="neutral" size="xs">Memobox</Badge>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardBody>
+        </Card>
+      </div>
+
+      {/* Issues ouvertes */}
+      {(efa.open_issues || []).length > 0 && (
+        <div className="mt-4">
+          <Card>
+            <CardBody>
+              <div className="flex items-center gap-2 mb-3">
+                <AlertTriangle size={16} className="text-amber-500" />
+                <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                  Anomalies ouvertes ({(efa.open_issues || []).length})
+                </h4>
+              </div>
+              <div className="space-y-2">
+                {(efa.open_issues || []).map((issue) => (
+                  <div key={issue.id} className="rounded-md border border-gray-100 p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <Badge variant={SEVERITY_VARIANTS[issue.severity] || 'neutral'} size="xs">
+                            {issue.severity}
+                          </Badge>
+                          <span className="text-xs text-gray-400">{issue.code}</span>
+                        </div>
+                        <p className="text-sm text-gray-900 mt-1">{issue.message_fr}</p>
+                        {issue.impact_fr && (
+                          <p className="text-xs text-gray-500 mt-0.5">{issue.impact_fr}</p>
+                        )}
+                        {issue.action_fr && (
+                          <p className="text-xs text-indigo-600 mt-0.5">{issue.action_fr}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardBody>
+          </Card>
+        </div>
+      )}
+
+      {/* EFA liées */}
+      {(efa.links || []).length > 0 && (
+        <div className="mt-4">
+          <Card>
+            <CardBody>
+              <div className="flex items-center gap-2 mb-3">
+                <Link2 size={16} className="text-gray-500" />
+                <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                  EFA liées ({(efa.links || []).length})
+                </h4>
+              </div>
+              <div className="space-y-2">
+                {(efa.links || []).map((link) => {
+                  const linkedId = link.child_efa_id === efa.id ? link.parent_efa_id : link.child_efa_id;
+                  return (
+                    <button
+                      key={link.id}
+                      onClick={() => navigate(`/conformite/tertiaire/efa/${linkedId}`)}
+                      className="w-full text-left flex items-center gap-2 text-sm p-2 rounded hover:bg-gray-50"
+                    >
+                      <Building2 size={14} className="text-gray-400" />
+                      <span className="text-gray-700">EFA #{linkedId}</span>
+                      <Badge variant="neutral" size="xs">{link.reason}</Badge>
+                      <ArrowRight size={12} className="text-gray-400 ml-auto" />
+                    </button>
+                  );
+                })}
+              </div>
+            </CardBody>
+          </Card>
+        </div>
+      )}
+
+      {/* Precheck result */}
+      {precheckResult && (
+        <div className="mt-4">
+          <Card>
+            <CardBody>
+              <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-3">
+                Pré-vérification {precheckResult.year}
+              </h4>
+              <div className="flex items-center gap-2 mb-3">
+                <Badge variant={
+                  precheckResult.status === 'pret' ? 'ok' :
+                  precheckResult.status === 'bloque' ? 'crit' : 'warn'
+                }>
+                  {precheckResult.status === 'pret' ? 'Prêt' :
+                   precheckResult.status === 'bloque' ? 'Bloqué' : 'Incomplet'}
+                </Badge>
+                <span className="text-xs text-gray-400">
+                  {precheckResult.ok_count}/{precheckResult.total} critères validés
+                </span>
+              </div>
+              <div className="space-y-1">
+                {(precheckResult.checklist || []).map((item, i) => (
+                  <div key={i} className="flex items-center gap-2 text-xs">
+                    {item.ok ? (
+                      <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
+                    ) : (
+                      <AlertTriangle size={14} className="text-amber-500 shrink-0" />
+                    )}
+                    <span className="text-gray-700">{item.label}</span>
+                    <span className="text-gray-400 ml-auto">{item.detail}</span>
+                  </div>
+                ))}
+              </div>
+              {precheckResult.status === 'pret' && (
+                <Button size="sm" className="mt-4" onClick={handleExport} disabled={exporting}>
+                  {exporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+                  Générer le pack export (simulation)
+                </Button>
+              )}
+            </CardBody>
+          </Card>
+        </div>
+      )}
+
+      {/* Export info */}
+      {(efa.declarations || []).some((d) => d.status === 'exported') && (
+        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50/30 p-4">
+          <div className="flex items-start gap-2">
+            <AlertTriangle size={16} className="text-amber-500 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-gray-900">Pack export généré (simulation)</p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Ce pack est une simulation PROMEOS. Il ne constitue pas une soumission officielle sur OPERAT.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+    </PageShell>
+  );
+}

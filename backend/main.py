@@ -35,6 +35,7 @@ from routes import (
     ems_router,
     dev_tools_router,
     flex_router,
+    tertiaire_router,
 )
 
 # Import KB router
@@ -100,6 +101,7 @@ app.include_router(bacs_router)  # BACS Expert (Decret n°2020-887)
 app.include_router(ems_router)  # EMS Consumption Explorer
 app.include_router(flex_router)  # Flex Mini V0 (demand-side flexibility)
 app.include_router(dev_tools_router)  # Dev Tools (reset_db)
+app.include_router(tertiaire_router)  # Tertiaire / OPERAT V39 (EFA, controls, precheck, export)
 
 # Run safe schema migrations (idempotent, no drop)
 from database import engine as _engine, run_migrations as _run_migrations
