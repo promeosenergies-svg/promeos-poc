@@ -199,6 +199,18 @@ class TestUniquePortefeuilleNamePerEntite:
         db.commit()
         assert db.query(Portefeuille).count() == 2
 
+    def test_soft_deleted_name_allows_reuse(self, db):
+        """Soft-deleted portefeuille name can be reused in same EJ."""
+        from datetime import datetime
+        org = _make_org(db)
+        ej = _make_ej(db, org.id)
+        pf = _make_portefeuille(db, ej.id, nom="Recyclé")
+        db.commit()
+        pf.deleted_at = datetime.utcnow()
+        db.commit()
+        _make_portefeuille(db, ej.id, nom="Recyclé")
+        db.commit()  # Should not raise
+
 
 # ========================================
 # TEST 3: Unique site (portefeuille + siret)
@@ -234,6 +246,17 @@ class TestUniqueSiteSiretPerPortefeuille:
         _make_site(db, pf1.id, nom="S1", siret="12345678901234")
         _make_site(db, pf2.id, nom="S2", siret="12345678901234")
         db.commit()
+
+    def test_soft_deleted_siret_allows_reuse(self, db):
+        """Soft-deleted site siret can be reused in same portefeuille."""
+        from datetime import datetime
+        org, ej, pf, _ = _scaffold(db)
+        s = _make_site(db, pf.id, nom="Old", siret="99988877766655")
+        db.commit()
+        s.deleted_at = datetime.utcnow()
+        db.commit()
+        _make_site(db, pf.id, nom="New", siret="99988877766655")
+        db.commit()  # Should not raise
 
 
 # ========================================
@@ -297,6 +320,17 @@ class TestUniqueBatimentNamePerSite:
         _make_batiment(db, s2.id, nom="Hall")
         db.commit()
         assert db.query(Batiment).count() == 2
+
+    def test_soft_deleted_name_allows_reuse(self, db):
+        """Soft-deleted batiment name can be reused on same site."""
+        from datetime import datetime
+        _, _, _, site = _scaffold(db)
+        b = _make_batiment(db, site.id, nom="Hall Recyclé")
+        db.commit()
+        b.deleted_at = datetime.utcnow()
+        db.commit()
+        _make_batiment(db, site.id, nom="Hall Recyclé")
+        db.commit()  # Should not raise
 
 
 # ========================================
@@ -390,6 +424,79 @@ class TestContractOverlapRejected:
             None, None,
         )
         assert overlap is not None
+
+    def test_adjacent_contracts_no_overlap(self, db):
+        """Back-to-back contracts (end = day before start) do NOT overlap."""
+        from routes.billing import check_contract_overlap
+        _, _, _, site = _scaffold(db)
+
+        _make_contract(db, site.id, start=date(2024, 1, 1), end=date(2024, 6, 30))
+        db.commit()
+
+        # Adjacent: starts the day after
+        overlap = check_contract_overlap(
+            db, site.id, BillingEnergyType.ELEC,
+            date(2024, 7, 1), date(2024, 12, 31),
+        )
+        assert overlap is None
+
+    def test_touching_contracts_overlap(self, db):
+        """Contracts sharing a boundary day (end = start) DO overlap."""
+        from routes.billing import check_contract_overlap
+        _, _, _, site = _scaffold(db)
+
+        _make_contract(db, site.id, start=date(2024, 1, 1), end=date(2024, 6, 30))
+        db.commit()
+
+        # Starts on same day as end
+        overlap = check_contract_overlap(
+            db, site.id, BillingEnergyType.ELEC,
+            date(2024, 6, 30), date(2024, 12, 31),
+        )
+        assert overlap is not None
+
+
+# ========================================
+# TEST 6b: Contract update overlap (PATCH guard)
+# ========================================
+
+class TestContractUpdateOverlap:
+    """Updating a contract's dates must also check for overlap (exclude_id)."""
+
+    def test_update_into_overlap_detected(self, db):
+        """Moving a contract's dates to overlap another → check catches it."""
+        from routes.billing import check_contract_overlap
+        _, _, _, site = _scaffold(db)
+
+        c1 = _make_contract(db, site.id, start=date(2024, 1, 1), end=date(2024, 6, 30))
+        c2 = _make_contract(db, site.id, start=date(2024, 7, 1), end=date(2024, 12, 31))
+        db.commit()
+
+        # Simulate PATCH of c2: extend start_date into c1's range
+        overlap = check_contract_overlap(
+            db, site.id, BillingEnergyType.ELEC,
+            date(2024, 3, 1), date(2024, 12, 31),
+            exclude_id=c2.id,
+        )
+        assert overlap is not None
+        assert overlap.id == c1.id
+
+    def test_update_no_overlap_passes(self, db):
+        """Moving dates within non-overlapping range → no conflict."""
+        from routes.billing import check_contract_overlap
+        _, _, _, site = _scaffold(db)
+
+        c1 = _make_contract(db, site.id, start=date(2024, 1, 1), end=date(2024, 6, 30))
+        c2 = _make_contract(db, site.id, start=date(2024, 7, 1), end=date(2024, 12, 31))
+        db.commit()
+
+        # Simulate PATCH of c2: shrink range (still non-overlapping)
+        overlap = check_contract_overlap(
+            db, site.id, BillingEnergyType.ELEC,
+            date(2024, 8, 1), date(2024, 11, 30),
+            exclude_id=c2.id,
+        )
+        assert overlap is None
 
 
 # ========================================

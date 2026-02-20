@@ -38,6 +38,7 @@ from services.import_mapping import (
 )
 from middleware.auth import get_optional_auth, AuthContext
 from services.scope_utils import get_scope_org_id
+from routes.billing import check_contract_overlap
 
 router = APIRouter(prefix="/api/patrimoine", tags=["Patrimoine"])
 
@@ -1411,15 +1412,31 @@ def update_contract(contract_id: int, request: Request, body: ContractUpdateRequ
     org_id = _get_org_id(request, auth, db)
     ct = _load_contract_with_org_check(db, contract_id, org_id)
 
-    updated = []
-    for field, value in body.model_dump(exclude_unset=True).items():
+    updates = body.model_dump(exclude_unset=True)
+
+    # Apply field values (parse dates)
+    for field, value in updates.items():
         if field in ("start_date", "end_date") and value is not None:
             value = date.fromisoformat(value)
         setattr(ct, field, value)
-        updated.append(field)
+
+    # If dates changed, check for overlap with other contracts
+    if "start_date" in updates or "end_date" in updates:
+        overlap = check_contract_overlap(
+            db, ct.site_id, ct.energy_type,
+            ct.start_date, ct.end_date,
+            exclude_id=ct.id,
+        )
+        if overlap:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Chevauchement avec le contrat #{overlap.id} "
+                       f"({overlap.supplier_name}, "
+                       f"{overlap.start_date or '...'} → {overlap.end_date or '...'})",
+            )
 
     db.commit()
-    return {"updated": updated, **_serialize_contract(ct)}
+    return {"updated": list(updates.keys()), **_serialize_contract(ct)}
 
 
 @router.delete("/contracts/{contract_id}")
