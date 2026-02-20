@@ -851,22 +851,26 @@ def activate_batch(db: Session, batch_id: int, portefeuille_id: int, user_id: in
     db.flush()
 
     # Atomic activation within SAVEPOINT
+    # batch.status + log.status are updated INSIDE the savepoint so that
+    # a rollback reverts everything atomically (no "APPLIED" without entities).
     try:
         with db.begin_nested():
             result = _do_activate(db, batch, batch_id, portefeuille_id, now)
+            # Status updates inside savepoint — atomic with entity creation
+            log.status = ActivationLogStatus.SUCCESS
+            log.completed_at = datetime.utcnow()
+            log.sites_created = result["sites_created"]
+            log.compteurs_created = result["compteurs_created"]
 
-        # Savepoint committed — update log with success
-        log.status = ActivationLogStatus.SUCCESS
-        log.completed_at = datetime.utcnow()
-        log.sites_created = result["sites_created"]
-        log.compteurs_created = result["compteurs_created"]
-        db.flush()
-
+        # Savepoint committed — batch.status=APPLIED + log=SUCCESS are atomic
         result["activation_log_id"] = log.id
         return result
 
     except (SQLAlchemyError, ValueError, Exception) as e:
-        # Savepoint auto-rolled back — all created entities undone
+        # Savepoint auto-rolled back — all created entities undone.
+        # Expire batch to discard stale in-memory APPLIED status that
+        # would otherwise be re-flushed to DB by the flush() below.
+        db.expire(batch)
         log.status = ActivationLogStatus.FAILED
         log.completed_at = datetime.utcnow()
         log.error_message = str(e)[:2000]

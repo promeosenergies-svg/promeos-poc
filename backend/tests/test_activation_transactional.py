@@ -336,3 +336,77 @@ class TestActivationLogCreated:
 
         assert log.activation_hash is not None
         assert len(log.activation_hash) == 64  # SHA-256 hex
+
+
+class TestActivationAtomicityRollback:
+    """batch.status + log.status must be consistent after a mid-activation crash.
+
+    Regression: if status updates leak outside the savepoint, a rollback
+    can leave batch.status = APPLIED while zero entities were created.
+    """
+
+    def test_activation_atomicity_rollback(self, db_session):
+        """Crash mid-activation → batch stays VALIDATED, log is FAILED, 0 entities."""
+        org, ej, pf = _create_org(db_session)
+
+        batch = _create_batch_with_sites(db_session, org.id, [
+            {"nom": "Atom Site A", "meters": [{"meter_id": "10000000000001"}]},
+            {"nom": "Atom Site B", "meters": [{"meter_id": "10000000000002"}]},
+            {"nom": "Atom Site C", "meters": [{"meter_id": "10000000000003"}]},
+        ])
+
+        run_quality_gate(db_session, batch.id)
+
+        # Sanity: batch is VALIDATED before activation
+        assert batch.status == StagingStatus.VALIDATED
+
+        sites_before = db_session.query(Site).count()
+        compteurs_before = db_session.query(Compteur).count()
+
+        # Force crash after first site — inside the savepoint
+        call_count = {"n": 0}
+        original_create = __import__(
+            "services.onboarding_service", fromlist=["create_site_from_data"]
+        ).create_site_from_data
+
+        def crash_on_second(*args, **kwargs):
+            call_count["n"] += 1
+            if call_count["n"] >= 2:
+                raise RuntimeError("Simulated mid-activation crash")
+            return original_create(*args, **kwargs)
+
+        with patch("services.patrimoine_service.create_site_from_data", side_effect=crash_on_second):
+            with pytest.raises(ValueError, match="Activation failed"):
+                activate_batch(db_session, batch.id, pf.id)
+
+        # ---- Atomicity checks ----
+
+        # 1. Re-read batch from DB (not in-memory cache)
+        db_session.expire(batch)
+        assert batch.status != StagingStatus.APPLIED, (
+            "CRITICAL: batch.status leaked to APPLIED despite rollback"
+        )
+        assert batch.status == StagingStatus.VALIDATED, (
+            "batch.status should stay VALIDATED after failed activation"
+        )
+
+        # 2. Zero entities created — full rollback
+        assert db_session.query(Site).count() == sites_before
+        assert db_session.query(Compteur).count() == compteurs_before
+
+        # 3. ActivationLog exists with FAILED (not SUCCESS, not STARTED)
+        log = db_session.query(ActivationLog).filter(
+            ActivationLog.batch_id == batch.id,
+        ).first()
+        assert log is not None
+        assert log.status == ActivationLogStatus.FAILED, (
+            f"log.status should be FAILED, got {log.status}"
+        )
+        assert log.error_message is not None
+        assert "mid-activation crash" in log.error_message
+
+        # 4. Batch can be re-activated (not stuck in inconsistent state)
+        result = activate_batch(db_session, batch.id, pf.id)
+        assert result["sites_created"] == 3
+        db_session.expire(batch)
+        assert batch.status == StagingStatus.APPLIED
