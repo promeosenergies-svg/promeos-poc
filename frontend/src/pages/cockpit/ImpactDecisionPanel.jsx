@@ -11,13 +11,14 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ShieldAlert, Receipt, TrendingUp, ArrowRight, Info, Loader2,
+  ShieldAlert, Receipt, TrendingUp, ArrowRight, Info, Loader2, Zap,
 } from 'lucide-react';
 import { Card, CardBody, Badge, Tooltip, Button } from '../../ui';
 import { KPI_ACCENTS } from '../../ui/colorTokens';
 import { fmtEur } from '../../utils/format';
 import { getBillingSummary } from '../../services/api';
 import { computeImpactKpis, computeRecommendation } from '../../models/impactDecisionModel';
+import { computeActionableLevers } from '../../models/leverEngineModel';
 
 // ── KPI tile (inline — small enough) ─────────────────────────────────────────
 
@@ -90,6 +91,12 @@ export default function ImpactDecisionPanel({ kpis }) {
   const reco = useMemo(
     () => computeRecommendation(impact, kpis),
     [impact, kpis],
+  );
+
+  // V33 — Levier Engine
+  const levers = useMemo(
+    () => computeActionableLevers({ kpis, billingSummary: billingSummary || {} }),
+    [kpis, billingSummary],
   );
 
   const handleDrillDown = (type) => {
@@ -183,6 +190,39 @@ export default function ImpactDecisionPanel({ kpis }) {
           dominant={dominantKey === 'optimisation'}
           subLabel={subLabels.optimisation}
         />
+      </div>
+
+      {/* ── Leviers activables V33 ── */}
+      <div className="rounded-lg border border-gray-200 bg-gray-50/50 p-4" data-testid="levers-section">
+        {levers.totalLevers > 0 ? (
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <Zap size={16} className="text-amber-500 shrink-0" />
+                <p className="text-sm font-semibold text-gray-900">
+                  {levers.totalLevers} levier{levers.totalLevers > 1 ? 's' : ''} activable{levers.totalLevers > 1 ? 's' : ''}
+                </p>
+              </div>
+              <p className="text-xs text-gray-500 mt-1 ml-6">
+                {[
+                  levers.leversByType.conformite > 0 && `${levers.leversByType.conformite} conformit\u00e9`,
+                  levers.leversByType.facturation > 0 && `${levers.leversByType.facturation} facturation`,
+                  levers.leversByType.optimisation > 0 && `${levers.leversByType.optimisation} optimisation`,
+                ].filter(Boolean).join(' \u2022 ')}
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant="secondary"
+              className="shrink-0"
+              onClick={() => navigate('/command-center?filter=leviers')}
+            >
+              Voir les leviers <ArrowRight size={14} />
+            </Button>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-400 text-center py-1">Aucun levier d\u00e9tect\u00e9 (V1)</p>
+        )}
       </div>
 
       {/* ── Recommandation prioritaire ── */}

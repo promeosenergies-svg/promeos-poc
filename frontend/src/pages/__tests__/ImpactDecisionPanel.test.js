@@ -315,3 +315,64 @@ describe('V32: Compteurs contextuels', () => {
     expect(panelSrc).toContain('getBillingSummary');
   });
 });
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TEST 7: V33 — Leviers activables (affichage + CTA navigate)
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('V33: Leviers activables', () => {
+  const panelSrc = readSrc('pages/cockpit/ImpactDecisionPanel.jsx');
+
+  it('importe computeActionableLevers depuis leverEngineModel', () => {
+    expect(panelSrc).toContain("from '../../models/leverEngineModel'");
+    expect(panelSrc).toContain('computeActionableLevers');
+  });
+
+  it('appelle computeActionableLevers via useMemo', () => {
+    expect(panelSrc).toMatch(/const levers = useMemo/);
+    expect(panelSrc).toContain('computeActionableLevers({ kpis, billingSummary');
+  });
+
+  it('affiche "X leviers activables" quand totalLevers > 0', () => {
+    expect(panelSrc).toContain('levier');
+    expect(panelSrc).toContain('activable');
+    expect(panelSrc).toContain('levers.totalLevers');
+  });
+
+  it('affiche le detail par type (conformite, facturation, optimisation)', () => {
+    expect(panelSrc).toContain('levers.leversByType.conformite');
+    expect(panelSrc).toContain('levers.leversByType.facturation');
+    expect(panelSrc).toContain('levers.leversByType.optimisation');
+  });
+
+  it('affiche le separateur bullet entre types', () => {
+    // U+2022 bullet separator between type labels
+    expect(panelSrc).toContain('\\u2022');
+  });
+
+  it('contient le CTA "Voir les leviers" vers /command-center?filter=leviers', () => {
+    expect(panelSrc).toContain('Voir les leviers');
+    expect(panelSrc).toContain("/command-center?filter=leviers");
+  });
+
+  it('affiche "Aucun levier detecte (V1)" quand totalLevers = 0', () => {
+    expect(panelSrc).toContain('Aucun levier');
+    expect(panelSrc).toContain('(V1)');
+  });
+
+  it('la section leviers a un data-testid', () => {
+    expect(panelSrc).toContain('data-testid="levers-section"');
+  });
+
+  it('impactDecisionModel.js est intact (V30 non modifie)', () => {
+    const modelSrc = readSrc('models/impactDecisionModel.js');
+    expect(modelSrc).toContain('export function computeImpactKpis');
+    expect(modelSrc).toContain('export function computeRecommendation');
+    expect(modelSrc).not.toContain('computeActionableLevers');
+  });
+
+  it('aucune nouvelle API ajoutee (contrainte V33)', () => {
+    const apiImports = panelSrc.match(/from '\.\.\/\.\.\/services\/api'/g) || [];
+    expect(apiImports).toHaveLength(1);
+  });
+});
