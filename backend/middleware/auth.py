@@ -22,7 +22,7 @@ from services.iam_service import decode_token, get_scoped_site_ids, check_permis
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=False)
 
 AUTH_ENABLED = os.environ.get("PROMEOS_AUTH_ENABLED", "false").lower() == "true"
-DEMO_MODE = os.environ.get("PROMEOS_DEMO_MODE", "true").lower() == "true"
+DEMO_MODE = os.environ.get("PROMEOS_DEMO_MODE", "false").lower() == "true"
 
 
 @dataclass

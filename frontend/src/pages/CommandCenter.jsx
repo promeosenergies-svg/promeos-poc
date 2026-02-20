@@ -19,6 +19,7 @@ import {
   getNotificationsSummary,
 } from '../services/api';
 import { useScope } from '../contexts/ScopeContext';
+import { getRiskStatus } from '../lib/constants';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { buildWatchlist, buildBriefing, buildOpportunities, buildTodayActions } from '../models/dashboardEssentials';
 import BriefingHeroCard from './cockpit/BriefingHeroCard';
@@ -67,7 +68,7 @@ export default function CommandCenter() {
       const [compBundle, actSummary, actList, notifSummary] = await Promise.all([
         getComplianceBundle({ org_id: org.id }).catch(() => null),
         getActionsSummary(org.id).catch(() => null),
-        getActionsList({ limit: 20, status: 'backlog,planned,in_progress' }).catch(() => []),
+        getActionsList({ limit: 20, status: 'open,in_progress' }).catch(() => []),
         getNotificationsSummary(org.id).catch(() => null),
       ]);
       setCompliance(compBundle);
@@ -96,7 +97,7 @@ export default function CommandCenter() {
       ? Math.round(scopedSites.filter(s => s.conso_kwh_an > 0).length / total * 100)
       : 0;
     const compStatus = nonConformes > 0 ? 'crit' : aRisque > 0 ? 'warn' : total > 0 ? 'ok' : 'neutral';
-    const risqueStatus = risque > 50000 ? 'crit' : risque > 10000 ? 'warn' : 'ok';
+    const risqueStatus = getRiskStatus(risque);
     return { total, conformes, nonConformes, aRisque, risque, pctConf, couvertureDonnees, compStatus, risqueStatus };
   }, [scopedSites]);
 
@@ -306,7 +307,7 @@ export default function CommandCenter() {
                       </Td>
                       <Td className="text-right text-sm font-medium">
                         {site.risque_eur > 0 ? (
-                          <span className="text-amber-700">{site.risque_eur.toLocaleString('fr-FR')} EUR</span>
+                          <span className="text-amber-700">{site.risque_eur.toLocaleString('fr-FR')} €</span>
                         ) : (
                           <span className="text-gray-400">-</span>
                         )}

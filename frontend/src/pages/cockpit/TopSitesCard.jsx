@@ -70,7 +70,7 @@ export default function TopSitesCard({ topSites = { worst: [], best: [] }, onNav
 
   const worstSub = (site) =>
     site.risque_eur > 0
-      ? `${site.risque_eur.toLocaleString('fr-FR')}\u00a0EUR`
+      ? `${site.risque_eur.toLocaleString('fr-FR')}\u00a0€`
       : 'Risque non chiffré';
 
   const bestSub = () => 'Conforme';

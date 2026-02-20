@@ -16,6 +16,7 @@ import {
   stagingValidate, stagingFix, stagingAutofix,
   stagingActivate, loadPatrimoineDemo,
 } from '../services/api';
+import { useScope } from '../contexts/ScopeContext';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
@@ -49,6 +50,7 @@ function formatBytes(bytes) {
 }
 
 const PatrimoineWizard = ({ onClose }) => {
+  const { refreshSites } = useScope();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -185,8 +187,12 @@ const PatrimoineWizard = ({ onClose }) => {
   };
 
   const handleClose = () => {
-    if (activationResult || demoResult) window.location.reload();
-    else onClose();
+    if (activationResult || demoResult) {
+      refreshSites();
+      onClose();
+    } else {
+      onClose();
+    }
   };
 
   const requestClose = () => {

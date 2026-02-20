@@ -4,6 +4,9 @@
  * 1) computeImpactKpis: 3 KPIs labels FR + valeurs correctes
  * 2) computeRecommendation: 3 cas (conformité > facture > optimisation)
  * 3) Guard: le panneau utilise uniquement des données scopées (pas d'appel direct non scopé)
+ * 4) Drill-down: 3 KPIs cliquables → navigation vers pages cibles
+ * 5) V32 — KPI dominant: mise en avant visuelle du max
+ * 6) V32 — Compteurs contextuels: sub-labels sous chaque KPI
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
@@ -158,5 +161,157 @@ describe('GUARD: Impact panel uses scoped data only', () => {
     expect(modelSrc).not.toContain("from 'react'");
     expect(modelSrc).not.toContain('import.*api');
     expect(modelSrc).not.toContain('fetch(');
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TEST 4: Drill-down — 3 KPIs cliquables avec navigation correcte
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('GUARD: Drill-down KPI navigation', () => {
+  const panelSrc = readSrc('pages/cockpit/ImpactDecisionPanel.jsx');
+
+  it('contient la fonction handleDrillDown', () => {
+    expect(panelSrc).toContain('handleDrillDown');
+  });
+
+  it('navigue vers /patrimoine?filter=risque pour le KPI risque', () => {
+    expect(panelSrc).toContain("/patrimoine?filter=risque");
+  });
+
+  it('navigue vers /factures?filter=anomalies pour le KPI surcoût', () => {
+    expect(panelSrc).toContain("/factures?filter=anomalies");
+  });
+
+  it('navigue vers /consommations?filter=energivores pour le KPI optimisation', () => {
+    expect(panelSrc).toContain("/consommations?filter=energivores");
+  });
+
+  it('chaque KPI tile reçoit un onClick', () => {
+    const onClickCount = (panelSrc.match(/onClick=\{.*handleDrillDown/g) || []).length;
+    expect(onClickCount).toBe(3);
+  });
+
+  it('chaque KPI tile a un aria-label pour l\'accessibilité', () => {
+    const ariaCount = (panelSrc.match(/ariaLabel="/g) || []).length;
+    expect(ariaCount).toBeGreaterThanOrEqual(3);
+  });
+
+  it('les tiles utilisent cursor-pointer au hover', () => {
+    expect(panelSrc).toContain('cursor-pointer');
+    expect(panelSrc).toContain('hover:');
+  });
+
+  it('les tiles sont rendues en <button> quand cliquables', () => {
+    expect(panelSrc).toContain("const Tag = onClick ? 'button' : 'div'");
+  });
+
+  it('la logique V30 (computeImpactKpis, computeRecommendation) n\'est pas modifiée', () => {
+    const modelSrc = readSrc('models/impactDecisionModel.js');
+    // Le modèle exporte toujours les 2 fonctions pures
+    expect(modelSrc).toContain('export function computeImpactKpis');
+    expect(modelSrc).toContain('export function computeRecommendation');
+    // Le panel importe bien ces 2 fonctions
+    expect(panelSrc).toContain("from '../../models/impactDecisionModel'");
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TEST 5: V32 — KPI dominant (mise en avant visuelle du max)
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('V32: KPI dominant', () => {
+  const panelSrc = readSrc('pages/cockpit/ImpactDecisionPanel.jsx');
+
+  it('calcule dominantKey via useMemo (max des 3 montants)', () => {
+    expect(panelSrc).toContain('dominantKey');
+    expect(panelSrc).toContain('Math.max(risqueConformite, surcoutFacture, opportuniteOptim)');
+  });
+
+  it('dominant=null quand max === 0', () => {
+    expect(panelSrc).toContain('if (max === 0) return null');
+  });
+
+  it('risque est dominant quand risqueConformite >= les deux autres', () => {
+    expect(panelSrc).toMatch(/risqueConformite >= surcoutFacture.*risqueConformite >= opportuniteOptim.*return 'risque'/s);
+  });
+
+  it('surcout est dominant quand surcoutFacture >= opportuniteOptim', () => {
+    expect(panelSrc).toMatch(/surcoutFacture >= opportuniteOptim.*return 'surcout'/s);
+  });
+
+  it('optimisation est dominant par défaut (fallback)', () => {
+    expect(panelSrc).toContain("return 'optimisation'");
+  });
+
+  it('chaque tile reçoit dominant={dominantKey === ...}', () => {
+    expect(panelSrc).toContain("dominant={dominantKey === 'risque'}");
+    expect(panelSrc).toContain("dominant={dominantKey === 'surcout'}");
+    expect(panelSrc).toContain("dominant={dominantKey === 'optimisation'}");
+  });
+
+  it('le tag "Prioritaire" s\'affiche quand dominant', () => {
+    expect(panelSrc).toContain('Prioritaire');
+    expect(panelSrc).toMatch(/dominant && \(/);
+  });
+
+  it('data-dominant est posé sur la tile dominante', () => {
+    expect(panelSrc).toContain('data-dominant={dominant || undefined}');
+  });
+
+  it('la tile dominante a un style hero (border accent + tintBg + shadow)', () => {
+    expect(panelSrc).toContain('a.border');
+    expect(panelSrc).toContain('a.tintBg');
+    expect(panelSrc).toContain('shadow-sm');
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TEST 6: V32 — Compteurs contextuels (sub-labels)
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('V32: Compteurs contextuels', () => {
+  const panelSrc = readSrc('pages/cockpit/ImpactDecisionPanel.jsx');
+
+  it('calcule subLabels via useMemo', () => {
+    expect(panelSrc).toContain('subLabels');
+    expect(panelSrc).toMatch(/const subLabels = useMemo/);
+  });
+
+  it('risque: compteur basé sur nonConformes + aRisque', () => {
+    expect(panelSrc).toContain('kpis?.nonConformes');
+    expect(panelSrc).toContain('kpis?.aRisque');
+    expect(panelSrc).toContain('concerné');
+  });
+
+  it('risque: pluriel correct (site/sites, concerné/concernés)', () => {
+    expect(panelSrc).toMatch(/rs > 1 \? 's' : ''/);
+  });
+
+  it('surcout: compteur basé sur invoices_with_anomalies ou total_insights', () => {
+    expect(panelSrc).toContain('invoices_with_anomalies');
+    expect(panelSrc).toContain('total_insights');
+    expect(panelSrc).toContain('impactée');
+  });
+
+  it('optimisation: compteur null en V1 (pas de données granulaires)', () => {
+    expect(panelSrc).toContain('optimisation: null');
+  });
+
+  it('chaque tile reçoit subLabel={subLabels.xxx}', () => {
+    expect(panelSrc).toContain('subLabel={subLabels.risque}');
+    expect(panelSrc).toContain('subLabel={subLabels.surcout}');
+    expect(panelSrc).toContain('subLabel={subLabels.optimisation}');
+  });
+
+  it('le subLabel s\'affiche uniquement quand available && subLabel', () => {
+    expect(panelSrc).toContain('available && subLabel');
+  });
+
+  it('aucune nouvelle API appelée (contrainte V32)', () => {
+    // Seule API : getBillingSummary (existante V30)
+    const apiCalls = panelSrc.match(/from '\.\.\/\.\.\/services\/api'/g) || [];
+    expect(apiCalls).toHaveLength(1);
+    expect(panelSrc).toContain('getBillingSummary');
   });
 });

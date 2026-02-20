@@ -58,6 +58,13 @@ describe('Batch A — Patrimoine accents', () => {
   it('détectée avec accent', () => {
     expect(src).not.toMatch(/detectee/);
   });
+  it('no bare "A risque" / "A evaluer" in STATUT maps', () => {
+    expect(src).not.toMatch(/label:\s*'A risque'/);
+    expect(src).not.toMatch(/label:\s*'A evaluer'/);
+  });
+  it('Réinitialiser with accent', () => {
+    expect(src).not.toMatch(/Reinitialiser/);
+  });
 });
 
 describe('Batch A — Site360 accents', () => {
@@ -67,6 +74,13 @@ describe('Batch A — Site360 accents', () => {
   });
   it('Évaluation réglementaire avec accents', () => {
     expect(src).not.toMatch(/Evaluation reglementaire/);
+  });
+  it('no bare "A risque" / "A evaluer"', () => {
+    expect(src).not.toMatch(/label:\s*'A risque'/);
+    expect(src).not.toMatch(/label:\s*'A evaluer'/);
+  });
+  it('no EUR currency strings', () => {
+    expect(src).not.toMatch(/\bEUR\b/);
   });
 });
 

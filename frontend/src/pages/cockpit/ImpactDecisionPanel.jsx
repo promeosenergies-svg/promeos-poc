@@ -21,16 +21,30 @@ import { computeImpactKpis, computeRecommendation } from '../../models/impactDec
 
 // ── KPI tile (inline — small enough) ─────────────────────────────────────────
 
-function ImpactKpiTile({ icon: Icon, label, value, available, tooltip, accent }) {
+function ImpactKpiTile({ icon: Icon, label, value, available, tooltip, accent, onClick, ariaLabel, dominant, subLabel }) {
   const a = KPI_ACCENTS[accent] || KPI_ACCENTS.neutral;
+  const Tag = onClick ? 'button' : 'div';
   return (
-    <div className="flex items-start gap-3 p-4 rounded-lg border border-gray-200 bg-white">
+    <Tag
+      onClick={onClick}
+      aria-label={ariaLabel}
+      data-dominant={dominant || undefined}
+      className={`flex items-start gap-3 p-4 rounded-lg border text-left w-full${
+        dominant ? ` ${a.border} ${a.tintBg} shadow-sm` : ' border-gray-200 bg-white'
+      }${onClick ? ' cursor-pointer hover:shadow-sm transition-all' : ''}`}
+      {...(onClick ? { type: 'button' } : {})}
+    >
       <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${a.iconBg}`}>
         <Icon size={18} className={a.iconText} />
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
           <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wide">{label}</p>
+          {dominant && (
+            <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded ${a.iconBg} ${a.tintText}`}>
+              Prioritaire
+            </span>
+          )}
           {tooltip && (
             <Tooltip content={tooltip}>
               <Info size={12} className="text-gray-400 cursor-help" />
@@ -40,11 +54,14 @@ function ImpactKpiTile({ icon: Icon, label, value, available, tooltip, accent })
         <p className="text-lg font-bold text-gray-900 mt-0.5">
           {available ? fmtEur(value) : '—'}
         </p>
+        {available && subLabel && (
+          <p className="text-[11px] text-gray-400 mt-0.5">{subLabel}</p>
+        )}
         {!available && (
           <Badge variant="neutral" size="xs">Données manquantes</Badge>
         )}
       </div>
-    </div>
+    </Tag>
   );
 }
 
@@ -74,6 +91,33 @@ export default function ImpactDecisionPanel({ kpis }) {
     () => computeRecommendation(impact, kpis),
     [impact, kpis],
   );
+
+  const handleDrillDown = (type) => {
+    if (type === 'risque') navigate('/patrimoine?filter=risque');
+    if (type === 'surcout') navigate('/factures?filter=anomalies');
+    if (type === 'optimisation') navigate('/consommations?filter=energivores');
+  };
+
+  // V32 — KPI dominant (max € parmi les 3)
+  const dominantKey = useMemo(() => {
+    const { risqueConformite, surcoutFacture, opportuniteOptim } = impact;
+    const max = Math.max(risqueConformite, surcoutFacture, opportuniteOptim);
+    if (max === 0) return null;
+    if (risqueConformite >= surcoutFacture && risqueConformite >= opportuniteOptim) return 'risque';
+    if (surcoutFacture >= opportuniteOptim) return 'surcout';
+    return 'optimisation';
+  }, [impact]);
+
+  // V32 — Compteurs contextuels (données déjà en scope, aucune nouvelle API)
+  const subLabels = useMemo(() => {
+    const rs = (kpis?.nonConformes ?? 0) + (kpis?.aRisque ?? 0);
+    const ac = billingSummary?.invoices_with_anomalies ?? billingSummary?.total_insights ?? null;
+    return {
+      risque: rs > 0 ? `${rs} site${rs > 1 ? 's' : ''} concerné${rs > 1 ? 's' : ''}` : null,
+      surcout: ac != null && ac > 0 ? `${ac} facture${ac > 1 ? 's' : ''} impactée${ac > 1 ? 's' : ''}` : null,
+      optimisation: null,
+    };
+  }, [kpis, billingSummary]);
 
   // Loading state
   if (loading) {
@@ -110,6 +154,10 @@ export default function ImpactDecisionPanel({ kpis }) {
           available={impact.risqueAvailable}
           tooltip="Somme des risques financiers des sites non conformes ou à risque dans le périmètre actif"
           accent="risque"
+          onClick={() => handleDrillDown('risque')}
+          ariaLabel="Voir les sites à risque conformité"
+          dominant={dominantKey === 'risque'}
+          subLabel={subLabels.risque}
         />
         <ImpactKpiTile
           icon={Receipt}
@@ -118,6 +166,10 @@ export default function ImpactDecisionPanel({ kpis }) {
           available={impact.surcoutAvailable}
           tooltip="Total des pertes identifiées par le moteur d'audit facture (shadow billing)"
           accent="alertes"
+          onClick={() => handleDrillDown('surcout')}
+          ariaLabel="Voir les anomalies de facturation"
+          dominant={dominantKey === 'surcout'}
+          subLabel={subLabels.surcout}
         />
         <ImpactKpiTile
           icon={TrendingUp}
@@ -126,6 +178,10 @@ export default function ImpactDecisionPanel({ kpis }) {
           available={impact.optimAvailable}
           tooltip="Heuristique V1 : 1 % du montant facturé total — affiné à mesure que les données s'enrichissent"
           accent="conformite"
+          onClick={() => handleDrillDown('optimisation')}
+          ariaLabel="Voir les sites énergivores"
+          dominant={dominantKey === 'optimisation'}
+          subLabel={subLabels.optimisation}
         />
       </div>
 
