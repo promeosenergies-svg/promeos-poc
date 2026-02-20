@@ -12,20 +12,9 @@ from models import (
     StatutConformite, not_deleted,
 )
 from middleware.auth import get_optional_auth, AuthContext
-from services.scope_utils import get_scope_org_id
+from services.scope_utils import resolve_org_id
 
 router = APIRouter(prefix="/api", tags=["Cockpit"])
-
-
-def _get_org_id(request: Request) -> int | None:
-    """Extract X-Org-Id from request headers (injected by frontend scope interceptor)."""
-    raw = request.headers.get("X-Org-Id")
-    if raw:
-        try:
-            return int(raw)
-        except ValueError:
-            pass
-    return None
 
 
 def _sites_for_org(db: Session, org_id: int | None):
@@ -51,25 +40,11 @@ def get_cockpit(
     Statistiques globales pour le cockpit exécutif.
     Scope priority: auth.org_id > X-Org-Id header > DemoState > last org.
     """
-    # V18-E: canonical scope resolution (auth > header > demo fallback)
-    org_id = get_scope_org_id(request, auth)
-
-    # Resolve organisation — canonical priority then demo fallback
-    if org_id is not None:
-        org = db.query(Organisation).filter(Organisation.id == org_id).first()
-    else:
-        from services.demo_state import DemoState
-        demo_org_id = DemoState.get_demo_org_id()
-        if demo_org_id:
-            org = db.query(Organisation).filter(Organisation.id == demo_org_id).first()
-        else:
-            org = db.query(Organisation).order_by(Organisation.id.desc()).first()
-
+    # DEMO_MODE-aware scope resolution (auth > header > demo fallback > 401)
+    effective_org_id = resolve_org_id(request, auth, db)
+    org = db.query(Organisation).filter(Organisation.id == effective_org_id).first()
     if not org:
         raise HTTPException(status_code=404, detail="Organisation non trouvée")
-
-    # Use resolved org_id for all site queries
-    effective_org_id = org.id
 
     # Stats sites (exclude soft-deleted, scoped to org)
     q_sites = _sites_for_org(db, effective_org_id)
@@ -126,19 +101,22 @@ def get_cockpit(
 
 
 @router.get("/portefeuilles")
-def get_portefeuilles(request: Request, db: Session = Depends(get_db)):
+def get_portefeuilles(
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """
     GET /api/portefeuilles
-    Liste des portefeuilles avec stats, scoped to X-Org-Id.
+    Liste des portefeuilles avec stats, scoped to org (DEMO_MODE-aware).
     """
-    org_id = _get_org_id(request)
+    org_id = resolve_org_id(request, auth, db)
 
     q = (
         not_deleted(db.query(Portefeuille), Portefeuille)
         .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+        .filter(EntiteJuridique.organisation_id == org_id)
     )
-    if org_id is not None:
-        q = q.filter(EntiteJuridique.organisation_id == org_id)
 
     portefeuilles = q.all()
 

@@ -10,6 +10,7 @@ from sqlalchemy import func
 
 from database import get_db
 from middleware.auth import get_optional_auth, AuthContext
+from services.scope_utils import resolve_org_id
 from models import (
     Portefeuille, EntiteJuridique,
     Organisation, Site, Obligation, Compteur, ComplianceFinding,
@@ -22,17 +23,6 @@ from models import (
 )
 
 router = APIRouter(prefix="/api/dashboard", tags=["Dashboard 2min"])
-
-
-def _get_org_id_from_header(request: Request) -> Optional[int]:
-    """Extract X-Org-Id header value as int, or None."""
-    raw = request.headers.get("X-Org-Id")
-    if raw:
-        try:
-            return int(raw)
-        except ValueError:
-            pass
-    return None
 
 
 def _sites_for_org_query(db: Session, org_id: int):
@@ -61,14 +51,12 @@ def get_dashboard_2min(
 
     Scope: X-Org-Id header > auth.org_id > last-created org (fallback).
     """
-    header_org_id = _get_org_id_from_header(request)
-
-    if header_org_id:
-        org = db.query(Organisation).filter(Organisation.id == header_org_id).first()
-    elif auth:
-        org = db.query(Organisation).filter(Organisation.id == auth.org_id).first()
-    else:
-        org = db.query(Organisation).order_by(Organisation.id.desc()).first()
+    # DEMO_MODE-aware scope resolution (auth > header > demo fallback > 401)
+    try:
+        effective_org_id = resolve_org_id(request, auth, db)
+        org = db.query(Organisation).filter(Organisation.id == effective_org_id).first()
+    except HTTPException:
+        org = None
 
     if not org:
         return {

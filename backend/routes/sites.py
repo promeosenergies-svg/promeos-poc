@@ -9,21 +9,11 @@ from routes.schemas import SiteResponse, SiteListResponse, SiteStats, SiteCompli
 from services.compliance_engine import compute_action_recommandee, _ACTION_TEMPLATES
 from middleware.auth import get_optional_auth, AuthContext
 from services.iam_scope import check_site_access, apply_scope_filter
+from services.scope_utils import resolve_org_id
 from pydantic import BaseModel
 from typing import List, Optional
 from sqlalchemy import func
 from datetime import datetime, timedelta
-
-
-def _get_org_id_from_request(request: Request) -> int | None:
-    """Extract X-Org-Id header value as int, or None."""
-    raw = request.headers.get("X-Org-Id")
-    if raw:
-        try:
-            return int(raw)
-        except ValueError:
-            pass
-    return None
 
 router = APIRouter(prefix="/api/sites", tags=["Sites"])
 
@@ -97,19 +87,18 @@ def get_sites(
     """
     query = not_deleted(db.query(Site), Site)
 
-    # Org scope: X-Org-Id header > org_id query param > auth token
-    header_org_id = _get_org_id_from_request(request)
-    effective_org_id = header_org_id or org_id
+    # DEMO_MODE-aware scope resolution (auth > org_id param > header > demo fallback > 401)
+    effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
 
-    if effective_org_id is not None:
-        query = (
-            query
-            .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
-            .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
-            .filter(EntiteJuridique.organisation_id == effective_org_id)
-        )
-    elif auth and auth.site_ids is not None:
-        # Fallback: JWT-scoped site list (authenticated mode without X-Org-Id)
+    query = (
+        query
+        .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
+        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+        .filter(EntiteJuridique.organisation_id == effective_org_id)
+    )
+
+    # Site-level scope: restrict to accessible sites when auth has site_ids
+    if auth and auth.site_ids is not None:
         query = query.filter(Site.id.in_(auth.site_ids))
 
     # Additional filters

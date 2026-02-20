@@ -9,7 +9,7 @@ from datetime import date as dt_date, datetime
 from datetime import timedelta
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -23,6 +23,7 @@ from models import (
 from services.action_hub_service import sync_actions, compute_priority
 from middleware.auth import get_optional_auth, AuthContext
 from services.iam_scope import apply_scope_filter
+from services.scope_utils import resolve_org_id
 
 router = APIRouter(prefix="/api/actions", tags=["Actions"])
 
@@ -78,15 +79,9 @@ class EvidenceCreate(BaseModel):
 # Helpers
 # ========================================
 
-def _resolve_org_id(db: Session, org_id: Optional[int], auth: Optional[AuthContext] = None) -> int:
-    if auth:
-        return auth.org_id
-    if org_id is not None:
-        return org_id
-    org = db.query(Organisation).first()
-    if not org:
-        raise HTTPException(status_code=400, detail="Aucune organisation trouvee.")
-    return org.id
+def _resolve_org(request: Request, auth: Optional[AuthContext], db: Session, org_id: Optional[int] = None) -> int:
+    """Delegate to centralized resolve_org_id (DEMO_MODE-aware)."""
+    return resolve_org_id(request, auth, db, org_id_override=org_id)
 
 
 def _serialize_action(a: ActionItem) -> dict:
@@ -137,6 +132,7 @@ def _create_event(db: Session, action_id: int, event_type: str, actor: str = "sy
 
 @router.post("")
 def create_action(
+    request: Request,
     data: ActionCreate,
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
@@ -146,7 +142,7 @@ def create_action(
     Create a single action from the UI (manual or insight-driven).
     Supports idempotency_key and collision detection.
     """
-    oid = _resolve_org_id(db, data.org_id, auth)
+    oid = _resolve_org(request, auth, db, data.org_id)
 
     # Idempotency: if key provided and action exists, return existing
     if data.idempotency_key:
@@ -249,20 +245,23 @@ def create_action(
 
 @router.post("/sync")
 def sync_action_hub(
+    request: Request,
     org_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """
     POST /api/actions/sync?org_id=
     Synchronise actions depuis les 4 briques. Idempotent.
     """
-    oid = _resolve_org_id(db, org_id)
+    oid = _resolve_org(request, auth, db, org_id)
     result = sync_actions(db, oid, triggered_by="api")
     return {"status": "ok", **result}
 
 
 @router.get("/list")
 def list_actions(
+    request: Request,
     org_id: Optional[int] = Query(None),
     status: Optional[str] = Query(None),
     source_type: Optional[str] = Query(None),
@@ -275,7 +274,7 @@ def list_actions(
     GET /api/actions/list?org_id=&status=&source_type=&priority=&site_id=
     Liste filtrable des actions.
     """
-    oid = _resolve_org_id(db, org_id, auth)
+    oid = _resolve_org(request, auth, db, org_id)
 
     q = db.query(ActionItem).filter(ActionItem.org_id == oid)
 
@@ -284,10 +283,16 @@ def list_actions(
         q = q.filter(ActionItem.site_id.in_(auth.site_ids))
 
     if status:
+        # Support comma-separated multi-status: ?status=backlog,planned,in_progress
+        raw_statuses = [s.strip() for s in status.split(",") if s.strip()]
         try:
-            q = q.filter(ActionItem.status == ActionStatus(status))
+            enum_statuses = [ActionStatus(s) for s in raw_statuses]
         except ValueError:
             raise HTTPException(status_code=400, detail=f"Statut invalide: {status}")
+        if len(enum_statuses) == 1:
+            q = q.filter(ActionItem.status == enum_statuses[0])
+        else:
+            q = q.filter(ActionItem.status.in_(enum_statuses))
     if source_type:
         try:
             q = q.filter(ActionItem.source_type == ActionSourceType(source_type))
@@ -304,6 +309,7 @@ def list_actions(
 
 @router.get("/summary")
 def actions_summary(
+    request: Request,
     org_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
@@ -312,7 +318,7 @@ def actions_summary(
     GET /api/actions/summary?org_id=
     Statistiques: counts par status, top 5 prioritaires, by_source.
     """
-    oid = _resolve_org_id(db, org_id, auth)
+    oid = _resolve_org(request, auth, db, org_id)
 
     q = db.query(ActionItem).filter(ActionItem.org_id == oid)
     q = apply_scope_filter(q, auth, ActionItem.site_id)
@@ -428,6 +434,7 @@ def patch_action(
 
 @router.get("/batches")
 def list_batches(
+    request: Request,
     org_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
@@ -436,7 +443,7 @@ def list_batches(
     GET /api/actions/batches?org_id=
     Historique des synchronisations.
     """
-    oid = _resolve_org_id(db, org_id, auth)
+    oid = _resolve_org(request, auth, db, org_id)
 
     batches = (
         db.query(ActionSyncBatch)
@@ -463,6 +470,7 @@ def list_batches(
 
 @router.get("/export.csv")
 def export_csv(
+    request: Request,
     org_id: Optional[int] = Query(None),
     status: Optional[str] = Query(None),
     source_type: Optional[str] = Query(None),
@@ -473,15 +481,20 @@ def export_csv(
     GET /api/actions/export.csv?org_id=&status=&source_type=
     Export CSV des actions — scope-filtered.
     """
-    oid = _resolve_org_id(db, org_id, auth)
+    oid = _resolve_org(request, auth, db, org_id)
 
     q = db.query(ActionItem).filter(ActionItem.org_id == oid)
     q = apply_scope_filter(q, auth, ActionItem.site_id)
     if status:
+        raw_statuses = [s.strip() for s in status.split(",") if s.strip()]
         try:
-            q = q.filter(ActionItem.status == ActionStatus(status))
+            enum_statuses = [ActionStatus(s) for s in raw_statuses]
         except ValueError:
             raise HTTPException(status_code=400, detail=f"Statut invalide: {status}")
+        if len(enum_statuses) == 1:
+            q = q.filter(ActionItem.status == enum_statuses[0])
+        else:
+            q = q.filter(ActionItem.status.in_(enum_statuses))
     if source_type:
         try:
             q = q.filter(ActionItem.source_type == ActionSourceType(source_type))
@@ -524,6 +537,7 @@ def export_csv(
 
 @router.get("/roi_summary")
 def roi_summary(
+    request: Request,
     org_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
@@ -532,7 +546,7 @@ def roi_summary(
     GET /api/actions/roi_summary?org_id=
     Aggregate ROI: estimated vs realized gains.
     """
-    oid = _resolve_org_id(db, org_id, auth)
+    oid = _resolve_org(request, auth, db, org_id)
 
     q = db.query(ActionItem).filter(ActionItem.org_id == oid)
     q = apply_scope_filter(q, auth, ActionItem.site_id)
