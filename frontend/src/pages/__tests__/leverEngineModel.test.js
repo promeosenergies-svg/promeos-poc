@@ -51,7 +51,9 @@ describe('computeActionableLevers — compliance only', () => {
     expect(result.leversByType.conformite).toBe(2); // nonConformes + aRisque
     expect(result.leversByType.facturation).toBe(0);
     expect(result.leversByType.optimisation).toBe(0);
-    expect(result.totalLevers).toBe(2);
+    // V37: data_activation lever fires (2/5 briques actives < threshold 3)
+    expect(result.leversByType.data_activation).toBe(1);
+    expect(result.totalLevers).toBe(3);
   });
 
   it('repartit le risqueTotal au prorata nonConformes / aRisque', () => {

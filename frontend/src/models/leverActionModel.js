@@ -105,6 +105,20 @@ export const LEVER_ACTION_TEMPLATES = {
     due_days: 60,
     priority: 2,
   },
+  // V37 — Activation donnees
+  'lev-data-cover': {
+    source_type: 'lever_engine',
+    severity: 'low',
+    rationale: [
+      'Couverture donnees incomplete \u2014 certaines briques non activees',
+      'Completez les donnees manquantes pour debloquer les recommandations',
+      'Chaque brique activee ameliore la precision des analyses',
+    ],
+    proof_expected: 'Donnees importees (patrimoine, factures, contrats, consommations)',
+    proof_owner: 'Gestionnaire de donnees ou Energy Manager',
+    due_days: 60,
+    priority: 3,
+  },
 };
 
 // ── Fallback template ────────────────────────────────────────────────────────

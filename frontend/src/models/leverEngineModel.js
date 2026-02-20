@@ -14,6 +14,7 @@
 import { isComplianceAvailable } from './complianceSignalsContract';
 import { isBillingInsightsAvailable } from './billingInsightsContract';
 import { isPurchaseAvailable } from './purchaseSignalsContract';
+import { computeActivatedCount, ACTIVATION_THRESHOLD } from './dataActivationModel';
 
 /**
  * @typedef {object} Lever
@@ -164,6 +165,19 @@ export function computeActionableLevers({ kpis = {}, billingSummary = {}, compli
     }
   }
 
+  // ── Activation donnees V37 ──────────────────────────────────────────────────
+  const activatedCount = computeActivatedCount({ kpis, billingSummary, purchaseSignals });
+  if ((kpis.total ?? 0) > 0 && activatedCount < ACTIVATION_THRESHOLD) {
+    const missing = 5 - activatedCount;
+    levers.push({
+      type: 'data_activation',
+      actionKey: 'lev-data-cover',
+      label: `Completer ${missing} brique${missing > 1 ? 's' : ''} de donnees manquante${missing > 1 ? 's' : ''}`,
+      impactEur: null,
+      ctaPath: '/activation',
+    });
+  }
+
   // ── Aggregation ─────────────────────────────────────────────────────────────
   const topLevers = [...levers].sort(
     (a, b) => (b.impactEur ?? -1) - (a.impactEur ?? -1),
@@ -174,6 +188,7 @@ export function computeActionableLevers({ kpis = {}, billingSummary = {}, compli
     facturation: levers.filter((l) => l.type === 'facturation').length,
     optimisation: levers.filter((l) => l.type === 'optimisation').length,
     achat: levers.filter((l) => l.type === 'achat').length,
+    data_activation: levers.filter((l) => l.type === 'data_activation').length,
   };
 
   const estimatedImpactEur =

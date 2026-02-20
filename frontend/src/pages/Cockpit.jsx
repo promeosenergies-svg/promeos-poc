@@ -30,6 +30,7 @@ import BriefingHeroCard from './cockpit/BriefingHeroCard';
 import ExecutiveSummaryCard from './cockpit/ExecutiveSummaryCard';
 import ExecutiveKpiRow from './cockpit/ExecutiveKpiRow';
 import ImpactDecisionPanel from './cockpit/ImpactDecisionPanel';
+import DataActivationPanel from './cockpit/DataActivationPanel';
 import { RISK_THRESHOLDS, READINESS_WEIGHTS, ACTIONS_SCORE, getRiskStatus, getStatusBadgeProps } from '../lib/constants';
 
 // ── Consistency banner (inline — too small for its own file) ─────────────────
@@ -212,6 +213,9 @@ const Cockpit = () => {
       )}
 
       <ModuleLaunchers kpis={kpis} isExpert={isExpert} onNavigate={navigate} />
+
+      {/* ── Activation des données V37 ── */}
+      <DataActivationPanel kpis={kpis} />
 
       {/* ── Données & connexions (relégué) ── */}
       <EssentialsRow
