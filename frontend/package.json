@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:check": "vite build && node scripts/check-bundle-size.js",
     "preview": "vite preview",
     "lint": "eslint src --ext js,jsx --max-warnings=174",
     "format": "prettier --write 'src/**/*.{js,jsx,css,json}'",
@@ -13,6 +14,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@tanstack/react-virtual": "^3.13.18",
     "axios": "^1.13.4",
     "lucide-react": "^0.563.0",
     "react": "^18.2.0",

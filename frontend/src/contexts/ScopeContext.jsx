@@ -72,7 +72,9 @@ export function ScopeProvider({ children }) {
   // ── Real sites from API (replaces mockSites when available) ───────────
   const [apiSites, setApiSites] = useState([]);
   const [sitesLoading, setSitesLoading] = useState(false); // V18: loading indicator
+  const [sitesError, setSitesError] = useState(null); // V19: surface API errors
   const _fetchId = useRef(0); // V18: requestId guard — ignore stale responses
+  const _fetchTrigger = useRef(0); // V19: manual refresh trigger
 
   // ── IMPORTANT: setApiScope MUST run BEFORE getSites so X-Org-Id header ──
   // ── is correct when the sites request is made (React runs effects in order) ─
@@ -80,28 +82,42 @@ export function ScopeProvider({ children }) {
     setApiScope({ orgId: effectiveOrgId ?? null, siteId: scope.siteId ?? null });
   }, [effectiveOrgId, scope.siteId]);
 
+  // V19: refreshSites — bump trigger to re-run the fetch effect
+  const [fetchTrigger, setFetchTrigger] = useState(0);
+  const refreshSites = useCallback(() => {
+    setFetchTrigger(t => t + 1);
+  }, []);
+
   useEffect(() => {
     // V18-A (RC1+RC3): sitesLoading indicator + requestId guard to reject stale responses
-    setApiSites([]);
+    // V19: also clears error on retry, keeps previous sites during refresh
     if (!effectiveOrgId) {
+      setApiSites([]);
       setSitesLoading(false);
+      setSitesError(null);
       return;
     }
     setSitesLoading(true);
+    setSitesError(null);
     const myId = ++_fetchId.current;
-    getSites({ org_id: effectiveOrgId, limit: 200 })
+    getSites({ org_id: effectiveOrgId, limit: 2000 })
       .then(data => {
         if (myId !== _fetchId.current) return; // stale response — ignore
         const list = Array.isArray(data) ? data : (data.sites || data.items || []);
         setApiSites(list);
         setSitesLoading(false);
       })
-      .catch(() => {
+      .catch((err) => {
         if (myId !== _fetchId.current) return;
-        setApiSites([]);
+        const status = err?.response?.status;
+        const msg = status === 401 ? 'Session expirée — reconnectez-vous'
+          : status === 403 ? 'Accès refusé à cette organisation'
+          : 'Impossible de charger les sites';
+        setSitesError(msg);
+        // V19: keep previous apiSites during transient errors (don't blank the UI)
         setSitesLoading(false);
       });
-  }, [effectiveOrgId]);
+  }, [effectiveOrgId, fetchTrigger]);
 
   const setOrg = useCallback((orgId) => {
     const next = { orgId, portefeuilleId: null, siteId: null };
@@ -246,6 +262,8 @@ export function ScopeProvider({ children }) {
     orgs: orgsData,
     sitesCount,
     sitesLoading, // V18: exposed for pages to show skeleton during fetch
+    sitesError,   // V19: error message when getSites fails
+    refreshSites, // V19: trigger re-fetch without full page reload
     selectedSiteId,
     scopeLabel,
     setOrg, setPortefeuille, setSite, resetScope, clearScope, applyDemoScope,

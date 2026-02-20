@@ -3,6 +3,7 @@
  * Risk-first table · URL-synced filters · tabbed SiteDrawer · k€/m² formatting.
  */
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Building2, Search, RotateCcw, Download, Star,
@@ -12,7 +13,7 @@ import {
   X, ArrowUpDown, SlidersHorizontal, ChevronDown,
 } from 'lucide-react';
 import {
-  Card, Badge, Button, Pagination, EmptyState,
+  Card, Badge, Button, EmptyState,
   PageShell, KpiCardCompact, Modal, Input, Drawer, Tabs, Tooltip,
 } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td, ThCheckbox, TdCheckbox } from '../ui';
@@ -23,10 +24,12 @@ import CreateActionModal from '../components/CreateActionModal';
 import PatrimoineWizard from '../components/PatrimoineWizard';
 import { track } from '../services/tracker';
 import { fmtEur, fmtEurFull, fmtArea, fmtAreaCompact, fmtKwh, fmtDateFR, pl } from '../utils/format';
+import { RISK_THRESHOLDS, ANOMALY_THRESHOLDS, getStatusBadgeProps } from '../lib/constants';
 
 /* ─── Constants ──────────────────────────────────────────── */
 
-const PAGE_SIZE = 25;
+const ROW_HEIGHT = 52;   // px — fixed row height for virtual scroll
+const OVERSCAN = 10;     // extra rows above/below viewport
 
 const USAGE_OPTIONS = [
   { value: '', label: 'Usage' },
@@ -39,14 +42,16 @@ const USAGE_OPTIONS = [
 const STATUT_OPTIONS = [
   { value: '', label: 'Statut' },
   { value: 'conforme', label: 'Conforme' }, { value: 'non_conforme', label: 'Non conforme' },
-  { value: 'a_risque', label: 'A risque' }, { value: 'a_evaluer', label: 'A evaluer' },
+  { value: 'a_risque', label: 'À risque' }, { value: 'a_evaluer', label: 'À évaluer' },
 ];
 
+// Built from centralized STATUS_CONFIG — single source of truth
+const _sb = (k) => { const { variant, label } = getStatusBadgeProps(k); return { status: variant, label }; };
 const STATUT_BADGE = {
-  conforme: { status: 'ok', label: 'Conforme' },
-  non_conforme: { status: 'crit', label: 'Non conforme' },
-  a_risque: { status: 'warn', label: 'A risque' },
-  a_evaluer: { status: 'neutral', label: 'A evaluer' },
+  conforme: _sb('conforme'),
+  non_conforme: _sb('non_conforme'),
+  a_risque: _sb('a_risque'),
+  a_evaluer: _sb('a_evaluer'),
 };
 
 const USAGE_COLOR = {
@@ -63,7 +68,7 @@ const USAGE_COLOR = {
 const PRESET_VIEWS = [
   { id: 'risk', label: 'Risque (Top)', sort: 'risque_eur', dir: 'desc', filter: {} },
   { id: 'nc', label: 'Non conformes', sort: 'risque_eur', dir: 'desc', filter: { statut: 'non_conforme' } },
-  { id: 'eval', label: 'A evaluer', sort: 'nom', dir: 'asc', filter: { statut: 'a_evaluer' } },
+  { id: 'eval', label: 'À évaluer', sort: 'nom', dir: 'asc', filter: { statut: 'a_evaluer' } },
 ];
 
 /* ─── Main Component ─────────────────────────────────────── */
@@ -84,7 +89,7 @@ export default function Patrimoine() {
   const sortDir = sp.get('dir') || 'desc';
   const activeView = sp.get('view') || '';
 
-  const [page, setPage] = useState(1);
+  const scrollRef = useRef(null);
   const [selected, setSelected] = useState(new Set());
   const [showActionModal, setShowActionModal] = useState(false);
   const [actionSite, setActionSite] = useState('');
@@ -104,7 +109,7 @@ export default function Patrimoine() {
       });
       return next;
     }, { replace: true });
-    setPage(1);
+    scrollRef.current?.scrollTo({ top: 0 });
   }, [setSp]);
 
   // Keyboard shortcut: "/" to focus search
@@ -158,7 +163,21 @@ export default function Patrimoine() {
   }, [scopedSites, search, filterUsage, filterStatut, filterAnomalies, sortCol, sortDir]);
 
   const total = filtered.length;
-  const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  // Virtual scroll
+  const virtualizer = useVirtualizer({
+    count: total,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => ROW_HEIGHT,
+    overscan: OVERSCAN,
+  });
+
+  const virtualItems = virtualizer.getVirtualItems();
+  const paddingTop = virtualItems.length > 0 ? virtualItems[0].start : 0;
+  const paddingBottom = virtualItems.length > 0
+    ? virtualizer.getTotalSize() - virtualItems[virtualItems.length - 1].end
+    : 0;
+  const colCount = isExpert ? 10 : 9;
 
   const selectedStats = useMemo(() => {
     if (selected.size === 0) return null;
@@ -181,7 +200,7 @@ export default function Patrimoine() {
 
   function resetFilters() {
     setSp({}, { replace: true });
-    setPage(1);
+    scrollRef.current?.scrollTo({ top: 0 });
     track('filter_apply', { action: 'reset' });
   }
 
@@ -190,7 +209,7 @@ export default function Patrimoine() {
     if (view.filter.statut) p.statut = view.filter.statut;
     else p.statut = '';
     setSp(p, { replace: true });
-    setPage(1);
+    scrollRef.current?.scrollTo({ top: 0 });
     track('filter_apply', { action: 'preset', name: view.id });
   }
 
@@ -198,18 +217,15 @@ export default function Patrimoine() {
     setSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
   }
   function toggleSelectAll() {
-    setSelected(selected.size === pageData.length ? new Set() : new Set(pageData.map(s => s.id)));
+    setSelected(selected.size === filtered.length ? new Set() : new Set(filtered.map(s => s.id)));
   }
 
   function exportCsv() {
-    const rows = filtered.filter(s => selected.size === 0 || selected.has(s.id));
-    const h = 'id;nom;adresse;code_postal;ville;usage;statut;risque_eur;surface_m2;anomalies;conso_kwh_an';
-    const csv = [h, ...rows.map(s =>
-      `${s.id};"${s.nom}";"${s.adresse}";${s.code_postal};${s.ville};${s.usage};${s.statut_conformite};${s.risque_eur};${s.surface_m2};${s.anomalies_count};${s.conso_kwh_an}`
-    )].join('\n');
-    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'patrimoine.csv'; a.click();
-    track('export_csv', { rows: rows.length });
+    const params = new URLSearchParams();
+    if (filterUsage) params.set('type_site', filterUsage);
+    if (search) params.set('search', search);
+    window.open(`/api/patrimoine/sites/export.csv?${params.toString()}`, '_blank');
+    track('export_csv', { server_side: true });
   }
 
   function toggleFavorites() {
@@ -304,7 +320,7 @@ export default function Patrimoine() {
             <KpiCardCompact
               icon={AlertTriangle} color="bg-red-600"
               label="Non conformes" value={stats.nc + stats.aRisque}
-              detail={`${stats.nc} NC · ${stats.aRisque} a risque`}
+              detail={`${stats.nc} NC · ${stats.aRisque} à risque`}
               active={filterStatut === 'non_conforme'}
               onClick={() => setParams({ statut: filterStatut === 'non_conforme' ? '' : 'non_conforme', anomalies: '', view: '' })}
             />
@@ -374,7 +390,7 @@ export default function Patrimoine() {
                   <button onClick={c.clear} className="hover:text-blue-900"><X size={10} /></button>
                 </span>
               ))}
-              <button onClick={resetFilters} className="text-[10px] text-gray-400 hover:text-gray-600 underline ml-1">Reinitialiser</button>
+              <button onClick={resetFilters} className="text-[10px] text-gray-400 hover:text-gray-600 underline ml-1">Réinitialiser</button>
               <span className="ml-auto text-xs text-gray-400">{pl(total, 'resultat')}</span>
             </div>
           )}
@@ -400,86 +416,99 @@ export default function Patrimoine() {
             <EmptyState
               icon={Search}
               title="Aucun site ne correspond"
-              text="Essayez d'autres criteres ou reinitialiser les filtres."
-              ctaLabel="Reinitialiser"
+              text="Essayez d'autres critères ou réinitialiser les filtres."
+              ctaLabel="Réinitialiser"
               onCta={resetFilters}
             />
           ) : (
-            <Card>
-              <Table compact pinFirst>
-                <Thead sticky>
-                  <tr>
-                    <ThCheckbox checked={selected.size === pageData.length && pageData.length > 0} onChange={toggleSelectAll} />
-                    <Th className="w-10 text-center text-gray-400">#</Th>
-                    <Th sortable sorted={sortCol === 'nom' ? sortDir : ''} onSort={() => handleSort('nom')} pin>Site</Th>
-                    <Th>Usage</Th>
-                    <Th>Conformité</Th>
-                    <Th sortable sorted={sortCol === 'risque_eur' ? sortDir : ''} onSort={() => handleSort('risque_eur')} className="text-right">Risque</Th>
-                    <Th sortable sorted={sortCol === 'surface_m2' ? sortDir : ''} onSort={() => handleSort('surface_m2')} className="text-right">Surface</Th>
-                    {isExpert && <Th sortable sorted={sortCol === 'conso_kwh_an' ? sortDir : ''} onSort={() => handleSort('conso_kwh_an')} className="text-right">Conso</Th>}
-                    <Th sortable sorted={sortCol === 'anomalies_count' ? sortDir : ''} onSort={() => handleSort('anomalies_count')} className="text-right">Anomalies</Th>
-                    <Th className="w-8" />
-                  </tr>
-                </Thead>
-                <Tbody>
-                  {pageData.map((site, idx) => {
-                    const badge = STATUT_BADGE[site.statut_conformite] || STATUT_BADGE.a_evaluer;
-                    const usageColor = USAGE_COLOR[site.usage] || 'bg-gray-100 text-gray-600 ring-gray-200';
-                    const rank = (page - 1) * PAGE_SIZE + idx + 1;
-                    const isFav = favorites.has(site.id);
-                    return (
-                      <Tr key={site.id} selected={selected.has(site.id)} className="group" onClick={() => openDrawer(site)}>
-                        <TdCheckbox checked={selected.has(site.id)} onChange={() => toggleSelect(site.id)} />
-                        <Td className="text-center text-xs text-gray-400 font-mono tabular-nums">{rank}</Td>
-                        <Td pin>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1">
-                              {isFav && <Star size={11} className="text-amber-400 fill-amber-400 shrink-0" />}
-                              <span className="font-medium text-gray-900 truncate text-sm">{site.nom}</span>
+            <Card className="flex flex-col">
+              <div
+                ref={scrollRef}
+                className="overflow-auto"
+                style={{ maxHeight: 'calc(100vh - 340px)', minHeight: '400px' }}
+              >
+                <Table compact pinFirst>
+                  <Thead sticky>
+                    <tr>
+                      <ThCheckbox checked={selected.size === filtered.length && filtered.length > 0} onChange={toggleSelectAll} />
+                      <Th className="w-10 text-center text-gray-400">#</Th>
+                      <Th sortable sorted={sortCol === 'nom' ? sortDir : ''} onSort={() => handleSort('nom')} pin>Site</Th>
+                      <Th>Usage</Th>
+                      <Th>Conformité</Th>
+                      <Th sortable sorted={sortCol === 'risque_eur' ? sortDir : ''} onSort={() => handleSort('risque_eur')} className="text-right">Risque</Th>
+                      <Th sortable sorted={sortCol === 'surface_m2' ? sortDir : ''} onSort={() => handleSort('surface_m2')} className="text-right">Surface</Th>
+                      {isExpert && <Th sortable sorted={sortCol === 'conso_kwh_an' ? sortDir : ''} onSort={() => handleSort('conso_kwh_an')} className="text-right">Conso</Th>}
+                      <Th sortable sorted={sortCol === 'anomalies_count' ? sortDir : ''} onSort={() => handleSort('anomalies_count')} className="text-right">Anomalies</Th>
+                      <Th className="w-8" />
+                    </tr>
+                  </Thead>
+                  <Tbody>
+                    {paddingTop > 0 && (
+                      <tr className="!border-0"><td colSpan={colCount} style={{ height: paddingTop, padding: 0, border: 'none', lineHeight: 0 }} /></tr>
+                    )}
+                    {virtualItems.map((vr) => {
+                      const site = filtered[vr.index];
+                      const badge = STATUT_BADGE[site.statut_conformite] || STATUT_BADGE.a_evaluer;
+                      const usageColor = USAGE_COLOR[site.usage] || 'bg-gray-100 text-gray-600 ring-gray-200';
+                      const rank = vr.index + 1;
+                      const isFav = favorites.has(site.id);
+                      return (
+                        <Tr key={site.id} selected={selected.has(site.id)} className="group" onClick={() => openDrawer(site)}>
+                          <TdCheckbox checked={selected.has(site.id)} onChange={() => toggleSelect(site.id)} />
+                          <Td className="text-center text-xs text-gray-400 font-mono tabular-nums">{rank}</Td>
+                          <Td pin>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1">
+                                {isFav && <Star size={11} className="text-amber-400 fill-amber-400 shrink-0" />}
+                                <span className="font-medium text-gray-900 truncate text-sm">{site.nom}</span>
+                              </div>
+                              <div className="text-[11px] text-gray-400 truncate leading-tight">{site.adresse}, {site.code_postal} {site.ville}</div>
                             </div>
-                            <div className="text-[11px] text-gray-400 truncate leading-tight">{site.adresse}, {site.code_postal} {site.ville}</div>
-                          </div>
-                        </Td>
-                        <Td>
-                          <span className={`capitalize text-[11px] px-2 py-0.5 rounded-md font-medium ring-1 ring-inset ${usageColor}`}>
-                            {site.usage}
-                          </span>
-                        </Td>
-                        <Td><Badge status={badge.status}>{badge.label}</Badge></Td>
-                        <Td className="text-right tabular-nums">
-                          {site.risque_eur > 0
-                            ? <span className={`font-semibold text-sm ${site.risque_eur >= 10000 ? 'text-red-600' : site.risque_eur >= 3000 ? 'text-amber-600' : 'text-gray-700'}`}>{fmtEur(site.risque_eur)}</span>
-                            : <span className="text-gray-300">—</span>}
-                        </Td>
-                        <Td className="text-right text-sm text-gray-600 tabular-nums">{fmtArea(site.surface_m2)}</Td>
-                        {isExpert && <Td className="text-right text-sm text-gray-600 tabular-nums">{fmtKwh(site.conso_kwh_an)}</Td>}
-                        <Td className="text-right">
-                          {site.anomalies_count > 0
-                            ? <Tooltip text={`${site.anomalies_count} anomalie${site.anomalies_count > 1 ? 's' : ''} détectée${site.anomalies_count > 1 ? 's' : ''}`}>
-                                <span className={`inline-flex items-center justify-center min-w-[22px] h-[22px] rounded-full text-[11px] font-bold ${
-                                  site.anomalies_count >= 5 ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
-                                }`}>{site.anomalies_count}</span>
+                          </Td>
+                          <Td>
+                            <span className={`capitalize text-[11px] px-2 py-0.5 rounded-md font-medium ring-1 ring-inset ${usageColor}`}>
+                              {site.usage}
+                            </span>
+                          </Td>
+                          <Td><Badge status={badge.status}>{badge.label}</Badge></Td>
+                          <Td className="text-right tabular-nums">
+                            {site.risque_eur > 0
+                              ? <span className={`font-semibold text-sm ${site.risque_eur >= RISK_THRESHOLDS.site.crit ? 'text-red-600' : site.risque_eur >= RISK_THRESHOLDS.site.warn ? 'text-amber-600' : 'text-gray-700'}`}>{fmtEur(site.risque_eur)}</span>
+                              : <span className="text-gray-300">—</span>}
+                          </Td>
+                          <Td className="text-right text-sm text-gray-600 tabular-nums">{fmtArea(site.surface_m2)}</Td>
+                          {isExpert && <Td className="text-right text-sm text-gray-600 tabular-nums">{fmtKwh(site.conso_kwh_an)}</Td>}
+                          <Td className="text-right">
+                            {site.anomalies_count > 0
+                              ? <Tooltip text={`${site.anomalies_count} anomalie${site.anomalies_count > 1 ? 's' : ''} détectée${site.anomalies_count > 1 ? 's' : ''}`}>
+                                  <span className={`inline-flex items-center justify-center min-w-[22px] h-[22px] rounded-full text-[11px] font-bold ${
+                                    site.anomalies_count >= ANOMALY_THRESHOLDS.critical ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
+                                  }`}>{site.anomalies_count}</span>
+                                </Tooltip>
+                              : <span className="text-gray-300 text-xs">0</span>}
+                          </Td>
+                          <Td>
+                            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition">
+                              <Tooltip text="Créer action">
+                                <button onClick={(e) => { e.stopPropagation(); openActionFromDrawer(site.nom); }} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-amber-600">
+                                  <Lightbulb size={14} />
+                                </button>
                               </Tooltip>
-                            : <span className="text-gray-300 text-xs">0</span>}
-                        </Td>
-                        <Td>
-                          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition">
-                            <Tooltip text="Creer action">
-                              <button onClick={(e) => { e.stopPropagation(); openActionFromDrawer(site.nom); }} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-amber-600">
-                                <Lightbulb size={14} />
-                              </button>
-                            </Tooltip>
-                            <ChevronRight size={14} className="text-gray-300" />
-                          </div>
-                        </Td>
-                      </Tr>
-                    );
-                  })}
-                </Tbody>
-              </Table>
+                              <ChevronRight size={14} className="text-gray-300" />
+                            </div>
+                          </Td>
+                        </Tr>
+                      );
+                    })}
+                    {paddingBottom > 0 && (
+                      <tr className="!border-0"><td colSpan={colCount} style={{ height: paddingBottom, padding: 0, border: 'none', lineHeight: 0 }} /></tr>
+                    )}
+                  </Tbody>
+                </Table>
+              </div>
               <div className="flex items-center justify-between px-4 py-2 border-t border-gray-100">
                 <span className="text-xs text-gray-400">{pl(total, 'site')} · Tri : {sortCol || 'defaut'} {sortDir === 'desc' ? '↓' : sortDir === 'asc' ? '↑' : ''}</span>
-                <Pagination page={page} pageSize={PAGE_SIZE} total={total} onChange={setPage} />
+                <span className="text-xs text-gray-500">{total} {total > 1 ? 'sites' : 'site'}</span>
               </div>
             </Card>
           )}
@@ -529,7 +558,7 @@ function FilterSelect({ options, value, onChange }) {
  * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
 const DRAWER_TABS = [
-  { id: 'resume', label: 'Resume' },
+  { id: 'resume', label: 'Résumé' },
   { id: 'anomalies', label: 'Anomalies' },
   { id: 'compteurs', label: 'Compteurs' },
   { id: 'actions', label: 'Actions' },
@@ -578,7 +607,7 @@ function SiteDrawerContent({ site, navigate, onCreateAction }) {
                 ? <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
                     site.operat_status === 'verified' ? 'bg-green-100 text-green-700' :
                     site.operat_status === 'submitted' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
-                  }`}>{site.operat_status === 'verified' ? 'Verifie' : site.operat_status === 'submitted' ? 'Soumis' : 'Non demarre'}</span>
+                  }`}>{site.operat_status === 'verified' ? 'Vérifié' : site.operat_status === 'submitted' ? 'Soumis' : 'Non démarré'}</span>
                 : '—'}
             </DrawerRow>
           </DrawerSection>
@@ -613,7 +642,7 @@ function SiteDrawerContent({ site, navigate, onCreateAction }) {
             <div className="text-center py-8 text-gray-400">
               <ShieldCheck size={28} className="mx-auto mb-2 text-green-400" />
               <p className="text-sm font-medium text-gray-600">Aucune anomalie</p>
-              <p className="text-xs text-gray-400">Ce site est en bon etat.</p>
+              <p className="text-xs text-gray-400">Ce site est en bon état.</p>
             </div>
           )}
         </div>
@@ -624,14 +653,14 @@ function SiteDrawerContent({ site, navigate, onCreateAction }) {
         <div>
           {site.nb_compteurs > 0 ? (
             <div className="space-y-2">
-              <p className="text-sm text-gray-600">{site.nb_compteurs} compteur{site.nb_compteurs > 1 ? 's' : ''} associe{site.nb_compteurs > 1 ? 's' : ''} a ce site.</p>
-              <p className="text-xs text-gray-400">Ouvrez la fiche site pour voir le detail de chaque compteur et ses consommations.</p>
+              <p className="text-sm text-gray-600">{site.nb_compteurs} compteur{site.nb_compteurs > 1 ? 's' : ''} associé{site.nb_compteurs > 1 ? 's' : ''} à ce site.</p>
+              <p className="text-xs text-gray-400">Ouvrez la fiche site pour voir le détail de chaque compteur et ses consommations.</p>
             </div>
           ) : (
             <div className="text-center py-8 text-gray-400">
               <Zap size={28} className="mx-auto mb-2" />
               <p className="text-sm font-medium text-gray-600">Aucun compteur</p>
-              <p className="text-xs text-gray-400">Ce site n'a pas encore de compteur rattache.</p>
+              <p className="text-xs text-gray-400">Ce site n'a pas encore de compteur rattaché.</p>
             </div>
           )}
         </div>
@@ -652,12 +681,12 @@ function SiteDrawerContent({ site, navigate, onCreateAction }) {
           onClick={onCreateAction}
           className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition"
         >
-          <Lightbulb size={15} /> Creer une action pour ce site
+          <Lightbulb size={15} /> Créer une action pour ce site
         </button>
       </div>
 
       <div className="text-[10px] text-gray-400 pt-1">
-        Site #{site.id} · {fmtDateFR(site.derniere_evaluation) !== '—' ? `Maj : ${fmtDateFR(site.derniere_evaluation)}` : 'Pas encore evalue'}
+        Site #{site.id} · {fmtDateFR(site.derniere_evaluation) !== '—' ? `Maj : ${fmtDateFR(site.derniere_evaluation)}` : 'Pas encore évalué'}
       </div>
     </div>
   );
