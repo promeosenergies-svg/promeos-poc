@@ -111,6 +111,17 @@ class KBDatabase:
             )
         """)
 
+        # V38: Memobox lifecycle + domain columns for kb_docs
+        for col_name, col_def in [
+            ("status", "TEXT DEFAULT 'draft'"),
+            ("domain", "TEXT"),
+            ("used_by_modules", "TEXT"),
+        ]:
+            try:
+                cursor.execute(f"ALTER TABLE kb_docs ADD COLUMN {col_name} {col_def}")
+            except sqlite3.OperationalError:
+                pass  # column already exists
+
         # Create indexes
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_kb_items_domain ON kb_items(domain)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_kb_items_type ON kb_items(type)")
@@ -118,6 +129,8 @@ class KBDatabase:
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_kb_items_priority ON kb_items(priority)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_kb_items_status ON kb_items(status)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_kb_chunks_doc ON kb_chunks(doc_id)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_kb_docs_status ON kb_docs(status)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_kb_docs_domain ON kb_docs(domain)")
 
         self.conn.commit()
         return True

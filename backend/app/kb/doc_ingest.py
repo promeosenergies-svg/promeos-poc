@@ -29,6 +29,14 @@ def _sha256(content: str) -> str:
     return hashlib.sha256(content.encode("utf-8")).hexdigest()
 
 
+def kb_doc_allows_deterministic(doc_status: str) -> bool:
+    """
+    V38 Gating: only validated or decisional docs may feed deterministic rules.
+    Draft and review docs are excluded from the apply engine.
+    """
+    return doc_status in ("validated", "decisional")
+
+
 def _extract_text_from_html(html: str) -> str:
     """Simple HTML to text (reuse normalize_text if available, fallback to regex)."""
     try:
@@ -163,6 +171,7 @@ def ingest_document(
         "nb_sections": 1,
         "nb_chunks": len(chunks),
         "updated_at": now,
+        "status": "draft",
         "meta": {
             "source_org": source_org,
             "doc_type": doc_type,

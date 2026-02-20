@@ -20,6 +20,7 @@ import { getBillingSummary, getPurchaseRenewals, patrimoineContracts } from '../
 import { computeImpactKpis, computeRecommendation } from '../../models/impactDecisionModel';
 import { computeActionableLevers } from '../../models/leverEngineModel';
 import { buildLeverDeepLink } from '../../models/leverActionModel';
+import { hasProofData, buildProofLink, getProofLabel } from '../../models/proofLinkModel';
 import { normalizePurchaseSignals, isPurchaseAvailable } from '../../models/purchaseSignalsContract';
 
 // ── KPI tile (inline — small enough) ─────────────────────────────────────────
@@ -232,10 +233,10 @@ export default function ImpactDecisionPanel({ kpis }) {
               aria-label="Voir les contrats \u00e0 renouveler"
             >
               <p className="text-lg font-bold text-gray-900">{purchaseSignals.expiringSoonCount}</p>
-              <p className="text-[10px] text-gray-500">Contrats \u2264 90j</p>
+              <p className="text-[10px] text-gray-500">Contrats {'\u2264'} 90j</p>
             </button>
             <div className="p-2">
-              <p className="text-lg font-bold text-gray-900">{purchaseSignals.coverageContractsPct}\u202f%</p>
+              <p className="text-lg font-bold text-gray-900">{purchaseSignals.coverageContractsPct}{'\u202f'}%</p>
               <p className="text-[10px] text-gray-500">Couverture contrats</p>
             </div>
             <button
@@ -249,9 +250,9 @@ export default function ImpactDecisionPanel({ kpis }) {
           </div>
         ) : (
           <div className="text-center py-2">
-            <p className="text-sm text-gray-400">Donn\u00e9es manquantes</p>
+            <p className="text-sm text-gray-400">Données manquantes</p>
             <p className="text-xs text-gray-400 mt-1">
-              Renseignez vos contrats \u00e9nergie dans{' '}
+              Renseignez vos contrats énergie dans{' '}
               <button onClick={() => navigate('/patrimoine')} className="text-blue-500 underline">
                 Patrimoine
               </button>
@@ -290,8 +291,23 @@ export default function ImpactDecisionPanel({ kpis }) {
                     <p className="text-xs font-medium text-gray-800 truncate">{lever.label}</p>
                     {lever.impactEur != null && (
                       <p className="text-[11px] text-gray-400">
-                        Impact estim\u00e9 : {lever.impactEur.toLocaleString('fr-FR')} \u20ac
+                        Impact estimé : {lever.impactEur.toLocaleString('fr-FR')} €
                       </p>
+                    )}
+                    {/* V38: Preuve attendue micro-bloc */}
+                    {hasProofData(lever) && (
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-[10px] text-amber-600 font-medium truncate">
+                          {'Preuve\u00a0: '}{getProofLabel(lever)}
+                        </span>
+                        <button
+                          className="text-[10px] text-amber-600 underline shrink-0"
+                          onClick={(e) => { e.stopPropagation(); navigate(buildProofLink(lever)); }}
+                          aria-label={`D\u00e9poser preuve pour : ${lever.label}`}
+                        >
+                          Déposer
+                        </button>
+                      </div>
                     )}
                   </div>
                   <Button
@@ -301,14 +317,14 @@ export default function ImpactDecisionPanel({ kpis }) {
                     onClick={() => navigate(buildLeverDeepLink(lever))}
                     aria-label={`Cr\u00e9er une action pour : ${lever.label}`}
                   >
-                    Cr\u00e9er une action <ArrowRight size={12} />
+                    Créer une action <ArrowRight size={12} />
                   </Button>
                 </div>
               ))}
             </div>
           </div>
         ) : (
-          <p className="text-sm text-gray-400 text-center py-1">Aucun levier d\u00e9tect\u00e9 (V1)</p>
+          <p className="text-sm text-gray-400 text-center py-1">Aucun levier détecté (V1)</p>
         )}
       </div>
 

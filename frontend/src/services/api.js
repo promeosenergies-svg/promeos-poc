@@ -408,6 +408,23 @@ export const getKBFullStats = () => api.get(`${KB_BASE}/stats`).then(r => {
   return d && d.kb ? { ...d.kb } : d;
 });
 
+// KB Memobox V38 — Upload + Lifecycle
+export const uploadKBDoc = (file, title, domain = null, docType = 'pdf') => {
+  const fd = new FormData();
+  fd.append('file', file);
+  const params = { title };
+  if (domain) params.domain = domain;
+  if (docType) params.doc_type = docType;
+  return api.post(`${KB_BASE}/upload`, fd, {
+    params,
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }).then(r => r.data);
+};
+export const changeKBDocStatus = (docId, status) =>
+  api.post(`${KB_BASE}/docs/${docId}/status`, { status }).then(r => r.data);
+export const getKBDocs = (params = {}) =>
+  api.get(`${KB_BASE}/docs`, { params }).then(r => r.data);
+
 // ========================================
 // ENERGY (Import & Analysis)
 // ========================================

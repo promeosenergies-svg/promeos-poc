@@ -214,7 +214,7 @@ export const NAV_SECTIONS = [
       { to: '/patrimoine',    icon: Building2, label: 'Patrimoine', keywords: ['sites', 'batiments', 'immobilier'] },
       { to: '/import',        icon: Import,    label: 'Imports', keywords: ['import', 'csv', 'upload'] },
       { to: '/connectors',    icon: Link2,     label: 'Connexions', keywords: ['connecteurs', 'api', 'sync'] },
-      { to: '/kb',            icon: BookOpen,  label: 'Knowledge Base', keywords: ['kb', 'knowledge', 'base'] },
+      { to: '/kb',            icon: BookOpen,  label: 'M\u00e9mobox', keywords: ['kb', 'knowledge', 'base', 'memobox', 'documents', 'preuves'] },
       { to: '/segmentation',  icon: Users,     label: 'Segmentation', keywords: ['segment', 'profil'] },
       { to: '/watchers',      icon: Eye,       label: 'Veille', keywords: ['veille', 'rss', 'reglementaire'] },
     ],

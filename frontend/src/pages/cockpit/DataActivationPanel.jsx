@@ -56,7 +56,7 @@ export default function DataActivationPanel({ kpis }) {
       <Card>
         <CardBody className="flex items-center justify-center gap-2 py-6 text-gray-400">
           <Loader2 size={16} className="animate-spin" />
-          <span className="text-sm">Chargement activation\u2026</span>
+          <span className="text-sm">Chargement activation…</span>
         </CardBody>
       </Card>
     );
@@ -71,7 +71,7 @@ export default function DataActivationPanel({ kpis }) {
         <div className="flex items-center gap-2">
           <Database size={16} className="text-gray-500 shrink-0" />
           <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-            Activation des donn\u00e9es
+            Activation des données
           </h4>
           <Tooltip content="Couverture des 5 briques de donnees necessaires aux recommandations">
             <Info size={12} className="text-gray-400 cursor-help" />
@@ -84,7 +84,7 @@ export default function DataActivationPanel({ kpis }) {
 
       {/* Barre de progression */}
       <Progress value={activation.overallCoverage} size="sm" color="blue" />
-      <p className="text-[10px] text-gray-400 mt-1">{activation.overallCoverage}\u202f% couverture moyenne</p>
+      <p className="text-[10px] text-gray-400 mt-1">{activation.overallCoverage}{'\u202f'}% couverture moyenne</p>
 
       {/* Badges par dimension */}
       <div className="flex flex-wrap gap-2 mt-3">
@@ -120,7 +120,7 @@ export default function DataActivationPanel({ kpis }) {
                 onClick={() => navigate(activation.nextAction.ctaPath)}
                 aria-label={`Compl\u00e9ter : ${activation.nextAction.label}`}
               >
-                Compl\u00e9ter <ArrowRight size={12} />
+                Compléter <ArrowRight size={12} />
               </Button>
             </div>
           )}
@@ -129,7 +129,7 @@ export default function DataActivationPanel({ kpis }) {
             className="mt-2 text-[11px] text-blue-500 hover:underline"
             aria-label="Voir le d\u00e9tail de l'activation des donn\u00e9es"
           >
-            Voir le d\u00e9tail \u2192
+            Voir le détail →
           </button>
         </>
       )}

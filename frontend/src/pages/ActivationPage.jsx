@@ -137,7 +137,7 @@ export default function ActivationPage() {
       <PageShell icon={Database} title="Activation des donn\u00e9es">
         <Card>
           <CardBody className="flex items-center justify-center gap-2 py-12 text-gray-400">
-            <span className="text-sm">Chargement\u2026</span>
+            <span className="text-sm">Chargement…</span>
           </CardBody>
         </Card>
       </PageShell>
@@ -203,7 +203,7 @@ export default function ActivationPage() {
             Sites ({filteredSites.length})
             {filterDim !== 'all' && (
               <span className="text-gray-400 font-normal ml-1">
-                \u2014 {FILTER_TABS.find((t) => t.key === filterDim)?.label} manquante
+                — {FILTER_TABS.find((t) => t.key === filterDim)?.label} manquante
               </span>
             )}
           </h3>
@@ -237,7 +237,7 @@ export default function ActivationPage() {
                 <Th>Site</Th>
                 <Th>Ville</Th>
                 <Th className="text-center">Patrimoine</Th>
-                <Th className="text-center">Conformit\u00e9</Th>
+                <Th className="text-center">Conformité</Th>
                 <Th className="text-center">Conso</Th>
                 <Th className="text-center">Facture</Th>
                 <Th className="text-center">Contrat</Th>

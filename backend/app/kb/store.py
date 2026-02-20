@@ -171,11 +171,13 @@ class KBStore:
 
             meta_json = json.dumps(doc.get("meta", {}))
 
+            status = doc.get("status", "draft")
+
             cursor.execute("""
                 INSERT INTO kb_docs (
                     doc_id, title, source_type, source_path, content_hash,
-                    nb_sections, nb_chunks, updated_at, meta_json
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    nb_sections, nb_chunks, updated_at, meta_json, status
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(doc_id) DO UPDATE SET
                     title=excluded.title,
                     source_type=excluded.source_type,
@@ -184,7 +186,8 @@ class KBStore:
                     nb_sections=excluded.nb_sections,
                     nb_chunks=excluded.nb_chunks,
                     updated_at=excluded.updated_at,
-                    meta_json=excluded.meta_json
+                    meta_json=excluded.meta_json,
+                    status=excluded.status
             """, (
                 doc["doc_id"],
                 doc["title"],
@@ -194,7 +197,8 @@ class KBStore:
                 doc.get("nb_sections", 0),
                 doc.get("nb_chunks", 0),
                 doc["updated_at"],
-                meta_json
+                meta_json,
+                status,
             ))
 
             self.db.conn.commit()
@@ -213,6 +217,52 @@ class KBStore:
         if row:
             return self._row_to_dict(row)
         return None
+
+    # V38: Memobox lifecycle management
+
+    VALID_DOC_STATUSES = {"draft", "review", "validated", "decisional", "deprecated"}
+
+    def update_doc_status(self, doc_id: str, new_status: str) -> bool:
+        """Update lifecycle status of a KB document."""
+        if new_status not in self.VALID_DOC_STATUSES:
+            return False
+        try:
+            cursor = self.db.conn.cursor()
+            cursor.execute(
+                "UPDATE kb_docs SET status = ?, updated_at = datetime('now') WHERE doc_id = ?",
+                (new_status, doc_id),
+            )
+            self.db.conn.commit()
+            return cursor.rowcount > 0
+        except sqlite3.Error as e:
+            print(f"Error updating doc status for {doc_id}: {e}")
+            return False
+
+    def get_docs_filtered(
+        self,
+        status: Optional[str] = None,
+        domain: Optional[str] = None,
+        q: Optional[str] = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> List[Dict[str, Any]]:
+        """Get KB docs with optional status/domain/text filters."""
+        cursor = self.db.conn.cursor()
+        query = "SELECT * FROM kb_docs WHERE 1=1"
+        params: list = []
+        if status:
+            query += " AND status = ?"
+            params.append(status)
+        if domain:
+            query += " AND domain = ?"
+            params.append(domain)
+        if q:
+            query += " AND title LIKE ?"
+            params.append(f"%{q}%")
+        query += " ORDER BY updated_at DESC LIMIT ? OFFSET ?"
+        params.extend([limit, offset])
+        cursor.execute(query, params)
+        return [self._row_to_dict(row) for row in cursor.fetchall()]
 
     def upsert_chunk(self, chunk: Dict[str, Any]) -> bool:
         """Insert or update a chunk"""

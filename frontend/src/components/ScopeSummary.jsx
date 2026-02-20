@@ -21,7 +21,7 @@ export default function ScopeSummary({ showCount = true, className = '' }) {
   if (sitesLoading) {
     return (
       <span className={`font-medium text-gray-400 italic ${className}`}>
-        {org.nom} — Chargement\u2026
+        {org.nom} — Chargement…
       </span>
     );
   }

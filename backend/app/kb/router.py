@@ -3,7 +3,10 @@ PROMEOS KB - FastAPI Router
 API endpoints for KB management, search, and apply.
 Hardened with input validation, payload limits, and proper error handling.
 """
-from fastapi import APIRouter, HTTPException, Query
+import hashlib
+from pathlib import Path
+
+from fastapi import APIRouter, HTTPException, Query, UploadFile, File
 from pydantic import BaseModel, field_validator
 from typing import Optional, List, Dict, Any
 
@@ -19,6 +22,18 @@ MAX_LIST_LIMIT = 1000
 VALID_STATUSES = {"draft", "validated", "deprecated"}
 VALID_DOMAINS = {"reglementaire", "usages", "acc", "facturation", "flex"}
 VALID_TYPES = {"rule", "knowledge", "checklist", "calc"}
+
+# V38: Memobox lifecycle
+VALID_DOC_STATUSES = {"draft", "review", "validated", "decisional", "deprecated"}
+DOC_TRANSITION_RULES = {
+    "draft": {"review"},
+    "review": {"validated", "draft"},
+    "validated": {"decisional", "deprecated"},
+    "decisional": {"deprecated"},
+    "deprecated": set(),
+}
+MAX_UPLOAD_SIZE_MB = 10
+VALID_UPLOAD_SUFFIXES = {".pdf", ".html", ".htm", ".md", ".txt"}
 
 
 # Pydantic models with validation
@@ -211,21 +226,131 @@ def get_stats():
 
 
 @router.get("/docs")
-def list_docs():
-    """List ingested HTML documents"""
+def list_docs(
+    status: Optional[str] = Query(None, description="Filter by lifecycle status"),
+    domain: Optional[str] = Query(None, description="Filter by domain"),
+    q: Optional[str] = Query(None, description="Search title"),
+):
+    """List ingested documents with optional filters."""
     try:
-        cursor = store.db.conn.cursor()
-        cursor.execute("SELECT * FROM kb_docs ORDER BY updated_at DESC")
-        rows = cursor.fetchall()
-
-        docs = [store._row_to_dict(row) for row in rows]
-
-        return {
-            "docs": docs,
-            "total": len(docs)
-        }
+        docs = store.get_docs_filtered(status=status, domain=domain, q=q)
+        return {"docs": docs, "total": len(docs)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Docs error: {str(e)[:200]}")
+
+
+# V38: Memobox upload + lifecycle endpoints
+
+class DocStatusRequest(BaseModel):
+    status: str
+
+
+@router.post("/upload")
+async def upload_doc(
+    file: UploadFile = File(...),
+    title: str = Query(..., description="Titre du document"),
+    domain: Optional[str] = Query(None, description="Domaine KB"),
+    doc_type: str = Query("pdf", description="Type de document"),
+):
+    """
+    Upload a document to the Memobox (KB).
+    Accepts PDF, HTML, MD, TXT files up to 10 MB.
+    Dedup by SHA256 checksum — identical content returns existing ref.
+    """
+    contents = await file.read()
+    if len(contents) > MAX_UPLOAD_SIZE_MB * 1024 * 1024:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Fichier trop volumineux (max {MAX_UPLOAD_SIZE_MB} Mo)",
+        )
+
+    suffix = Path(file.filename).suffix.lower() if file.filename else ".txt"
+    if suffix not in VALID_UPLOAD_SUFFIXES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Type non supporte: {suffix}. Acceptes: {VALID_UPLOAD_SUFFIXES}",
+        )
+
+    content_hash = hashlib.sha256(contents).hexdigest()
+    doc_id = f"upload_{content_hash[:12]}"
+
+    # Dedup: if same hash already ingested, return existing ref
+    existing = store.get_doc(doc_id)
+    if existing and existing.get("content_hash") == content_hash:
+        return {
+            "status": "already_exists",
+            "doc_id": doc_id,
+            "content_hash": content_hash,
+            "message": "Document avec contenu identique deja present",
+        }
+
+    # Save raw file
+    raw_dir = Path(__file__).resolve().parent.parent.parent / "data" / "kb" / "raw"
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    file_path = raw_dir / f"{doc_id}{suffix}"
+    file_path.write_bytes(contents)
+
+    # Ingest via existing pipeline
+    from .doc_ingest import ingest_document
+
+    result = ingest_document(
+        doc_id=doc_id,
+        title=title,
+        file_path=str(file_path),
+        source_org="upload",
+        doc_type=doc_type,
+    )
+    if result.get("status") == "error":
+        raise HTTPException(status_code=400, detail=result.get("message", "Erreur ingestion"))
+
+    # Set domain if provided
+    if domain:
+        cursor = store.db.conn.cursor()
+        cursor.execute("UPDATE kb_docs SET domain = ? WHERE doc_id = ?", (domain, doc_id))
+        store.db.conn.commit()
+
+    result["domain"] = domain
+    return result
+
+
+@router.post("/docs/{doc_id}/status")
+def change_doc_status(doc_id: str, request: DocStatusRequest):
+    """
+    Change lifecycle status of a KB document.
+    Enforces forward-only transitions: draft->review->validated->decisional.
+    """
+    if len(doc_id) > 200:
+        raise HTTPException(status_code=400, detail="Doc ID trop long")
+
+    doc = store.get_doc(doc_id)
+    if not doc:
+        raise HTTPException(status_code=404, detail=f"Document {doc_id} introuvable")
+
+    current_status = doc.get("status", "draft")
+    new_status = request.status
+
+    if new_status not in VALID_DOC_STATUSES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Statut invalide: {new_status}. Autorises: {VALID_DOC_STATUSES}",
+        )
+
+    allowed = DOC_TRANSITION_RULES.get(current_status, set())
+    if new_status not in allowed:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Transition interdite: {current_status} -> {new_status}. Autorises: {allowed}",
+        )
+
+    ok = store.update_doc_status(doc_id, new_status)
+    if not ok:
+        raise HTTPException(status_code=500, detail="Echec mise a jour statut")
+
+    return {
+        "doc_id": doc_id,
+        "previous_status": current_status,
+        "new_status": new_status,
+    }
 
 
 @router.get("/docs/{doc_id}")

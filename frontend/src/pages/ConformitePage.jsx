@@ -290,7 +290,7 @@ function KBObligationsSection({ scopedSites }) {
       <Card>
         <CardBody className="text-center py-6">
           <BookOpen size={24} className="text-blue-300 mx-auto mb-2 animate-pulse" />
-          <p className="text-sm text-gray-400">Analyse réglementaire KB en cours\u2026</p>
+          <p className="text-sm text-gray-400">Analyse réglementaire KB en cours…</p>
         </CardBody>
       </Card>
     );
