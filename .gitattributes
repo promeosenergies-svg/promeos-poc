@@ -1,0 +1,30 @@
+# Auto-detect text files, normalize to LF everywhere (repo + working copy).
+# Modern editors (VS Code, JetBrains, etc.) handle LF on Windows fine.
+* text=auto eol=lf
+
+# Ensure shell scripts are always LF (even if created on Windows)
+*.sh text eol=lf
+*.bash text eol=lf
+Makefile text eol=lf
+
+# Windows-only scripts stay CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary files — no conversion
+*.db binary
+*.sqlite binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.tar binary
