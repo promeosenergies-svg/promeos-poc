@@ -333,24 +333,24 @@ class TestUpdateIsolation:
         assert resp.status_code == 403
 
     def test_update_other_org_compteur_denied(self, client, db):
-        """Org A tries to update Org B's compteur → 403."""
+        """Org A tries to update Org B's compteur → 404 (JOIN-based, no ID enumeration)."""
         data = _create_two_orgs(db)
         resp = client.patch(
             f"/api/patrimoine/compteurs/{data['cpt_b'].id}",
             json={"numero_serie": "HACKED-001"},
             headers=_headers(data["org_a"].id),
         )
-        assert resp.status_code == 403
+        assert resp.status_code == 404
 
     def test_move_compteur_cross_org_denied(self, client, db):
-        """Org A tries to move Org B's compteur → 403."""
+        """Org A tries to move Org B's compteur → 404 (JOIN-based, no ID enumeration)."""
         data = _create_two_orgs(db)
         resp = client.post(
             f"/api/patrimoine/compteurs/{data['cpt_b'].id}/move",
             json={"target_site_id": data["site_a"].id},
             headers=_headers(data["org_a"].id),
         )
-        assert resp.status_code == 403
+        assert resp.status_code == 404
 
 
 # ========================================
@@ -377,7 +377,7 @@ class TestDeleteIsolation:
         assert resp.status_code == 403
 
     def test_delete_other_org_contract_denied(self, client, db):
-        """Org A tries to delete Org B's contract → 403."""
+        """Org A tries to delete Org B's contract → 404 (JOIN-based, no ID enumeration)."""
         data = _create_two_orgs(db)
         ct_b = EnergyContract(
             site_id=data["site_b"].id, energy_type=BillingEnergyType.ELEC,
@@ -390,16 +390,16 @@ class TestDeleteIsolation:
             f"/api/patrimoine/contracts/{ct_b.id}",
             headers=_headers(data["org_a"].id),
         )
-        assert resp.status_code == 403
+        assert resp.status_code == 404
 
     def test_detach_other_org_compteur_denied(self, client, db):
-        """Org A tries to detach Org B's compteur → 403."""
+        """Org A tries to detach Org B's compteur → 404 (JOIN-based, no ID enumeration)."""
         data = _create_two_orgs(db)
         resp = client.post(
             f"/api/patrimoine/compteurs/{data['cpt_b'].id}/detach",
             headers=_headers(data["org_a"].id),
         )
-        assert resp.status_code == 403
+        assert resp.status_code == 404
 
     def test_abandon_other_org_batch_denied(self, client, db):
         """Org A tries to abandon Org B's batch → 403."""
@@ -485,6 +485,68 @@ class TestBatchIsolation:
 
         resp = client.post(
             f"/api/patrimoine/staging/{batch_b.id}/validate",
+            headers=_headers(data["org_a"].id),
+        )
+        assert resp.status_code == 403
+
+
+# ========================================
+# Test 8: Demo/load — production guard (Phase A1)
+# ========================================
+
+class TestDemoLoadGuard:
+
+    def test_demo_load_blocked_in_production(self, client, monkeypatch):
+        """demo/load returns 403 when DEMO_MODE is False."""
+        monkeypatch.setattr("middleware.auth.DEMO_MODE", False)
+        resp = client.post("/api/patrimoine/demo/load")
+        assert resp.status_code == 403
+
+    def test_demo_load_allowed_in_demo_mode(self, client, monkeypatch):
+        """demo/load is allowed when DEMO_MODE is True (may fail on seed, that's ok)."""
+        monkeypatch.setattr("middleware.auth.DEMO_MODE", True)
+        resp = client.post("/api/patrimoine/demo/load")
+        # 200 or 500 (seed may fail in test env) — but NOT 403
+        assert resp.status_code != 403
+
+
+# ========================================
+# Test 9: Fail-closed — orphan site (Phase A1)
+# ========================================
+
+class TestFailClosed:
+
+    def test_orphan_site_without_portfolio_blocked(self, client, db):
+        """A site with portefeuille_id=None is inaccessible (fail-closed)."""
+        data = _create_two_orgs(db)
+        orphan = Site(
+            nom="Orphan Site", type=TypeSite.BUREAU,
+            adresse="1 rue Orphan", code_postal="75001", ville="Paris",
+            surface_m2=100, portefeuille_id=None, actif=True,
+        )
+        db.add(orphan)
+        db.commit()
+
+        resp = client.get(
+            f"/api/patrimoine/sites/{orphan.id}",
+            headers=_headers(data["org_a"].id),
+        )
+        assert resp.status_code == 403
+
+    def test_orphan_site_update_blocked(self, client, db):
+        """Cannot PATCH a site with no portfolio (fail-closed)."""
+        data = _create_two_orgs(db)
+        orphan = Site(
+            nom="Orphan 2", type=TypeSite.BUREAU,
+            adresse="2 rue Orphan", code_postal="75001", ville="Paris",
+            surface_m2=100, portefeuille_id=None, actif=True,
+        )
+        db.add(orphan)
+        db.commit()
+
+        resp = client.patch(
+            f"/api/patrimoine/sites/{orphan.id}",
+            json={"nom": "Hacked"},
             headers=_headers(data["org_a"].id),
         )
         assert resp.status_code == 403

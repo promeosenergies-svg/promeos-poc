@@ -12,6 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import Optional, List
+from sqlalchemy import func, case
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -23,6 +24,7 @@ from models import (
     Site, DeliveryPoint, not_deleted,
     Compteur, TypeSite, TypeCompteur, EnergyVector,
     EnergyContract, BillingEnergyType,
+    StatutConformite,
 )
 from services.patrimoine_service import (
     create_staging_batch, import_csv_to_staging, import_invoices_to_staging,
@@ -124,16 +126,9 @@ class ContractUpdateRequest(BaseModel):
 # ========================================
 
 def _get_org_id(request: Request, auth: Optional[AuthContext], db: Session) -> int:
-    """Resolve org_id from auth chain. Demo fallback to first active org."""
-    org_id = get_scope_org_id(request, auth)
-    if org_id is not None:
-        return org_id
-    # Demo mode (auth is None): fall back to first active org
-    if auth is None:
-        org = db.query(Organisation).filter(Organisation.actif == True).first()
-        if org:
-            return org.id
-    raise HTTPException(status_code=403, detail="Organisation non résolue")
+    """Resolve org_id via centralized scope chain (DEMO_MODE-aware)."""
+    from services.scope_utils import resolve_org_id
+    return resolve_org_id(request, auth, db)
 
 
 def _check_batch_org(batch: StagingBatch, org_id: int):
@@ -145,13 +140,15 @@ def _check_batch_org(batch: StagingBatch, org_id: int):
 
 
 def _check_site_belongs_to_org(db: Session, site: Site, org_id: int):
-    """Verify site belongs to org via portfolio→EJ chain. Raises 403."""
-    if site.portefeuille_id:
-        pf = db.query(Portefeuille).get(site.portefeuille_id)
-        if pf:
-            ej = db.query(EntiteJuridique).get(pf.entite_juridique_id)
-            if ej and ej.organisation_id != org_id:
-                raise HTTPException(status_code=403, detail="Site hors périmètre")
+    """Verify site belongs to org via portfolio→EJ chain. Fail-closed: raises 403 on any break."""
+    if not site.portefeuille_id:
+        raise HTTPException(status_code=403, detail="Site hors périmètre")
+    pf = db.query(Portefeuille).get(site.portefeuille_id)
+    if not pf:
+        raise HTTPException(status_code=403, detail="Site hors périmètre")
+    ej = db.query(EntiteJuridique).get(pf.entite_juridique_id)
+    if not ej or ej.organisation_id != org_id:
+        raise HTTPException(status_code=403, detail="Site hors périmètre")
 
 
 def _check_portfolio_belongs_to_org(db: Session, portfolio_id: int, org_id: int):
@@ -172,6 +169,38 @@ def _load_site_with_org_check(db: Session, site_id: int, org_id: int) -> Site:
         raise HTTPException(status_code=404, detail=f"Site {site_id} non trouvé")
     _check_site_belongs_to_org(db, site, org_id)
     return site
+
+
+def _load_compteur_with_org_check(db: Session, compteur_id: int, org_id: int) -> "Compteur":
+    """Load a compteur with upfront org verification via JOIN chain. Returns 404 on miss."""
+    c = (
+        db.query(Compteur)
+        .join(Site, Compteur.site_id == Site.id)
+        .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+        .filter(EntiteJuridique.organisation_id == org_id)
+        .filter(Compteur.id == compteur_id)
+        .first()
+    )
+    if not c:
+        raise HTTPException(status_code=404, detail=f"Compteur {compteur_id} non trouvé")
+    return c
+
+
+def _load_contract_with_org_check(db: Session, contract_id: int, org_id: int) -> "EnergyContract":
+    """Load a contract with upfront org verification via JOIN chain. Returns 404 on miss."""
+    ct = (
+        db.query(EnergyContract)
+        .join(Site, EnergyContract.site_id == Site.id)
+        .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+        .filter(EntiteJuridique.organisation_id == org_id)
+        .filter(EnergyContract.id == contract_id)
+        .first()
+    )
+    if not ct:
+        raise HTTPException(status_code=404, detail=f"Contrat {contract_id} non trouvé")
+    return ct
 
 
 # ========================================
@@ -844,7 +873,10 @@ async def portfolio_sync(
 
 @router.post("/demo/load")
 def demo_load(db: Session = Depends(get_db)):
-    """Load demo patrimoine data (Collectivite Azur)."""
+    """Load demo patrimoine data (Collectivite Azur). Requires DEMO_MODE."""
+    from middleware.auth import DEMO_MODE
+    if not DEMO_MODE:
+        raise HTTPException(status_code=403, detail="Demo load désactivé en production")
     try:
         from scripts.seed_data import seed_patrimoine_demo
         result = seed_patrimoine_demo(db)
@@ -915,6 +947,52 @@ def mapping_preview(body: MappingPreviewRequest):
 
 
 # ========================================
+# KPIs (server-side aggregation)
+# ========================================
+
+@router.get("/kpis")
+def patrimoine_kpis(
+    request: Request,
+    site_id: Optional[int] = Query(None, description="Filter KPIs to a single site"),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Aggregated KPIs for the patrimoine page — replaces client-side useMemo."""
+    org_id = _get_org_id(request, auth, db)
+
+    base_q = (
+        db.query(Site)
+        .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+        .filter(EntiteJuridique.organisation_id == org_id)
+        .filter(Site.actif == True)
+    )
+
+    if site_id is not None:
+        base_q = base_q.filter(Site.id == site_id)
+
+    result = base_q.with_entities(
+        func.count(Site.id).label("total"),
+        func.count(case((Site.statut_decret_tertiaire == StatutConformite.CONFORME, 1))).label("conformes"),
+        func.count(case((Site.statut_decret_tertiaire == StatutConformite.A_RISQUE, 1))).label("a_risque"),
+        func.count(case((Site.statut_decret_tertiaire == StatutConformite.NON_CONFORME, 1))).label("non_conformes"),
+        func.coalesce(func.sum(Site.risque_financier_euro), 0).label("total_risque"),
+        func.coalesce(func.sum(Site.surface_m2), 0).label("total_surface"),
+        func.count(case((Site.anomalie_facture == True, 1))).label("total_anomalies"),
+    ).one()
+
+    return {
+        "total": result.total,
+        "conformes": result.conformes,
+        "aRisque": result.a_risque,
+        "nonConformes": result.non_conformes,
+        "totalRisque": round(float(result.total_risque), 2),
+        "totalSurface": round(float(result.total_surface), 2),
+        "totalAnomalies": result.total_anomalies,
+    }
+
+
+# ========================================
 # Site CRUD (WORLD CLASS)
 # ========================================
 
@@ -936,24 +1014,17 @@ def _serialize_site(site: Site) -> dict:
         "data_source": site.data_source,
         "created_at": site.created_at.isoformat() if site.created_at else None,
         "updated_at": site.updated_at.isoformat() if site.updated_at else None,
+        # Enriched analytics fields
+        "risque_eur": site.risque_financier_euro,
+        "statut_conformite": site.statut_decret_tertiaire.value if site.statut_decret_tertiaire else None,
+        "anomalie_facture": site.anomalie_facture,
+        "conso_kwh_an": site.annual_kwh_total,
     }
 
 
-@router.get("/sites")
-def list_sites(
-    request: Request,
-    portefeuille_id: Optional[int] = None,
-    actif: Optional[bool] = None,
-    ville: Optional[str] = None,
-    type_site: Optional[str] = None,
-    search: Optional[str] = None,
-    skip: int = 0,
-    limit: int = 100,
-    db: Session = Depends(get_db),
-    auth: Optional[AuthContext] = Depends(get_optional_auth),
-):
-    """List sites with filters — scoped to org."""
-    org_id = _get_org_id(request, auth, db)
+def _build_sites_query(db: Session, org_id: int, portefeuille_id=None, actif=None,
+                       ville=None, type_site=None, search=None):
+    """Build a filtered site query scoped to org — shared by list_sites and export."""
     q = (
         db.query(Site)
         .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
@@ -974,12 +1045,109 @@ def list_sites(
             (Site.ville.ilike(f"%{search}%")) |
             (Site.adresse.ilike(f"%{search}%"))
         )
+    return q
+
+
+_SORT_WHITELIST = {"nom", "ville", "surface_m2", "risque_financier_euro", "type", "created_at"}
+
+
+@router.get("/sites")
+def list_sites(
+    request: Request,
+    portefeuille_id: Optional[int] = None,
+    actif: Optional[bool] = None,
+    ville: Optional[str] = None,
+    type_site: Optional[str] = None,
+    search: Optional[str] = None,
+    page: int = Query(1, ge=1, description="Page number (1-indexed)"),
+    page_size: int = Query(25, ge=1, le=200, description="Items per page"),
+    sort_by: Optional[str] = Query(None, description="Sort column"),
+    sort_dir: Optional[str] = Query("asc", description="Sort direction: asc or desc"),
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """List sites with filters, pagination, and sorting — scoped to org."""
+    org_id = _get_org_id(request, auth, db)
+    q = _build_sites_query(db, org_id, portefeuille_id, actif, ville, type_site, search)
+
+    # Sort
+    if sort_by and sort_by in _SORT_WHITELIST:
+        col = getattr(Site, sort_by, None)
+        if col is not None:
+            q = q.order_by(col.desc() if sort_dir == "desc" else col.asc())
+
     total = q.count()
-    sites = q.offset(skip).limit(limit).all()
+
+    # Use page/page_size if page > 1, otherwise fall back to skip/limit for backward compat
+    if page > 1 or page_size != 25:
+        offset = (page - 1) * page_size
+        sites = q.offset(offset).limit(page_size).all()
+    else:
+        sites = q.offset(skip).limit(limit).all()
+
     return {
         "total": total,
         "sites": [_serialize_site(s) for s in sites],
+        "page": page,
+        "page_size": page_size,
     }
+
+
+@router.get("/sites/export.csv")
+def export_sites_csv(
+    request: Request,
+    portefeuille_id: Optional[int] = None,
+    actif: Optional[bool] = None,
+    ville: Optional[str] = None,
+    type_site: Optional[str] = None,
+    search: Optional[str] = None,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Export filtered sites as CSV (streaming, UTF-8-sig BOM for French Excel)."""
+    org_id = _get_org_id(request, auth, db)
+    q = _build_sites_query(db, org_id, portefeuille_id, actif, ville, type_site, search)
+    sites = q.all()
+
+    headers = [
+        "id", "nom", "type", "adresse", "code_postal", "ville", "region",
+        "surface_m2", "nombre_employes", "siret", "actif",
+        "risque_financier_euro", "statut_conformite", "anomalie_facture",
+        "conso_kwh_an", "portefeuille_id",
+    ]
+
+    def iter_csv():
+        yield "\ufeff"  # BOM for Excel
+        out = io.StringIO()
+        w = csv.writer(out, delimiter=";")
+        w.writerow(headers)
+        yield out.getvalue()
+        for site in sites:
+            out = io.StringIO()
+            w = csv.writer(out, delimiter=";")
+            w.writerow([
+                site.id, site.nom,
+                site.type.value if site.type else "",
+                site.adresse or "", site.code_postal or "", site.ville or "",
+                site.region or "", site.surface_m2 or "",
+                site.nombre_employes or "", site.siret or "",
+                site.actif,
+                site.risque_financier_euro or 0,
+                site.statut_decret_tertiaire.value if site.statut_decret_tertiaire else "",
+                site.anomalie_facture or False,
+                site.annual_kwh_total or "",
+                site.portefeuille_id or "",
+            ])
+            yield out.getvalue()
+
+    filename = f"patrimoine_sites_{date.today().isoformat()}.csv"
+    return StreamingResponse(
+        iter_csv(),
+        media_type="text/csv; charset=utf-8-sig",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.get("/sites/{site_id}")
@@ -1119,10 +1287,7 @@ def list_compteurs(
 def update_compteur(compteur_id: int, request: Request, body: CompteurUpdateRequest, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
     """Update a compteur (partial update)."""
     org_id = _get_org_id(request, auth, db)
-    c = db.query(Compteur).filter(Compteur.id == compteur_id).first()
-    if not c:
-        raise HTTPException(status_code=404, detail=f"Compteur {compteur_id} non trouvé")
-    _load_site_with_org_check(db, c.site_id, org_id)
+    c = _load_compteur_with_org_check(db, compteur_id, org_id)
 
     updated = []
     for field, value in body.model_dump(exclude_unset=True).items():
@@ -1142,10 +1307,7 @@ def update_compteur(compteur_id: int, request: Request, body: CompteurUpdateRequ
 def move_compteur(compteur_id: int, request: Request, body: CompteurMoveRequest, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
     """Move a compteur to another site."""
     org_id = _get_org_id(request, auth, db)
-    c = db.query(Compteur).filter(Compteur.id == compteur_id).first()
-    if not c:
-        raise HTTPException(status_code=404, detail=f"Compteur {compteur_id} non trouvé")
-    _load_site_with_org_check(db, c.site_id, org_id)
+    c = _load_compteur_with_org_check(db, compteur_id, org_id)
     target = _load_site_with_org_check(db, body.target_site_id, org_id)
 
     old_site_id = c.site_id
@@ -1161,10 +1323,7 @@ def move_compteur(compteur_id: int, request: Request, body: CompteurMoveRequest,
 def detach_compteur(compteur_id: int, request: Request, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
     """Deactivate a compteur (soft detach)."""
     org_id = _get_org_id(request, auth, db)
-    c = db.query(Compteur).filter(Compteur.id == compteur_id).first()
-    if not c:
-        raise HTTPException(status_code=404, detail=f"Compteur {compteur_id} non trouvé")
-    _load_site_with_org_check(db, c.site_id, org_id)
+    c = _load_compteur_with_org_check(db, compteur_id, org_id)
     c.actif = False
     db.commit()
     return {"detail": f"Compteur {compteur_id} desactive", **_serialize_compteur(c)}
@@ -1250,10 +1409,7 @@ def create_contract(request: Request, body: ContractCreateRequest, db: Session =
 def update_contract(contract_id: int, request: Request, body: ContractUpdateRequest, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
     """Update an energy contract (partial update)."""
     org_id = _get_org_id(request, auth, db)
-    ct = db.query(EnergyContract).filter(EnergyContract.id == contract_id).first()
-    if not ct:
-        raise HTTPException(status_code=404, detail=f"Contrat {contract_id} non trouvé")
-    _load_site_with_org_check(db, ct.site_id, org_id)
+    ct = _load_contract_with_org_check(db, contract_id, org_id)
 
     updated = []
     for field, value in body.model_dump(exclude_unset=True).items():
@@ -1270,10 +1426,7 @@ def update_contract(contract_id: int, request: Request, body: ContractUpdateRequ
 def delete_contract(contract_id: int, request: Request, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
     """Delete an energy contract."""
     org_id = _get_org_id(request, auth, db)
-    ct = db.query(EnergyContract).filter(EnergyContract.id == contract_id).first()
-    if not ct:
-        raise HTTPException(status_code=404, detail=f"Contrat {contract_id} non trouvé")
-    _load_site_with_org_check(db, ct.site_id, org_id)
+    ct = _load_contract_with_org_check(db, contract_id, org_id)
     db.delete(ct)
     db.commit()
     return {"detail": f"Contrat {contract_id} supprime"}
