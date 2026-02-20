@@ -382,6 +382,8 @@ class TestSiteCRUD:
         assert resp.status_code == 400
 
     def test_site_not_found(self, client, db):
+        _create_org(db)  # Need org scope for the request to pass auth
+        db.commit()
         resp = client.get("/api/patrimoine/sites/99999")
         assert resp.status_code == 404
 

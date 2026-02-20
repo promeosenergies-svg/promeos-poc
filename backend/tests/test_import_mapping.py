@@ -387,7 +387,11 @@ class TestStagingRowsEndpoint:
         assert data["total"] == 2
         assert len(data["rows"]) == 1  # page_size=1
 
-    def test_rows_404_unknown_batch(self, client):
+    def test_rows_404_unknown_batch(self, client, db_session):
+        # Need an org so scope resolution succeeds (demo fallback)
+        org = Organisation(nom="Tmp Org", type_client="bureau", actif=True)
+        db_session.add(org)
+        db_session.commit()
         response = client.get("/api/patrimoine/staging/9999/rows")
         assert response.status_code == 404
 
@@ -439,7 +443,11 @@ class TestStagingIssuesEndpoint:
         assert data["total"] == 1
         assert data["issues"][0]["severity"] == "warning"
 
-    def test_issues_404_unknown_batch(self, client):
+    def test_issues_404_unknown_batch(self, client, db_session):
+        # Need an org so scope resolution succeeds (demo fallback)
+        org = Organisation(nom="Tmp Org", type_client="bureau", actif=True)
+        db_session.add(org)
+        db_session.commit()
         response = client.get("/api/patrimoine/staging/9999/issues")
         assert response.status_code == 404
 
@@ -611,7 +619,11 @@ class TestStagingResultEndpoint:
         assert "activation" in data
         assert data["activation"]["sites_created"] == 2
 
-    def test_result_404_unknown_batch(self, client):
+    def test_result_404_unknown_batch(self, client, db_session):
+        # Need an org so scope resolution succeeds (demo fallback)
+        org = Organisation(nom="Tmp Org", type_client="bureau", actif=True)
+        db_session.add(org)
+        db_session.commit()
         response = client.get("/api/patrimoine/staging/9999/result")
         assert response.status_code == 404
 
@@ -640,7 +652,11 @@ class TestExportReportEndpoint:
         assert len(lines) == 3  # header + 2 sites
         assert "Site Alpha" in lines[1]
 
-    def test_export_report_404_unknown(self, client):
+    def test_export_report_404_unknown(self, client, db_session):
+        # Need an org so scope resolution succeeds (demo fallback)
+        org = Organisation(nom="Tmp Org", type_client="bureau", actif=True)
+        db_session.add(org)
+        db_session.commit()
         response = client.get("/api/patrimoine/staging/9999/export/report.csv")
         assert response.status_code == 404
 

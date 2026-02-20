@@ -8,7 +8,7 @@ import io
 import json
 from datetime import date, datetime
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import Optional, List
@@ -16,7 +16,8 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from models import (
-    Organisation, Portefeuille, StagingBatch, StagingSite, StagingCompteur,
+    Organisation, EntiteJuridique, Portefeuille,
+    StagingBatch, StagingSite, StagingCompteur,
     QualityFinding, ImportSourceType, StagingStatus, QualityRuleSeverity,
     ActivationLog, ActivationLogStatus,
     Site, DeliveryPoint, not_deleted,
@@ -33,6 +34,8 @@ from services.import_mapping import (
     map_headers, detect_encoding, detect_delimiter, normalize_column_name,
     get_mapping_report,
 )
+from middleware.auth import get_optional_auth, AuthContext
+from services.scope_utils import get_scope_org_id
 
 router = APIRouter(prefix="/api/patrimoine", tags=["Patrimoine"])
 
@@ -117,6 +120,61 @@ class ContractUpdateRequest(BaseModel):
 
 
 # ========================================
+# Multi-org scope helpers
+# ========================================
+
+def _get_org_id(request: Request, auth: Optional[AuthContext], db: Session) -> int:
+    """Resolve org_id from auth chain. Demo fallback to first active org."""
+    org_id = get_scope_org_id(request, auth)
+    if org_id is not None:
+        return org_id
+    # Demo mode (auth is None): fall back to first active org
+    if auth is None:
+        org = db.query(Organisation).filter(Organisation.actif == True).first()
+        if org:
+            return org.id
+    raise HTTPException(status_code=403, detail="Organisation non résolue")
+
+
+def _check_batch_org(batch: StagingBatch, org_id: int):
+    """Verify batch belongs to the resolved org. Raises 403 if mismatch."""
+    if batch is None:
+        raise HTTPException(status_code=404, detail="Batch non trouvé")
+    if batch.org_id is not None and batch.org_id != org_id:
+        raise HTTPException(status_code=403, detail="Batch hors périmètre")
+
+
+def _check_site_belongs_to_org(db: Session, site: Site, org_id: int):
+    """Verify site belongs to org via portfolio→EJ chain. Raises 403."""
+    if site.portefeuille_id:
+        pf = db.query(Portefeuille).get(site.portefeuille_id)
+        if pf:
+            ej = db.query(EntiteJuridique).get(pf.entite_juridique_id)
+            if ej and ej.organisation_id != org_id:
+                raise HTTPException(status_code=403, detail="Site hors périmètre")
+
+
+def _check_portfolio_belongs_to_org(db: Session, portfolio_id: int, org_id: int):
+    """Verify portfolio belongs to org. Raises 403 if mismatch."""
+    pf = db.query(Portefeuille).get(portfolio_id)
+    if not pf:
+        raise HTTPException(status_code=404, detail=f"Portefeuille {portfolio_id} non trouvé")
+    ej = db.query(EntiteJuridique).get(pf.entite_juridique_id)
+    if not ej or ej.organisation_id != org_id:
+        raise HTTPException(status_code=403, detail="Portefeuille hors périmètre")
+    return pf
+
+
+def _load_site_with_org_check(db: Session, site_id: int, org_id: int) -> Site:
+    """Load a site and verify org ownership. Raises 404/403."""
+    site = db.query(Site).filter(Site.id == site_id).first()
+    if not site:
+        raise HTTPException(status_code=404, detail=f"Site {site_id} non trouvé")
+    _check_site_belongs_to_org(db, site, org_id)
+    return site
+
+
+# ========================================
 # Template download
 # ========================================
 
@@ -165,14 +223,18 @@ def import_template_columns():
 
 @router.post("/staging/import")
 async def staging_import(
+    request: Request,
     file: UploadFile = File(...),
     mode: str = Query("import", description="express, import, assiste, demo"),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Import CSV/Excel file into staging pipeline.
 
     Performs: encoding detection, header mapping, normalization, dedup check.
     """
+    org_id = _get_org_id(request, auth, db)
+
     content = await file.read()
     content_hash = compute_content_hash(content)
 
@@ -183,9 +245,10 @@ async def staging_import(
     else:
         source_type = ImportSourceType.CSV
 
-    # Check for duplicate import (same content hash)
+    # Check for duplicate import (same content hash, same org)
     existing = db.query(StagingBatch).filter(
         StagingBatch.content_hash == content_hash,
+        StagingBatch.org_id == org_id,
         StagingBatch.status != StagingStatus.ABANDONED,
     ).first()
     if existing:
@@ -197,13 +260,10 @@ async def staging_import(
             **summary,
         }
 
-    # Get default org (first available)
-    org = db.query(Organisation).first()
-
     batch = create_staging_batch(
         db=db,
-        org_id=org.id if org else None,
-        user_id=None,
+        org_id=org_id,
+        user_id=auth.user.id if auth else None,
         source_type=source_type,
         mode=mode,
         filename=filename,
@@ -250,16 +310,18 @@ async def staging_import(
 
 @router.post("/staging/import-invoices")
 def staging_import_invoices(
+    request: Request,
     body: InvoiceImportRequest,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Import sites/meters from invoice metadata into staging."""
-    org = db.query(Organisation).first()
+    org_id = _get_org_id(request, auth, db)
 
     batch = create_staging_batch(
         db=db,
-        org_id=org.id if org else None,
-        user_id=None,
+        org_id=org_id,
+        user_id=auth.user.id if auth else None,
         source_type=ImportSourceType.INVOICE,
         mode="assiste",
     )
@@ -278,8 +340,11 @@ def staging_import_invoices(
 # ========================================
 
 @router.get("/staging/{batch_id}/summary")
-def staging_summary(batch_id: int, db: Session = Depends(get_db)):
+def staging_summary(batch_id: int, request: Request, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
     """Get staging batch summary stats."""
+    org_id = _get_org_id(request, auth, db)
+    batch = db.query(StagingBatch).get(batch_id)
+    _check_batch_org(batch, org_id)
     try:
         return get_staging_summary(db, batch_id)
     except ValueError as e:
@@ -289,16 +354,18 @@ def staging_summary(batch_id: int, db: Session = Depends(get_db)):
 @router.get("/staging/{batch_id}/rows")
 def staging_rows(
     batch_id: int,
+    request: Request,
     status: Optional[str] = Query(None, description="ok, error, skipped"),
     q: Optional[str] = Query(None, description="Search query"),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """List staging rows (sites + linked compteurs) with pagination & search."""
+    org_id = _get_org_id(request, auth, db)
     batch = db.query(StagingBatch).get(batch_id)
-    if not batch:
-        raise HTTPException(status_code=404, detail=f"Batch {batch_id} not found")
+    _check_batch_org(batch, org_id)
 
     query = db.query(StagingSite).filter(StagingSite.batch_id == batch_id)
 
@@ -387,14 +454,16 @@ def staging_rows(
 @router.get("/staging/{batch_id}/issues")
 def staging_issues(
     batch_id: int,
+    request: Request,
     severity: Optional[str] = Query(None, description="blocking, critical, warning, info"),
     resolved: Optional[bool] = Query(None),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """List quality findings (issues) for a batch, optionally filtered."""
+    org_id = _get_org_id(request, auth, db)
     batch = db.query(StagingBatch).get(batch_id)
-    if not batch:
-        raise HTTPException(status_code=404, detail=f"Batch {batch_id} not found")
+    _check_batch_org(batch, org_id)
 
     query = db.query(QualityFinding).filter(QualityFinding.batch_id == batch_id)
 
@@ -430,8 +499,11 @@ def staging_issues(
 
 
 @router.post("/staging/{batch_id}/validate")
-def staging_validate(batch_id: int, db: Session = Depends(get_db)):
+def staging_validate(batch_id: int, request: Request, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
     """Run quality gate on staging batch."""
+    org_id = _get_org_id(request, auth, db)
+    batch = db.query(StagingBatch).get(batch_id)
+    _check_batch_org(batch, org_id)
     try:
         findings = run_quality_gate(db, batch_id)
     except ValueError as e:
@@ -448,16 +520,22 @@ def staging_validate(batch_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/staging/{batch_id}/fix")
-def staging_fix(batch_id: int, body: FixRequest, db: Session = Depends(get_db)):
+def staging_fix(batch_id: int, request: Request, body: FixRequest, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
     """Apply a correction to staging data."""
+    org_id = _get_org_id(request, auth, db)
+    batch = db.query(StagingBatch).get(batch_id)
+    _check_batch_org(batch, org_id)
     result = apply_fix(db, batch_id, body.fix_type, body.params)
     db.commit()
     return result
 
 
 @router.put("/staging/{batch_id}/fix/bulk")
-def staging_fix_bulk(batch_id: int, body: BulkFixRequest, db: Session = Depends(get_db)):
+def staging_fix_bulk(batch_id: int, request: Request, body: BulkFixRequest, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
     """Apply multiple corrections in a single transaction."""
+    org_id = _get_org_id(request, auth, db)
+    batch = db.query(StagingBatch).get(batch_id)
+    _check_batch_org(batch, org_id)
     results = []
     for fix in body.fixes:
         r = apply_fix(db, batch_id, fix.fix_type, fix.params)
@@ -472,7 +550,7 @@ def staging_fix_bulk(batch_id: int, body: BulkFixRequest, db: Session = Depends(
 
 
 @router.post("/staging/{batch_id}/autofix")
-def staging_autofix(batch_id: int, db: Session = Depends(get_db)):
+def staging_autofix(batch_id: int, request: Request, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
     """Apply safe auto-corrections to staging data.
 
     Safe fixes:
@@ -481,9 +559,9 @@ def staging_autofix(batch_id: int, db: Session = Depends(get_db)):
     - Normalize type_compteur (electricite/gaz/eau)
     - Skip orphan compteurs without meter_id and without numero_serie
     """
+    org_id = _get_org_id(request, auth, db)
     batch = db.query(StagingBatch).get(batch_id)
-    if not batch:
-        raise HTTPException(status_code=404, detail=f"Batch {batch_id} not found")
+    _check_batch_org(batch, org_id)
 
     fixes_applied = 0
 
@@ -545,8 +623,11 @@ def staging_autofix(batch_id: int, db: Session = Depends(get_db)):
 
 
 @router.delete("/staging/{batch_id}")
-def staging_abandon(batch_id: int, db: Session = Depends(get_db)):
+def staging_abandon(batch_id: int, request: Request, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
     """Abandon a staging batch."""
+    org_id = _get_org_id(request, auth, db)
+    batch = db.query(StagingBatch).get(batch_id)
+    _check_batch_org(batch, org_id)
     try:
         result = abandon_batch(db, batch_id)
     except ValueError as e:
@@ -560,8 +641,12 @@ def staging_abandon(batch_id: int, db: Session = Depends(get_db)):
 # ========================================
 
 @router.post("/staging/{batch_id}/activate")
-def staging_activate(batch_id: int, body: ActivateRequest, db: Session = Depends(get_db)):
+def staging_activate(batch_id: int, request: Request, body: ActivateRequest, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
     """Activate a validated staging batch → create real entities."""
+    org_id = _get_org_id(request, auth, db)
+    batch = db.query(StagingBatch).get(batch_id)
+    _check_batch_org(batch, org_id)
+    _check_portfolio_belongs_to_org(db, body.portefeuille_id, org_id)
     try:
         result = activate_batch(db, batch_id, body.portefeuille_id)
     except ValueError as e:
@@ -571,11 +656,11 @@ def staging_activate(batch_id: int, body: ActivateRequest, db: Session = Depends
 
 
 @router.get("/staging/{batch_id}/result")
-def staging_result(batch_id: int, db: Session = Depends(get_db)):
+def staging_result(batch_id: int, request: Request, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
     """Get activation result for a batch (post-activation)."""
+    org_id = _get_org_id(request, auth, db)
     batch = db.query(StagingBatch).get(batch_id)
-    if not batch:
-        raise HTTPException(status_code=404, detail=f"Batch {batch_id} not found")
+    _check_batch_org(batch, org_id)
 
     summary = get_staging_summary(db, batch_id)
 
@@ -615,11 +700,11 @@ def staging_result(batch_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/staging/{batch_id}/export/report.csv")
-def staging_export_report(batch_id: int, db: Session = Depends(get_db)):
+def staging_export_report(batch_id: int, request: Request, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
     """Export batch report as CSV: all rows + issues + status."""
+    org_id = _get_org_id(request, auth, db)
     batch = db.query(StagingBatch).get(batch_id)
-    if not batch:
-        raise HTTPException(status_code=404, detail=f"Batch {batch_id} not found")
+    _check_batch_org(batch, org_id)
 
     sites = db.query(StagingSite).filter(
         StagingSite.batch_id == batch_id,
@@ -682,11 +767,10 @@ def staging_export_report(batch_id: int, db: Session = Depends(get_db)):
 # ========================================
 
 @router.get("/sites/{site_id}/delivery-points")
-def site_delivery_points(site_id: int, db: Session = Depends(get_db)):
+def site_delivery_points(site_id: int, request: Request, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
     """List active delivery points (PRM/PCE) for a site."""
-    site = db.query(Site).get(site_id)
-    if not site:
-        raise HTTPException(status_code=404, detail=f"Site {site_id} not found")
+    org_id = _get_org_id(request, auth, db)
+    site = _load_site_with_org_check(db, site_id, org_id)
 
     dps = not_deleted(db.query(DeliveryPoint), DeliveryPoint).filter(
         DeliveryPoint.site_id == site_id,
@@ -713,14 +797,15 @@ def site_delivery_points(site_id: int, db: Session = Depends(get_db)):
 @router.post("/{portfolio_id}/sync")
 async def portfolio_sync(
     portfolio_id: int,
+    request: Request,
     file: UploadFile = File(...),
     dry_run: bool = Query(True),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Incremental sync: compare uploaded file vs existing portfolio."""
-    pf = db.query(Portefeuille).get(portfolio_id)
-    if not pf:
-        raise HTTPException(status_code=404, detail=f"Portefeuille {portfolio_id} not found")
+    org_id = _get_org_id(request, auth, db)
+    _check_portfolio_belongs_to_org(db, portfolio_id, org_id)
 
     content = await file.read()
     content_hash = compute_content_hash(content)
@@ -729,8 +814,8 @@ async def portfolio_sync(
     # Create temporary staging batch
     batch = create_staging_batch(
         db=db,
-        org_id=None,
-        user_id=None,
+        org_id=org_id,
+        user_id=auth.user.id if auth else None,
         source_type=ImportSourceType.CSV,
         mode="sync",
         filename=filename,
@@ -856,6 +941,7 @@ def _serialize_site(site: Site) -> dict:
 
 @router.get("/sites")
 def list_sites(
+    request: Request,
     portefeuille_id: Optional[int] = None,
     actif: Optional[bool] = None,
     ville: Optional[str] = None,
@@ -864,9 +950,16 @@ def list_sites(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """List sites with filters."""
-    q = db.query(Site)
+    """List sites with filters — scoped to org."""
+    org_id = _get_org_id(request, auth, db)
+    q = (
+        db.query(Site)
+        .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+        .filter(EntiteJuridique.organisation_id == org_id)
+    )
     if portefeuille_id is not None:
         q = q.filter(Site.portefeuille_id == portefeuille_id)
     if actif is not None:
@@ -890,11 +983,10 @@ def list_sites(
 
 
 @router.get("/sites/{site_id}")
-def get_site_detail(site_id: int, db: Session = Depends(get_db)):
+def get_site_detail(site_id: int, request: Request, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
     """Get a site with compteurs and contracts count."""
-    site = db.query(Site).filter(Site.id == site_id).first()
-    if not site:
-        raise HTTPException(status_code=404, detail=f"Site {site_id} non trouve")
+    org_id = _get_org_id(request, auth, db)
+    site = _load_site_with_org_check(db, site_id, org_id)
     compteurs_count = db.query(Compteur).filter(Compteur.site_id == site_id, Compteur.actif.is_(True)).count()
     contracts_count = db.query(EnergyContract).filter(EnergyContract.site_id == site_id).count()
     return {
@@ -905,11 +997,10 @@ def get_site_detail(site_id: int, db: Session = Depends(get_db)):
 
 
 @router.patch("/sites/{site_id}")
-def update_site(site_id: int, body: SiteUpdateRequest, db: Session = Depends(get_db)):
+def update_site(site_id: int, request: Request, body: SiteUpdateRequest, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
     """Update a site (partial update)."""
-    site = db.query(Site).filter(Site.id == site_id).first()
-    if not site:
-        raise HTTPException(status_code=404, detail=f"Site {site_id} non trouve")
+    org_id = _get_org_id(request, auth, db)
+    site = _load_site_with_org_check(db, site_id, org_id)
 
     updated_fields = []
     for field, value in body.model_dump(exclude_unset=True).items():
@@ -926,11 +1017,10 @@ def update_site(site_id: int, body: SiteUpdateRequest, db: Session = Depends(get
 
 
 @router.post("/sites/{site_id}/archive")
-def archive_site(site_id: int, db: Session = Depends(get_db)):
+def archive_site(site_id: int, request: Request, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
     """Soft-delete a site (set actif=False)."""
-    site = db.query(Site).filter(Site.id == site_id).first()
-    if not site:
-        raise HTTPException(status_code=404, detail=f"Site {site_id} non trouve")
+    org_id = _get_org_id(request, auth, db)
+    site = _load_site_with_org_check(db, site_id, org_id)
     if not site.actif:
         return {"detail": "Site deja archive", "site_id": site_id}
     site.actif = False
@@ -939,11 +1029,10 @@ def archive_site(site_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/sites/{site_id}/restore")
-def restore_site(site_id: int, db: Session = Depends(get_db)):
+def restore_site(site_id: int, request: Request, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
     """Restore an archived site (set actif=True)."""
-    site = db.query(Site).filter(Site.id == site_id).first()
-    if not site:
-        raise HTTPException(status_code=404, detail=f"Site {site_id} non trouve")
+    org_id = _get_org_id(request, auth, db)
+    site = _load_site_with_org_check(db, site_id, org_id)
     if site.actif:
         return {"detail": "Site deja actif", "site_id": site_id}
     site.actif = True
@@ -952,14 +1041,11 @@ def restore_site(site_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/sites/merge")
-def merge_sites(body: SiteMergeRequest, db: Session = Depends(get_db)):
+def merge_sites(request: Request, body: SiteMergeRequest, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
     """Merge source site into target: transfer compteurs+contracts, archive source."""
-    source = db.query(Site).filter(Site.id == body.source_site_id).first()
-    target = db.query(Site).filter(Site.id == body.target_site_id).first()
-    if not source:
-        raise HTTPException(status_code=404, detail=f"Site source {body.source_site_id} non trouve")
-    if not target:
-        raise HTTPException(status_code=404, detail=f"Site cible {body.target_site_id} non trouve")
+    org_id = _get_org_id(request, auth, db)
+    source = _load_site_with_org_check(db, body.source_site_id, org_id)
+    target = _load_site_with_org_check(db, body.target_site_id, org_id)
     if source.id == target.id:
         raise HTTPException(status_code=400, detail="Source et cible identiques")
 
@@ -1003,14 +1089,23 @@ def _serialize_compteur(c: Compteur) -> dict:
 
 @router.get("/compteurs")
 def list_compteurs(
+    request: Request,
     site_id: Optional[int] = None,
     actif: Optional[bool] = None,
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """List compteurs with filters."""
-    q = db.query(Compteur)
+    """List compteurs with filters — scoped to org."""
+    org_id = _get_org_id(request, auth, db)
+    q = (
+        db.query(Compteur)
+        .join(Site, Compteur.site_id == Site.id)
+        .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+        .filter(EntiteJuridique.organisation_id == org_id)
+    )
     if site_id is not None:
         q = q.filter(Compteur.site_id == site_id)
     if actif is not None:
@@ -1021,11 +1116,13 @@ def list_compteurs(
 
 
 @router.patch("/compteurs/{compteur_id}")
-def update_compteur(compteur_id: int, body: CompteurUpdateRequest, db: Session = Depends(get_db)):
+def update_compteur(compteur_id: int, request: Request, body: CompteurUpdateRequest, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
     """Update a compteur (partial update)."""
+    org_id = _get_org_id(request, auth, db)
     c = db.query(Compteur).filter(Compteur.id == compteur_id).first()
     if not c:
-        raise HTTPException(status_code=404, detail=f"Compteur {compteur_id} non trouve")
+        raise HTTPException(status_code=404, detail=f"Compteur {compteur_id} non trouvé")
+    _load_site_with_org_check(db, c.site_id, org_id)
 
     updated = []
     for field, value in body.model_dump(exclude_unset=True).items():
@@ -1042,14 +1139,14 @@ def update_compteur(compteur_id: int, body: CompteurUpdateRequest, db: Session =
 
 
 @router.post("/compteurs/{compteur_id}/move")
-def move_compteur(compteur_id: int, body: CompteurMoveRequest, db: Session = Depends(get_db)):
+def move_compteur(compteur_id: int, request: Request, body: CompteurMoveRequest, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
     """Move a compteur to another site."""
+    org_id = _get_org_id(request, auth, db)
     c = db.query(Compteur).filter(Compteur.id == compteur_id).first()
     if not c:
-        raise HTTPException(status_code=404, detail=f"Compteur {compteur_id} non trouve")
-    target = db.query(Site).filter(Site.id == body.target_site_id).first()
-    if not target:
-        raise HTTPException(status_code=404, detail=f"Site cible {body.target_site_id} non trouve")
+        raise HTTPException(status_code=404, detail=f"Compteur {compteur_id} non trouvé")
+    _load_site_with_org_check(db, c.site_id, org_id)
+    target = _load_site_with_org_check(db, body.target_site_id, org_id)
 
     old_site_id = c.site_id
     c.site_id = target.id
@@ -1061,11 +1158,13 @@ def move_compteur(compteur_id: int, body: CompteurMoveRequest, db: Session = Dep
 
 
 @router.post("/compteurs/{compteur_id}/detach")
-def detach_compteur(compteur_id: int, db: Session = Depends(get_db)):
+def detach_compteur(compteur_id: int, request: Request, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
     """Deactivate a compteur (soft detach)."""
+    org_id = _get_org_id(request, auth, db)
     c = db.query(Compteur).filter(Compteur.id == compteur_id).first()
     if not c:
-        raise HTTPException(status_code=404, detail=f"Compteur {compteur_id} non trouve")
+        raise HTTPException(status_code=404, detail=f"Compteur {compteur_id} non trouvé")
+    _load_site_with_org_check(db, c.site_id, org_id)
     c.actif = False
     db.commit()
     return {"detail": f"Compteur {compteur_id} desactive", **_serialize_compteur(c)}
@@ -1093,14 +1192,23 @@ def _serialize_contract(ct: EnergyContract) -> dict:
 
 @router.get("/contracts")
 def list_contracts(
+    request: Request,
     site_id: Optional[int] = None,
     energy_type: Optional[str] = None,
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """List energy contracts with filters."""
-    q = db.query(EnergyContract)
+    """List energy contracts with filters — scoped to org."""
+    org_id = _get_org_id(request, auth, db)
+    q = (
+        db.query(EnergyContract)
+        .join(Site, EnergyContract.site_id == Site.id)
+        .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+        .filter(EntiteJuridique.organisation_id == org_id)
+    )
     if site_id is not None:
         q = q.filter(EnergyContract.site_id == site_id)
     if energy_type:
@@ -1111,11 +1219,10 @@ def list_contracts(
 
 
 @router.post("/contracts")
-def create_contract(body: ContractCreateRequest, db: Session = Depends(get_db)):
+def create_contract(request: Request, body: ContractCreateRequest, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
     """Create a new energy contract."""
-    site = db.query(Site).filter(Site.id == body.site_id).first()
-    if not site:
-        raise HTTPException(status_code=404, detail=f"Site {body.site_id} non trouve")
+    org_id = _get_org_id(request, auth, db)
+    site = _load_site_with_org_check(db, body.site_id, org_id)
 
     try:
         et = BillingEnergyType(body.energy_type)
@@ -1140,11 +1247,13 @@ def create_contract(body: ContractCreateRequest, db: Session = Depends(get_db)):
 
 
 @router.patch("/contracts/{contract_id}")
-def update_contract(contract_id: int, body: ContractUpdateRequest, db: Session = Depends(get_db)):
+def update_contract(contract_id: int, request: Request, body: ContractUpdateRequest, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
     """Update an energy contract (partial update)."""
+    org_id = _get_org_id(request, auth, db)
     ct = db.query(EnergyContract).filter(EnergyContract.id == contract_id).first()
     if not ct:
-        raise HTTPException(status_code=404, detail=f"Contrat {contract_id} non trouve")
+        raise HTTPException(status_code=404, detail=f"Contrat {contract_id} non trouvé")
+    _load_site_with_org_check(db, ct.site_id, org_id)
 
     updated = []
     for field, value in body.model_dump(exclude_unset=True).items():
@@ -1158,11 +1267,13 @@ def update_contract(contract_id: int, body: ContractUpdateRequest, db: Session =
 
 
 @router.delete("/contracts/{contract_id}")
-def delete_contract(contract_id: int, db: Session = Depends(get_db)):
+def delete_contract(contract_id: int, request: Request, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
     """Delete an energy contract."""
+    org_id = _get_org_id(request, auth, db)
     ct = db.query(EnergyContract).filter(EnergyContract.id == contract_id).first()
     if not ct:
-        raise HTTPException(status_code=404, detail=f"Contrat {contract_id} non trouve")
+        raise HTTPException(status_code=404, detail=f"Contrat {contract_id} non trouvé")
+    _load_site_with_org_check(db, ct.site_id, org_id)
     db.delete(ct)
     db.commit()
     return {"detail": f"Contrat {contract_id} supprime"}
