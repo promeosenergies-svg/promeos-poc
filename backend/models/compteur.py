@@ -26,9 +26,10 @@ class Compteur(Base, TimestampMixin, SoftDeleteMixin):
     energy_vector = Column(Enum(EnergyVector), nullable=True, comment="Vecteur energetique")
     actif = Column(Boolean, default=True, comment="Compteur actif ou non")
 
-    # DeliveryPoint FK (nullable for backward compat during migration)
+    # DeliveryPoint FK (nullable — SET NULL on DP deletion via trigger)
     delivery_point_id = Column(
-        Integer, ForeignKey("delivery_points.id"), nullable=True, index=True,
+        Integer, ForeignKey("delivery_points.id", ondelete="SET NULL"),
+        nullable=True, index=True,
         comment="Point de livraison associe (PRM/PCE)",
     )
 

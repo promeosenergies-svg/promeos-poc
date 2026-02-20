@@ -33,6 +33,12 @@ def run_migrations(engine):
     _add_compteur_delivery_point_fk(engine)
     _backfill_delivery_points(engine)
     _add_unique_delivery_point_code_index(engine)
+    # Phase 2A — Integrity constraints
+    _add_unique_org_siren_index(engine)
+    _add_unique_portefeuille_ej_nom_index(engine)
+    _add_unique_site_portefeuille_siret_index(engine)
+    _add_unique_batiment_site_nom_index(engine)
+    _add_dp_compteur_cascade_trigger(engine)
 
 
 def _add_soft_delete_columns(engine):
@@ -284,3 +290,122 @@ def _add_unique_delivery_point_code_index(engine):
             logger.info("migration: created unique partial index %s", idx_name)
         except Exception as e:
             logger.warning("migration: could not create index %s: %s", idx_name, e)
+
+
+# ========================================
+# Phase 2A — Integrity constraints
+# ========================================
+
+def _add_unique_org_siren_index(engine):
+    """UNIQUE(siren) on organisations WHERE active (deleted_at IS NULL, siren IS NOT NULL)."""
+    idx_name = "uq_org_siren_active"
+    insp = inspect(engine)
+    if not insp.has_table("organisations"):
+        return
+    existing = {idx["name"] for idx in insp.get_indexes("organisations") if idx.get("name")}
+    if idx_name in existing:
+        return
+    with engine.begin() as conn:
+        try:
+            conn.execute(text(
+                f'CREATE UNIQUE INDEX IF NOT EXISTS "{idx_name}" '
+                f'ON "organisations" ("siren") '
+                f'WHERE "siren" IS NOT NULL AND "deleted_at" IS NULL'
+            ))
+            logger.info("migration: created unique index %s", idx_name)
+        except Exception as e:
+            logger.warning("migration: could not create index %s: %s", idx_name, e)
+
+
+def _add_unique_portefeuille_ej_nom_index(engine):
+    """UNIQUE(entite_juridique_id, nom) on portefeuilles WHERE active."""
+    idx_name = "uq_portefeuille_ej_nom_active"
+    insp = inspect(engine)
+    if not insp.has_table("portefeuilles"):
+        return
+    existing = {idx["name"] for idx in insp.get_indexes("portefeuilles") if idx.get("name")}
+    if idx_name in existing:
+        return
+    with engine.begin() as conn:
+        try:
+            conn.execute(text(
+                f'CREATE UNIQUE INDEX IF NOT EXISTS "{idx_name}" '
+                f'ON "portefeuilles" ("entite_juridique_id", "nom") '
+                f'WHERE "deleted_at" IS NULL'
+            ))
+            logger.info("migration: created unique index %s", idx_name)
+        except Exception as e:
+            logger.warning("migration: could not create index %s: %s", idx_name, e)
+
+
+def _add_unique_site_portefeuille_siret_index(engine):
+    """UNIQUE(portefeuille_id, siret) on sites WHERE active and siret IS NOT NULL."""
+    idx_name = "uq_site_portefeuille_siret_active"
+    insp = inspect(engine)
+    if not insp.has_table("sites"):
+        return
+    existing = {idx["name"] for idx in insp.get_indexes("sites") if idx.get("name")}
+    if idx_name in existing:
+        return
+    with engine.begin() as conn:
+        try:
+            conn.execute(text(
+                f'CREATE UNIQUE INDEX IF NOT EXISTS "{idx_name}" '
+                f'ON "sites" ("portefeuille_id", "siret") '
+                f'WHERE "siret" IS NOT NULL AND "deleted_at" IS NULL'
+            ))
+            logger.info("migration: created unique index %s", idx_name)
+        except Exception as e:
+            logger.warning("migration: could not create index %s: %s", idx_name, e)
+
+
+def _add_unique_batiment_site_nom_index(engine):
+    """UNIQUE(site_id, nom) on batiments WHERE active."""
+    idx_name = "uq_batiment_site_nom_active"
+    insp = inspect(engine)
+    if not insp.has_table("batiments"):
+        return
+    existing = {idx["name"] for idx in insp.get_indexes("batiments") if idx.get("name")}
+    if idx_name in existing:
+        return
+    with engine.begin() as conn:
+        try:
+            conn.execute(text(
+                f'CREATE UNIQUE INDEX IF NOT EXISTS "{idx_name}" '
+                f'ON "batiments" ("site_id", "nom") '
+                f'WHERE "deleted_at" IS NULL'
+            ))
+            logger.info("migration: created unique index %s", idx_name)
+        except Exception as e:
+            logger.warning("migration: could not create index %s: %s", idx_name, e)
+
+
+def _add_dp_compteur_cascade_trigger(engine):
+    """SET NULL on compteurs.delivery_point_id when a delivery_point is hard-deleted.
+
+    SQLite cannot ALTER FK constraints, so we use a BEFORE DELETE trigger.
+    Soft delete (normal path) does not fire this — only hard DELETE.
+    """
+    trigger_name = "trg_dp_delete_nullify_compteurs"
+    with engine.begin() as conn:
+        # Check if trigger exists
+        row = conn.execute(text(
+            "SELECT COUNT(*) FROM sqlite_master "
+            "WHERE type='trigger' AND name=:name"
+        ), {"name": trigger_name}).scalar()
+        if row and row > 0:
+            return
+        try:
+            conn.execute(text(f"""
+                CREATE TRIGGER "{trigger_name}"
+                BEFORE DELETE ON "delivery_points"
+                FOR EACH ROW
+                BEGIN
+                    UPDATE "compteurs"
+                    SET "delivery_point_id" = NULL
+                    WHERE "delivery_point_id" = OLD."id";
+                END
+            """))
+            logger.info("migration: created trigger %s", trigger_name)
+        except Exception as e:
+            logger.warning("migration: could not create trigger %s: %s", trigger_name, e)
