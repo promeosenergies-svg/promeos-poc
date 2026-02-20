@@ -1,0 +1,157 @@
+/**
+ * PROMEOS — ImpactDecisionPanel
+ * Panneau "Impact & Décision" pour le Cockpit.
+ * 3 KPIs agrégés (€) + 1 recommandation actionnable.
+ *
+ * Données:
+ *   - kpis (scopedSites)   → risque conformité (déjà calculé)
+ *   - getBillingSummary()   → surcoût facture + base opportunité
+ * Aucune nouvelle API créée.
+ */
+import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  ShieldAlert, Receipt, TrendingUp, ArrowRight, Info, Loader2,
+} from 'lucide-react';
+import { Card, CardBody, Badge, Tooltip, Button } from '../../ui';
+import { KPI_ACCENTS } from '../../ui/colorTokens';
+import { fmtEur } from '../../utils/format';
+import { getBillingSummary } from '../../services/api';
+import { computeImpactKpis, computeRecommendation } from '../../models/impactDecisionModel';
+
+// ── KPI tile (inline — small enough) ─────────────────────────────────────────
+
+function ImpactKpiTile({ icon: Icon, label, value, available, tooltip, accent }) {
+  const a = KPI_ACCENTS[accent] || KPI_ACCENTS.neutral;
+  return (
+    <div className="flex items-start gap-3 p-4 rounded-lg border border-gray-200 bg-white">
+      <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${a.iconBg}`}>
+        <Icon size={18} className={a.iconText} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-1.5">
+          <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wide">{label}</p>
+          {tooltip && (
+            <Tooltip content={tooltip}>
+              <Info size={12} className="text-gray-400 cursor-help" />
+            </Tooltip>
+          )}
+        </div>
+        <p className="text-lg font-bold text-gray-900 mt-0.5">
+          {available ? fmtEur(value) : '—'}
+        </p>
+        {!available && (
+          <Badge variant="neutral" size="xs">Données manquantes</Badge>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Main Panel ───────────────────────────────────────────────────────────────
+
+export default function ImpactDecisionPanel({ kpis }) {
+  const navigate = useNavigate();
+  const [billingSummary, setBillingSummary] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    getBillingSummary()
+      .then((data) => { if (!cancelled) setBillingSummary(data); })
+      .catch(() => { if (!cancelled) setBillingSummary({}); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const impact = useMemo(
+    () => computeImpactKpis(kpis, billingSummary || {}),
+    [kpis, billingSummary],
+  );
+
+  const reco = useMemo(
+    () => computeRecommendation(impact, kpis),
+    [impact, kpis],
+  );
+
+  // Loading state
+  if (loading) {
+    return (
+      <Card>
+        <CardBody className="flex items-center justify-center gap-2 py-8 text-gray-400">
+          <Loader2 size={16} className="animate-spin" />
+          <span className="text-sm">Chargement Impact & Décision…</span>
+        </CardBody>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-3" data-testid="impact-decision-panel">
+      {/* ── Titre section ── */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+          Impact & Décision
+        </h3>
+        <Tooltip content="Calculs V1 — règles déterministes basées sur vos données réelles">
+          <span className="text-[10px] text-gray-400 border border-gray-200 rounded px-1.5 py-0.5 cursor-help">
+            V1
+          </span>
+        </Tooltip>
+      </div>
+
+      {/* ── 3 KPIs ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <ImpactKpiTile
+          icon={ShieldAlert}
+          label="Risque conformité"
+          value={impact.risqueConformite}
+          available={impact.risqueAvailable}
+          tooltip="Somme des risques financiers des sites non conformes ou à risque dans le périmètre actif"
+          accent="risque"
+        />
+        <ImpactKpiTile
+          icon={Receipt}
+          label="Surcoût facture"
+          value={impact.surcoutFacture}
+          available={impact.surcoutAvailable}
+          tooltip="Total des pertes identifiées par le moteur d'audit facture (shadow billing)"
+          accent="alertes"
+        />
+        <ImpactKpiTile
+          icon={TrendingUp}
+          label="Opportunité optimisation"
+          value={impact.opportuniteOptim}
+          available={impact.optimAvailable}
+          tooltip="Heuristique V1 : 1 % du montant facturé total — affiné à mesure que les données s'enrichissent"
+          accent="conformite"
+        />
+      </div>
+
+      {/* ── Recommandation prioritaire ── */}
+      <div className="rounded-lg border border-indigo-200/60 bg-indigo-50/30 p-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-gray-900">{reco.titre}</p>
+            <ul className="mt-2 space-y-1">
+              {reco.bullets.map((b, i) => (
+                <li key={i} className="flex items-start gap-2 text-xs text-gray-600">
+                  <span className="mt-1 w-1 h-1 rounded-full bg-indigo-400 shrink-0" />
+                  {b}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <Button
+            size="sm"
+            className="shrink-0 mt-1"
+            onClick={() => navigate(reco.ctaPath)}
+          >
+            {reco.cta} <ArrowRight size={14} />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}

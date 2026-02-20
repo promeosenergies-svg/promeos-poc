@@ -11,8 +11,10 @@ import {
 } from 'lucide-react';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
+import useRenderTiming from '../hooks/useRenderTiming';
 import { Button, Card, CardBody, PageShell, Progress, Modal, Pagination, StatusDot, Tabs, EmptyState, ScopeSummary } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
+import { SkeletonCard, SkeletonTable } from '../ui/Skeleton';
 import { KPI_ACCENTS } from '../ui/colorTokens';
 // Cockpit V2 — model + sub-components
 import {
@@ -27,6 +29,7 @@ import ModuleLaunchers from './cockpit/ModuleLaunchers';
 import BriefingHeroCard from './cockpit/BriefingHeroCard';
 import ExecutiveSummaryCard from './cockpit/ExecutiveSummaryCard';
 import ExecutiveKpiRow from './cockpit/ExecutiveKpiRow';
+import ImpactDecisionPanel from './cockpit/ImpactDecisionPanel';
 
 // ── Consistency banner (inline — too small for its own file) ─────────────────
 function ConsistencyBanner({ issues }) {
@@ -40,6 +43,7 @@ function ConsistencyBanner({ issues }) {
 }
 
 const Cockpit = () => {
+  useRenderTiming('Cockpit');
   const navigate = useNavigate();
   const { org, portefeuille, portefeuilles, scopedSites, sitesCount, sitesLoading } = useScope();
   const { isExpert } = useExpertMode();
@@ -169,10 +173,10 @@ const Cockpit = () => {
   if (sitesLoading) {
     return (
       <PageShell icon={FileText} title="Vue exécutive" subtitle={<ScopeSummary />}>
-        <div className="p-8 flex items-center justify-center text-gray-400 text-sm gap-2">
-          <Loader2 size={16} className="animate-spin" />
-          Synchronisation du périmètre…
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <SkeletonCard /><SkeletonCard /><SkeletonCard /><SkeletonCard />
         </div>
+        <SkeletonTable rows={5} cols={5} />
       </PageShell>
     );
   }
@@ -188,6 +192,9 @@ const Cockpit = () => {
 
       {/* ── KPIs décideur 4 tuiles (Cockpit V2) ── */}
       <ExecutiveKpiRow kpis={executiveKpis} onNavigate={navigate} />
+
+      {/* ── Impact & Décision ── */}
+      <ImpactDecisionPanel kpis={kpis} />
 
       {/* ── Briefing du jour ── */}
       <BriefingHeroCard briefing={briefing} onNavigate={navigate} />
@@ -270,7 +277,7 @@ const Cockpit = () => {
               <div>
                 <p className="text-[10px] text-gray-500 font-medium uppercase">Risque</p>
                 <p className="text-sm font-medium text-gray-900 mt-0.5">
-                  {singleSite.risque_eur > 0 ? `${singleSite.risque_eur.toLocaleString('fr-FR')} EUR` : 'Aucun'}
+                  {singleSite.risque_eur > 0 ? `${singleSite.risque_eur.toLocaleString('fr-FR')} €` : 'Aucun'}
                 </p>
               </div>
             </CardBody>
@@ -361,7 +368,7 @@ const Cockpit = () => {
                         </Td>
                         <Td className="text-right text-sm font-medium">
                           {site.risque_eur > 0 ? (
-                            <span className="text-amber-700">{site.risque_eur.toLocaleString('fr-FR')} EUR</span>
+                            <span className="text-amber-700">{site.risque_eur.toLocaleString('fr-FR')} €</span>
                           ) : (
                             <span className="text-gray-400">-</span>
                           )}
