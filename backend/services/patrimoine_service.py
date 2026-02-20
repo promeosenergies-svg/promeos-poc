@@ -868,12 +868,16 @@ def activate_batch(db: Session, batch_id: int, portefeuille_id: int, user_id: in
 
     except (SQLAlchemyError, ValueError, Exception) as e:
         # Savepoint auto-rolled back — all created entities undone.
-        # Expire batch to discard stale in-memory APPLIED status that
-        # would otherwise be re-flushed to DB by the flush() below.
+        # Expire BOTH batch and log to discard stale in-memory state
+        # (APPLIED / SUCCESS / non-zero counters) that would otherwise
+        # be re-flushed to DB by the flush() below.
         db.expire(batch)
+        db.expire(log)
         log.status = ActivationLogStatus.FAILED
         log.completed_at = datetime.utcnow()
         log.error_message = str(e)[:2000]
+        log.sites_created = 0
+        log.compteurs_created = 0
         db.flush()
 
         raise ValueError(f"Activation failed (rolled back): {e}") from e

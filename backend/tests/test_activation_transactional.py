@@ -405,8 +405,53 @@ class TestActivationAtomicityRollback:
         assert log.error_message is not None
         assert "mid-activation crash" in log.error_message
 
+        # 3b. Counters must be 0 — no stale values leaked from savepoint
+        assert log.sites_created == 0 or log.sites_created is None, (
+            f"CRITICAL: log.sites_created={log.sites_created} leaked from rolled-back savepoint"
+        )
+        assert log.compteurs_created == 0 or log.compteurs_created is None, (
+            f"CRITICAL: log.compteurs_created={log.compteurs_created} leaked from rolled-back savepoint"
+        )
+
         # 4. Batch can be re-activated (not stuck in inconsistent state)
         result = activate_batch(db_session, batch.id, pf.id)
         assert result["sites_created"] == 3
         db_session.expire(batch)
         assert batch.status == StagingStatus.APPLIED
+
+    def test_failed_log_counters_are_zero(self, db_session):
+        """Crash after 1st site → log.sites_created must be 0 (not stale from savepoint)."""
+        org, ej, pf = _create_org(db_session)
+
+        batch = _create_batch_with_sites(db_session, org.id, [
+            {"nom": "Counter A", "meters": [{"meter_id": "10000000000010"}]},
+            {"nom": "Counter B", "meters": [{"meter_id": "10000000000011"}]},
+        ])
+
+        run_quality_gate(db_session, batch.id)
+
+        call_count = {"n": 0}
+        original_create = __import__(
+            "services.onboarding_service", fromlist=["create_site_from_data"]
+        ).create_site_from_data
+
+        def crash_on_second(*args, **kwargs):
+            call_count["n"] += 1
+            if call_count["n"] >= 2:
+                raise RuntimeError("Crash after first site created")
+            return original_create(*args, **kwargs)
+
+        with patch("services.patrimoine_service.create_site_from_data", side_effect=crash_on_second):
+            with pytest.raises(ValueError, match="Activation failed"):
+                activate_batch(db_session, batch.id, pf.id)
+
+        # Re-read log from DB to get actual persisted values
+        log = db_session.query(ActivationLog).filter(
+            ActivationLog.batch_id == batch.id,
+        ).order_by(ActivationLog.id.desc()).first()
+
+        assert log.status == ActivationLogStatus.FAILED
+        # Key invariant: counters must be 0, NOT the partial count from inside the savepoint
+        assert log.sites_created == 0 or log.sites_created is None
+        assert log.compteurs_created == 0 or log.compteurs_created is None
+        assert log.error_message is not None
