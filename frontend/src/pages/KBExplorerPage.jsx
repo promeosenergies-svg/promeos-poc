@@ -4,11 +4,11 @@
  * Deep-link support: /kb?context=proof&domain=X&hint=Y
  */
 import { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Search, BookOpen, ShieldCheck, Zap, Sun, Receipt, Wind,
   ChevronDown, ChevronUp, ExternalLink, Filter, AlertTriangle,
-  Upload, FileText, CheckCircle, X,
+  Upload, FileText, CheckCircle, X, ArrowLeft,
 } from 'lucide-react';
 import { PageShell, Card, CardBody, Badge, Button, TrustBadge, EmptyState } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
@@ -43,6 +43,7 @@ const DOMAIN_COLORS = {
 
 export default function KBExplorerPage() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [domain, setDomain] = useState(null);
   const [typeFilter, setTypeFilter] = useState(null);
@@ -80,6 +81,7 @@ export default function KBExplorerPage() {
         status: urlStatus || null,
         proof_type: searchParams.get('proof_type') || null,
         efa_id: searchParams.get('efa_id') || null,
+        action_id: searchParams.get('action_id') || null,
       });
     }
   }, []);
@@ -234,14 +236,27 @@ export default function KBExplorerPage() {
               <p className="text-[11px] text-indigo-600 truncate mt-0.5">{proofContext.hint}</p>
             )}
           </div>
-          <button
-            onClick={clearProofContext}
-            className="flex items-center gap-1 text-[11px] text-indigo-600 hover:text-indigo-800 shrink-0"
-            aria-label="Effacer les filtres de preuve"
-          >
-            <X size={12} />
-            Effacer filtres
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            {/* V47: Retour à l'action */}
+            {proofContext.action_id && (
+              <button
+                onClick={() => navigate(`/actions?detail=${proofContext.action_id}`)}
+                className="flex items-center gap-1 text-[11px] font-medium text-indigo-700 hover:text-indigo-900 bg-indigo-100 hover:bg-indigo-200 px-2 py-1 rounded transition"
+                data-testid="btn-return-action"
+              >
+                <ArrowLeft size={12} />
+                Retour à l'action
+              </button>
+            )}
+            <button
+              onClick={clearProofContext}
+              className="flex items-center gap-1 text-[11px] text-indigo-600 hover:text-indigo-800"
+              aria-label="Effacer les filtres de preuve"
+            >
+              <X size={12} />
+              Effacer filtres
+            </button>
+          </div>
         </div>
       )}
 

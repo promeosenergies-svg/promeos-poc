@@ -3,9 +3,11 @@
  * 5-tab drawer: Detail, Impact, Pieces jointes, Commentaires, Historique.
  */
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Clock, User, Tag, Paperclip, MessageSquare, History,
   BadgeEuro, CheckCircle, AlertTriangle, ArrowRight, Plus,
+  Shield, ExternalLink, FileCheck,
 } from 'lucide-react';
 import Drawer from '../ui/Drawer';
 import { Badge, Button, TrustBadge } from '../ui';
@@ -13,9 +15,14 @@ import { useToast } from '../ui/ToastProvider';
 import {
   getActionDetail, getActionComments, addActionComment,
   getActionEvidence, addActionEvidence, getActionEvents,
-  patchAction,
+  patchAction, getTertiaireEfaProofs,
 } from '../services/api';
 import { ACTION_STATUS_LABELS } from '../domain/compliance/complianceLabels.fr';
+import {
+  isOperatAction, parseOperatSourceId, buildActionProofLink,
+  isActionClosable, resolveProofStatus,
+  PROOF_STATUS_LABELS, PROOF_STATUS_BADGE,
+} from '../models/actionProofLinkModel';
 
 const STATUS_TO_BE = { backlog: 'open', in_progress: 'in_progress', done: 'done', planned: 'blocked' };
 const STATUS_TO_FE = { open: 'backlog', in_progress: 'in_progress', done: 'done', blocked: 'planned', false_positive: 'done' };
@@ -80,12 +87,16 @@ const SOURCE_LABELS = {
 
 export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [tab, setTab] = useState('detail');
   const [detail, setDetail] = useState(null);
   const [comments, setComments] = useState([]);
   const [evidence, setEvidence] = useState([]);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  // V47 — Preuves OPERAT
+  const [proofsSummary, setProofsSummary] = useState(null);
 
   // Comment form
   const [commentAuthor, setCommentAuthor] = useState('');
@@ -130,6 +141,17 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
       fetchAll();
     }
   }, [open, actionId, fetchAll]);
+
+  // V47 — Fetch preuves EFA si action OPERAT
+  useEffect(() => {
+    if (!open || !detail) { setProofsSummary(null); return; }
+    if (!isOperatAction(detail)) { setProofsSummary(null); return; }
+    const parsed = parseOperatSourceId(detail.source_id);
+    if (!parsed?.efa_id) return;
+    getTertiaireEfaProofs(parsed.efa_id)
+      .then(setProofsSummary)
+      .catch(() => setProofsSummary(null));
+  }, [open, detail]);
 
   // Status change
   async function handleStatusChange(newStatus) {
@@ -313,24 +335,110 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                 </div>
               )}
 
+              {/* V47 — Bloc Preuves OPERAT */}
+              {isOperatAction(d) && (() => {
+                const proofStatus = resolveProofStatus(proofsSummary);
+                const badgeVariant = PROOF_STATUS_BADGE[proofStatus] || 'neutral';
+                const closability = isActionClosable(d, proofsSummary, evidence.length);
+                const proofLink = buildActionProofLink(d);
+                const parsed = parseOperatSourceId(d.source_id);
+
+                return (
+                  <div className="border-t border-gray-100 pt-4 space-y-3" data-testid="operat-proof-bloc">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Shield size={14} className="text-blue-600" />
+                      <p className="text-xs font-semibold text-gray-700">Preuves OPERAT</p>
+                    </div>
+
+                    {/* Statut preuve */}
+                    <div className="flex items-center gap-3">
+                      <Badge status={badgeVariant}>{PROOF_STATUS_LABELS[proofStatus]}</Badge>
+                      {proofsSummary && (
+                        <span className="text-xs text-gray-500">
+                          {proofsSummary.validated_count || 0} validée(s) / {proofsSummary.expected_count || '—'} attendue(s)
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Compteurs si disponibles */}
+                    {proofsSummary && (
+                      <div className="grid grid-cols-3 gap-2 text-center">
+                        <div className="p-2 bg-blue-50 rounded-lg">
+                          <p className="text-lg font-bold text-blue-700">{proofsSummary.expected_count || 0}</p>
+                          <p className="text-[10px] text-gray-500">Attendues</p>
+                        </div>
+                        <div className="p-2 bg-amber-50 rounded-lg">
+                          <p className="text-lg font-bold text-amber-700">{proofsSummary.deposited_count || 0}</p>
+                          <p className="text-[10px] text-gray-500">Déposées</p>
+                        </div>
+                        <div className="p-2 bg-green-50 rounded-lg">
+                          <p className="text-lg font-bold text-green-700">{proofsSummary.validated_count || 0}</p>
+                          <p className="text-[10px] text-gray-500">Validées</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* CTAs */}
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => { onClose(); navigate(proofLink); }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
+                        data-testid="operat-proof-deposit-cta"
+                      >
+                        <FileCheck size={12} /> Déposer une preuve
+                      </button>
+                      {parsed?.efa_id && (
+                        <button
+                          onClick={() => { onClose(); navigate(`/conformite/tertiaire/efa/${parsed.efa_id}`); }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 transition"
+                        >
+                          <ExternalLink size={12} /> Fiche EFA
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Aide FR */}
+                    <p className="text-[11px] text-gray-400 leading-relaxed bg-gray-50 rounded-lg p-2">
+                      Une action OPERAT est considérée clôturable quand une preuve est liée et validée sur l'EFA,
+                      ou qu'une pièce jointe est présente, ou que les notes contiennent [justifié].
+                    </p>
+
+                    {/* Avertissement si non clôturable */}
+                    {!closability.closable && d.status !== 'done' && (
+                      <div className="text-xs text-amber-700 bg-amber-50 rounded-lg p-2" data-testid="operat-closability-warning">
+                        <p className="font-medium mb-1">Clôture bloquée :</p>
+                        <ul className="list-disc list-inside space-y-0.5">
+                          {closability.raisons.map((r, i) => <li key={i}>{r}</li>)}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
               {/* Status workflow buttons */}
               <div className="border-t border-gray-100 pt-4">
                 <p className="text-xs text-gray-500 mb-2">Changer le statut</p>
                 <div className="flex flex-wrap gap-2">
-                  {STATUS_WORKFLOW.map(s => (
-                    <button
-                      key={s.value}
-                      disabled={d.status === s.value}
-                      onClick={() => handleStatusChange(s.value)}
-                      className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${
-                        d.status === s.value
-                          ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                          : 'bg-white border border-gray-200 hover:bg-blue-50 hover:border-blue-300 text-gray-700'
-                      }`}
-                    >
-                      {s.label}
-                    </button>
-                  ))}
+                  {STATUS_WORKFLOW.map(s => {
+                    const isDone = s.value === 'done';
+                    const operatBlocked = isDone && isOperatAction(d) && !isActionClosable(d, proofsSummary, evidence.length).closable;
+                    return (
+                      <button
+                        key={s.value}
+                        disabled={d.status === s.value || operatBlocked}
+                        onClick={() => handleStatusChange(s.value)}
+                        title={operatBlocked ? 'Preuve requise pour clôturer' : undefined}
+                        className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${
+                          d.status === s.value || operatBlocked
+                            ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                            : 'bg-white border border-gray-200 hover:bg-blue-50 hover:border-blue-300 text-gray-700'
+                        }`}
+                      >
+                        {s.label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
