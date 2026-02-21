@@ -184,12 +184,22 @@ export function computeActionableLevers({ kpis = {}, billingSummary = {}, compli
     });
   }
 
-  // ── Tertiaire / Site signals V42 ──────────────────────────────────────────
+  // ── Tertiaire / Site signals V42 + V43 explainability ─────────────────────
   const tertiaireSiteSignals = kpis._tertiaireSiteSignals ?? {};
   const uncoveredProbable = tertiaireSiteSignals.uncovered_probable ?? 0;
   const incompleteData = tertiaireSiteSignals.incomplete_data ?? 0;
+  const signalSites = tertiaireSiteSignals.sites ?? [];
+  const topMissingFields = tertiaireSiteSignals.top_missing_fields ?? {};
 
   if (uncoveredProbable > 0) {
+    // V43: build rationale from first uncovered probable site's reasons_fr
+    const sampleSite = signalSites.find((s) => s.signal === 'assujetti_probable' && !s.is_covered);
+    const reasons = sampleSite?.reasons_fr ?? [];
+    const rationaleLines = [
+      ...reasons.slice(0, 2),
+      'Aucune EFA créée — action recommandée',
+    ];
+
     levers.push({
       type: 'conformite',
       actionKey: 'lev-tertiaire-create-efa',
@@ -197,16 +207,31 @@ export function computeActionableLevers({ kpis = {}, billingSummary = {}, compli
       impactEur: null,
       ctaPath: '/conformite/tertiaire',
       proofHint: 'Attestation OPERAT ou justificatif de surface',
+      reasons_fr: rationaleLines,
     });
   }
 
   if (incompleteData > 0) {
+    // V43: build rationale from missing fields
+    const missingLabels = [];
+    if (topMissingFields.surface > 0) missingLabels.push(`surface (${topMissingFields.surface} site${topMissingFields.surface > 1 ? 's' : ''})`);
+    if (topMissingFields.batiments > 0) missingLabels.push(`bâtiments (${topMissingFields.batiments} site${topMissingFields.batiments > 1 ? 's' : ''})`);
+    if (topMissingFields.usage_site > 0) missingLabels.push(`usage (${topMissingFields.usage_site} site${topMissingFields.usage_site > 1 ? 's' : ''})`);
+    if (topMissingFields.surface_batiment > 0) missingLabels.push(`surfaces bâtiment (${topMissingFields.surface_batiment} site${topMissingFields.surface_batiment > 1 ? 's' : ''})`);
+
+    const rationaleLines = [
+      `${incompleteData} site${incompleteData > 1 ? 's' : ''} avec données incomplètes`,
+      missingLabels.length > 0 ? `Données manquantes : ${missingLabels.join(', ')}` : 'Qualification impossible sans données complètes',
+      'Heuristique V1 — à confirmer par analyse réglementaire',
+    ];
+
     levers.push({
       type: 'data_activation',
       actionKey: 'lev-tertiaire-complete-patrimoine',
       label: `Compléter les données de ${incompleteData} site${incompleteData > 1 ? 's' : ''} pour qualifier l'assujettissement`,
       impactEur: null,
       ctaPath: '/patrimoine',
+      reasons_fr: rationaleLines,
     });
   }
 

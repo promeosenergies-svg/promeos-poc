@@ -294,6 +294,17 @@ export default function ImpactDecisionPanel({ kpis }) {
                         Impact estimé : {lever.impactEur.toLocaleString('fr-FR')} €
                       </p>
                     )}
+                    {/* V43: Rationale bullets from site signals */}
+                    {lever.reasons_fr && lever.reasons_fr.length > 0 && (
+                      <ul className="mt-1 space-y-0.5" data-testid={`lever-reasons-${lever.actionKey}`}>
+                        {lever.reasons_fr.map((r, i) => (
+                          <li key={i} className="flex items-start gap-1.5 text-[10px] text-gray-500">
+                            <span className="mt-1 w-1 h-1 rounded-full bg-gray-300 shrink-0" />
+                            {r}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                     {/* V38: Preuve attendue micro-bloc */}
                     {hasProofData(lever) && (
                       <div className="flex items-center gap-1.5 mt-0.5">

@@ -1,14 +1,18 @@
 /**
- * PROMEOS V39 — Dashboard Tertiaire / OPERAT
+ * PROMEOS V39 + V42 + V43 — Dashboard Tertiaire / OPERAT
  * Route: /conformite/tertiaire
+ *
+ * V42: section "Sites à traiter" (assujetti_probable + incomplètes)
+ * V43: Drawer "Pourquoi ?", filtres par signal, raisons explicables
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Building2, AlertTriangle, CheckCircle2, FileText, Plus,
-  Loader2, ArrowRight, ShieldAlert, MapPin,
+  Loader2, ArrowRight, ShieldAlert, MapPin, HelpCircle, X,
+  Check, Filter,
 } from 'lucide-react';
-import { PageShell, Card, CardBody, Button, Badge, KpiCard } from '../../ui';
+import { PageShell, Card, CardBody, Button, Badge, KpiCard, Drawer } from '../../ui';
 import { getTertiaireDashboard, getTertiaireEfas, getTertiaireSiteSignals } from '../../services/api';
 
 const STATUS_LABELS = {
@@ -23,12 +27,42 @@ const STATUS_VARIANTS = {
   closed: 'neutral',
 };
 
+// V43: Signal labels FR
+const SIGNAL_LABELS = {
+  assujetti_probable: 'Assujetti probable',
+  a_verifier: 'À vérifier',
+  non_concerne: 'Non concerné',
+};
+
+const SIGNAL_BADGE_VARIANTS = {
+  assujetti_probable: 'warn',
+  a_verifier: 'info',
+  non_concerne: 'ok',
+};
+
+// V43: Missing field labels FR
+const MISSING_FIELD_LABELS = {
+  surface: 'Surface',
+  usage_site: 'Usage',
+  batiments: 'Bâtiments',
+  surface_batiment: 'Surfaces bâtiment',
+  code_naf: 'Code NAF',
+};
+
 export default function TertiaireDashboardPage() {
   const navigate = useNavigate();
   const [dashboard, setDashboard] = useState(null);
   const [efas, setEfas] = useState([]);
   const [siteSignals, setSiteSignals] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // V43: Drawer state
+  const [whySite, setWhySite] = useState(null);
+
+  // V43: Filter state
+  const [signalFilter, setSignalFilter] = useState(null); // null = all
+  const [uncoveredOnly, setUncoveredOnly] = useState(false);
+  const [missingFieldFilter, setMissingFieldFilter] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -47,6 +81,24 @@ export default function TertiaireDashboardPage() {
     });
     return () => { cancelled = true; };
   }, []);
+
+  // V43: Filtered sites
+  const filteredSites = useMemo(() => {
+    if (!siteSignals?.sites) return [];
+    let sites = siteSignals.sites;
+    if (signalFilter) {
+      sites = sites.filter((s) => s.signal === signalFilter);
+    }
+    if (uncoveredOnly) {
+      sites = sites.filter((s) => !s.is_covered);
+    }
+    if (missingFieldFilter) {
+      sites = sites.filter((s) => s.missing_fields?.includes(missingFieldFilter));
+    }
+    return sites;
+  }, [siteSignals, signalFilter, uncoveredOnly, missingFieldFilter]);
+
+  const hasActiveFilters = signalFilter || uncoveredOnly || missingFieldFilter;
 
   if (loading) {
     return (
@@ -95,41 +147,150 @@ export default function TertiaireDashboardPage() {
         />
       </div>
 
-      {/* V42: Sites à traiter */}
-      {siteSignals && (siteSignals.uncovered_probable > 0 || siteSignals.incomplete_data > 0) && (
+      {/* V42+V43: Sites à traiter */}
+      {siteSignals && siteSignals.total_sites > 0 && (
         <div className="mt-6" data-testid="sites-a-traiter">
-          <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">
-            Sites à traiter
-          </h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+              Sites à traiter
+            </h3>
+            {siteSignals.total_sites > 0 && (
+              <span className="text-xs text-gray-400">
+                {siteSignals.total_sites} site{siteSignals.total_sites > 1 ? 's' : ''} analysé{siteSignals.total_sites > 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
+
+          {/* V43: Filter chips */}
+          <div className="flex flex-wrap items-center gap-2 mb-3" data-testid="signal-filters">
+            <Filter size={14} className="text-gray-400 shrink-0" />
+            {Object.entries(SIGNAL_LABELS).map(([key, label]) => {
+              const count = siteSignals.counts?.[key] ?? 0;
+              const active = signalFilter === key;
+              return (
+                <button
+                  key={key}
+                  onClick={() => setSignalFilter(active ? null : key)}
+                  data-testid={`filter-${key}`}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                    active
+                      ? 'bg-gray-900 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {label} ({count})
+                </button>
+              );
+            })}
+            <button
+              onClick={() => setUncoveredOnly(!uncoveredOnly)}
+              data-testid="filter-uncovered"
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                uncoveredOnly
+                  ? 'bg-amber-600 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              Sans EFA
+            </button>
+            {/* Missing field filters */}
+            {siteSignals.top_missing_fields && Object.keys(siteSignals.top_missing_fields).length > 0 && (
+              <>
+                <span className="text-gray-300">|</span>
+                {Object.entries(siteSignals.top_missing_fields).map(([field, count]) => {
+                  const active = missingFieldFilter === field;
+                  return (
+                    <button
+                      key={field}
+                      onClick={() => setMissingFieldFilter(active ? null : field)}
+                      data-testid={`filter-missing-${field}`}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                        active
+                          ? 'bg-red-600 text-white'
+                          : 'bg-red-50 text-red-600 hover:bg-red-100'
+                      }`}
+                    >
+                      {MISSING_FIELD_LABELS[field] || field} ({count})
+                    </button>
+                  );
+                })}
+              </>
+            )}
+            {hasActiveFilters && (
+              <button
+                onClick={() => { setSignalFilter(null); setUncoveredOnly(false); setMissingFieldFilter(null); }}
+                className="text-xs text-gray-400 hover:text-gray-600 underline"
+              >
+                Réinitialiser
+              </button>
+            )}
+          </div>
+
+          {/* Site cards */}
           <div className="space-y-2">
-            {siteSignals.sites
-              .filter((s) => s.signal === 'assujetti_probable' && !s.is_covered)
+            {filteredSites
+              .filter((s) => !hasActiveFilters ? (s.signal === 'assujetti_probable' && !s.is_covered) : true)
               .map((site) => (
                 <div
                   key={site.site_id}
-                  className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50/50 p-3"
+                  className={`flex items-center justify-between rounded-lg border p-3 ${
+                    site.signal === 'assujetti_probable'
+                      ? 'border-amber-200 bg-amber-50/50'
+                      : site.signal === 'a_verifier'
+                        ? 'border-blue-200 bg-blue-50/30'
+                        : 'border-gray-200 bg-white'
+                  }`}
                 >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <MapPin size={16} className="text-amber-500 shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{site.site_nom}</p>
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <MapPin size={16} className={
+                      site.signal === 'assujetti_probable' ? 'text-amber-500 shrink-0'
+                        : site.signal === 'a_verifier' ? 'text-blue-400 shrink-0'
+                          : 'text-gray-400 shrink-0'
+                    } />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium text-gray-900 truncate">{site.site_nom}</p>
+                        <Badge status={SIGNAL_BADGE_VARIANTS[site.signal]} className="text-[10px] shrink-0">
+                          {SIGNAL_LABELS[site.signal]}
+                        </Badge>
+                      </div>
                       <p className="text-xs text-gray-500">
                         {site.surface_tertiaire_m2 ? `${Math.round(site.surface_tertiaire_m2).toLocaleString('fr-FR')} m²` : 'Surface non renseignée'}
                         {site.ville ? ` · ${site.ville}` : ''}
                         {' · '}{site.nb_batiments} bâtiment{site.nb_batiments > 1 ? 's' : ''}
                       </p>
+                      {/* V43: missing fields inline */}
+                      {site.missing_fields && site.missing_fields.length > 0 && (
+                        <p className="text-[10px] text-red-500 mt-0.5">
+                          Données manquantes : {site.missing_fields.map((f) => MISSING_FIELD_LABELS[f] || f).join(', ')}
+                        </p>
+                      )}
                     </div>
                   </div>
-                  <Button
-                    size="xs"
-                    variant="secondary"
-                    onClick={() => navigate(`/conformite/tertiaire/wizard?site_id=${site.site_id}`)}
-                  >
-                    Créer une EFA <ArrowRight size={12} />
-                  </Button>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {/* V43: Why button */}
+                    <button
+                      onClick={() => setWhySite(site)}
+                      className="p-1.5 rounded-md hover:bg-gray-100 transition-colors"
+                      aria-label="Pourquoi ce classement ?"
+                      data-testid={`why-btn-${site.site_id}`}
+                    >
+                      <HelpCircle size={16} className="text-gray-400" />
+                    </button>
+                    {site.recommended_cta && (
+                      <Button
+                        size="xs"
+                        variant="secondary"
+                        onClick={() => navigate(site.recommended_cta.to || `/conformite/tertiaire/wizard?site_id=${site.site_id}`)}
+                      >
+                        {site.recommended_cta.label_fr} <ArrowRight size={12} />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               ))}
-            {siteSignals.sites
+            {/* V42 legacy: incomplete data sites (when no filters active) */}
+            {!hasActiveFilters && siteSignals.sites
               .filter((s) => !s.data_complete && s.signal === 'a_verifier')
               .slice(0, 3)
               .map((site) => (
@@ -137,22 +298,40 @@ export default function TertiaireDashboardPage() {
                   key={`incomplete-${site.site_id}`}
                   className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 p-3"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
                     <AlertTriangle size={16} className="text-gray-400 shrink-0" />
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-gray-700 truncate">{site.site_nom}</p>
                       <p className="text-xs text-gray-400">Données incomplètes — qualification impossible</p>
+                      {site.missing_fields && site.missing_fields.length > 0 && (
+                        <p className="text-[10px] text-red-500 mt-0.5">
+                          Données manquantes : {site.missing_fields.map((f) => MISSING_FIELD_LABELS[f] || f).join(', ')}
+                        </p>
+                      )}
                     </div>
                   </div>
-                  <Button
-                    size="xs"
-                    variant="secondary"
-                    onClick={() => navigate('/patrimoine')}
-                  >
-                    Compléter
-                  </Button>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      onClick={() => setWhySite(site)}
+                      className="p-1.5 rounded-md hover:bg-gray-100 transition-colors"
+                      aria-label="Pourquoi ce classement ?"
+                      data-testid={`why-btn-incomplete-${site.site_id}`}
+                    >
+                      <HelpCircle size={16} className="text-gray-400" />
+                    </button>
+                    <Button
+                      size="xs"
+                      variant="secondary"
+                      onClick={() => navigate(site.recommended_cta?.to || '/patrimoine')}
+                    >
+                      Compléter
+                    </Button>
+                  </div>
                 </div>
               ))}
+            {hasActiveFilters && filteredSites.length === 0 && (
+              <p className="text-sm text-gray-400 text-center py-4">Aucun site ne correspond aux filtres sélectionnés.</p>
+            )}
           </div>
         </div>
       )}
@@ -216,6 +395,120 @@ export default function TertiaireDashboardPage() {
           </div>
         )}
       </div>
+
+      {/* V43: Drawer "Pourquoi ce classement ?" */}
+      <Drawer
+        open={!!whySite}
+        onClose={() => setWhySite(null)}
+        title="Pourquoi ce classement ?"
+      >
+        {whySite && (
+          <div className="space-y-5" data-testid="why-drawer-content">
+            {/* Site name + signal badge */}
+            <div>
+              <p className="text-base font-semibold text-gray-900">{whySite.site_nom}</p>
+              {whySite.ville && <p className="text-sm text-gray-500">{whySite.ville}</p>}
+              <div className="mt-2">
+                <Badge status={SIGNAL_BADGE_VARIANTS[whySite.signal]}>
+                  {SIGNAL_LABELS[whySite.signal]}
+                </Badge>
+              </div>
+            </div>
+
+            {/* Rules applied */}
+            {whySite.rules_applied && whySite.rules_applied.length > 0 && (
+              <div>
+                <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">
+                  Règles appliquées
+                </h4>
+                <div className="space-y-1.5" data-testid="why-rules">
+                  {whySite.rules_applied.map((rule, i) => (
+                    <div key={i} className="flex items-start gap-2 text-sm">
+                      {rule.ok
+                        ? <Check size={14} className="text-green-500 shrink-0 mt-0.5" />
+                        : <X size={14} className="text-red-400 shrink-0 mt-0.5" />
+                      }
+                      <span className={rule.ok ? 'text-gray-700' : 'text-gray-500'}>
+                        {rule.label_fr}
+                        {rule.value != null && (
+                          <span className="text-gray-400 ml-1">
+                            ({typeof rule.value === 'number' ? rule.value.toLocaleString('fr-FR') : rule.value})
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Reasons FR */}
+            {whySite.reasons_fr && whySite.reasons_fr.length > 0 && (
+              <div>
+                <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">
+                  Constats
+                </h4>
+                <ul className="space-y-1" data-testid="why-reasons">
+                  {whySite.reasons_fr.map((reason, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
+                      <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-gray-300 shrink-0" />
+                      {reason}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Missing fields + CTA */}
+            {whySite.missing_fields && whySite.missing_fields.length > 0 && (
+              <div className="rounded-lg border border-red-100 bg-red-50/50 p-3">
+                <h4 className="text-xs font-semibold text-red-700 uppercase tracking-wide mb-2">
+                  À compléter
+                </h4>
+                <ul className="space-y-1 mb-3">
+                  {whySite.missing_fields.map((field, i) => (
+                    <li key={i} className="flex items-center gap-2 text-sm text-red-600">
+                      <AlertTriangle size={12} className="shrink-0" />
+                      {MISSING_FIELD_LABELS[field] || field}
+                    </li>
+                  ))}
+                </ul>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => {
+                    setWhySite(null);
+                    navigate(whySite.recommended_cta?.to || `/patrimoine?site_id=${whySite.site_id}`);
+                  }}
+                >
+                  Compléter le patrimoine <ArrowRight size={14} />
+                </Button>
+              </div>
+            )}
+
+            {/* CTA principal */}
+            {whySite.recommended_cta && whySite.recommended_next_step === 'creer_efa' && (
+              <Button
+                className="w-full"
+                onClick={() => {
+                  setWhySite(null);
+                  navigate(whySite.recommended_cta.to);
+                }}
+              >
+                {whySite.recommended_cta.label_fr} <ArrowRight size={14} />
+              </Button>
+            )}
+
+            {/* Disclaimer */}
+            <div className="rounded-md bg-gray-50 border border-gray-200 p-3">
+              <p className="text-xs text-gray-500" data-testid="why-disclaimer">
+                Heuristique V1 — à confirmer par analyse réglementaire.
+                Les règles ci-dessus sont dérivées automatiquement des données patrimoniales renseignées.
+              </p>
+            </div>
+          </div>
+        )}
+      </Drawer>
     </PageShell>
   );
 }
