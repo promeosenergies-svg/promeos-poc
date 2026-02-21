@@ -134,8 +134,8 @@ describe('GUARD TertiaireWizardPage proof section', () => {
   });
 
   it('proof section does not affect canNext validation', () => {
-    // canNext for step 6 should always return true
-    expect(code).toContain('case 6: return true;');
+    // V41 reindexed steps (buildings step added) — proof is now step 5
+    expect(code).toContain('case 5: return true;');
   });
 });
 
