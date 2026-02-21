@@ -9,6 +9,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { buildProofLink } from '../../models/proofLinkModel.js';
+import { STEPS as WIZARD_STEPS } from '../tertiaire/TertiaireWizardPage.jsx';
 
 // ── Helper: read source file ────────────────────────────────────────────────
 const src = (rel) =>
@@ -134,8 +135,10 @@ describe('GUARD TertiaireWizardPage proof section', () => {
   });
 
   it('proof section does not affect canNext validation', () => {
-    // V41 reindexed steps (buildings step added) — proof is now step 5
-    expect(code).toContain('case 5: return true;');
+    // Resilient to step reordering: derive the confirmation step index from STEPS
+    const confirmIdx = WIZARD_STEPS.findIndex((s) => s.key === 'confirmation');
+    expect(confirmIdx).toBeGreaterThanOrEqual(0);
+    expect(code).toContain(`case ${confirmIdx}: return true;`);
   });
 });
 

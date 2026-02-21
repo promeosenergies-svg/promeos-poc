@@ -15,7 +15,7 @@ import {
 } from '../../services/api';
 import ProofDepositCTA from './components/ProofDepositCTA';
 
-const STEPS = [
+export const STEPS = [
   { key: 'nom', label: 'Identification', icon: Building2, description: "Nom et type de l'EFA" },
   { key: 'role', label: 'Rôle assujetti', icon: Users, description: 'Propriétaire, locataire ou mandataire' },
   { key: 'batiments', label: 'Bâtiments', icon: MapPin, description: 'Sélectionner les bâtiments du patrimoine' },
