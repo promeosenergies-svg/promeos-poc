@@ -6,13 +6,14 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Building2, AlertTriangle, CheckCircle2, Clock, FileText, Download,
-  Loader2, ArrowRight, ShieldAlert, Users, Calendar, Zap, Link2,
+  Loader2, ArrowRight, ShieldAlert, Users, Calendar, Zap, Link2, Plus,
 } from 'lucide-react';
 import { PageShell, Card, CardBody, Button, Badge, Tooltip } from '../../ui';
 import {
   getTertiaireEfa, runTertiaireControls, precheckTertiaireDeclaration,
-  exportTertiairePack, getTertiaireEfaProofs,
+  exportTertiairePack, getTertiaireEfaProofs, createAction,
 } from '../../services/api';
+import { buildOperatActionPayload, buildOperatActionDeepLink } from '../../models/operatActionModel';
 import ProofDepositCTA from './components/ProofDepositCTA';
 
 const SEVERITY_VARIANTS = {
@@ -38,6 +39,30 @@ export default function TertiaireEfaDetailPage() {
   const [exporting, setExporting] = useState(false);
   const [exportResult, setExportResult] = useState(null);
   const [proofsStatus, setProofsStatus] = useState(null);
+  const [actionFeedback, setActionFeedback] = useState(null);
+  const [creatingActionFor, setCreatingActionFor] = useState(null);
+
+  const handleCreateAction = async (issue) => {
+    setCreatingActionFor(issue.code);
+    setActionFeedback(null);
+    try {
+      const year = new Date().getFullYear();
+      const payload = buildOperatActionPayload({
+        efa, issue, year,
+        kb_open_url: issue.proof_links?.[0] || null,
+        proof_type: issue.proof_required?.type || null,
+      });
+      const { data } = await createAction(payload);
+      if (data?.status === 'existing') {
+        setActionFeedback({ type: 'info', text: 'Action déjà existante dans le plan d\u2019actions' });
+      } else {
+        setActionFeedback({ type: 'ok', text: 'Action créée dans le plan d\u2019actions' });
+      }
+    } catch {
+      setActionFeedback({ type: 'error', text: 'Erreur lors de la création de l\u2019action' });
+    }
+    setCreatingActionFor(null);
+  };
 
   const fetchEfa = () => {
     setLoading(true);
@@ -371,21 +396,85 @@ export default function TertiaireEfaDetailPage() {
                           </div>
                         )}
                       </div>
-                      {/* V45: CTA deep-link Mémobox si proof_links */}
-                      {issue.proof_links && issue.proof_links.length > 0 && (
+                      {/* V45+V46: CTA Mémobox + Créer action */}
+                      <div className="flex flex-col gap-1 shrink-0">
+                        {issue.proof_links && issue.proof_links.length > 0 && (
+                          <Button
+                            size="xs"
+                            variant="secondary"
+                            onClick={() => navigate(issue.proof_links[0])}
+                            data-testid="btn-deposit-proof"
+                          >
+                            <FileText size={12} /> Déposer la preuve
+                          </Button>
+                        )}
                         <Button
                           size="xs"
                           variant="secondary"
-                          className="shrink-0"
-                          onClick={() => navigate(issue.proof_links[0])}
-                          data-testid="btn-deposit-proof"
+                          onClick={() => handleCreateAction(issue)}
+                          disabled={creatingActionFor === issue.code}
+                          data-testid="btn-create-action"
                         >
-                          <FileText size={12} /> Déposer la preuve
+                          {creatingActionFor === issue.code
+                            ? <Loader2 size={12} className="animate-spin" />
+                            : <Plus size={12} />}
+                          Créer une action
                         </Button>
-                      )}
+                      </div>
                     </div>
                   </div>
                 ))}
+              </div>
+            </CardBody>
+          </Card>
+        </div>
+      )}
+
+      {/* V46: Feedback toast */}
+      {actionFeedback && (
+        <div className={`mt-4 rounded-lg px-4 py-3 text-sm flex items-center justify-between ${
+          actionFeedback.type === 'ok' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+          actionFeedback.type === 'info' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
+          'bg-red-50 text-red-700 border border-red-200'
+        }`} data-testid="action-feedback">
+          <span>{actionFeedback.text}</span>
+          <div className="flex items-center gap-2">
+            <Button
+              size="xs"
+              variant="secondary"
+              onClick={() => navigate(buildOperatActionDeepLink(
+                buildOperatActionPayload({ efa, issue: (efa.open_issues || [])[0], year: new Date().getFullYear() })
+              ))}
+            >
+              Ouvrir le plan d&apos;actions
+            </Button>
+            <button onClick={() => setActionFeedback(null)} className="text-gray-400 hover:text-gray-600">
+              &times;
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* V46: Mini-bloc Plan d'actions OPERAT */}
+      {(efa.open_issues || []).length > 0 && (
+        <div className="mt-4" data-testid="operat-actions-bloc">
+          <Card>
+            <CardBody className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Plus size={16} className="text-indigo-500" />
+                  <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                    Plan d&apos;actions OPERAT
+                  </h4>
+                </div>
+                <Button
+                  size="xs"
+                  variant="secondary"
+                  onClick={() => navigate(`/actions?source=operat&efa_id=${efa.id}`)}
+                  data-testid="btn-view-action-plan"
+                >
+                  <ArrowRight size={12} /> Voir dans le plan d&apos;actions
+                </Button>
               </div>
             </CardBody>
           </Card>

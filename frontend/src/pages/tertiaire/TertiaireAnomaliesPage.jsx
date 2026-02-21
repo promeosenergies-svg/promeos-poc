@@ -6,10 +6,11 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   AlertTriangle, ShieldAlert, CheckCircle2, Loader2, Filter,
-  Building2, ArrowRight, FileText,
+  Building2, ArrowRight, FileText, Plus,
 } from 'lucide-react';
 import { PageShell, Card, CardBody, Button, Badge } from '../../ui';
-import { getTertiaireIssues, updateTertiaireIssue } from '../../services/api';
+import { getTertiaireIssues, updateTertiaireIssue, createAction } from '../../services/api';
+import { buildOperatActionPayload } from '../../models/operatActionModel';
 import ProofDepositCTA from './components/ProofDepositCTA';
 
 const SEVERITY_VARIANTS = {
@@ -46,6 +47,8 @@ export default function TertiaireAnomaliesPage() {
   const [loading, setLoading] = useState(true);
   const [filterSeverity, setFilterSeverity] = useState('');
   const [filterStatus, setFilterStatus] = useState('open');
+  const [creatingActionFor, setCreatingActionFor] = useState(null);
+  const [actionFeedback, setActionFeedback] = useState(null);
 
   const fetchIssues = () => {
     setLoading(true);
@@ -63,6 +66,29 @@ export default function TertiaireAnomaliesPage() {
   const handleStatusChange = async (issueId, newStatus) => {
     await updateTertiaireIssue(issueId, { status: newStatus });
     fetchIssues();
+  };
+
+  const handleCreateAction = async (issue) => {
+    setCreatingActionFor(issue.id);
+    setActionFeedback(null);
+    try {
+      const year = issue.year || new Date().getFullYear();
+      const efa = { id: issue.efa_id, nom: issue.efa_nom || `EFA #${issue.efa_id}`, site_id: issue.site_id };
+      const payload = buildOperatActionPayload({
+        efa, issue, year,
+        kb_open_url: issue.proof_links?.[0] || null,
+        proof_type: issue.proof_required?.type || null,
+      });
+      const { data } = await createAction(payload);
+      if (data?.status === 'existing') {
+        setActionFeedback({ type: 'info', text: 'Action déjà existante' });
+      } else {
+        setActionFeedback({ type: 'ok', text: 'Action créée' });
+      }
+    } catch {
+      setActionFeedback({ type: 'error', text: 'Erreur lors de la création' });
+    }
+    setCreatingActionFor(null);
   };
 
   const severityCounts = issues.reduce((acc, i) => {
@@ -115,6 +141,18 @@ export default function TertiaireAnomaliesPage() {
           </div>
         </CardBody>
       </Card>
+
+      {/* V46: Feedback toast */}
+      {actionFeedback && (
+        <div className={`mt-3 rounded-lg px-4 py-2 text-xs flex items-center justify-between ${
+          actionFeedback.type === 'ok' ? 'bg-emerald-50 text-emerald-700' :
+          actionFeedback.type === 'info' ? 'bg-blue-50 text-blue-700' :
+          'bg-red-50 text-red-700'
+        }`} data-testid="action-feedback">
+          <span>{actionFeedback.text}</span>
+          <button onClick={() => setActionFeedback(null)} className="text-gray-400 hover:text-gray-600 ml-2">&times;</button>
+        </div>
+      )}
 
       {/* Compteurs sévérité */}
       {!loading && issues.length > 0 && (
@@ -256,6 +294,19 @@ export default function TertiaireAnomaliesPage() {
                           label="Déposer la preuve"
                         />
                       )}
+                      {/* V46: Créer une action */}
+                      <Button
+                        size="xs"
+                        variant="secondary"
+                        onClick={() => handleCreateAction(issue)}
+                        disabled={creatingActionFor === issue.id}
+                        data-testid="btn-create-action"
+                      >
+                        {creatingActionFor === issue.id
+                          ? <Loader2 size={12} className="animate-spin" />
+                          : <Plus size={12} />}
+                        Créer une action
+                      </Button>
                   </div>
                 </CardBody>
               </Card>
