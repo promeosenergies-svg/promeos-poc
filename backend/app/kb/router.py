@@ -251,6 +251,7 @@ async def upload_doc(
     title: str = Query(..., description="Titre du document"),
     domain: Optional[str] = Query(None, description="Domaine KB"),
     doc_type: str = Query("pdf", description="Type de document"),
+    action_id: Optional[int] = Query(None, description="V48: lier automatiquement à une action"),
 ):
     """
     Upload a document to the Memobox (KB).
@@ -277,12 +278,20 @@ async def upload_doc(
     # Dedup: if same hash already ingested, return existing ref
     existing = store.get_doc(doc_id)
     if existing and existing.get("content_hash") == content_hash:
-        return {
+        resp = {
             "status": "already_exists",
             "doc_id": doc_id,
             "content_hash": content_hash,
             "message": "Document avec contenu identique deja present",
         }
+        # V48: still link to action even if doc already exists
+        if action_id is not None:
+            try:
+                link_result = store.link_doc_to_action(action_id, doc_id)
+                resp["action_link"] = link_result.get("status")
+            except Exception:
+                resp["action_link"] = "error"
+        return resp
 
     # Save raw file
     raw_dir = Path(__file__).resolve().parent.parent.parent / "data" / "kb" / "raw"
@@ -310,6 +319,15 @@ async def upload_doc(
         store.db.conn.commit()
 
     result["domain"] = domain
+
+    # V48: Auto-link doc to action if action_id provided
+    if action_id is not None:
+        try:
+            link_result = store.link_doc_to_action(action_id, doc_id)
+            result["action_link"] = link_result.get("status")
+        except Exception:
+            result["action_link"] = "error"
+
     return result
 
 

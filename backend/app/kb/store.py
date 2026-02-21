@@ -339,6 +339,66 @@ class KBStore:
 
         return d
 
+    # ── V48: Action ↔ Proof link operations ─────────────────────────────────
+
+    def link_doc_to_action(self, action_id: int, kb_doc_id: str, proof_type: str = None) -> Dict[str, Any]:
+        """
+        Idempotent: link a KB doc to an action. Returns status 'linked' or 'already_linked'.
+        """
+        try:
+            cursor = self.db.conn.cursor()
+            cursor.execute(
+                "INSERT INTO action_proof_link (action_id, kb_doc_id, proof_type) VALUES (?, ?, ?)",
+                (action_id, kb_doc_id, proof_type),
+            )
+            self.db.conn.commit()
+            return {"status": "linked", "action_id": action_id, "kb_doc_id": kb_doc_id}
+        except sqlite3.IntegrityError:
+            return {"status": "already_linked", "action_id": action_id, "kb_doc_id": kb_doc_id}
+        except sqlite3.Error as e:
+            return {"status": "error", "detail": str(e)}
+
+    def list_action_proofs(self, action_id: int) -> Dict[str, Any]:
+        """
+        List all KB docs linked to an action + summary counts by status.
+        Returns: { docs: [...], summary: { total, draft, review, validated, ... } }
+        """
+        cursor = self.db.conn.cursor()
+        cursor.execute("""
+            SELECT apl.id, apl.action_id, apl.kb_doc_id, apl.proof_type, apl.created_at,
+                   d.title, d.status, d.domain, d.source_type, d.display_name
+            FROM action_proof_link apl
+            LEFT JOIN kb_docs d ON apl.kb_doc_id = d.doc_id
+            WHERE apl.action_id = ?
+            ORDER BY apl.created_at DESC
+        """, (action_id,))
+        rows = cursor.fetchall()
+
+        docs = []
+        summary = {"total": 0, "draft": 0, "review": 0, "validated": 0, "decisional": 0}
+        for row in rows:
+            doc = dict(row)
+            docs.append(doc)
+            summary["total"] += 1
+            doc_status = doc.get("status") or "draft"
+            if doc_status in summary:
+                summary[doc_status] += 1
+
+        return {"docs": docs, "summary": summary}
+
+    def unlink_doc_from_action(self, action_id: int, kb_doc_id: str) -> bool:
+        """Remove link between action and KB doc."""
+        try:
+            cursor = self.db.conn.cursor()
+            cursor.execute(
+                "DELETE FROM action_proof_link WHERE action_id = ? AND kb_doc_id = ?",
+                (action_id, kb_doc_id),
+            )
+            self.db.conn.commit()
+            return cursor.rowcount > 0
+        except sqlite3.Error:
+            return False
+
     def get_stats(self) -> Dict[str, Any]:
         """Get KB statistics"""
         cursor = self.db.conn.cursor()

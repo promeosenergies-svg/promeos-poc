@@ -409,12 +409,13 @@ export const getKBFullStats = () => api.get(`${KB_BASE}/stats`).then(r => {
 });
 
 // KB Memobox V38 — Upload + Lifecycle
-export const uploadKBDoc = (file, title, domain = null, docType = 'pdf') => {
+export const uploadKBDoc = (file, title, domain = null, docType = 'pdf', actionId = null) => {
   const fd = new FormData();
   fd.append('file', file);
   const params = { title };
   if (domain) params.domain = domain;
   if (docType) params.doc_type = docType;
+  if (actionId) params.action_id = actionId;  // V48: auto-link to action
   return api.post(`${KB_BASE}/upload`, fd, {
     params,
     headers: { 'Content-Type': 'multipart/form-data' },
@@ -647,6 +648,10 @@ export const getActionEvidence = (id) => api.get(`/actions/${id}/evidence`).then
 export const addActionEvidence = (id, data) => api.post(`/actions/${id}/evidence`, data).then(r => r.data);
 export const getActionEvents = (id) => api.get(`/actions/${id}/events`).then(r => r.data);
 export const getROISummary = (orgId) => api.get('/actions/roi_summary', { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);
+
+// V48: Action ↔ Proof persistence
+export const getActionProofs = (actionId) => api.get(`/actions/${actionId}/proofs`).then(r => r.data);
+export const linkProofToAction = (actionId, kbDocId) => api.post(`/actions/${actionId}/proofs/${kbDocId}`).then(r => r.data);
 
 // ========================================
 // REPORTS (Sprint 10.1)

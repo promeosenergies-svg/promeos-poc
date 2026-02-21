@@ -15,7 +15,7 @@ import { useToast } from '../ui/ToastProvider';
 import {
   getActionDetail, getActionComments, addActionComment,
   getActionEvidence, addActionEvidence, getActionEvents,
-  patchAction, getTertiaireEfaProofs,
+  patchAction, getTertiaireEfaProofs, getActionProofs,
 } from '../services/api';
 import { ACTION_STATUS_LABELS } from '../domain/compliance/complianceLabels.fr';
 import {
@@ -142,16 +142,29 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
     }
   }, [open, actionId, fetchAll]);
 
-  // V47 — Fetch preuves EFA si action OPERAT
+  // V48 — Fetch preuves: persistent API + EFA fallback
   useEffect(() => {
     if (!open || !detail) { setProofsSummary(null); return; }
     if (!isOperatAction(detail)) { setProofsSummary(null); return; }
     const parsed = parseOperatSourceId(detail.source_id);
-    if (!parsed?.efa_id) return;
-    getTertiaireEfaProofs(parsed.efa_id)
-      .then(setProofsSummary)
-      .catch(() => setProofsSummary(null));
-  }, [open, detail]);
+
+    Promise.all([
+      actionId ? getActionProofs(actionId).catch(() => null) : null,
+      parsed?.efa_id ? getTertiaireEfaProofs(parsed.efa_id).catch(() => null) : null,
+    ]).then(([persistent, efa]) => {
+      const pSummary = persistent?.summary || {};
+      const pTotal = pSummary.total || 0;
+      const pValidated = (pSummary.validated || 0) + (pSummary.decisional || 0);
+      const eSummary = efa || {};
+
+      setProofsSummary({
+        expected_count: eSummary.expected_count ?? pTotal,
+        deposited_count: Math.max(pTotal, eSummary.deposited_count || 0),
+        validated_count: Math.max(pValidated, eSummary.validated_count || 0),
+        docs: persistent?.docs || [],
+      });
+    });
+  }, [open, detail, actionId]);
 
   // Status change
   async function handleStatusChange(newStatus) {

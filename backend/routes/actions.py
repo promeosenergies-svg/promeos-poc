@@ -790,6 +790,56 @@ def list_events(
 
 
 # ========================================
+# V48: Action ↔ Proof persistence endpoints
+# ========================================
+
+@router.get("/{action_id}/proofs")
+def get_action_proofs(action_id: int, db: Session = Depends(get_db)):
+    """
+    GET /api/actions/{action_id}/proofs
+    List all KB docs linked to this action + summary.
+    """
+    action = db.query(ActionItem).filter(ActionItem.id == action_id).first()
+    if not action:
+        raise HTTPException(status_code=404, detail="Action non trouvée")
+
+    try:
+        from app.kb.store import KBStore
+        kb_store = KBStore()
+        return kb_store.list_action_proofs(action_id)
+    except Exception:
+        # KB store not available — return empty (backward compat)
+        return {"docs": [], "summary": {"total": 0, "draft": 0, "review": 0, "validated": 0, "decisional": 0}}
+
+
+@router.post("/{action_id}/proofs/{kb_doc_id}")
+def link_proof_to_action(
+    action_id: int,
+    kb_doc_id: str,
+    db: Session = Depends(get_db),
+):
+    """
+    POST /api/actions/{action_id}/proofs/{kb_doc_id}
+    Manually link an existing KB doc to an action. Idempotent.
+    """
+    action = db.query(ActionItem).filter(ActionItem.id == action_id).first()
+    if not action:
+        raise HTTPException(status_code=404, detail="Action non trouvée")
+
+    try:
+        from app.kb.store import KBStore
+        kb_store = KBStore()
+        result = kb_store.link_doc_to_action(action_id, kb_doc_id)
+        if result.get("status") == "error":
+            raise HTTPException(status_code=500, detail=result.get("detail", "Erreur lors du rattachement"))
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur KB: {str(e)}")
+
+
+# ========================================
 # Detail endpoint (after fixed-path routes to avoid conflict)
 # ========================================
 

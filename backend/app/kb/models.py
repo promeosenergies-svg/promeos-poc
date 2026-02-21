@@ -134,6 +134,20 @@ class KBDatabase:
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_kb_docs_status ON kb_docs(status)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_kb_docs_domain ON kb_docs(domain)")
 
+        # V48: Action ↔ KB Doc link table (persistent proof artifacts)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS action_proof_link (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                action_id INTEGER NOT NULL,
+                kb_doc_id TEXT NOT NULL,
+                proof_type TEXT,
+                created_at TEXT DEFAULT (datetime('now')),
+                UNIQUE(action_id, kb_doc_id)
+            )
+        """)
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_apl_action ON action_proof_link(action_id)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_apl_doc ON action_proof_link(kb_doc_id)")
+
         self.conn.commit()
         return True
 

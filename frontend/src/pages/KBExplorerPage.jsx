@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { PageShell, Card, CardBody, Badge, Button, TrustBadge, EmptyState } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
-import { searchKBItems, getKBFullStats, uploadKBDoc, getKBDocs, changeKBDocStatus, linkTertiaireProof } from '../services/api';
+import { searchKBItems, getKBFullStats, uploadKBDoc, getKBDocs, changeKBDocStatus, linkTertiaireProof, linkProofToAction } from '../services/api';
 import { DOC_STATUS_LABELS, DOC_STATUS_BADGE } from '../models/proofLinkModel';
 
 const DOMAIN_TABS = [
@@ -150,11 +150,14 @@ export default function KBExplorerPage() {
     if (!f) return;
     setUploadMsg(null);
     try {
-      const result = await uploadKBDoc(f, f.name, domain);
+      // V48: Pass action_id from proofContext for auto-link
+      const actionId = proofContext?.action_id ? parseInt(proofContext.action_id, 10) : null;
+      const result = await uploadKBDoc(f, f.name, domain, 'pdf', actionId);
       if (result.status === 'already_exists') {
         setUploadMsg({ type: 'info', text: 'Document déjà présent (contenu identique)' });
       } else {
-        setUploadMsg({ type: 'ok', text: `Document ingéré : ${result.doc_id} (${result.nb_chunks} chunks)` });
+        const linkInfo = result.action_link === 'linked' ? ' — lié à l\'action' : '';
+        setUploadMsg({ type: 'ok', text: `Document ingéré : ${result.doc_id} (${result.nb_chunks} chunks)${linkInfo}` });
       }
       loadDocs();
     } catch (err) {
@@ -494,6 +497,10 @@ function DocCard({ doc, onStatusChange, proofContext, onLinkMsg }) {
   const canLink = proofContext?.efa_id && proofContext?.proof_type;
   const [linking, setLinking] = useState(false);
 
+  // V48: Link doc to action (persistent)
+  const canLinkAction = !!proofContext?.action_id;
+  const [linkingAction, setLinkingAction] = useState(false);
+
   async function handleLinkProof() {
     if (!canLink) return;
     setLinking(true);
@@ -511,6 +518,21 @@ function DocCard({ doc, onStatusChange, proofContext, onLinkMsg }) {
       if (onLinkMsg) onLinkMsg({ type: 'error', text: 'Erreur lors du rattachement de la preuve' });
     }
     setLinking(false);
+  }
+
+  async function handleLinkAction() {
+    if (!canLinkAction) return;
+    setLinkingAction(true);
+    try {
+      const result = await linkProofToAction(proofContext.action_id, doc.doc_id);
+      const msg = result.status === 'already_linked'
+        ? 'Document déjà lié à cette action'
+        : `Document lié à l'action #${proofContext.action_id}`;
+      if (onLinkMsg) onLinkMsg({ type: result.status === 'already_linked' ? 'info' : 'ok', text: msg });
+    } catch {
+      if (onLinkMsg) onLinkMsg({ type: 'error', text: 'Erreur lors du rattachement à l\'action' });
+    }
+    setLinkingAction(false);
   }
 
   return (
@@ -552,6 +574,17 @@ function DocCard({ doc, onStatusChange, proofContext, onLinkMsg }) {
               data-testid="btn-link-proof-efa"
             >
               {linking ? 'Liaison…' : 'Lier à l\u2019EFA'}
+            </button>
+          )}
+          {/* V48: Link doc to action (persistent) */}
+          {canLinkAction && (
+            <button
+              onClick={handleLinkAction}
+              disabled={linkingAction}
+              className="text-[10px] text-blue-600 hover:text-blue-800 underline shrink-0"
+              data-testid="btn-link-proof-action"
+            >
+              {linkingAction ? 'Liaison…' : 'Lier à l\u2019action'}
             </button>
           )}
         </div>
