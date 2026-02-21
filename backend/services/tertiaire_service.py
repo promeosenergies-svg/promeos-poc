@@ -1,7 +1,8 @@
 """
-PROMEOS V39 — Service Tertiaire / OPERAT
+PROMEOS V40 — Service Tertiaire / OPERAT
 qualify_efa, run_controls, precheck_declaration, generate_operat_pack
 """
+import hashlib
 import json
 import logging
 import os
@@ -406,6 +407,79 @@ Il ne constitue pas une soumission officielle sur la plateforme OPERAT.
         decl.exported_pack_path = str(zip_path)
         db.commit()
 
+    # ── V40: Register pack as KB document + proof artifact ───────────────────
+    kb_doc_id = None
+    kb_open_url = None
+    try:
+        # SHA256 checksum du zip
+        sha256 = hashlib.sha256(zip_path.read_bytes()).hexdigest()
+        kb_doc_id = f"generated_operat_{sha256[:12]}"
+
+        from app.kb.store import KBStore
+        kb_store = KBStore()
+
+        # Dedup : si même hash, on ne recrée pas
+        existing = kb_store.get_doc(kb_doc_id)
+        if not existing or existing.get("content_hash") != sha256:
+            kb_store.upsert_doc({
+                "doc_id": kb_doc_id,
+                "title": f"Pack OPERAT — {efa.nom} — {year}",
+                "source_type": "pdf",
+                "source_path": str(zip_path),
+                "content_hash": sha256,
+                "nb_sections": 2,
+                "nb_chunks": 0,
+                "updated_at": datetime.utcnow().isoformat(),
+                "meta": {
+                    "efa_id": efa_id,
+                    "efa_nom": efa.nom,
+                    "year": year,
+                    "surface_m2": total_surface,
+                    "simulation": True,
+                    "generated_type": "operat_export",
+                },
+                "status": "review",
+            })
+            # Set domain on the KB doc
+            try:
+                kb_store.db.conn.cursor().execute(
+                    "UPDATE kb_docs SET domain = ? WHERE doc_id = ?",
+                    ("conformite/tertiaire-operat", kb_doc_id),
+                )
+                kb_store.db.conn.commit()
+            except Exception:
+                pass  # domain column may not exist yet
+
+        # Create proof artifact (bridge Tertiaire ↔ KB)
+        existing_artifact = db.query(TertiaireProofArtifact).filter(
+            TertiaireProofArtifact.efa_id == efa_id,
+            TertiaireProofArtifact.type == "operat_export_pack",
+            TertiaireProofArtifact.kb_doc_id == kb_doc_id,
+        ).first()
+        if not existing_artifact:
+            artifact = TertiaireProofArtifact(
+                efa_id=efa_id,
+                type="operat_export_pack",
+                file_path=str(zip_path),
+                kb_doc_id=kb_doc_id,
+                owner_role=efa.role_assujetti,
+                tags_json=json.dumps({"year": year, "efa_id": efa_id}),
+            )
+            db.add(artifact)
+            db.commit()
+
+        # Deep-link vers la Mémobox avec contexte preuve
+        kb_open_url = (
+            f"/kb?context=proof"
+            f"&domain=conformite%2Ftertiaire-operat"
+            f"&status=review"
+            f"&hint=Pack+OPERAT+%E2%80%94+{efa.nom}+%E2%80%94+{year}"
+        )
+
+    except Exception as exc:
+        logger.warning("V40: KB doc creation failed for pack %s: %s", pack_name, exc)
+        # Non-bloquant : l'export fonctionne même si KB échoue
+
     return {
         "status": "exported",
         "simulation": True,
@@ -413,6 +487,8 @@ Il ne constitue pas une soumission officielle sur la plateforme OPERAT.
         "year": year,
         "zip_path": str(zip_path),
         "recap": recap,
+        "kb_doc_id": kb_doc_id,
+        "kb_open_url": kb_open_url,
     }
 
 
