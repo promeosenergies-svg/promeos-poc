@@ -4,6 +4,7 @@
  * inline status change, context-aware empty states, impact bulk bar.
  */
 import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Plus, Download, Printer, Clock, ListChecks, RefreshCw,
   MessageSquare, Paperclip, AlertTriangle, BadgeEuro, ShieldCheck,
@@ -24,16 +25,18 @@ import { track } from '../services/tracker';
 import { ACTION_STATUS_LABELS, ACTION_TYPE_LABELS } from '../domain/compliance/complianceLabels.fr';
 
 /* Backend → frontend field mappers */
-const SOURCE_MAP = { compliance: 'conformite', consumption: 'conso', billing: 'facture', purchase: 'maintenance' };
+const SOURCE_MAP = { compliance: 'conformite', consumption: 'conso', billing: 'facture', purchase: 'maintenance', insight: 'operat' };
 const STATUS_TO_FE = { open: 'backlog', in_progress: 'in_progress', done: 'done', blocked: 'planned', false_positive: 'done' };
 const STATUS_TO_BE = { backlog: 'open', in_progress: 'in_progress', done: 'done', planned: 'blocked' };
 const PRIO_TO_FE = { 1: 'critical', 2: 'high', 3: 'medium', 4: 'low', 5: 'low' };
 
 function mapBackendAction(a) {
+  // V46: OPERAT actions (insight with source_id starting with "operat:")
+  const isOperat = a.source_type === 'insight' && a.source_id?.startsWith('operat:');
   return {
     id: a.id,
     titre: a.title,
-    type: SOURCE_MAP[a.source_type] || a.source_type,
+    type: isOperat ? 'operat' : (SOURCE_MAP[a.source_type] || a.source_type),
     site_id: a.site_id,
     site_nom: `Site ${a.site_id || '?'}`,
     impact_eur: a.estimated_gain_eur || 0,
@@ -53,6 +56,7 @@ const TYPE_BADGE = {
   conso: { status: 'warn', label: 'Conso' },
   facture: { status: 'info', label: 'Facture' },
   maintenance: { status: 'neutral', label: 'Maintenance' },
+  operat: { status: 'crit', label: 'OPERAT' },
 };
 
 const PRIORITY_BADGE = {
@@ -302,11 +306,12 @@ export default function ActionsPage() {
   const { scopedSites } = useScope();
   const { isExpert } = useExpertMode();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
   const [actions, setActions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [filterStatut, setFilterStatut] = useState('');
-  const [filterType, setFilterType] = useState('');
+  const [filterType, setFilterType] = useState(searchParams.get('source') === 'operat' ? 'operat' : '');
   const [quickView, setQuickView] = useState('');
   const [page, setPage] = useState(1);
   const [showCreate, setShowCreate] = useState(false);

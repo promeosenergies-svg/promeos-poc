@@ -90,6 +90,7 @@ export const ACTION_TYPE_LABELS = {
   conso:       'Consommation',
   facture:     'Facturation',
   maintenance: 'Maintenance',
+  operat:      'OPERAT',
 };
 
 // ─── Onglets cockpit ────────────────────────────────────────────────────

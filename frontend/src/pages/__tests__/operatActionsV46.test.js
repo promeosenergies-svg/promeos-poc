@@ -139,3 +139,46 @@ describe('API service has createAction', () => {
     expect(api).toContain("'/actions'");
   });
 });
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 5. ActionsPage — V46 OPERAT filter
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('ActionsPage has V46 OPERAT integration', () => {
+  const page = src('pages/ActionsPage.jsx');
+
+  it('imports useSearchParams', () => {
+    expect(page).toContain('useSearchParams');
+  });
+
+  it('reads source=operat from URL', () => {
+    expect(page).toContain("source");
+    expect(page).toContain("'operat'");
+  });
+
+  it('maps insight+operat: source_id to operat type', () => {
+    expect(page).toContain('isOperat');
+    expect(page).toContain("operat:");
+  });
+
+  it('has operat in TYPE_BADGE', () => {
+    expect(page).toContain("operat: { status: 'crit', label: 'OPERAT' }");
+  });
+
+  it('maps insight source_type to operat', () => {
+    expect(page).toContain("insight: 'operat'");
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 6. Labels FR — OPERAT type
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('complianceLabels has OPERAT type', () => {
+  const labels = src('domain/compliance/complianceLabels.fr.js');
+
+  it('has operat in ACTION_TYPE_LABELS', () => {
+    expect(labels).toContain("operat:");
+    expect(labels).toContain("'OPERAT'");
+  });
+});
