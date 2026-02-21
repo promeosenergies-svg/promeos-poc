@@ -94,6 +94,19 @@ describe('GUARD generate_operat_pack KB doc creation', () => {
   it('kb_open_url includes status=review', () => {
     expect(code).toContain('status=review');
   });
+
+  // V40.1: display_name
+  it('builds human-friendly kb_display_name', () => {
+    expect(code).toContain('kb_display_name');
+  });
+
+  it('passes display_name to upsert_doc', () => {
+    expect(code).toContain('"display_name": kb_display_name');
+  });
+
+  it('returns kb_doc_display_name in response', () => {
+    expect(code).toContain('"kb_doc_display_name"');
+  });
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -130,6 +143,11 @@ describe('GUARD TertiaireEfaDetailPage export → Mémobox', () => {
 
   it('displays kb_doc_id reference', () => {
     expect(code).toContain('exportResult.kb_doc_id');
+  });
+
+  // V40.1: display_name
+  it('prefers kb_doc_display_name over kb_doc_id', () => {
+    expect(code).toContain('exportResult.kb_doc_display_name || exportResult.kb_doc_id');
   });
 
   it('has aria-label for accessibility', () => {

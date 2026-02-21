@@ -65,6 +65,14 @@ class TestKBDocFromExportPack:
         assert doc["meta"]["generated_type"] == "operat_export"
         assert "efa_id" in doc["meta"]
 
+    def test_display_name_format(self):
+        """V40.1: display_name should be human-friendly, no hash."""
+        efa_nom = "Siège Nantes"
+        year = 2025
+        display_name = f"Pack OPERAT \u2014 {efa_nom} \u2014 {year}"
+        assert display_name == "Pack OPERAT \u2014 Siège Nantes \u2014 2025"
+        assert "generated_operat_" not in display_name
+
     def test_kb_open_url_format(self):
         """kb_open_url should point to /kb with context=proof and status=review."""
         url = (
@@ -115,10 +123,35 @@ class TestServiceSourceGuards:
     def test_review_initial_status(self):
         assert '"status": "review"' in self.code
 
+    # V40.1: display_name guards
+    def test_builds_display_name(self):
+        assert "kb_display_name" in self.code
+
+    def test_passes_display_name_to_upsert(self):
+        assert '"display_name": kb_display_name' in self.code
+
+    def test_returns_kb_doc_display_name(self):
+        assert '"kb_doc_display_name"' in self.code
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # 3. Proof artifact model
 # ══════════════════════════════════════════════════════════════════════════════
+
+class TestDisplayNameInKBStore:
+    """V40.1: Verify display_name column is supported in KB store + models."""
+
+    def test_store_upsert_handles_display_name(self):
+        src_path = Path(__file__).resolve().parent.parent / "app" / "kb" / "store.py"
+        code = src_path.read_text(encoding="utf-8")
+        assert "display_name" in code
+        assert "display_name=excluded.display_name" in code
+
+    def test_models_migration_adds_display_name(self):
+        src_path = Path(__file__).resolve().parent.parent / "app" / "kb" / "models.py"
+        code = src_path.read_text(encoding="utf-8")
+        assert '"display_name"' in code
+
 
 class TestProofArtifactModel:
     """Verify TertiaireProofArtifact has kb_doc_id field."""

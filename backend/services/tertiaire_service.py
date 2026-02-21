@@ -409,6 +409,7 @@ Il ne constitue pas une soumission officielle sur la plateforme OPERAT.
 
     # ── V40: Register pack as KB document + proof artifact ───────────────────
     kb_doc_id = None
+    kb_display_name = None
     kb_open_url = None
     try:
         # SHA256 checksum du zip
@@ -419,11 +420,15 @@ Il ne constitue pas une soumission officielle sur la plateforme OPERAT.
         kb_store = KBStore()
 
         # Dedup : si même hash, on ne recrée pas
+        # V40.1: human-friendly display name (never shows hash to user)
+        kb_display_name = f"Pack OPERAT \u2014 {efa.nom} \u2014 {year}"
+
         existing = kb_store.get_doc(kb_doc_id)
         if not existing or existing.get("content_hash") != sha256:
             kb_store.upsert_doc({
                 "doc_id": kb_doc_id,
                 "title": f"Pack OPERAT — {efa.nom} — {year}",
+                "display_name": kb_display_name,
                 "source_type": "pdf",
                 "source_path": str(zip_path),
                 "content_hash": sha256,
@@ -488,6 +493,7 @@ Il ne constitue pas une soumission officielle sur la plateforme OPERAT.
         "zip_path": str(zip_path),
         "recap": recap,
         "kb_doc_id": kb_doc_id,
+        "kb_doc_display_name": kb_display_name if kb_doc_id else None,
         "kb_open_url": kb_open_url,
     }
 

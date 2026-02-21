@@ -425,7 +425,7 @@ export default function TertiaireEfaDetailPage() {
                 <div className="flex items-center gap-3 mt-3 pt-3 border-t border-amber-200">
                   <Badge variant="ok" size="xs">Mémobox</Badge>
                   <span className="text-xs text-gray-600">
-                    Document enregistré : {exportResult.kb_doc_id}
+                    Document enregistré : {exportResult.kb_doc_display_name || exportResult.kb_doc_id}
                   </span>
                   <Button
                     size="xs"

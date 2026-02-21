@@ -112,10 +112,12 @@ class KBDatabase:
         """)
 
         # V38: Memobox lifecycle + domain columns for kb_docs
+        # V40.1: display_name — human-friendly label for generated docs
         for col_name, col_def in [
             ("status", "TEXT DEFAULT 'draft'"),
             ("domain", "TEXT"),
             ("used_by_modules", "TEXT"),
+            ("display_name", "TEXT"),
         ]:
             try:
                 cursor.execute(f"ALTER TABLE kb_docs ADD COLUMN {col_name} {col_def}")

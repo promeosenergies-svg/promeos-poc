@@ -173,11 +173,14 @@ class KBStore:
 
             status = doc.get("status", "draft")
 
+            display_name = doc.get("display_name") or doc.get("title")
+
             cursor.execute("""
                 INSERT INTO kb_docs (
                     doc_id, title, source_type, source_path, content_hash,
-                    nb_sections, nb_chunks, updated_at, meta_json, status
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    nb_sections, nb_chunks, updated_at, meta_json, status,
+                    display_name
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(doc_id) DO UPDATE SET
                     title=excluded.title,
                     source_type=excluded.source_type,
@@ -187,7 +190,8 @@ class KBStore:
                     nb_chunks=excluded.nb_chunks,
                     updated_at=excluded.updated_at,
                     meta_json=excluded.meta_json,
-                    status=excluded.status
+                    status=excluded.status,
+                    display_name=excluded.display_name
             """, (
                 doc["doc_id"],
                 doc["title"],
@@ -199,6 +203,7 @@ class KBStore:
                 doc["updated_at"],
                 meta_json,
                 status,
+                display_name,
             ))
 
             self.db.conn.commit()
