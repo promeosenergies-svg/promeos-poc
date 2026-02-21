@@ -133,10 +133,10 @@ class TestImportMapping:
         assert normalize_header("area_m2") == "surface_m2"
 
     def test_normalize_header_meter(self):
-        assert normalize_header("prm") == "meter_id"
-        assert normalize_header("pdl") == "meter_id"
-        assert normalize_header("pce") == "meter_id"
-        assert normalize_header("point_de_livraison") == "meter_id"
+        assert normalize_header("prm") == "delivery_code"
+        assert normalize_header("pdl") == "delivery_code"
+        assert normalize_header("pce") == "delivery_code"
+        assert normalize_header("point_de_livraison") == "delivery_code"
         assert normalize_header("serial_number") == "numero_serie"
 
     def test_normalize_header_unknown(self):
@@ -382,6 +382,8 @@ class TestSiteCRUD:
         assert resp.status_code == 400
 
     def test_site_not_found(self, client, db):
+        _create_org(db)  # Need org scope for the request to pass auth
+        db.commit()
         resp = client.get("/api/patrimoine/sites/99999")
         assert resp.status_code == 404
 

@@ -1,0 +1,55 @@
+"""
+PROMEOS - Demo Seed: Weather Data Generator
+Generates 90 days of daily weather per site (sinusoidal + noise).
+"""
+import math
+import random
+from datetime import datetime, timedelta
+
+from models import EmsWeatherCache
+
+
+def generate_weather(db, sites: list, days: int, rng: random.Random) -> dict:
+    """
+    Generate daily weather for each site.
+
+    Returns:
+        temp_lookup: {site_id: {"YYYY-MM-DD": temp_avg_c}}
+    """
+    now = datetime.utcnow()
+    start = now - timedelta(days=days)
+    temp_lookup = {}
+
+    for site in sites:
+        lat = site.latitude or 46.0
+        site_temps = {}
+        records = []
+
+        for d in range(days):
+            dt = start + timedelta(days=d)
+            day_of_year = dt.timetuple().tm_yday
+
+            # Base: sinusoidal seasonal (cold winter, warm summer)
+            # Adjusted by latitude (southern France warmer)
+            lat_offset = (46.0 - lat) * 0.3  # ~+1C per degree south
+            base = 12.0 + lat_offset - 10.0 * math.cos(2 * math.pi * (day_of_year - 15) / 365)
+            noise = rng.uniform(-2.0, 2.0)
+            temp = round(base + noise, 1)
+
+            day_key = dt.date().isoformat()
+            site_temps[day_key] = temp
+
+            records.append(EmsWeatherCache(
+                site_id=site.id,
+                date=dt.replace(hour=0, minute=0, second=0, microsecond=0),
+                temp_avg_c=temp,
+                temp_min_c=round(temp - rng.uniform(3, 6), 1),
+                temp_max_c=round(temp + rng.uniform(3, 6), 1),
+                source="demo_seed",
+            ))
+
+        db.bulk_save_objects(records)
+        temp_lookup[site.id] = site_temps
+
+    db.flush()
+    return temp_lookup

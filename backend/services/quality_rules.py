@@ -1,6 +1,6 @@
 """
 PROMEOS - Quality Rules Engine (DIAMANT)
-5 deterministic rules for staging data quality gate.
+11 deterministic rules for staging data quality gate.
 """
 from difflib import SequenceMatcher
 from typing import List
@@ -9,7 +9,10 @@ from sqlalchemy.orm import Session
 
 from models import (
     StagingSite, StagingCompteur, Site, Compteur, EntiteJuridique,
-    QualityFinding, QualityRuleSeverity,
+    QualityFinding, QualityRuleSeverity, not_deleted,
+)
+from services.validation_helpers import (
+    is_valid_siren, is_valid_siret, is_valid_meter_id, is_valid_postal_code,
 )
 
 
@@ -51,7 +54,7 @@ def check_duplicate_sites(db: Session, batch_id: int) -> List[dict]:
                     })
 
     # Vs existing sites (limit to 500 for perf)
-    existing_sites = db.query(Site).filter(Site.actif.is_(True)).limit(500).all()
+    existing_sites = not_deleted(db.query(Site), Site).filter(Site.actif.is_(True)).limit(500).all()
     for ss in staging_sites:
         for ex in existing_sites:
             if ss.code_postal and ex.code_postal and ss.code_postal == ex.code_postal:
@@ -115,7 +118,7 @@ def check_duplicate_meters(db: Session, batch_id: int) -> List[dict]:
                 seen_meter[sc.meter_id] = sc.id
 
     # Vs existing compteurs
-    existing_compteurs = db.query(Compteur).filter(Compteur.actif.is_(True)).all()
+    existing_compteurs = not_deleted(db.query(Compteur), Compteur).filter(Compteur.actif.is_(True)).all()
     existing_series = {c.numero_serie for c in existing_compteurs if c.numero_serie}
     existing_meters = {c.meter_id for c in existing_compteurs if c.meter_id}
 
@@ -197,6 +200,75 @@ def check_incomplete_sites(db: Session, batch_id: int) -> List[dict]:
     return findings
 
 
+def check_duplicate_delivery_point(db: Session, batch_id: int) -> List[dict]:
+    """Rule: dup_delivery_point_global — CRITICAL.
+
+    A PRM (elec) or PCE (gaz) must be globally unique among active compteurs.
+    Detects:
+    1. Intra-staging: two staging rows with the same meter_id
+    2. Vs existing DB: staging meter_id already exists in active compteurs
+    Soft-deleted compteurs are excluded (reuse allowed).
+    """
+    findings = []
+    staging_compteurs = db.query(StagingCompteur).filter(
+        StagingCompteur.batch_id == batch_id,
+        StagingCompteur.skip.is_(False),
+    ).all()
+
+    # 1. Intra-staging duplicates
+    seen_meter = {}
+    for sc in staging_compteurs:
+        if not sc.meter_id:
+            continue
+        mid = sc.meter_id.strip()
+        if not mid:
+            continue
+        if mid in seen_meter:
+            findings.append({
+                "rule_id": "dup_delivery_point_global",
+                "severity": QualityRuleSeverity.CRITICAL,
+                "staging_compteur_id": sc.id,
+                "evidence_json": (
+                    f'{{"dup_with_staging_id": {seen_meter[mid]}, '
+                    f'"field": "meter_id", "value": "{mid}", '
+                    f'"scope": "intra_staging"}}'
+                ),
+                "suggested_action": "skip",
+            })
+        else:
+            seen_meter[mid] = sc.id
+
+    # 2. Vs existing active compteurs (soft-deleted excluded)
+    active_compteurs = not_deleted(db.query(Compteur), Compteur).filter(
+        Compteur.meter_id.isnot(None),
+    ).all()
+    existing_map = {}
+    for c in active_compteurs:
+        if c.meter_id:
+            existing_map[c.meter_id.strip()] = c.id
+
+    for sc in staging_compteurs:
+        if not sc.meter_id:
+            continue
+        mid = sc.meter_id.strip()
+        if not mid:
+            continue
+        if mid in existing_map:
+            findings.append({
+                "rule_id": "dup_delivery_point_global",
+                "severity": QualityRuleSeverity.CRITICAL,
+                "staging_compteur_id": sc.id,
+                "evidence_json": (
+                    f'{{"dup_with_existing_id": {existing_map[mid]}, '
+                    f'"field": "meter_id", "value": "{mid}", '
+                    f'"scope": "vs_existing_db"}}'
+                ),
+                "suggested_action": "skip",
+            })
+
+    return findings
+
+
 def check_missing_entity(db: Session, batch_id: int) -> List[dict]:
     """Rule: missing_entite — staging site has SIRET but no matching EntiteJuridique."""
     findings = []
@@ -232,10 +304,136 @@ def check_missing_entity(db: Session, batch_id: int) -> List[dict]:
 
 
 # ========================================
+# Format validation rules
+# ========================================
+
+def check_valid_siren(db: Session, batch_id: int) -> List[dict]:
+    """Rule: valid_siren_format — SIREN portion of SIRET must be 9 valid digits + Luhn."""
+    findings = []
+    sites = db.query(StagingSite).filter(
+        StagingSite.batch_id == batch_id,
+        StagingSite.skip.is_(False),
+        StagingSite.siret.isnot(None),
+    ).all()
+
+    for ss in sites:
+        siret_val = ss.siret.strip() if ss.siret else ""
+        if not siret_val:
+            continue
+        siren_part = siret_val[:9]
+        if not is_valid_siren(siren_part):
+            findings.append({
+                "rule_id": "valid_siren_format",
+                "severity": QualityRuleSeverity.BLOCKING,
+                "staging_site_id": ss.id,
+                "evidence_json": (
+                    f'{{"field": "siret", "siren_extracted": "{siren_part}", '
+                    f'"site_name": "{ss.nom}", "reason": "invalid_siren"}}'
+                ),
+                "suggested_action": "fix_siret",
+            })
+    return findings
+
+
+def check_valid_siret(db: Session, batch_id: int) -> List[dict]:
+    """Rule: valid_siret_format — SIRET must be exactly 14 valid digits + Luhn."""
+    findings = []
+    sites = db.query(StagingSite).filter(
+        StagingSite.batch_id == batch_id,
+        StagingSite.skip.is_(False),
+        StagingSite.siret.isnot(None),
+    ).all()
+
+    for ss in sites:
+        siret_val = ss.siret.strip() if ss.siret else ""
+        if not siret_val:
+            continue
+        if not is_valid_siret(siret_val):
+            findings.append({
+                "rule_id": "valid_siret_format",
+                "severity": QualityRuleSeverity.BLOCKING,
+                "staging_site_id": ss.id,
+                "evidence_json": (
+                    f'{{"field": "siret", "value": "{siret_val}", '
+                    f'"site_name": "{ss.nom}", "reason": "invalid_siret"}}'
+                ),
+                "suggested_action": "fix_siret",
+            })
+    return findings
+
+
+def check_valid_meter_format(db: Session, batch_id: int) -> List[dict]:
+    """Rule: valid_meter_format — meter_id (PRM/PCE) must be exactly 14 digits."""
+    findings = []
+    compteurs = db.query(StagingCompteur).filter(
+        StagingCompteur.batch_id == batch_id,
+        StagingCompteur.skip.is_(False),
+        StagingCompteur.meter_id.isnot(None),
+    ).all()
+
+    for sc in compteurs:
+        mid = sc.meter_id.strip() if sc.meter_id else ""
+        if not mid:
+            continue
+        if not is_valid_meter_id(mid):
+            findings.append({
+                "rule_id": "valid_meter_format",
+                "severity": QualityRuleSeverity.BLOCKING,
+                "staging_compteur_id": sc.id,
+                "evidence_json": (
+                    f'{{"field": "meter_id", "value": "{mid}", '
+                    f'"reason": "expected_14_digits"}}'
+                ),
+                "suggested_action": "fix_meter_id",
+            })
+    return findings
+
+
+def check_valid_postal_code(db: Session, batch_id: int) -> List[dict]:
+    """Rule: valid_postal_code — code_postal must be a valid 5-digit French postal code."""
+    findings = []
+    sites = db.query(StagingSite).filter(
+        StagingSite.batch_id == batch_id,
+        StagingSite.skip.is_(False),
+        StagingSite.code_postal.isnot(None),
+    ).all()
+
+    for ss in sites:
+        cp = ss.code_postal.strip() if ss.code_postal else ""
+        if not cp:
+            continue
+        if not is_valid_postal_code(cp):
+            findings.append({
+                "rule_id": "valid_postal_code",
+                "severity": QualityRuleSeverity.WARNING,
+                "staging_site_id": ss.id,
+                "evidence_json": (
+                    f'{{"field": "code_postal", "value": "{cp}", '
+                    f'"site_name": "{ss.nom}", "reason": "invalid_postal_code"}}'
+                ),
+                "suggested_action": "fix_address",
+            })
+    return findings
+
+
+def check_valid_dates(db: Session, batch_id: int) -> List[dict]:
+    """Rule: valid_date_format — no string date fields in current staging schema.
+    Reserved for future use when date-string fields are added to staging models.
+    """
+    return []
+
+
+# ========================================
 # Rules registry
 # ========================================
 
 QUALITY_RULES = [
+    {
+        "id": "dup_delivery_point_global",
+        "label": "PRM/PCE duplique (point de livraison unique)",
+        "severity": "critical",
+        "check": check_duplicate_delivery_point,
+    },
     {
         "id": "dup_site_address",
         "label": "Sites avec adresse similaire",
@@ -265,6 +463,36 @@ QUALITY_RULES = [
         "label": "Entite juridique non identifiee",
         "severity": "info",
         "check": check_missing_entity,
+    },
+    {
+        "id": "valid_siren_format",
+        "label": "Format SIREN invalide (9 chiffres + Luhn)",
+        "severity": "blocking",
+        "check": check_valid_siren,
+    },
+    {
+        "id": "valid_siret_format",
+        "label": "Format SIRET invalide (14 chiffres + Luhn)",
+        "severity": "blocking",
+        "check": check_valid_siret,
+    },
+    {
+        "id": "valid_meter_format",
+        "label": "Format PRM/PCE invalide (14 chiffres)",
+        "severity": "blocking",
+        "check": check_valid_meter_format,
+    },
+    {
+        "id": "valid_postal_code",
+        "label": "Code postal invalide (5 chiffres, dept valide)",
+        "severity": "warning",
+        "check": check_valid_postal_code,
+    },
+    {
+        "id": "valid_date_format",
+        "label": "Format date invalide",
+        "severity": "warning",
+        "check": check_valid_dates,
     },
 ]
 

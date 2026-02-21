@@ -3,18 +3,24 @@ PROMEOS - Compliance Rules Evaluator
 Charge les packs YAML et produit des ComplianceFinding persistants.
 """
 import json
+import logging
 import os
+import uuid
 from datetime import date
 from typing import List, Optional
 
 import yaml
+from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.orm import Session
+
+logger = logging.getLogger(__name__)
 
 from models import (
     Site, Batiment, Obligation, Evidence, ComplianceFinding, Organisation,
     Portefeuille, EntiteJuridique, ComplianceRunBatch,
     StatutConformite, TypeObligation, TypeEvidence, StatutEvidence,
     OperatStatus, ParkingType, InsightStatus,
+    BacsAsset, BacsCvcSystem, BacsAssessment,
 )
 
 RULES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "rules")
@@ -440,27 +446,40 @@ def evaluate_organisation(db: Session, org_id: int) -> dict:
     }
 
 
-def get_summary(db: Session, org_id: int) -> dict:
-    """Aggregate compliance findings for an org into a summary."""
-    site_ids = [
-        row[0] for row in
-        db.query(Site.id)
-        .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
-        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
-        .filter(EntiteJuridique.organisation_id == org_id)
-        .all()
-    ]
+def _resolve_site_ids(db: Session, org_id: int, entity_id: int = None,
+                      site_id: int = None, portefeuille_id: int = None) -> list:
+    """Resolve site IDs from scope filters (site > portefeuille > entity > org)."""
+    if site_id:
+        return [site_id]
+    if portefeuille_id:
+        rows = db.query(Site.id).filter(Site.portefeuille_id == portefeuille_id).all()
+        return [row[0] for row in rows]
+    q = db.query(Site.id).join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+    if entity_id:
+        q = q.filter(Portefeuille.entite_juridique_id == entity_id)
+    else:
+        q = q.join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+        q = q.filter(EntiteJuridique.organisation_id == org_id)
+    return [row[0] for row in q.all()]
+
+
+def get_summary(db: Session, org_id: int, entity_id: int = None,
+                site_id: int = None, portefeuille_id: int = None) -> dict:
+    """Aggregate compliance findings for an org/entity/portefeuille/site into a summary."""
+    site_ids = _resolve_site_ids(db, org_id, entity_id, site_id, portefeuille_id=portefeuille_id)
+
+    _empty = {
+        "total_sites": 0,
+        "sites_ok": 0,
+        "sites_nok": 0,
+        "sites_unknown": 0,
+        "pct_ok": 0,
+        "findings_by_regulation": {},
+        "top_actions": [],
+    }
 
     if not site_ids:
-        return {
-            "total_sites": 0,
-            "sites_ok": 0,
-            "sites_nok": 0,
-            "sites_unknown": 0,
-            "pct_ok": 0,
-            "findings_by_regulation": {},
-            "top_actions": [],
-        }
+        return {**_empty, "empty_reason": "NO_SITES"}
 
     all_findings = (
         db.query(ComplianceFinding)
@@ -519,7 +538,7 @@ def get_summary(db: Session, org_id: int) -> dict:
         if len(top_actions) >= 5:
             break
 
-    return {
+    result = {
         "total_sites": len(site_ids),
         "sites_ok": sites_ok,
         "sites_nok": sites_nok,
@@ -529,18 +548,21 @@ def get_summary(db: Session, org_id: int) -> dict:
         "top_actions": top_actions,
     }
 
+    # Empty reason codes
+    if not all_findings:
+        result["empty_reason"] = "NO_EVALUATION"
+    elif sites_nok == 0 and sites_unknown == 0:
+        result["empty_reason"] = "ALL_COMPLIANT"
+
+    return result
+
 
 def get_sites_findings(db: Session, org_id: int, regulation: str = None,
-                       status: str = None, severity: str = None) -> List[dict]:
+                       status: str = None, severity: str = None,
+                       entity_id: int = None, site_id: int = None,
+                       portefeuille_id: int = None) -> List[dict]:
     """Return per-site findings list with filters."""
-    site_ids = [
-        row[0] for row in
-        db.query(Site.id)
-        .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
-        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
-        .filter(EntiteJuridique.organisation_id == org_id)
-        .all()
-    ]
+    site_ids = _resolve_site_ids(db, org_id, entity_id, site_id, portefeuille_id=portefeuille_id)
 
     if not site_ids:
         return []
@@ -563,7 +585,7 @@ def get_sites_findings(db: Session, org_id: int, regulation: str = None,
             sites_map[f.site_id] = {
                 "site_id": f.site_id,
                 "site_nom": site.nom if site else "?",
-                "site_type": site.type.value if site else "?",
+                "site_type": site.type.value if site and site.type else "?",
                 "findings": [],
             }
         actions = json.loads(f.recommended_actions_json) if f.recommended_actions_json else []
@@ -579,3 +601,127 @@ def get_sites_findings(db: Session, org_id: int, regulation: str = None,
         })
 
     return list(sites_map.values())
+
+
+# ---------------------------------------------------------------------------
+# BACS v2 enrichment (per-site assessment data)
+# ---------------------------------------------------------------------------
+
+def _enrich_bacs_meta(db: Session, site_ids: list) -> dict:
+    """Fetch BACS v2 assessment data for sites that have BacsAssets."""
+    from services.bacs_engine import compute_putile
+    meta = {}
+    assets = db.query(BacsAsset).filter(BacsAsset.site_id.in_(site_ids)).all()
+    for asset in assets:
+        latest = (
+            db.query(BacsAssessment)
+            .filter(BacsAssessment.asset_id == asset.id)
+            .order_by(BacsAssessment.assessed_at.desc())
+            .first()
+        )
+        if not latest:
+            continue
+        entry = {
+            "applicable": latest.is_obligated,
+            "tier": f"TIER1_{latest.threshold_applied}" if latest.threshold_applied else None,
+            "threshold_kw": latest.threshold_applied,
+            "deadline": latest.deadline_date.isoformat() if latest.deadline_date else None,
+            "putile_kw": None,
+            "tri_exemption": latest.tri_exemption_possible,
+            "tri_years": latest.tri_years,
+            "compliance_score": latest.compliance_score,
+            "confidence_score": latest.confidence_score,
+            "engine_version": latest.engine_version,
+        }
+        # Get putile from CVC systems
+        systems = db.query(BacsCvcSystem).filter(BacsCvcSystem.asset_id == asset.id).all()
+        if systems:
+            putile = compute_putile(systems)
+            entry["putile_kw"] = putile.get("putile_kw")
+        meta[asset.site_id] = entry
+    return meta
+
+
+# ---------------------------------------------------------------------------
+# Bundle (single-request for Conformite cockpit)
+# ---------------------------------------------------------------------------
+
+_EMPTY_MESSAGES = {
+    "NO_SITES": "Aucun site dans le perimetre selectionne.",
+    "NO_SITES_IN_SCOPE": "Aucun site dans le perimetre selectionne.",
+    "NO_EVALUATION": "L'evaluation n'a pas encore ete lancee. Cliquez Re-evaluer.",
+    "NOT_EVALUATED_YET": "L'evaluation n'a pas encore ete lancee. Cliquez Re-evaluer.",
+    "ALL_COMPLIANT": "Tous les sites sont conformes.",
+    "DATA_BLOCKED": "Erreur d'acces aux donnees de conformite.",
+}
+
+
+def get_compliance_bundle(
+    db: Session,
+    org_id: int,
+    entity_id: int = None,
+    site_id: int = None,
+    portefeuille_id: int = None,
+    regulation: str = None,
+    status: str = None,
+    severity: str = None,
+) -> dict:
+    """Single-request bundle for Conformite cockpit. org_id REQUIRED."""
+    from datetime import datetime as _dt
+    trace_id = str(uuid.uuid4())[:12]
+    try:
+        site_ids_resolved = _resolve_site_ids(db, org_id, entity_id, site_id,
+                                              portefeuille_id=portefeuille_id)
+        summary = get_summary(db, org_id, entity_id=entity_id, site_id=site_id,
+                              portefeuille_id=portefeuille_id)
+        sites = get_sites_findings(
+            db, org_id, regulation, status, severity,
+            entity_id=entity_id, site_id=site_id,
+            portefeuille_id=portefeuille_id,
+        )
+        bacs_meta = _enrich_bacs_meta(db, site_ids_resolved) if site_ids_resolved else {}
+    except (OperationalError, ProgrammingError) as exc:
+        msg = str(exc)
+        logger.error("bundle trace_id=%s DB error: %s", trace_id, msg)
+        is_schema = "no such column" in msg or "no such table" in msg
+        code = "DB_SCHEMA_MISMATCH" if is_schema else "DATA_BLOCKED"
+        return {
+            "scope": {"org_id": org_id, "entity_id": entity_id,
+                      "site_id": site_id, "portefeuille_id": portefeuille_id,
+                      "site_count": 0},
+            "summary": {"total_sites": 0, "sites_ok": 0, "sites_nok": 0,
+                         "sites_unknown": 0, "pct_ok": 0,
+                         "findings_by_regulation": {}, "top_actions": []},
+            "sites": [],
+            "bacs_v2": {},
+            "meta": {
+                "generated_at": _dt.utcnow().isoformat(),
+                "engine_versions": {"compliance": "1.0", "bacs": "bacs_v2.0"},
+            },
+            "empty_reason_code": code,
+            "empty_reason_message": _EMPTY_MESSAGES.get(code, msg),
+            "error_code": code,
+            "hint": "run_reset_db" if is_schema else None,
+            "trace_id": trace_id,
+        }
+
+    code = summary.get("empty_reason")
+    return {
+        "scope": {
+            "org_id": org_id,
+            "entity_id": entity_id,
+            "site_id": site_id,
+            "portefeuille_id": portefeuille_id,
+            "site_count": summary.get("total_sites", 0),
+        },
+        "summary": summary,
+        "sites": sites,
+        "bacs_v2": bacs_meta,
+        "meta": {
+            "generated_at": _dt.utcnow().isoformat(),
+            "engine_versions": {"compliance": "1.0", "bacs": "bacs_v2.0"},
+        },
+        "empty_reason_code": code,
+        "empty_reason_message": _EMPTY_MESSAGES.get(code),
+        "trace_id": trace_id,
+    }

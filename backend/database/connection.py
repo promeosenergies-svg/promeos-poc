@@ -1,39 +1,51 @@
 """
 PROMEOS - Configuration de la base de données
-Connexion SQLite pour gestion des 120 sites
+Supports SQLite (default, dev) and PostgreSQL (production).
+Reads DATABASE_URL from environment (.env or system env var).
 """
+import os
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-import os
 
-# Chemin vers la base SQLite
+load_dotenv()  # Load .env file if present
+
+# Database URL: env var > .env > SQLite fallback
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATABASE_PATH = os.path.join(BASE_DIR, "data", "promeos.db")
+_DEFAULT_SQLITE_URL = f"sqlite:///{os.path.join(BASE_DIR, 'data', 'promeos.db')}"
 
-# Créer le dossier data s'il n'existe pas
-os.makedirs(os.path.dirname(DATABASE_PATH), exist_ok=True)
+DATABASE_URL = os.environ.get("DATABASE_URL", _DEFAULT_SQLITE_URL)
 
-# URL de connexion SQLite
-DATABASE_URL = f"sqlite:///{DATABASE_PATH}"
+# Ensure data dir exists for SQLite
+_is_sqlite = DATABASE_URL.startswith("sqlite")
+if _is_sqlite:
+    db_path = DATABASE_URL.replace("sqlite:///", "")
+    os.makedirs(os.path.dirname(os.path.abspath(db_path)), exist_ok=True)
 
-print(f"[DB] Base de donnees PROMEOS : {DATABASE_PATH}")
+print(f"[DB] Base de donnees PROMEOS : {DATABASE_URL.split('://')[0]}://...")
 
-# Engine SQLAlchemy
-engine = create_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False},  # Nécessaire pour SQLite
-    echo=False  # Mettre True pour voir les requêtes SQL en dev
-)
+# Engine configuration — database-specific
+_engine_kwargs = {
+    "echo": False,
+}
+
+if _is_sqlite:
+    _engine_kwargs["connect_args"] = {"check_same_thread": False}
+else:
+    # PostgreSQL connection pool settings
+    _engine_kwargs["pool_size"] = int(os.environ.get("DB_POOL_SIZE", "5"))
+    _engine_kwargs["max_overflow"] = int(os.environ.get("DB_MAX_OVERFLOW", "10"))
+    _engine_kwargs["pool_pre_ping"] = True
+
+engine = create_engine(DATABASE_URL, **_engine_kwargs)
 
 # Session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+
 # Dependency pour FastAPI
 def get_db():
-    """
-    Générateur de session de base de données
-    À utiliser comme dépendance FastAPI
-    """
+    """Générateur de session de base de données — dépendance FastAPI."""
     db = SessionLocal()
     try:
         yield db

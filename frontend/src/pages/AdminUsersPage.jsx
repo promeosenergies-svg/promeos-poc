@@ -2,13 +2,16 @@ import { useState, useEffect } from 'react';
 import { Users, Shield, Search, Eye, MapPin, Building2, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
 import { getAdminUsers, getEffectiveAccess, setAdminScopes } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { PageShell, Button, EmptyState } from '../ui';
+import { SkeletonCard } from '../ui/Skeleton';
+import { useToast } from '../ui/ToastProvider';
 
 const ROLE_LABELS = {
   dg_owner: 'DG / Owner',
   dsi_admin: 'DSI / Admin',
   daf: 'DAF',
   acheteur: 'Acheteur',
-  resp_conformite: 'Resp. Conformite',
+  resp_conformite: 'Resp. Conformité',
   energy_manager: 'Energy Manager',
   resp_immobilier: 'Resp. Immobilier',
   resp_site: 'Resp. Site',
@@ -119,12 +122,13 @@ export default function AdminUsersPage() {
   const [search, setSearch] = useState('');
   const [expandedUser, setExpandedUser] = useState(null);
   const { hasPermission } = useAuth();
+  const { toast } = useToast();
 
   const load = () => {
     setLoading(true);
     getAdminUsers()
       .then(setUsers)
-      .catch(() => {})
+      .catch(() => toast('Erreur lors du chargement des utilisateurs', 'error'))
       .finally(() => setLoading(false));
   };
 
@@ -136,31 +140,23 @@ export default function AdminUsersPage() {
 
   if (!hasPermission('admin')) {
     return (
-      <div className="p-8 text-center">
-        <Shield size={48} className="mx-auto text-gray-300 mb-4" />
-        <h2 className="text-lg font-semibold text-gray-600">Acces refuse</h2>
-        <p className="text-sm text-gray-400 mt-1">Vous n'avez pas les droits d'administration.</p>
-      </div>
+      <PageShell icon={Users} title="Utilisateurs">
+        <EmptyState icon={Shield} title="Acces refuse" text="Vous n'avez pas les droits d'administration." />
+      </PageShell>
     );
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Users size={24} className="text-blue-600" />
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Utilisateurs</h1>
-            <p className="text-sm text-gray-500 mt-0.5">
-              {filtered.length} utilisateur{filtered.length > 1 ? 's' : ''} — Gestion des comptes, roles et perimetres
-            </p>
-          </div>
-        </div>
-        <button onClick={load} className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-gray-200 rounded-lg hover:bg-gray-50">
-          <RefreshCw size={14} /> Actualiser
-        </button>
-      </div>
+    <PageShell
+      icon={Users}
+      title="Utilisateurs"
+      subtitle={`${filtered.length} utilisateur${filtered.length > 1 ? 's' : ''} — Gestion des comptes, roles et perimetres`}
+      actions={
+        <Button variant="secondary" onClick={load}>
+          <RefreshCw size={14} className="mr-1.5" /> Actualiser
+        </Button>
+      }
+    >
 
       {/* Search */}
       <div className="relative max-w-sm">
@@ -193,7 +189,7 @@ export default function AdminUsersPage() {
               <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">Chargement...</td></tr>
             ) : filtered.length === 0 ? (
               <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">
-                {search ? 'Aucun resultat pour cette recherche' : 'Aucun utilisateur'}
+                {search ? 'Aucun résultat pour cette recherche' : 'Aucun utilisateur'}
               </td></tr>
             ) : (
               filtered.map((u) => (
@@ -255,6 +251,6 @@ export default function AdminUsersPage() {
           </tbody>
         </table>
       </div>
-    </div>
+    </PageShell>
   );
 }

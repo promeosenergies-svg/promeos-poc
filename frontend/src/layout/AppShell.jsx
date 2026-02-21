@@ -1,18 +1,28 @@
-import { useEffect, useState, useRef } from 'react';
+/**
+ * PROMEOS — AppShell Layout (Rail + Panel)
+ * Sidebar (Rail+Panel) + Header + Content with module-tinted header bands.
+ */
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
-import { Search, LogOut, ChevronDown, Building2, Shield } from 'lucide-react';
+import { Search, LogOut, ChevronDown, Building2, Command } from 'lucide-react';
 import Sidebar from './Sidebar';
 import Breadcrumb from './Breadcrumb';
 import ScopeSwitcher from './ScopeSwitcher';
+import DevPanel from './DevPanel';
+import CommandPalette from '../ui/CommandPalette';
+import { ToastProvider } from '../ui/ToastProvider';
+import { Toggle } from '../ui';
 import { trackRouteChange } from '../services/tracker';
 import { useAuth } from '../contexts/AuthContext';
+import { useExpertMode } from '../contexts/ExpertModeContext';
+import { resolveModule, MODULE_TINTS } from './NavRegistry';
 
 const ROLE_LABELS = {
   dg_owner: 'DG / Owner',
   dsi_admin: 'DSI / Admin',
   daf: 'DAF',
   acheteur: 'Acheteur',
-  resp_conformite: 'Resp. Conformité',
+  resp_conformite: 'Resp. Conformite',
   energy_manager: 'Energy Manager',
   resp_immobilier: 'Resp. Immobilier',
   resp_site: 'Resp. Site',
@@ -62,7 +72,6 @@ function UserMenu() {
 
       {open && (
         <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-          {/* User info */}
           <div className="px-4 py-2 border-b border-gray-100">
             <p className="text-sm font-medium text-gray-800">{user.prenom} {user.nom}</p>
             <p className="text-xs text-gray-400">{user.email}</p>
@@ -71,16 +80,14 @@ function UserMenu() {
             </span>
           </div>
 
-          {/* Current org */}
           <div className="px-4 py-2 border-b border-gray-100">
             <p className="text-[10px] uppercase text-gray-400 font-semibold tracking-wide">Organisation</p>
             <div className="flex items-center gap-2 mt-1">
               <Building2 size={14} className="text-gray-400" />
-              <span className="text-sm text-gray-700">{org?.nom || '—'}</span>
+              <span className="text-sm text-gray-700">{org?.nom || '\u2014'}</span>
             </div>
           </div>
 
-          {/* Switch org (if multi-org) */}
           {orgs && orgs.length > 1 && (
             <div className="px-4 py-2 border-b border-gray-100">
               <p className="text-[10px] uppercase text-gray-400 font-semibold tracking-wide mb-1">Changer d'org</p>
@@ -96,13 +103,12 @@ function UserMenu() {
             </div>
           )}
 
-          {/* Logout */}
           <button
             onClick={() => { logout(); setOpen(false); }}
             className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition"
           >
             <LogOut size={14} />
-            Déconnexion
+            Deconnexion
           </button>
         </div>
       )}
@@ -112,17 +118,35 @@ function UserMenu() {
 
 export default function AppShell() {
   const location = useLocation();
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const { isExpert, toggleExpert } = useExpertMode();
 
   useEffect(() => {
     trackRouteChange(location.pathname);
   }, [location.pathname]);
 
+  // Global Ctrl+K shortcut
+  useEffect(() => {
+    function onKey(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setPaletteOpen((prev) => !prev);
+      }
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
+
+  // Module-tinted header band
+  const currentModule = useMemo(() => resolveModule(location.pathname), [location.pathname]);
+  const headerBandClass = MODULE_TINTS[currentModule] || MODULE_TINTS.cockpit;
+
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50/80">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Header */}
-        <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between sticky top-0 z-10">
+        {/* Header — glass surface */}
+        <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/70 px-6 py-3 flex items-center justify-between sticky top-0 z-10">
           <div className="flex items-center gap-4">
             <Breadcrumb />
             <div className="relative">
@@ -130,24 +154,47 @@ export default function AppShell() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <div className="relative">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Rechercher..."
-                className="pl-9 pr-4 py-2 w-52 bg-gray-50 border border-gray-200 rounded-lg text-sm
-                  placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
-              />
-            </div>
+            {/* Command Palette trigger */}
+            <button
+              onClick={() => setPaletteOpen(true)}
+              className="flex items-center gap-2 px-3 py-2 bg-white/60 border border-slate-200/80 rounded-lg text-sm text-slate-400
+                hover:bg-white hover:text-slate-600 hover:border-slate-300 transition-all duration-150 shadow-sm"
+            >
+              <Search size={14} />
+              <span className="hidden sm:inline">Rechercher...</span>
+              <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono bg-slate-50 border border-slate-200/80 rounded ml-2">
+                <Command size={10} className="mr-0.5" />K
+              </kbd>
+            </button>
+
+            {/* Expert Mode toggle */}
+            <Toggle
+              checked={isExpert}
+              onChange={toggleExpert}
+              label="Expert"
+              size="sm"
+            />
+
             <UserMenu />
           </div>
         </header>
 
+        {/* Module-tinted header band — subtle depth glow */}
+        <div className={`h-24 bg-gradient-to-b ${headerBandClass} -mb-24 pointer-events-none`} aria-hidden="true" />
+
         {/* Content */}
         <main className="flex-1 overflow-y-auto">
-          <Outlet />
+          <ToastProvider>
+            <Outlet />
+          </ToastProvider>
         </main>
       </div>
+
+      {/* Command Palette overlay */}
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+
+      {/* Dev Panel — dev-only, visible when ?debug */}
+      <DevPanel />
     </div>
   );
 }

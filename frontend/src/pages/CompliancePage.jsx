@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldCheck, AlertTriangle, XCircle, HelpCircle, RefreshCw, Filter, ChevronDown, ChevronRight } from 'lucide-react';
 import { getComplianceSummary, getComplianceSites, recomputeComplianceRules } from '../services/api';
+import { useToast } from '../ui/ToastProvider';
 
 const STATUS_CONFIG = {
   OK: { label: 'Conforme', color: 'text-green-700 bg-green-100', icon: ShieldCheck },
@@ -172,6 +173,7 @@ function SiteRow({ site }) {
 }
 
 export default function CompliancePage() {
+  const { toast } = useToast();
   const [summary, setSummary] = useState(null);
   const [sites, setSites] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -193,7 +195,7 @@ export default function CompliancePage() {
     ]).then(([s, st]) => {
       setSummary(s);
       setSites(st);
-    }).catch(() => {})
+    }).catch(() => toast('Erreur lors du chargement de la conformité', 'error'))
       .finally(() => setLoading(false));
   };
 
@@ -205,7 +207,7 @@ export default function CompliancePage() {
       await recomputeComplianceRules();
       loadData();
     } catch {
-      // silent
+      toast('Erreur lors du recalcul des regles', 'error');
     } finally {
       setRecomputing(false);
     }
@@ -217,10 +219,10 @@ export default function CompliancePage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <ShieldCheck size={24} className="text-blue-600" />
-            Conformite reglementaire
+            Conformité réglementaire
           </h1>
           <p className="text-gray-500 text-sm mt-1">
-            Evaluation multi-sites — Decret Tertiaire, BACS, Loi APER
+            Évaluation multi-sites — Décret Tertiaire, BACS, Loi APER
           </p>
         </div>
         <button
@@ -229,7 +231,7 @@ export default function CompliancePage() {
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50"
         >
           <RefreshCw size={16} className={recomputing ? 'animate-spin' : ''} />
-          {recomputing ? 'Evaluation...' : 'Re-evaluer'}
+          {recomputing ? 'Évaluation...' : 'Réévaluer'}
         </button>
       </div>
 
@@ -286,9 +288,9 @@ export default function CompliancePage() {
             {sites.length === 0 ? (
               <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
                 <ShieldCheck size={40} className="mx-auto mb-3 text-gray-300" />
-                <p>Aucun finding.</p>
+                <p>Aucun constat.</p>
                 <p className="text-sm mt-1">
-                  Cliquez "Re-evaluer" pour lancer l'evaluation ou{' '}
+                  Cliquez « Réévaluer » pour lancer l'évaluation ou{' '}
                   <Link to="/import" className="text-blue-600 hover:underline">importez des sites</Link>.
                 </p>
               </div>

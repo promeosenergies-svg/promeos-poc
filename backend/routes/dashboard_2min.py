@@ -4,26 +4,43 @@ GET /api/dashboard/2min - Vue synthetique en 3 blocs pour un prospect
 """
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from database import get_db
 from middleware.auth import get_optional_auth, AuthContext
+from services.scope_utils import resolve_org_id
 from models import (
+    Portefeuille, EntiteJuridique,
     Organisation, Site, Obligation, Compteur, ComplianceFinding,
     ConsumptionInsight, StatutConformite, TypeObligation,
     EnergyInvoice, BillingInsight, BillingInvoiceStatus,
     PurchaseScenarioResult, PurchaseRecoStatus,
     ActionItem, ActionStatus,
     NotificationEvent, NotificationStatus, NotificationSeverity,
+    not_deleted,
 )
 
 router = APIRouter(prefix="/api/dashboard", tags=["Dashboard 2min"])
 
 
+def _sites_for_org_query(db: Session, org_id: int):
+    """Base query: non-deleted sites scoped to org_id via join chain."""
+    return (
+        not_deleted(db.query(Site), Site)
+        .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
+        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+        .filter(EntiteJuridique.organisation_id == org_id)
+    )
+
+
 @router.get("/2min")
-def get_dashboard_2min(db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
+def get_dashboard_2min(
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """
     Retourne un JSON minimal pour le cockpit "2 minutes":
     - conformite_status: etat global conformite
@@ -31,11 +48,16 @@ def get_dashboard_2min(db: Session = Depends(get_db), auth: Optional[AuthContext
     - action_1: action prioritaire (#1)
     - organisation: nom + type
     - completude: % de remplissage du patrimoine
+
+    Scope: X-Org-Id header > auth.org_id > last-created org (fallback).
     """
-    if auth:
-        org = db.query(Organisation).filter(Organisation.id == auth.org_id).first()
-    else:
-        org = db.query(Organisation).first()
+    # DEMO_MODE-aware scope resolution (auth > header > demo fallback > 401)
+    try:
+        effective_org_id = resolve_org_id(request, auth, db)
+        org = db.query(Organisation).filter(Organisation.id == effective_org_id).first()
+    except HTTPException:
+        org = None
+
     if not org:
         return {
             "has_data": False,
@@ -46,13 +68,22 @@ def get_dashboard_2min(db: Session = Depends(get_db), auth: Optional[AuthContext
             "completude": _empty_completude(),
         }
 
-    # Stats sites
-    total_sites = db.query(Site).count()
-    sites_actifs = db.query(Site).filter(Site.actif == True).count()
-    total_compteurs = db.query(Compteur).count()
+    # Stats sites — scoped to org
+    q_sites = _sites_for_org_query(db, org.id)
+    total_sites = q_sites.count()
+    sites_actifs = q_sites.filter(Site.actif == True).count()
+    site_ids = [s.id for s in q_sites.with_entities(Site.id).all()]
+    total_compteurs = (
+        not_deleted(db.query(Compteur), Compteur)
+        .filter(Compteur.site_id.in_(site_ids))
+        .count()
+    ) if site_ids else 0
 
-    # Conformite globale
-    obligations = db.query(Obligation).all()
+    # Conformite globale — scoped to org's sites
+    obligations = (
+        db.query(Obligation).filter(Obligation.site_id.in_(site_ids)).all()
+        if site_ids else []
+    )
     if obligations:
         nb_conforme = sum(1 for o in obligations if o.statut == StatutConformite.CONFORME)
         nb_non_conforme = sum(1 for o in obligations if o.statut == StatutConformite.NON_CONFORME)
@@ -90,10 +121,22 @@ def get_dashboard_2min(db: Session = Depends(get_db), auth: Optional[AuthContext
             "non_conformes": 0,
         }
 
-    # Risque financier (base: obligations) + pertes estimees (insights conso) + billing
-    risque_total = db.query(func.sum(Site.risque_financier_euro)).scalar() or 0
-    pertes_conso = db.query(func.sum(ConsumptionInsight.estimated_loss_eur)).scalar() or 0
-    pertes_billing = db.query(func.sum(BillingInsight.estimated_loss_eur)).scalar() or 0
+    # Risque financier — scoped to org's sites
+    risque_total = (
+        _sites_for_org_query(db, org.id)
+        .with_entities(func.sum(Site.risque_financier_euro))
+        .scalar() or 0
+    )
+    pertes_conso = (
+        db.query(func.sum(ConsumptionInsight.estimated_loss_eur))
+        .filter(ConsumptionInsight.site_id.in_(site_ids))
+        .scalar() or 0
+    ) if site_ids else 0
+    pertes_billing = (
+        db.query(func.sum(BillingInsight.estimated_loss_eur))
+        .filter(BillingInsight.site_id.in_(site_ids))
+        .scalar() or 0
+    ) if site_ids else 0
 
     # Action prioritaire #1
     action_1 = _get_top_action(db, obligations)
@@ -101,8 +144,11 @@ def get_dashboard_2min(db: Session = Depends(get_db), auth: Optional[AuthContext
     # Completude du patrimoine
     completude = _compute_completude(total_sites, total_compteurs, org)
 
-    # ComplianceFinding-based summary (Sprint 4)
-    findings = db.query(ComplianceFinding).all()
+    # ComplianceFinding-based summary (Sprint 4) — scoped
+    findings = (
+        db.query(ComplianceFinding).filter(ComplianceFinding.site_id.in_(site_ids)).all()
+        if site_ids else []
+    )
     nok_findings = [f for f in findings if f.status == "NOK"]
     unknown_findings = [f for f in findings if f.status == "UNKNOWN"]
 
@@ -141,10 +187,13 @@ def get_dashboard_2min(db: Session = Depends(get_db), auth: Optional[AuthContext
         import json as _json
         top_insight = (
             db.query(ConsumptionInsight)
-            .filter(ConsumptionInsight.estimated_loss_eur > 0)
+            .filter(
+                ConsumptionInsight.site_id.in_(site_ids),
+                ConsumptionInsight.estimated_loss_eur > 0,
+            )
             .order_by(ConsumptionInsight.estimated_loss_eur.desc())
             .first()
-        )
+        ) if site_ids else None
         if top_insight and top_insight.recommended_actions_json:
             rec = _json.loads(top_insight.recommended_actions_json)
             if rec:
@@ -176,8 +225,8 @@ def get_dashboard_2min(db: Session = Depends(get_db), auth: Optional[AuthContext
             "total_compteurs": total_compteurs,
             "total_obligations": len(obligations),
         },
-        "billing": _billing_summary(db),
-        "achat": _purchase_summary(db),
+        "billing": _billing_summary(db, site_ids),
+        "achat": _purchase_summary(db, site_ids),
         "action_hub": _action_hub_summary(db, org.id),
         "alerts": _notifications_summary(db, org.id),
     }
@@ -248,20 +297,27 @@ def _empty_completude() -> dict:
     }
 
 
-def _purchase_summary(db: Session) -> dict:
-    """Achat energie summary for dashboard 2min. V1.1: +gain_potentiel_eur, +prochain_renouvellement."""
+def _purchase_summary(db: Session, site_ids: list) -> dict:
+    """Achat energie summary for dashboard 2min. Scoped to site_ids."""
     from datetime import date as _date
-    from models import EnergyContract
+    from models import EnergyContract, PurchaseAssumptionSet
 
-    total_results = db.query(PurchaseScenarioResult).count()
+    if not site_ids:
+        return None
+
+    q_base = (
+        db.query(PurchaseScenarioResult)
+        .join(PurchaseAssumptionSet, PurchaseAssumptionSet.id == PurchaseScenarioResult.assumption_set_id)
+        .filter(PurchaseAssumptionSet.site_id.in_(site_ids))
+    )
+
+    total_results = q_base.count()
     if total_results == 0:
         return None
 
-    recommended = (
-        db.query(PurchaseScenarioResult)
-        .filter(PurchaseScenarioResult.is_recommended == True)
-        .first()
-    )
+    recommended = q_base.filter(
+        PurchaseScenarioResult.is_recommended == True
+    ).first()
 
     base = {
         "total_scenarios": total_results,
@@ -278,10 +334,12 @@ def _purchase_summary(db: Session) -> dict:
             "reco_status": recommended.reco_status.value if recommended.reco_status else None,
         }
 
-    # V1.1: gain_potentiel_eur
+    # V1.1: gain_potentiel_eur — scoped
     draft_recos = (
         db.query(PurchaseScenarioResult)
+        .join(PurchaseAssumptionSet, PurchaseAssumptionSet.id == PurchaseScenarioResult.assumption_set_id)
         .filter(
+            PurchaseAssumptionSet.site_id.in_(site_ids),
             PurchaseScenarioResult.is_recommended == True,
             PurchaseScenarioResult.reco_status == PurchaseRecoStatus.DRAFT,
         )
@@ -294,11 +352,15 @@ def _purchase_summary(db: Session) -> dict:
     )
     base["gain_potentiel_eur"] = round(gain, 2)
 
-    # V1.1: prochain_renouvellement
+    # V1.1: prochain_renouvellement — scoped
     today = _date.today()
     next_contract = (
         db.query(EnergyContract)
-        .filter(EnergyContract.end_date.isnot(None), EnergyContract.end_date >= today)
+        .filter(
+            EnergyContract.site_id.in_(site_ids),
+            EnergyContract.end_date.isnot(None),
+            EnergyContract.end_date >= today,
+        )
         .order_by(EnergyContract.end_date.asc())
         .first()
     )
@@ -317,14 +379,32 @@ def _purchase_summary(db: Session) -> dict:
     return base
 
 
-def _billing_summary(db: Session) -> dict:
-    """Billing intelligence summary for dashboard 2min."""
-    total_invoices = db.query(EnergyInvoice).count()
+def _billing_summary(db: Session, site_ids: list) -> dict:
+    """Billing intelligence summary for dashboard 2min. Scoped to site_ids."""
+    if not site_ids:
+        return None
+    total_invoices = (
+        db.query(EnergyInvoice)
+        .filter(EnergyInvoice.site_id.in_(site_ids))
+        .count()
+    )
     if total_invoices == 0:
         return None
-    total_eur = db.query(func.sum(EnergyInvoice.total_eur)).scalar() or 0
-    anomalies_count = db.query(BillingInsight).count()
-    total_loss = db.query(func.sum(BillingInsight.estimated_loss_eur)).scalar() or 0
+    total_eur = (
+        db.query(func.sum(EnergyInvoice.total_eur))
+        .filter(EnergyInvoice.site_id.in_(site_ids))
+        .scalar() or 0
+    )
+    anomalies_count = (
+        db.query(BillingInsight)
+        .filter(BillingInsight.site_id.in_(site_ids))
+        .count()
+    )
+    total_loss = (
+        db.query(func.sum(BillingInsight.estimated_loss_eur))
+        .filter(BillingInsight.site_id.in_(site_ids))
+        .scalar() or 0
+    )
     return {
         "total_invoices": total_invoices,
         "total_eur": round(total_eur, 2),

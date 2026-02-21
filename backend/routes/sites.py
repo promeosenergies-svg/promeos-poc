@@ -1,14 +1,15 @@
 """
 PROMEOS - Routes API pour les Sites
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from database import get_db
-from models import Site, Compteur, Alerte, Consommation, Obligation, Evidence, Batiment, StatutConformite, StatutEvidence, TypeObligation
+from models import Site, Portefeuille, EntiteJuridique, Compteur, Alerte, Consommation, Obligation, Evidence, Batiment, StatutConformite, StatutEvidence, TypeObligation, not_deleted
 from routes.schemas import SiteResponse, SiteListResponse, SiteStats, SiteComplianceResponse, BatimentResponse
 from services.compliance_engine import compute_action_recommandee, _ACTION_TEMPLATES
 from middleware.auth import get_optional_auth, AuthContext
 from services.iam_scope import check_site_access, apply_scope_filter
+from services.scope_utils import resolve_org_id
 from pydantic import BaseModel
 from typing import List, Optional
 from sqlalchemy import func
@@ -71,31 +72,44 @@ def create_site(req: SiteCreateRequest, db: Session = Depends(get_db)):
 
 @router.get("", response_model=SiteListResponse)
 def get_sites(
+    request: Request,
     skip: int = 0,
     limit: int = 100,
+    org_id: Optional[int] = None,
     ville: Optional[str] = None,
     type: Optional[str] = None,
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """
-    Liste tous les sites PROMEOS avec pagination et filtres
+    Liste les sites PROMEOS avec pagination et filtres.
+    Scope: org_id query param OR X-Org-Id header (header takes priority when both present).
     """
-    query = db.query(Site)
+    query = not_deleted(db.query(Site), Site)
 
-    # Scope filtering
+    # DEMO_MODE-aware scope resolution (auth > org_id param > header > demo fallback > 401)
+    effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
+
+    query = (
+        query
+        .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
+        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+        .filter(EntiteJuridique.organisation_id == effective_org_id)
+    )
+
+    # Site-level scope: restrict to accessible sites when auth has site_ids
     if auth and auth.site_ids is not None:
         query = query.filter(Site.id.in_(auth.site_ids))
 
-    # Filtres
+    # Additional filters
     if ville:
         query = query.filter(Site.ville.ilike(f"%{ville}%"))
     if type:
         query = query.filter(Site.type == type)
-    
+
     total = query.count()
     sites = query.offset(skip).limit(limit).all()
-    
+
     return {
         "total": total,
         "sites": sites
@@ -107,11 +121,11 @@ def get_site(site_id: int, db: Session = Depends(get_db), auth: Optional[AuthCon
     Récupère les détails d'un site spécifique
     """
     check_site_access(auth, site_id)
-    site = db.query(Site).filter(Site.id == site_id).first()
-    
+    site = not_deleted(db.query(Site), Site).filter(Site.id == site_id).first()
+
     if not site:
         raise HTTPException(status_code=404, detail="Site non trouvé")
-    
+
     return site
 
 @router.get("/{site_id}/stats", response_model=SiteStats)

@@ -217,7 +217,7 @@ def recompute_site(db: Session, site_id: int) -> dict:
     evidences = db.query(Evidence).filter(Evidence.site_id == site_id).all()
     snapshot = compute_site_snapshot(obligations, evidences)
     _apply_snapshot(site, snapshot)
-    db.commit()
+    db.flush()
     return snapshot
 
 

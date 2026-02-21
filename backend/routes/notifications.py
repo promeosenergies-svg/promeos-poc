@@ -5,7 +5,7 @@ PROMEOS — Notifications Routes (Sprint 10.2)
 import json
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -18,6 +18,7 @@ from models import (
 from services.notification_service import sync_notifications, _count_summary
 from middleware.auth import get_optional_auth, AuthContext
 from services.iam_scope import apply_scope_filter
+from services.scope_utils import resolve_org_id
 
 router = APIRouter(prefix="/api/notifications", tags=["Notifications"])
 
@@ -40,15 +41,9 @@ class PreferencePatch(BaseModel):
 # Helpers
 # ========================================
 
-def _resolve_org_id(db: Session, org_id: Optional[int], auth: Optional[AuthContext] = None) -> int:
-    if auth:
-        return auth.org_id
-    if org_id is not None:
-        return org_id
-    org = db.query(Organisation).first()
-    if not org:
-        raise HTTPException(status_code=400, detail="Aucune organisation trouvee.")
-    return org.id
+def _resolve_org(request: Request, auth: Optional[AuthContext], db: Session, org_id: Optional[int] = None) -> int:
+    """Delegate to centralized resolve_org_id (DEMO_MODE-aware)."""
+    return resolve_org_id(request, auth, db, org_id_override=org_id)
 
 
 def _serialize_event(e: NotificationEvent) -> dict:
@@ -76,17 +71,20 @@ def _serialize_event(e: NotificationEvent) -> dict:
 
 @router.post("/sync")
 def sync_notifs(
+    request: Request,
     org_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """POST /api/notifications/sync — Sync alerts from 5 briques."""
-    oid = _resolve_org_id(db, org_id)
+    oid = _resolve_org(request, auth, db, org_id)
     result = sync_notifications(db, oid, triggered_by="api")
     return {"status": "ok", **result}
 
 
 @router.get("/list")
 def list_notifs(
+    request: Request,
     org_id: Optional[int] = Query(None),
     severity: Optional[str] = Query(None),
     status: Optional[str] = Query(None),
@@ -96,7 +94,7 @@ def list_notifs(
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """GET /api/notifications/list — Filterable list."""
-    oid = _resolve_org_id(db, org_id, auth)
+    oid = _resolve_org(request, auth, db, org_id)
 
     q = db.query(NotificationEvent).filter(NotificationEvent.org_id == oid)
     q = apply_scope_filter(q, auth, NotificationEvent.site_id)
@@ -129,11 +127,13 @@ def list_notifs(
 
 @router.get("/summary")
 def notif_summary(
+    request: Request,
     org_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """GET /api/notifications/summary — Counts by severity + status."""
-    oid = _resolve_org_id(db, org_id)
+    oid = _resolve_org(request, auth, db, org_id)
     return _count_summary(db, oid)
 
 
@@ -161,11 +161,13 @@ def patch_notif(
 
 @router.get("/preferences")
 def get_preferences(
+    request: Request,
     org_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """GET /api/notifications/preferences — Get org notification preferences."""
-    oid = _resolve_org_id(db, org_id)
+    oid = _resolve_org(request, auth, db, org_id)
     pref = db.query(NotificationPreference).filter(NotificationPreference.org_id == oid).first()
 
     if not pref:
@@ -193,12 +195,14 @@ def get_preferences(
 
 @router.put("/preferences")
 def update_preferences(
+    request: Request,
     data: PreferencePatch,
     org_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """PUT /api/notifications/preferences — Update org notification preferences."""
-    oid = _resolve_org_id(db, org_id)
+    oid = _resolve_org(request, auth, db, org_id)
     pref = db.query(NotificationPreference).filter(NotificationPreference.org_id == oid).first()
 
     if not pref:
@@ -224,11 +228,13 @@ def update_preferences(
 
 @router.get("/batches")
 def list_batches(
+    request: Request,
     org_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """GET /api/notifications/batches — Sync history."""
-    oid = _resolve_org_id(db, org_id)
+    oid = _resolve_org(request, auth, db, org_id)
 
     batches = (
         db.query(NotificationBatch)

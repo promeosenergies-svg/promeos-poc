@@ -79,12 +79,25 @@ def create_contract(data: ContractCreate, db: Session = Depends(get_db)):
     except ValueError:
         raise HTTPException(status_code=400, detail=f"energy_type invalide: {data.energy_type}")
 
+    start = _parse_date(data.start_date)
+    end = _parse_date(data.end_date)
+
+    # Check for overlapping contracts on same site + energy_type
+    overlap = check_contract_overlap(db, data.site_id, energy_type, start, end)
+    if overlap:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Chevauchement avec le contrat #{overlap.id} "
+                   f"({overlap.supplier_name}, "
+                   f"{overlap.start_date or '...'} → {overlap.end_date or '...'})",
+        )
+
     contract = EnergyContract(
         site_id=data.site_id,
         energy_type=energy_type,
         supplier_name=data.supplier_name,
-        start_date=_parse_date(data.start_date),
-        end_date=_parse_date(data.end_date),
+        start_date=start,
+        end_date=end,
         price_ref_eur_per_kwh=data.price_ref_eur_per_kwh,
         fixed_fee_eur_per_month=data.fixed_fee_eur_per_month,
     )
@@ -560,3 +573,33 @@ def _parse_float(val: Optional[str]) -> Optional[float]:
         return float(val.strip().replace(",", "."))
     except ValueError:
         return None
+
+
+def check_contract_overlap(
+    db: Session,
+    site_id: int,
+    energy_type: BillingEnergyType,
+    start_date: Optional[date],
+    end_date: Optional[date],
+    exclude_id: Optional[int] = None,
+) -> Optional[EnergyContract]:
+    """Return first overlapping contract, or None.
+
+    Overlap rule: (startA <= endB) AND (startB <= endA).
+    NULL start = open-ended past (−∞).  NULL end = open-ended future (+∞).
+    """
+    q = db.query(EnergyContract).filter(
+        EnergyContract.site_id == site_id,
+        EnergyContract.energy_type == energy_type,
+    )
+    if exclude_id is not None:
+        q = q.filter(EnergyContract.id != exclude_id)
+
+    for c in q.all():
+        # startA <= endB  (if either is None, condition is True)
+        cond1 = (start_date is None or c.end_date is None or start_date <= c.end_date)
+        # startB <= endA  (if either is None, condition is True)
+        cond2 = (c.start_date is None or end_date is None or c.start_date <= end_date)
+        if cond1 and cond2:
+            return c
+    return None

@@ -397,3 +397,130 @@ class TestFilterEndpoints:
         r = client.get(f"/api/actions/list?org_id={org.id}")
         assert r.status_code == 200
         assert r.json() == []
+
+
+# ========================================
+# Test Direct Create (POST /api/actions)
+# ========================================
+
+class TestDirectCreate:
+    def test_create_manual_action(self, client, db_session):
+        """POST /api/actions with source_type=manual creates an action."""
+        org, site = _create_org_site(db_session)
+        db_session.commit()
+
+        r = client.post("/api/actions", json={
+            "org_id": org.id,
+            "site_id": site.id,
+            "source_type": "manual",
+            "title": "Planifier audit energetique",
+            "severity": "medium",
+        })
+        assert r.status_code == 200
+        data = r.json()
+        assert data["status"] == "open"  # action workflow status (from _serialize_action)
+        assert data["title"] == "Planifier audit energetique"
+        assert data["source_type"] == "manual"
+        assert data["site_id"] == site.id
+        assert 1 <= data["priority"] <= 5
+
+    def test_create_insight_action(self, client, db_session):
+        """POST /api/actions with source_type=insight + source_id."""
+        org, site = _create_org_site(db_session)
+        db_session.commit()
+
+        r = client.post("/api/actions", json={
+            "org_id": org.id,
+            "site_id": site.id,
+            "source_type": "insight",
+            "source_id": "insight_42",
+            "title": "Reduire consommation hors horaires",
+            "severity": "high",
+            "estimated_gain_eur": 12000,
+        })
+        assert r.status_code == 200
+        data = r.json()
+        assert data["source_type"] == "insight"
+        assert data["source_id"] == "insight_42"
+        assert data["estimated_gain_eur"] == 12000
+
+    def test_reject_empty_title(self, client, db_session):
+        """POST /api/actions with empty title returns 422."""
+        org, _ = _create_org_site(db_session)
+        db_session.commit()
+
+        r = client.post("/api/actions", json={
+            "org_id": org.id,
+            "source_type": "manual",
+            "title": "",
+        })
+        assert r.status_code == 422
+
+    def test_reject_invalid_source_type(self, client, db_session):
+        """POST /api/actions with source_type=compliance returns 400."""
+        org, _ = _create_org_site(db_session)
+        db_session.commit()
+
+        r = client.post("/api/actions", json={
+            "org_id": org.id,
+            "source_type": "compliance",
+            "title": "Test action",
+        })
+        assert r.status_code == 400
+        assert "manual" in r.json()["detail"] or "insight" in r.json()["detail"]
+
+    def test_auto_compute_priority(self, client, db_session):
+        """Priority auto-computed when omitted, using severity + gain."""
+        org, _ = _create_org_site(db_session)
+        db_session.commit()
+
+        r = client.post("/api/actions", json={
+            "org_id": org.id,
+            "source_type": "manual",
+            "title": "Action critique urgente",
+            "severity": "critical",
+            "estimated_gain_eur": 20000,
+        })
+        assert r.status_code == 200
+        # critical + high gain -> priority should be 1
+        assert r.json()["priority"] == 1
+
+    def test_created_appears_in_list(self, client, db_session):
+        """Manually created action appears in GET /api/actions/list."""
+        org, site = _create_org_site(db_session)
+        db_session.commit()
+
+        client.post("/api/actions", json={
+            "org_id": org.id,
+            "site_id": site.id,
+            "source_type": "manual",
+            "title": "Action visible dans la liste",
+        })
+
+        r = client.get(f"/api/actions/list?org_id={org.id}")
+        assert r.status_code == 200
+        titles = [a["title"] for a in r.json()]
+        assert "Action visible dans la liste" in titles
+
+    def test_sync_does_not_close_manual_actions(self, client, db_session):
+        """Sync auto-close must NOT affect manual/insight actions."""
+        org, site = _create_org_site(db_session)
+        db_session.commit()
+
+        # Create a manual action
+        r = client.post("/api/actions", json={
+            "org_id": org.id,
+            "site_id": site.id,
+            "source_type": "manual",
+            "title": "Action manuelle a preserver",
+        })
+        assert r.status_code == 200
+        manual_id = r.json()["id"]
+
+        # Run sync (no compliance/billing sources => would close everything without guard)
+        client.post(f"/api/actions/sync?org_id={org.id}")
+
+        # Manual action must still be OPEN
+        item = db_session.query(ActionItem).filter(ActionItem.id == manual_id).first()
+        assert item is not None
+        assert item.status == ActionStatus.OPEN

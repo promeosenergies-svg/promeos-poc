@@ -2,50 +2,85 @@
 PROMEOS - Routes API Cockpit & Portefeuilles
 Endpoints pour le cockpit exécutif et la gestion des portefeuilles
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from typing import Optional
 from database import get_db
 from models import (
-    Organisation, Portefeuille, Site, Alerte,
-    StatutConformite
+    Organisation, Portefeuille, EntiteJuridique, Site, Alerte,
+    StatutConformite, not_deleted,
 )
+from middleware.auth import get_optional_auth, AuthContext
+from services.scope_utils import resolve_org_id
 
 router = APIRouter(prefix="/api", tags=["Cockpit"])
 
 
+def _sites_for_org(db: Session, org_id: int | None):
+    """Base query for non-deleted sites filtered by org_id via the join chain."""
+    q = (
+        not_deleted(db.query(Site), Site)
+        .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
+        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+    )
+    if org_id is not None:
+        q = q.filter(EntiteJuridique.organisation_id == org_id)
+    return q
+
+
 @router.get("/cockpit")
-def get_cockpit(db: Session = Depends(get_db)):
+def get_cockpit(
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """
     GET /api/cockpit
-    Statistiques globales pour le cockpit exécutif
+    Statistiques globales pour le cockpit exécutif.
+    Scope priority: auth.org_id > X-Org-Id header > DemoState > last org.
     """
-    # Organisation
-    org = db.query(Organisation).first()
+    # DEMO_MODE-aware scope resolution (auth > header > demo fallback > 401)
+    effective_org_id = resolve_org_id(request, auth, db)
+    org = db.query(Organisation).filter(Organisation.id == effective_org_id).first()
     if not org:
         raise HTTPException(status_code=404, detail="Organisation non trouvée")
 
-    # Stats sites
-    total_sites = db.query(Site).count()
-    sites_actifs = db.query(Site).filter(Site.actif == True).count()
+    # Stats sites (exclude soft-deleted, scoped to org)
+    q_sites = _sites_for_org(db, effective_org_id)
+    total_sites = q_sites.count()
+    sites_actifs = q_sites.filter(Site.actif == True).count()
 
-    # Stats conformité
-    sites_tertiaire_ko = db.query(Site).filter(
+    # Stats conformite
+    sites_tertiaire_ko = _sites_for_org(db, effective_org_id).filter(
         Site.statut_decret_tertiaire == "non_conforme"
     ).count()
 
-    sites_bacs_ko = db.query(Site).filter(
+    sites_bacs_ko = _sites_for_org(db, effective_org_id).filter(
         Site.statut_bacs == "non_conforme"
     ).count()
 
     # Risque financier total
-    risque_total = db.query(func.sum(Site.risque_financier_euro)).scalar() or 0
+    risque_total = (
+        _sites_for_org(db, effective_org_id)
+        .with_entities(func.sum(Site.risque_financier_euro))
+        .scalar() or 0
+    )
 
-    # Avancement moyen décret tertiaire
-    avg_avancement = db.query(func.avg(Site.avancement_decret_pct)).scalar() or 0
+    # Avancement moyen decret tertiaire
+    avg_avancement = (
+        _sites_for_org(db, effective_org_id)
+        .with_entities(func.avg(Site.avancement_decret_pct))
+        .scalar() or 0
+    )
 
-    # Alertes actives
-    alertes_actives = db.query(Alerte).filter(Alerte.resolue == False).count()
+    # Alertes actives — scoped to org's sites
+    site_ids = [s.id for s in _sites_for_org(db, effective_org_id).with_entities(Site.id).all()]
+    alertes_actives = (
+        db.query(Alerte)
+        .filter(Alerte.resolue == False, Alerte.site_id.in_(site_ids))
+        .count()
+    ) if site_ids else 0
 
     return {
         "organisation": {
@@ -66,16 +101,28 @@ def get_cockpit(db: Session = Depends(get_db)):
 
 
 @router.get("/portefeuilles")
-def get_portefeuilles(db: Session = Depends(get_db)):
+def get_portefeuilles(
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """
     GET /api/portefeuilles
-    Liste des portefeuilles avec stats
+    Liste des portefeuilles avec stats, scoped to org (DEMO_MODE-aware).
     """
-    portefeuilles = db.query(Portefeuille).all()
+    org_id = resolve_org_id(request, auth, db)
+
+    q = (
+        not_deleted(db.query(Portefeuille), Portefeuille)
+        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+        .filter(EntiteJuridique.organisation_id == org_id)
+    )
+
+    portefeuilles = q.all()
 
     result = []
     for p in portefeuilles:
-        nb_sites = db.query(Site).filter(Site.portefeuille_id == p.id).count()
+        nb_sites = not_deleted(db.query(Site), Site).filter(Site.portefeuille_id == p.id).count()
 
         result.append({
             "id": p.id,

@@ -7,13 +7,16 @@ import { useState, useEffect } from 'react';
 import { Users, Shield, Building2, MapPin, ChevronRight, Check, Search, RefreshCw } from 'lucide-react';
 import { getAdminUsers, getAdminRoles, setAdminScopes, changeAdminRole } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { PageShell, Button, EmptyState } from '../ui';
+import { SkeletonCard } from '../ui/Skeleton';
+import { useToast } from '../ui/ToastProvider';
 
 const ROLE_LABELS = {
   dg_owner: 'DG / Owner',
   dsi_admin: 'DSI / Admin',
   daf: 'DAF',
   acheteur: 'Acheteur',
-  resp_conformite: 'Resp. Conformite',
+  resp_conformite: 'Resp. Conformité',
   energy_manager: 'Energy Manager',
   resp_immobilier: 'Resp. Immobilier',
   resp_site: 'Resp. Site',
@@ -25,6 +28,7 @@ const ROLE_LABELS = {
 const SCOPE_LABELS = { org: 'Organisation', entite: 'Entite', site: 'Site' };
 
 function WizardExpress({ users, roles, onDone }) {
+  const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedScopeLevel, setSelectedScopeLevel] = useState('org');
@@ -52,7 +56,7 @@ function WizardExpress({ users, roles, onDone }) {
       }]);
       onDone();
     } catch (err) {
-      alert('Erreur: ' + (err.response?.data?.detail || err.message));
+      toast('Erreur: ' + (err.response?.data?.detail || err.message), 'error');
     } finally {
       setSaving(false);
     }
@@ -62,12 +66,12 @@ function WizardExpress({ users, roles, onDone }) {
     <div className="bg-white rounded-xl border border-gray-200 p-6">
       <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
         <Shield size={20} className="text-blue-600" />
-        Wizard Express — Assigner un role
+        Wizard Express — Assigner un rôle
       </h2>
 
       {/* Step indicator */}
       <div className="flex items-center gap-2 mb-6 text-sm">
-        {['Utilisateur', 'Scope', 'Role', 'Confirmer'].map((label, i) => (
+        {['Utilisateur', 'Périmètre', 'Rôle', 'Confirmer'].map((label, i) => (
           <div key={label} className="flex items-center gap-1">
             <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold
               ${step > i + 1 ? 'bg-green-100 text-green-700' : step === i + 1 ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-400'}`}>
@@ -283,6 +287,7 @@ function MatrixView({ users, roles }) {
 
 export default function AdminAssignmentsPage() {
   const { hasPermission } = useAuth();
+  const { toast } = useToast();
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -292,7 +297,7 @@ export default function AdminAssignmentsPage() {
     setLoading(true);
     Promise.all([getAdminUsers(), getAdminRoles()])
       .then(([u, r]) => { setUsers(u); setRoles(r); })
-      .catch(() => {})
+      .catch(() => toast('Erreur lors du chargement des données', 'error'))
       .finally(() => setLoading(false));
   };
 
@@ -300,32 +305,31 @@ export default function AdminAssignmentsPage() {
 
   if (!hasPermission('admin')) {
     return (
-      <div className="p-8 text-center text-gray-500">
-        <Users size={48} className="mx-auto mb-4 text-gray-300" />
-        <p className="text-lg font-medium">Acces refuse</p>
-      </div>
+      <PageShell icon={Users} title="Affectations">
+        <EmptyState icon={Shield} title="Acces refuse" text="Vous n'avez pas les droits d'administration." />
+      </PageShell>
     );
   }
 
   if (loading) {
-    return <div className="p-8 text-center text-gray-400">Chargement...</div>;
+    return (
+      <PageShell icon={Users} title="Affectations" subtitle="Chargement...">
+        <SkeletonCard /><SkeletonCard />
+      </PageShell>
+    );
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Users size={24} className="text-blue-600" />
-          <div>
-            <h1 className="text-xl font-bold text-gray-800">Assignments</h1>
-            <p className="text-sm text-gray-400">{users.length} utilisateurs configures</p>
-          </div>
-        </div>
-        <button onClick={load} className="flex items-center gap-1 px-3 py-1.5 text-sm border border-gray-200 rounded-lg hover:bg-gray-50">
-          <RefreshCw size={14} /> Actualiser
-        </button>
-      </div>
-
+    <PageShell
+      icon={Users}
+      title="Affectations"
+      subtitle={`${users.length} utilisateurs configures`}
+      actions={
+        <Button variant="secondary" onClick={load}>
+          <RefreshCw size={14} className="mr-1.5" /> Actualiser
+        </Button>
+      }
+    >
       {/* Tabs */}
       <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit">
         <button
@@ -346,6 +350,6 @@ export default function AdminAssignmentsPage() {
 
       {tab === 'wizard' && <WizardExpress users={users} roles={roles} onDone={load} />}
       {tab === 'matrix' && <MatrixView users={users} roles={roles} />}
-    </div>
+    </PageShell>
   );
 }

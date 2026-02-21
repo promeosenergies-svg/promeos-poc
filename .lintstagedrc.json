@@ -1,0 +1,10 @@
+{
+  "frontend/src/**/*.{js,jsx}": [
+    "eslint --max-warnings=174 --fix",
+    "prettier --write"
+  ],
+  "backend/**/*.py": [
+    "ruff check --fix --config backend/pyproject.toml",
+    "ruff format --config backend/pyproject.toml"
+  ]
+}

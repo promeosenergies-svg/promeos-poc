@@ -11,22 +11,26 @@ import {
 } from 'lucide-react';
 import { Card, CardBody, Badge, Button, Tabs, EmptyState, TrustBadge } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
-import { getMockSite } from '../mocks/sites';
+import { SkeletonCard } from '../ui/Skeleton';
+import { useScope } from '../contexts/ScopeContext';
 import { applyKB } from '../services/api';
+import { getStatusBadgeProps, SEV_BADGE } from '../lib/constants';
 import IntakeWizard from '../components/IntakeWizard';
+import BacsWizard from '../components/BacsWizard';
 
+const _sb = (k) => { const { variant, label } = getStatusBadgeProps(k); return { status: variant, label }; };
 const STATUT_BADGE = {
-  conforme: { status: 'ok', label: 'Conforme' },
-  non_conforme: { status: 'crit', label: 'Non conforme' },
-  a_risque: { status: 'warn', label: 'A risque' },
-  a_evaluer: { status: 'neutral', label: 'A evaluer' },
+  conforme: _sb('conforme'),
+  non_conforme: _sb('non_conforme'),
+  a_risque: _sb('a_risque'),
+  a_evaluer: _sb('a_evaluer'),
 };
 
 const TABS = [
-  { id: 'resume', label: 'Resume' },
+  { id: 'resume', label: 'Résumé' },
   { id: 'conso', label: 'Consommation' },
   { id: 'factures', label: 'Factures' },
-  { id: 'conformite', label: 'Conformite' },
+  { id: 'conformite', label: 'Conformité' },
   { id: 'actions', label: 'Actions' },
 ];
 
@@ -45,8 +49,8 @@ function MiniKpi({ icon: Icon, label, value, color }) {
 function TabResume({ site }) {
   const mockAnomalies = [
     { id: 1, type: 'hors_horaires', severity: 'critical', message: `58% consommation hors horaires`, perte_eur: Math.round(site.risque_eur * 0.4) },
-    { id: 2, type: 'base_load', severity: 'high', message: 'Talon eleve: 45% de la mediane', perte_eur: Math.round(site.risque_eur * 0.2) },
-    { id: 3, type: 'derive', severity: 'medium', message: 'Derive +8% sur 30 jours', perte_eur: Math.round(site.risque_eur * 0.1) },
+    { id: 2, type: 'base_load', severity: 'high', message: 'Talon élevé : 45% de la médiane', perte_eur: Math.round(site.risque_eur * 0.2) },
+    { id: 3, type: 'derive', severity: 'medium', message: 'Dérive +8% sur 30 jours', perte_eur: Math.round(site.risque_eur * 0.1) },
   ];
 
   return (
@@ -55,7 +59,7 @@ function TabResume({ site }) {
       <div className="space-y-4">
         <Card>
           <div className="px-5 py-3 border-b border-gray-100">
-            <h3 className="font-semibold text-gray-800">Indicateurs cles</h3>
+            <h3 className="font-semibold text-gray-800">Indicateurs clés</h3>
           </div>
           <CardBody>
             <div className="grid grid-cols-2 gap-4">
@@ -65,7 +69,7 @@ function TabResume({ site }) {
               </div>
               <div className="p-3 bg-red-50 rounded-lg">
                 <p className="text-xs text-gray-500">Risque financier</p>
-                <p className="text-lg font-bold text-red-700">{site.risque_eur.toLocaleString()} EUR</p>
+                <p className="text-lg font-bold text-red-700">{site.risque_eur.toLocaleString()} €</p>
               </div>
               <div className="p-3 bg-amber-50 rounded-lg">
                 <p className="text-xs text-gray-500">Anomalies</p>
@@ -85,13 +89,13 @@ function TabResume({ site }) {
             <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Recommandation principale</p>
             <p className="text-sm text-gray-800 font-medium">
               {site.statut_conformite === 'non_conforme'
-                ? 'Declarer vos consommations sur OPERAT avant le 30/09/2026'
+                ? 'Déclarer vos consommations sur OPERAT avant le 30/09/2026'
                 : site.statut_conformite === 'a_risque'
-                  ? 'Planifier la mise en conformite BACS pour ce site'
+                  ? 'Planifier la mise en conformité BACS pour ce site'
                   : 'Maintenir la surveillance et optimiser la consommation'
               }
             </p>
-            <Button size="sm" className="mt-3">Creer une action</Button>
+            <Button size="sm" className="mt-3">Créer une action</Button>
           </CardBody>
         </Card>
       </div>
@@ -99,22 +103,22 @@ function TabResume({ site }) {
       {/* Right: anomalies list */}
       <Card>
         <div className="px-5 py-3 border-b border-gray-100">
-          <h3 className="font-semibold text-gray-800">Anomalies detectees</h3>
+          <h3 className="font-semibold text-gray-800">Anomalies détectées</h3>
         </div>
         {site.anomalies_count === 0 ? (
-          <EmptyState title="Aucune anomalie" text="Ce site ne presente aucune anomalie detectee." />
+          <EmptyState title="Aucune anomalie" text="Ce site ne présente aucune anomalie détectée." />
         ) : (
           <Table>
             <Thead>
-              <tr><Th>Type</Th><Th>Severite</Th><Th>Message</Th><Th className="text-right">Perte</Th></tr>
+              <tr><Th>Type</Th><Th>Sévérité</Th><Th>Message</Th><Th className="text-right">Perte</Th></tr>
             </Thead>
             <Tbody>
               {mockAnomalies.map((a) => (
                 <Tr key={a.id}>
                   <Td><span className="text-xs px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded">{a.type}</span></Td>
-                  <Td><Badge status={a.severity === 'critical' ? 'crit' : a.severity === 'high' ? 'warn' : 'info'}>{a.severity}</Badge></Td>
+                  <Td><Badge status={SEV_BADGE[a.severity] || 'info'}>{a.severity}</Badge></Td>
                   <Td className="text-sm">{a.message}</Td>
-                  <Td className="text-right text-red-600 font-medium">{a.perte_eur.toLocaleString()} EUR</Td>
+                  <Td className="text-right text-red-600 font-medium">{a.perte_eur.toLocaleString()} €</Td>
                 </Tr>
               ))}
             </Tbody>
@@ -131,14 +135,13 @@ function TabStub({ title, text }) {
       <EmptyState
         title={title}
         text={text}
-        ctaLabel="Bientot disponible"
+        ctaLabel="Bientôt disponible"
       />
     </div>
   );
 }
 
 const KB_SEV_ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
-const SEV_BADGE = { critical: 'crit', high: 'warn', medium: 'info', low: 'neutral' };
 
 function TabConformite({ site }) {
   const [kbResult, setKbResult] = useState(null);
@@ -171,7 +174,7 @@ function TabConformite({ site }) {
         <Card>
           <CardBody className="text-center py-8">
             <BookOpen size={28} className="text-blue-300 mx-auto mb-2 animate-pulse" />
-            <p className="text-sm text-gray-400">Evaluation reglementaire en cours pour {site.nom}...</p>
+            <p className="text-sm text-gray-400">Évaluation réglementaire en cours pour {site.nom}...</p>
           </CardBody>
         </Card>
       </div>
@@ -184,7 +187,7 @@ function TabConformite({ site }) {
         <EmptyState
           icon={ShieldCheck}
           title="Analyse indisponible"
-          text="Impossible de contacter le moteur KB. Verifiez que le backend est demarre."
+          text="Impossible de contacter le moteur KB. Vérifiez que le backend est démarré."
         />
       </div>
     );
@@ -326,7 +329,7 @@ function TabConformite({ site }) {
           <CardBody className="py-3">
             <div className="flex items-center gap-2 mb-2">
               <AlertTriangle size={14} className="text-amber-500" />
-              <p className="text-xs font-semibold text-amber-700">Donnees manquantes</p>
+              <p className="text-xs font-semibold text-amber-700">Données manquantes</p>
             </div>
             <div className="flex flex-wrap gap-2">
               {missing.map((f) => (
@@ -348,17 +351,35 @@ function TabConformite({ site }) {
 export default function Site360() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { scopedSites, sitesLoading } = useScope();
   const [activeTab, setActiveTab] = useState('resume');
   const [showIntake, setShowIntake] = useState(false);
+  const [showBacs, setShowBacs] = useState(false);
 
-  const site = getMockSite(id);
+  const site = scopedSites.find(s => String(s.id) === String(id));
+
+  if (sitesLoading) {
+    return (
+      <div className="px-6 py-6 space-y-4">
+        <button
+          onClick={() => navigate('/patrimoine')}
+          className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition"
+        >
+          <ArrowLeft size={16} /> Patrimoine
+        </button>
+        <div className="flex gap-4">
+          <SkeletonCard /><SkeletonCard /><SkeletonCard />
+        </div>
+      </div>
+    );
+  }
 
   if (!site) {
     return (
       <div className="px-6 py-6">
         <EmptyState
           title="Site introuvable"
-          text={`Aucun site avec l'ID ${id}.`}
+          text={`Aucun site avec l'identifiant ${id} dans votre périmètre.`}
           ctaLabel="Retour au patrimoine"
           onCta={() => navigate('/patrimoine')}
         />
@@ -391,9 +412,13 @@ export default function Site360() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setShowBacs(true)}>
+            <ShieldCheck size={14} className="mr-1" />
+            Évaluer BACS
+          </Button>
           <Button variant="outline" onClick={() => setShowIntake(true)}>
             <ClipboardCheck size={14} className="mr-1" />
-            Completer les donnees
+            Compléter les données
           </Button>
           <Button variant="secondary" onClick={() => navigate(`/regops/${site.id}`)}>
             Evaluation RegOps
@@ -404,7 +429,7 @@ export default function Site360() {
       {/* 3 Mini KPIs */}
       <div className="flex gap-4">
         <MiniKpi icon={Zap} label="Conso annuelle" value={`${(site.conso_kwh_an / 1000).toFixed(0)} MWh`} color="text-blue-600" />
-        <MiniKpi icon={BadgeEuro} label="Risque EUR" value={`${site.risque_eur.toLocaleString()} EUR`} color="text-red-600" />
+        <MiniKpi icon={BadgeEuro} label="Risque €" value={`${site.risque_eur.toLocaleString()} €`} color="text-red-600" />
         <MiniKpi icon={AlertTriangle} label="Anomalies" value={`${site.anomalies_count}`} color="text-amber-600" />
       </div>
 
@@ -413,10 +438,15 @@ export default function Site360() {
 
       {/* Tab content */}
       {activeTab === 'resume' && <TabResume site={site} />}
-      {activeTab === 'conso' && <TabStub title="Consommation" text="Courbes de charge, historique et benchmark a venir." />}
-      {activeTab === 'factures' && <TabStub title="Factures" text="Analyse factures, shadow billing et optimisation tarifaire a venir." />}
+      {activeTab === 'conso' && <TabStub title="Consommation" text="Courbes de charge, historique et benchmark à venir." />}
+      {activeTab === 'factures' && <TabStub title="Factures" text="Analyse factures, shadow billing et optimisation tarifaire à venir." />}
       {activeTab === 'conformite' && <TabConformite site={site} />}
-      {activeTab === 'actions' && <TabStub title="Actions" text="Plan d'action et suivi des recommandations a venir." />}
+      {activeTab === 'actions' && <TabStub title="Actions" text="Plan d'action et suivi des recommandations à venir." />}
+
+      {/* BACS Wizard modal */}
+      {showBacs && (
+        <BacsWizard siteId={site.id} onClose={() => setShowBacs(false)} />
+      )}
 
       {/* Smart Intake Wizard modal */}
       {showIntake && (

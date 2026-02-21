@@ -6,13 +6,16 @@ import { useState, useEffect } from 'react';
 import { Shield, Check, X } from 'lucide-react';
 import { getAdminRoles } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { PageShell, Badge, EmptyState } from '../ui';
+import { SkeletonCard } from '../ui/Skeleton';
+import { useToast } from '../ui/ToastProvider';
 
 const ROLE_LABELS = {
   dg_owner: 'DG / Owner',
   dsi_admin: 'DSI / Admin',
   daf: 'DAF',
   acheteur: 'Acheteur',
-  resp_conformite: 'Resp. Conformite',
+  resp_conformite: 'Resp. Conformité',
   energy_manager: 'Energy Manager',
   resp_immobilier: 'Resp. Immobilier',
   resp_site: 'Resp. Site',
@@ -71,42 +74,41 @@ function PermCell({ value }) {
 
 export default function AdminRolesPage() {
   const { hasPermission } = useAuth();
+  const { toast } = useToast();
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     getAdminRoles()
       .then(setRoles)
-      .catch(() => {})
+      .catch(() => toast('Erreur lors du chargement des roles', 'error'))
       .finally(() => setLoading(false));
   }, []);
 
   if (!hasPermission('admin')) {
     return (
-      <div className="p-8 text-center text-gray-500">
-        <Shield size={48} className="mx-auto mb-4 text-gray-300" />
-        <p className="text-lg font-medium">Acces refuse</p>
-        <p className="text-sm">Vous n'avez pas les droits pour voir cette page.</p>
-      </div>
+      <PageShell icon={Shield} title="Rôles & Permissions">
+        <EmptyState icon={Shield} title="Accès refusé" text="Vous n'avez pas les droits d'administration." />
+      </PageShell>
     );
   }
 
   if (loading) {
-    return <div className="p-8 text-center text-gray-400">Chargement...</div>;
+    return (
+      <PageShell icon={Shield} title="Rôles & Permissions" subtitle="Chargement...">
+        <SkeletonCard />
+      </PageShell>
+    );
   }
 
   const permKeys = ['view', 'edit', 'admin', 'export', 'sync', 'approve'];
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex items-center gap-3 mb-6">
-        <Shield size={24} className="text-blue-600" />
-        <div>
-          <h1 className="text-xl font-bold text-gray-800">Roles & Permissions</h1>
-          <p className="text-sm text-gray-400">11 roles systeme — lecture seule (non-modifiables)</p>
-        </div>
-      </div>
-
+    <PageShell
+      icon={Shield}
+      title="Rôles & Permissions"
+      subtitle="11 rôles système — lecture seule (non-modifiables)"
+    >
       <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -139,8 +141,8 @@ export default function AdminRolesPage() {
       </div>
 
       <p className="mt-4 text-xs text-gray-400">
-        Les roles systeme sont fixes et ne peuvent pas etre modifies. Le perimetre d'acces (scope) est configure par utilisateur via les Assignments.
+        Les rôles système sont fixes et ne peuvent pas être modifiés. Le périmètre d'accès (scope) est configuré par utilisateur via les Assignments.
       </p>
-    </div>
+    </PageShell>
   );
 }

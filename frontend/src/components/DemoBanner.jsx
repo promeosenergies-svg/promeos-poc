@@ -1,26 +1,45 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useDemo } from '../contexts/DemoContext';
-import { Sparkles, ArrowRight, CheckCircle } from 'lucide-react';
-import { getOnboardingStatus } from '../services/api';
+import { useScope } from '../contexts/ScopeContext';
+import { Sparkles, ArrowRight, CheckCircle, ChevronDown } from 'lucide-react';
+import { seedDemoPack } from '../services/api';
+
+const DEMO_PACKS = [
+  { value: 'casino', label: 'Casino (36 sites)', size: 'S' },
+  { value: 'tertiaire', label: 'Tertiaire (10 sites)', size: 'S' },
+];
 
 const DemoBanner = ({ onUpgradeClick }) => {
   const { demoEnabled, toggleDemo } = useDemo();
-  const [onboarding, setOnboarding] = useState(null);
+  const { org, sitesCount, portefeuilles, applyDemoScope } = useScope();
+  const [packLoading, setPackLoading] = useState(false);
 
-  useEffect(() => {
-    getOnboardingStatus()
-      .then(setOnboarding)
-      .catch(() => {});
-  }, []);
+  const handlePackChange = async (pack, size) => {
+    setPackLoading(true);
+    try {
+      const result = await seedDemoPack(pack, size, true);
+      if (result?.org_id) {
+        applyDemoScope({
+          orgId: result.org_id,
+          orgNom: result.org_nom,
+          defaultSiteId: result.default_site_id,
+          defaultSiteName: result.default_site_name,
+        });
+      }
+    } catch {
+      // Silently fail — banner is not critical
+    }
+    setPackLoading(false);
+  };
 
   // Si onboarding reel fait et demo desactivee → bandeau vert avec nom org
-  if (!demoEnabled && onboarding?.onboarding_complete) {
+  if (!demoEnabled && org?.nom && sitesCount > 0) {
     return (
       <div className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <CheckCircle size={20} />
           <span className="font-medium text-sm">
-            {onboarding.organisation_nom} — {onboarding.total_sites} site{onboarding.total_sites > 1 ? 's' : ''}, {onboarding.total_portefeuilles} portefeuille{onboarding.total_portefeuilles > 1 ? 's' : ''}
+            {org.nom} — {sitesCount} site{sitesCount > 1 ? 's' : ''}, {portefeuilles.length} portefeuille{portefeuilles.length > 1 ? 's' : ''}
           </span>
         </div>
       </div>
@@ -35,10 +54,28 @@ const DemoBanner = ({ onUpgradeClick }) => {
         <Sparkles size={20} />
         <span className="font-medium text-sm">
           Mode Demo actif — Donnees de demonstration
-          {onboarding?.organisation_nom ? ` (${onboarding.organisation_nom}, ${onboarding.total_sites} sites)` : ''}
+          {org?.nom ? ` (${org.nom}, ${sitesCount} sites)` : ''}
         </span>
       </div>
       <div className="flex items-center gap-4">
+        {/* Demo Pack Selector */}
+        <div className="relative">
+          <select
+            disabled={packLoading}
+            onChange={(e) => {
+              const p = DEMO_PACKS.find(d => d.value === e.target.value);
+              if (p) handlePackChange(p.value, p.size);
+            }}
+            defaultValue=""
+            className="appearance-none bg-white/20 text-white text-xs px-3 py-1 pr-6 rounded cursor-pointer disabled:opacity-50"
+          >
+            <option value="" disabled>{packLoading ? 'Chargement...' : 'Changer de pack'}</option>
+            {DEMO_PACKS.map(p => (
+              <option key={p.value} value={p.value} className="text-gray-900">{p.label}</option>
+            ))}
+          </select>
+          <ChevronDown size={12} className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+        </div>
         {/* Toggle */}
         <button
           onClick={toggleDemo}

@@ -6,6 +6,10 @@
  */
 import { useState, useEffect, useCallback } from 'react';
 import { useScope } from '../contexts/ScopeContext';
+import { useExpertMode } from '../contexts/ExpertModeContext';
+import { PageShell, EmptyState } from '../ui';
+import { SkeletonCard } from '../ui/Skeleton';
+import { useToast } from '../ui/ToastProvider';
 import ExportNoteDecision from '../components/ExportNoteDecision';
 import ExportPackRFP from '../components/ExportPackRFP';
 import PurchaseErrorBoundary from '../components/PurchaseErrorBoundary';
@@ -60,12 +64,14 @@ function riskLevel(score) {
 const TABS = [
   { key: 'simulation', label: 'Simulation', icon: Calculator },
   { key: 'portefeuille', label: 'Portefeuille', icon: Building2 },
-  { key: 'echeances', label: 'Echeances', icon: Clock },
+  { key: 'echeances', label: 'Échéances', icon: Clock },
   { key: 'historique', label: 'Historique', icon: History },
 ];
 
 export default function PurchasePage() {
   const { scopedSites } = useScope();
+  const { isExpert } = useExpertMode();
+  const { toast } = useToast();
 
   // Tab state
   const [activeTab, setActiveTab] = useState('simulation');
@@ -157,7 +163,7 @@ export default function PurchasePage() {
       setScenarios(results.scenarios || []);
       setAcceptedId(null);
     } catch {
-      // Silent — mock mode may not have backend
+      toast('Erreur lors du chargement des données du site', 'error');
     }
     setLoading(false);
   }, []);
@@ -172,7 +178,7 @@ export default function PurchasePage() {
       setRenewalsLoading(true);
       getPurchaseRenewals().then(data => {
         setRenewals(data.renewals || []);
-      }).catch(() => {}).finally(() => setRenewalsLoading(false));
+      }).catch(() => toast('Erreur lors du chargement des echeances', 'error')).finally(() => setRenewalsLoading(false));
     }
   }, [activeTab, renewals.length]);
 
@@ -182,20 +188,20 @@ export default function PurchasePage() {
       setHistoryLoading(true);
       getPurchaseHistory(selectedSiteId).then(data => {
         setHistory(data.runs || []);
-      }).catch(() => {}).finally(() => setHistoryLoading(false));
+      }).catch(() => toast('Erreur lors du chargement de l\'historique', 'error')).finally(() => setHistoryLoading(false));
     }
   }, [activeTab, selectedSiteId]);
 
   const handleSaveAssumptions = async () => {
     if (!selectedSiteId) return;
     setSavingAssumptions(true);
-    try { await putPurchaseAssumptions(selectedSiteId, assumptions); } catch { /* silent */ }
+    try { await putPurchaseAssumptions(selectedSiteId, assumptions); } catch { toast('Erreur lors de la sauvegarde des hypotheses', 'error'); }
     setSavingAssumptions(false);
   };
 
   const handleSavePreferences = async () => {
     setSavingPrefs(true);
-    try { await putPurchasePreferences(preferences); } catch { /* silent */ }
+    try { await putPurchasePreferences(preferences); } catch { toast('Erreur lors de la sauvegarde des preferences', 'error'); }
     setSavingPrefs(false);
   };
 
@@ -208,7 +214,7 @@ export default function PurchasePage() {
       const result = await computePurchaseScenarios(selectedSiteId);
       setScenarios(result.scenarios || []);
       setAcceptedId(null);
-    } catch { /* silent */ }
+    } catch { toast('Erreur lors du calcul des scenarios', 'error'); }
     setComputing(false);
   };
 
@@ -219,7 +225,7 @@ export default function PurchasePage() {
       setScenarios(prev => prev.map(s =>
         s.id === resultId ? { ...s, reco_status: 'accepted' } : s
       ));
-    } catch { /* silent */ }
+    } catch { toast('Erreur lors de l\'acceptation du scenario', 'error'); }
   };
 
   const handleComputePortfolio = async () => {
@@ -227,7 +233,7 @@ export default function PurchasePage() {
     try {
       const data = await computePortfolio(1);
       setPortfolioData(data);
-    } catch { /* silent */ }
+    } catch { toast('Erreur lors du calcul du portefeuille', 'error'); }
     setPortfolioLoading(false);
   };
 
@@ -236,25 +242,17 @@ export default function PurchasePage() {
     try {
       const data = await getPortfolioResults(1);
       setPortfolioData(data);
-    } catch { /* silent */ }
+    } catch { toast('Erreur lors du chargement du portefeuille', 'error'); }
     setPortfolioLoading(false);
   };
 
   return (
     <PurchaseErrorBoundary>
-    <div className="px-6 py-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <ShoppingCart size={22} /> Achats énergie
-          </h2>
-          <p className="text-sm text-gray-500 mt-0.5">
-            Simuler & arbitrer vos stratégies d'achat
-          </p>
-        </div>
-      </div>
-
+    <PageShell
+      icon={ShoppingCart}
+      title="Achats énergie"
+      subtitle="Simuler & arbitrer vos stratégies d'achat"
+    >
       {/* Tab bar */}
       <div className="flex border-b border-gray-200">
         {TABS.map(tab => (
@@ -513,7 +511,7 @@ export default function PurchasePage() {
               </button>
             </div>
           )}
-          {loading && <div className="text-center py-12 text-gray-400">Chargement...</div>}
+          {loading && <div className="grid grid-cols-1 md:grid-cols-3 gap-4"><SkeletonCard /><SkeletonCard /><SkeletonCard /></div>}
         </>
       )}
 
@@ -527,7 +525,7 @@ export default function PurchasePage() {
             </button>
             <button onClick={handleLoadPortfolio} disabled={portfolioLoading}
               className="bg-gray-100 text-gray-700 px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-200 transition disabled:opacity-50">
-              Charger resultats existants
+              Charger résultats existants
             </button>
             <div className="ml-auto flex items-center gap-2">
               <span className="text-xs text-gray-400 uppercase font-medium">Datasets demo</span>
@@ -744,7 +742,6 @@ export default function PurchasePage() {
           )}
         </div>
       )}
-    </div>
     <PurchaseDebugDrawer
       assumptions={assumptions}
       preferences={preferences}
@@ -753,6 +750,7 @@ export default function PurchasePage() {
       selectedSiteId={selectedSiteId}
       seedResult={seedResult}
     />
+    </PageShell>
     </PurchaseErrorBoundary>
   );
 }

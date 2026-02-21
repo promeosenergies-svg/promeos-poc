@@ -198,6 +198,64 @@ class TestPowerEngine:
         assert result["risk_score"] < 30
         assert result["depassement_count"] == 0
 
+
+class TestDemoProfilePlausibility:
+    """Ensure demo profiles produce realistic KPIs."""
+
+    def _make_profile_readings(self, profile_name, days=14):
+        """Simulate demo readings using USAGE_PROFILES config."""
+        import random, math
+        from routes.monitoring import USAGE_PROFILES
+        profile = USAGE_PROFILES[profile_name]
+        start = datetime(2025, 6, 1, 0, 0)
+        readings = []
+        random.seed(42)
+        peak_start, peak_end = profile["peak_h"]
+        for day in range(days):
+            dt = start + timedelta(days=day)
+            is_weekend = dt.weekday() >= 5
+            for hour in range(24):
+                ts = dt.replace(hour=hour)
+                if is_weekend:
+                    base = profile["weekend"]
+                elif peak_start <= hour <= peak_end:
+                    base = profile["peak"]
+                else:
+                    base = profile["night"]
+                base *= random.uniform(0.9, 1.1)
+                value = max(0.1, round(base, 2))
+                readings.append({"timestamp": ts, "value_kwh": value})
+        return readings
+
+    @pytest.mark.parametrize("profile", ["office", "hotel", "retail", "warehouse"])
+    def test_all_profiles_produce_valid_kpis(self, profile):
+        readings = self._make_profile_readings(profile)
+        eng = KPIEngine()
+        kpis = eng.compute(readings)
+        assert kpis["pmax_kw"] > 0
+        assert 0 < kpis["load_factor"] < 1
+        assert kpis["total_kwh"] > 0
+        # Guard: no absurd peak (< 500 kW for these profiles)
+        assert kpis["pmax_kw"] < 500
+
+    def test_office_low_weekend(self):
+        readings = self._make_profile_readings("office")
+        eng = KPIEngine()
+        kpis = eng.compute(readings)
+        assert kpis["weekend_ratio"] < 0.5  # Office should have low WE
+
+    def test_hotel_high_weekend(self):
+        readings = self._make_profile_readings("hotel")
+        eng = KPIEngine()
+        kpis = eng.compute(readings)
+        assert kpis["weekend_ratio"] > 0.5  # Hotel open on weekends
+
+    def test_profiles_have_labels(self):
+        from routes.monitoring import USAGE_PROFILES
+        for name, p in USAGE_PROFILES.items():
+            assert "label" in p, f"Missing label for profile {name}"
+            assert "psub_kva" in p, f"Missing psub_kva for profile {name}"
+
     def test_empty_input(self):
         eng = PowerEngine()
         result = eng.compute({}, [], subscribed_power_kva=100)
@@ -230,3 +288,30 @@ class TestEndToEndPipeline:
         result = orch.run_standalone(readings, subscribed_power_kva=30)
         assert result["alert_count"] == len(result["alerts"])
         assert result["alert_count"] >= 3  # Multiple anomalies embedded
+
+
+class TestClimateIntegration:
+    def test_pipeline_with_weather(self):
+        orch = MonitoringOrchestrator()
+        readings = _make_office_readings(30)
+        start = datetime(2025, 1, 6)
+        weather = []
+        for d in range(30):
+            dt = start + timedelta(days=d)
+            temp = 5 + 10 * (d / 30)
+            weather.append({"date": dt.date().isoformat(), "temp_avg_c": round(temp, 1)})
+        result = orch.run_standalone(readings, weather_data=weather)
+        assert "climate" in result
+        assert result["climate"]["n_points"] > 0
+
+    def test_pipeline_without_weather(self):
+        orch = MonitoringOrchestrator()
+        readings = _make_office_readings(7)
+        result = orch.run_standalone(readings)
+        assert "climate" in result
+        assert result["climate"]["n_points"] <= 7
+
+    def test_climate_key_always_present(self):
+        orch = MonitoringOrchestrator()
+        result = orch.run_standalone([])
+        assert "climate" in result

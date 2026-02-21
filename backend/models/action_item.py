@@ -5,7 +5,7 @@ ActionSyncBatch: batch record for each sync run.
 """
 from sqlalchemy import (
     Column, Integer, String, Float, Text, Date, DateTime,
-    ForeignKey, Enum as SAEnum, UniqueConstraint,
+    ForeignKey, Enum as SAEnum, UniqueConstraint, Index,
 )
 from sqlalchemy.orm import relationship
 
@@ -73,6 +73,27 @@ class ActionItem(Base, TimestampMixin):
     inputs_hash = Column(
         String(64), nullable=True,
         comment="SHA-256 du contenu source pour detecter les changements",
+    )
+
+    # V5.0: Action Center Pro fields
+    category = Column(
+        String(50), nullable=True,
+        comment="Category: conformite, energie, maintenance, finance",
+    )
+    description = Column(Text, nullable=True, comment="Description detaillee")
+    realized_gain_eur = Column(
+        Float, nullable=True,
+        comment="Gain realise en EUR",
+    )
+    realized_at = Column(Date, nullable=True, comment="Date de constatation du gain realise")
+    closed_at = Column(DateTime, nullable=True, comment="Date de fermeture de l'action")
+    idempotency_key = Column(
+        String(64), nullable=True, unique=True, index=True,
+        comment="Cle d'idempotence unique",
+    )
+    co2e_savings_est_kg = Column(
+        Float, nullable=True,
+        comment="Economies CO2e estimees en kg (V9 Decarbonation)",
     )
 
     # Relations

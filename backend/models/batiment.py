@@ -4,10 +4,10 @@ Unité réglementaire (décret tertiaire, BACS)
 """
 from sqlalchemy import Column, Integer, String, Float, ForeignKey
 from sqlalchemy.orm import relationship
-from .base import Base, TimestampMixin
+from .base import Base, TimestampMixin, SoftDeleteMixin
 
 
-class Batiment(Base, TimestampMixin):
+class Batiment(Base, TimestampMixin, SoftDeleteMixin):
     __tablename__ = "batiments"
 
     id = Column(Integer, primary_key=True, index=True)

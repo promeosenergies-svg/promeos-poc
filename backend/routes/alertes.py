@@ -1,6 +1,8 @@
 """
 PROMEOS - Routes API pour les Alertes
 """
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from database import get_db

@@ -1,0 +1,23 @@
+engine_version: "bacs_v2.0"
+regulation: "bacs"
+label: "BACS (GTB/GTC)"
+reference: "Decret n°2020-887 du 20 juillet 2020"
+
+thresholds_kw:
+  tier1: 290
+  tier2: 70
+
+deadlines:
+  tier1: "2025-01-01"
+  tier2: "2030-01-01"
+
+renewal_cutoff: "2023-04-09"
+
+tri_exemption_years: 10
+inspection_periodicity_years: 5
+
+notes: |
+  Valeurs issues du Decret n°2020-887.
+  tier1 = CVC > 290 kW → echeance 1er jan 2025.
+  tier2 = CVC 70-290 kW → echeance 1er jan 2030.
+  TRI > 10 ans → exemption possible.

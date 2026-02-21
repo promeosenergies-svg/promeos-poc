@@ -5,11 +5,16 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:check": "vite build && node scripts/check-bundle-size.js",
     "preview": "vite preview",
-    "lint": "eslint src --ext js,jsx --max-warnings=0 || exit 0",
-    "format": "prettier --write 'src/**/*.{js,jsx,css,json}'"
+    "lint": "eslint src --ext js,jsx --max-warnings=174",
+    "format": "prettier --write 'src/**/*.{js,jsx,css,json}'",
+    "format:check": "prettier --check 'src/**/*.{js,jsx,css,json}'",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
+    "@tanstack/react-virtual": "^3.13.18",
     "axios": "^1.13.4",
     "lucide-react": "^0.563.0",
     "react": "^18.2.0",
@@ -26,6 +31,7 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "prettier": "^3.1.1",
     "tailwindcss": "^4.1.18",
-    "vite": "^5.0.7"
+    "vite": "^5.0.7",
+    "vitest": "^4.0.18"
   }
 }

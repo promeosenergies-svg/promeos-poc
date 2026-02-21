@@ -5,6 +5,7 @@ import {
   CheckCircle, XCircle, Clock, Plus, ShoppingCart,
 } from 'lucide-react';
 import { getDashboard2min } from '../services/api';
+import { useScope } from '../contexts/ScopeContext';
 
 const COLOR_MAP = {
   green: { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-700', icon: CheckCircle },
@@ -15,6 +16,7 @@ const COLOR_MAP = {
 };
 
 function Cockpit2MinPage({ onUpgradeClick }) {
+  const { scope } = useScope();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -32,7 +34,7 @@ function Cockpit2MinPage({ onUpgradeClick }) {
     }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(); }, [scope.orgId]);
 
   if (loading) {
     return (
@@ -151,7 +153,7 @@ function Cockpit2MinPage({ onUpgradeClick }) {
             {data.pertes_estimees_eur?.toLocaleString('fr-FR')} EUR
           </p>
           <p className="text-xs text-gray-500">
-            Pertes estimees liees a la non-conformite reglementaire
+            Pertes estimées liées à la non-conformité réglementaire
           </p>
           <div className="mt-3 text-xs text-gray-600 space-y-1">
             <div className="flex justify-between">

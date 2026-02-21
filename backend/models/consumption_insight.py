@@ -2,11 +2,12 @@
 PROMEOS - Modele ConsumptionInsight
 Resultat d'un diagnostic de consommation (hors horaires, base load, pointe, derive).
 """
-from sqlalchemy import Column, Integer, String, Float, Text, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, Float, Text, ForeignKey, DateTime, Enum as SAEnum
 from sqlalchemy.orm import relationship
 from datetime import datetime
 
 from .base import Base, TimestampMixin
+from .enums import InsightStatus
 
 
 class ConsumptionInsight(Base, TimestampMixin):
@@ -70,6 +71,13 @@ class ConsumptionInsight(Base, TimestampMixin):
     )
     period_start = Column(DateTime, nullable=True)
     period_end = Column(DateTime, nullable=True)
+    insight_status = Column(
+        SAEnum(InsightStatus),
+        default=InsightStatus.OPEN,
+        nullable=False,
+        server_default="open",
+        comment="Statut workflow: open, ack, resolved, false_positive",
+    )
 
     # Relations
     site = relationship("Site", backref="consumption_insights")

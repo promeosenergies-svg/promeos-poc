@@ -1,12 +1,19 @@
 """
 PROMEOS - Demo Mode API Routes
 POST /api/demo/enable, POST /api/demo/disable, GET /api/demo/status
-POST /api/demo/seed - Peuple la DB avec un jeu de donnees demo
+POST /api/demo/seed - Peuple la DB avec un jeu de donnees demo (legacy 3 sites)
+POST /api/demo/seed-pack - Seed complet par pack (casino, tertiaire)
+POST /api/demo/reset-pack - Reset des donnees demo
+GET /api/demo/status-pack - Status detaille des donnees demo
+GET /api/demo/packs - Liste des packs disponibles
+GET /api/demo/manifest - Source de verite: org, portefeuilles, sites, compteurs
 GET /api/demo/templates, GET /api/demo/templates/{template_id}
 """
 import random
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -19,6 +26,23 @@ from services.onboarding_service import provision_site
 
 router = APIRouter(prefix="/api/demo", tags=["Demo Mode"])
 
+
+# --- Pydantic models for new endpoints ---
+
+class SeedPackRequest(BaseModel):
+    pack: str = "casino"
+    size: str = "S"
+    rng_seed: Optional[int] = 42
+    reset: bool = False
+    days: int = 90
+
+
+class ResetPackRequest(BaseModel):
+    mode: str = "soft"
+    confirm: bool = False
+
+
+# --- Mode toggle ---
 
 @router.post("/enable")
 def enable_demo():
@@ -35,6 +59,189 @@ def disable_demo():
 @router.get("/status")
 def get_demo_status():
     return DemoState.status()
+
+
+# --- Pack-based endpoints ---
+
+@router.get("/packs")
+def list_demo_packs():
+    """Liste des packs demo disponibles."""
+    from services.demo_seed.packs import list_packs
+    return {"packs": list_packs()}
+
+
+@router.post("/seed-pack")
+def seed_demo_pack(request: SeedPackRequest, db: Session = Depends(get_db)):
+    """
+    Seed complet par pack. Genere: org, sites, meters, readings (90j),
+    weather, compliance, monitoring, billing, actions, purchase.
+    """
+    from services.demo_seed import SeedOrchestrator
+
+    orch = SeedOrchestrator(db)
+
+    if request.reset:
+        orch.reset(mode="hard")
+
+    result = orch.seed(
+        pack=request.pack, size=request.size,
+        rng_seed=request.rng_seed, days=request.days,
+    )
+
+    if result.get("error"):
+        raise HTTPException(status_code=400, detail=result["error"])
+
+    return result
+
+
+@router.get("/status-pack")
+def get_demo_pack_status(db: Session = Depends(get_db)):
+    """Status détaillé: comptage par table + current org/site for scope.
+
+    Uses DemoState to resolve the correct org — not Organisation.first() which
+    would return a stale/wrong org when multiple seeds have been run.
+    Returns sites_count scoped to the seeded org.
+    """
+    from services.demo_seed import SeedOrchestrator
+    ctx = DemoState.get_demo_context()
+    org_id = ctx.get("org_id")
+
+    # Resolve org: prefer DemoState tracking; fallback to last-created org
+    if org_id:
+        org = db.query(Organisation).filter(Organisation.id == org_id).first()
+    else:
+        org = db.query(Organisation).order_by(Organisation.id.desc()).first()
+
+    orch = SeedOrchestrator(db)
+    counts = orch.status(org_id=org.id if org else None)
+
+    result = {
+        "demo_enabled": DemoState.is_enabled(),
+        "counts": counts,
+        "total_rows": sum(counts.values()),
+        "pack": ctx.get("pack"),
+        "size": ctx.get("size"),
+    }
+
+    if org:
+        result["org_id"] = org.id
+        result["org_nom"] = org.nom
+        # sites_count is already scoped to org (from orch.status(org_id=...))
+        result["sites_count"] = counts.get("sites", 0)
+
+        # default_site: use DemoState-registered; fallback to first active site of this org
+        dsid = ctx.get("default_site_id")
+        if dsid:
+            result["default_site_id"] = dsid
+            result["default_site_name"] = ctx.get("default_site_name")
+        else:
+            from models import Portefeuille, EntiteJuridique
+            first_site = (
+                db.query(Site)
+                .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
+                .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+                .filter(EntiteJuridique.organisation_id == org.id, Site.actif == True)
+                .first()
+            )
+            if first_site:
+                result["default_site_id"] = first_site.id
+                result["default_site_name"] = first_site.nom
+
+    return result
+
+
+@router.get("/manifest")
+def get_demo_manifest(db: Session = Depends(get_db)):
+    """Source de verite de la demo: org, portefeuilles, sites, compteurs.
+
+    Returns the canonical state after seed — live counts from DB.
+    Used by the frontend to guarantee consistency across all views.
+    """
+    ctx = DemoState.get_demo_context()
+    org_id = ctx.get("org_id")
+
+    if not org_id:
+        raise HTTPException(status_code=404, detail="No demo seeded")
+
+    org = db.query(Organisation).filter(Organisation.id == org_id).first()
+    if not org:
+        raise HTTPException(status_code=404, detail="Org not found in DB")
+
+    entites = db.query(EntiteJuridique).filter(
+        EntiteJuridique.organisation_id == org.id
+    ).all()
+
+    portefeuilles = []
+    total_sites = 0
+    total_compteurs = 0
+    all_site_ids = []
+
+    for ej in entites:
+        for p in db.query(Portefeuille).filter(
+            Portefeuille.entite_juridique_id == ej.id
+        ).all():
+            sites = db.query(Site).filter(Site.portefeuille_id == p.id).all()
+            compteurs_count = (
+                db.query(Compteur).filter(Compteur.site_id.in_([s.id for s in sites])).count()
+                if sites else 0
+            )
+            total_sites += len(sites)
+            total_compteurs += compteurs_count
+            site_ids = [s.id for s in sites]
+            all_site_ids.extend(site_ids)
+            portefeuilles.append({
+                "id": p.id,
+                "nom": p.nom,
+                "entite_juridique_id": ej.id,
+                "sites_count": len(sites),
+                "site_ids": site_ids,
+            })
+
+    return {
+        "org_id": org.id,
+        "org_nom": org.nom,
+        "pack": ctx.get("pack"),
+        "size": ctx.get("size"),
+        "portefeuilles": portefeuilles,
+        "total_sites": total_sites,
+        "total_compteurs": total_compteurs,
+        "all_site_ids": all_site_ids,
+    }
+
+
+def _reset_iam_demo(db):
+    """Delete @atlas.demo users and their roles, then re-seed IAM."""
+    from models import User, UserOrgRole
+    demo_users = db.query(User).filter(User.email.like("%@atlas.demo")).all()
+    for u in demo_users:
+        db.query(UserOrgRole).filter(UserOrgRole.user_id == u.id).delete()
+        db.query(User).filter(User.id == u.id).delete()
+    db.commit()
+    # Re-seed IAM if an org still exists
+    org = db.query(Organisation).first()
+    if org:
+        from scripts.seed_data import seed_iam_demo
+        seed_iam_demo(db, org)
+
+
+@router.post("/reset-pack")
+def reset_demo_pack(request: ResetPackRequest, db: Session = Depends(get_db)):
+    """Reset des donnees demo. mode=soft (demo only) ou hard (tout).
+    Canonical reset endpoint — also resets IAM demo users."""
+    if request.mode == "hard" and not request.confirm:
+        raise HTTPException(
+            status_code=400,
+            detail="Hard reset requires confirm=true. This will delete ALL data."
+        )
+
+    from services.demo_seed import SeedOrchestrator
+    orch = SeedOrchestrator(db)
+    result = orch.reset(mode=request.mode)
+
+    # Also reset IAM demo users
+    _reset_iam_demo(db)
+
+    return result
 
 
 _DEMO_SITES = [

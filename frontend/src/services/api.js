@@ -3,8 +3,9 @@
  * Gestion des appels vers le backend FastAPI
  */
 import axios from 'axios';
+import { logger } from './logger';
 
-const API_BASE_URL = 'http://127.0.0.1:8000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -13,22 +14,233 @@ const api = axios.create({
   },
 });
 
-// Auth interceptors
+// ── GET dedup + short-lived cache ────────────────────────────────────────
+// Eliminates duplicate concurrent GET requests (React StrictMode double-mount)
+// and caches responses for a short TTL (tab switching in Expert mode).
+const _getCache = new Map();
+const GET_CACHE_TTL_MS = 5000; // 5 seconds
+
+function _cacheKey(url, params) {
+  if (!params || Object.keys(params).length === 0) return url;
+  const sorted = JSON.stringify(params, Object.keys(params).sort());
+  return `${url}|${sorted}`;
+}
+
+/**
+ * Cached GET — deduplicates in-flight requests and caches responses.
+ * - Same request in-flight → returns same Promise (no duplicate network call)
+ * - Same request completed within TTL → returns cached data
+ * - Otherwise → fresh fetch
+ * @param {string} url
+ * @param {object} [config] — axios config (params, headers, etc.)
+ * @returns {Promise<import('axios').AxiosResponse>}
+ */
+function _cachedGet(url, config = {}) {
+  const key = _cacheKey(url, config.params);
+  const now = Date.now();
+  const entry = _getCache.get(key);
+
+  if (entry) {
+    if (entry.inflight) return entry.promise; // dedup in-flight
+    if (now - entry.ts < GET_CACHE_TTL_MS) {  // cache hit
+      return Promise.resolve({ data: entry.data, status: 200, _cached: true });
+    }
+  }
+
+  const promise = api.get(url, config).then(response => {
+    _getCache.set(key, { data: response.data, ts: Date.now(), inflight: false });
+    return response;
+  }).catch(err => {
+    _getCache.delete(key);
+    throw err;
+  });
+
+  _getCache.set(key, { promise, inflight: true });
+  return promise;
+}
+
+/** Clear the GET cache (for tests or after mutations). */
+export function clearApiCache() { _getCache.clear(); }
+
+/** @returns {number} Current cache size (for DevPanel / tests). */
+export function getApiCacheSize() { return _getCache.size; }
+
+// Periodic cleanup of expired entries
+if (typeof setInterval !== 'undefined') {
+  setInterval(() => {
+    const now = Date.now();
+    for (const [key, entry] of _getCache) {
+      if (!entry.inflight && now - entry.ts > GET_CACHE_TTL_MS) _getCache.delete(key);
+    }
+  }, GET_CACHE_TTL_MS * 2);
+}
+
+// ── Request tracing (ring buffer for DevPanel) ──────────────────────────
+let _lastRequests = [];
+const MAX_REQUESTS = 20;
+
+function genRequestId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+/** @returns {Array} Last 20 API requests for DevPanel */
+export function getLastRequests() {
+  return _lastRequests;
+}
+
+// ── Scope state (module-level, updated by ScopeContext) ──────────────────
+// Holds the current org/site scope for injection into API headers.
+let _apiScope = { orgId: null, siteId: null };
+
+/**
+ * setApiScope — called by ScopeContext on every scope change (and on boot).
+ * Enables all API requests to carry X-Org-Id / X-Site-Id without prop drilling.
+ * @param {{ orgId: number|null, siteId: number|null }} scope
+ */
+export function setApiScope({ orgId = null, siteId = null } = {}) {
+  _apiScope = { orgId: orgId ?? null, siteId: siteId ?? null };
+}
+
+// Auth + Scope + Request-Id interceptor
+// NOTE: demo paths (/demo/*) are scope-exempt — we NEVER inject org/site headers there.
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('promeos_token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
+
+  // Request tracing
+  config._requestId = genRequestId();
+  config._startTime = Date.now();
+  config.headers['X-Request-Id'] = config._requestId;
+
+  // Scope injection: skip /demo/* endpoints
+  if (!isDemoPath(config.url)) {
+    if (_apiScope.orgId != null) {
+      config.headers['X-Org-Id'] = String(_apiScope.orgId);
+    }
+    if (_apiScope.siteId != null) {
+      config.headers['X-Site-Id'] = String(_apiScope.siteId);
+    }
+  }
   return config;
 });
 
+// Silent URL patterns — passive checks that should never trigger toasts
+const SILENT_URLS = ['/demo/status-pack'];
+
+/**
+ * Demo-path guard: /demo/* endpoints must NEVER receive scope injection
+ * (org_id / site_id headers or query params) from a request interceptor.
+ * If a scope interceptor is ever added, it MUST call isDemoPath() first.
+ *
+ * @param {string} url — raw URL string or path (with or without baseURL prefix)
+ * @returns {boolean}
+ */
+export function isDemoPath(url) {
+  if (!url) return false;
+  // Strip protocol + host + query string to get bare path
+  let path = url;
+  try {
+    if (/^https?:\/\//i.test(url)) path = new URL(url).pathname;
+  } catch { /* keep as-is */ }
+  path = path.split('?')[0].split('#')[0];
+  // Match /demo/* or /api/demo/*
+  return /\/demo\//.test(path);
+}
+
+/**
+ * Normalize an Axios config into a clean pathname for matching.
+ * Handles: baseURL+url join, absolute URLs, querystring/hash, missing slash.
+ */
+export function normalizePathFromAxiosConfig(config) {
+  if (!config) return '';
+  let raw = config.url || '';
+  // Join baseURL + url if url is relative
+  if (raw && !/^https?:\/\//i.test(raw) && config.baseURL) {
+    const base = config.baseURL.replace(/\/+$/, '');
+    raw = base + (raw.startsWith('/') ? raw : '/' + raw);
+  }
+  // Strip protocol + host for absolute URLs
+  try {
+    if (/^https?:\/\//i.test(raw)) {
+      raw = new URL(raw).pathname;
+    }
+  } catch { /* keep raw as-is */ }
+  // Strip querystring and hash
+  raw = raw.split('?')[0].split('#')[0];
+  // Ensure leading slash
+  if (raw && !raw.startsWith('/')) raw = '/' + raw;
+  return raw;
+}
+
+export const isSilentUrl = (urlOrConfig) => {
+  // Accept either a string (legacy) or an axios config object
+  const path = typeof urlOrConfig === 'object' && urlOrConfig !== null
+    ? normalizePathFromAxiosConfig(urlOrConfig)
+    : String(urlOrConfig || '');
+  return SILENT_URLS.some(u => path.endsWith(u) || path.includes(u + '?') || path.includes(u + '#') || path === u);
+};
+
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Track successful request
+    const duration = Date.now() - (response.config._startTime || Date.now());
+    const entry = {
+      id: response.config._requestId,
+      url: response.config.url,
+      method: response.config.method?.toUpperCase(),
+      status: response.status,
+      duration,
+      ts: Date.now(),
+    };
+    _lastRequests = [..._lastRequests, entry].slice(-MAX_REQUESTS);
+
+    // Structured DEV logging: page, orgId, endpoint, ms
+    if (import.meta.env.DEV) {
+      console.log(
+        `%c[API] %c${entry.method} %c${entry.url} %c${entry.status} %c${duration}ms`,
+        'color:#6b7280', 'color:#2563eb', 'color:#059669', 'color:#6b7280', duration > 300 ? 'color:#ef4444;font-weight:bold' : 'color:#6b7280',
+        { page: window.location.pathname, orgId: _apiScope.orgId, endpoint: entry.url, ms: duration, requestId: entry.id },
+      );
+    }
+
+    return response;
+  },
   (error) => {
-    if (error.response?.status === 401 && !error.config?.url?.includes('/auth/')) {
+    const cfg = error.config || {};
+    const isSilent = cfg.silent || isSilentUrl(cfg);
+
+    // Track failed request
+    const duration = Date.now() - (cfg._startTime || Date.now());
+    const errEntry = {
+      id: cfg._requestId,
+      url: cfg.url,
+      method: cfg.method?.toUpperCase(),
+      status: error.response?.status || 0,
+      duration,
+      ts: Date.now(),
+      error: true,
+    };
+    _lastRequests = [..._lastRequests, errEntry].slice(-MAX_REQUESTS);
+
+    if (!isSilent) {
+      logger.warn('API', `${cfg.method?.toUpperCase() || '?'} ${cfg.url || '?'} failed`, {
+        page: window.location.pathname,
+        orgId: _apiScope.orgId,
+        endpoint: cfg.url,
+        ms: duration,
+        status: error.response?.status,
+        requestId: cfg._requestId,
+      });
+    }
+
+    if (!isSilent && error.response?.status === 401 && !cfg.url?.includes('/auth/')) {
       localStorage.removeItem('promeos_token');
       if (window.location.pathname !== '/login') {
         window.location.href = '/login';
       }
     }
+    // Mark error as silent so downstream handlers can skip toasting
+    if (isSilent) error._silent = true;
     return Promise.reject(error);
   }
 );
@@ -38,7 +250,7 @@ api.interceptors.response.use(
 // ========================================
 
 export const getSites = async (params = {}) => {
-  const response = await api.get('/sites', { params });
+  const response = await _cachedGet('/sites', { params });
   return response.data;
 };
 
@@ -102,6 +314,13 @@ export const getDemoStatus = () => api.get('/demo/status').then(r => r.data);
 export const enableDemo = () => api.post('/demo/enable').then(r => r.data);
 export const disableDemo = () => api.post('/demo/disable').then(r => r.data);
 export const getDemoTemplates = () => api.get('/demo/templates').then(r => r.data);
+export const getDemoPacks = () => api.get('/demo/packs').then(r => r.data);
+export const seedDemoPack = (pack, size, reset = false) =>
+  api.post('/demo/seed-pack', { pack, size, reset, rng_seed: 42 }).then(r => r.data);
+export const getDemoPackStatus = () => api.get('/demo/status-pack', { silent: true }).then(r => r.data);
+export const resetDemoPack = (mode = 'soft', confirm = false) =>
+  api.post('/demo/reset-pack', { mode, confirm }).then(r => r.data);
+export const getDemoManifest = () => api.get('/demo/manifest', { silent: true }).then(r => r.data);
 
 // ========================================
 // GUIDANCE (Action Plan + Readiness)
@@ -163,22 +382,48 @@ export const listAiInsights = (params = {}) => api.get('/ai/insights', { params 
 // KB USAGES (Knowledge Base)
 // ========================================
 
-export const getKBArchetypes = () => api.get('/kb/archetypes').then(r => r.data);
-export const getKBArchetype = (code) => api.get(`/kb/archetypes/${code}`).then(r => r.data);
-export const getKBArchetypeByNaf = (naf) => api.get(`/kb/archetypes/by-naf/${naf}`).then(r => r.data);
-export const getKBRules = () => api.get('/kb/rules').then(r => r.data);
-export const getKBRecommendations = () => api.get('/kb/recommendations').then(r => r.data);
-export const searchKB = (q, type = null) => api.get('/kb/search', { params: { q, type } }).then(r => r.data);
-export const getKBProvenance = (itemType, code) => api.get(`/kb/provenance/${itemType}/${code}`).then(r => r.data);
-export const getKBStats = () => api.get('/kb/stats').then(r => r.data);
-export const reloadKB = () => api.post('/kb/reload').then(r => r.data);
+const KB_BASE = '/kb';
+
+export const pingKB = () => api.get(`${KB_BASE}/ping`).then(r => r.data);
+export const getKBArchetypes = () => api.get(`${KB_BASE}/archetypes`).then(r => r.data);
+export const getKBArchetype = (code) => api.get(`${KB_BASE}/archetypes/${code}`).then(r => r.data);
+export const getKBArchetypeByNaf = (naf) => api.get(`${KB_BASE}/archetypes/by-naf/${naf}`).then(r => r.data);
+export const getKBRules = () => api.get(`${KB_BASE}/rules`).then(r => r.data);
+export const getKBRecommendations = () => api.get(`${KB_BASE}/recommendations`).then(r => r.data);
+export const searchKB = (q, type = null) => api.get(`${KB_BASE}/search`, { params: { q, type } }).then(r => r.data);
+export const getKBProvenance = (itemType, code) => api.get(`${KB_BASE}/provenance/${itemType}/${code}`).then(r => r.data);
+export const getKBStats = () => api.get(`${KB_BASE}/usages-stats`).then(r => r.data);
+export const reloadKB = () => api.post(`${KB_BASE}/reload`).then(r => r.data);
+export const seedDemoKB = () => api.post(`${KB_BASE}/seed_demo`).then(r => r.data);
 
 // KB Explorer (structured KB system - FTS5 search + apply engine)
-export const getKBItemsList = (params = {}) => api.get('/kb/items', { params }).then(r => r.data);
-export const getKBItemDetail = (itemId) => api.get(`/kb/items/${itemId}`).then(r => r.data);
-export const searchKBItems = (body) => api.post('/kb/search', body).then(r => r.data);
-export const applyKB = (body) => api.post('/kb/apply', body).then(r => r.data);
-export const getKBFullStats = () => api.get('/kb/stats').then(r => r.data);
+export const getKBItemsList = (params = {}) => api.get(`${KB_BASE}/items`, { params }).then(r => r.data);
+export const getKBItemDetail = (itemId) => api.get(`${KB_BASE}/items/${itemId}`).then(r => r.data);
+export const searchKBItems = (body) => api.post(`${KB_BASE}/search`, body).then(r => r.data);
+export const applyKB = (body) => api.post(`${KB_BASE}/apply`, body).then(r => r.data);
+export const getKBFullStats = () => api.get(`${KB_BASE}/stats`).then(r => {
+  const d = r.data;
+  // app/kb/router.py returns { kb: { total_items, by_status, by_domain, ... }, index: {...} }
+  // Normalize to flat shape expected by KBExplorerPage (stats.total_items, stats.by_status, ...)
+  return d && d.kb ? { ...d.kb } : d;
+});
+
+// KB Memobox V38 — Upload + Lifecycle
+export const uploadKBDoc = (file, title, domain = null, docType = 'pdf') => {
+  const fd = new FormData();
+  fd.append('file', file);
+  const params = { title };
+  if (domain) params.domain = domain;
+  if (docType) params.doc_type = docType;
+  return api.post(`${KB_BASE}/upload`, fd, {
+    params,
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }).then(r => r.data);
+};
+export const changeKBDocStatus = (docId, status) =>
+  api.post(`${KB_BASE}/docs/${docId}/status`, { status }).then(r => r.data);
+export const getKBDocs = (params = {}) =>
+  api.get(`${KB_BASE}/docs`, { params }).then(r => r.data);
 
 // ========================================
 // ENERGY (Import & Analysis)
@@ -257,8 +502,9 @@ export const getSegmentationProfile = () => api.get('/segmentation/profile').the
 // COMPLIANCE (Rules-based)
 // ========================================
 
-export const getComplianceSummary = (orgId = null) => api.get('/compliance/summary', { params: { org_id: orgId } }).then(r => r.data);
+export const getComplianceSummary = (params = {}) => api.get('/compliance/summary', { params }).then(r => r.data);
 export const getComplianceSites = (params = {}) => api.get('/compliance/sites', { params }).then(r => r.data);
+export const getComplianceBundle = (params = {}) => _cachedGet('/compliance/bundle', { params }).then(r => r.data);
 export const recomputeComplianceRules = (orgId = null) => api.post('/compliance/recompute-rules', null, { params: { org_id: orgId } }).then(r => r.data);
 export const getComplianceRules = () => api.get('/compliance/rules').then(r => r.data);
 
@@ -268,6 +514,12 @@ export const patchComplianceFinding = (id, data) => api.patch(`/compliance/findi
 export const getComplianceBatches = (orgId = null) => api.get('/compliance/batches', { params: { org_id: orgId } }).then(r => r.data);
 export const getFindingDetail = (findingId) => api.get(`/compliance/findings/${findingId}`).then(r => r.data);
 
+// Dev Tools
+export const resetDb = () => api.post('/dev/reset_db').then(r => r.data);
+
+// Health
+export const getApiHealth = () => api.get('/health').then(r => r.data);
+
 // ========================================
 // CONSUMPTION DIAGNOSTIC
 // ========================================
@@ -276,6 +528,47 @@ export const getConsumptionInsights = (orgId = null) => api.get('/consumption/in
 export const getConsumptionSite = (siteId) => api.get(`/consumption/site/${siteId}`).then(r => r.data);
 export const runConsumptionDiagnose = (orgId = null, days = 30) => api.post('/consumption/diagnose', null, { params: { org_id: orgId, days } }).then(r => r.data);
 export const seedDemoConsumption = (siteId = null, days = 30) => api.post('/consumption/seed-demo', null, { params: { site_id: siteId, days } }).then(r => r.data);
+export const patchConsumptionInsight = (insightId, data) => api.patch(`/consumption/insights/${insightId}`, data).then(r => r.data);
+
+// ========================================
+// FLEX MINI
+// ========================================
+export const getFlexMini = (siteId, start, end) =>
+  api.get(`/sites/${siteId}/flex/mini`, { params: { start, end } }).then(r => r.data);
+
+// ========================================
+// CONSUMPTION EXPLORER (V10 World-Class)
+// ========================================
+
+// Availability check (V10.1 handshake)
+export const getConsumptionAvailability = (siteId, energyType = 'electricity') => _cachedGet('/consumption/availability', { params: { site_id: siteId, energy_type: energyType } }).then(r => r.data);
+
+// Tunnel (envelope P10-P90)
+export const getConsumptionTunnel = (siteId, days = 90, energyType = 'electricity') => api.get('/consumption/tunnel', { params: { site_id: siteId, days, energy_type: energyType } }).then(r => r.data);
+export const getConsumptionTunnelV2 = (siteId, days = 90, energyType = 'electricity', mode = 'energy') => _cachedGet('/consumption/tunnel_v2', { params: { site_id: siteId, days, energy_type: energyType, mode } }).then(r => r.data);
+
+// Targets (objectifs & budgets)
+export const getConsumptionTargets = (siteId, energyType = 'electricity', year = null) => _cachedGet('/consumption/targets', { params: { site_id: siteId, energy_type: energyType, year } }).then(r => r.data);
+export const createConsumptionTarget = (data) => api.post('/consumption/targets', data).then(r => r.data);
+export const patchConsumptionTarget = (id, data) => api.patch(`/consumption/targets/${id}`, data).then(r => r.data);
+export const deleteConsumptionTarget = (id) => api.delete(`/consumption/targets/${id}`).then(r => r.data);
+export const getTargetsProgression = (siteId, energyType = 'electricity', year = null) => api.get('/consumption/targets/progression', { params: { site_id: siteId, energy_type: energyType, year } }).then(r => r.data);
+export const getTargetsProgressionV2 = (siteId, energyType = 'electricity', year = null) => _cachedGet('/consumption/targets/progress_v2', { params: { site_id: siteId, energy_type: energyType, year } }).then(r => r.data);
+
+// TOU Schedules (grilles HP/HC)
+export const getTOUSchedules = (siteId, meterId = null, activeOnly = true) => api.get('/consumption/tou_schedules', { params: { site_id: siteId, meter_id: meterId, active_only: activeOnly } }).then(r => r.data);
+export const getActiveTOUSchedule = (siteId, meterId = null, refDate = null) => api.get('/consumption/tou_schedules/active', { params: { site_id: siteId, meter_id: meterId, ref_date: refDate } }).then(r => r.data);
+export const createTOUSchedule = (data) => api.post('/consumption/tou_schedules', data).then(r => r.data);
+export const patchTOUSchedule = (id, data) => api.patch(`/consumption/tou_schedules/${id}`, data).then(r => r.data);
+export const deleteTOUSchedule = (id) => api.delete(`/consumption/tou_schedules/${id}`).then(r => r.data);
+
+// HP/HC Ratio
+export const getHPHCRatio = (siteId, meterId = null, days = 30) => api.get('/consumption/hp_hc', { params: { site_id: siteId, meter_id: meterId, days } }).then(r => r.data);
+export const getHPHCBreakdownV2 = (siteId, days = 30, calendarId = null, simulate = false) => _cachedGet('/consumption/hphc_breakdown_v2', { params: { site_id: siteId, days, calendar_id: calendarId, simulate } }).then(r => r.data);
+
+// Gas Summary (beta)
+export const getGasSummary = (siteId, days = 90) => _cachedGet('/consumption/gas/summary', { params: { site_id: siteId, days } }).then(r => r.data);
+export const getGasWeatherNormalized = (siteId, days = 90) => _cachedGet('/consumption/gas/weather_normalized', { params: { site_id: siteId, days } }).then(r => r.data);
 
 // ========================================
 // SITE CONFIG (Schedule + Tariff)
@@ -338,12 +631,22 @@ export const getPurchaseActions = (orgId = null) => api.get('/purchase/actions',
 // ACTION HUB (Sprint 10)
 // ========================================
 
+export const createAction = (data) => api.post('/actions', data).then(r => r.data);
 export const syncActions = (orgId = null) => api.post('/actions/sync', null, { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);
-export const getActionsList = (params = {}) => api.get('/actions/list', { params }).then(r => r.data);
-export const getActionsSummary = (orgId = null) => api.get('/actions/summary', { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);
+export const getActionsList = (params = {}) => _cachedGet('/actions/list', { params }).then(r => r.data);
+export const getActionsSummary = (orgId = null) => _cachedGet('/actions/summary', { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);
 export const patchAction = (id, data) => api.patch(`/actions/${id}`, data).then(r => r.data);
 export const getActionBatches = (orgId = null) => api.get('/actions/batches', { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);
 export const exportActionsCSV = (params = {}) => api.get('/actions/export.csv', { params, responseType: 'blob' });
+
+// Action Detail + Sub-resources (V5.0)
+export const getActionDetail = (id) => api.get(`/actions/${id}`).then(r => r.data);
+export const getActionComments = (id) => api.get(`/actions/${id}/comments`).then(r => r.data);
+export const addActionComment = (id, data) => api.post(`/actions/${id}/comments`, data).then(r => r.data);
+export const getActionEvidence = (id) => api.get(`/actions/${id}/evidence`).then(r => r.data);
+export const addActionEvidence = (id, data) => api.post(`/actions/${id}/evidence`, data).then(r => r.data);
+export const getActionEvents = (id) => api.get(`/actions/${id}/events`).then(r => r.data);
+export const getROISummary = (orgId) => api.get('/actions/roi_summary', { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);
 
 // ========================================
 // REPORTS (Sprint 10.1)
@@ -358,7 +661,7 @@ export const downloadAuditPDF = (orgId = null) => api.get('/reports/audit.pdf', 
 
 export const syncNotifications = (orgId = null) => api.post('/notifications/sync', null, { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);
 export const getNotificationsList = (params = {}) => api.get('/notifications/list', { params }).then(r => r.data);
-export const getNotificationsSummary = (orgId = null) => api.get('/notifications/summary', { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);
+export const getNotificationsSummary = (orgId = null) => _cachedGet('/notifications/summary', { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);
 export const patchNotification = (id, data) => api.patch(`/notifications/${id}`, data).then(r => r.data);
 export const getNotificationPreferences = (orgId = null) => api.get('/notifications/preferences', { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);
 export const putNotificationPreferences = (data, orgId = null) => api.put('/notifications/preferences', data, { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);
@@ -399,7 +702,6 @@ export const getAuditLogs = (params = {}) => api.get('/auth/audit', { params }).
 // ========================================
 
 export const impersonateUser = (email) => api.post('/auth/impersonate', { email }).then(r => r.data);
-export const resetDemo = () => api.post('/auth/reset-demo').then(r => r.data);
 
 // ========================================
 // PATRIMOINE STAGING (DIAMANT)
@@ -415,11 +717,17 @@ export const stagingImport = (file, mode = 'import') => {
 };
 export const stagingImportInvoices = (invoices) => api.post('/patrimoine/staging/import-invoices', { invoices }).then(r => r.data);
 export const stagingSummary = (batchId) => api.get(`/patrimoine/staging/${batchId}/summary`).then(r => r.data);
+export const stagingRows = (batchId, params = {}) => api.get(`/patrimoine/staging/${batchId}/rows`, { params }).then(r => r.data);
+export const stagingIssues = (batchId, params = {}) => api.get(`/patrimoine/staging/${batchId}/issues`, { params }).then(r => r.data);
 export const stagingValidate = (batchId) => api.post(`/patrimoine/staging/${batchId}/validate`).then(r => r.data);
 export const stagingFix = (batchId, fixType, params) => api.put(`/patrimoine/staging/${batchId}/fix`, { fix_type: fixType, params }).then(r => r.data);
+export const stagingFixBulk = (batchId, fixes) => api.put(`/patrimoine/staging/${batchId}/fix/bulk`, { fixes }).then(r => r.data);
+export const stagingAutofix = (batchId) => api.post(`/patrimoine/staging/${batchId}/autofix`).then(r => r.data);
 export const stagingActivate = (batchId, portefeuilleId) => api.post(`/patrimoine/staging/${batchId}/activate`, { portefeuille_id: portefeuilleId }).then(r => r.data);
+export const stagingResult = (batchId) => api.get(`/patrimoine/staging/${batchId}/result`).then(r => r.data);
 export const stagingAbandon = (batchId) => api.delete(`/patrimoine/staging/${batchId}`).then(r => r.data);
 export const loadPatrimoineDemo = () => api.post('/patrimoine/demo/load').then(r => r.data);
+export const getImportTemplateColumns = () => api.get('/patrimoine/import/template/columns').then(r => r.data);
 export const portfolioSync = (portfolioId, file, dryRun = true) => {
   const fd = new FormData();
   fd.append('file', file);
@@ -470,6 +778,106 @@ export const getMonitoringSnapshots = (siteId, limit = 10) => api.get('/monitori
 export const getMonitoringAlerts = (siteId, status = null, limit = 50) => api.get('/monitoring/alerts', { params: { site_id: siteId, status, limit } }).then(r => r.data);
 export const ackMonitoringAlert = (id) => api.post(`/monitoring/alerts/${id}/ack`, { acknowledged_by: 'user' }).then(r => r.data);
 export const resolveMonitoringAlert = (id, note = null) => api.post(`/monitoring/alerts/${id}/resolve`, { resolved_by: 'user', resolution_note: note }).then(r => r.data);
-export const generateMonitoringDemo = (siteId, days = 90) => api.post('/monitoring/demo/generate', { site_id: siteId, days }).then(r => r.data);
+export const generateMonitoringDemo = (siteId, days = 90, profile = 'office') => api.post('/monitoring/demo/generate', { site_id: siteId, days, profile }).then(r => r.data);
+export const getMonitoringKpisCompare = (siteId, mode = 'previous', customStart = null, customEnd = null) =>
+  api.get('/monitoring/kpis/compare', { params: { site_id: siteId, mode, custom_start: customStart, custom_end: customEnd } }).then(r => r.data);
+
+// ========================================
+// Emissions / CO2e (Sprint V9 Decarbonation)
+// ========================================
+
+export const getEmissions = (siteId) => api.get('/monitoring/emissions', { params: { site_id: siteId } }).then(r => r.data);
+export const getEmissionFactors = () => api.get('/monitoring/emission-factors').then(r => r.data);
+export const seedEmissionFactors = () => api.post('/monitoring/emission-factors/seed').then(r => r.data);
+
+// ========================================
+// BACS Expert (Decret n°2020-887)
+// ========================================
+
+export const getBacsAssessment = (siteId) => api.get(`/regops/bacs/site/${siteId}`).then(r => r.data);
+export const recomputeBacs = (siteId) => api.post(`/regops/bacs/recompute/${siteId}`).then(r => r.data);
+export const getBacsScoreExplain = (siteId) => api.get(`/regops/bacs/score_explain/${siteId}`).then(r => r.data);
+export const getBacsDataQuality = (siteId) => api.get(`/regops/bacs/data_quality/${siteId}`).then(r => r.data);
+export const createBacsAsset = (siteId, isTertiary = true, pcDate = null) =>
+  api.post('/regops/bacs/asset', null, { params: { site_id: siteId, is_tertiary: isTertiary, pc_date: pcDate } }).then(r => r.data);
+export const addCvcSystem = (assetId, systemType, architecture, unitsJson = '[]') =>
+  api.post(`/regops/bacs/asset/${assetId}/system`, null, { params: { system_type: systemType, architecture, units_json: unitsJson } }).then(r => r.data);
+export const updateCvcSystem = (systemId, unitsJson = null, architecture = null) =>
+  api.put(`/regops/bacs/system/${systemId}`, null, { params: { units_json: unitsJson, architecture } }).then(r => r.data);
+export const deleteCvcSystem = (systemId) => api.delete(`/regops/bacs/system/${systemId}`).then(r => r.data);
+export const seedBacsDemo = () => api.post('/regops/bacs/seed_demo').then(r => r.data);
+export const getBacsOpsPanel = (siteId) => api.get(`/regops/bacs/site/${siteId}/ops`).then(r => r.data);
+
+// ========================================
+// EMS Consumption Explorer
+// ========================================
+
+export const getEmsTimeseries = (params) => _cachedGet('/ems/timeseries', { params }).then(r => r.data);
+export const getEmsTimeseriesSuggest = (dateFrom, dateTo) => _cachedGet('/ems/timeseries/suggest', { params: { date_from: dateFrom, date_to: dateTo } }).then(r => r.data);
+export const getEmsWeather = (siteId, dateFrom, dateTo) => api.get('/ems/weather', { params: { site_id: siteId, date_from: dateFrom, date_to: dateTo } }).then(r => r.data);
+export const getEmsWeatherMulti = (siteIds, dateFrom, dateTo) => api.get('/ems/weather', { params: { site_ids: siteIds.join(','), date_from: dateFrom, date_to: dateTo } }).then(r => r.data);
+export const runEmsSignature = (siteId, dateFrom, dateTo, meterIds = null) => api.post('/ems/signature/run', null, { params: { site_id: siteId, date_from: dateFrom, date_to: dateTo, meter_ids: meterIds } }).then(r => r.data);
+export const runEmsSignaturePortfolio = (siteIds, dateFrom, dateTo) => api.post('/ems/signature/portfolio', null, { params: { site_ids: siteIds.join(','), date_from: dateFrom, date_to: dateTo } }).then(r => r.data);
+export const getEmsViews = (userId = null) => api.get('/ems/views', { params: userId ? { user_id: userId } : {} }).then(r => r.data);
+export const createEmsView = (name, configJson, userId = null) => api.post('/ems/views', null, { params: { name, config_json: configJson, user_id: userId } }).then(r => r.data);
+export const updateEmsView = (id, params) => api.put(`/ems/views/${id}`, null, { params }).then(r => r.data);
+export const deleteEmsView = (id) => api.delete(`/ems/views/${id}`).then(r => r.data);
+
+// Collections (paniers de sites)
+export const getEmsCollections = () => api.get('/ems/collections').then(r => r.data);
+export const createEmsCollection = (name, siteIds, scopeType = 'custom', isFavorite = false) =>
+  api.post('/ems/collections', null, { params: { name, site_ids: siteIds.join(','), scope_type: scopeType, is_favorite: isFavorite } }).then(r => r.data);
+export const updateEmsCollection = (id, params) => api.put(`/ems/collections/${id}`, null, { params }).then(r => r.data);
+export const deleteEmsCollection = (id) => api.delete(`/ems/collections/${id}`).then(r => r.data);
+
+// Usage suggest & benchmark
+export const getUsageSuggest = (siteId) => api.get('/ems/usage_suggest', { params: { site_id: siteId } }).then(r => r.data);
+export const getEmsBenchmark = (siteId) => api.get('/ems/benchmark', { params: { site_id: siteId } }).then(r => r.data);
+export const getScheduleSuggest = (siteId, days = 90) => api.get('/ems/schedule_suggest', { params: { site_id: siteId, days } }).then(r => r.data);
+
+// Demo data
+export const generateEmsDemo = (portfolioSize = 12, days = 365, seed = 123, force = false) =>
+  api.post('/ems/demo/generate', null, { params: { portfolio_size: portfolioSize, days, seed, force } }).then(r => r.data);
+export const purgeEmsDemo = () => api.post('/ems/demo/purge').then(r => r.data);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Tertiaire / OPERAT V39
+// ═══════════════════════════════════════════════════════════════════════════
+const TERT_BASE = '/tertiaire';
+
+export const getTertiaireEfas = (params = {}) =>
+  api.get(`${TERT_BASE}/efa`, { params }).then(r => r.data);
+export const createTertiaireEfa = (body) =>
+  api.post(`${TERT_BASE}/efa`, body).then(r => r.data);
+export const getTertiaireEfa = (efaId) =>
+  api.get(`${TERT_BASE}/efa/${efaId}`).then(r => r.data);
+export const updateTertiaireEfa = (efaId, body) =>
+  api.patch(`${TERT_BASE}/efa/${efaId}`, body).then(r => r.data);
+export const deleteTertiaireEfa = (efaId) =>
+  api.delete(`${TERT_BASE}/efa/${efaId}`).then(r => r.data);
+
+export const addTertiaireBuilding = (efaId, body) =>
+  api.post(`${TERT_BASE}/efa/${efaId}/buildings`, body).then(r => r.data);
+export const addTertiaireResponsibility = (efaId, body) =>
+  api.post(`${TERT_BASE}/efa/${efaId}/responsibilities`, body).then(r => r.data);
+export const addTertiaireEvent = (efaId, body) =>
+  api.post(`${TERT_BASE}/efa/${efaId}/events`, body).then(r => r.data);
+export const addTertiaireEfaLink = (efaId, body) =>
+  api.post(`${TERT_BASE}/efa/${efaId}/links`, body).then(r => r.data);
+
+export const runTertiaireControls = (efaId, year = null) =>
+  api.post(`${TERT_BASE}/efa/${efaId}/controls`, null, { params: year ? { year } : {} }).then(r => r.data);
+export const precheckTertiaireDeclaration = (efaId, year) =>
+  api.post(`${TERT_BASE}/efa/${efaId}/precheck`, null, { params: { year } }).then(r => r.data);
+export const exportTertiairePack = (efaId, year) =>
+  api.post(`${TERT_BASE}/efa/${efaId}/export-pack`, null, { params: { year } }).then(r => r.data);
+
+export const getTertiaireIssues = (params = {}) =>
+  api.get(`${TERT_BASE}/issues`, { params }).then(r => r.data);
+export const updateTertiaireIssue = (issueId, body) =>
+  api.patch(`${TERT_BASE}/issues/${issueId}`, body).then(r => r.data);
+
+export const getTertiaireDashboard = (orgId = null) =>
+  api.get(`${TERT_BASE}/dashboard`, { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);
 
 export default api;

@@ -12,11 +12,14 @@ import {
   importInvoicesCsv,
   resolveBillingInsight,
 } from '../services/api';
-import { Card, CardBody, Badge, Button, TrustBadge } from '../ui';
+import { Card, CardBody, Badge, Button, TrustBadge, PageShell, EmptyState } from '../ui';
+import { SkeletonCard } from '../ui/Skeleton';
+import { useToast } from '../ui/ToastProvider';
 import {
   FileText, AlertTriangle, CheckCircle, Upload, Play, Download,
   DollarSign, Zap, TrendingUp, RefreshCw, CheckCircle2,
 } from 'lucide-react';
+import { useExpertMode } from '../contexts/ExpertModeContext';
 import { track } from '../services/tracker';
 
 const SEVERITY_BADGE = {
@@ -67,6 +70,8 @@ const INSIGHT_FILTER_OPTIONS = [
 ];
 
 export default function BillIntelPage() {
+  const { isExpert } = useExpertMode();
+  const { toast } = useToast();
   const [summary, setSummary] = useState(null);
   const [insights, setInsights] = useState([]);
   const [invoices, setInvoices] = useState([]);
@@ -88,7 +93,7 @@ export default function BillIntelPage() {
       setInsights(i.insights || []);
       setInvoices(inv.invoices || []);
     } catch {
-      // API may not be running
+      toast('Erreur lors du chargement de la facturation', 'error');
     }
     setLoading(false);
   }
@@ -137,14 +142,12 @@ export default function BillIntelPage() {
   const hasData = summary && summary.total_invoices > 0;
 
   return (
-    <div className="px-6 py-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">Facturation</h2>
-          <p className="text-sm text-gray-500 mt-0.5">Shadow billing, TURPE/ATRD/ATRT, écarts & anomalies</p>
-        </div>
-        <div className="flex items-center gap-2">
+    <PageShell
+      icon={FileText}
+      title="Facturation"
+      subtitle="Shadow billing, TURPE/ATRD/ATRT, ecarts & anomalies"
+      actions={
+        <>
           <label className="inline-flex items-center gap-2 cursor-pointer">
             <Button variant="secondary" size="sm" as="span">
               <Upload size={14} /> Importer CSV
@@ -164,8 +167,9 @@ export default function BillIntelPage() {
           <button onClick={fetchData} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600" title="Rafraichir">
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
           </button>
-        </div>
-      </div>
+        </>
+      }
+    >
 
       {/* Summary cards */}
       {summary && (
@@ -183,11 +187,11 @@ export default function BillIntelPage() {
         <Card>
           <CardBody className="text-center py-12">
             <FileText size={40} className="text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">Aucune facture importee</h3>
-            <p className="text-sm text-gray-500 mb-6">Importez des factures CSV ou generez des donnees demo pour commencer.</p>
+            <h3 className="text-lg font-semibold text-gray-700 mb-2">Aucune facture importée</h3>
+            <p className="text-sm text-gray-500 mb-6">Importez des factures CSV ou générez des données démo pour commencer.</p>
             <div className="flex items-center justify-center gap-3">
               <Button onClick={handleSeedDemo} disabled={seeding}>
-                <Zap size={14} /> {seeding ? 'Generation...' : 'Generer demo (5 factures)'}
+                <Zap size={14} /> {seeding ? 'Génération...' : 'Générer démo (5 factures)'}
               </Button>
               <label className="inline-flex items-center gap-2 cursor-pointer">
                 <Button variant="secondary" as="span">
@@ -205,7 +209,7 @@ export default function BillIntelPage() {
         <div>
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-gray-700">
-              Anomalies detectees ({insights.length})
+              Anomalies détectées ({insights.length})
             </h3>
             <div className="flex items-center gap-1">
               {INSIGHT_FILTER_OPTIONS.map((opt) => (
@@ -318,12 +322,12 @@ export default function BillIntelPage() {
               </table>
             </div>
             <div className="px-4 py-2 border-t border-gray-100">
-              <TrustBadge source="PROMEOS Bill Intel" period="donnees importees" confidence="medium" />
+              <TrustBadge source="PROMEOS Bill Intel" period="données importées" confidence="medium" />
             </div>
           </Card>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }
 
