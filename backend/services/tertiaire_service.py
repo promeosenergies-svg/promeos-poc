@@ -75,13 +75,26 @@ def qualify_efa(db: Session, efa_id: int) -> dict:
     }
 
 
-# ── Controles qualite ────────────────────────────────────────────────────────
+# ── Controles qualite V2 ─────────────────────────────────────────────────────
 
-# Codes d'issues (deterministes, traces)
+# V45: proof_required structuré — type, label_fr, owner_role, deadline_hint, doc_domain
+def _proof(proof_type, label_fr, owner_role="proprietaire", deadline_hint="Avant dépôt"):
+    """Helper pour construire un proof_required structuré V45."""
+    return {
+        "type": proof_type,
+        "label_fr": label_fr,
+        "owner_role": owner_role,
+        "deadline_hint": deadline_hint,
+        "doc_domain": "conformite/tertiaire-operat",
+    }
+
+
+# Codes d'issues (deterministes, traces) — V2 enrichi
 CONTROL_RULES = [
     {
         "code": "TERTIAIRE_NO_BUILDING",
         "severity": "critical",
+        "title_fr": "Aucun bâtiment",
         "check": lambda efa, buildings, resps, events: len(buildings) == 0,
         "message_fr": "Aucun bâtiment associé à l'EFA",
         "impact_fr": "Impossible de calculer la surface assujettie",
@@ -92,18 +105,20 @@ CONTROL_RULES = [
     {
         "code": "TERTIAIRE_MISSING_SURFACE",
         "severity": "high",
+        "title_fr": "Surface manquante",
         "check": lambda efa, buildings, resps, events: any(
             not b.surface_m2 or b.surface_m2 <= 0 for b in buildings
         ) if buildings else False,
         "message_fr": "Surface manquante ou nulle sur un ou plusieurs bâtiments",
         "impact_fr": "La surface totale EFA ne peut pas être calculée correctement",
         "action_fr": "Renseigner la surface (m²) de chaque bâtiment associé",
-        "proof_required": None,
-        "proof_owner": None,
+        "proof_required": _proof("preuve_surface_usage", "Preuve de surface (plan, DPE, géomètre)", "mandataire", "À fournir pour compléter le patrimoine"),
+        "proof_owner": "mandataire",
     },
     {
         "code": "TERTIAIRE_MISSING_USAGE",
         "severity": "medium",
+        "title_fr": "Usage non renseigné",
         "check": lambda efa, buildings, resps, events: any(
             not b.usage_label for b in buildings
         ) if buildings else False,
@@ -116,16 +131,18 @@ CONTROL_RULES = [
     {
         "code": "TERTIAIRE_NO_RESPONSIBILITY",
         "severity": "high",
+        "title_fr": "Responsable absent",
         "check": lambda efa, buildings, resps, events: len(resps) == 0,
         "message_fr": "Aucun responsable défini pour l'EFA",
         "impact_fr": "Le rôle de l'assujetti n'est pas clair (propriétaire, locataire, mandataire)",
         "action_fr": "Définir au moins un responsable avec son rôle",
-        "proof_required": "Bail ou titre de propriété",
-        "proof_owner": "À CLARIFIER",
+        "proof_required": _proof("bail_titre_propriete", "Bail ou titre de propriété", "proprietaire", "À conserver en cas d'audit"),
+        "proof_owner": "proprietaire",
     },
     {
         "code": "TERTIAIRE_NO_REPORTING_PERIOD",
         "severity": "medium",
+        "title_fr": "Période reporting absente",
         "check": lambda efa, buildings, resps, events: efa.reporting_start is None,
         "message_fr": "Période de reporting non définie",
         "impact_fr": "Impossible de calculer les trajectoires de réduction",
@@ -136,20 +153,66 @@ CONTROL_RULES = [
     {
         "code": "TERTIAIRE_SURFACE_COHERENCE",
         "severity": "medium",
+        "title_fr": "Surface < seuil",
         "check": lambda efa, buildings, resps, events: (
             sum(b.surface_m2 or 0 for b in buildings) < 1000
         ) if buildings and all(b.surface_m2 for b in buildings) else False,
-        "message_fr": "Surface totale EFA inférieure au seuil d'assujettissement (1000 m²)",
+        "message_fr": "Surface totale EFA inférieure au seuil d'assujettissement (1 000 m²)",
         "impact_fr": "L'EFA pourrait ne pas être assujettie au Décret tertiaire",
-        "action_fr": "Vérifier les surfaces. Si < 1000 m², l'EFA n'est peut-être pas assujettie",
-        "proof_required": "Attestation de surface — À CLARIFIER (source exacte)",
-        "proof_owner": "À CLARIFIER",
+        "action_fr": "Vérifier les surfaces. Si < 1 000 m², l'EFA n'est peut-être pas assujettie",
+        "proof_required": _proof("justificatif_exemption", "Justificatif d'exemption ou d'exclusion", "proprietaire", "À conserver en cas d'audit"),
+        "proof_owner": "proprietaire",
+    },
+    # V45: nouvelles règles
+    {
+        "code": "TERTIAIRE_RESP_NO_EMAIL",
+        "severity": "low",
+        "title_fr": "Email responsable manquant",
+        "check": lambda efa, buildings, resps, events: (
+            len(resps) > 0 and any(not r.contact_email for r in resps)
+        ),
+        "message_fr": "Email de contact non renseigné pour un ou plusieurs responsables",
+        "impact_fr": "Impossible de contacter le responsable en cas d'audit ou de relance",
+        "action_fr": "Renseigner l'email de contact de chaque responsable",
+        "proof_required": None,
+        "proof_owner": None,
+    },
+    {
+        "code": "TERTIAIRE_PERIMETER_EVENT_PROOF",
+        "severity": "high",
+        "title_fr": "Preuve modulation requise",
+        "check": lambda efa, buildings, resps, events: len(events) > 0,
+        "message_fr": "Événement de périmètre déclaré — preuve de modulation requise",
+        "impact_fr": "Sans justificatif, la modulation ne sera pas acceptée par OPERAT",
+        "action_fr": "Déposer le dossier de modulation (vacance, travaux, changement d'usage)",
+        "proof_required": _proof("dossier_modulation", "Dossier de modulation (vacance, travaux, changement d'usage)", "proprietaire", "À joindre au dépôt si modulation demandée"),
+        "proof_owner": "proprietaire",
     },
 ]
 
 
+def _build_proof_links(efa_id, rule, year=None):
+    """V45: Construit les deep-links Mémobox pour une issue avec proof_required."""
+    proof = rule.get("proof_required")
+    if not proof:
+        return []
+    efa_hint = f"efa_id={efa_id}"
+    params = (
+        f"/kb?context=proof"
+        f"&domain={proof['doc_domain'].replace('/', '%2F')}"
+        f"&status=draft"
+        f"&hint={proof['label_fr'][:80].replace(' ', '+')}"
+        f"&proof_type={proof['type']}"
+        f"&efa_id={efa_id}"
+    )
+    if year:
+        params += f"&year={year}"
+    return [params]
+
+
 def run_controls(db: Session, efa_id: int, year: int = None) -> list[dict]:
     """Execute les controles de completude/coherence sur une EFA.
+    V45: enrichi avec proof_required structuré + proof_links deep-link Mémobox.
     Retourne la liste des issues detectees.
     """
     efa = db.query(TertiaireEfa).filter(TertiaireEfa.id == efa_id).first()
@@ -174,18 +237,24 @@ def run_controls(db: Session, efa_id: int, year: int = None) -> list[dict]:
             triggered = False
 
         if triggered:
+            proof_req = rule.get("proof_required")
+            proof_links = _build_proof_links(efa_id, rule, year)
+
             issue_data = {
                 "efa_id": efa_id,
                 "year": year,
                 "code": rule["code"],
                 "severity": rule["severity"],
+                "title_fr": rule.get("title_fr", rule["code"]),
                 "message_fr": rule["message_fr"],
                 "impact_fr": rule["impact_fr"],
                 "action_fr": rule["action_fr"],
-                "proof_required_json": json.dumps(
-                    {"label": rule["proof_required"], "owner": rule["proof_owner"]}
-                ) if rule["proof_required"] else None,
-                "proof_owner_role": rule["proof_owner"],
+                # V45: structured proof_required
+                "proof_required": proof_req,
+                "proof_links": proof_links,
+                # Legacy V1 fields (backward compat)
+                "proof_required_json": json.dumps(proof_req) if proof_req else None,
+                "proof_owner_role": rule.get("proof_owner"),
             }
             issues.append(issue_data)
 
