@@ -537,12 +537,148 @@ def get_tertiaire_dashboard(db: Session, org_id: int = None) -> dict:
     }
 
 
-# ── Site Signals V42 ────────────────────────────────────────────────────────
+# ── Site Signals V42 + Explainability V43 ──────────────────────────────────
+
+# Labels FR pour les types de site
+_TYPE_LABELS_FR = {
+    "magasin": "Magasin",
+    "usine": "Usine",
+    "bureau": "Bureau",
+    "entrepot": "Entrepôt",
+    "commerce": "Commerce",
+    "copropriete": "Copropriété",
+    "logement_social": "Logement social",
+    "collectivite": "Collectivité",
+    "hotel": "Hôtel",
+    "sante": "Santé",
+    "enseignement": "Enseignement",
+}
+
+
+def _format_surface(val):
+    """Format surface with French locale-like thousands separator."""
+    if val is None:
+        return "non renseignée"
+    return f"{int(round(val)):,}".replace(",", "\u202f") + " m²"
+
+
+def _build_site_explanation(site, bats, surface_tertiaire, data_complete, is_covered, efa_ids):
+    """V43: Build explainability payload for a single site signal."""
+    has_batiments = len(bats) > 0
+    all_surfaces_ok = has_batiments and all(b.surface_m2 and b.surface_m2 > 0 for b in bats)
+
+    site_type_raw = site.type.value if site.type else None
+    site_type_label = _TYPE_LABELS_FR.get(site_type_raw, site_type_raw) if site_type_raw else None
+
+    # ── Rules applied ────────────────────────────────────────────────────
+    rules = []
+
+    # Rule 1: surface threshold
+    rules.append({
+        "code": "surface_threshold",
+        "label_fr": "Surface totale ≥ 1\u202f000 m²",
+        "value": surface_tertiaire,
+        "threshold": 1000,
+        "ok": bool(surface_tertiaire and surface_tertiaire >= 1000),
+    })
+
+    # Rule 2: buildings present
+    rules.append({
+        "code": "batiments_renseignes",
+        "label_fr": "Au moins un bâtiment renseigné",
+        "value": len(bats),
+        "threshold": 1,
+        "ok": has_batiments,
+    })
+
+    # Rule 3: all surfaces filled
+    rules.append({
+        "code": "surfaces_completes",
+        "label_fr": "Surfaces renseignées pour tous les bâtiments",
+        "value": sum(1 for b in bats if b.surface_m2 and b.surface_m2 > 0),
+        "threshold": len(bats) if has_batiments else 1,
+        "ok": all_surfaces_ok,
+    })
+
+    # ── Reasons FR ───────────────────────────────────────────────────────
+    reasons = []
+
+    if surface_tertiaire and surface_tertiaire >= 1000:
+        reasons.append(f"Surface totale {_format_surface(surface_tertiaire)} ≥ 1\u202f000 m²")
+    elif surface_tertiaire and surface_tertiaire > 0:
+        reasons.append(f"Surface totale {_format_surface(surface_tertiaire)} < 1\u202f000 m²")
+    else:
+        reasons.append("Surface totale non renseignée")
+
+    if site_type_label:
+        reasons.append(f"Usage : {site_type_label}")
+    else:
+        reasons.append("Usage non renseigné — à vérifier")
+
+    if not has_batiments:
+        reasons.append("Aucun bâtiment renseigné dans le patrimoine")
+    else:
+        reasons.append(f"{len(bats)} bâtiment{'s' if len(bats) > 1 else ''} renseigné{'s' if len(bats) > 1 else ''}")
+
+    if not all_surfaces_ok and has_batiments:
+        missing_count = sum(1 for b in bats if not b.surface_m2 or b.surface_m2 <= 0)
+        reasons.append(f"{missing_count} bâtiment{'s' if missing_count > 1 else ''} sans surface renseignée")
+
+    if is_covered:
+        reasons.append(f"EFA existante (n° {', '.join(str(i) for i in efa_ids[:3])})")
+    else:
+        reasons.append("Aucune EFA créée pour ce site")
+
+    # ── Missing fields ───────────────────────────────────────────────────
+    missing = []
+    if not surface_tertiaire or surface_tertiaire <= 0:
+        missing.append("surface")
+    if not site_type_raw:
+        missing.append("usage_site")
+    if not has_batiments:
+        missing.append("batiments")
+    elif not all_surfaces_ok:
+        missing.append("surface_batiment")
+    if not site.naf_code:
+        missing.append("code_naf")
+
+    # ── Recommended next step + CTA ──────────────────────────────────────
+    signal = (
+        "assujetti_probable" if surface_tertiaire and surface_tertiaire >= 1000
+        else "a_verifier" if not data_complete
+        else "non_concerne"
+    )
+
+    if signal == "assujetti_probable" and not is_covered:
+        next_step = "creer_efa"
+        cta = {
+            "label_fr": "Créer l'EFA",
+            "to": f"/conformite/tertiaire/wizard?site_id={site.id}",
+        }
+    elif missing:
+        next_step = "completer_patrimoine"
+        cta = {
+            "label_fr": "Compléter le patrimoine",
+            "to": f"/patrimoine?site_id={site.id}",
+        }
+    else:
+        next_step = "aucune_action"
+        cta = None
+
+    return {
+        "signal_version": "V1",
+        "rules_applied": rules,
+        "reasons_fr": reasons,
+        "missing_fields": missing,
+        "recommended_next_step": next_step,
+        "recommended_cta": cta,
+    }
+
 
 def compute_site_signals(db: Session, org_id: int = None) -> dict:
     """Qualifie chaque site du patrimoine vis-à-vis du Décret tertiaire.
 
-    Heuristique V1:
+    Heuristique V1 (V42) + Explainability V43:
     - surface_tertiaire_m2 >= 1000 → assujetti_probable
     - surface_tertiaire_m2 < 1000 mais données incomplètes → a_verifier
     - surface_tertiaire_m2 < 1000 et données complètes → non_concerne
@@ -572,6 +708,9 @@ def compute_site_signals(db: Session, org_id: int = None) -> dict:
                     efa_by_site.setdefault(bat.site_id, []).append(efa.id)
 
     signals = []
+    # V43: aggregate missing fields across all sites
+    all_missing_fields = {}
+
     for site in sites:
         bats = db.query(Batiment).filter(
             Batiment.site_id == site.id,
@@ -600,7 +739,17 @@ def compute_site_signals(db: Session, org_id: int = None) -> dict:
         is_covered = site.id in covered_site_ids
         efa_ids = efa_by_site.get(site.id, [])
 
+        # V43: explainability
+        explain = _build_site_explanation(
+            site, bats, surface_tertiaire, data_complete, is_covered, efa_ids,
+        )
+
+        # Track missing fields for summary
+        for field in explain["missing_fields"]:
+            all_missing_fields[field] = all_missing_fields.get(field, 0) + 1
+
         signals.append({
+            # V42 fields (unchanged)
             "site_id": site.id,
             "site_nom": site.nom,
             "ville": site.ville,
@@ -610,6 +759,8 @@ def compute_site_signals(db: Session, org_id: int = None) -> dict:
             "data_complete": data_complete,
             "is_covered": is_covered,
             "efa_ids": efa_ids,
+            # V43 fields
+            **explain,
         })
 
     counts = {
@@ -628,4 +779,6 @@ def compute_site_signals(db: Session, org_id: int = None) -> dict:
         "counts": counts,
         "uncovered_probable": uncovered_probable,
         "incomplete_data": incomplete_data,
+        # V43: enriched summary
+        "top_missing_fields": all_missing_fields,
     }
