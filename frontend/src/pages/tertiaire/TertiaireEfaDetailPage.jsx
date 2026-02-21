@@ -1,5 +1,5 @@
 /**
- * PROMEOS V39 — Fiche détaillée EFA
+ * PROMEOS V40 — Fiche détaillée EFA
  * Route: /conformite/tertiaire/efa/:id
  */
 import { useState, useEffect } from 'react';
@@ -36,6 +36,7 @@ export default function TertiaireEfaDetailPage() {
   const [controlsRunning, setControlsRunning] = useState(false);
   const [precheckResult, setPrecheckResult] = useState(null);
   const [exporting, setExporting] = useState(false);
+  const [exportResult, setExportResult] = useState(null);
 
   const fetchEfa = () => {
     setLoading(true);
@@ -67,7 +68,8 @@ export default function TertiaireEfaDetailPage() {
     setExporting(true);
     try {
       const year = new Date().getFullYear();
-      await exportTertiairePack(id, year);
+      const result = await exportTertiairePack(id, year);
+      setExportResult(result);
       fetchEfa();
     } finally {
       setExporting(false);
@@ -333,6 +335,38 @@ export default function TertiaireEfaDetailPage() {
         </div>
       )}
 
+      {/* Actions OPERAT — export pack toujours accessible */}
+      <div className="mt-4">
+        <Card>
+          <CardBody className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                  Actions OPERAT
+                </h4>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Pré-vérification et export du dossier déclaratif
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button size="xs" variant="secondary" onClick={handlePrecheck}>
+                  <CheckCircle2 size={14} /> Pré-vérifier
+                </Button>
+                <Button
+                  size="xs"
+                  data-testid="btn-export-pack"
+                  onClick={handleExport}
+                  disabled={exporting}
+                >
+                  {exporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+                  Exporter le pack
+                </Button>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+
       {/* Precheck result */}
       {precheckResult && (
         <div className="mt-4">
@@ -377,16 +411,33 @@ export default function TertiaireEfaDetailPage() {
         </div>
       )}
 
-      {/* Export info */}
+      {/* Export info + lien Mémobox V40 */}
       {(efa.declarations || []).some((d) => d.status === 'exported') && (
         <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50/30 p-4">
           <div className="flex items-start gap-2">
             <AlertTriangle size={16} className="text-amber-500 shrink-0 mt-0.5" />
-            <div>
+            <div className="flex-1">
               <p className="text-sm font-medium text-gray-900">Pack export généré (simulation)</p>
               <p className="text-xs text-gray-500 mt-0.5">
                 Ce pack est une simulation PROMEOS. Il ne constitue pas une soumission officielle sur OPERAT.
               </p>
+              {exportResult?.kb_doc_id && (
+                <div className="flex items-center gap-3 mt-3 pt-3 border-t border-amber-200">
+                  <Badge variant="ok" size="xs">Mémobox</Badge>
+                  <span className="text-xs text-gray-600">
+                    Document enregistré : {exportResult.kb_doc_id}
+                  </span>
+                  <Button
+                    size="xs"
+                    variant="secondary"
+                    onClick={() => navigate(exportResult.kb_open_url)}
+                    aria-label="Ouvrir le pack dans la Mémobox"
+                  >
+                    <FileText size={12} />
+                    Ouvrir dans la Mémobox
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </div>

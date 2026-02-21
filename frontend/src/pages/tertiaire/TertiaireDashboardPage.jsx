@@ -94,7 +94,7 @@ export default function TertiaireDashboardPage() {
 
       {/* Actions rapides */}
       <div className="flex items-center gap-3 mt-6">
-        <Button onClick={() => navigate('/conformite/tertiaire/wizard')}>
+        <Button data-testid="btn-nouvelle-efa" onClick={() => navigate('/conformite/tertiaire/wizard')}>
           <Plus size={16} /> Nouvelle EFA
         </Button>
         <Button variant="secondary" onClick={() => navigate('/conformite/tertiaire/anomalies')}>
@@ -115,7 +115,7 @@ export default function TertiaireDashboardPage() {
               <p className="text-xs text-gray-400 mt-1">
                 Créez votre première EFA via l'assistant
               </p>
-              <Button size="sm" className="mt-4" onClick={() => navigate('/conformite/tertiaire/wizard')}>
+              <Button size="sm" className="mt-4" data-testid="btn-creer-efa-empty" onClick={() => navigate('/conformite/tertiaire/wizard')}>
                 Créer une EFA
               </Button>
             </CardBody>

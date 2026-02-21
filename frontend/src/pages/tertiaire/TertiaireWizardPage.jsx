@@ -6,7 +6,7 @@ import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Building2, MapPin, Ruler, Users, Calendar, FileText, CheckCircle2,
-  ArrowRight, ArrowLeft, Loader2,
+  ArrowRight, ArrowLeft, Loader2, AlertTriangle,
 } from 'lucide-react';
 import { PageShell, Card, CardBody, Button, Input, Select, Badge } from '../../ui';
 import {
@@ -47,6 +47,7 @@ export default function TertiaireWizardPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
   const [form, setForm] = useState({
     nom: '',
     role_assujetti: 'proprietaire',
@@ -77,6 +78,7 @@ export default function TertiaireWizardPage() {
 
   const handleSubmit = async () => {
     setSaving(true);
+    setSubmitError(null);
     try {
       // 1. Create EFA
       const efa = await createTertiaireEfa({
@@ -104,9 +106,11 @@ export default function TertiaireWizardPage() {
         });
       }
 
-      navigate(`/conformite/tertiaire/efa/${efa.id}`);
+      navigate(`/conformite/tertiaire/efa/${efa.id}`, { state: { justCreated: true } });
     } catch (err) {
       console.error('Erreur création EFA:', err);
+      const detail = err?.response?.data?.detail || err?.message || 'Erreur inconnue';
+      setSubmitError(`Impossible de créer l'EFA : ${detail}`);
       setSaving(false);
     }
   };
@@ -293,6 +297,14 @@ export default function TertiaireWizardPage() {
                   size="xs"
                 />
               </div>
+            </div>
+          )}
+
+          {/* Erreur de soumission */}
+          {submitError && (
+            <div data-testid="wizard-submit-error" className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 flex items-start gap-2">
+              <AlertTriangle size={16} className="text-red-500 shrink-0 mt-0.5" />
+              <p className="text-sm text-red-700">{submitError}</p>
             </div>
           )}
 
