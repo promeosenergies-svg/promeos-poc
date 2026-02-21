@@ -888,4 +888,14 @@ export const getTertiaireSiteSignals = (orgId = null) =>
 export const getTertiaireCatalog = (orgId = 1) =>
   api.get(`${TERT_BASE}/catalog`, { params: { org_id: orgId } }).then(r => r.data);
 
+// V45 — Proof catalog + status
+export const getTertiaireProofCatalog = () =>
+  api.get(`${TERT_BASE}/proof-catalog`).then(r => r.data);
+
+export const getTertiaireEfaProofs = (efaId, year = null) =>
+  api.get(`${TERT_BASE}/efa/${efaId}/proofs`, { params: year ? { year } : {} }).then(r => r.data);
+
+export const linkTertiaireProof = (efaId, body) =>
+  api.post(`${TERT_BASE}/efa/${efaId}/proofs/link`, body).then(r => r.data);
+
 export default api;

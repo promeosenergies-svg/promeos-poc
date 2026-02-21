@@ -23,6 +23,9 @@ from services.tertiaire_service import (
     generate_operat_pack, get_tertiaire_dashboard,
     compute_site_signals,  # V42
 )
+from services.tertiaire_proofs import (  # V45
+    PROOF_CATALOG, get_expected_proofs_for_efa, list_proofs_status,
+)
 
 router = APIRouter(prefix="/api/tertiaire", tags=["Tertiaire / OPERAT"])
 
@@ -531,4 +534,87 @@ def building_catalog(
     return {
         "sites": result,
         "total_buildings": sum(len(s["batiments"]) for s in result),
+    }
+
+
+# ── Proof catalog + status V45 ───────────────────────────────────────────────
+
+@router.get("/proof-catalog")
+def get_proof_catalog():
+    """V45: Catalogue des preuves OPERAT attendues."""
+    return {"proofs": list(PROOF_CATALOG.values()), "total": len(PROOF_CATALOG)}
+
+
+@router.get("/efa/{efa_id}/proofs")
+def get_efa_proofs(
+    efa_id: int,
+    year: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+):
+    """V45: Statut des preuves pour une EFA (expected/deposited/validated)."""
+    efa = db.query(TertiaireEfa).filter(
+        TertiaireEfa.id == efa_id,
+        TertiaireEfa.deleted_at.is_(None),
+    ).first()
+    if not efa:
+        raise HTTPException(404, "EFA introuvable")
+    return list_proofs_status(db, efa_id, year)
+
+
+class ProofLinkBody(BaseModel):
+    kb_doc_id: str
+    proof_type: str
+    year: Optional[int] = None
+    issue_code: Optional[str] = None
+
+
+@router.post("/efa/{efa_id}/proofs/link", status_code=201)
+def link_proof_to_efa(
+    efa_id: int,
+    body: ProofLinkBody,
+    db: Session = Depends(get_db),
+):
+    """V45: Lie un document KB à une EFA comme preuve."""
+    efa = db.query(TertiaireEfa).filter(
+        TertiaireEfa.id == efa_id,
+        TertiaireEfa.deleted_at.is_(None),
+    ).first()
+    if not efa:
+        raise HTTPException(404, "EFA introuvable")
+
+    # Dedup: check if artifact already exists
+    existing = db.query(TertiaireProofArtifact).filter(
+        TertiaireProofArtifact.efa_id == efa_id,
+        TertiaireProofArtifact.kb_doc_id == body.kb_doc_id,
+        TertiaireProofArtifact.type == body.proof_type,
+    ).first()
+    if existing:
+        return {
+            "id": existing.id,
+            "status": "already_linked",
+            "message": "Ce document est déjà lié à cette EFA",
+        }
+
+    import json
+    artifact = TertiaireProofArtifact(
+        efa_id=efa_id,
+        type=body.proof_type,
+        kb_doc_id=body.kb_doc_id,
+        owner_role=efa.role_assujetti,
+        tags_json=json.dumps({
+            "year": body.year,
+            "issue_code": body.issue_code,
+            "proof_type": body.proof_type,
+        }),
+    )
+    db.add(artifact)
+    db.commit()
+    db.refresh(artifact)
+
+    return {
+        "id": artifact.id,
+        "status": "linked",
+        "type": artifact.type,
+        "kb_doc_id": artifact.kb_doc_id,
+        "efa_id": efa_id,
     }
