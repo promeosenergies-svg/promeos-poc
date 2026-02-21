@@ -189,6 +189,18 @@ def create_efa(body: EfaCreate, db: Session = Depends(get_db)):
         first_bat = batiment_lookup[body.buildings[0].building_id]
         inferred_site_id = first_bat.site_id
 
+    # V44: Dedup warning — check if site already has an active/draft EFA
+    dedup_warning = None
+    if inferred_site_id:
+        existing_efas = db.query(TertiaireEfa).filter(
+            TertiaireEfa.site_id == inferred_site_id,
+            TertiaireEfa.deleted_at.is_(None),
+            TertiaireEfa.statut.in_([EfaStatut.DRAFT, EfaStatut.ACTIVE]),
+        ).all()
+        if existing_efas:
+            names = ", ".join(e.nom for e in existing_efas[:3])
+            dedup_warning = f"Ce site a déjà {len(existing_efas)} EFA existante(s) : {names}"
+
     efa = TertiaireEfa(
         org_id=body.org_id,
         site_id=inferred_site_id,
@@ -222,6 +234,8 @@ def create_efa(body: EfaCreate, db: Session = Depends(get_db)):
     result = _efa_to_dict(efa)
     if created_buildings:
         result["buildings"] = [_building_to_dict(b) for b in created_buildings]
+    if dedup_warning:
+        result["dedup_warning"] = dedup_warning
     return result
 
 

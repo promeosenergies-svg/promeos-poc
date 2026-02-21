@@ -200,12 +200,18 @@ export function computeActionableLevers({ kpis = {}, billingSummary = {}, compli
       'Aucune EFA créée — action recommandée',
     ];
 
+    // V44: deep-link with site_id for direct wizard prefill
+    const ctaSiteId = sampleSite?.site_id;
+    const ctaPath = ctaSiteId
+      ? `/conformite/tertiaire/wizard?site_id=${ctaSiteId}`
+      : '/conformite/tertiaire';
+
     levers.push({
       type: 'conformite',
       actionKey: 'lev-tertiaire-create-efa',
       label: `Créer une EFA pour ${uncoveredProbable} site${uncoveredProbable > 1 ? 's' : ''} assujetti${uncoveredProbable > 1 ? 's' : ''} probable${uncoveredProbable > 1 ? 's' : ''}`,
       impactEur: null,
-      ctaPath: '/conformite/tertiaire',
+      ctaPath,
       proofHint: 'Attestation OPERAT ou justificatif de surface',
       reasons_fr: rationaleLines,
     });

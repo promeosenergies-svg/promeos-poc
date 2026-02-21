@@ -71,19 +71,24 @@ export default function TertiaireWizardPage() {
       .then((data) => {
         setCatalog(data);
         // V42: Auto-select buildings from prefill site_id
+        // V42+V44: Auto-select buildings + prefill EFA name from site
         if (prefillSiteId && data?.sites) {
           const targetSite = data.sites.find(
             (s) => String(s.site_id) === prefillSiteId
           );
-          if (targetSite && targetSite.batiments.length > 0) {
-            const preselected = targetSite.batiments.map((bat) => ({
-              building_id: bat.id,
-              nom: bat.nom,
-              surface_m2: bat.surface_m2,
-              site_nom: targetSite.site_nom,
-              usage_label: '',
-            }));
-            updateField('selectedBuildings', preselected);
+          if (targetSite) {
+            // V44: Prefill EFA name from site name
+            updateField('nom', `EFA — ${targetSite.site_nom}`);
+            if (targetSite.batiments.length > 0) {
+              const preselected = targetSite.batiments.map((bat) => ({
+                building_id: bat.id,
+                nom: bat.nom,
+                surface_m2: bat.surface_m2,
+                site_nom: targetSite.site_nom,
+                usage_label: '',
+              }));
+              updateField('selectedBuildings', preselected);
+            }
           }
         }
       })
