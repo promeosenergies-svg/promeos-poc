@@ -3,7 +3,7 @@ PROMEOS V39 — Routes Tertiaire / OPERAT
 Namespace: /api/tertiaire
 """
 from datetime import date
-from typing import Optional
+from typing import Optional, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
@@ -16,6 +16,7 @@ from models import (
     TertiaireDeclaration, TertiaireProofArtifact, TertiaireDataQualityIssue,
     EfaStatut, EfaRole, DeclarationStatus, PerimeterEventType,
     DataQualityIssueStatus,
+    Site, Batiment,  # V41
 )
 from services.tertiaire_service import (
     qualify_efa, run_controls, precheck_declaration,
@@ -27,6 +28,11 @@ router = APIRouter(prefix="/api/tertiaire", tags=["Tertiaire / OPERAT"])
 
 # ── Schemas ──────────────────────────────────────────────────────────────────
 
+class BuildingWithUsage(BaseModel):
+    building_id: int
+    usage_label: str
+
+
 class EfaCreate(BaseModel):
     org_id: int
     site_id: Optional[int] = None
@@ -35,6 +41,7 @@ class EfaCreate(BaseModel):
     reporting_start: Optional[str] = None
     reporting_end: Optional[str] = None
     notes: Optional[str] = None
+    buildings: Optional[List[BuildingWithUsage]] = None  # V41
 
 
 class EfaUpdate(BaseModel):
@@ -161,9 +168,29 @@ def list_efas(
 
 @router.post("/efa", status_code=201)
 def create_efa(body: EfaCreate, db: Session = Depends(get_db)):
+    # V41: Validate buildings if provided
+    batiment_lookup = {}
+    if body.buildings:
+        building_ids = [b.building_id for b in body.buildings]
+        batiments = db.query(Batiment).filter(
+            Batiment.id.in_(building_ids),
+            Batiment.deleted_at.is_(None),
+        ).all()
+        found_ids = {b.id for b in batiments}
+        missing = set(building_ids) - found_ids
+        if missing:
+            raise HTTPException(404, f"Bâtiment(s) introuvable(s) : {sorted(missing)}")
+        batiment_lookup = {b.id: b for b in batiments}
+
+    # Infer site_id from first building if not provided
+    inferred_site_id = body.site_id
+    if not inferred_site_id and batiment_lookup:
+        first_bat = batiment_lookup[body.buildings[0].building_id]
+        inferred_site_id = first_bat.site_id
+
     efa = TertiaireEfa(
         org_id=body.org_id,
-        site_id=body.site_id,
+        site_id=inferred_site_id,
         nom=body.nom,
         statut=EfaStatut.DRAFT,
         role_assujetti=EfaRole(body.role_assujetti),
@@ -172,9 +199,29 @@ def create_efa(body: EfaCreate, db: Session = Depends(get_db)):
         notes=body.notes,
     )
     db.add(efa)
+    db.flush()  # get efa.id for building rows
+
+    # V41: Create building associations with snapshotted surface
+    created_buildings = []
+    if body.buildings and batiment_lookup:
+        for bw in body.buildings:
+            bat = batiment_lookup[bw.building_id]
+            assoc = TertiaireEfaBuilding(
+                efa_id=efa.id,
+                building_id=bw.building_id,
+                usage_label=bw.usage_label,
+                surface_m2=bat.surface_m2,  # snapshot from patrimoine
+            )
+            db.add(assoc)
+            created_buildings.append(assoc)
+
     db.commit()
     db.refresh(efa)
-    return _efa_to_dict(efa)
+
+    result = _efa_to_dict(efa)
+    if created_buildings:
+        result["buildings"] = [_building_to_dict(b) for b in created_buildings]
+    return result
 
 
 @router.get("/efa/{efa_id}")
@@ -422,3 +469,43 @@ def update_issue_status(issue_id: int, body: IssueStatusUpdate, db: Session = De
 @router.get("/dashboard")
 def dashboard(org_id: Optional[int] = Query(None), db: Session = Depends(get_db)):
     return get_tertiaire_dashboard(db, org_id)
+
+
+# ── Catalog (patrimoine buildings for wizard) ────────────────────────────────
+
+@router.get("/catalog")
+def building_catalog(
+    org_id: int = Query(1),
+    db: Session = Depends(get_db),
+):
+    """Sites + bâtiments pour le wizard EFA (scoped org)."""
+    sites = db.query(Site).filter(
+        Site.actif.is_(True),
+        Site.deleted_at.is_(None),
+    ).order_by(Site.nom).all()
+
+    result = []
+    for site in sites:
+        bats = db.query(Batiment).filter(
+            Batiment.site_id == site.id,
+            Batiment.deleted_at.is_(None),
+        ).all()
+        result.append({
+            "site_id": site.id,
+            "site_nom": site.nom,
+            "ville": site.ville,
+            "batiments": [
+                {
+                    "id": b.id,
+                    "nom": b.nom,
+                    "surface_m2": b.surface_m2,
+                    "annee_construction": b.annee_construction,
+                }
+                for b in bats
+            ],
+        })
+
+    return {
+        "sites": result,
+        "total_buildings": sum(len(s["batiments"]) for s in result),
+    }

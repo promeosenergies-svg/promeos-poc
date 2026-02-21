@@ -1,24 +1,24 @@
 /**
- * PROMEOS V39 — Assistant création EFA (7 étapes)
+ * PROMEOS V41 — Assistant création EFA (6 étapes)
  * Route: /conformite/tertiaire/wizard
+ * Sélection de bâtiments depuis le Patrimoine (zéro duplication).
  */
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Building2, MapPin, Ruler, Users, Calendar, FileText, CheckCircle2,
+  Building2, MapPin, Users, Calendar, CheckCircle2,
   ArrowRight, ArrowLeft, Loader2, AlertTriangle,
 } from 'lucide-react';
 import { PageShell, Card, CardBody, Button, Input, Select, Badge } from '../../ui';
 import {
-  createTertiaireEfa, addTertiaireBuilding, addTertiaireResponsibility,
+  createTertiaireEfa, addTertiaireResponsibility, getTertiaireCatalog,
 } from '../../services/api';
 import ProofDepositCTA from './components/ProofDepositCTA';
 
 const STEPS = [
-  { key: 'nom', label: 'Identification', icon: Building2, description: 'Nom et type de l\'EFA' },
+  { key: 'nom', label: 'Identification', icon: Building2, description: "Nom et type de l'EFA" },
   { key: 'role', label: 'Rôle assujetti', icon: Users, description: 'Propriétaire, locataire ou mandataire' },
-  { key: 'batiment', label: 'Bâtiment', icon: MapPin, description: 'Association bâtiment et surface' },
-  { key: 'usage', label: 'Usage', icon: Ruler, description: 'Catégorie d\'activité OPERAT' },
+  { key: 'batiments', label: 'Bâtiments', icon: MapPin, description: 'Sélectionner les bâtiments du patrimoine' },
   { key: 'responsable', label: 'Responsable', icon: Users, description: 'Contact du responsable EFA' },
   { key: 'reporting', label: 'Reporting', icon: Calendar, description: 'Période et année de référence' },
   { key: 'confirmation', label: 'Confirmation', icon: CheckCircle2, description: 'Vérification et création' },
@@ -51,13 +51,25 @@ export default function TertiaireWizardPage() {
   const [form, setForm] = useState({
     nom: '',
     role_assujetti: 'proprietaire',
-    surface_m2: '',
-    usage_label: '',
+    selectedBuildings: [],
     resp_entity: '',
     resp_email: '',
     reporting_start: '',
     notes: '',
   });
+
+  // V41: Patrimoine catalog
+  const [catalog, setCatalog] = useState(null);
+  const [catalogLoading, setCatalogLoading] = useState(false);
+  const [catalogError, setCatalogError] = useState(null);
+
+  useEffect(() => {
+    setCatalogLoading(true);
+    getTertiaireCatalog()
+      .then((data) => setCatalog(data))
+      .catch((err) => setCatalogError(err?.message || 'Erreur chargement patrimoine'))
+      .finally(() => setCatalogLoading(false));
+  }, []);
 
   const updateField = useCallback((field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -67,11 +79,11 @@ export default function TertiaireWizardPage() {
     switch (step) {
       case 0: return form.nom.trim().length > 0;
       case 1: return !!form.role_assujetti;
-      case 2: return form.surface_m2 && Number(form.surface_m2) > 0;
-      case 3: return !!form.usage_label;
+      case 2: return form.selectedBuildings.length > 0
+               && form.selectedBuildings.every((b) => !!b.usage_label);
+      case 3: return true;
       case 4: return true;
       case 5: return true;
-      case 6: return true;
       default: return false;
     }
   };
@@ -80,24 +92,20 @@ export default function TertiaireWizardPage() {
     setSaving(true);
     setSubmitError(null);
     try {
-      // 1. Create EFA
+      // V41: Create EFA with buildings atomically
       const efa = await createTertiaireEfa({
         org_id: 1,
         nom: form.nom.trim(),
         role_assujetti: form.role_assujetti,
         reporting_start: form.reporting_start || null,
         notes: form.notes || null,
+        buildings: form.selectedBuildings.map((b) => ({
+          building_id: b.building_id,
+          usage_label: b.usage_label,
+        })),
       });
 
-      // 2. Add building
-      if (form.surface_m2) {
-        await addTertiaireBuilding(efa.id, {
-          usage_label: form.usage_label || null,
-          surface_m2: Number(form.surface_m2),
-        });
-      }
-
-      // 3. Add responsibility
+      // Add responsibility (still separate, only if provided)
       if (form.resp_entity || form.resp_email) {
         await addTertiaireResponsibility(efa.id, {
           role: form.role_assujetti,
@@ -115,6 +123,33 @@ export default function TertiaireWizardPage() {
     }
   };
 
+  const toggleBuilding = (bat, siteName) => {
+    const exists = form.selectedBuildings.find((b) => b.building_id === bat.id);
+    if (exists) {
+      updateField('selectedBuildings',
+        form.selectedBuildings.filter((b) => b.building_id !== bat.id));
+    } else {
+      updateField('selectedBuildings', [
+        ...form.selectedBuildings,
+        {
+          building_id: bat.id,
+          nom: bat.nom,
+          surface_m2: bat.surface_m2,
+          site_nom: siteName,
+          usage_label: '',
+        },
+      ]);
+    }
+  };
+
+  const setUsageForBuilding = (buildingId, usageLabel) => {
+    updateField('selectedBuildings',
+      form.selectedBuildings.map((b) =>
+        b.building_id === buildingId ? { ...b, usage_label: usageLabel } : b
+      ));
+  };
+
+  const totalSurface = form.selectedBuildings.reduce((s, b) => s + (b.surface_m2 || 0), 0);
   const currentStep = STEPS[step];
 
   return (
@@ -147,7 +182,7 @@ export default function TertiaireWizardPage() {
             </div>
           </div>
 
-          {/* Step content */}
+          {/* Step 0: Identification */}
           {step === 0 && (
             <div className="space-y-4">
               <Input
@@ -159,6 +194,7 @@ export default function TertiaireWizardPage() {
             </div>
           )}
 
+          {/* Step 1: Rôle assujetti */}
           {step === 1 && (
             <div className="space-y-4">
               <p className="text-sm text-gray-600 mb-3">
@@ -183,44 +219,107 @@ export default function TertiaireWizardPage() {
             </div>
           )}
 
+          {/* Step 2: Bâtiments du patrimoine (V41) */}
           {step === 2 && (
             <div className="space-y-4">
-              <Input
-                label="Surface tertiaire (m²)"
-                type="number"
-                value={form.surface_m2}
-                onChange={(e) => updateField('surface_m2', e.target.value)}
-                placeholder="Ex : 2500"
-              />
-              <p className="text-xs text-gray-400">
-                Le seuil d'assujettissement est de 1 000 m² de surface de plancher.
-              </p>
-            </div>
-          )}
+              {catalogLoading && (
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <Loader2 size={16} className="animate-spin" />
+                  Chargement du patrimoine…
+                </div>
+              )}
 
-          {step === 3 && (
-            <div className="space-y-4">
-              <p className="text-sm text-gray-600 mb-3">Catégorie d'activité principale :</p>
-              <div className="grid grid-cols-2 gap-2">
-                {USAGES.map((u) => (
-                  <button
-                    key={u}
-                    type="button"
-                    onClick={() => updateField('usage_label', u)}
-                    className={`text-left p-3 rounded-lg border text-sm transition-colors ${
-                      form.usage_label === u
-                        ? 'border-indigo-500 bg-indigo-50 font-medium'
-                        : 'border-gray-200 hover:bg-gray-50'
-                    }`}
+              {catalogError && (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-3">
+                  <p className="text-sm text-red-700">{catalogError}</p>
+                </div>
+              )}
+
+              {catalog && catalog.total_buildings === 0 && (
+                <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-center">
+                  <AlertTriangle size={24} className="mx-auto text-amber-500 mb-2" />
+                  <p className="text-sm font-medium text-amber-800">
+                    Aucun bâtiment dans le patrimoine
+                  </p>
+                  <p className="text-xs text-amber-600 mt-1 mb-3">
+                    Pour créer une EFA, vous devez d'abord enregistrer vos bâtiments dans le module Patrimoine.
+                  </p>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => navigate('/patrimoine')}
                   >
-                    {u}
-                  </button>
-                ))}
-              </div>
+                    Compléter le patrimoine
+                  </Button>
+                </div>
+              )}
+
+              {catalog && catalog.total_buildings > 0 && (
+                <>
+                  <p className="text-sm text-gray-600">
+                    Sélectionnez un ou plusieurs bâtiments, puis choisissez l'usage OPERAT pour chacun :
+                  </p>
+                  {catalog.sites.map((site) => (
+                    site.batiments.length > 0 && (
+                      <div key={site.site_id} className="border border-gray-200 rounded-lg p-3">
+                        <p className="text-xs font-semibold text-gray-500 uppercase mb-2">
+                          {site.site_nom}{site.ville ? ` — ${site.ville}` : ''}
+                        </p>
+                        {site.batiments.map((bat) => {
+                          const selected = form.selectedBuildings.find(
+                            (b) => b.building_id === bat.id
+                          );
+                          return (
+                            <div key={bat.id} className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0">
+                              <input
+                                type="checkbox"
+                                checked={!!selected}
+                                onChange={() => toggleBuilding(bat, site.site_nom)}
+                                className="h-4 w-4 rounded border-gray-300 text-indigo-600"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-gray-900">{bat.nom}</p>
+                                <p className="text-xs text-gray-400">
+                                  {bat.surface_m2} m²
+                                  {bat.annee_construction ? ` · ${bat.annee_construction}` : ''}
+                                </p>
+                              </div>
+                              {selected && (
+                                <select
+                                  value={selected.usage_label}
+                                  onChange={(e) => setUsageForBuilding(bat.id, e.target.value)}
+                                  className="w-48 text-sm border border-gray-300 rounded-md px-2 py-1"
+                                  data-testid={`usage-select-${bat.id}`}
+                                >
+                                  <option value="">Usage OPERAT…</option>
+                                  {USAGES.map((u) => (
+                                    <option key={u} value={u}>{u}</option>
+                                  ))}
+                                </select>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )
+                  ))}
+
+                  {/* Surface totale (lecture seule) */}
+                  {form.selectedBuildings.length > 0 && (
+                    <div className="rounded-lg bg-indigo-50 border border-indigo-100 p-3">
+                      <p className="text-xs text-indigo-600 font-medium">
+                        Surface totale : {totalSurface.toLocaleString('fr-FR')} m²
+                        ({form.selectedBuildings.length} bâtiment{form.selectedBuildings.length > 1 ? 's' : ''})
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           )}
 
-          {step === 4 && (
+          {/* Step 3: Responsable */}
+          {step === 3 && (
             <div className="space-y-4">
               <Input
                 label="Entité responsable"
@@ -238,7 +337,8 @@ export default function TertiaireWizardPage() {
             </div>
           )}
 
-          {step === 5 && (
+          {/* Step 4: Reporting */}
+          {step === 4 && (
             <div className="space-y-4">
               <Input
                 label="Début de la période de reporting"
@@ -255,22 +355,27 @@ export default function TertiaireWizardPage() {
             </div>
           )}
 
-          {step === 6 && (
+          {/* Step 5: Confirmation */}
+          {step === 5 && (
             <div className="space-y-4">
               <h4 className="text-sm font-semibold text-gray-700">Récapitulatif</h4>
               <div className="rounded-lg border border-gray-200 divide-y divide-gray-100">
                 {[
                   ['Nom', form.nom],
                   ['Rôle', ROLES.find((r) => r.value === form.role_assujetti)?.label || form.role_assujetti],
-                  ['Surface', form.surface_m2 ? `${form.surface_m2} m²` : 'Non renseignée'],
-                  ['Usage', form.usage_label || 'Non renseigné'],
+                  ['Bâtiments', form.selectedBuildings.length > 0
+                    ? form.selectedBuildings.map((b) => `${b.nom} (${b.surface_m2} m² — ${b.usage_label})`).join(', ')
+                    : 'Aucun'],
+                  ['Surface totale', form.selectedBuildings.length > 0
+                    ? `${totalSurface.toLocaleString('fr-FR')} m²`
+                    : 'Non renseignée'],
                   ['Responsable', form.resp_entity || 'Non renseigné'],
                   ['Email', form.resp_email || 'Non renseigné'],
                   ['Début reporting', form.reporting_start || 'Non renseigné'],
                 ].map(([label, value]) => (
                   <div key={label} className="flex justify-between px-4 py-2.5">
                     <span className="text-xs text-gray-500">{label}</span>
-                    <span className="text-xs font-medium text-gray-900">{value}</span>
+                    <span className="text-xs font-medium text-gray-900 max-w-[60%] text-right">{value}</span>
                   </div>
                 ))}
               </div>
@@ -289,8 +394,8 @@ export default function TertiaireWizardPage() {
                     `EFA:${form.nom || '(nouveau)'}`,
                     'Étape:Confirmation',
                     `Rôle:${ROLES.find((r) => r.value === form.role_assujetti)?.label || form.role_assujetti}`,
-                    `Surface:${form.surface_m2 || '?'} m²`,
-                    `Usage:${form.usage_label || '?'}`,
+                    `Bâtiments:${form.selectedBuildings.length}`,
+                    `Surface:${totalSurface} m²`,
                   ].join(' | ')}
                   label="Déposer une preuve dans la Mémobox"
                   variant="secondary"
