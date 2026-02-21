@@ -880,6 +880,10 @@ export const updateTertiaireIssue = (issueId, body) =>
 export const getTertiaireDashboard = (orgId = null) =>
   api.get(`${TERT_BASE}/dashboard`, { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);
 
+// V42: Site signals for auto-qualification
+export const getTertiaireSiteSignals = (orgId = null) =>
+  api.get(`${TERT_BASE}/site-signals`, { params: orgId ? { org_id: orgId } : {} }).then(r => r.data);
+
 // V41: Patrimoine building catalog for wizard
 export const getTertiaireCatalog = (orgId = 1) =>
   api.get(`${TERT_BASE}/catalog`, { params: { org_id: orgId } }).then(r => r.data);

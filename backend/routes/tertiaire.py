@@ -21,6 +21,7 @@ from models import (
 from services.tertiaire_service import (
     qualify_efa, run_controls, precheck_declaration,
     generate_operat_pack, get_tertiaire_dashboard,
+    compute_site_signals,  # V42
 )
 
 router = APIRouter(prefix="/api/tertiaire", tags=["Tertiaire / OPERAT"])
@@ -469,6 +470,14 @@ def update_issue_status(issue_id: int, body: IssueStatusUpdate, db: Session = De
 @router.get("/dashboard")
 def dashboard(org_id: Optional[int] = Query(None), db: Session = Depends(get_db)):
     return get_tertiaire_dashboard(db, org_id)
+
+
+# ── Site Signals V42 ─────────────────────────────────────────────────────────
+
+@router.get("/site-signals")
+def site_signals(org_id: Optional[int] = Query(None), db: Session = Depends(get_db)):
+    """V42: Qualification des sites patrimoine vis-à-vis du Décret tertiaire."""
+    return compute_site_signals(db, org_id)
 
 
 # ── Catalog (patrimoine buildings for wizard) ────────────────────────────────

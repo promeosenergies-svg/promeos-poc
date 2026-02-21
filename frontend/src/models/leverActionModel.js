@@ -119,6 +119,33 @@ export const LEVER_ACTION_TEMPLATES = {
     due_days: 90,
     priority: 1,
   },
+  // V42 — Tertiaire site signals
+  'lev-tertiaire-create-efa': {
+    source_type: 'lever_engine',
+    severity: 'high',
+    rationale: [
+      'Sites identifiés comme probablement assujettis au Décret tertiaire (surface >= 1000 m²)',
+      'Aucune EFA existante pour ces sites',
+      'Création d\'une EFA recommandée avant la prochaine échéance OPERAT',
+    ],
+    proof_expected: 'Attestation OPERAT ou justificatif de surface tertiaire',
+    proof_owner: 'Responsable conformité ou Energy Manager',
+    due_days: 60,
+    priority: 1,
+  },
+  'lev-tertiaire-complete-patrimoine': {
+    source_type: 'lever_engine',
+    severity: 'medium',
+    rationale: [
+      'Données patrimoniales incomplètes pour certains sites',
+      'Impossible de qualifier l\'assujettissement au Décret tertiaire sans surface renseignée',
+      'Complétez les bâtiments et surfaces pour activer la qualification automatique',
+    ],
+    proof_expected: 'Données patrimoniales (surfaces, bâtiments)',
+    proof_owner: 'Gestionnaire patrimoine',
+    due_days: 90,
+    priority: 2,
+  },
   // V37 — Activation donnees
   'lev-data-cover': {
     source_type: 'lever_engine',

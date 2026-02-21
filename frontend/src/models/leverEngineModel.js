@@ -184,6 +184,32 @@ export function computeActionableLevers({ kpis = {}, billingSummary = {}, compli
     });
   }
 
+  // ── Tertiaire / Site signals V42 ──────────────────────────────────────────
+  const tertiaireSiteSignals = kpis._tertiaireSiteSignals ?? {};
+  const uncoveredProbable = tertiaireSiteSignals.uncovered_probable ?? 0;
+  const incompleteData = tertiaireSiteSignals.incomplete_data ?? 0;
+
+  if (uncoveredProbable > 0) {
+    levers.push({
+      type: 'conformite',
+      actionKey: 'lev-tertiaire-create-efa',
+      label: `Créer une EFA pour ${uncoveredProbable} site${uncoveredProbable > 1 ? 's' : ''} assujetti${uncoveredProbable > 1 ? 's' : ''} probable${uncoveredProbable > 1 ? 's' : ''}`,
+      impactEur: null,
+      ctaPath: '/conformite/tertiaire',
+      proofHint: 'Attestation OPERAT ou justificatif de surface',
+    });
+  }
+
+  if (incompleteData > 0) {
+    levers.push({
+      type: 'data_activation',
+      actionKey: 'lev-tertiaire-complete-patrimoine',
+      label: `Compléter les données de ${incompleteData} site${incompleteData > 1 ? 's' : ''} pour qualifier l'assujettissement`,
+      impactEur: null,
+      ctaPath: '/patrimoine',
+    });
+  }
+
   // ── Activation donnees V37 ──────────────────────────────────────────────────
   const activatedCount = computeActivatedCount({ kpis, billingSummary, purchaseSignals });
   if ((kpis.total ?? 0) > 0 && activatedCount < ACTIVATION_THRESHOLD) {

@@ -4,7 +4,7 @@
  * Sélection de bâtiments depuis le Patrimoine (zéro duplication).
  */
 import { useState, useCallback, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Building2, MapPin, Users, Calendar, CheckCircle2,
   ArrowRight, ArrowLeft, Loader2, AlertTriangle,
@@ -45,6 +45,8 @@ const USAGES = [
 
 export default function TertiaireWizardPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const prefillSiteId = searchParams.get('site_id');
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [submitError, setSubmitError] = useState(null);
@@ -66,10 +68,28 @@ export default function TertiaireWizardPage() {
   useEffect(() => {
     setCatalogLoading(true);
     getTertiaireCatalog()
-      .then((data) => setCatalog(data))
+      .then((data) => {
+        setCatalog(data);
+        // V42: Auto-select buildings from prefill site_id
+        if (prefillSiteId && data?.sites) {
+          const targetSite = data.sites.find(
+            (s) => String(s.site_id) === prefillSiteId
+          );
+          if (targetSite && targetSite.batiments.length > 0) {
+            const preselected = targetSite.batiments.map((bat) => ({
+              building_id: bat.id,
+              nom: bat.nom,
+              surface_m2: bat.surface_m2,
+              site_nom: targetSite.site_nom,
+              usage_label: '',
+            }));
+            updateField('selectedBuildings', preselected);
+          }
+        }
+      })
       .catch((err) => setCatalogError(err?.message || 'Erreur chargement patrimoine'))
       .finally(() => setCatalogLoading(false));
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const updateField = useCallback((field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));

@@ -6,10 +6,10 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Building2, AlertTriangle, CheckCircle2, FileText, Plus,
-  Loader2, ArrowRight, ShieldAlert,
+  Loader2, ArrowRight, ShieldAlert, MapPin,
 } from 'lucide-react';
 import { PageShell, Card, CardBody, Button, Badge, KpiCard } from '../../ui';
-import { getTertiaireDashboard, getTertiaireEfas } from '../../services/api';
+import { getTertiaireDashboard, getTertiaireEfas, getTertiaireSiteSignals } from '../../services/api';
 
 const STATUS_LABELS = {
   active: 'Active',
@@ -27,6 +27,7 @@ export default function TertiaireDashboardPage() {
   const navigate = useNavigate();
   const [dashboard, setDashboard] = useState(null);
   const [efas, setEfas] = useState([]);
+  const [siteSignals, setSiteSignals] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -35,10 +36,12 @@ export default function TertiaireDashboardPage() {
     Promise.all([
       getTertiaireDashboard().catch(() => null),
       getTertiaireEfas().catch(() => ({ efas: [] })),
-    ]).then(([dash, efaData]) => {
+      getTertiaireSiteSignals().catch(() => null),
+    ]).then(([dash, efaData, signals]) => {
       if (!cancelled) {
         setDashboard(dash);
         setEfas(efaData?.efas ?? []);
+        setSiteSignals(signals);
         setLoading(false);
       }
     });
@@ -91,6 +94,68 @@ export default function TertiaireDashboardPage() {
           accent={kpis.critical_issues > 0 ? 'red' : 'slate'}
         />
       </div>
+
+      {/* V42: Sites à traiter */}
+      {siteSignals && (siteSignals.uncovered_probable > 0 || siteSignals.incomplete_data > 0) && (
+        <div className="mt-6" data-testid="sites-a-traiter">
+          <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">
+            Sites à traiter
+          </h3>
+          <div className="space-y-2">
+            {siteSignals.sites
+              .filter((s) => s.signal === 'assujetti_probable' && !s.is_covered)
+              .map((site) => (
+                <div
+                  key={site.site_id}
+                  className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50/50 p-3"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <MapPin size={16} className="text-amber-500 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{site.site_nom}</p>
+                      <p className="text-xs text-gray-500">
+                        {site.surface_tertiaire_m2 ? `${Math.round(site.surface_tertiaire_m2).toLocaleString('fr-FR')} m²` : 'Surface non renseignée'}
+                        {site.ville ? ` · ${site.ville}` : ''}
+                        {' · '}{site.nb_batiments} bâtiment{site.nb_batiments > 1 ? 's' : ''}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    size="xs"
+                    variant="secondary"
+                    onClick={() => navigate(`/conformite/tertiaire/wizard?site_id=${site.site_id}`)}
+                  >
+                    Créer une EFA <ArrowRight size={12} />
+                  </Button>
+                </div>
+              ))}
+            {siteSignals.sites
+              .filter((s) => !s.data_complete && s.signal === 'a_verifier')
+              .slice(0, 3)
+              .map((site) => (
+                <div
+                  key={`incomplete-${site.site_id}`}
+                  className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 p-3"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <AlertTriangle size={16} className="text-gray-400 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-700 truncate">{site.site_nom}</p>
+                      <p className="text-xs text-gray-400">Données incomplètes — qualification impossible</p>
+                    </div>
+                  </div>
+                  <Button
+                    size="xs"
+                    variant="secondary"
+                    onClick={() => navigate('/patrimoine')}
+                  >
+                    Compléter
+                  </Button>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
 
       {/* Actions rapides */}
       <div className="flex items-center gap-3 mt-6">

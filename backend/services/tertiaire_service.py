@@ -18,6 +18,7 @@ from models import (
     TertiaireProofArtifact, TertiaireDataQualityIssue,
     EfaStatut, DeclarationStatus,
     DataQualityIssueSeverity, DataQualityIssueStatus,
+    Site, Batiment,  # V42
 )
 
 logger = logging.getLogger(__name__)
@@ -533,4 +534,98 @@ def get_tertiaire_dashboard(db: Session, org_id: int = None) -> dict:
         "closed": closed,
         "open_issues": open_issues,
         "critical_issues": critical_issues,
+    }
+
+
+# ── Site Signals V42 ────────────────────────────────────────────────────────
+
+def compute_site_signals(db: Session, org_id: int = None) -> dict:
+    """Qualifie chaque site du patrimoine vis-à-vis du Décret tertiaire.
+
+    Heuristique V1:
+    - surface_tertiaire_m2 >= 1000 → assujetti_probable
+    - surface_tertiaire_m2 < 1000 mais données incomplètes → a_verifier
+    - surface_tertiaire_m2 < 1000 et données complètes → non_concerne
+
+    Un site "couvert" = a déjà au moins une EFA active/draft liée via building_id.
+    """
+    sites = db.query(Site).filter(
+        Site.actif.is_(True),
+        Site.deleted_at.is_(None),
+    ).order_by(Site.nom).all()
+
+    # Collect all EFA building associations to determine coverage
+    covered_site_ids = set()
+    efa_by_site = {}
+    efas = db.query(TertiaireEfa).filter(
+        TertiaireEfa.deleted_at.is_(None),
+    ).all()
+    for efa in efas:
+        buildings = db.query(TertiaireEfaBuilding).filter(
+            TertiaireEfaBuilding.efa_id == efa.id,
+        ).all()
+        for b in buildings:
+            if b.building_id:
+                bat = db.query(Batiment).filter(Batiment.id == b.building_id).first()
+                if bat:
+                    covered_site_ids.add(bat.site_id)
+                    efa_by_site.setdefault(bat.site_id, []).append(efa.id)
+
+    signals = []
+    for site in sites:
+        bats = db.query(Batiment).filter(
+            Batiment.site_id == site.id,
+            Batiment.deleted_at.is_(None),
+        ).all()
+
+        # Surface tertiaire: use site.tertiaire_area_m2 if set, else sum of building surfaces
+        surface_tertiaire = site.tertiaire_area_m2
+        sum_bat_surface = sum(b.surface_m2 or 0 for b in bats)
+        if not surface_tertiaire:
+            surface_tertiaire = sum_bat_surface
+
+        # Data completeness
+        has_batiments = len(bats) > 0
+        all_surfaces_ok = has_batiments and all(b.surface_m2 and b.surface_m2 > 0 for b in bats)
+        data_complete = has_batiments and all_surfaces_ok
+
+        # Heuristic
+        if surface_tertiaire and surface_tertiaire >= 1000:
+            signal = "assujetti_probable"
+        elif not data_complete:
+            signal = "a_verifier"
+        else:
+            signal = "non_concerne"
+
+        is_covered = site.id in covered_site_ids
+        efa_ids = efa_by_site.get(site.id, [])
+
+        signals.append({
+            "site_id": site.id,
+            "site_nom": site.nom,
+            "ville": site.ville,
+            "surface_tertiaire_m2": surface_tertiaire,
+            "nb_batiments": len(bats),
+            "signal": signal,
+            "data_complete": data_complete,
+            "is_covered": is_covered,
+            "efa_ids": efa_ids,
+        })
+
+    counts = {
+        "assujetti_probable": sum(1 for s in signals if s["signal"] == "assujetti_probable"),
+        "a_verifier": sum(1 for s in signals if s["signal"] == "a_verifier"),
+        "non_concerne": sum(1 for s in signals if s["signal"] == "non_concerne"),
+    }
+    uncovered_probable = sum(
+        1 for s in signals if s["signal"] == "assujetti_probable" and not s["is_covered"]
+    )
+    incomplete_data = sum(1 for s in signals if not s["data_complete"])
+
+    return {
+        "sites": signals,
+        "total_sites": len(signals),
+        "counts": counts,
+        "uncovered_probable": uncovered_probable,
+        "incomplete_data": incomplete_data,
     }
