@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { PageShell, Card, CardBody, Badge, Button, TrustBadge, EmptyState } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
-import { searchKBItems, getKBFullStats, uploadKBDoc, getKBDocs, changeKBDocStatus } from '../services/api';
+import { searchKBItems, getKBFullStats, uploadKBDoc, getKBDocs, changeKBDocStatus, linkTertiaireProof } from '../services/api';
 import { DOC_STATUS_LABELS, DOC_STATUS_BADGE } from '../models/proofLinkModel';
 
 const DOMAIN_TABS = [
@@ -71,13 +71,15 @@ export default function KBExplorerPage() {
     if (urlHint) setQuery(urlHint);
     const urlStatus = searchParams.get('status');
     if (urlStatus) setStatusFilter(urlStatus);
-    // V39.1: Build proof context for banner
+    // V39.1+V45: Build proof context for banner
     if (searchParams.get('context') === 'proof') {
       setProofContext({
         hint: urlHint || null,
         domain: urlDomain || null,
         lever: searchParams.get('lever') || null,
         status: urlStatus || null,
+        proof_type: searchParams.get('proof_type') || null,
+        efa_id: searchParams.get('efa_id') || null,
       });
     }
   }, []);
@@ -222,6 +224,12 @@ export default function KBExplorerPage() {
                 <span className="text-indigo-500 font-normal"> — Domaine : {proofContext.domain.replace('conformite/', 'Conformité / ').replace('tertiaire-operat', 'Tertiaire OPERAT')}</span>
               )}
             </p>
+            {proofContext.proof_type && (
+              <p className="text-[11px] text-indigo-700 font-medium mt-0.5" data-testid="proof-type-label">
+                Type : {proofContext.proof_type.replace(/_/g, ' ')}
+                {proofContext.efa_id && <span className="text-indigo-500 font-normal"> · EFA #{proofContext.efa_id}</span>}
+              </p>
+            )}
             {proofContext.hint && (
               <p className="text-[11px] text-indigo-600 truncate mt-0.5">{proofContext.hint}</p>
             )}
@@ -435,7 +443,7 @@ export default function KBExplorerPage() {
             <div className="space-y-2">
               <p className="text-xs text-gray-400">{docs.length} document{docs.length > 1 ? 's' : ''}</p>
               {docs.map((doc) => (
-                <DocCard key={doc.doc_id} doc={doc} onStatusChange={handleStatusChange} />
+                <DocCard key={doc.doc_id} doc={doc} onStatusChange={handleStatusChange} proofContext={proofContext} onLinkMsg={setUploadMsg} />
               ))}
             </div>
           )}
@@ -462,10 +470,33 @@ const NEXT_STATUS_LABEL = {
   validated: 'Marquer décisionnel',
 };
 
-function DocCard({ doc, onStatusChange }) {
+function DocCard({ doc, onStatusChange, proofContext, onLinkMsg }) {
   const status = doc.status || 'draft';
   const next = NEXT_STATUS[status];
   const domainColor = DOMAIN_COLORS[doc.domain] || '';
+
+  // V45: Link doc as proof to EFA
+  const canLink = proofContext?.efa_id && proofContext?.proof_type;
+  const [linking, setLinking] = useState(false);
+
+  async function handleLinkProof() {
+    if (!canLink) return;
+    setLinking(true);
+    try {
+      const result = await linkTertiaireProof(proofContext.efa_id, {
+        kb_doc_id: doc.doc_id,
+        proof_type: proofContext.proof_type,
+        year: new Date().getFullYear(),
+      });
+      const msg = result.status === 'already_linked'
+        ? 'Preuve déjà liée à cette EFA'
+        : `Preuve liée à l'EFA #${proofContext.efa_id}`;
+      if (onLinkMsg) onLinkMsg({ type: result.status === 'already_linked' ? 'info' : 'ok', text: msg });
+    } catch {
+      if (onLinkMsg) onLinkMsg({ type: 'error', text: 'Erreur lors du rattachement de la preuve' });
+    }
+    setLinking(false);
+  }
 
   return (
     <Card>
@@ -495,6 +526,17 @@ function DocCard({ doc, onStatusChange }) {
               aria-label={NEXT_STATUS_LABEL[status]}
             >
               {NEXT_STATUS_LABEL[status]}
+            </button>
+          )}
+          {/* V45: Link as proof to EFA */}
+          {canLink && (
+            <button
+              onClick={handleLinkProof}
+              disabled={linking}
+              className="text-[10px] text-indigo-600 hover:text-indigo-800 underline shrink-0"
+              data-testid="btn-link-proof-efa"
+            >
+              {linking ? 'Liaison…' : 'Lier à l\u2019EFA'}
             </button>
           )}
         </div>

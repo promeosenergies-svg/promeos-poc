@@ -11,7 +11,7 @@ import {
 import { PageShell, Card, CardBody, Button, Badge, Tooltip } from '../../ui';
 import {
   getTertiaireEfa, runTertiaireControls, precheckTertiaireDeclaration,
-  exportTertiairePack,
+  exportTertiairePack, getTertiaireEfaProofs,
 } from '../../services/api';
 import ProofDepositCTA from './components/ProofDepositCTA';
 
@@ -37,6 +37,7 @@ export default function TertiaireEfaDetailPage() {
   const [precheckResult, setPrecheckResult] = useState(null);
   const [exporting, setExporting] = useState(false);
   const [exportResult, setExportResult] = useState(null);
+  const [proofsStatus, setProofsStatus] = useState(null);
 
   const fetchEfa = () => {
     setLoading(true);
@@ -46,7 +47,13 @@ export default function TertiaireEfaDetailPage() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { fetchEfa(); }, [id]);
+  const fetchProofsStatus = () => {
+    getTertiaireEfaProofs(id)
+      .then(setProofsStatus)
+      .catch(() => setProofsStatus(null));
+  };
+
+  useEffect(() => { fetchEfa(); fetchProofsStatus(); }, [id]);
 
   const handleRunControls = async () => {
     setControlsRunning(true);
@@ -263,7 +270,63 @@ export default function TertiaireEfaDetailPage() {
         </Card>
       </div>
 
-      {/* Issues ouvertes */}
+      {/* V45: Statut des preuves */}
+      {proofsStatus && (
+        <div className="mt-4" data-testid="proofs-status-bloc">
+          <Card>
+            <CardBody className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <ShieldAlert size={16} className="text-indigo-500" />
+                  <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                    Statut des preuves
+                  </h4>
+                </div>
+                <Button
+                  size="xs"
+                  variant="secondary"
+                  onClick={() => navigate(`/kb?context=proof&efa_id=${efa.id}`)}
+                >
+                  <FileText size={12} /> Voir dans la Mémobox
+                </Button>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="text-center p-2 rounded-lg bg-blue-50">
+                  <p className="text-lg font-bold text-blue-700">{proofsStatus.expected_count ?? 0}</p>
+                  <p className="text-xs text-blue-600">Attendues</p>
+                </div>
+                <div className="text-center p-2 rounded-lg bg-amber-50">
+                  <p className="text-lg font-bold text-amber-700">{proofsStatus.deposited_count ?? 0}</p>
+                  <p className="text-xs text-amber-600">Déposées</p>
+                </div>
+                <div className="text-center p-2 rounded-lg bg-emerald-50">
+                  <p className="text-lg font-bold text-emerald-700">{proofsStatus.validated_count ?? 0}</p>
+                  <p className="text-xs text-emerald-600">Validées</p>
+                </div>
+              </div>
+              {proofsStatus.coverage_pct != null && (
+                <div className="mt-3">
+                  <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+                    <span>Couverture</span>
+                    <span className="font-medium">{proofsStatus.coverage_pct}%</span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-1.5">
+                    <div
+                      className={`h-1.5 rounded-full ${
+                        proofsStatus.coverage_pct >= 80 ? 'bg-emerald-500' :
+                        proofsStatus.coverage_pct >= 40 ? 'bg-amber-500' : 'bg-red-400'
+                      }`}
+                      style={{ width: `${Math.min(proofsStatus.coverage_pct, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        </div>
+      )}
+
+      {/* Issues ouvertes — V45: enrichi avec title_fr + proof_required */}
       {(efa.open_issues || []).length > 0 && (
         <div className="mt-4">
           <Card>
@@ -285,14 +348,41 @@ export default function TertiaireEfaDetailPage() {
                           </Badge>
                           <span className="text-xs text-gray-400">{issue.code}</span>
                         </div>
-                        <p className="text-sm text-gray-900 mt-1">{issue.message_fr}</p>
+                        {issue.title_fr && (
+                          <p className="text-sm font-semibold text-gray-900 mt-1">{issue.title_fr}</p>
+                        )}
+                        <p className="text-sm text-gray-700 mt-0.5">{issue.message_fr}</p>
                         {issue.impact_fr && (
                           <p className="text-xs text-gray-500 mt-0.5">{issue.impact_fr}</p>
                         )}
                         {issue.action_fr && (
                           <p className="text-xs text-indigo-600 mt-0.5">{issue.action_fr}</p>
                         )}
+                        {/* V45: Preuve attendue */}
+                        {issue.proof_required && (
+                          <div className="mt-2 p-2 rounded bg-indigo-50 border border-indigo-100" data-testid="issue-proof-required">
+                            <p className="text-xs font-medium text-indigo-700">
+                              Preuve attendue : {issue.proof_required.label_fr}
+                            </p>
+                            <p className="text-xs text-indigo-500 mt-0.5">
+                              Responsable : {issue.proof_required.owner_role}
+                              {issue.proof_required.deadline_hint ? ` · ${issue.proof_required.deadline_hint}` : ''}
+                            </p>
+                          </div>
+                        )}
                       </div>
+                      {/* V45: CTA deep-link Mémobox si proof_links */}
+                      {issue.proof_links && issue.proof_links.length > 0 && (
+                        <Button
+                          size="xs"
+                          variant="secondary"
+                          className="shrink-0"
+                          onClick={() => navigate(issue.proof_links[0])}
+                          data-testid="btn-deposit-proof"
+                        >
+                          <FileText size={12} /> Déposer la preuve
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}

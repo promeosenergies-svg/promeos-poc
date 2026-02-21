@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   AlertTriangle, ShieldAlert, CheckCircle2, Loader2, Filter,
-  Building2, ArrowRight,
+  Building2, ArrowRight, FileText,
 } from 'lucide-react';
 import { PageShell, Card, CardBody, Button, Badge } from '../../ui';
 import { getTertiaireIssues, updateTertiaireIssue } from '../../services/api';
@@ -167,8 +167,15 @@ export default function TertiaireAnomaliesPage() {
                         )}
                       </div>
 
+                      {/* V45: Title */}
+                      {issue.title_fr && (
+                        <p className="text-sm text-gray-900 mt-2 font-semibold">{issue.title_fr}</p>
+                      )}
+
                       {/* Message */}
-                      <p className="text-sm text-gray-900 mt-2 font-medium">{issue.message_fr}</p>
+                      <p className={`text-sm text-gray-${issue.title_fr ? '700' : '900'} mt-1 ${issue.title_fr ? '' : 'font-medium'}`}>
+                        {issue.message_fr}
+                      </p>
 
                       {/* Impact */}
                       {issue.impact_fr && (
@@ -184,6 +191,19 @@ export default function TertiaireAnomaliesPage() {
                           <ArrowRight size={12} className="inline mr-1" />
                           {issue.action_fr}
                         </p>
+                      )}
+
+                      {/* V45: Preuve attendue */}
+                      {issue.proof_required && (
+                        <div className="mt-2 p-2 rounded bg-indigo-50 border border-indigo-100" data-testid="issue-proof-required">
+                          <p className="text-xs font-medium text-indigo-700">
+                            Preuve attendue : {issue.proof_required.label_fr}
+                          </p>
+                          <p className="text-xs text-indigo-500 mt-0.5">
+                            Responsable : {issue.proof_required.owner_role}
+                            {issue.proof_required.deadline_hint ? ` · ${issue.proof_required.deadline_hint}` : ''}
+                          </p>
+                        </div>
                       )}
                     </div>
 
@@ -215,16 +235,27 @@ export default function TertiaireAnomaliesPage() {
                           Marquer résolue
                         </Button>
                       )}
-                      <ProofDepositCTA
-                        hint={[
-                          `EFA:${issue.efa_nom || `#${issue.efa_id}`}`,
-                          `efa_id:${issue.efa_id}`,
-                          `Issue:${issue.code}`,
-                          `Sévérité:${SEVERITY_LABELS[issue.severity] || issue.severity}`,
-                        ].join(' | ')}
-                        label="Déposer la preuve"
-                      />
-                    </div>
+                      {/* V45: Deep-link Mémobox si proof_links disponible */}
+                      {issue.proof_links && issue.proof_links.length > 0 ? (
+                        <Button
+                          size="xs"
+                          variant="secondary"
+                          onClick={() => navigate(issue.proof_links[0])}
+                          data-testid="btn-deposit-proof"
+                        >
+                          <FileText size={12} /> Déposer la preuve
+                        </Button>
+                      ) : (
+                        <ProofDepositCTA
+                          hint={[
+                            `EFA:${issue.efa_nom || `#${issue.efa_id}`}`,
+                            `efa_id:${issue.efa_id}`,
+                            `Issue:${issue.code}`,
+                            `Sévérité:${SEVERITY_LABELS[issue.severity] || issue.severity}`,
+                          ].join(' | ')}
+                          label="Déposer la preuve"
+                        />
+                      )}
                   </div>
                 </CardBody>
               </Card>
