@@ -238,6 +238,12 @@ export default function KBExplorerPage() {
             {proofContext.hint && (
               <p className="text-[11px] text-indigo-600 truncate mt-0.5">{proofContext.hint}</p>
             )}
+            {/* V49: Close rule reminder */}
+            {proofContext.action_id && (
+              <p className="text-[10px] text-indigo-400 mt-0.5" data-testid="v49-close-rule-hint">
+                Une preuve validée permet de clôturer cette action.
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {/* V47: Retour à l'action */}

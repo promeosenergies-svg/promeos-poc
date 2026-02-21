@@ -96,6 +96,12 @@ class ActionItem(Base, TimestampMixin):
         comment="Economies CO2e estimees en kg (V9 Decarbonation)",
     )
 
+    # V49: Closure justification (OPERAT close rules)
+    closure_justification = Column(
+        Text, nullable=True,
+        comment="Justification de cloture (V49 — requise pour OPERAT si pas de preuve validee)",
+    )
+
     # Relations
     organisation = relationship("Organisation", backref="action_items")
     site = relationship("Site", backref="action_items")

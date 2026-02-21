@@ -119,7 +119,7 @@ describe('ActionDetailDrawer — Preuves OPERAT (V47)', () => {
 
   it('contient la bannière d\'aide FR sur clôturabilité', () => {
     expect(code).toContain('considérée clôturable');
-    expect(code).toContain('[justifié]');
+    expect(code).toContain('justification');
   });
 
   it('contient le warning de clôture bloquée', () => {

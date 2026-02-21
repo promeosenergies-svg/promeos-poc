@@ -21,6 +21,7 @@ from models import (
     ActionEvent, ActionComment, ActionEvidence,
 )
 from services.action_hub_service import sync_actions, compute_priority
+from services.action_close_rules import is_operat_action, check_closable
 from middleware.auth import get_optional_auth, AuthContext
 from services.iam_scope import apply_scope_filter
 from services.scope_utils import resolve_org_id
@@ -61,6 +62,7 @@ class ActionPatch(BaseModel):
     category: Optional[str] = None
     description: Optional[str] = None
     co2e_savings_est_kg: Optional[float] = None
+    closure_justification: Optional[str] = None  # V49
 
 
 class CommentCreate(BaseModel):
@@ -109,6 +111,8 @@ def _serialize_action(a: ActionItem) -> dict:
         "closed_at": a.closed_at.isoformat() if a.closed_at else None,
         # V9 Decarbonation
         "co2e_savings_est_kg": a.co2e_savings_est_kg,
+        # V49
+        "closure_justification": a.closure_justification,
     }
 
 
@@ -367,6 +371,10 @@ def patch_action(
     if not action:
         raise HTTPException(status_code=404, detail="Action non trouvee")
 
+    # V49: store closure_justification before status check (needed for closability)
+    if data.closure_justification is not None:
+        action.closure_justification = data.closure_justification
+
     if data.status is not None:
         old_status = action.status.value if action.status else "open"
         try:
@@ -374,6 +382,12 @@ def patch_action(
         except ValueError:
             raise HTTPException(status_code=400, detail=f"Statut invalide: {data.status}")
         if old_status != data.status:
+            # V49: Enforce close rules for OPERAT actions
+            if new_status == ActionStatus.DONE and is_operat_action(action):
+                result = check_closable(action, data.closure_justification)
+                if not result["closable"]:
+                    raise HTTPException(status_code=400, detail=result["reason"])
+
             action.status = new_status
             _create_event(db, action.id, "status_change", old_value=old_status, new_value=data.status)
             # Set closed_at when action is marked done
@@ -787,6 +801,25 @@ def list_events(
         }
         for e in events
     ]
+
+
+# ========================================
+# V49: Action closeability check
+# ========================================
+
+@router.get("/{action_id}/closeability")
+def get_action_closeability(action_id: int, db: Session = Depends(get_db)):
+    """
+    GET /api/actions/{action_id}/closeability
+    Returns whether this action can be closed and why/why not.
+    """
+    action = db.query(ActionItem).filter(ActionItem.id == action_id).first()
+    if not action:
+        raise HTTPException(status_code=404, detail="Action non trouvée")
+
+    result = check_closable(action)
+    result["is_operat"] = is_operat_action(action)
+    return result
 
 
 # ========================================

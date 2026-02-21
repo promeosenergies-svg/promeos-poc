@@ -653,6 +653,9 @@ export const getROISummary = (orgId) => api.get('/actions/roi_summary', { params
 export const getActionProofs = (actionId) => api.get(`/actions/${actionId}/proofs`).then(r => r.data);
 export const linkProofToAction = (actionId, kbDocId) => api.post(`/actions/${actionId}/proofs/${kbDocId}`).then(r => r.data);
 
+// V49: Action closeability check
+export const checkActionCloseability = (actionId) => api.get(`/actions/${actionId}/closeability`).then(r => r.data);
+
 // ========================================
 // REPORTS (Sprint 10.1)
 // ========================================

@@ -16,6 +16,7 @@ import {
   getActionDetail, getActionComments, addActionComment,
   getActionEvidence, addActionEvidence, getActionEvents,
   patchAction, getTertiaireEfaProofs, getActionProofs,
+  checkActionCloseability,
 } from '../services/api';
 import { ACTION_STATUS_LABELS } from '../domain/compliance/complianceLabels.fr';
 import {
@@ -112,6 +113,11 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
   const [editingRealized, setEditingRealized] = useState(false);
   const [realizedValue, setRealizedValue] = useState('');
 
+  // V49: Guided close flow
+  const [closureJustification, setClosureJustification] = useState('');
+  const [closeError, setCloseError] = useState(null);
+  const [showCloseForm, setShowCloseForm] = useState(false);
+
   const actionId = action?._backend?.id || action?.id;
 
   const fetchAll = useCallback(async () => {
@@ -166,18 +172,48 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
     });
   }, [open, detail, actionId]);
 
-  // Status change
+  // Status change — V49: guided close for OPERAT actions
   async function handleStatusChange(newStatus) {
+    setCloseError(null);
+
+    // V49: if trying to close an OPERAT action, check closeability first
+    if (newStatus === 'done' && isOperatAction(d)) {
+      try {
+        const closeCheck = await checkActionCloseability(actionId);
+        if (!closeCheck.closable && !closureJustification.trim()) {
+          setShowCloseForm(true);
+          setCloseError('Preuve validée ou justification requise pour clôturer cette action OPERAT.');
+          return;
+        }
+      } catch {
+        // If closeability check fails, continue and let PATCH enforce
+      }
+    }
+
     try {
-      const resp = await patchAction(actionId, { status: newStatus });
+      const payload = { status: newStatus };
+      // V49: include justification for OPERAT close
+      if (newStatus === 'done' && closureJustification.trim()) {
+        payload.closure_justification = closureJustification.trim();
+      }
+      const resp = await patchAction(actionId, payload);
       setDetail(prev => ({ ...prev, ...resp }));
       if (onUpdate) onUpdate(actionId, { status: STATUS_TO_FE[newStatus] || newStatus });
-      toast('Statut mis a jour', 'success');
+      toast('Statut mis à jour', 'success');
+      setShowCloseForm(false);
+      setClosureJustification('');
+      setCloseError(null);
       // Refresh events
       const ev = await getActionEvents(actionId);
       setEvents(ev);
-    } catch {
-      toast('Erreur lors du changement de statut', 'error');
+    } catch (err) {
+      const msg = err?.response?.data?.detail || 'Erreur lors du changement de statut';
+      if (err?.response?.status === 400 && newStatus === 'done') {
+        setShowCloseForm(true);
+        setCloseError(msg);
+      } else {
+        toast(msg, 'error');
+      }
     }
   }
 
@@ -410,10 +446,11 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                       )}
                     </div>
 
-                    {/* Aide FR */}
+                    {/* Aide FR — V49 */}
                     <p className="text-[11px] text-gray-400 leading-relaxed bg-gray-50 rounded-lg p-2">
-                      Une action OPERAT est considérée clôturable quand une preuve est liée et validée sur l'EFA,
-                      ou qu'une pièce jointe est présente, ou que les notes contiennent [justifié].
+                      Une action OPERAT est considérée clôturable quand une preuve validée est liée,
+                      ou qu'une justification de clôture est fournie (min. 10 caractères).
+                      Le serveur vérifie cette règle avant d'accepter la clôture.
                     </p>
 
                     {/* Avertissement si non clôturable */}
@@ -439,13 +476,15 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                     return (
                       <button
                         key={s.value}
-                        disabled={d.status === s.value || operatBlocked}
+                        disabled={d.status === s.value}
                         onClick={() => handleStatusChange(s.value)}
                         title={operatBlocked ? 'Preuve requise pour clôturer' : undefined}
                         className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${
-                          d.status === s.value || operatBlocked
+                          d.status === s.value
                             ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                            : 'bg-white border border-gray-200 hover:bg-blue-50 hover:border-blue-300 text-gray-700'
+                            : operatBlocked
+                              ? 'bg-amber-50 border border-amber-300 text-amber-700 hover:bg-amber-100'
+                              : 'bg-white border border-gray-200 hover:bg-blue-50 hover:border-blue-300 text-gray-700'
                         }`}
                       >
                         {s.label}
@@ -453,10 +492,56 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                     );
                   })}
                 </div>
+
+                {/* V49: Guided close form for OPERAT actions */}
+                {showCloseForm && isOperatAction(d) && (
+                  <div className="mt-3 space-y-2 p-3 bg-amber-50 border border-amber-200 rounded-lg" data-testid="v49-close-form">
+                    {closeError && (
+                      <p className="text-xs text-amber-700 font-medium" data-testid="v49-close-error">{closeError}</p>
+                    )}
+                    <label className="text-xs text-gray-600 block">
+                      Justification de clôture (min. 10 caractères)
+                    </label>
+                    <textarea
+                      value={closureJustification}
+                      onChange={(e) => setClosureJustification(e.target.value)}
+                      placeholder="Expliquez pourquoi cette action peut être clôturée sans preuve validée..."
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none"
+                      data-testid="v49-closure-justification"
+                    />
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => handleStatusChange('done')}
+                        disabled={closureJustification.trim().length < 10}
+                      >
+                        Clôturer avec justification
+                      </Button>
+                      <button
+                        onClick={() => { setShowCloseForm(false); setCloseError(null); }}
+                        className="text-xs text-gray-400 hover:text-gray-600"
+                      >
+                        Annuler
+                      </button>
+                      <span className="text-[10px] text-gray-400 ml-auto">
+                        {closureJustification.trim().length}/10 caractères min.
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {d.closed_at && (
                 <p className="text-xs text-gray-400 mt-2">Fermee le {new Date(d.closed_at).toLocaleDateString('fr-FR')}</p>
+              )}
+
+              {/* V49: Display closure justification if present */}
+              {d.closure_justification && (
+                <div className="mt-2" data-testid="v49-closure-justification-display">
+                  <p className="text-xs text-gray-500 mb-1">Justification de clôture</p>
+                  <p className="text-sm text-gray-600 bg-gray-50 rounded-lg p-2 whitespace-pre-line">{d.closure_justification}</p>
+                </div>
               )}
             </div>
           )}
