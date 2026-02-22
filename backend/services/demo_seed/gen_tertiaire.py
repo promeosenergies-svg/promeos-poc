@@ -6,6 +6,7 @@ and declaration stubs from the existing seeded sites.
 import random
 from datetime import date, timedelta
 
+from models import Batiment
 from models.tertiaire import (
     TertiaireEfa, TertiaireEfaBuilding, TertiaireResponsibility,
     TertiairePerimeterEvent, TertiaireDeclaration, TertiaireProofArtifact,
@@ -94,7 +95,8 @@ _QUALITY_ISSUES = [
 ]
 
 
-def generate_tertiaire(db, org, sites: list, rng: random.Random) -> dict:
+def generate_tertiaire(db, org, sites: list, rng: random.Random,
+                       buildings_map: dict = None) -> dict:
     """
     Generate EFA + sub-entities for demo.
     Creates 1 EFA per site (for sites with tertiaire_area_m2 >= 1000),
@@ -145,8 +147,22 @@ def generate_tertiaire(db, org, sites: list, rng: random.Random) -> dict:
         efa_objects.append(efa)
         efas_created += 1
 
-        # Buildings — most get at least 1, some deliberately have none (gap)
-        if idx % 6 != 5:  # ~83% have buildings
+        # Buildings — use real batiment IDs when available (helios)
+        real_bat_ids = (buildings_map or {}).get(site.id, [])
+        if real_bat_ids:
+            # ── Helios: link to real Batiment records ────────────────
+            for bat_id in real_bat_ids:
+                bat = db.query(Batiment).get(bat_id)
+                usage = _USAGE_LABELS[rng.randint(0, len(_USAGE_LABELS) - 1)]
+                building = TertiaireEfaBuilding(
+                    efa_id=efa.id,
+                    building_id=bat_id,
+                    usage_label=usage,
+                    surface_m2=bat.surface_m2 if bat else None,
+                )
+                db.add(building)
+                buildings_created += 1
+        elif idx % 6 != 5:  # ~83% have buildings (randomized mode)
             n_buildings = rng.randint(1, 3)
             for b in range(n_buildings):
                 usage = _USAGE_LABELS[rng.randint(0, len(_USAGE_LABELS) - 1)]

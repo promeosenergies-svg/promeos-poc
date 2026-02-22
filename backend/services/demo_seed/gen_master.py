@@ -67,11 +67,12 @@ def generate_master(db, pack: dict, size: str, rng: random.Random) -> dict:
         entites.append(ej)
     db.flush()
 
-    # 3. Portefeuilles
+    # 3. Portefeuilles (entite_idx routing for multi-entite packs like helios)
     portefeuilles = []
     for pf_cfg in pack["portefeuilles"]:
+        ej_idx = pf_cfg.get("entite_idx", 0)
         pf = Portefeuille(
-            entite_juridique_id=entites[0].id,
+            entite_juridique_id=entites[ej_idx].id,
             nom=pf_cfg["nom"], description=pf_cfg["description"],
         )
         db.add(pf)
@@ -79,94 +80,70 @@ def generate_master(db, pack: dict, size: str, rng: random.Random) -> dict:
     db.flush()
 
     # 4. Sites + meters
-    sites_per_pf = size_cfg["sites_per_pf"]
-    site_groups = pack["site_groups"]
     all_sites = []
     all_meters = []
     site_profiles = {}  # site_id → profile name
+    buildings_map = {}  # site_id → [batiment_id, ...] (helios only)
 
-    site_counter = 0
-    for pf_idx, (pf, count) in enumerate(zip(portefeuilles, sites_per_pf)):
-        group = site_groups[pf_idx % len(site_groups)]
-        for i in range(count):
-            v = _VILLES[site_counter % len(_VILLES)]
-            ville, cp, region, lat, lon = v
-            surface = rng.randint(*group["surface_range"])
-            cvc_kw = round(surface * rng.uniform(*group["cvc_w_per_m2"]) / 1000, 1)
-            parking = rng.randint(*group["parking_range"])
-            roof = round(surface * rng.uniform(*group["roof_pct"]))
-            annual_kwh = rng.randint(*group["annual_kwh_range"])
-
-            # Site type: use group type, but for tertiaire equipements cycle
-            site_type_str = group["type_site"]
-            if "profiles" in group:
-                prof_idx = i % len(group["profiles"])
-                profile_name = group["profiles"][prof_idx]
-                # Map profile to site type
-                if profile_name == "school":
-                    site_type_str = "enseignement"
-                elif profile_name == "hospital":
-                    site_type_str = "sante"
-                elif profile_name == "hotel":
-                    site_type_str = "hotel"
-            else:
-                profile_name = group.get("profile", "office")
+    if "sites_explicit" in pack:
+        # ── Explicit sites mode (helios) ─────────────────────────────────
+        for site_counter, spec in enumerate(pack["sites_explicit"]):
+            pf = portefeuilles[spec["portefeuille_idx"]]
 
             site = Site(
                 portefeuille_id=pf.id,
-                nom=f"{group['prefix']} {ville} #{site_counter + 1:02d}",
-                type=_TYPE_MAP.get(site_type_str, TypeSite.BUREAU),
+                nom=spec["nom"],
+                type=_TYPE_MAP.get(spec["type_site"], TypeSite.BUREAU),
                 adresse=f"{rng.randint(1, 200)} {_RUES[site_counter % len(_RUES)]}",
-                code_postal=cp, ville=ville, region=region,
-                surface_m2=surface, nombre_employes=rng.randint(*group["employees_range"]),
-                latitude=lat + rng.uniform(-0.02, 0.02),
-                longitude=lon + rng.uniform(-0.02, 0.02),
+                code_postal=spec["cp"], ville=spec["ville"], region=spec["region"],
+                surface_m2=spec["surface_m2"],
+                nombre_employes=spec.get("employees", 50),
+                latitude=spec["lat"], longitude=spec["lon"],
                 actif=True, is_demo=True,
-                tertiaire_area_m2=surface if surface >= 1000 else None,
-                parking_area_m2=parking,
-                parking_type=_PARKING_MAP.get(group.get("parking_type"), ParkingType.UNKNOWN),
-                roof_area_m2=roof,
-                naf_code=group.get("naf") if site_counter < (count * 0.8) else None,
-                annual_kwh_total=annual_kwh,
+                tertiaire_area_m2=spec.get("tertiaire_area_m2"),
+                parking_area_m2=spec.get("parking_m2"),
+                parking_type=_PARKING_MAP.get(spec.get("parking_type"), ParkingType.UNKNOWN),
+                roof_area_m2=spec.get("roof_m2"),
+                naf_code=spec.get("naf"),
+                annual_kwh_total=spec.get("annual_kwh"),
                 data_source="demo",
-                siret=f"{pack['entites'][0]['siren']}{rng.randint(10000, 99999)}",
+                siret=f"{pack['entites'][0]['siren']}{10000 + site_counter:05d}",
             )
-            # Store cvc_power_kw as attribute (for Batiment)
-            site._cvc_kw = cvc_kw
+            site._cvc_kw = spec.get("cvc_kw", 100)
             db.add(site)
             db.flush()
 
-            site_profiles[site.id] = profile_name
+            site_profiles[site.id] = spec.get("profile", "office")
             all_sites.append(site)
 
-            # Batiment
-            bat = Batiment(
-                site_id=site.id,
-                nom=f"Batiment principal - {site.nom}",
-                surface_m2=surface,
-                annee_construction=rng.randint(1970, 2020),
-                cvc_power_kw=cvc_kw,
-            )
-            db.add(bat)
+            # OPERAT status
+            operat_str = spec.get("operat_status")
+            if operat_str:
+                site.operat_status = getattr(OperatStatus, operat_str, None)
 
-            # OPERAT status for assujetti sites
-            if site.tertiaire_area_m2 and site.tertiaire_area_m2 >= 1000:
-                bucket = site_counter % 3
-                if bucket == 0:
-                    site.operat_status = OperatStatus.SUBMITTED
-                elif bucket == 1:
-                    site.operat_status = OperatStatus.IN_PROGRESS
-                else:
-                    site.operat_status = OperatStatus.NOT_STARTED
+            # Batiments (explicit list)
+            bat_ids = []
+            for b_spec in spec.get("buildings", []):
+                bat = Batiment(
+                    site_id=site.id,
+                    nom=b_spec["nom"],
+                    surface_m2=b_spec["surface_m2"],
+                    annee_construction=b_spec.get("annee", 2000),
+                    cvc_power_kw=b_spec.get("cvc_kw"),
+                )
+                db.add(bat)
+                db.flush()
+                bat_ids.append(bat.id)
+            buildings_map[site.id] = bat_ids
 
             # Meter (electricity)
-            meter_id_str = f"DEMO-{pack['org']['siren'][:4]}-{site.id:04d}"
+            meter_id_str = f"DEMO-HELI-{site.id:04d}"
             meter = Meter(
                 meter_id=meter_id_str,
                 name=f"Compteur {site.nom}",
                 site_id=site.id,
                 energy_vector=EnergyVectorModel.ELECTRICITY,
-                subscribed_power_kva=float(rng.randint(*group["psub_range"])),
+                subscribed_power_kva=float(spec.get("psub_kva", 80)),
                 tariff_type="C5",
                 is_active=True,
             )
@@ -174,7 +151,7 @@ def generate_master(db, pack: dict, size: str, rng: random.Random) -> dict:
             db.flush()
             all_meters.append(meter)
 
-            # Compteur (legacy model)
+            # Compteur legacy (elec)
             db.add(Compteur(
                 site_id=site.id, type=TypeCompteur.ELECTRICITE,
                 numero_serie=f"DEMO-E-{site.id:04d}",
@@ -184,28 +161,155 @@ def generate_master(db, pack: dict, size: str, rng: random.Random) -> dict:
                 data_source="demo",
             ))
 
-            # Gas meter for some sites
-            if rng.random() < group.get("gas_pct", 0):
+            # Gas compteur if needed
+            if spec.get("gas"):
                 db.add(Compteur(
                     site_id=site.id, type=TypeCompteur.GAZ,
                     numero_serie=f"DEMO-G-{site.id:04d}",
-                    meter_id=f"GRD{rng.randint(100000000, 999999999)}",
+                    meter_id=f"GRD{100000000 + site.id}",
                     energy_vector=EnergyVector.GAS, actif=True,
                     data_source="demo",
                 ))
 
             # Operating schedule
+            profile_name = spec.get("profile", "office")
             sched_cfg = _PROFILE_SCHEDULES.get(profile_name, _PROFILE_SCHEDULES["office"])
-            sched = SiteOperatingSchedule(
+            db.add(SiteOperatingSchedule(
                 site_id=site.id,
                 open_days=sched_cfg["open_days"],
                 open_time=sched_cfg["open_time"],
                 close_time=sched_cfg["close_time"],
                 is_24_7=sched_cfg["is_24_7"],
-            )
-            db.add(sched)
+            ))
 
-            site_counter += 1
+        db.flush()
+
+    else:
+        # ── Randomized sites mode (casino / tertiaire) ──────────────────
+        sites_per_pf = size_cfg["sites_per_pf"]
+        site_groups = pack["site_groups"]
+
+        site_counter = 0
+        for pf_idx, (pf, count) in enumerate(zip(portefeuilles, sites_per_pf)):
+            group = site_groups[pf_idx % len(site_groups)]
+            for i in range(count):
+                v = _VILLES[site_counter % len(_VILLES)]
+                ville, cp, region, lat, lon = v
+                surface = rng.randint(*group["surface_range"])
+                cvc_kw = round(surface * rng.uniform(*group["cvc_w_per_m2"]) / 1000, 1)
+                parking = rng.randint(*group["parking_range"])
+                roof = round(surface * rng.uniform(*group["roof_pct"]))
+                annual_kwh = rng.randint(*group["annual_kwh_range"])
+
+                # Site type: use group type, but for tertiaire equipements cycle
+                site_type_str = group["type_site"]
+                if "profiles" in group:
+                    prof_idx = i % len(group["profiles"])
+                    profile_name = group["profiles"][prof_idx]
+                    # Map profile to site type
+                    if profile_name == "school":
+                        site_type_str = "enseignement"
+                    elif profile_name == "hospital":
+                        site_type_str = "sante"
+                    elif profile_name == "hotel":
+                        site_type_str = "hotel"
+                else:
+                    profile_name = group.get("profile", "office")
+
+                site = Site(
+                    portefeuille_id=pf.id,
+                    nom=f"{group['prefix']} {ville} #{site_counter + 1:02d}",
+                    type=_TYPE_MAP.get(site_type_str, TypeSite.BUREAU),
+                    adresse=f"{rng.randint(1, 200)} {_RUES[site_counter % len(_RUES)]}",
+                    code_postal=cp, ville=ville, region=region,
+                    surface_m2=surface, nombre_employes=rng.randint(*group["employees_range"]),
+                    latitude=lat + rng.uniform(-0.02, 0.02),
+                    longitude=lon + rng.uniform(-0.02, 0.02),
+                    actif=True, is_demo=True,
+                    tertiaire_area_m2=surface if surface >= 1000 else None,
+                    parking_area_m2=parking,
+                    parking_type=_PARKING_MAP.get(group.get("parking_type"), ParkingType.UNKNOWN),
+                    roof_area_m2=roof,
+                    naf_code=group.get("naf") if site_counter < (count * 0.8) else None,
+                    annual_kwh_total=annual_kwh,
+                    data_source="demo",
+                    siret=f"{pack['entites'][0]['siren']}{rng.randint(10000, 99999)}",
+                )
+                # Store cvc_power_kw as attribute (for Batiment)
+                site._cvc_kw = cvc_kw
+                db.add(site)
+                db.flush()
+
+                site_profiles[site.id] = profile_name
+                all_sites.append(site)
+
+                # Batiment
+                bat = Batiment(
+                    site_id=site.id,
+                    nom=f"Batiment principal - {site.nom}",
+                    surface_m2=surface,
+                    annee_construction=rng.randint(1970, 2020),
+                    cvc_power_kw=cvc_kw,
+                )
+                db.add(bat)
+
+                # OPERAT status for assujetti sites
+                if site.tertiaire_area_m2 and site.tertiaire_area_m2 >= 1000:
+                    bucket = site_counter % 3
+                    if bucket == 0:
+                        site.operat_status = OperatStatus.SUBMITTED
+                    elif bucket == 1:
+                        site.operat_status = OperatStatus.IN_PROGRESS
+                    else:
+                        site.operat_status = OperatStatus.NOT_STARTED
+
+                # Meter (electricity)
+                meter_id_str = f"DEMO-{pack['org']['siren'][:4]}-{site.id:04d}"
+                meter = Meter(
+                    meter_id=meter_id_str,
+                    name=f"Compteur {site.nom}",
+                    site_id=site.id,
+                    energy_vector=EnergyVectorModel.ELECTRICITY,
+                    subscribed_power_kva=float(rng.randint(*group["psub_range"])),
+                    tariff_type="C5",
+                    is_active=True,
+                )
+                db.add(meter)
+                db.flush()
+                all_meters.append(meter)
+
+                # Compteur (legacy model)
+                db.add(Compteur(
+                    site_id=site.id, type=TypeCompteur.ELECTRICITE,
+                    numero_serie=f"DEMO-E-{site.id:04d}",
+                    puissance_souscrite_kw=meter.subscribed_power_kva,
+                    meter_id=meter_id_str,
+                    energy_vector=EnergyVector.ELECTRICITY, actif=True,
+                    data_source="demo",
+                ))
+
+                # Gas meter for some sites
+                if rng.random() < group.get("gas_pct", 0):
+                    db.add(Compteur(
+                        site_id=site.id, type=TypeCompteur.GAZ,
+                        numero_serie=f"DEMO-G-{site.id:04d}",
+                        meter_id=f"GRD{rng.randint(100000000, 999999999)}",
+                        energy_vector=EnergyVector.GAS, actif=True,
+                        data_source="demo",
+                    ))
+
+                # Operating schedule
+                sched_cfg = _PROFILE_SCHEDULES.get(profile_name, _PROFILE_SCHEDULES["office"])
+                sched = SiteOperatingSchedule(
+                    site_id=site.id,
+                    open_days=sched_cfg["open_days"],
+                    open_time=sched_cfg["open_time"],
+                    close_time=sched_cfg["close_time"],
+                    is_24_7=sched_cfg["is_24_7"],
+                )
+                db.add(sched)
+
+                site_counter += 1
 
     db.flush()
 
@@ -216,4 +320,5 @@ def generate_master(db, pack: dict, size: str, rng: random.Random) -> dict:
         "sites": all_sites,
         "meters": all_meters,
         "site_profiles": site_profiles,
+        "buildings_map": buildings_map,
     }

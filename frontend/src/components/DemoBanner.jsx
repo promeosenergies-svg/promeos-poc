@@ -5,6 +5,7 @@ import { Sparkles, ArrowRight, CheckCircle, ChevronDown } from 'lucide-react';
 import { seedDemoPack } from '../services/api';
 
 const DEMO_PACKS = [
+  { value: 'helios', label: 'HELIOS (5 sites E2E)', size: 'S' },
   { value: 'casino', label: 'Casino (36 sites)', size: 'S' },
   { value: 'tertiaire', label: 'Tertiaire (10 sites)', size: 'S' },
 ];

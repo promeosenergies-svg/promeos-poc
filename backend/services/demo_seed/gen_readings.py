@@ -126,3 +126,88 @@ def _gen_meter_readings(meter_id: int, profile: dict, temps: dict,
             ))
 
     return readings
+
+
+# ── Monthly readings (V52 — helios) ─────────────────────────────────────────
+
+# Monthly base kWh per profile (average month)
+_MONTHLY_BASE = {
+    "office":    25000,
+    "hotel":     80000,
+    "retail":    35000,
+    "warehouse": 50000,
+    "school":    18000,
+    "hospital":  120000,
+}
+
+# Seasonal multiplier by month (1=Jan..12=Dec), cosine-based: peak winter, low summer
+_SEASONAL_MULT = {
+    1: 1.25, 2: 1.20, 3: 1.10, 4: 0.95, 5: 0.85, 6: 0.80,
+    7: 0.75, 8: 0.75, 9: 0.85, 10: 0.95, 11: 1.10, 12: 1.25,
+}
+
+# School vacation months — consumption drops to 20%
+_SCHOOL_VACATION_MONTHS = {7, 8}
+
+
+def generate_monthly_readings(db, meters: list, site_profiles: dict,
+                              months: int, rng: random.Random) -> int:
+    """
+    Generate monthly aggregated readings (V52 helios).
+
+    Args:
+        meters: list of Meter ORM objects
+        site_profiles: {site_id: profile_name}
+        months: number of months of history
+        rng: seeded Random instance
+
+    Returns:
+        total number of readings created
+    """
+    now = datetime.utcnow()
+    total = 0
+
+    for meter in meters:
+        profile_name = site_profiles.get(meter.site_id, "office")
+        base_kwh = _MONTHLY_BASE.get(profile_name, _MONTHLY_BASE["office"])
+        psub = meter.subscribed_power_kva or 80
+        # Scale base by subscribed power (bigger site → more consumption)
+        scale = psub / 100.0
+        is_school = profile_name == "school"
+
+        # Pick 1-2 anomaly months (spike to 180%)
+        anomaly_months = set(rng.sample(range(months), min(2, months)))
+
+        readings = []
+        for m_offset in range(months):
+            dt = now - timedelta(days=(months - m_offset) * 30)
+            dt = dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            month_num = dt.month
+
+            # Seasonal variation
+            seasonal = _SEASONAL_MULT.get(month_num, 1.0)
+            value = base_kwh * scale * seasonal
+
+            # School vacation
+            if is_school and month_num in _SCHOOL_VACATION_MONTHS:
+                value *= 0.20
+
+            # Anomaly spike
+            if m_offset in anomaly_months:
+                value *= 1.80
+
+            # Noise
+            value *= rng.uniform(0.92, 1.08)
+            value = max(100, round(value, 0))
+
+            readings.append(MeterReading(
+                meter_id=meter.id, timestamp=dt,
+                frequency=FrequencyType.MONTHLY,
+                value_kwh=value, is_estimated=False,
+            ))
+
+        db.bulk_save_objects(readings)
+        total += len(readings)
+
+    db.flush()
+    return total

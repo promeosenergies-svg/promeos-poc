@@ -16,31 +16,63 @@ _SUPPLIERS = ["EDF", "Engie", "TotalEnergies", "Eni", "Vattenfall"]
 
 
 def generate_billing(db, org, sites: list, invoices_count: int,
-                     rng: random.Random) -> dict:
+                     rng: random.Random, pack_def: dict = None) -> dict:
     """Generate contracts + invoices + lines + insights."""
     contracts_created = 0
     invoices_created = 0
     lines_created = 0
     insights_created = 0
 
-    # Create 1 contract per site (electricity)
-    contract_map = {}  # site_id → contract
-    for site in sites:
-        supplier = _SUPPLIERS[rng.randint(0, len(_SUPPLIERS) - 1)]
-        price = round(rng.uniform(0.10, 0.25), 4)
-        contract = EnergyContract(
-            site_id=site.id, energy_type=BillingEnergyType.ELEC,
-            supplier_name=supplier,
-            start_date=date(2024, 1, 1),
-            end_date=date(2026, 12, 31),
-            price_ref_eur_per_kwh=price,
-            fixed_fee_eur_per_month=round(rng.uniform(20, 200), 2),
-            notice_period_days=90, auto_renew=rng.choice([True, False]),
-        )
-        db.add(contract)
-        db.flush()
-        contract_map[site.id] = contract
-        contracts_created += 1
+    _ENERGY_TYPE_MAP = {"elec": BillingEnergyType.ELEC, "gaz": BillingEnergyType.GAZ}
+
+    contract_map = {}  # site_id → contract (first per site, for invoices)
+
+    if pack_def and "contracts_spec" in pack_def:
+        # ── Explicit contracts (helios) ──────────────────────────────
+        for c_spec in pack_def["contracts_spec"]:
+            site = sites[c_spec["site_idx"]]
+            end_str = c_spec["end"]
+            if end_str == "EXPIRING_SOON":
+                end_date_val = date.today() + timedelta(days=60)
+            else:
+                end_date_val = date.fromisoformat(end_str)
+
+            contract = EnergyContract(
+                site_id=site.id,
+                energy_type=_ENERGY_TYPE_MAP.get(c_spec["type"], BillingEnergyType.ELEC),
+                supplier_name=c_spec["supplier"],
+                start_date=date.fromisoformat(c_spec["start"]),
+                end_date=end_date_val,
+                price_ref_eur_per_kwh=c_spec["price"],
+                fixed_fee_eur_per_month=c_spec.get("fee", 50),
+                notice_period_days=90,
+                auto_renew=c_spec.get("auto_renew", False),
+                metadata_json=json.dumps({"strategy": c_spec.get("strategy", "fixe")}),
+            )
+            db.add(contract)
+            db.flush()
+            # Keep first contract per site for invoice generation
+            if site.id not in contract_map:
+                contract_map[site.id] = contract
+            contracts_created += 1
+    else:
+        # ── Randomized contracts (casino / tertiaire) ────────────────
+        for site in sites:
+            supplier = _SUPPLIERS[rng.randint(0, len(_SUPPLIERS) - 1)]
+            price = round(rng.uniform(0.10, 0.25), 4)
+            contract = EnergyContract(
+                site_id=site.id, energy_type=BillingEnergyType.ELEC,
+                supplier_name=supplier,
+                start_date=date(2024, 1, 1),
+                end_date=date(2026, 12, 31),
+                price_ref_eur_per_kwh=price,
+                fixed_fee_eur_per_month=round(rng.uniform(20, 200), 2),
+                notice_period_days=90, auto_renew=rng.choice([True, False]),
+            )
+            db.add(contract)
+            db.flush()
+            contract_map[site.id] = contract
+            contracts_created += 1
 
     # Generate invoices — spread across sites
     sites_for_inv = rng.sample(sites, min(invoices_count, len(sites)))

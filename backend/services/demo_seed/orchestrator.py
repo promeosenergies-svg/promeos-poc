@@ -60,37 +60,55 @@ class SeedOrchestrator:
         result["default_site_id"] = master["sites"][0].id if master["sites"] else None
         result["default_site_name"] = master["sites"][0].nom if master["sites"] else None
 
-        # 2. Weather
-        from .gen_weather import generate_weather
-        temp_lookup = generate_weather(self.db, master["sites"], days, rng)
-        result["weather_days"] = days
+        # 2-3. Weather + Readings — monthly branch for helios
+        readings_freq = pack_def.get("readings_frequency", "hourly")
+        if readings_freq == "monthly":
+            # Monthly readings (helios) — skip weather + monitoring
+            from .gen_readings import generate_monthly_readings
+            readings_months = pack_def.get("readings_months", 36)
+            readings_count = generate_monthly_readings(
+                self.db, master["meters"], master["site_profiles"],
+                readings_months, rng
+            )
+            result["readings_count"] = readings_count
+            result["readings_frequency"] = "monthly"
+            result["weather_days"] = 0
+        else:
+            # Hourly readings (casino / tertiaire) — with weather
+            from .gen_weather import generate_weather
+            temp_lookup = generate_weather(self.db, master["sites"], days, rng)
+            result["weather_days"] = days
 
-        # 3. Meter readings (depends on weather for correlation)
-        from .gen_readings import generate_readings
-        readings_count = generate_readings(
-            self.db, master["meters"], master["site_profiles"],
-            temp_lookup, days, rng
-        )
-        result["readings_count"] = readings_count
+            from .gen_readings import generate_readings
+            readings_count = generate_readings(
+                self.db, master["meters"], master["site_profiles"],
+                temp_lookup, days, rng
+            )
+            result["readings_count"] = readings_count
+            result["readings_frequency"] = "hourly"
 
         # 4. Compliance
         from .gen_compliance import generate_compliance
         compliance = generate_compliance(self.db, master["org"], master["sites"], rng)
         result["compliance"] = compliance
 
-        # 5. Monitoring (uses real engines on generated readings)
-        from .gen_monitoring import generate_monitoring
-        monitoring = generate_monitoring(
-            self.db, master["sites"], master["meters"],
-            master["site_profiles"], rng
-        )
-        result["monitoring"] = monitoring
+        # 5. Monitoring (needs hourly data — skip for monthly packs)
+        if readings_freq != "monthly":
+            from .gen_monitoring import generate_monitoring
+            monitoring = generate_monitoring(
+                self.db, master["sites"], master["meters"],
+                master["site_profiles"], rng
+            )
+            result["monitoring"] = monitoring
+        else:
+            result["monitoring"] = {"skipped": True, "reason": "monthly_readings"}
 
         # 6. Billing
         from .gen_billing import generate_billing
         billing = generate_billing(
             self.db, master["org"], master["sites"],
-            pack_def.get("invoices_count", 10), rng
+            pack_def.get("invoices_count", 10), rng,
+            pack_def=pack_def,
         )
         result["billing"] = billing
 
@@ -109,7 +127,10 @@ class SeedOrchestrator:
 
         # 9. Tertiaire / OPERAT (EFA, buildings, responsibilities, issues)
         from .gen_tertiaire import generate_tertiaire
-        tertiaire = generate_tertiaire(self.db, master["org"], master["sites"], rng)
+        tertiaire = generate_tertiaire(
+            self.db, master["org"], master["sites"], rng,
+            buildings_map=master.get("buildings_map"),
+        )
         result["tertiaire"] = tertiaire
 
         # 10. Superuser
