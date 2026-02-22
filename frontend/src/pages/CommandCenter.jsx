@@ -307,7 +307,7 @@ export default function CommandCenter() {
                       </Td>
                       <Td className="text-right text-sm font-medium">
                         {site.risque_eur > 0 ? (
-                          <span className="text-amber-700">{site.risque_eur.toLocaleString('fr-FR')} €</span>
+                          <span className="text-amber-700">{(site.risque_eur || 0).toLocaleString('fr-FR')} €</span>
                         ) : (
                           <span className="text-gray-400">-</span>
                         )}

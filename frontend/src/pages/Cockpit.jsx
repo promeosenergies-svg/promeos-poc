@@ -94,8 +94,8 @@ const Cockpit = () => {
   const todayActions      = useMemo(() => buildTodayActions(kpis, watchlist, opportunities),          [kpis, watchlist, opportunities]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const scopeLabel = portefeuille
-    ? `${org.nom} / ${portefeuille.nom}`
-    : org.nom;
+    ? `${org?.nom || 'Organisation'} / ${portefeuille.nom}`
+    : (org?.nom || 'Organisation');
 
   const ptfWithCounts = useMemo(() => {
     return portefeuilles.map(pf => {

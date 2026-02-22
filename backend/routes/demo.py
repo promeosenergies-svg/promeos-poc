@@ -9,6 +9,8 @@ GET /api/demo/packs - Liste des packs disponibles
 GET /api/demo/manifest - Source de verite: org, portefeuilles, sites, compteurs
 GET /api/demo/templates, GET /api/demo/templates/{template_id}
 """
+import hashlib
+import json
 import random
 import threading
 from typing import Optional
@@ -18,6 +20,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from database import get_db
+from middleware.auth import require_admin
 from models import (
     Organisation, EntiteJuridique, Portefeuille, Site, Compteur,
     TypeSite, TypeCompteur, EnergyVector,
@@ -34,7 +37,7 @@ _seed_lock = threading.Lock()
 # --- Pydantic models for new endpoints ---
 
 class SeedPackRequest(BaseModel):
-    pack: str = "casino"
+    pack: str = "helios"
     size: str = "S"
     rng_seed: Optional[int] = 42
     reset: bool = False
@@ -75,11 +78,14 @@ def list_demo_packs():
 
 
 @router.post("/seed-pack")
-def seed_demo_pack(request: SeedPackRequest, db: Session = Depends(get_db)):
+def seed_demo_pack(
+    request: SeedPackRequest,
+    db: Session = Depends(get_db),
+    _admin=Depends(require_admin()),
+):
     """
-    Seed complet par pack. Genere: org, sites, meters, readings,
-    weather, compliance, monitoring, billing, actions, purchase.
-    Concurrency-safe: rejects concurrent calls with 409.
+    Seed complet par pack. Admin-only. Concurrency-safe (409 on double-click).
+    Returns org_id, summary counts, and checksum for idempotency verification.
     """
     acquired = _seed_lock.acquire(blocking=False)
     if not acquired:
@@ -106,12 +112,29 @@ def seed_demo_pack(request: SeedPackRequest, db: Session = Depends(get_db)):
                 detail={
                     "message": result["error"],
                     "available_packs": result.get("available", []),
+                    "hint": "Si le pack existe dans packs.py mais n'est pas trouve, "
+                            "redemarrez le backend: uvicorn main:app --reload",
                 },
             )
 
+        # Compute deterministic checksum for idempotency verification
+        result["checksum"] = _compute_checksum(result)
         return result
     finally:
         _seed_lock.release()
+
+
+def _compute_checksum(result: dict) -> str:
+    """SHA-256 checksum over deterministic seed result fields."""
+    payload = json.dumps({
+        "pack": result.get("pack"),
+        "size": result.get("size"),
+        "org_id": result.get("org_id"),
+        "sites_count": result.get("sites_count"),
+        "meters_count": result.get("meters_count"),
+        "readings_count": result.get("readings_count"),
+    }, sort_keys=True)
+    return hashlib.sha256(payload.encode()).hexdigest()[:16]
 
 
 @router.get("/status-pack")
@@ -126,11 +149,8 @@ def get_demo_pack_status(db: Session = Depends(get_db)):
     ctx = DemoState.get_demo_context()
     org_id = ctx.get("org_id")
 
-    # Resolve org: prefer DemoState tracking; fallback to last-created org
-    if org_id:
-        org = db.query(Organisation).filter(Organisation.id == org_id).first()
-    else:
-        org = db.query(Organisation).order_by(Organisation.id.desc()).first()
+    # Resolve org from DemoState only — NO fallback to avoid stale org after reset
+    org = db.query(Organisation).filter(Organisation.id == org_id).first() if org_id else None
 
     orch = SeedOrchestrator(db)
     counts = orch.status(org_id=org.id if org else None)
@@ -245,9 +265,13 @@ def _reset_iam_demo(db):
 
 
 @router.post("/reset-pack")
-def reset_demo_pack(request: ResetPackRequest, db: Session = Depends(get_db)):
-    """Reset des donnees demo. mode=soft (demo only) ou hard (tout).
-    Canonical reset endpoint — also resets IAM demo users."""
+def reset_demo_pack(
+    request: ResetPackRequest,
+    db: Session = Depends(get_db),
+    _admin=Depends(require_admin()),
+):
+    """Reset des donnees demo. Admin-only.
+    mode=soft (demo only) ou hard (tout). Also resets IAM demo users."""
     if request.mode == "hard" and not request.confirm:
         raise HTTPException(
             status_code=400,

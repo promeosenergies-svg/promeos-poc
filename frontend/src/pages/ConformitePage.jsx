@@ -188,15 +188,16 @@ export function computeBacsV2Summary(bacsV2Data) {
  * Exported for testing.
  */
 export function computeScopeLabel(org, scope, scopedSites, portefeuilles) {
-  if (scope.siteId) {
-    const site = scopedSites[0];
-    return `${org.nom} · Site: ${site?.nom || scope.siteId}`;
+  const orgName = org?.nom || 'Organisation';
+  if (scope?.siteId) {
+    const site = scopedSites?.[0];
+    return `${orgName} · Site: ${site?.nom || scope.siteId}`;
   }
-  if (scope.portefeuilleId) {
+  if (scope?.portefeuilleId) {
     const pf = portefeuilles?.find(p => p.id === scope.portefeuilleId);
-    return `${org.nom} · Portefeuille: ${pf?.nom || scope.portefeuilleId} (${scopedSites.length} sites)`;
+    return `${orgName} · Portefeuille: ${pf?.nom || scope.portefeuilleId} (${scopedSites?.length || 0} sites)`;
   }
-  return `${org.nom} · Organisation (${scopedSites.length} sites)`;
+  return `${orgName} · Organisation (${scopedSites?.length || 0} sites)`;
 }
 
 export function isOverdue(obligation) {
@@ -1089,7 +1090,7 @@ export default function ConformitePage() {
     if (sitesLoading) return; // V18-B: wait for scope to be ready before fetching
     setLoading(true);
     setError(null);
-    const scopeParams = buildScopeParams({ orgId: org.id, portefeuilleId: scope.portefeuilleId, siteId: scope.siteId }, scopedSites);
+    const scopeParams = buildScopeParams({ orgId: org?.id, portefeuilleId: scope.portefeuilleId, siteId: scope.siteId }, scopedSites);
 
     getComplianceBundle(scopeParams)
       .then((b) => {
@@ -1113,7 +1114,7 @@ export default function ConformitePage() {
         setError(base);
       })
       .finally(() => setLoading(false));
-  }, [org.id, scope.portefeuilleId, scope.siteId, scopedSites, sitesLoading]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [org?.id, scope.portefeuilleId, scope.siteId, scopedSites, sitesLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -1182,7 +1183,7 @@ export default function ConformitePage() {
   const handleRecompute = async () => {
     setRecomputing(true);
     try {
-      await recomputeComplianceRules(org.id);
+      await recomputeComplianceRules(org?.id);
       loadData();
       track('conformite_recompute');
     } catch {
@@ -1270,7 +1271,7 @@ export default function ConformitePage() {
 
     return (
       <PageShell icon={ShieldCheck} title="Conformité réglementaire"
-                 subtitle={`${org.nom} · ${sitesCount} site${sitesCount !== 1 ? 's' : ''}`}>
+                 subtitle={`${org?.nom || 'Organisation'} · ${sitesCount} site${sitesCount !== 1 ? 's' : ''}`}>
         <ErrorState
           title="Erreur de chargement"
           message={error.message || 'Données de conformité indisponibles'}
@@ -1314,7 +1315,7 @@ export default function ConformitePage() {
       {isExpert && (
         <div className="flex items-center gap-2 -mt-1 mb-1">
           <DevApiBadge />
-          <DevScopeBadge scope={{ orgId: org.id, portefeuilleId: scope.portefeuilleId, siteId: scope.siteId }} scopedSites={scopedSites} />
+          <DevScopeBadge scope={{ orgId: org?.id, portefeuilleId: scope.portefeuilleId, siteId: scope.siteId }} scopedSites={scopedSites} />
           {bundle?.meta?.generated_at && (
             <span className="text-[10px] font-mono text-gray-400">
               Synthèse : {new Date(bundle.meta.generated_at).toLocaleTimeString('fr-FR')}

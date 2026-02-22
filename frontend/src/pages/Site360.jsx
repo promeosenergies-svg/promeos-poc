@@ -65,11 +65,11 @@ function TabResume({ site }) {
             <div className="grid grid-cols-2 gap-4">
               <div className="p-3 bg-blue-50 rounded-lg">
                 <p className="text-xs text-gray-500">Conso annuelle</p>
-                <p className="text-lg font-bold text-blue-700">{(site.conso_kwh_an / 1000).toFixed(0)} MWh</p>
+                <p className="text-lg font-bold text-blue-700">{((site.conso_kwh_an || 0) / 1000).toFixed(0)} MWh</p>
               </div>
               <div className="p-3 bg-red-50 rounded-lg">
                 <p className="text-xs text-gray-500">Risque financier</p>
-                <p className="text-lg font-bold text-red-700">{site.risque_eur.toLocaleString()} €</p>
+                <p className="text-lg font-bold text-red-700">{(site.risque_eur || 0).toLocaleString()} €</p>
               </div>
               <div className="p-3 bg-amber-50 rounded-lg">
                 <p className="text-xs text-gray-500">Anomalies</p>
@@ -118,7 +118,7 @@ function TabResume({ site }) {
                   <Td><span className="text-xs px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded">{a.type}</span></Td>
                   <Td><Badge status={SEV_BADGE[a.severity] || 'info'}>{a.severity}</Badge></Td>
                   <Td className="text-sm">{a.message}</Td>
-                  <Td className="text-right text-red-600 font-medium">{a.perte_eur.toLocaleString()} €</Td>
+                  <Td className="text-right text-red-600 font-medium">{(a.perte_eur || 0).toLocaleString()} €</Td>
                 </Tr>
               ))}
             </Tbody>
@@ -408,7 +408,7 @@ export default function Site360() {
           </div>
           <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
             <span className="flex items-center gap-1"><MapPin size={14} /> {site.adresse}, {site.code_postal} {site.ville}</span>
-            <span className="flex items-center gap-1"><Ruler size={14} /> {site.surface_m2.toLocaleString()} m2</span>
+            <span className="flex items-center gap-1"><Ruler size={14} /> {(site.surface_m2 || 0).toLocaleString()} m2</span>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -428,8 +428,8 @@ export default function Site360() {
 
       {/* 3 Mini KPIs */}
       <div className="flex gap-4">
-        <MiniKpi icon={Zap} label="Conso annuelle" value={`${(site.conso_kwh_an / 1000).toFixed(0)} MWh`} color="text-blue-600" />
-        <MiniKpi icon={BadgeEuro} label="Risque €" value={`${site.risque_eur.toLocaleString()} €`} color="text-red-600" />
+        <MiniKpi icon={Zap} label="Conso annuelle" value={`${((site.conso_kwh_an || 0) / 1000).toFixed(0)} MWh`} color="text-blue-600" />
+        <MiniKpi icon={BadgeEuro} label="Risque €" value={`${(site.risque_eur || 0).toLocaleString()} €`} color="text-red-600" />
         <MiniKpi icon={AlertTriangle} label="Anomalies" value={`${site.anomalies_count}`} color="text-amber-600" />
       </div>
 
