@@ -91,6 +91,57 @@ class IssueStatusUpdate(BaseModel):
     status: str
 
 
+# ── Site Signals response models (V42 / fix OpenAPI) ─────────────────────────
+
+from typing import Any
+
+
+class SiteSignalRuleApplied(BaseModel):
+    code: str
+    label_fr: str
+    value: Any = None
+    threshold: Any = None
+    ok: bool = False
+
+
+class SiteSignalCTA(BaseModel):
+    label_fr: str
+    to: str
+
+
+class SiteSignalItem(BaseModel):
+    site_id: int
+    site_nom: str
+    ville: Optional[str] = None
+    surface_tertiaire_m2: Optional[float] = None
+    nb_batiments: int = 0
+    signal: str
+    signal_version: Optional[str] = None
+    data_complete: bool = False
+    is_covered: bool = False
+    efa_ids: List[int] = []
+    missing_fields: Optional[List[str]] = None
+    reasons_fr: Optional[List[str]] = None
+    rules_applied: Optional[List[SiteSignalRuleApplied]] = None
+    recommended_next_step: Optional[str] = None
+    recommended_cta: Optional[SiteSignalCTA] = None
+
+
+class SiteSignalCounts(BaseModel):
+    assujetti_probable: int = 0
+    a_verifier: int = 0
+    non_concerne: int = 0
+
+
+class SiteSignalsResponse(BaseModel):
+    sites: List[SiteSignalItem]
+    total_sites: int
+    counts: SiteSignalCounts
+    uncovered_probable: int = 0
+    incomplete_data: int = 0
+    top_missing_fields: Optional[dict] = None
+
+
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 def _efa_to_dict(efa: TertiaireEfa) -> dict:
@@ -495,8 +546,11 @@ def dashboard(org_id: Optional[int] = Query(None), db: Session = Depends(get_db)
 
 # ── Site Signals V42 ─────────────────────────────────────────────────────────
 
-@router.get("/site-signals")
-def site_signals(org_id: Optional[int] = Query(None), db: Session = Depends(get_db)):
+@router.get("/site-signals", response_model=SiteSignalsResponse)
+def site_signals(
+    org_id: Optional[int] = Query(None, description="ID organisation (optionnel, filtre les sites)"),
+    db: Session = Depends(get_db),
+):
     """V42: Qualification des sites patrimoine vis-à-vis du Décret tertiaire."""
     return compute_site_signals(db, org_id)
 

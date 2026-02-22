@@ -80,6 +80,41 @@ class TestOpenAPISignals:
         paths = resp.json()["paths"]
         assert "/api/tertiaire/site-signals" in paths
 
+    def test_openapi_200_schema_is_object(self):
+        """V50.1: OpenAPI 200 schema must be an object ref, not empty/string."""
+        from main import app
+        from fastapi.testclient import TestClient
+        client = TestClient(app)
+        oa = client.get("/openapi.json").json()
+        path_info = oa["paths"]["/api/tertiaire/site-signals"]["get"]
+        schema = path_info["responses"]["200"]["content"]["application/json"]["schema"]
+        # Must have a $ref to a named model
+        assert "$ref" in schema, "OpenAPI 200 schema should reference a model"
+        ref = schema["$ref"]
+        model_name = ref.split("/")[-1]
+        model_def = oa["components"]["schemas"][model_name]
+        assert model_def["type"] == "object"
+        props = model_def.get("properties", {})
+        assert "sites" in props
+        assert "total_sites" in props
+        assert "counts" in props
+
+    def test_openapi_site_item_has_signal_field(self):
+        """V50.1: site item in OpenAPI must expose 'signal' field."""
+        from main import app
+        from fastapi.testclient import TestClient
+        client = TestClient(app)
+        oa = client.get("/openapi.json").json()
+        # Walk: SiteSignalsResponse → sites → items → SiteSignalItem
+        ref = oa["paths"]["/api/tertiaire/site-signals"]["get"]["responses"]["200"]["content"]["application/json"]["schema"]["$ref"]
+        resp_model = oa["components"]["schemas"][ref.split("/")[-1]]
+        sites_prop = resp_model["properties"]["sites"]
+        item_ref = sites_prop["items"]["$ref"]
+        item_model = oa["components"]["schemas"][item_ref.split("/")[-1]]
+        assert "signal" in item_model["properties"]
+        assert "site_id" in item_model["properties"]
+        assert "is_covered" in item_model["properties"]
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # 3. Source guards
@@ -116,3 +151,13 @@ class TestSourceGuardsV42:
 
     def test_service_imports_site_batiment(self):
         assert "Site, Batiment" in self.service_code
+
+    def test_route_has_response_model(self):
+        """V50.1: endpoint must declare response_model for proper OpenAPI."""
+        assert "response_model=SiteSignalsResponse" in self.route_code
+
+    def test_route_has_pydantic_models(self):
+        """V50.1: Pydantic response models must be defined."""
+        assert "class SiteSignalsResponse" in self.route_code
+        assert "class SiteSignalItem" in self.route_code
+        assert "class SiteSignalCounts" in self.route_code
