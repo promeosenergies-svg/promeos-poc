@@ -131,6 +131,15 @@ class TestTemplateGeneration:
         from fastapi.testclient import TestClient
         self.client = TestClient(app)
         TestTemplateGeneration._counter += 1
+        # Clean stale KB template docs from prior runs (fixes flaky dedup)
+        try:
+            from app.kb.store import KBStore
+            kb = KBStore()
+            cursor = kb.db.conn.cursor()
+            cursor.execute("DELETE FROM kb_docs WHERE doc_id LIKE 'operat_template:%'")
+            kb.db.conn.commit()
+        except Exception:
+            pass
 
     def _create_efa(self, suffix=""):
         tag = f"v50_{TestTemplateGeneration._counter}_{suffix}"

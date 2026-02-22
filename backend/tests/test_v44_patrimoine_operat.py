@@ -21,6 +21,49 @@ Base.metadata.create_all(bind=engine)
 class TestDedupWarning:
     """POST /efa should warn (not block) when site already has an EFA."""
 
+    @pytest.fixture(autouse=True, scope="class")
+    def _clean_efas_for_target_site(self):
+        """Remove ALL EFAs for the first catalog site so dedup tests start clean."""
+        from main import app
+        from fastapi.testclient import TestClient
+        from database import SessionLocal
+        from models.tertiaire import (
+            TertiaireEfaBuilding, TertiaireEfa, TertiaireResponsibility,
+            TertiaireDeclaration, TertiairePerimeterEvent,
+            TertiaireDataQualityIssue, TertiaireProofArtifact, TertiaireEfaLink,
+        )
+        client = TestClient(app)
+        catalog = client.get("/api/tertiaire/catalog").json()
+        if not catalog["sites"] or not catalog["sites"][0]["batiments"]:
+            return
+        site_id = catalog["sites"][0]["site_id"]
+        db = SessionLocal()
+        try:
+            efas = db.query(TertiaireEfa).filter(
+                TertiaireEfa.site_id == site_id
+            ).all()
+            efa_ids = [e.id for e in efas]
+            if efa_ids:
+                for model in [TertiaireDataQualityIssue, TertiaireProofArtifact,
+                              TertiaireDeclaration, TertiairePerimeterEvent,
+                              TertiaireResponsibility, TertiaireEfaBuilding]:
+                    db.query(model).filter(model.efa_id.in_(efa_ids)).delete(
+                        synchronize_session=False)
+                db.query(TertiaireEfaLink).filter(
+                    TertiaireEfaLink.child_efa_id.in_(efa_ids)
+                ).delete(synchronize_session=False)
+                db.query(TertiaireEfaLink).filter(
+                    TertiaireEfaLink.parent_efa_id.in_(efa_ids)
+                ).delete(synchronize_session=False)
+                db.query(TertiaireEfa).filter(
+                    TertiaireEfa.id.in_(efa_ids)
+                ).delete(synchronize_session=False)
+                db.commit()
+        except Exception:
+            db.rollback()
+        finally:
+            db.close()
+
     def test_first_efa_no_warning(self):
         from main import app
         from fastapi.testclient import TestClient
