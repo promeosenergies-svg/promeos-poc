@@ -17,6 +17,7 @@ import {
   getActionEvidence, addActionEvidence, getActionEvents,
   patchAction, getTertiaireEfaProofs, getActionProofs,
   checkActionCloseability,
+  getIssueProofs, createOperatProofTemplates,
 } from '../services/api';
 import { ACTION_STATUS_LABELS } from '../domain/compliance/complianceLabels.fr';
 import {
@@ -118,6 +119,10 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
   const [closeError, setCloseError] = useState(null);
   const [showCloseForm, setShowCloseForm] = useState(false);
 
+  // V50: Expected proofs + template generation
+  const [expectedProofs, setExpectedProofs] = useState(null);
+  const [generatingTemplates, setGeneratingTemplates] = useState(false);
+
   const actionId = action?._backend?.id || action?.id;
 
   const fetchAll = useCallback(async () => {
@@ -171,6 +176,46 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
       });
     });
   }, [open, detail, actionId]);
+
+  // V50 — Fetch expected proofs for OPERAT issue
+  useEffect(() => {
+    if (!open || !detail) { setExpectedProofs(null); return; }
+    if (!isOperatAction(detail)) { setExpectedProofs(null); return; }
+    const parsed = parseOperatSourceId(detail.source_id);
+    if (!parsed?.issue_code) { setExpectedProofs(null); return; }
+
+    getIssueProofs(parsed.issue_code)
+      .then((data) => setExpectedProofs(data))
+      .catch(() => setExpectedProofs(null));
+  }, [open, detail]);
+
+  // V50 — Generate proof templates in Mémobox
+  async function handleGenerateTemplates() {
+    if (!detail || generatingTemplates) return;
+    const parsed = parseOperatSourceId(detail.source_id);
+    if (!parsed?.efa_id || !expectedProofs?.proof_types?.length) return;
+
+    setGeneratingTemplates(true);
+    try {
+      const result = await createOperatProofTemplates(
+        parsed.efa_id,
+        parsed.year || new Date().getFullYear(),
+        {
+          issue_code: parsed.issue_code,
+          proof_types: expectedProofs.proof_types,
+          action_id: actionId || undefined,
+        },
+      );
+      toast(
+        `${result.total_created} modèle(s) créé(s)${result.total_skipped ? `, ${result.total_skipped} existant(s)` : ''}`,
+        'success',
+      );
+    } catch {
+      toast('Erreur lors de la génération des modèles', 'error');
+    } finally {
+      setGeneratingTemplates(false);
+    }
+  }
 
   // Status change — V49: guided close for OPERAT actions
   async function handleStatusChange(newStatus) {
@@ -424,6 +469,55 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                           <p className="text-lg font-bold text-green-700">{proofsSummary.validated_count || 0}</p>
                           <p className="text-[10px] text-gray-500">Validées</p>
                         </div>
+                      </div>
+                    )}
+
+                    {/* V50 — Preuves attendues pour cette anomalie */}
+                    {expectedProofs && expectedProofs.proof_types?.length > 0 && (
+                      <div className="space-y-2" data-testid="v50-expected-proofs">
+                        <p className="text-xs font-medium text-gray-600">
+                          Preuves attendues
+                          {expectedProofs.confidence && (
+                            <span className={`ml-2 px-1.5 py-0.5 rounded text-[10px] ${
+                              expectedProofs.confidence === 'high' ? 'bg-green-100 text-green-700'
+                              : expectedProofs.confidence === 'medium' ? 'bg-amber-100 text-amber-700'
+                              : 'bg-gray-100 text-gray-500'
+                            }`}>
+                              {expectedProofs.confidence === 'high' ? 'Confirmé' : expectedProofs.confidence === 'medium' ? 'Probable' : 'À vérifier'}
+                            </span>
+                          )}
+                        </p>
+                        {expectedProofs.rationale_fr && (
+                          <p className="text-[11px] text-gray-500">{expectedProofs.rationale_fr}</p>
+                        )}
+                        <div className="space-y-1">
+                          {expectedProofs.details?.map((pt) => (
+                            <div key={pt.proof_type} className="flex items-start gap-2 p-2 bg-blue-50/50 rounded-lg">
+                              <FileCheck size={12} className="text-blue-500 mt-0.5 shrink-0" />
+                              <div className="min-w-0">
+                                <p className="text-xs font-medium text-gray-700">{pt.title_fr}</p>
+                                <p className="text-[10px] text-gray-400">{pt.description_fr}</p>
+                                {pt.examples_fr?.length > 0 && (
+                                  <p className="text-[10px] text-gray-400 mt-0.5">
+                                    Ex. : {pt.examples_fr.slice(0, 2).join(', ')}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        {/* V50 CTA: Créer les modèles dans la Mémobox */}
+                        {parsed?.efa_id && (
+                          <button
+                            onClick={handleGenerateTemplates}
+                            disabled={generatingTemplates}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition disabled:opacity-50"
+                            data-testid="v50-generate-templates-cta"
+                          >
+                            <Plus size={12} />
+                            {generatingTemplates ? 'Génération...' : 'Créer les modèles dans la Mémobox'}
+                          </button>
+                        )}
                       </div>
                     )}
 

@@ -906,4 +906,14 @@ export const getTertiaireEfaProofs = (efaId, year = null) =>
 export const linkTertiaireProof = (efaId, body) =>
   api.post(`${TERT_BASE}/efa/${efaId}/proofs/link`, body).then(r => r.data);
 
+// V50: Proof Catalog V2 + Issue mapping + Template generation
+export const getOperatProofCatalogV2 = () =>
+  api.get(`${TERT_BASE}/proofs/catalog`).then(r => r.data);
+
+export const getIssueProofs = (issueCode) =>
+  api.get(`${TERT_BASE}/issues/${issueCode}/proofs`).then(r => r.data);
+
+export const createOperatProofTemplates = (efaId, year, body) =>
+  api.post(`${TERT_BASE}/efa/${efaId}/proofs/templates`, body, { params: { year } }).then(r => r.data);
+
 export default api;

@@ -307,6 +307,7 @@ export default function TertiaireAnomaliesPage() {
                           : <Plus size={12} />}
                         Créer une action
                       </Button>
+                    </div>
                   </div>
                 </CardBody>
               </Card>

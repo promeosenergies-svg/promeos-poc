@@ -26,6 +26,10 @@ from services.tertiaire_service import (
 from services.tertiaire_proofs import (  # V45
     PROOF_CATALOG, get_expected_proofs_for_efa, list_proofs_status,
 )
+from services.tertiaire_proof_catalog import (  # V50
+    get_proof_types, get_issue_proof_mapping, get_proofs_for_issue,
+)
+from services.tertiaire_proof_templates import generate_proof_templates  # V50
 
 router = APIRouter(prefix="/api/tertiaire", tags=["Tertiaire / OPERAT"])
 
@@ -618,3 +622,56 @@ def link_proof_to_efa(
         "kb_doc_id": artifact.kb_doc_id,
         "efa_id": efa_id,
     }
+
+
+# ── Proof Catalog V2 (V50) ──────────────────────────────────────────────────
+
+@router.get("/proofs/catalog")
+def proof_catalog_v2():
+    """V50: Catalogue enrichi des types de preuves OPERAT."""
+    return get_proof_types()
+
+
+@router.get("/proofs/issue-mapping")
+def proof_issue_mapping():
+    """V50: Mapping issue_code → preuves attendues."""
+    return get_issue_proof_mapping()
+
+
+@router.get("/issues/{issue_code}/proofs")
+def issue_proofs(issue_code: str):
+    """V50: Preuves attendues pour un code d'issue donné."""
+    return get_proofs_for_issue(issue_code)
+
+
+# ── Template generation V50 ─────────────────────────────────────────────────
+
+class ProofTemplateBody(BaseModel):
+    issue_code: str
+    proof_types: List[str]
+    action_id: Optional[int] = None
+
+
+@router.post("/efa/{efa_id}/proofs/templates")
+def create_proof_templates(
+    efa_id: int,
+    body: ProofTemplateBody,
+    year: int = Query(...),
+    db: Session = Depends(get_db),
+):
+    """V50: Génère des modèles de preuves dans la Mémobox (draft)."""
+    efa = db.query(TertiaireEfa).filter(
+        TertiaireEfa.id == efa_id,
+        TertiaireEfa.deleted_at.is_(None),
+    ).first()
+    if not efa:
+        raise HTTPException(404, "EFA introuvable")
+
+    return generate_proof_templates(
+        efa_id=efa_id,
+        year=year,
+        issue_code=body.issue_code,
+        proof_types=body.proof_types,
+        action_id=body.action_id,
+        efa_nom=efa.nom,
+    )
