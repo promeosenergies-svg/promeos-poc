@@ -762,6 +762,16 @@ export const patrimoineContractCreate = (data) => api.post('/patrimoine/contract
 export const patrimoineContractUpdate = (id, data) => api.patch(`/patrimoine/contracts/${id}`, data).then(r => r.data);
 export const patrimoineContractDelete = (id) => api.delete(`/patrimoine/contracts/${id}`).then(r => r.data);
 
+// Patrimoine — compléments audit V51
+export const stagingExportReport = (batchId) =>
+  api.get(`/patrimoine/staging/${batchId}/export/report.csv`, { responseType: 'blob' });
+export const patrimoineDeliveryPoints = (siteId) =>
+  api.get(`/patrimoine/sites/${siteId}/delivery-points`).then(r => r.data);
+export const patrimoineKpis = (params = {}) =>
+  api.get('/patrimoine/kpis', { params }).then(r => r.data);
+export const patrimoineSitesExport = (params = {}) =>
+  api.get('/patrimoine/sites/export.csv', { params, responseType: 'blob' });
+
 // ========================================
 // SMART INTAKE (DIAMANT)
 // ========================================
