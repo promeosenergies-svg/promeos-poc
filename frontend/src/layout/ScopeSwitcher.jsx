@@ -30,7 +30,7 @@ export default function ScopeSwitcher() {
         className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-full text-sm text-blue-700 hover:bg-blue-100 transition"
       >
         <Building2 size={14} />
-        <span className="font-medium">{org.nom}</span>
+        <span className="font-medium">{org?.nom || 'Aucune org'}</span>
         {portefeuille && (
           <>
             <span className="text-blue-300">/</span>

@@ -3,8 +3,9 @@
  * Upload CSV + apercu + validation + import + Demo Packs
  */
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Upload, FileText, CheckCircle, AlertTriangle, Download, Trash2, Database, Package, RotateCcw, Loader2, RefreshCw } from 'lucide-react';
-import { importSitesStandalone, seedDemo, seedDemoPack, getDemoPackStatus, resetDemoPack } from '../services/api';
+import { importSitesStandalone, seedDemo, seedDemoPack, getDemoPackStatus, resetDemoPack, clearApiCache } from '../services/api';
 import { PageShell, Card, CardBody, Badge, Button, EmptyState, Modal } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { useToast } from '../ui/ToastProvider';
@@ -12,12 +13,17 @@ import { useScope } from '../contexts/ScopeContext';
 
 const DEMO_PACKS = [
   {
-    key: 'casino', label: 'Groupe Casino — Retail',
+    key: 'helios', label: 'Groupe HELIOS — E2E',
+    description: '5 sites, 7 batiments, 8 contrats, 36 mois. Pack officiel.',
+    sizes: { S: '5 sites' },
+  },
+  {
+    key: 'casino', label: 'Groupe Casino — Retail (legacy)',
     description: 'Hypermarches, proximite, entrepots. 3 portefeuilles.',
     sizes: { S: '36 sites', M: '72 sites' },
   },
   {
-    key: 'tertiaire', label: 'SCI Les Terrasses — Tertiaire',
+    key: 'tertiaire', label: 'SCI Les Terrasses — Tertiaire (legacy)',
     description: '10 batiments: bureaux, ecoles, hopital, hotel.',
     sizes: { S: '10 sites', M: '20 sites' },
   },
@@ -33,9 +39,10 @@ function ImportPage() {
   const fileRef = useRef(null);
   const { toast } = useToast();
   const { clearScope, applyDemoScope, org, scope, scopeLabel } = useScope();
+  const navigate = useNavigate();
 
-  // Demo Packs state
-  const [selectedPack, setSelectedPack] = useState('casino');
+  // Demo Packs state — HELIOS is the official default
+  const [selectedPack, setSelectedPack] = useState('helios');
   const [selectedSize, setSelectedSize] = useState('S');
   const [packLoading, setPackLoading] = useState(false);
   const [packResult, setPackResult] = useState(null);
@@ -150,6 +157,9 @@ function ImportPage() {
         });
       }
 
+      // Invalidate stale GET cache BEFORE switching scope
+      clearApiCache();
+
       // Switch global scope to the seeded org immediately
       if (res.org_id) {
         applyDemoScope({
@@ -161,6 +171,9 @@ function ImportPage() {
       }
       toast(successToast, 'success');
       refreshStatus(); // Async refresh — confirms/enriches packStatus from backend
+
+      // Navigate to patrimoine to prove the switch worked
+      navigate('/patrimoine');
     } catch (err) {
       const status = err.response?.status;
       const detail = err.response?.data?.detail || err.message || 'Erreur inconnue';
@@ -188,6 +201,7 @@ function ImportPage() {
     try {
       await resetDemoPack('hard', true);
       setPackResult(null);
+      clearApiCache();
       clearScope();
       toast('Démo réinitialisée — retour à un contexte neutre.', 'success');
       refreshStatus();

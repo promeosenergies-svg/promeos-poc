@@ -72,6 +72,22 @@ class TestPatchCloseRules:
         from fastapi.testclient import TestClient
         self.client = TestClient(app)
         TestPatchCloseRules._counter += 1
+        # Ensure DemoState has a valid org (action creation requires org_id)
+        from services.demo_state import DemoState
+        if not DemoState.get_demo_org_id():
+            from database import SessionLocal
+            from models import Organisation
+            db = SessionLocal()
+            try:
+                org = db.query(Organisation).first()
+                if not org:
+                    org = Organisation(nom="V49 Test Org", type_client="tertiaire",
+                                      actif=True, siren="999999999", is_demo=True)
+                    db.add(org)
+                    db.commit()
+                DemoState.set_demo_org(org_id=org.id, org_nom=org.nom)
+            finally:
+                db.close()
 
     def _create_operat_action(self, suffix=""):
         """Create a fresh OPERAT action via POST."""
@@ -147,6 +163,22 @@ class TestCloseabilityEndpoint:
         from main import app
         from fastapi.testclient import TestClient
         self.client = TestClient(app)
+        # Ensure DemoState has a valid org
+        from services.demo_state import DemoState
+        if not DemoState.get_demo_org_id():
+            from database import SessionLocal
+            from models import Organisation
+            db = SessionLocal()
+            try:
+                org = db.query(Organisation).first()
+                if not org:
+                    org = Organisation(nom="V49 Test Org", type_client="tertiaire",
+                                      actif=True, siren="999999999", is_demo=True)
+                    db.add(org)
+                    db.commit()
+                DemoState.set_demo_org(org_id=org.id, org_nom=org.nom)
+            finally:
+                db.close()
 
     def test_closeability_returns_shape(self):
         """Closeability endpoint returns expected fields."""

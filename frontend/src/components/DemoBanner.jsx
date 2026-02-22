@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useDemo } from '../contexts/DemoContext';
 import { useScope } from '../contexts/ScopeContext';
 import { Sparkles, ArrowRight, CheckCircle, ChevronDown } from 'lucide-react';
-import { seedDemoPack } from '../services/api';
+import { seedDemoPack, clearApiCache } from '../services/api';
 
 const DEMO_PACKS = [
   { value: 'helios', label: 'HELIOS (5 sites E2E)', size: 'S' },
@@ -19,6 +19,7 @@ const DemoBanner = ({ onUpgradeClick }) => {
     setPackLoading(true);
     try {
       const result = await seedDemoPack(pack, size, true);
+      clearApiCache();
       if (result?.org_id) {
         applyDemoScope({
           orgId: result.org_id,

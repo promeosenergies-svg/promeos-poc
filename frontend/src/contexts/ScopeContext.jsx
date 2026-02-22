@@ -10,7 +10,7 @@
 import { createContext, useContext, useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { mockSites } from '../mocks/sites';
 import { useAuth } from './AuthContext';
-import { getSites, setApiScope } from '../services/api';
+import { getSites, setApiScope, getDemoPackStatus, clearApiCache } from '../services/api';
 
 const STORAGE_KEY = 'promeos_scope';
 const DEMO_ORGS_KEY = 'promeos_demo_orgs';
@@ -38,7 +38,8 @@ function loadScope() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return JSON.parse(raw);
   } catch { /* ignore */ }
-  return { orgId: 1, portefeuilleId: null, siteId: null };
+  // Default to null — auto-sync from backend will resolve the correct org
+  return { orgId: null, portefeuilleId: null, siteId: null };
 }
 
 function saveScope(scope) {
@@ -164,8 +165,8 @@ export function ScopeProvider({ children }) {
    */
   const applyDemoScope = useCallback(({ orgId, orgNom, defaultSiteId = null, defaultSiteName = null } = {}) => {
     if (!orgId) return;
-    // V18-A (RC2): removed redundant setApiSites([]) — the useEffect on effectiveOrgId
-    // already clears + re-fetches sites atomically after setScope() triggers.
+    // Invalidate stale GET cache from previous org BEFORE switching scope
+    clearApiCache();
     // Register the org dynamically
     setDemoOrgs((prev) => {
       const exists = prev.some((o) => o.id === orgId);
@@ -181,6 +182,20 @@ export function ScopeProvider({ children }) {
     void defaultSiteId; void defaultSiteName; // reserved for future use
   }, []);
 
+  // Auto-sync: on mount, if no org is selected, check backend for a seeded demo
+  const _autoSynced = useRef(false);
+  useEffect(() => {
+    if (scope.orgId || _autoSynced.current) return;
+    _autoSynced.current = true;
+    getDemoPackStatus()
+      .then(status => {
+        if (status?.org_id) {
+          applyDemoScope({ orgId: status.org_id, orgNom: status.org_nom });
+        }
+      })
+      .catch(() => {}); // Silent — no demo loaded on backend
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // When authenticated, use auth orgs; otherwise mock + dynamically registered demo orgs
   const orgsData = useMemo(() => {
     if (isAuth && auth.orgs && auth.orgs.length > 0) {
@@ -194,7 +209,9 @@ export function ScopeProvider({ children }) {
     return all;
   }, [isAuth, auth, demoOrgs]);
 
-  const org = orgsData.find((o) => o.id === effectiveOrgId) || orgsData[0];
+  const org = effectiveOrgId
+    ? (orgsData.find((o) => o.id === effectiveOrgId) || orgsData[0] || null)
+    : null;
   const portefeuilles = MOCK_PORTEFEUILLES.filter((p) => p.org_id === effectiveOrgId);
   const portefeuille = scope.portefeuilleId
     ? MOCK_PORTEFEUILLES.find((p) => p.id === scope.portefeuilleId)

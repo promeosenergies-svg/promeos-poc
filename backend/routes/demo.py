@@ -10,6 +10,7 @@ GET /api/demo/manifest - Source de verite: org, portefeuilles, sites, compteurs
 GET /api/demo/templates, GET /api/demo/templates/{template_id}
 """
 import random
+import threading
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -25,6 +26,9 @@ from services.demo_state import DemoState
 from services.onboarding_service import provision_site
 
 router = APIRouter(prefix="/api/demo", tags=["Demo Mode"])
+
+# Concurrency guard — prevent double-click / concurrent seed runs
+_seed_lock = threading.Lock()
 
 
 # --- Pydantic models for new endpoints ---
@@ -73,25 +77,35 @@ def list_demo_packs():
 @router.post("/seed-pack")
 def seed_demo_pack(request: SeedPackRequest, db: Session = Depends(get_db)):
     """
-    Seed complet par pack. Genere: org, sites, meters, readings (90j),
+    Seed complet par pack. Genere: org, sites, meters, readings,
     weather, compliance, monitoring, billing, actions, purchase.
+    Concurrency-safe: rejects concurrent calls with 409.
     """
-    from services.demo_seed import SeedOrchestrator
+    acquired = _seed_lock.acquire(blocking=False)
+    if not acquired:
+        raise HTTPException(
+            status_code=409,
+            detail="Un chargement est deja en cours. Veuillez patienter.",
+        )
+    try:
+        from services.demo_seed import SeedOrchestrator
 
-    orch = SeedOrchestrator(db)
+        orch = SeedOrchestrator(db)
 
-    if request.reset:
-        orch.reset(mode="hard")
+        if request.reset:
+            orch.reset(mode="hard")
 
-    result = orch.seed(
-        pack=request.pack, size=request.size,
-        rng_seed=request.rng_seed, days=request.days,
-    )
+        result = orch.seed(
+            pack=request.pack, size=request.size,
+            rng_seed=request.rng_seed, days=request.days,
+        )
 
-    if result.get("error"):
-        raise HTTPException(status_code=400, detail=result["error"])
+        if result.get("error"):
+            raise HTTPException(status_code=400, detail=result["error"])
 
-    return result
+        return result
+    finally:
+        _seed_lock.release()
 
 
 @router.get("/status-pack")
