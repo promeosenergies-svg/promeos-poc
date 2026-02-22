@@ -31,6 +31,7 @@ _RUES = [
 
 PACKS = {
     "casino": {
+        "visible": False,  # V55: legacy — hidden from UI, kept for tests/rollback
         "label": "Groupe Casino — Retail",
         "description": "Hypermarches, proximite, entrepots. 3 portefeuilles.",
         "org": {"nom": "Groupe Casino", "type_client": "retail", "siren": "554008671"},
@@ -80,6 +81,7 @@ PACKS = {
         "actions_count": 12,
     },
     "tertiaire": {
+        "visible": False,  # V55: legacy — hidden from UI, kept for tests/rollback
         "label": "SCI Les Terrasses — Tertiaire",
         "description": "10 batiments: bureaux, ecoles, hopital, hotel.",
         "org": {"nom": "SCI Les Terrasses", "type_client": "tertiaire", "siren": "888777666"},
@@ -124,6 +126,8 @@ PACKS = {
     # 3 entites, 5 sites, 7 batiments, couvre toutes les briques PROMEOS
     # ══════════════════════════════════════════════════════════════════════════
     "helios": {
+        "visible": True,
+        "is_default": True,
         "label": "Groupe HELIOS — Mixte (E2E)",
         "description": "3 entites, 5 sites, 7 batiments. Bureaux, industrie, hotel, ecole.",
         "org": {"nom": "Groupe HELIOS", "type_client": "mixte", "siren": "123456789"},
@@ -271,10 +275,11 @@ def get_pack(pack_name: str) -> dict:
     return PACKS.get(pack_name)
 
 
-def list_packs() -> list:
-    """List available packs."""
+def list_packs(include_hidden: bool = False) -> list:
+    """List available packs. Only visible packs by default."""
     return [
         {"key": k, "label": v["label"], "description": v["description"],
-         "sizes": list(v["sizes"].keys())}
+         "sizes": list(v["sizes"].keys()), "is_default": v.get("is_default", False)}
         for k, v in PACKS.items()
+        if include_hidden or v.get("visible", True)
     ]

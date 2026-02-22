@@ -101,7 +101,13 @@ def seed_demo_pack(request: SeedPackRequest, db: Session = Depends(get_db)):
         )
 
         if result.get("error"):
-            raise HTTPException(status_code=400, detail=result["error"])
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "message": result["error"],
+                    "available_packs": result.get("available", []),
+                },
+            )
 
         return result
     finally:

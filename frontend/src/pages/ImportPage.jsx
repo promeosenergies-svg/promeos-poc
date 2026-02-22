@@ -5,29 +5,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Upload, FileText, CheckCircle, AlertTriangle, Download, Trash2, Database, Package, RotateCcw, Loader2, RefreshCw } from 'lucide-react';
-import { importSitesStandalone, seedDemo, seedDemoPack, getDemoPackStatus, resetDemoPack, clearApiCache } from '../services/api';
+import { importSitesStandalone, seedDemoPack, getDemoPackStatus, getDemoPacks, resetDemoPack, clearApiCache } from '../services/api';
 import { PageShell, Card, CardBody, Badge, Button, EmptyState, Modal } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { useToast } from '../ui/ToastProvider';
 import { useScope } from '../contexts/ScopeContext';
-
-const DEMO_PACKS = [
-  {
-    key: 'helios', label: 'Groupe HELIOS — E2E',
-    description: '5 sites, 7 batiments, 8 contrats, 36 mois. Pack officiel.',
-    sizes: { S: '5 sites' },
-  },
-  {
-    key: 'casino', label: 'Groupe Casino — Retail (legacy)',
-    description: 'Hypermarches, proximite, entrepots. 3 portefeuilles.',
-    sizes: { S: '36 sites', M: '72 sites' },
-  },
-  {
-    key: 'tertiaire', label: 'SCI Les Terrasses — Tertiaire (legacy)',
-    description: '10 batiments: bureaux, ecoles, hopital, hotel.',
-    sizes: { S: '10 sites', M: '20 sites' },
-  },
-];
 
 function ImportPage() {
   const [file, setFile] = useState(null);
@@ -35,14 +17,14 @@ function ImportPage() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [seedLoading, setSeedLoading] = useState(false);
   const fileRef = useRef(null);
   const { toast } = useToast();
   const { clearScope, applyDemoScope, org, scope, scopeLabel } = useScope();
   const navigate = useNavigate();
 
-  // Demo Packs state — HELIOS is the official default
-  const [selectedPack, setSelectedPack] = useState('helios');
+  // Demo Packs state — fetched from backend (no hardcoded IDs)
+  const [demoPacks, setDemoPacks] = useState([]);
+  const [selectedPack, setSelectedPack] = useState(null);
   const [selectedSize, setSelectedSize] = useState('S');
   const [packLoading, setPackLoading] = useState(false);
   const [packResult, setPackResult] = useState(null);
@@ -51,7 +33,7 @@ function ImportPage() {
   const [showResetModal, setShowResetModal] = useState(false);
   const [statusError, setStatusError] = useState(false);
 
-  const packDef = DEMO_PACKS.find(p => p.key === selectedPack);
+  const packDef = demoPacks.find(p => p.key === selectedPack);
   const totalRows = packStatus?.total_rows || 0;
 
   // Mismatch: backend has a loaded pack for a different org than current scope
@@ -77,6 +59,21 @@ function ImportPage() {
   };
 
   useEffect(() => { refreshStatus(); }, []);
+
+  // Fetch available packs from backend — single source of truth
+  useEffect(() => {
+    getDemoPacks()
+      .then(data => {
+        const packs = data?.packs || [];
+        setDemoPacks(packs);
+        // Auto-select default pack (or first available)
+        const def = packs.find(p => p.is_default) || packs[0];
+        if (def && !selectedPack) setSelectedPack(def.key);
+      })
+      .catch(() => {
+        toast('Impossible de charger la liste des packs demo', 'error');
+      });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-silently sync scope when mismatch is detected
   useEffect(() => {
@@ -119,17 +116,6 @@ function ImportPage() {
       toast('Erreur lors de l\'import', 'error');
     }
     setLoading(false);
-  };
-
-  const handleSeedDemo = async () => {
-    setSeedLoading(true);
-    try {
-      const res = await seedDemo();
-      toast(`Demo chargee : ${res.sites_created} sites, ${res.compteurs_created} compteurs`, 'success');
-    } catch (err) {
-      toast(err.response?.data?.detail || 'Erreur lors du chargement demo', 'error');
-    }
-    setSeedLoading(false);
   };
 
   /**
@@ -176,7 +162,9 @@ function ImportPage() {
       navigate('/patrimoine');
     } catch (err) {
       const status = err.response?.status;
-      const detail = err.response?.data?.detail || err.message || 'Erreur inconnue';
+      const raw = err.response?.data?.detail;
+      // Backend may return {message, available_packs} or a plain string
+      const detail = typeof raw === 'object' ? raw.message : (raw || err.message || 'Erreur inconnue');
       toast(
         status
           ? `Echec du chargement (HTTP\u00a0${status}) — ${detail}`
@@ -287,9 +275,9 @@ function ImportPage() {
             )}
           </div>
 
-          {/* Pack selector */}
+          {/* Pack selector — from backend registry */}
           <div className="flex flex-wrap gap-3 mb-4">
-            {DEMO_PACKS.map(p => {
+            {demoPacks.map(p => {
               const isLoaded = packStatus?.pack === p.key;
               const isSelected = selectedPack === p.key;
               return (
@@ -317,7 +305,7 @@ function ImportPage() {
           {/* Size selector + actions */}
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex gap-1 bg-white rounded-lg p-0.5 border border-gray-200">
-              {packDef && Object.entries(packDef.sizes).map(([sz, label]) => (
+              {packDef && packDef.sizes.map(sz => (
                 <button
                   key={sz}
                   onClick={() => setSelectedSize(sz)}
@@ -327,12 +315,12 @@ function ImportPage() {
                       : 'text-gray-600 hover:bg-gray-50'
                   }`}
                 >
-                  {sz} ({label})
+                  {sz}
                 </button>
               ))}
             </div>
 
-            <Button onClick={handleSeedPack} disabled={packLoading || resetLoading}>
+            <Button onClick={handleSeedPack} disabled={packLoading || resetLoading || !selectedPack}>
               {packLoading ? (
                 <><Loader2 size={14} className="mr-1.5 animate-spin" />Chargement...</>
               ) : (
@@ -348,7 +336,7 @@ function ImportPage() {
               )}
             </Button>
 
-            <Button variant="secondary" onClick={handleReplay} disabled={packLoading || resetLoading}>
+            <Button variant="secondary" onClick={handleReplay} disabled={packLoading || resetLoading || !selectedPack}>
               <RefreshCw size={14} className="mr-1.5" />Reset + relancer
             </Button>
           </div>
@@ -393,23 +381,7 @@ function ImportPage() {
         </CardBody>
       </Card>
 
-      {/* Legacy demo seed */}
-      <Card className="border-amber-200 bg-amber-50/50">
-        <CardBody className="flex items-center justify-between">
-          <div>
-            <p className="font-medium text-amber-800">Seed legacy (3 sites)</p>
-            <p className="text-sm text-amber-600">Charger 3 sites demo (commerce, bureau, entrepot) avec compteurs et obligations.</p>
-          </div>
-          <Button
-            variant="secondary"
-            onClick={handleSeedDemo}
-            disabled={seedLoading}
-          >
-            <Database size={14} className="mr-1.5" />
-            {seedLoading ? 'Chargement...' : 'Charger demo'}
-          </Button>
-        </CardBody>
-      </Card>
+      {/* Legacy demo seed removed in V55 — HELIOS is the only official pack */}
 
       {/* Upload zone */}
       <div

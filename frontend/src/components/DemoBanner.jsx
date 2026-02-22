@@ -1,24 +1,18 @@
 import React, { useState } from 'react';
 import { useDemo } from '../contexts/DemoContext';
 import { useScope } from '../contexts/ScopeContext';
-import { Sparkles, ArrowRight, CheckCircle, ChevronDown } from 'lucide-react';
+import { Sparkles, ArrowRight, CheckCircle, RefreshCw, Loader2 } from 'lucide-react';
 import { seedDemoPack, clearApiCache } from '../services/api';
-
-const DEMO_PACKS = [
-  { value: 'helios', label: 'HELIOS (5 sites E2E)', size: 'S' },
-  { value: 'casino', label: 'Casino (36 sites)', size: 'S' },
-  { value: 'tertiaire', label: 'Tertiaire (10 sites)', size: 'S' },
-];
 
 const DemoBanner = ({ onUpgradeClick }) => {
   const { demoEnabled, toggleDemo } = useDemo();
   const { org, sitesCount, portefeuilles, applyDemoScope } = useScope();
-  const [packLoading, setPackLoading] = useState(false);
+  const [reloading, setReloading] = useState(false);
 
-  const handlePackChange = async (pack, size) => {
-    setPackLoading(true);
+  const handleReloadHelios = async () => {
+    setReloading(true);
     try {
-      const result = await seedDemoPack(pack, size, true);
+      const result = await seedDemoPack('helios', 'S', true);
       clearApiCache();
       if (result?.org_id) {
         applyDemoScope({
@@ -29,9 +23,9 @@ const DemoBanner = ({ onUpgradeClick }) => {
         });
       }
     } catch {
-      // Silently fail — banner is not critical
+      // Banner is not critical — errors are surfaced in ImportPage
     }
-    setPackLoading(false);
+    setReloading(false);
   };
 
   // Si onboarding reel fait et demo desactivee → bandeau vert avec nom org
@@ -55,29 +49,20 @@ const DemoBanner = ({ onUpgradeClick }) => {
       <div className="flex items-center gap-3">
         <Sparkles size={20} />
         <span className="font-medium text-sm">
-          Mode Demo actif — Donnees de demonstration
+          Mode Demo actif — Donnees HELIOS
           {org?.nom ? ` (${org.nom}, ${sitesCount} sites)` : ''}
         </span>
       </div>
       <div className="flex items-center gap-4">
-        {/* Demo Pack Selector */}
-        <div className="relative">
-          <select
-            disabled={packLoading}
-            onChange={(e) => {
-              const p = DEMO_PACKS.find(d => d.value === e.target.value);
-              if (p) handlePackChange(p.value, p.size);
-            }}
-            defaultValue=""
-            className="appearance-none bg-white/20 text-white text-xs px-3 py-1 pr-6 rounded cursor-pointer disabled:opacity-50"
-          >
-            <option value="" disabled>{packLoading ? 'Chargement...' : 'Changer de pack'}</option>
-            {DEMO_PACKS.map(p => (
-              <option key={p.value} value={p.value} className="text-gray-900">{p.label}</option>
-            ))}
-          </select>
-          <ChevronDown size={12} className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-        </div>
+        {/* Reload HELIOS */}
+        <button
+          onClick={handleReloadHelios}
+          disabled={reloading}
+          className="flex items-center gap-1.5 bg-white/20 text-white text-xs px-3 py-1.5 rounded hover:bg-white/30 transition disabled:opacity-50"
+        >
+          {reloading ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+          {reloading ? 'Chargement...' : 'Recharger HELIOS'}
+        </button>
         {/* Toggle */}
         <button
           onClick={toggleDemo}

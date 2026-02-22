@@ -78,9 +78,9 @@ describe('DemoBanner scope discipline', () => {
     expect(src).toContain('sitesCount');
   });
 
-  it('has DemoPackSelector (pack change dropdown)', () => {
-    expect(src).toContain('DEMO_PACKS');
-    expect(src).toContain('handlePackChange');
+  it('has HELIOS reload button (V55: single pack)', () => {
+    expect(src).toContain('handleReloadHelios');
+    expect(src).toContain('seedDemoPack');
   });
 });
 
