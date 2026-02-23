@@ -23,6 +23,7 @@ import { useExpertMode } from '../contexts/ExpertModeContext';
 import CreateActionModal from '../components/CreateActionModal';
 import PatrimoineWizard from '../components/PatrimoineWizard';
 import PatrimoineHealthCard from '../components/PatrimoineHealthCard';
+import PatrimoinePortfolioHealthBar from '../components/PatrimoinePortfolioHealthBar';
 import { track } from '../services/tracker';
 import { fmtEur, fmtEurFull, fmtArea, fmtAreaCompact, fmtKwh, fmtDateFR, pl } from '../utils/format';
 import { RISK_THRESHOLDS, ANOMALY_THRESHOLDS, getStatusBadgeProps } from '../lib/constants';
@@ -96,6 +97,7 @@ export default function Patrimoine() {
   const [actionSite, setActionSite] = useState('');
   const [showWizard, setShowWizard] = useState(false);
   const [drawerSite, setDrawerSite] = useState(null);
+  const [drawerInitialTab, setDrawerInitialTab] = useState('resume');
   const [favorites, setFavorites] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem('promeos_fav_sites') || '[]')); } catch { return new Set(); }
   });
@@ -237,7 +239,23 @@ export default function Patrimoine() {
     setSelected(new Set());
   }
 
-  const openDrawer = useCallback((site) => { setDrawerSite(site); track('row_click', { site_id: site.id }); }, []);
+  const openDrawer = useCallback((site) => {
+    setDrawerSite(site);
+    setDrawerInitialTab('resume');
+    track('row_click', { site_id: site.id });
+  }, []);
+
+  // V60 — ouvre le drawer sur l'onglet Anomalies (depuis PatrimoinePortfolioHealthBar)
+  const openDrawerOnAnomalies = useCallback((site_id) => {
+    const site = scopedSites.find(s => s.id === site_id);
+    if (site) {
+      setDrawerSite(site);
+      setDrawerInitialTab('anomalies');
+      track('portfolio_top_site_click', { site_id });
+    } else {
+      navigate(`/sites/${site_id}`);
+    }
+  }, [scopedSites, navigate]);
   const openActionFromDrawer = useCallback((siteName) => {
     setDrawerSite(null);
     setActionSite(siteName);
@@ -301,6 +319,9 @@ export default function Patrimoine() {
         />
       ) : (
         <div className="space-y-3">
+
+          {/* ── Portfolio Health Bar V60 — risque global, top sites, framework ── */}
+          <PatrimoinePortfolioHealthBar onSiteClick={openDrawerOnAnomalies} />
 
           {/* ── KPI row (compact) ── */}
           <div className="grid grid-cols-4 gap-3">
@@ -523,6 +544,7 @@ export default function Patrimoine() {
             site={drawerSite}
             navigate={navigate}
             onCreateAction={() => openActionFromDrawer(drawerSite.nom)}
+            initialTab={drawerInitialTab}
           />
         )}
       </Drawer>
@@ -565,8 +587,8 @@ const DRAWER_TABS = [
   { id: 'actions', label: 'Actions' },
 ];
 
-function SiteDrawerContent({ site, navigate, onCreateAction }) {
-  const [tab, setTab] = useState('resume');
+function SiteDrawerContent({ site, navigate, onCreateAction, initialTab = 'resume' }) {
+  const [tab, setTab] = useState(initialTab);
   const badge = STATUT_BADGE[site.statut_conformite] || STATUT_BADGE.a_evaluer;
   const usageColor = USAGE_COLOR[site.usage] || 'bg-gray-100 text-gray-600 ring-gray-200';
 

@@ -782,6 +782,9 @@ export const listPatrimoineAnomalies = (params = {}) =>
 // V59: hypothèses de calcul en lecture seule
 export const getPatrimoineAssumptions = () =>
   api.get('/patrimoine/assumptions').then(r => r.data);
+// V60: résumé portfolio — risque global, framework breakdown, top sites
+export const getPatrimoinePortfolioSummary = (params = {}) =>
+  _cachedGet('/patrimoine/portfolio-summary', { params }).then(r => r.data);
 
 // ========================================
 // SMART INTAKE (DIAMANT)

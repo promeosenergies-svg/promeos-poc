@@ -1410,6 +1410,39 @@ class OrgAnomaliesResponse(BaseModel):
     sites: List[OrgAnomaliesSiteItem]
 
 
+# ── V60 : Portfolio summary ────────────────────────────────────────────────
+
+class PortfolioSitesAtRisk(BaseModel):
+    critical: int = 0
+    high: int = 0
+    medium: int = 0
+    low: int = 0
+
+
+class PortfolioFrameworkItem(BaseModel):
+    framework: str
+    risk_eur: float
+    anomalies_count: int
+
+
+class PortfolioTopSiteItem(BaseModel):
+    site_id: int
+    site_nom: str
+    risk_eur: float
+    anomalies_count: int
+    top_framework: Optional[str] = None
+
+
+class PortfolioSummaryResponse(BaseModel):
+    scope: Dict[str, Any]
+    total_estimated_risk_eur: float
+    sites_count: int
+    sites_at_risk: PortfolioSitesAtRisk
+    framework_breakdown: List[PortfolioFrameworkItem]
+    top_sites: List[PortfolioTopSiteItem]
+    computed_at: str
+
+
 # ========================================
 # Snapshot & Anomalies (V58 → V59)
 # ========================================
@@ -1547,6 +1580,135 @@ def get_patrimoine_assumptions():
     """
     from config.patrimoine_assumptions import DEFAULT_ASSUMPTIONS
     return DEFAULT_ASSUMPTIONS.to_dict()
+
+
+@router.get("/portfolio-summary", response_model=PortfolioSummaryResponse)
+def get_portfolio_summary(
+    request: Request,
+    portefeuille_id: Optional[int] = Query(None, description="Filtre par portefeuille"),
+    site_id: Optional[int] = Query(None, description="Filtre par site unique"),
+    top_n: int = Query(default=3, ge=1, le=10, description="Nombre de top sites retournés"),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """
+    Agrégation portfolio patrimoine : risque global, framework breakdown, top sites (V60).
+
+    - Multi-org safe : scoped via org_id + filtres optionnels portefeuille/site.
+    - Zéro N+1 côté query SQL — enrichissement impact fait en mémoire via enrich_anomalies_with_impact().
+    - Cas critique : org vide ou scope vide → tout à 0, listes vides, pas de crash.
+    - top_n (1..10, défaut 3) : contrôle la taille de top_sites.
+    """
+    from services.patrimoine_anomalies import compute_site_anomalies
+    from services.patrimoine_impact import enrich_anomalies_with_impact
+    from config.patrimoine_assumptions import DEFAULT_ASSUMPTIONS
+
+    org_id = _get_org_id(request, auth, db)
+
+    _SEV_ORDER = {"CRITICAL": 4, "HIGH": 3, "MEDIUM": 2, "LOW": 1}
+
+    # Build sites query — même chaîne de jointures que list_org_anomalies
+    sites_q = (
+        db.query(Site)
+        .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+        .filter(EntiteJuridique.organisation_id == org_id)
+        .filter(Site.actif.is_(True))
+        .order_by(Site.id)
+    )
+    if portefeuille_id is not None:
+        sites_q = sites_q.filter(Site.portefeuille_id == portefeuille_id)
+    if site_id is not None:
+        sites_q = sites_q.filter(Site.id == site_id)
+
+    all_sites = sites_q.all()
+
+    # Scope vide → tout à 0
+    if not all_sites:
+        return {
+            "scope": {"org_id": org_id, "portefeuille_id": portefeuille_id, "site_id": site_id},
+            "total_estimated_risk_eur": 0.0,
+            "sites_count": 0,
+            "sites_at_risk": {"critical": 0, "high": 0, "medium": 0, "low": 0},
+            "framework_breakdown": [],
+            "top_sites": [],
+            "computed_at": datetime.utcnow().isoformat() + "Z",
+        }
+
+    # Agrégation
+    total_risk = 0.0
+    sites_at_risk: Dict[str, int] = {"critical": 0, "high": 0, "medium": 0, "low": 0}
+    framework_totals: Dict[str, Dict] = {}
+    site_summaries = []
+
+    for site in all_sites:
+        data = compute_site_anomalies(site.id, db)
+        enriched = enrich_anomalies_with_impact(data["anomalies"], None, DEFAULT_ASSUMPTIONS)
+
+        site_risk = sum(
+            (a.get("business_impact") or {}).get("estimated_risk_eur") or 0.0
+            for a in enriched
+        )
+        total_risk += site_risk
+
+        # Pire sévérité du site → bucket sites_at_risk
+        if enriched:
+            worst_sev = max(
+                (a["severity"] for a in enriched),
+                key=lambda s: _SEV_ORDER.get(s, 0),
+            ).lower()
+            if worst_sev in sites_at_risk:
+                sites_at_risk[worst_sev] += 1
+
+        # Breakdown par framework réglementaire
+        for a in enriched:
+            fw = (a.get("regulatory_impact") or {}).get("framework", "NONE")
+            if fw == "NONE":
+                continue
+            risk_a = (a.get("business_impact") or {}).get("estimated_risk_eur") or 0.0
+            if fw not in framework_totals:
+                framework_totals[fw] = {"risk_eur": 0.0, "anomalies_count": 0}
+            framework_totals[fw]["risk_eur"] += risk_a
+            framework_totals[fw]["anomalies_count"] += 1
+
+        # Framework dominant du site (depuis l'anomalie top priority)
+        top_fw: Optional[str] = None
+        if enriched:
+            ri = enriched[0].get("regulatory_impact") or {}
+            fw0 = ri.get("framework", "NONE")
+            top_fw = fw0 if fw0 != "NONE" else None
+
+        site_summaries.append({
+            "site_id": site.id,
+            "site_nom": site.nom,
+            "risk_eur": round(site_risk, 0),
+            "anomalies_count": data["nb_anomalies"],
+            "top_framework": top_fw,
+        })
+
+    # Top N sites par risk_eur DESC
+    site_summaries.sort(key=lambda s: s["risk_eur"], reverse=True)
+    top_sites = site_summaries[:top_n]
+
+    # Framework breakdown trié par risk_eur DESC
+    framework_breakdown = [
+        {
+            "framework": fw,
+            "risk_eur": round(v["risk_eur"], 0),
+            "anomalies_count": v["anomalies_count"],
+        }
+        for fw, v in sorted(framework_totals.items(), key=lambda x: x[1]["risk_eur"], reverse=True)
+    ]
+
+    return {
+        "scope": {"org_id": org_id, "portefeuille_id": portefeuille_id, "site_id": site_id},
+        "total_estimated_risk_eur": round(total_risk, 0),
+        "sites_count": len(all_sites),
+        "sites_at_risk": sites_at_risk,
+        "framework_breakdown": framework_breakdown,
+        "top_sites": top_sites,
+        "computed_at": datetime.utcnow().isoformat() + "Z",
+    }
 
 
 @router.get("/contracts")
