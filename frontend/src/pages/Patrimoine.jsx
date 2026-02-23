@@ -24,6 +24,8 @@ import CreateActionModal from '../components/CreateActionModal';
 import PatrimoineWizard from '../components/PatrimoineWizard';
 import PatrimoineHealthCard from '../components/PatrimoineHealthCard';
 import PatrimoinePortfolioHealthBar from '../components/PatrimoinePortfolioHealthBar';
+import PatrimoineHeatmap from '../components/PatrimoineHeatmap';
+import { getPatrimoineAnomalies } from '../services/api';
 import { track } from '../services/tracker';
 import { fmtEur, fmtEurFull, fmtArea, fmtAreaCompact, fmtKwh, fmtDateFR, pl } from '../utils/format';
 import { RISK_THRESHOLDS, ANOMALY_THRESHOLDS, getStatusBadgeProps } from '../lib/constants';
@@ -98,6 +100,13 @@ export default function Patrimoine() {
   const [showWizard, setShowWizard] = useState(false);
   const [drawerSite, setDrawerSite] = useState(null);
   const [drawerInitialTab, setDrawerInitialTab] = useState('resume');
+
+  // V63 — Heatmap enrichie (anomalies par site, Promise.all, guard stale)
+  const [hmTiles, setHmTiles]     = useState([]);
+  const [hmLoading, setHmLoading] = useState(false);
+  const [hmError, setHmError]     = useState(null);
+  const hmFetchIdRef              = useRef(0);
+
   const [favorites, setFavorites] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem('promeos_fav_sites') || '[]')); } catch { return new Set(); }
   });
@@ -126,6 +135,74 @@ export default function Patrimoine() {
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, []);
+
+  // V63 — Enrichissement heatmap : anomalies par site (Promise.all, max 10 sites, guard stale)
+  useEffect(() => {
+    if (scopedSites.length === 0) {
+      setHmTiles([]);
+      setHmLoading(false);
+      setHmError(null);
+      return;
+    }
+    const sitesToFetch = scopedSites.slice(0, 10);
+    setHmLoading(true);
+    setHmError(null);
+
+    const fetchId = ++hmFetchIdRef.current;
+
+    const SEV_ORDER_MAP = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
+
+    Promise.all(
+      sitesToFetch.map(site =>
+        getPatrimoineAnomalies(site.id)
+          .then(data => ({ site, data, ok: true }))
+          .catch(() => ({ site, data: null, ok: false }))
+      )
+    ).then(results => {
+      if (hmFetchIdRef.current !== fetchId) return;  // réponse périmée
+      const tiles = results.map(({ site, data, ok }) => {
+        const anomalies = ok && data ? (data.anomalies ?? []) : [];
+
+        // Mode framework dominant
+        const fwCounts = {};
+        for (const a of anomalies) {
+          const fw = a.regulatory_impact?.framework ?? 'NONE';
+          if (fw !== 'NONE') fwCounts[fw] = (fwCounts[fw] ?? 0) + 1;
+        }
+        const dominant_framework = Object.keys(fwCounts).length > 0
+          ? Object.entries(fwCounts).sort((a, b) => b[1] - a[1])[0][0]
+          : null;
+
+        // Sévérité max
+        const max_severity = anomalies.reduce((mx, a) => {
+          const o   = SEV_ORDER_MAP[a.severity] ?? 0;
+          const mxo = SEV_ORDER_MAP[mx]         ?? 0;
+          return o > mxo ? a.severity : mx;
+        }, null);
+
+        return {
+          site_id:          site.id,
+          site_nom:         site.nom,
+          total_risk_eur:   ok && data ? data.total_estimated_risk_eur : (site.risque_eur ?? 0),
+          anomalies_count:  ok && data ? data.nb_anomalies             : (site.anomalies_count ?? 0),
+          max_severity,
+          dominant_framework,
+          completude_score: ok && data ? data.completude_score : 0,
+          top_anomalies: anomalies.slice(0, 2).map(a => ({
+            code:     a.code,
+            severity: a.severity,
+            title_fr: a.title_fr,
+          })),
+        };
+      });
+      setHmTiles(tiles);
+      setHmLoading(false);
+    }).catch(() => {
+      if (hmFetchIdRef.current !== fetchId) return;
+      setHmError('Impossible de charger la heatmap.');
+      setHmLoading(false);
+    });
+  }, [scopedSites]);
 
   /* ─── Computed data ─── */
 
@@ -322,6 +399,14 @@ export default function Patrimoine() {
 
           {/* ── Portfolio Health Bar V60 — risque global, top sites, framework ── */}
           <PatrimoinePortfolioHealthBar onSiteClick={openDrawerOnAnomalies} />
+
+          {/* ── V63 — Heatmap portefeuille (risque / anomalies / framework par site) ── */}
+          <PatrimoineHeatmap
+            tiles={hmTiles}
+            onOpenSite={openDrawerOnAnomalies}
+            loading={hmLoading}
+            error={hmError}
+          />
 
           {/* ── KPI row (compact) ── */}
           <div className="grid grid-cols-4 gap-3">
