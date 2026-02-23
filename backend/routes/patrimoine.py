@@ -1410,13 +1410,29 @@ class OrgAnomaliesResponse(BaseModel):
     sites: List[OrgAnomaliesSiteItem]
 
 
-# ── V60 : Portfolio summary ────────────────────────────────────────────────
+# ── V60/V61 : Portfolio summary ────────────────────────────────────────────
 
 class PortfolioSitesAtRisk(BaseModel):
     critical: int = 0
     high: int = 0
     medium: int = 0
     low: int = 0
+
+
+class PortfolioSitesHealth(BaseModel):
+    """V61 — distribution des sites par score de complétude (data quality)."""
+    healthy: int = 0       # completude_score >= 85
+    warning: int = 0       # 50 <= completude_score < 85
+    critical: int = 0      # completude_score < 50
+    healthy_pct: float = 0.0
+
+
+class PortfolioTrend(BaseModel):
+    """V61 — tendance vs snapshot précédent. Null si pas d'historique."""
+    risk_eur_delta: Optional[float] = None
+    sites_count_delta: Optional[int] = None
+    direction: Optional[str] = None    # "up" | "down" | "stable" | null
+    vs_computed_at: Optional[str] = None
 
 
 class PortfolioFrameworkItem(BaseModel):
@@ -1438,8 +1454,10 @@ class PortfolioSummaryResponse(BaseModel):
     total_estimated_risk_eur: float
     sites_count: int
     sites_at_risk: PortfolioSitesAtRisk
+    sites_health: PortfolioSitesHealth          # V61 NEW
     framework_breakdown: List[PortfolioFrameworkItem]
     top_sites: List[PortfolioTopSiteItem]
+    trend: Optional[PortfolioTrend] = None      # V61 NEW (null — pas d'historique encore)
     computed_at: str
 
 
@@ -1623,6 +1641,9 @@ def get_portfolio_summary(
 
     all_sites = sites_q.all()
 
+    _HEALTH_HEALTHY  = 85
+    _HEALTH_WARNING  = 50
+
     # Scope vide → tout à 0
     if not all_sites:
         return {
@@ -1630,14 +1651,17 @@ def get_portfolio_summary(
             "total_estimated_risk_eur": 0.0,
             "sites_count": 0,
             "sites_at_risk": {"critical": 0, "high": 0, "medium": 0, "low": 0},
+            "sites_health": {"healthy": 0, "warning": 0, "critical": 0, "healthy_pct": 0.0},
             "framework_breakdown": [],
             "top_sites": [],
+            "trend": None,
             "computed_at": datetime.utcnow().isoformat() + "Z",
         }
 
     # Agrégation
     total_risk = 0.0
     sites_at_risk: Dict[str, int] = {"critical": 0, "high": 0, "medium": 0, "low": 0}
+    sites_health: Dict[str, Any] = {"healthy": 0, "warning": 0, "critical": 0}
     framework_totals: Dict[str, Dict] = {}
     site_summaries = []
 
@@ -1659,6 +1683,15 @@ def get_portfolio_summary(
             ).lower()
             if worst_sev in sites_at_risk:
                 sites_at_risk[worst_sev] += 1
+
+        # V61 — santé par score de complétude (data quality)
+        score = data.get("completude_score", 0)
+        if score >= _HEALTH_HEALTHY:
+            sites_health["healthy"] += 1
+        elif score >= _HEALTH_WARNING:
+            sites_health["warning"] += 1
+        else:
+            sites_health["critical"] += 1
 
         # Breakdown par framework réglementaire
         for a in enriched:
@@ -1686,6 +1719,10 @@ def get_portfolio_summary(
             "top_framework": top_fw,
         })
 
+    # healthy_pct final
+    n_total = len(all_sites)
+    sites_health["healthy_pct"] = round(sites_health["healthy"] / n_total * 100, 1) if n_total else 0.0
+
     # Top N sites par risk_eur DESC
     site_summaries.sort(key=lambda s: s["risk_eur"], reverse=True)
     top_sites = site_summaries[:top_n]
@@ -1703,10 +1740,12 @@ def get_portfolio_summary(
     return {
         "scope": {"org_id": org_id, "portefeuille_id": portefeuille_id, "site_id": site_id},
         "total_estimated_risk_eur": round(total_risk, 0),
-        "sites_count": len(all_sites),
+        "sites_count": n_total,
         "sites_at_risk": sites_at_risk,
+        "sites_health": sites_health,
         "framework_breakdown": framework_breakdown,
         "top_sites": top_sites,
+        "trend": None,   # V61 — null : pas d'historique encore (prévu V62+)
         "computed_at": datetime.utcnow().isoformat() + "Z",
     }
 

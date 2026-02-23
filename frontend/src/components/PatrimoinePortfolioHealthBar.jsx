@@ -1,19 +1,28 @@
 /**
- * PatrimoinePortfolioHealthBar — V60
- * Bandeau cockpit en-tête de /patrimoine : risque global, framework dominant, top sites.
+ * PatrimoinePortfolioHealthBar — V61
+ * Bandeau cockpit en-tête de /patrimoine.
+ *
+ * V60 : risque global, framework dominant, top sites à risque.
+ * V61 enrichissements :
+ *   A. Breakdown santé : % sains (score ≥ 85) · warning · critical
+ *   B. Top 3 frameworks dominants avec compte d'anomalies — "Décret Tertiaire (8)"
+ *   C. Trend (↑/↓/—) vs snapshot précédent — null-safe (affiche "—" si pas d'historique)
  *
  * Props:
- *   onSiteClick(site_id) — callback pour ouvrir le SiteDrawer sur onglet Anomalies
+ *   onSiteClick(site_id) — ouvre SiteDrawer sur onglet Anomalies
  *
- * États gérés :
- *   - loading   : skeleton
- *   - error     : message + retry
- *   - sites_count === 0 : bandeau "0 €" + CTA "Charger HELIOS" → /import
- *   - nominal   : risque global, sites critiques, framework dominant, top sites
+ * États :
+ *   loading  → skeleton
+ *   error    → message + retry
+ *   sites_count === 0 → bandeau "0 €" + CTA "Charger HELIOS" → /import
+ *   nominal  → cockpit complet
  */
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, Euro, ChevronRight, RefreshCw, Upload } from 'lucide-react';
+import {
+  AlertTriangle, Euro, ChevronRight, RefreshCw, Upload,
+  ShieldCheck, TrendingUp, TrendingDown, Minus,
+} from 'lucide-react';
 import { getPatrimoinePortfolioSummary } from '../services/api';
 
 /* ── Constantes ──────────────────────────────────────────────────────────── */
@@ -30,6 +39,8 @@ const FRAMEWORK_CHIP_COLOR = {
   BACS:             'bg-teal-50 text-teal-700 border-teal-100',
 };
 
+/* ── Utilitaires ──────────────────────────────────────────────────────────── */
+
 function fmtRisk(eur) {
   if (!eur || eur <= 0) return '0 €';
   if (eur >= 1_000_000) return `~${(eur / 1_000_000).toFixed(1)} M€`;
@@ -37,13 +48,85 @@ function fmtRisk(eur) {
   return `~${Math.round(eur)} €`;
 }
 
-function FrameworkPill({ framework }) {
+/* ── Sous-composants ─────────────────────────────────────────────────────── */
+
+/** Chip framework avec compteur optionnel — "Décret Tertiaire (8)" */
+function FrameworkPill({ framework, count }) {
   const label = FRAMEWORK_LABEL[framework] || framework;
   const color = FRAMEWORK_CHIP_COLOR[framework] || 'bg-gray-50 text-gray-600 border-gray-100';
   return (
-    <span className={`text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border ${color} shrink-0`}>
+    <span
+      className={`inline-flex items-center gap-0.5 text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border shrink-0 ${color}`}
+    >
       {label}
+      {count != null && (
+        <span className="font-normal opacity-70 normal-case tracking-normal">({count})</span>
+      )}
     </span>
+  );
+}
+
+/**
+ * Indicateur de tendance — null-safe.
+ * direction : "up" = risque en hausse (rouge) | "down" = baisse (vert) | "stable" | null → "—"
+ */
+function TrendBadge({ trend }) {
+  if (!trend || trend.direction == null) {
+    return (
+      <span className="inline-flex items-center gap-0.5 text-[11px] text-gray-300">
+        <Minus size={11} /> Tendance
+      </span>
+    );
+  }
+  if (trend.direction === 'up') {
+    return (
+      <span className="inline-flex items-center gap-0.5 text-[11px] font-medium text-red-500">
+        <TrendingUp size={12} /> Hausse
+      </span>
+    );
+  }
+  if (trend.direction === 'down') {
+    return (
+      <span className="inline-flex items-center gap-0.5 text-[11px] font-medium text-green-600">
+        <TrendingDown size={12} /> Baisse
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-0.5 text-[11px] text-gray-400">
+      <Minus size={11} /> Stable
+    </span>
+  );
+}
+
+/** Barre de santé — healthy (vert) / warning (amber) / critical (rouge) */
+function HealthBar({ sites_health, sites_count }) {
+  const healthy  = sites_health?.healthy  ?? 0;
+  const warning  = sites_health?.warning  ?? 0;
+  const critical = sites_health?.critical ?? 0;
+  const pct      = sites_health?.healthy_pct ?? 0;
+
+  const pctH = sites_count > 0 ? Math.round(healthy  / sites_count * 100) : 0;
+  const pctW = sites_count > 0 ? Math.round(warning  / sites_count * 100) : 0;
+  const pctC = sites_count > 0 ? Math.round(critical / sites_count * 100) : 0;
+
+  return (
+    <div className="flex items-center gap-2">
+      <ShieldCheck size={14} className="text-green-500 shrink-0" />
+      <div className="flex items-center gap-1.5">
+        <span className="text-sm font-bold text-green-600">{pct}%</span>
+        <span className="text-xs text-gray-500">sains</span>
+      </div>
+      {/* Mini progress bar */}
+      <div className="flex h-1.5 w-16 rounded-full overflow-hidden bg-gray-100">
+        {pctH > 0 && <div className="bg-green-400 h-full" style={{ width: `${pctH}%` }} />}
+        {pctW > 0 && <div className="bg-amber-400 h-full" style={{ width: `${pctW}%` }} />}
+        {pctC > 0 && <div className="bg-red-400 h-full"   style={{ width: `${pctC}%` }} />}
+      </div>
+      <span className="text-[10px] text-gray-400">
+        {healthy}✓ · {warning}⚠ · {critical}✗
+      </span>
+    </div>
   );
 }
 
@@ -51,9 +134,9 @@ function FrameworkPill({ framework }) {
 
 export default function PatrimoinePortfolioHealthBar({ onSiteClick }) {
   const navigate = useNavigate();
-  const [data, setData] = useState(null);
+  const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError]     = useState(null);
 
   const fetchSummary = () => {
     setLoading(true);
@@ -69,9 +152,7 @@ export default function PatrimoinePortfolioHealthBar({ onSiteClick }) {
   /* ── États ── */
 
   if (loading) {
-    return (
-      <div className="animate-pulse bg-gray-50 border border-gray-100 rounded-xl p-4 h-16" />
-    );
+    return <div className="animate-pulse bg-gray-50 border border-gray-100 rounded-xl p-4 h-16" />;
   }
 
   if (error) {
@@ -79,10 +160,7 @@ export default function PatrimoinePortfolioHealthBar({ onSiteClick }) {
       <div className="flex items-center gap-2 text-xs text-gray-400 bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
         <AlertTriangle size={14} className="text-amber-400 shrink-0" />
         <span>{error}</span>
-        <button
-          onClick={fetchSummary}
-          className="ml-auto flex items-center gap-1 text-blue-600 hover:underline"
-        >
+        <button onClick={fetchSummary} className="ml-auto flex items-center gap-1 text-blue-600 hover:underline">
           <RefreshCw size={11} /> Réessayer
         </button>
       </div>
@@ -112,42 +190,68 @@ export default function PatrimoinePortfolioHealthBar({ onSiteClick }) {
     );
   }
 
-  /* ── Vue nominale ── */
+  /* ── Vue cockpit nominale ── */
 
-  const { total_estimated_risk_eur, sites_at_risk, framework_breakdown, top_sites } = data;
-  const dominantFw = framework_breakdown[0] ?? null;
-  const totalAtRisk = (sites_at_risk?.critical ?? 0) + (sites_at_risk?.high ?? 0);
+  const {
+    total_estimated_risk_eur,
+    sites_count,
+    sites_at_risk,
+    sites_health,
+    framework_breakdown,
+    top_sites,
+    trend,
+  } = data;
+
+  // Top 3 frameworks dominants (déjà triés risk_eur DESC par le backend)
+  const top3Fw = (framework_breakdown ?? []).slice(0, 3);
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl px-4 py-3 space-y-2.5">
 
-      {/* ── Ligne d'indicateurs ── */}
+      {/* ── Ligne 1 : métriques clés ── */}
       <div className="flex items-center gap-4 flex-wrap">
 
         {/* Risque global */}
         <div className="flex items-center gap-1.5">
           <Euro size={14} className="text-red-500 shrink-0" />
-          <span className="text-sm text-gray-600">Risque global estimé :</span>
+          <span className="text-sm text-gray-600">Risque global :</span>
           <span className="text-sm font-bold text-red-600">{fmtRisk(total_estimated_risk_eur)}</span>
         </div>
 
-        {/* Sites critiques / élevés */}
-        {totalAtRisk > 0 && (
-          <div className="flex items-center gap-1.5">
-            <AlertTriangle size={13} className="text-orange-500 shrink-0" />
-            <span className="text-sm text-gray-600">Sites critiques :</span>
-            <span className="text-sm font-semibold text-orange-600">{totalAtRisk}</span>
-          </div>
-        )}
+        {/* Santé des données (V61) */}
+        <HealthBar sites_health={sites_health} sites_count={sites_count} />
 
-        {/* Framework dominant */}
-        {dominantFw && (
-          <div className="flex items-center gap-1.5 ml-auto">
-            <FrameworkPill framework={dominantFw.framework} />
-            <span className="text-xs text-gray-400">dominant</span>
+        {/* Trend (V61) — null-safe */}
+        <TrendBadge trend={trend} />
+
+        {/* Sites critiques (si > 0) */}
+        {((sites_at_risk?.critical ?? 0) + (sites_at_risk?.high ?? 0)) > 0 && (
+          <div className="flex items-center gap-1 ml-auto">
+            <AlertTriangle size={13} className="text-orange-500 shrink-0" />
+            <span className="text-xs font-semibold text-orange-600">
+              {(sites_at_risk.critical ?? 0) + (sites_at_risk.high ?? 0)} site{
+                (sites_at_risk.critical ?? 0) + (sites_at_risk.high ?? 0) > 1 ? 's' : ''
+              } critiques
+            </span>
           </div>
         )}
       </div>
+
+      {/* ── Ligne 2 : frameworks dominants top 3 (V61 — avec comptes) ── */}
+      {top3Fw.length > 0 && (
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mr-1">
+            Frameworks :
+          </span>
+          {top3Fw.map((fw) => (
+            <FrameworkPill
+              key={fw.framework}
+              framework={fw.framework}
+              count={fw.anomalies_count}
+            />
+          ))}
+        </div>
+      )}
 
       {/* ── Top sites à risque ── */}
       {top_sites.length > 0 && (
@@ -160,7 +264,9 @@ export default function PatrimoinePortfolioHealthBar({ onSiteClick }) {
               <span className="font-medium text-gray-800 text-sm truncate flex-1 min-w-0">
                 {s.site_nom}
               </span>
-              {s.top_framework && <FrameworkPill framework={s.top_framework} />}
+              {s.top_framework && (
+                <FrameworkPill framework={s.top_framework} />
+              )}
               <span className="text-xs font-semibold text-red-600 shrink-0">
                 {fmtRisk(s.risk_eur)}
               </span>
