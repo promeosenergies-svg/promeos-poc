@@ -2,10 +2,11 @@
 PROMEOS - Routes API pour l'Energie (Import & Analysis)
 Import CSV/XLSX/JSON consumption data, run KB-driven analytics
 """
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query, Request
 from sqlalchemy.orm import Session
 from database import get_db
 from middleware.auth import get_optional_auth, AuthContext
+from services.iam_scope import check_site_access
 from models import (
     Site, Meter, MeterReading, DataImportJob, UsageProfile,
     Anomaly as AnomalyModel, Recommendation as RecommendationModel,
@@ -89,8 +90,13 @@ class DemoDataRequest(BaseModel):
 # --- Meter endpoints ---
 
 @router.post("/meters", response_model=MeterResponse)
-def create_meter(meter: MeterCreate, db: Session = Depends(get_db)):
+def create_meter(
+    meter: MeterCreate,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Create a new energy meter"""
+    check_site_access(auth, meter.site_id)
     # Verify site exists
     site = db.query(Site).filter_by(id=meter.site_id).first()
     if not site:
@@ -160,13 +166,15 @@ async def upload_consumption_data(
     file: UploadFile = File(...),
     meter_id: str = Query(..., description="Meter ID (PRM/PDL)"),
     frequency: str = Query("hourly", description="Data frequency: 15min, 30min, hourly, daily, monthly"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Upload consumption data file (CSV/XLSX/JSON)"""
     # Validate meter
     meter = db.query(Meter).filter_by(meter_id=meter_id).first()
     if not meter:
         raise HTTPException(status_code=404, detail=f"Meter '{meter_id}' not found")
+    check_site_access(auth, meter.site_id)
 
     # Determine format
     filename = file.filename or "unknown"
@@ -296,7 +304,8 @@ def list_import_jobs(
 @router.post("/analysis/run")
 def run_analysis(
     meter_id: str = Query(..., description="Meter ID to analyze"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Run KB-driven analysis on meter data"""
     from services.analytics_engine import AnalyticsEngine
@@ -304,6 +313,7 @@ def run_analysis(
     meter = db.query(Meter).filter_by(meter_id=meter_id).first()
     if not meter:
         raise HTTPException(status_code=404, detail=f"Meter '{meter_id}' not found")
+    check_site_access(auth, meter.site_id)
 
     # Check for data
     readings_count = db.query(MeterReading).filter_by(meter_id=meter.id).count()
@@ -319,12 +329,14 @@ def run_analysis(
 @router.get("/analysis/summary")
 def get_analysis_summary(
     meter_id: str = Query(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Get latest analysis summary for a meter"""
     meter = db.query(Meter).filter_by(meter_id=meter_id).first()
     if not meter:
         raise HTTPException(status_code=404, detail=f"Meter '{meter_id}' not found")
+    check_site_access(auth, meter.site_id)
 
     # Get latest profile
     profile = db.query(UsageProfile).filter_by(
@@ -376,11 +388,16 @@ def get_analysis_summary(
 # --- Demo endpoints ---
 
 @router.post("/demo/generate")
-def generate_demo_data(request: DemoDataRequest, db: Session = Depends(get_db)):
+def generate_demo_data(
+    request: DemoDataRequest,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Generate synthetic consumption data for demo purposes"""
     import random
     import math
 
+    check_site_access(auth, request.site_id)
     site = db.query(Site).filter_by(id=request.site_id).first()
     if not site:
         raise HTTPException(status_code=404, detail=f"Site {request.site_id} not found")

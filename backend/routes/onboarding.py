@@ -8,12 +8,14 @@ import io
 import csv
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import Organisation, Portefeuille, Site, not_deleted
+from models import Organisation, Portefeuille, EntiteJuridique, Site, not_deleted
+from middleware.auth import get_optional_auth, AuthContext
+from services.scope_utils import resolve_org_id
 from services.onboarding_service import (
     create_organisation_full,
     create_site_from_data,
@@ -59,18 +61,28 @@ class OnboardingRequest(BaseModel):
 # ========================================
 
 @router.post("")
-def create_onboarding(payload: OnboardingRequest, db: Session = Depends(get_db)):
+def create_onboarding(
+    payload: OnboardingRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """
     Cree l'organisation complete en un seul appel.
-    V1 mono-org: erreur 409 si une organisation existe deja.
+    V1 mono-org: erreur 409 si une organisation existe deja dans le scope.
     """
-    # V1: mono-org
-    existing = db.query(Organisation).first()
-    if existing:
-        raise HTTPException(
-            status_code=409,
-            detail=f"Organisation '{existing.nom}' existe deja. V1 mono-org: supprimez d'abord l'existante."
-        )
+    # V1: check if org already exists for this scope
+    try:
+        existing_org_id = resolve_org_id(request, auth, db)
+        existing = db.query(Organisation).filter(Organisation.id == existing_org_id).first()
+        if existing:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Organisation '{existing.nom}' existe deja. Supprimez d'abord l'existante."
+            )
+    except HTTPException as e:
+        if e.status_code not in (401, 403):
+            raise
 
     # Creer org + entite + portefeuilles
     portefeuilles_data = [p.model_dump() for p in (payload.portefeuilles or [])]
@@ -119,7 +131,12 @@ def create_onboarding(payload: OnboardingRequest, db: Session = Depends(get_db))
 
 
 @router.post("/import-csv")
-async def import_csv(file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def import_csv(
+    request: Request,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """
     Import massif de sites via CSV.
     Necessite une organisation existante (onboarding prealable).
@@ -127,18 +144,17 @@ async def import_csv(file: UploadFile = File(...), db: Session = Depends(get_db)
     Format CSV attendu (separateur , ou ;):
     nom,adresse,code_postal,ville,surface_m2,type,naf_code
     """
-    # Verifier qu'une org existe
-    org = db.query(Organisation).first()
-    if not org:
-        raise HTTPException(
-            status_code=400,
-            detail="Aucune organisation. Creez d'abord une organisation via POST /api/onboarding."
-        )
+    org_id = resolve_org_id(request, auth, db)
 
-    # Trouver le premier portefeuille
-    portefeuille = db.query(Portefeuille).first()
+    # Trouver le premier portefeuille de l'org
+    portefeuille = (
+        db.query(Portefeuille)
+        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+        .filter(EntiteJuridique.organisation_id == org_id)
+        .first()
+    )
     if not portefeuille:
-        raise HTTPException(status_code=400, detail="Aucun portefeuille existant.")
+        raise HTTPException(status_code=400, detail="Aucun portefeuille pour cette organisation.")
 
     # Lire le fichier
     content = await file.read()
@@ -197,7 +213,11 @@ async def import_csv(file: UploadFile = File(...), db: Session = Depends(get_db)
 
 
 @router.get("/status")
-def get_onboarding_status(db: Session = Depends(get_db)):
+def get_onboarding_status(
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """
     Retourne l'etat de l'onboarding:
     - has_organisation: bool
@@ -206,9 +226,32 @@ def get_onboarding_status(db: Session = Depends(get_db)):
     - total_portefeuilles: int
     - onboarding_complete: bool (org existe ET >= 1 site)
     """
-    org = db.query(Organisation).first()
-    total_sites = not_deleted(db.query(Site), Site).count()
-    total_portefeuilles = not_deleted(db.query(Portefeuille), Portefeuille).count()
+    try:
+        org_id = resolve_org_id(request, auth, db)
+    except HTTPException:
+        return {
+            "has_organisation": False,
+            "organisation_nom": None,
+            "organisation_type": None,
+            "total_sites": 0,
+            "total_portefeuilles": 0,
+            "onboarding_complete": False,
+        }
+
+    org = db.query(Organisation).filter(Organisation.id == org_id).first()
+    total_sites = (
+        not_deleted(db.query(Site), Site)
+        .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
+        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+        .filter(EntiteJuridique.organisation_id == org_id)
+        .count()
+    )
+    total_portefeuilles = (
+        not_deleted(db.query(Portefeuille), Portefeuille)
+        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+        .filter(EntiteJuridique.organisation_id == org_id)
+        .count()
+    )
 
     return {
         "has_organisation": org is not None,

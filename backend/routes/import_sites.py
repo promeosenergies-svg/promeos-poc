@@ -6,11 +6,13 @@ GET  /api/import/template - Retourne la structure CSV attendue
 import io
 import csv
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import Organisation, Portefeuille
+from models import Organisation, Portefeuille, EntiteJuridique
+from middleware.auth import get_optional_auth, AuthContext
+from services.scope_utils import resolve_org_id
 from services.onboarding_service import create_site_from_data, provision_site
 
 router = APIRouter(prefix="/api/import", tags=["Import"])
@@ -42,22 +44,27 @@ def get_csv_template():
 
 
 @router.post("/sites")
-async def import_sites_csv(file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def import_sites_csv(
+    request: Request,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """
     Import massif de sites via CSV.
     Necessite une organisation existante.
-    Les sites sont crees dans le premier portefeuille disponible.
+    Les sites sont crees dans le premier portefeuille de l'organisation resolue.
     """
-    org = db.query(Organisation).first()
-    if not org:
-        raise HTTPException(
-            status_code=400,
-            detail="Aucune organisation. Creez d'abord une organisation via POST /api/onboarding ou POST /api/demo/seed."
-        )
+    org_id = resolve_org_id(request, auth, db)
 
-    portefeuille = db.query(Portefeuille).first()
+    portefeuille = (
+        db.query(Portefeuille)
+        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+        .filter(EntiteJuridique.organisation_id == org_id)
+        .first()
+    )
     if not portefeuille:
-        raise HTTPException(status_code=400, detail="Aucun portefeuille existant.")
+        raise HTTPException(status_code=400, detail="Aucun portefeuille pour cette organisation.")
 
     content = await file.read()
     text = content.decode("utf-8-sig")

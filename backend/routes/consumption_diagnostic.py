@@ -27,7 +27,7 @@ from services.consumption_diagnostic import (
     run_diagnostic_org,
     get_insights_summary,
 )
-from services.scope_utils import get_scope_org_id
+from services.scope_utils import get_scope_org_id, resolve_org_id
 from services.tunnel_service import compute_tunnel, compute_tunnel_v2
 from services.targets_service import (
     get_targets, create_target, update_target, delete_target, get_progression, get_progression_v2,
@@ -64,23 +64,9 @@ def consumption_insights(
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Aggregate consumption insights for an organisation.
-    Scope priority: auth token > X-Org-Id header > org_id query param > DemoState > last org.
+    Scope priority: auth token > X-Org-Id header > org_id query param > DEMO_MODE fallback.
     """
-    # V18-E: canonical priority via scope_utils (auth > X-Org-Id header), then query param
-    org_id = get_scope_org_id(request, auth) or org_id
-    if org_id is None:
-        from services.demo_state import DemoState
-        org_id = DemoState.get_demo_org_id()
-    if org_id is None:
-        org = db.query(Organisation).order_by(Organisation.id.desc()).first()
-        if not org:
-            return {
-                "total_insights": 0, "by_type": {},
-                "total_loss_kwh": 0, "total_loss_eur": 0,
-                "sites_with_insights": 0, "insights": [],
-            }
-        org_id = org.id
-
+    org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
     return get_insights_summary(db, org_id)
 
 
@@ -123,19 +109,14 @@ def site_insights(site_id: int, db: Session = Depends(get_db), auth: Optional[Au
 
 @router.post("/diagnose")
 def diagnose(
+    request: Request,
     org_id: Optional[int] = Query(None),
     days: int = Query(30),
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Run diagnostics for all sites of an organisation."""
-    if auth:
-        org_id = auth.org_id
-    if org_id is None:
-        org = db.query(Organisation).first()
-        if not org:
-            raise HTTPException(status_code=400, detail="Aucune organisation trouvee.")
-        org_id = org.id
+    org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
 
     result = run_diagnostic_org(db, org_id, days=days)
     return {"status": "ok", **result}

@@ -7,7 +7,7 @@ Endpoint to trigger recomputation of site conformity snapshots.
 import json
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -29,6 +29,7 @@ from services.compliance_rules import (
     load_all_packs,
 )
 from middleware.auth import get_optional_auth, AuthContext
+from services.scope_utils import resolve_org_id
 
 router = APIRouter(prefix="/api/compliance", tags=["Compliance"])
 
@@ -84,10 +85,12 @@ def recompute_compliance(
 
 @router.get("/summary")
 def compliance_summary(
+    request: Request,
     org_id: Optional[int] = Query(None),
     entity_id: Optional[int] = Query(None),
     site_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """
     GET /api/compliance/summary?org_id=&entity_id=&site_id=
@@ -95,22 +98,13 @@ def compliance_summary(
     Aggregate compliance findings with scope filtering.
     Scope priority: site_id > entity_id > org_id.
     """
-    if org_id is None and entity_id is None and site_id is None:
-        org = db.query(Organisation).first()
-        if not org:
-            return {
-                "total_sites": 0, "sites_ok": 0, "sites_nok": 0,
-                "sites_unknown": 0, "pct_ok": 0,
-                "findings_by_regulation": {}, "top_actions": [],
-                "empty_reason": "NO_SITES",
-            }
-        org_id = org.id
-
-    return get_summary(db, org_id or 0, entity_id=entity_id, site_id=site_id)
+    org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
+    return get_summary(db, org_id, entity_id=entity_id, site_id=site_id)
 
 
 @router.get("/sites")
 def compliance_sites(
+    request: Request,
     org_id: Optional[int] = Query(None),
     entity_id: Optional[int] = Query(None),
     site_id: Optional[int] = Query(None),
@@ -118,24 +112,21 @@ def compliance_sites(
     status: Optional[str] = Query(None),
     severity: Optional[str] = Query(None),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """
     GET /api/compliance/sites?org_id=&entity_id=&site_id=&regulation=&status=&severity=
 
     Per-site findings list with scope filtering.
     """
-    if org_id is None and entity_id is None and site_id is None:
-        org = db.query(Organisation).first()
-        if not org:
-            return []
-        org_id = org.id
-
-    return get_sites_findings(db, org_id or 0, regulation, status, severity,
+    org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
+    return get_sites_findings(db, org_id, regulation, status, severity,
                               entity_id=entity_id, site_id=site_id)
 
 
 @router.get("/bundle")
 def compliance_bundle(
+    request: Request,
     org_id: Optional[int] = Query(None),
     entity_id: Optional[int] = Query(None),
     site_id: Optional[int] = Query(None),
@@ -144,6 +135,7 @@ def compliance_bundle(
     status: Optional[str] = Query(None),
     severity: Optional[str] = Query(None),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """
     GET /api/compliance/bundle?org_id=&entity_id=&site_id=&portefeuille_id=
@@ -151,12 +143,7 @@ def compliance_bundle(
     Single-request bundle: summary + sites + empty_reason.
     Scope priority: site_id > portefeuille_id > entity_id > org_id.
     """
-    if org_id is None:
-        org = db.query(Organisation).first()
-        if not org:
-            return get_compliance_bundle(db, 0)
-        org_id = org.id
-
+    org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
     return get_compliance_bundle(
         db, org_id,
         entity_id=entity_id, site_id=site_id,
@@ -167,8 +154,10 @@ def compliance_bundle(
 
 @router.post("/recompute-rules")
 def recompute_rules(
+    request: Request,
     org_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """
     POST /api/compliance/recompute-rules?org_id=
@@ -176,12 +165,7 @@ def recompute_rules(
     Evaluate all YAML rules for all sites of an organisation.
     Produces ComplianceFinding rows + ComplianceRunBatch (Sprint 9).
     """
-    if org_id is None:
-        org = db.query(Organisation).first()
-        if not org:
-            raise HTTPException(status_code=400, detail="Aucune organisation trouvee.")
-        org_id = org.id
-
+    org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
     result = evaluate_organisation(db, org_id)
     return {"status": "ok", **result}
 
@@ -217,6 +201,7 @@ def list_rules():
 
 @router.get("/findings")
 def list_findings(
+    request: Request,
     org_id: Optional[int] = Query(None),
     regulation: Optional[str] = Query(None),
     status: Optional[str] = Query(None),
@@ -230,14 +215,7 @@ def list_findings(
 
     List all findings with workflow fields. Supports filters.
     """
-    # Resolve org scope
-    if auth:
-        org_id = auth.org_id
-    elif org_id is None:
-        org = db.query(Organisation).first()
-        if not org:
-            return []
-        org_id = org.id
+    org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
 
     site_ids = [
         row[0] for row in
@@ -296,15 +274,33 @@ def list_findings(
 
 
 @router.patch("/findings/{finding_id}")
-def patch_finding(finding_id: int, data: FindingPatch, db: Session = Depends(get_db)):
+def patch_finding(
+    finding_id: int,
+    data: FindingPatch,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """
     PATCH /api/compliance/findings/{finding_id}
 
     Update finding workflow: status, owner, notes.
     """
+    org_id = resolve_org_id(request, auth, db)
     finding = db.query(ComplianceFinding).filter(ComplianceFinding.id == finding_id).first()
     if not finding:
         raise HTTPException(status_code=404, detail="Finding non trouve")
+    # Verify finding belongs to user's org
+    site = db.query(Site).filter(Site.id == finding.site_id).first()
+    if site:
+        org_match = (
+            db.query(EntiteJuridique.organisation_id)
+            .join(Portefeuille, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+            .filter(Portefeuille.id == site.portefeuille_id)
+            .first()
+        )
+        if not org_match or org_match[0] != org_id:
+            raise HTTPException(status_code=403, detail="Accès interdit à ce finding")
 
     if data.status is not None:
         try:
@@ -359,15 +355,32 @@ def list_batches(
 
 
 @router.get("/findings/{finding_id}")
-def get_finding_detail(finding_id: int, db: Session = Depends(get_db)):
+def get_finding_detail(
+    finding_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """
     GET /api/compliance/findings/{finding_id}
 
     Detailed finding with audit fields (inputs, params, evidence, engine_version).
     """
+    org_id = resolve_org_id(request, auth, db)
     f = db.query(ComplianceFinding).filter(ComplianceFinding.id == finding_id).first()
     if not f:
         raise HTTPException(status_code=404, detail="Finding not found")
+    # Verify finding belongs to user's org
+    site = db.query(Site).filter(Site.id == f.site_id).first()
+    if site:
+        org_match = (
+            db.query(EntiteJuridique.organisation_id)
+            .join(Portefeuille, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+            .filter(Portefeuille.id == site.portefeuille_id)
+            .first()
+        )
+        if not org_match or org_match[0] != org_id:
+            raise HTTPException(status_code=403, detail="Accès interdit à ce finding")
 
     site = db.query(Site).filter(Site.id == f.site_id).first()
     actions = json.loads(f.recommended_actions_json) if f.recommended_actions_json else []

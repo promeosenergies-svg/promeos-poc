@@ -5,13 +5,15 @@ POST /api/segmentation/answers — soumettre les reponses
 GET /api/segmentation/profile — profil detecte + score
 """
 import json
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from typing import Dict, Optional
 from sqlalchemy.orm import Session
 
 from database import get_db
 from models import Organisation
+from middleware.auth import get_optional_auth, AuthContext
+from services.scope_utils import resolve_org_id
 from services.segmentation_service import (
     get_questions,
     get_or_create_profile,
@@ -45,17 +47,20 @@ def list_questions():
 # ========================================
 
 @router.post("/answers")
-def submit_answers(req: AnswersRequest, db: Session = Depends(get_db)):
+def submit_answers(
+    req: AnswersRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Soumet les reponses au questionnaire et met a jour le profil."""
-    org = db.query(Organisation).first()
-    if not org:
-        raise HTTPException(status_code=400, detail="Aucune organisation trouvee. Creez d'abord une organisation.")
+    org_id = resolve_org_id(request, auth, db)
 
-    profile = update_profile_with_answers(db, org.id, req.answers)
+    profile = update_profile_with_answers(db, org_id, req.answers)
 
     # Auto-recompute compliance after questionnaire answers
     from services.compliance_rules import evaluate_organisation
-    eval_result = evaluate_organisation(db, org.id)
+    eval_result = evaluate_organisation(db, org_id)
 
     return {
         "typologie": profile.typologie,
@@ -71,9 +76,14 @@ def submit_answers(req: AnswersRequest, db: Session = Depends(get_db)):
 # ========================================
 
 @router.get("/profile")
-def get_profile(db: Session = Depends(get_db)):
+def get_profile(
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Retourne le profil de segmentation de l'organisation courante."""
-    org = db.query(Organisation).first()
+    org_id = resolve_org_id(request, auth, db)
+    org = db.query(Organisation).filter(Organisation.id == org_id).first()
     if not org:
         return {
             "has_profile": False,
@@ -84,7 +94,7 @@ def get_profile(db: Session = Depends(get_db)):
             "naf_code": None,
         }
 
-    profile = get_or_create_profile(db, org.id)
+    profile = get_or_create_profile(db, org_id)
 
     return {
         "has_profile": True,

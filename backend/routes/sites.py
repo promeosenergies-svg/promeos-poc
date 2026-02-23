@@ -29,20 +29,28 @@ class SiteCreateRequest(BaseModel):
 
 
 @router.post("")
-def create_site(req: SiteCreateRequest, db: Session = Depends(get_db)):
+def create_site(
+    req: SiteCreateRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """
-    Cree un site dans le premier portefeuille de l'organisation existante.
+    Cree un site dans le premier portefeuille de l'organisation resolue.
     Auto-provision: batiment + obligations + compliance recompute.
     """
-    from models import Organisation, Portefeuille
+    from models import Portefeuille, EntiteJuridique
     from services.onboarding_service import create_site_from_data, provision_site
 
-    org = db.query(Organisation).first()
-    if not org:
-        raise HTTPException(status_code=400, detail="Aucune organisation. Creez-en une d'abord.")
-    pf = db.query(Portefeuille).first()
+    org_id = resolve_org_id(request, auth, db)
+    pf = (
+        db.query(Portefeuille)
+        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+        .filter(EntiteJuridique.organisation_id == org_id)
+        .first()
+    )
     if not pf:
-        raise HTTPException(status_code=400, detail="Aucun portefeuille.")
+        raise HTTPException(status_code=400, detail="Aucun portefeuille pour cette organisation.")
 
     site = create_site_from_data(
         db=db,
