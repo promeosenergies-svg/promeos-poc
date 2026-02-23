@@ -16,16 +16,13 @@ const STORAGE_KEY = 'promeos_scope';
 const DEMO_ORGS_KEY = 'promeos_demo_orgs';
 
 const MOCK_ORGS = [
-  { id: 1, nom: 'Groupe Casino' },
-  { id: 2, nom: 'Nexity Immobilier' },
+  { id: 1, nom: 'Groupe HELIOS' },
 ];
 
 const MOCK_PORTEFEUILLES = [
-  { id: 1, org_id: 1, nom: 'Hypermarches' },
-  { id: 2, org_id: 1, nom: 'Proximite' },
-  { id: 3, org_id: 1, nom: 'Logistique' },
-  { id: 4, org_id: 2, nom: 'IDF' },
-  { id: 5, org_id: 2, nom: 'PACA' },
+  { id: 1, org_id: 1, nom: 'Siège & Bureaux' },
+  { id: 2, org_id: 1, nom: 'Sites Industriels' },
+  { id: 3, org_id: 1, nom: 'Patrimoine Tertiaire' },
 ];
 
 // Assign sites to portefeuilles deterministically
@@ -234,7 +231,7 @@ export function ScopeProvider({ children }) {
       sites = mockSites.slice(0, 10).filter((s) => {
         const pfId = sitePortefeuille(s);
         const pf = MOCK_PORTEFEUILLES.find((p) => p.id === pfId);
-        return pf && pf.org_id === 1; // offline sample from Casino
+        return pf && pf.org_id === 1; // offline sample from HELIOS
       });
       if (scope.portefeuilleId) {
         sites = sites.filter((s) => sitePortefeuille(s) === scope.portefeuilleId);

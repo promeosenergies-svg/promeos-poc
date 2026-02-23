@@ -107,6 +107,75 @@ app.include_router(tertiaire_router)  # Tertiaire / OPERAT V39 (EFA, controls, p
 from database import engine as _engine, run_migrations as _run_migrations
 _run_migrations(_engine)
 
+
+@app.on_event("startup")
+async def restore_or_seed_helios():
+    """
+    Au démarrage : si DEMO_MODE=true, restaurer DemoState depuis la DB
+    (org is_demo=True existante) ou seeder HELIOS fresh si aucune org demo.
+    Idempotent — ne re-seed pas si une org demo existe déjà en DB.
+    """
+    if os.environ.get("PROMEOS_DEMO_MODE", "false").lower() != "true":
+        return
+    # Never run during pytest — test fixtures manage their own DB isolation
+    if os.environ.get("PYTEST_CURRENT_TEST"):
+        return
+
+    from database import SessionLocal
+    from services.demo_state import DemoState
+
+    if DemoState.get_demo_org_id():
+        return  # DemoState déjà rempli (ex: test ou rechargement uvicorn)
+
+    db = SessionLocal()
+    try:
+        from models import Organisation, Site, Portefeuille, EntiteJuridique
+        demo_org = (db.query(Organisation)
+            .filter(Organisation.actif == True, Organisation.is_demo == True)
+            .order_by(Organisation.id.desc())
+            .first())
+
+        if demo_org:
+            # Re-register après restart — pas de re-seed
+            pf_ids = [row.id for row in (
+                db.query(Portefeuille.id)
+                .join(EntiteJuridique,
+                      Portefeuille.entite_juridique_id == EntiteJuridique.id)
+                .filter(EntiteJuridique.organisation_id == demo_org.id)
+                .all()
+            )]
+            sites_q = db.query(Site).filter(
+                Site.portefeuille_id.in_(pf_ids), Site.actif == True
+            )
+            sites_count = sites_q.count()
+            first_site = sites_q.first()
+            DemoState.set_demo_org(
+                org_id=demo_org.id,
+                org_nom=demo_org.nom,
+                pack="helios",
+                size="S",
+                sites_count=sites_count,
+                default_site_id=first_site.id if first_site else None,
+                default_site_name=first_site.nom if first_site else None,
+            )
+        else:
+            # Fresh seed — premier démarrage, DB vide
+            from services.demo_seed import SeedOrchestrator
+            import logging
+            logging.getLogger("promeos.startup").info(
+                "[startup] Seeding HELIOS demo data..."
+            )
+            orch = SeedOrchestrator(db)
+            orch.seed(pack="helios", size="S", rng_seed=42)
+    except Exception as exc:
+        import logging
+        logging.getLogger("promeos.startup").warning(
+            f"[startup] HELIOS init failed (non-bloquant): {exc}"
+        )
+    finally:
+        db.close()
+
+
 # Route racine
 @app.get("/")
 def root():
