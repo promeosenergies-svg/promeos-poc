@@ -304,3 +304,71 @@ describe('api.js V63 — getPatrimoineAnomalies', () => {
     expect(API_JS).toMatch(/patrimoine\/sites.*anomalies/);
   });
 });
+
+// ── Top-15 scalabilité (cas de test a/b/c/d du cahier des charges) ────────
+
+describe('PatrimoineHeatmap V63-scale — Top-15 tiles', () => {
+  test('MAX_TILES = 15 défini', () => {
+    expect(HEATMAP_JSX).toMatch(/MAX_TILES\s*=\s*15/);
+  });
+
+  test('visibleTiles calculé depuis filtered', () => {
+    expect(HEATMAP_JSX).toMatch(/visibleTiles/);
+  });
+
+  test('showTopBanner conditionnel sur filtered.length > MAX_TILES', () => {
+    expect(HEATMAP_JSX).toMatch(/showTopBanner/);
+    expect(HEATMAP_JSX).toMatch(/filtered\.length\s*>\s*MAX_TILES/);
+  });
+
+  // cas (a) : 5 sites → pas de bandeau (showTopBanner = false quand filtered.length ≤ 15)
+  test('pas de bandeau si filtered.length ≤ MAX_TILES (condition guard)', () => {
+    // Le bandeau n'est rendu que si showTopBanner est vrai
+    expect(HEATMAP_JSX).toMatch(/\{showTopBanner/);
+  });
+
+  // cas (b) : 20 sites → bandeau "15 / 20 (Top risques)"
+  test('bandeau affiche visibleTiles.length / filtered.length (Top risques)', () => {
+    expect(HEATMAP_JSX).toMatch(/visibleTiles\.length/);
+    expect(HEATMAP_JSX).toMatch(/filtered\.length/);
+    expect(HEATMAP_JSX).toMatch(/Top risques/);
+  });
+
+  // cas (b) : 20 sites → slice(0, MAX_TILES) pour sélection top-15
+  test('slice sur MAX_TILES pour sélection top-15', () => {
+    expect(HEATMAP_JSX).toMatch(/\.slice\s*\(\s*0\s*,\s*MAX_TILES\s*\)/);
+  });
+
+  // cas (b) : selection triée par total_risk_eur DESC avant slice
+  test('tri par total_risk_eur DESC avant slice', () => {
+    expect(HEATMAP_JSX).toMatch(/total_risk_eur.*sort|sort.*total_risk_eur/s);
+  });
+
+  // cas (c) : filtres réduisent à 8 → pas de bandeau (8 ≤ 15)
+  test('visibleTiles = filtered quand filtered.length ≤ MAX_TILES (no banner)', () => {
+    // La condition ternaire couvre les deux cas
+    expect(HEATMAP_JSX).toMatch(/filtered\.length\s*>\s*MAX_TILES[\s\S]*?\?[\s\S]*?:[\s\S]*?filtered/);
+  });
+
+  // cas (d) : CTA "Voir tous les sites" uniquement quand showTopBanner
+  test('CTA "Voir tous les sites" présent dans le bandeau', () => {
+    expect(HEATMAP_JSX).toMatch(/Voir tous les sites/);
+  });
+
+  test('CTA scroll vers id="sites-table"', () => {
+    expect(HEATMAP_JSX).toMatch(/sites-table/);
+    expect(HEATMAP_JSX).toMatch(/scrollIntoView/);
+  });
+
+  test('grille utilise visibleTiles.map (pas filtered.map)', () => {
+    expect(HEATMAP_JSX).toMatch(/visibleTiles\.map/);
+  });
+});
+
+// ── Patrimoine.jsx — id="sites-table" sur la table ───────────────────────
+
+describe('Patrimoine.jsx V63-scale — id sites-table', () => {
+  test('id="sites-table" présent sur l\'élément Card de la table', () => {
+    expect(PATRIMOINE_JSX).toMatch(/id="sites-table"/);
+  });
+});

@@ -212,6 +212,15 @@ export default function PatrimoineHeatmap({ tiles = [], onOpenSite, loading = fa
 
   const hasActiveFilters = !!(fwFilter || sevFilter || search);
 
+  // V63-scale — Top 15 : sélectionner les sites les plus risqués après filtres
+  const MAX_TILES = 15;
+  const showTopBanner = filtered.length > MAX_TILES;
+  const visibleTiles  = showTopBanner
+    ? [...filtered]
+        .sort((a, b) => (b.total_risk_eur ?? 0) - (a.total_risk_eur ?? 0))
+        .slice(0, MAX_TILES)
+    : filtered;
+
   /* ── État chargement ── */
   if (loading) {
     return (
@@ -297,12 +306,27 @@ export default function PatrimoineHeatmap({ tiles = [], onOpenSite, loading = fa
         </div>
       </div>
 
+      {/* ── Bandeau Top-15 (discret, 1 ligne) ── */}
+      {showTopBanner && (
+        <div className="flex items-center justify-between px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-lg text-xs text-blue-700">
+          <span>
+            Affichage&nbsp;: <strong>{visibleTiles.length}</strong> / {filtered.length} (Top risques)
+          </span>
+          <button
+            onClick={() => document.getElementById('sites-table')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+            className="font-semibold underline underline-offset-2 hover:text-blue-900 transition shrink-0"
+          >
+            Voir tous les sites
+          </button>
+        </div>
+      )}
+
       {/* ── Grille de tiles ── */}
       {filtered.length === 0 ? (
         <p className="text-xs text-gray-400 text-center py-3">Aucun site ne correspond aux filtres.</p>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
-          {filtered.map(tile => (
+          {visibleTiles.map(tile => (
             <SiteTile
               key={tile.site_id}
               tile={tile}

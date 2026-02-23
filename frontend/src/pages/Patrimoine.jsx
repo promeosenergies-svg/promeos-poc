@@ -528,7 +528,7 @@ export default function Patrimoine() {
               onCta={resetFilters}
             />
           ) : (
-            <Card className="flex flex-col">
+            <Card id="sites-table" className="flex flex-col">
               <div
                 ref={scrollRef}
                 className="overflow-auto"
