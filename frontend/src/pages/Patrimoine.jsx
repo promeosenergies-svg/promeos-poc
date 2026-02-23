@@ -80,7 +80,7 @@ const PRESET_VIEWS = [
 export default function Patrimoine() {
   const navigate = useNavigate();
   const [sp, setSp] = useSearchParams();
-  const { scopedSites, sitesLoading } = useScope();
+  const { scopedSites, sitesLoading, scope } = useScope();
   const { isExpert } = useExpertMode();
   const searchRef = useRef(null);
 
@@ -398,7 +398,7 @@ export default function Patrimoine() {
         <div className="space-y-3">
 
           {/* ── Portfolio Health Bar V60 — risque global, top sites, framework ── */}
-          <PatrimoinePortfolioHealthBar onSiteClick={openDrawerOnAnomalies} />
+          <PatrimoinePortfolioHealthBar onSiteClick={openDrawerOnAnomalies} orgId={scope.orgId} />
 
           {/* ── V63 — Heatmap portefeuille (risque / anomalies / framework par site) ── */}
           <PatrimoineHeatmap

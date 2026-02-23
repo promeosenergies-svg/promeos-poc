@@ -28,15 +28,17 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 >
 > | Brique | Etat |
 > |--------|------|
-> | Backend API (66 endpoints) | Stable |
-> | Frontend React (8 pages) | Stable |
-> | Moteur conformite (Decret Tertiaire, BACS) | Stable -- 56 tests |
-> | RegOps 4 reglementations (Tertiaire, BACS, APER, CEE P6) | Stable -- 138 tests |
+> | Backend API (~150 endpoints) | Stable |
+> | Frontend React (20+ pages) | Stable |
+> | Moteur conformite (Decret Tertiaire, BACS) | Stable |
+> | RegOps 4 reglementations (Tertiaire, BACS, APER, CEE P6) | Stable |
 > | Knowledge Base (12 items YAML + FTS5) | Stable |
 > | Connecteurs externes (RTE, PVGIS live ; Enedis, Meteo stubs) | Partiel |
 > | Watchers veille reglementaire (Legifrance, CRE, RTE RSS) | Stable |
 > | Couche IA (5 agents, mode stub sans cle API) | Stable |
-> | Authentification / IAM (JWT + 11 roles + scopes) | Stable -- 61 tests |
+> | Authentification / IAM (JWT + 11 roles + scopes) | Stable |
+> | Patrimoine (import HELIOS, anomalies, impact, cockpit portfolio) | Stable -- V58-V63 |
+> | Suite de tests automatises | **2 087 passes, 0 echec** |
 
 > **Disclaimer**
 >
@@ -50,9 +52,9 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 <a id="tldr"></a>
 ## TL;DR
 
-- **Backend FastAPI** avec 66 endpoints, 20+ modeles SQLAlchemy, 4 moteurs de regles reglementaires, 5 connecteurs de donnees, 4 watchers de veille, 5 agents IA (stub).
-- **Frontend React 18 + Tailwind + Vite** avec 8 pages : Dashboard, Cockpit Executif, Detail Site, Plan d'action, RegOps, Conso & Usages, Connecteurs, Veille Reglementaire.
-- **770 tests passent** (709 baseline + 61 IAM), seed de 120 sites + 10 personas IAM en une commande, demo operationnelle en 2 minutes.
+- **Backend FastAPI** avec ~150 endpoints, 20+ modeles SQLAlchemy, 4 moteurs de regles reglementaires, 5 connecteurs de donnees, 4 watchers de veille, 5 agents IA (stub), module Patrimoine complet (import HELIOS, anomalies, impact reglementaire, cockpit portfolio V60-V63).
+- **Frontend React 18 + Tailwind + Vite** avec 20+ pages : Dashboard, Cockpit Executif, Patrimoine (heatmap + portfolio), Detail Site, Plan d'action, RegOps, Conso & Usages, Tertiaire OPERAT, IAM Admin, Import, KB Explorer, Veille Reglementaire, et plus.
+- **2 087 tests passent, 0 echec** — pytest backend complet, seed de 120 sites + 10 personas IAM en une commande, demo operationnelle en 2 minutes.
 
 ---
 
@@ -372,7 +374,7 @@ Champs cles du Site :
 <a id="api-quick-view"></a>
 ## API Quick View
 
-66 endpoints au total. Selection des plus importants :
+~150 endpoints au total. Selection des plus importants :
 
 | Methode | Endpoint | Description |
 |---------|----------|-------------|
@@ -387,6 +389,10 @@ Champs cles du Site :
 | `GET` | `/api/connectors/list` | Liste des connecteurs et leur statut |
 | `GET` | `/api/watchers/events` | Evenements de veille reglementaire |
 | `GET` | `/api/ai/site/{id}/explain` | Brief IA sur un site (stub sans API key) |
+| `GET` | `/api/patrimoine/sites` | Liste sites patrimoine (anomalies, score, framework) |
+| `GET` | `/api/patrimoine/portfolio-summary` | Cockpit portfolio : risque global, top sites, trend |
+| `POST` | `/api/patrimoine/staging/upload` | Import HELIOS CSV/XLSX — pipeline staging |
+| `POST` | `/api/patrimoine/staging/{id}/activate` | Activation staging → entites reelles |
 | `GET` | `/health` | Health check |
 
 Documentation Swagger complete : `http://localhost:8000/docs`
@@ -400,12 +406,21 @@ Documentation Swagger complete : `http://localhost:8000/docs`
 |-------|------|-----------|
 | `/` | Dashboard | Vue portefeuille : 120 sites, filtres, statuts conformite |
 | `/cockpit` | Cockpit Executif | KPIs COMEX : score global, worst-sites, risque financier |
+| `/patrimoine` | Patrimoine | Heatmap sites (risque/anomalies/framework) + cockpit portfolio |
+| `/import` | Import HELIOS | Pipeline staging CSV/XLSX : upload, QA, validation, activation |
 | `/sites/:id` | Detail Site | Fiche site : obligations, evidences, actions, score |
 | `/regops/:id` | RegOps | Audit reglementaire : findings, severite, deadlines, actions |
-| `/action-plan` | Plan d'action | Actions priorisees cross-sites |
+| `/tertiaire` | Tertiaire OPERAT | Dashboard EFA, wizard OPERAT, anomalies, plan de preuves |
+| `/action-plan` | Plan d'action | Actions priorisees cross-sites avec lien preuves OPERAT |
 | `/consommations` | Conso & Usages | Profils energetiques, anomalies, recommendations |
 | `/connectors` | Connecteurs | Statut des 5 connecteurs, test/sync manuels |
 | `/watchers` | Veille Reglementaire | Evenements Legifrance/CRE/RTE, revue manuelle |
+| `/kb` | KB Explorer | Knowledge Base : archetypes, regles anomalie, recommendations |
+| `/bill-intelligence` | Bill Intelligence | Analyse factures, shadow billing, 20 regles d'anomalie |
+| `/monitoring` | Monitoring | Alertes actives, KPIs live, badges sidebar |
+| `/purchase` | Achat Energie | Assistant achat multi-sites, note decision, RFP |
+| `/admin/users` | Admin Utilisateurs | Gestion users/roles/scopes, journal d'audit |
+| `/login` | Authentification | Login JWT, switch org, impersonation |
 
 ---
 
@@ -482,7 +497,16 @@ Pour plus de details : [Security Notes](docs/security_notes.md) | [Demo Script](
 - 10 personas demo avec scopes varies (DG, resp_site, prestataire expire, auditeur)
 - Admin UI : gestion users/roles/scopes, acces effectif, journal d'audit
 - Filtrage server-side centralise (iam_scope.py) sur 14+ endpoints
-- 770 tests automatises (pytest) dont 61 tests IAM anti-fuite
+- **Module Patrimoine complet (V58-V63)** :
+  - Import HELIOS : pipeline staging CSV/XLSX avec QA, mapping FR/EN, validation, activation transactionnelle
+  - Anomalies P0 : 5 detecteurs (contrat expire, compteur orphelin, surface/compteur manquant, mismatch BACS, depassement tertiaire)
+  - Impact reglementaire & business : estimation risque financier (EUR) par framework
+  - HealthCard site : score composite + snapshot canonique
+  - Cockpit Portfolio (V60) : risque global, top sites a risque, framework breakdown
+  - Portfolio Health Bar enrichi (V61) : % sains/warning/critical, top 3 frameworks, trend
+  - Portfolio Trend reel (V62) : cache in-memory par org_id, direction up/down/stable
+  - Heatmap portefeuille (V63) : grille sites scalable top-15, risque x anomalies x framework
+- **2 087 tests automatises (pytest), 0 echec**
 - 12 items KB valides (archetypes, regles, recommendations)
 - Smoke test "red button" (14 checks avant mise en pilote)
 
@@ -584,7 +608,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 cd backend
 python -m pytest tests/ -v --tb=short
 ```
-Resultat attendu : `770 passed`.
+Resultat attendu : `2087 passed, 9 skipped`.
 
 ### Tests IAM uniquement
 

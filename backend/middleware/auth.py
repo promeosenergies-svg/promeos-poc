@@ -137,6 +137,47 @@ def get_optional_auth(
     )
 
 
+def get_portfolio_optional_auth(
+    token: Optional[str] = Depends(oauth2_scheme),
+    db: Session = Depends(get_db),
+) -> Optional[AuthContext]:
+    """Auth dependency pour les endpoints agrégats (portfolio-summary, etc.).
+
+    JAMAIS de raise — retourne toujours None si l'auth est indisponible.
+    L'endpoint appelant doit renvoyer une réponse 200 vide dans ce cas,
+    plutôt qu'une erreur 401/403 qui s'afficherait comme bandeau d'erreur.
+
+    Différence vs get_optional_auth :
+      - get_optional_auth : lève 401 si DEMO_MODE=false et pas de token.
+      - get_portfolio_optional_auth : retourne None dans tous les cas d'erreur.
+    """
+    if token is None:
+        return None  # Pas de token → None, jamais de 401
+    try:
+        payload = decode_token(token)
+        user_id = int(payload.get("sub", 0))
+        org_id = int(payload.get("org_id", 0))
+        user = db.query(User).filter(User.id == user_id, User.actif == True).first()
+        if not user:
+            return None
+        uor = db.query(UserOrgRole).filter(
+            UserOrgRole.user_id == user_id,
+            UserOrgRole.org_id == org_id,
+        ).first()
+        if not uor:
+            return None
+        site_ids = get_scoped_site_ids(db, uor)
+        return AuthContext(
+            user=user,
+            user_org_role=uor,
+            org_id=org_id,
+            role=uor.role,
+            site_ids=site_ids,
+        )
+    except Exception:
+        return None
+
+
 def require_permission(action: str, module: Optional[str] = None):
     """Dependency factory: raise 403 if role lacks permission."""
     def _check(

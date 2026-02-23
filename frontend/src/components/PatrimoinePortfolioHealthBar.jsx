@@ -132,24 +132,59 @@ function HealthBar({ sites_health, sites_count }) {
 
 /* ── Composant principal ─────────────────────────────────────────────────── */
 
-export default function PatrimoinePortfolioHealthBar({ onSiteClick }) {
+/**
+ * orgId — org_id courant passé par la page parente (Patrimoine.jsx via useScope).
+ * Le fetch n'est déclenché que lorsque orgId est non-null, ce qui évite la
+ * condition de course React (les useEffect enfants s'exécutent avant les parents).
+ */
+export default function PatrimoinePortfolioHealthBar({ onSiteClick, orgId = null }) {
   const navigate = useNavigate();
   const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState(null);
 
   const fetchSummary = () => {
+    // [DIAG V63] Vérifie que orgId et X-Org-Id sont cohérents au moment du fetch.
+    // À retirer après validation E2E.
+    if (process.env.NODE_ENV !== 'production') {
+      console.debug('[PortfolioHealthBar] fetchSummary fired', {
+        orgId,
+        timestamp: new Date().toISOString(),
+      });
+    }
     setLoading(true);
     setError(null);
     getPatrimoinePortfolioSummary()
-      .then(setData)
-      .catch(() => setError('Impossible de charger le résumé portfolio.'))
+      .then((result) => {
+        if (process.env.NODE_ENV !== 'production') {
+          console.debug('[PortfolioHealthBar] fetchSummary success', {
+            sites_count: result?.sites_count,
+            scope_org_id: result?.scope?.org_id,
+          });
+        }
+        setData(result);
+      })
+      .catch((err) => {
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn('[PortfolioHealthBar] fetchSummary error', { err, orgId });
+        }
+        setError('Impossible de charger le résumé portfolio.');
+      })
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { fetchSummary(); }, []);
+  // Dépend de orgId : ne fetch que quand l'org est résolu, et refetch si elle change.
+  useEffect(() => {
+    if (!orgId) return;
+    fetchSummary();
+  }, [orgId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── États ── */
+
+  // orgId pas encore résolu (ScopeContext en cours d'init) → skeleton discret
+  if (!orgId) {
+    return <div className="animate-pulse bg-gray-50 border border-gray-100 rounded-xl p-4 h-16" />;
+  }
 
   if (loading) {
     return <div className="animate-pulse bg-gray-50 border border-gray-100 rounded-xl p-4 h-16" />;

@@ -36,7 +36,7 @@ from services.import_mapping import (
     map_headers, detect_encoding, detect_delimiter, normalize_column_name,
     get_mapping_report,
 )
-from middleware.auth import get_optional_auth, AuthContext
+from middleware.auth import get_optional_auth, get_portfolio_optional_auth, AuthContext
 from services.scope_utils import get_scope_org_id
 from routes.billing import check_contract_overlap
 
@@ -1607,7 +1607,7 @@ def get_portfolio_summary(
     site_id: Optional[int] = Query(None, description="Filtre par site unique"),
     top_n: int = Query(default=3, ge=1, le=10, description="Nombre de top sites retournés"),
     db: Session = Depends(get_db),
-    auth: Optional[AuthContext] = Depends(get_optional_auth),
+    auth: Optional[AuthContext] = Depends(get_portfolio_optional_auth),
 ):
     """
     Agrégation portfolio patrimoine : risque global, framework breakdown, top sites (V60).
@@ -1616,13 +1616,32 @@ def get_portfolio_summary(
     - Zéro N+1 côté query SQL — enrichissement impact fait en mémoire via enrich_anomalies_with_impact().
     - Cas critique : org vide ou scope vide → tout à 0, listes vides, pas de crash.
     - top_n (1..10, défaut 3) : contrôle la taille de top_sites.
+    - Gracieux : si org non résolue (no auth, no demo) → 200 empty (jamais de 401/403).
     """
     from services.patrimoine_anomalies import compute_site_anomalies
     from services.patrimoine_impact import enrich_anomalies_with_impact
     from config.patrimoine_assumptions import DEFAULT_ASSUMPTIONS
     from services.patrimoine_portfolio_cache import get_prev_snapshot, set_snapshot
 
-    org_id = _get_org_id(request, auth, db)
+    # Résolution org_id gracieuse : si non résolu → 200 vide (pas de 401/403)
+    # Évite le bandeau d'erreur frontend quand l'auth n'est pas encore établie.
+    try:
+        org_id = _get_org_id(request, auth, db)
+    except HTTPException:
+        # Org non résolue : pas d'auth, pas de DemoState, pas d'org active en DB.
+        # Retourner une réponse vide valide plutôt qu'une erreur 401/403.
+        from datetime import datetime as _dt
+        return {
+            "scope": {"org_id": None, "portefeuille_id": portefeuille_id, "site_id": site_id},
+            "total_estimated_risk_eur": 0.0,
+            "sites_count": 0,
+            "sites_at_risk": {"critical": 0, "high": 0, "medium": 0, "low": 0},
+            "sites_health": {"healthy": 0, "warning": 0, "critical": 0, "healthy_pct": 0.0},
+            "framework_breakdown": [],
+            "top_sites": [],
+            "trend": None,
+            "computed_at": _dt.utcnow().isoformat() + "Z",
+        }
 
     _SEV_ORDER = {"CRITICAL": 4, "HIGH": 3, "MEDIUM": 2, "LOW": 1}
 

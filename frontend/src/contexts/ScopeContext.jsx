@@ -77,8 +77,14 @@ export function ScopeProvider({ children }) {
   const _fetchId = useRef(0); // V18: requestId guard — ignore stale responses
   const _fetchTrigger = useRef(0); // V19: manual refresh trigger
 
-  // ── IMPORTANT: setApiScope MUST run BEFORE getSites so X-Org-Id header ──
-  // ── is correct when the sites request is made (React runs effects in order) ─
+  // ── IMPORTANT: setApiScope MUST be called synchronously during render ──────
+  // ── so _apiScope.orgId is set BEFORE any child useEffect runs.            ──
+  // ── (React runs child effects before parent effects on mount.)             ──
+  // ── setApiScope is idempotent and only mutates a module-level variable     ──
+  // ── — no React state, no re-render. Safe to call during render.           ──
+  setApiScope({ orgId: effectiveOrgId ?? null, siteId: scope.siteId ?? null });
+
+  // Also keep the useEffect to handle future scope changes (re-renders).
   useEffect(() => {
     setApiScope({ orgId: effectiveOrgId ?? null, siteId: scope.siteId ?? null });
   }, [effectiveOrgId, scope.siteId]);
