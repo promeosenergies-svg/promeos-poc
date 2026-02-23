@@ -285,6 +285,10 @@ def reset_demo_pack(
     # Also reset IAM demo users
     _reset_iam_demo(db)
 
+    # V62 — invalider le cache trend portfolio (les snapshots ne sont plus valides)
+    from services.patrimoine_portfolio_cache import clear_all as _clear_portfolio_cache
+    _clear_portfolio_cache()
+
     return result
 
 

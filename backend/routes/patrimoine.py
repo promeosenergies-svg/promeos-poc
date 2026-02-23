@@ -1620,6 +1620,7 @@ def get_portfolio_summary(
     from services.patrimoine_anomalies import compute_site_anomalies
     from services.patrimoine_impact import enrich_anomalies_with_impact
     from config.patrimoine_assumptions import DEFAULT_ASSUMPTIONS
+    from services.patrimoine_portfolio_cache import get_prev_snapshot, set_snapshot
 
     org_id = _get_org_id(request, auth, db)
 
@@ -1646,7 +1647,9 @@ def get_portfolio_summary(
 
     # Scope vide → tout à 0
     if not all_sites:
-        return {
+        computed_at_empty = datetime.utcnow().isoformat() + "Z"
+        # Trend V62 : scope vide → on ne met pas en cache (pas de data utile)
+        empty_resp = {
             "scope": {"org_id": org_id, "portefeuille_id": portefeuille_id, "site_id": site_id},
             "total_estimated_risk_eur": 0.0,
             "sites_count": 0,
@@ -1655,8 +1658,9 @@ def get_portfolio_summary(
             "framework_breakdown": [],
             "top_sites": [],
             "trend": None,
-            "computed_at": datetime.utcnow().isoformat() + "Z",
+            "computed_at": computed_at_empty,
         }
+        return empty_resp
 
     # Agrégation
     total_risk = 0.0
@@ -1737,16 +1741,49 @@ def get_portfolio_summary(
         for fw, v in sorted(framework_totals.items(), key=lambda x: x[1]["risk_eur"], reverse=True)
     ]
 
+    computed_at = datetime.utcnow().isoformat() + "Z"
+    total_risk_rounded = round(total_risk, 0)
+
+    # V62 — Trend réel via snapshot in-memory par org_id
+    # On ne cache que lorsque le scope est global (pas de filtre site/portefeuille)
+    # pour éviter de polluer la baseline avec une vue partielle.
+    _EPS = 1.0  # €  — seuil anti-bruit
+    trend_payload: Optional[Dict[str, Any]] = None
+
+    if portefeuille_id is None and site_id is None:
+        prev = get_prev_snapshot(org_id)
+        if prev is not None:
+            delta_risk = total_risk_rounded - prev["total_estimated_risk_eur"]
+            delta_sites = n_total - prev["sites_count"]
+            if delta_risk > _EPS:
+                direction = "up"
+            elif delta_risk < -_EPS:
+                direction = "down"
+            else:
+                direction = "stable"
+            trend_payload = {
+                "risk_eur_delta": round(delta_risk, 0),
+                "sites_count_delta": delta_sites,
+                "direction": direction,
+                "vs_computed_at": prev["computed_at"],
+            }
+        # Mettre à jour le snapshot courant APRÈS avoir lu le précédent
+        set_snapshot(org_id, {
+            "computed_at": computed_at,
+            "total_estimated_risk_eur": total_risk_rounded,
+            "sites_count": n_total,
+        })
+
     return {
         "scope": {"org_id": org_id, "portefeuille_id": portefeuille_id, "site_id": site_id},
-        "total_estimated_risk_eur": round(total_risk, 0),
+        "total_estimated_risk_eur": total_risk_rounded,
         "sites_count": n_total,
         "sites_at_risk": sites_at_risk,
         "sites_health": sites_health,
         "framework_breakdown": framework_breakdown,
         "top_sites": top_sites,
-        "trend": None,   # V61 — null : pas d'historique encore (prévu V62+)
-        "computed_at": datetime.utcnow().isoformat() + "Z",
+        "trend": trend_payload,
+        "computed_at": computed_at,
     }
 
 
