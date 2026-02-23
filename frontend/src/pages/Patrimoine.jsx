@@ -22,6 +22,7 @@ import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import CreateActionModal from '../components/CreateActionModal';
 import PatrimoineWizard from '../components/PatrimoineWizard';
+import PatrimoineHealthCard from '../components/PatrimoineHealthCard';
 import { track } from '../services/tracker';
 import { fmtEur, fmtEurFull, fmtArea, fmtAreaCompact, fmtKwh, fmtDateFR, pl } from '../utils/format';
 import { RISK_THRESHOLDS, ANOMALY_THRESHOLDS, getStatusBadgeProps } from '../lib/constants';
@@ -627,24 +628,10 @@ function SiteDrawerContent({ site, navigate, onCreateAction }) {
         </div>
       )}
 
-      {/* Tab: Anomalies */}
+      {/* Tab: Anomalies — V58 PatrimoineHealthCard */}
       {tab === 'anomalies' && (
         <div>
-          {site.anomalies_count > 0 ? (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-2">
-              <div className="flex items-center gap-2">
-                <AlertTriangle size={15} className="text-amber-600" />
-                <span className="text-sm font-medium text-amber-800">{site.anomalies_count} anomalie{site.anomalies_count > 1 ? 's' : ''} détectée{site.anomalies_count > 1 ? 's' : ''}</span>
-              </div>
-              <p className="text-xs text-amber-700">Consultez la fiche site pour le détail des anomalies et actions correctives.</p>
-            </div>
-          ) : (
-            <div className="text-center py-8 text-gray-400">
-              <ShieldCheck size={28} className="mx-auto mb-2 text-green-400" />
-              <p className="text-sm font-medium text-gray-600">Aucune anomalie</p>
-              <p className="text-xs text-gray-400">Ce site est en bon état.</p>
-            </div>
-          )}
+          <PatrimoineHealthCard siteId={site.id} />
         </div>
       )}
 

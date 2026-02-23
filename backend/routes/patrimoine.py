@@ -1350,6 +1350,102 @@ def _serialize_contract(ct: EnergyContract) -> dict:
     }
 
 
+# ========================================
+# Snapshot & Anomalies (V58)
+# ========================================
+
+@router.get("/sites/{site_id}/snapshot")
+def get_site_snapshot_endpoint(
+    site_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """
+    Snapshot canonique d'un site : surface SoT, bâtiments, compteurs,
+    points de livraison, contrats.  Scoped org — zéro N+1.
+    """
+    from services.patrimoine_snapshot import get_site_snapshot
+    org_id = _get_org_id(request, auth, db)
+    _load_site_with_org_check(db, site_id, org_id)  # 404/403 si hors périmètre
+    snapshot = get_site_snapshot(site_id, org_id, db)
+    if snapshot is None:
+        raise HTTPException(status_code=404, detail=f"Site {site_id} non trouvé")
+    return snapshot
+
+
+@router.get("/sites/{site_id}/anomalies")
+def get_site_anomalies_endpoint(
+    site_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """
+    Anomalies de données patrimoine pour un site (8 règles P0).
+    Retourne score de complétude + liste triée CRITICAL→LOW.
+    """
+    from services.patrimoine_anomalies import compute_site_anomalies
+    org_id = _get_org_id(request, auth, db)
+    _load_site_with_org_check(db, site_id, org_id)  # 404/403 si hors périmètre
+    return compute_site_anomalies(site_id, db)
+
+
+@router.get("/anomalies")
+def list_org_anomalies(
+    request: Request,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    min_score: Optional[int] = Query(None, ge=0, le=100, description="Filtre sites avec score ≤ min_score"),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """
+    Liste paginée des sites de l'org avec leurs anomalies patrimoine.
+    Triée par completude_score ASC (les plus dégradés en premier).
+    """
+    from services.patrimoine_anomalies import compute_site_anomalies
+    org_id = _get_org_id(request, auth, db)
+
+    sites_q = (
+        db.query(Site)
+        .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+        .filter(EntiteJuridique.organisation_id == org_id)
+        .filter(Site.actif.is_(True))
+        .order_by(Site.id)
+    )
+    all_sites = sites_q.all()
+
+    results = []
+    for site in all_sites:
+        data = compute_site_anomalies(site.id, db)
+        if min_score is not None and data["completude_score"] > min_score:
+            continue
+        results.append({
+            "site_id": site.id,
+            "nom": site.nom,
+            "completude_score": data["completude_score"],
+            "nb_anomalies": data["nb_anomalies"],
+            "top_severity": data["anomalies"][0]["severity"] if data["anomalies"] else None,
+            "anomalies": data["anomalies"],
+        })
+
+    # Tri : scores les plus bas en premier (les plus à risque)
+    results.sort(key=lambda r: r["completude_score"])
+
+    total = len(results)
+    offset = (page - 1) * page_size
+    page_items = results[offset: offset + page_size]
+
+    return {
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "sites": page_items,
+    }
+
+
 @router.get("/contracts")
 def list_contracts(
     request: Request,

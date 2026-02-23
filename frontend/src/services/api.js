@@ -772,6 +772,14 @@ export const patrimoineKpis = (params = {}) =>
 export const patrimoineSitesExport = (params = {}) =>
   api.get('/patrimoine/sites/export.csv', { params, responseType: 'blob' });
 
+// Patrimoine — V58 Snapshot & Anomalies
+export const getPatrimoineSnapshot = (siteId) =>
+  api.get(`/patrimoine/sites/${siteId}/snapshot`).then(r => r.data);
+export const getPatrimoineAnomalies = (siteId) =>
+  api.get(`/patrimoine/sites/${siteId}/anomalies`).then(r => r.data);
+export const listPatrimoineAnomalies = (params = {}) =>
+  api.get('/patrimoine/anomalies', { params }).then(r => r.data);
+
 // ========================================
 // SMART INTAKE (DIAMANT)
 // ========================================
