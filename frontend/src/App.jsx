@@ -49,6 +49,7 @@ const TertiaireDashboardPage = lazy(() => import('./pages/tertiaire/TertiaireDas
 const TertiaireWizardPage = lazy(() => import('./pages/tertiaire/TertiaireWizardPage'));
 const TertiaireEfaDetailPage = lazy(() => import('./pages/tertiaire/TertiaireEfaDetailPage'));
 const TertiaireAnomaliesPage = lazy(() => import('./pages/tertiaire/TertiaireAnomaliesPage'));
+const AnomaliesPage = lazy(() => import('./pages/AnomaliesPage'));
 
 function PageSuspense({ children }) {
   return (
@@ -136,7 +137,7 @@ function App() {
                   <Route path="/plan-actions" element={<Navigate to="/actions" replace />} />
                   <Route path="/factures" element={<Navigate to="/bill-intel" replace />} />
                   <Route path="/facturation" element={<Navigate to="/bill-intel" replace />} />
-                  <Route path="/anomalies" element={<Navigate to="/diagnostic-conso" replace />} />
+                  <Route path="/anomalies" element={<PageSuspense><AnomaliesPage /></PageSuspense>} />
                   <Route path="/diagnostic" element={<Navigate to="/diagnostic-conso" replace />} />
                   <Route path="/performance" element={<Navigate to="/monitoring" replace />} />
                   <Route path="/achats" element={<Navigate to="/achat-energie" replace />} />

@@ -187,7 +187,7 @@ function SiteTile({ tile, allTiles, onOpenSite }) {
 
 /* ── Composant principal ─────────────────────────────────────────────────── */
 
-export default function PatrimoineHeatmap({ tiles = [], onOpenSite, loading = false, error = null }) {
+export default function PatrimoineHeatmap({ tiles = [], onOpenSite, loading = false, error = null, topSlot = null }) {
   const navigate = useNavigate();
 
   // Filtres locaux
@@ -305,6 +305,9 @@ export default function PatrimoineHeatmap({ tiles = [], onOpenSite, loading = fa
           )}
         </div>
       </div>
+
+      {/* ── V64 Distribution du risque ── */}
+      {topSlot}
 
       {/* ── Bandeau Top-15 (discret, 1 ligne) ── */}
       {showTopBanner && (

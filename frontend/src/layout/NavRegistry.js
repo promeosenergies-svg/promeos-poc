@@ -10,7 +10,7 @@ import {
   LayoutDashboard, Building2, ShieldCheck, FileText,
   Zap, ListChecks, Activity, Import, Users, Receipt,
   BookOpen, ShoppingCart, Search, Link2, Eye, Bell, Lock,
-  Target, Database, ScanLine, ListPlus,
+  Target, Database, ScanLine, ListPlus, AlertTriangle,
 } from 'lucide-react';
 
 /* ── Route → module mapping (for permission checks + auto-select) ── */
@@ -23,6 +23,7 @@ export const ROUTE_MODULE_MAP = {
   '/conformite/tertiaire/wizard': 'operations',
   '/conformite/tertiaire/anomalies': 'operations',
   '/actions': 'operations',
+  '/anomalies': 'operations',
   '/consommations': 'analyse',
   '/consommations/explorer': 'analyse',
   '/consommations/import': 'analyse',
@@ -182,6 +183,7 @@ export const NAV_SECTIONS = [
       { to: '/conformite', icon: ShieldCheck, label: 'Conformité', keywords: ['compliance', 'reglementation', 'decret'] },
       { to: '/conformite/tertiaire', icon: Building2, label: 'Tertiaire / OPERAT', keywords: ['tertiaire', 'operat', 'efa', 'decret', 'declaration'] },
       { to: '/actions',    icon: ListChecks,  label: "Plan d'actions", keywords: ['actions', 'plan', 'todo'] },
+      { to: '/anomalies',  icon: AlertTriangle, label: 'Action Center', keywords: ['anomalies', 'actions', 'risque', 'priorite'] },
     ],
   },
   {
