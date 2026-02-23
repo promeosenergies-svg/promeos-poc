@@ -11,7 +11,7 @@ from datetime import date, datetime
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Any, Dict, Optional, List
 from sqlalchemy import func, case
 from sqlalchemy.orm import Session
 
@@ -1351,7 +1351,67 @@ def _serialize_contract(ct: EnergyContract) -> dict:
 
 
 # ========================================
-# Snapshot & Anomalies (V58)
+# Response models — Snapshot & Anomalies (V59)
+# ========================================
+
+class RegulatoryImpact(BaseModel):
+    framework: str          # DECRET_TERTIAIRE / FACTURATION / BACS / NONE
+    risk_level: str         # HIGH / MEDIUM / LOW
+    explanation_fr: str
+
+
+class BusinessImpact(BaseModel):
+    type: str               # DATA_QUALITY / REGULATORY_RISK / BILLING_RISK
+    estimated_risk_eur: float
+    confidence: float       # 0..1
+    explanation_fr: str
+
+
+class AnomalyResponse(BaseModel):
+    code: str
+    severity: str
+    title_fr: str
+    detail_fr: str
+    evidence: Dict[str, Any]
+    cta: Dict[str, str]
+    fix_hint_fr: str
+    # V59 additions (always present, null-safe)
+    regulatory_impact: Optional[RegulatoryImpact] = None
+    business_impact: Optional[BusinessImpact] = None
+    priority_score: Optional[int] = None
+
+
+class SiteAnomaliesResponse(BaseModel):
+    site_id: int
+    anomalies: List[AnomalyResponse]
+    completude_score: int
+    nb_anomalies: int
+    computed_at: str
+    # V59 additions
+    total_estimated_risk_eur: float
+    assumptions_used: Dict[str, Any]
+
+
+class OrgAnomaliesSiteItem(BaseModel):
+    site_id: int
+    nom: str
+    completude_score: int
+    nb_anomalies: int
+    top_severity: Optional[str]
+    top_priority_score: Optional[int]
+    total_estimated_risk_eur: float
+    anomalies: List[AnomalyResponse]
+
+
+class OrgAnomaliesResponse(BaseModel):
+    total: int
+    page: int
+    page_size: int
+    sites: List[OrgAnomaliesSiteItem]
+
+
+# ========================================
+# Snapshot & Anomalies (V58 → V59)
 # ========================================
 
 @router.get("/sites/{site_id}/snapshot")
@@ -1374,7 +1434,7 @@ def get_site_snapshot_endpoint(
     return snapshot
 
 
-@router.get("/sites/{site_id}/anomalies")
+@router.get("/sites/{site_id}/anomalies", response_model=SiteAnomaliesResponse)
 def get_site_anomalies_endpoint(
     site_id: int,
     request: Request,
@@ -1383,15 +1443,36 @@ def get_site_anomalies_endpoint(
 ):
     """
     Anomalies de données patrimoine pour un site (8 règles P0).
-    Retourne score de complétude + liste triée CRITICAL→LOW.
+    V59 : enrichies avec regulatory_impact, business_impact, priority_score.
+    Triées par priority_score DESC.
     """
     from services.patrimoine_anomalies import compute_site_anomalies
+    from services.patrimoine_impact import enrich_anomalies_with_impact
+    from services.patrimoine_snapshot import get_site_snapshot
+    from config.patrimoine_assumptions import DEFAULT_ASSUMPTIONS
+
     org_id = _get_org_id(request, auth, db)
-    _load_site_with_org_check(db, site_id, org_id)  # 404/403 si hors périmètre
-    return compute_site_anomalies(site_id, db)
+    _load_site_with_org_check(db, site_id, org_id)
+
+    result = compute_site_anomalies(site_id, db)
+    # Snapshot optionnel pour améliorer SURFACE_MISMATCH (usage-aware)
+    snapshot = get_site_snapshot(site_id, org_id, db) or {}
+    enriched = enrich_anomalies_with_impact(
+        result["anomalies"], snapshot, DEFAULT_ASSUMPTIONS
+    )
+    total_risk_eur = sum(
+        (a.get("business_impact") or {}).get("estimated_risk_eur") or 0.0
+        for a in enriched
+    )
+    return {
+        **result,
+        "anomalies": enriched,
+        "total_estimated_risk_eur": round(total_risk_eur, 0),
+        "assumptions_used": DEFAULT_ASSUMPTIONS.to_dict(),
+    }
 
 
-@router.get("/anomalies")
+@router.get("/anomalies", response_model=OrgAnomaliesResponse)
 def list_org_anomalies(
     request: Request,
     page: int = Query(1, ge=1),
@@ -1401,10 +1482,14 @@ def list_org_anomalies(
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """
-    Liste paginée des sites de l'org avec leurs anomalies patrimoine.
-    Triée par completude_score ASC (les plus dégradés en premier).
+    Liste paginée des sites de l'org avec leurs anomalies patrimoine (V59).
+    Chaque anomalie enrichie : regulatory_impact, business_impact, priority_score.
+    Triée par completude_score ASC (plus dégradés en premier).
     """
     from services.patrimoine_anomalies import compute_site_anomalies
+    from services.patrimoine_impact import enrich_anomalies_with_impact
+    from config.patrimoine_assumptions import DEFAULT_ASSUMPTIONS
+
     org_id = _get_org_id(request, auth, db)
 
     sites_q = (
@@ -1422,13 +1507,21 @@ def list_org_anomalies(
         data = compute_site_anomalies(site.id, db)
         if min_score is not None and data["completude_score"] > min_score:
             continue
+        enriched = enrich_anomalies_with_impact(data["anomalies"], None, DEFAULT_ASSUMPTIONS)
+        total_risk_eur = sum(
+            (a.get("business_impact") or {}).get("estimated_risk_eur") or 0.0
+            for a in enriched
+        )
+        top_priority = enriched[0]["priority_score"] if enriched else None
         results.append({
             "site_id": site.id,
             "nom": site.nom,
             "completude_score": data["completude_score"],
             "nb_anomalies": data["nb_anomalies"],
-            "top_severity": data["anomalies"][0]["severity"] if data["anomalies"] else None,
-            "anomalies": data["anomalies"],
+            "top_severity": enriched[0]["severity"] if enriched else None,
+            "top_priority_score": top_priority,
+            "total_estimated_risk_eur": round(total_risk_eur, 0),
+            "anomalies": enriched,
         })
 
     # Tri : scores les plus bas en premier (les plus à risque)
@@ -1444,6 +1537,16 @@ def list_org_anomalies(
         "page_size": page_size,
         "sites": page_items,
     }
+
+
+@router.get("/assumptions")
+def get_patrimoine_assumptions():
+    """
+    Retourne les hypothèses de calcul d'impact en lecture seule (V59).
+    Permet au frontend d'afficher la transparence des estimations.
+    """
+    from config.patrimoine_assumptions import DEFAULT_ASSUMPTIONS
+    return DEFAULT_ASSUMPTIONS.to_dict()
 
 
 @router.get("/contracts")
