@@ -40,7 +40,8 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 > | Patrimoine (import HELIOS, anomalies, impact, cockpit portfolio) | Stable -- V58-V63 |
 > | Facturation (org-scoping, PDF import, shadow billing, Action Center) | Stable -- V66 |
 > | Timeline & couverture facturation (periods, coverage engine, /billing page) | Stable -- V67 |
-> | Suite de tests automatises | **2 118 passes, 0 echec** |
+> | Billing Unified (shadow V2 TURPE/CSPE, R13/R14, deep-links, seed 36 mois) | Stable -- V68 |
+> | Suite de tests automatises | **2 138 passes, 0 echec** |
 
 > **Disclaimer**
 >
@@ -54,9 +55,9 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 <a id="tldr"></a>
 ## TL;DR
 
-- **Backend FastAPI** avec ~150 endpoints, 20+ modeles SQLAlchemy, 4 moteurs de regles reglementaires, 5 connecteurs de donnees, 4 watchers de veille, 5 agents IA (stub), module Patrimoine complet (import HELIOS, anomalies, impact reglementaire, cockpit portfolio V60-V63), module Facturation production-grade (org-scoping, PDF EDF/Engie, shadow billing, 12 regles d'anomalie, bridge Action Center), timeline & couverture facturation (periods, coverage engine V67).
-- **Frontend React 18 + Tailwind + Vite** avec 20+ pages : Dashboard, Cockpit Executif, Patrimoine (heatmap + portfolio), Detail Site, Plan d'action, RegOps, Conso & Usages, Tertiaire OPERAT, IAM Admin, Import, KB Explorer, Veille Reglementaire, Facturation (BillIntel + BillingPage timeline + SiteBillingMini), et plus.
-- **2 118 tests passent, 0 echec** — pytest backend complet, seed de 120 sites + 10 personas IAM en une commande, demo operationnelle en 2 minutes.
+- **Backend FastAPI** avec ~150 endpoints, 20+ modeles SQLAlchemy, 4 moteurs de regles reglementaires, 5 connecteurs de donnees, 4 watchers de veille, 5 agents IA (stub), module Patrimoine complet (import HELIOS, anomalies, impact reglementaire, cockpit portfolio V60-V63), module Facturation production-grade (org-scoping, PDF EDF/Engie, shadow billing V2 TURPE/CSPE/TICGN, 14 regles d'anomalie, bridge Action Center), timeline & couverture facturation (periods, coverage engine V67), Billing Unified (InvoiceNormalized, deep-links bidirectionnels, seed 36 mois HELIOS V68).
+- **Frontend React 18 + Tailwind + Vite** avec 20+ pages : Dashboard, Cockpit Executif, Patrimoine (heatmap + portfolio), Detail Site, Plan d'action, RegOps, Conso & Usages, Tertiaire OPERAT, IAM Admin, Import, KB Explorer, Veille Reglementaire, Facturation (BillIntel deep-links site_id/month + BillingPage activeMonth highlight + BillingTimeline ring + SiteBillingMini), et plus.
+- **2 138 tests passent, 0 echec** — pytest backend complet, seed de 120 sites + 10 personas IAM + 36 mois facturation HELIOS en une commande, demo operationnelle en 2 minutes.
 
 ---
 
@@ -407,7 +408,8 @@ Champs cles du Site :
 | `GET` | `/api/billing/summary` | KPIs facturation (total factures, pertes estimees) |
 | `POST` | `/api/billing/import-csv` | Import factures CSV |
 | `POST` | `/api/billing/import-pdf` | Import facture PDF EDF/Engie (pymupdf) |
-| `POST` | `/api/billing/audit-all` | Lancer les 12 regles d'anomalie sur toutes les factures |
+| `GET` | `/api/billing/invoices/normalized` | Factures normalisees (ht/tva/fournisseur/energie calcules) |
+| `POST` | `/api/billing/audit-all` | Lancer les 14 regles d'anomalie sur toutes les factures |
 | `GET` | `/api/billing/site/{id}` | Facturation d'un site (factures + insights) |
 | `GET` | `/api/billing/anomalies-scoped` | Anomalies billing au format Patrimoine (FACTURATION) |
 | `GET` | `/api/billing/periods` | Timeline mensuelle paginee (coverage_status, ratio, total_ttc) |
@@ -545,7 +547,17 @@ Pour plus de details : [Security Notes](docs/security_notes.md) | [Demo Script](
   - `CoverageBar.jsx` : barre proportionnelle verte|orange|rouge
   - Lien "Voir timeline complete" dans Site360 → `/billing?site_id=X`
   - 14 tests backend + 31 tests frontend source-guard
-- **2 118 tests automatises (pytest), 0 echec**
+- **Billing Unified V68** :
+  - `billing_normalization.py` : `InvoiceNormalized` Pydantic schema + `normalize_invoice()` (ht=ENERGY+NETWORK lines, tva=TAX lines, fournisseur/energie depuis contrat) + `GET /billing/invoices/normalized`
+  - `billing_shadow_v2.py` : constantes TURPE/ATRD/ATRT/CSPE/TICGN + `shadow_billing_v2()` → 4 composantes (fourniture/reseau/taxes/tva) + deltas vs facture
+  - R13 (`_rule_reseau_mismatch` : delta reseau > 10% medium, > 20% high) + R14 (`_rule_taxes_mismatch` : delta taxes > 5% medium) → BILLING_RULES 14 regles
+  - Navigation bidirectionnelle : `BillingTimeline → /bill-intel?site_id=X&month=YYYY-MM` ; `BillIntelPage → /billing?site_id=X`
+  - `BillIntelPage.jsx` : `useSearchParams` → `siteFilter`/`monthFilter` pre-remplis depuis URL, filtrage front `filteredInvoices`, bouton "Voir timeline" (CalendarRange)
+  - `BillingPage.jsx` : lit `?month=YYYY-MM` → `activeMonth` state → passe a BillingTimeline
+  - `BillingTimeline.jsx` : `activeMonth` prop → `ring-2 ring-amber-400` sur la ligne du mois actif
+  - Seed 36 mois HELIOS : Jan 2023–Dec 2025 × 2 sites (site_a ELEC 9000 kWh, site_b GAZ 6000 kWh), 3 trous (2023-03, 2024-09, 2025-02), 2 partiels (2023-06 15j, 2024-01 20j), 3 anomalies controlees (2024-07 R1 shadow gap, 2024-11 R13 reseau, 2025-01 R14 taxes). Idempotent via `source="seed_36m"`, integre dans `seed_data.py`
+  - 20 tests backend + 49 tests frontend source-guard
+- **2 138 tests automatises (pytest), 0 echec**
 - 12 items KB valides (archetypes, regles, recommendations)
 - Smoke test "red button" (14 checks avant mise en pilote)
 
@@ -647,7 +659,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 cd backend
 python -m pytest tests/ -v --tb=short
 ```
-Resultat attendu : `2118 passed, 12 skipped`.
+Resultat attendu : `2138 passed, 12 skipped`.
 
 ### Tests IAM uniquement
 
