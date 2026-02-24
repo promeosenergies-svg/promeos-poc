@@ -39,7 +39,8 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 > | Authentification / IAM (JWT + 11 roles + scopes) | Stable |
 > | Patrimoine (import HELIOS, anomalies, impact, cockpit portfolio) | Stable -- V58-V63 |
 > | Facturation (org-scoping, PDF import, shadow billing, Action Center) | Stable -- V66 |
-> | Suite de tests automatises | **2 104 passes, 0 echec** |
+> | Timeline & couverture facturation (periods, coverage engine, /billing page) | Stable -- V67 |
+> | Suite de tests automatises | **2 118 passes, 0 echec** |
 
 > **Disclaimer**
 >
@@ -53,9 +54,9 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 <a id="tldr"></a>
 ## TL;DR
 
-- **Backend FastAPI** avec ~150 endpoints, 20+ modeles SQLAlchemy, 4 moteurs de regles reglementaires, 5 connecteurs de donnees, 4 watchers de veille, 5 agents IA (stub), module Patrimoine complet (import HELIOS, anomalies, impact reglementaire, cockpit portfolio V60-V63), module Facturation production-grade (org-scoping, PDF EDF/Engie, shadow billing, 12 regles d'anomalie, bridge Action Center).
-- **Frontend React 18 + Tailwind + Vite** avec 20+ pages : Dashboard, Cockpit Executif, Patrimoine (heatmap + portfolio), Detail Site, Plan d'action, RegOps, Conso & Usages, Tertiaire OPERAT, IAM Admin, Import, KB Explorer, Veille Reglementaire, Facturation (BillIntel + SiteBillingMini), et plus.
-- **2 104 tests passent, 0 echec** — pytest backend complet, seed de 120 sites + 10 personas IAM en une commande, demo operationnelle en 2 minutes.
+- **Backend FastAPI** avec ~150 endpoints, 20+ modeles SQLAlchemy, 4 moteurs de regles reglementaires, 5 connecteurs de donnees, 4 watchers de veille, 5 agents IA (stub), module Patrimoine complet (import HELIOS, anomalies, impact reglementaire, cockpit portfolio V60-V63), module Facturation production-grade (org-scoping, PDF EDF/Engie, shadow billing, 12 regles d'anomalie, bridge Action Center), timeline & couverture facturation (periods, coverage engine V67).
+- **Frontend React 18 + Tailwind + Vite** avec 20+ pages : Dashboard, Cockpit Executif, Patrimoine (heatmap + portfolio), Detail Site, Plan d'action, RegOps, Conso & Usages, Tertiaire OPERAT, IAM Admin, Import, KB Explorer, Veille Reglementaire, Facturation (BillIntel + BillingPage timeline + SiteBillingMini), et plus.
+- **2 118 tests passent, 0 echec** — pytest backend complet, seed de 120 sites + 10 personas IAM en une commande, demo operationnelle en 2 minutes.
 
 ---
 
@@ -409,6 +410,9 @@ Champs cles du Site :
 | `POST` | `/api/billing/audit-all` | Lancer les 12 regles d'anomalie sur toutes les factures |
 | `GET` | `/api/billing/site/{id}` | Facturation d'un site (factures + insights) |
 | `GET` | `/api/billing/anomalies-scoped` | Anomalies billing au format Patrimoine (FACTURATION) |
+| `GET` | `/api/billing/periods` | Timeline mensuelle paginee (coverage_status, ratio, total_ttc) |
+| `GET` | `/api/billing/coverage-summary` | KPIs globaux : mois couverts/partiels/manquants, top sites |
+| `GET` | `/api/billing/missing-periods` | Periodes manquantes/partielles paginées avec CTA import |
 | `GET` | `/health` | Health check |
 
 Documentation Swagger complete : `http://localhost:8000/docs`
@@ -433,6 +437,7 @@ Documentation Swagger complete : `http://localhost:8000/docs`
 | `/watchers` | Veille Reglementaire | Evenements Legifrance/CRE/RTE, revue manuelle |
 | `/kb` | KB Explorer | Knowledge Base : archetypes, regles anomalie, recommendations |
 | `/bill-intel` | Bill Intelligence | Import CSV/PDF, shadow billing 12 regles, anomalies, "Creer action" CTA |
+| `/billing` | Timeline Facturation | Vue mensuelle couverture (covered/partial/missing), CoverageBar, filtres, pagination |
 | `/monitoring` | Monitoring | Alertes actives, KPIs live, badges sidebar |
 | `/purchase` | Achat Energie | Assistant achat multi-sites, note decision, RFP |
 | `/admin/users` | Admin Utilisateurs | Gestion users/roles/scopes, journal d'audit |
@@ -530,7 +535,17 @@ Pour plus de details : [Security Notes](docs/security_notes.md) | [Demo Script](
   - Bridge `ActionItem` : chaque anomalie billing cree un ActionItem idempotent (`source_type=BILLING`)
   - `SiteBillingMini` : KPIs facturation integres dans l'onglet Factures de Site360
   - `GET /anomalies-scoped` : anomalies billing visibles dans la page Anomalies (framework FACTURATION)
-- **2 104 tests automatises (pytest), 0 echec**
+- **Timeline & Couverture Facturation (V67)** :
+  - `billing_coverage.py` : moteur de couverture mensuelle (`COVERAGE_THRESHOLD=0.80`, SoT `period_start/end` → fallback `issue_date` mois entier, avoirs exclus via `total_eur <= 0`, `set()` de jours anti-double-comptage)
+  - 4 index SQLAlchemy sur `EnergyInvoice` (`period_start`, `period_end`, `issue_date`, `(site_id, period_start)`)
+  - Fix N+1 `anomalies-scoped` : batch `Site.id.in_(...)` au lieu de 1+N queries
+  - 3 nouveaux endpoints pagines : `GET /billing/periods`, `/billing/coverage-summary`, `/billing/missing-periods`
+  - `BillingPage.jsx` : page `/billing` avec filtres URL (`?site_id=`), KPIs (covered/partial/missing), CoverageBar, periodes manquantes, timeline paginee "charger plus"
+  - `BillingTimeline.jsx` : liste mensuelle avec chips statut, totaux TTC, CTA Voir/Importer/Creer action
+  - `CoverageBar.jsx` : barre proportionnelle verte|orange|rouge
+  - Lien "Voir timeline complete" dans Site360 → `/billing?site_id=X`
+  - 14 tests backend + 31 tests frontend source-guard
+- **2 118 tests automatises (pytest), 0 echec**
 - 12 items KB valides (archetypes, regles, recommendations)
 - Smoke test "red button" (14 checks avant mise en pilote)
 
@@ -632,7 +647,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 cd backend
 python -m pytest tests/ -v --tb=short
 ```
-Resultat attendu : `2104 passed, 12 skipped`.
+Resultat attendu : `2118 passed, 12 skipped`.
 
 ### Tests IAM uniquement
 
