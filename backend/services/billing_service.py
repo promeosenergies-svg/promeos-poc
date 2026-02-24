@@ -16,7 +16,9 @@ from models import (
     Site, EnergyContract, EnergyInvoice, EnergyInvoiceLine, BillingInsight,
     BillingEnergyType, InvoiceLineType, BillingInvoiceStatus,
     SiteTariffProfile, InsightStatus,
+    ActionItem, Portefeuille, EntiteJuridique,
 )
+from models.enums import ActionSourceType, ActionStatus
 
 
 # ========================================
@@ -401,6 +403,72 @@ def _energy_type(invoice: EnergyInvoice, contract: Optional[EnergyContract]) -> 
     return "elec"  # default
 
 
+# ========================================
+# R11 — TTC Coherence (V66)
+# ========================================
+
+def _rule_ttc_coherence(invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine]) -> Optional[Dict]:
+    """R11: TTC facturé incohérent avec HT+TVA (tolérance 2%)."""
+    if not invoice.total_eur or not lines:
+        return None
+    sum_ht = sum(l.amount_eur or 0 for l in lines if l.line_type != InvoiceLineType.TAX)
+    sum_tva = sum(l.amount_eur or 0 for l in lines if l.line_type == InvoiceLineType.TAX)
+    expected = sum_ht + sum_tva
+    if expected == 0:
+        return None
+    delta = abs(expected - invoice.total_eur)
+    if delta / max(invoice.total_eur, 1) > 0.02:
+        return {
+            "type": "ttc_mismatch",
+            "severity": "high",
+            "message": f"TTC facturé {invoice.total_eur:.2f}€ ≠ HT+TVA {expected:.2f}€ (écart {delta:.2f}€)",
+            "metrics": {
+                "total_eur_facture": invoice.total_eur,
+                "total_eur_calcule": round(expected, 2),
+                "delta_eur": round(delta, 2),
+                "tolerance_pct": 2,
+            },
+            "estimated_loss_eur": round(delta, 2),
+        }
+    return None
+
+
+# ========================================
+# R12 — Contract Expiry (V66)
+# ========================================
+
+def _rule_contract_expiry(invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine]) -> Optional[Dict]:
+    """R12: Contrat expiré ou expire bientôt (< 90 jours)."""
+    if not contract or not contract.end_date:
+        return None
+    days_left = (contract.end_date - date.today()).days
+    if days_left < 0:
+        return {
+            "type": "contract_expired",
+            "severity": "critical",
+            "message": f"Contrat {contract.supplier_name} expiré le {contract.end_date} ({abs(days_left)}j)",
+            "metrics": {
+                "end_date": str(contract.end_date),
+                "days_overdue": abs(days_left),
+                "supplier": contract.supplier_name,
+            },
+            "estimated_loss_eur": round((invoice.total_eur or 0) * 0.1, 2),
+        }
+    elif days_left <= 90:
+        return {
+            "type": "contract_expiry_soon",
+            "severity": "high",
+            "message": f"Contrat {contract.supplier_name} expire dans {days_left}j (le {contract.end_date})",
+            "metrics": {
+                "end_date": str(contract.end_date),
+                "days_left": days_left,
+                "supplier": contract.supplier_name,
+            },
+            "estimated_loss_eur": 0,
+        }
+    return None
+
+
 # All rules
 BILLING_RULES = [
     ("R1", "Shadow gap", _rule_shadow_gap),
@@ -413,6 +481,8 @@ BILLING_RULES = [
     ("R8", "Lines sum mismatch", _rule_lines_sum_mismatch),
     ("R9", "Consumption spike", _rule_consumption_spike),
     ("R10", "Price drift", _rule_price_drift),
+    ("R11", "TTC coherence", _rule_ttc_coherence),
+    ("R12", "Contract expiry", _rule_contract_expiry),
 ]
 
 
@@ -441,14 +511,30 @@ def run_anomaly_engine(
     return anomalies
 
 
+def _resolve_invoice_org_id(db: Session, invoice: EnergyInvoice) -> Optional[int]:
+    """Walk site→portefeuille→entite_juridique→org to resolve org_id for an invoice."""
+    try:
+        site = db.query(Site).filter(Site.id == invoice.site_id).first()
+        if not site or not site.portefeuille_id:
+            return None
+        port = db.query(Portefeuille).filter(Portefeuille.id == site.portefeuille_id).first()
+        if not port or not port.entite_juridique_id:
+            return None
+        entite = db.query(EntiteJuridique).filter(EntiteJuridique.id == port.entite_juridique_id).first()
+        return entite.organisation_id if entite else None
+    except Exception:
+        return None
+
+
 def persist_insights(
     db: Session,
     invoice: EnergyInvoice,
     anomalies: List[Dict[str, Any]],
 ) -> List[BillingInsight]:
-    """Persist anomaly results as BillingInsight rows."""
+    """Persist anomaly results as BillingInsight rows + idempotent ActionItem bridge."""
     db.query(BillingInsight).filter(BillingInsight.invoice_id == invoice.id).delete()
 
+    org_id = _resolve_invoice_org_id(db, invoice)
     insights = []
     for a in anomalies:
         insight = BillingInsight(
@@ -463,6 +549,32 @@ def persist_insights(
             insight_status=InsightStatus.OPEN,
         )
         db.add(insight)
+        db.flush()  # get insight.id for idempotency_key
+
+        # V66 P2.4 — Bridge billing anomaly → ActionItem (idempotent)
+        if org_id:
+            idem_key = f"billing:{invoice.id}:{a['type']}"
+            existing_action = db.query(ActionItem).filter(
+                ActionItem.idempotency_key == idem_key
+            ).first()
+            if not existing_action:
+                sev = a.get("severity", "medium").lower()
+                priority = 1 if sev == "critical" else 2 if sev == "high" else 3
+                db.add(ActionItem(
+                    org_id=org_id,
+                    site_id=invoice.site_id,
+                    source_type=ActionSourceType.BILLING,
+                    source_id=str(insight.id),
+                    source_key=f"billing:{invoice.id}:{a['type']}",
+                    idempotency_key=idem_key,
+                    title=a.get("message", a["type"]),
+                    rationale=json.dumps(a.get("metrics", {})),
+                    priority=priority,
+                    severity=sev,
+                    estimated_gain_eur=a.get("estimated_loss_eur"),
+                    status=ActionStatus.OPEN,
+                ))
+
         insights.append(insight)
 
     if anomalies:

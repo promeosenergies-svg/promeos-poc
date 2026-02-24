@@ -40,32 +40,32 @@ class PDFTemplate:
 # Text extraction
 # ========================================
 
+def extract_text_with_fitz(content: bytes) -> str:
+    """Extract text from PDF bytes via pymupdf (fitz) — in requirements.txt."""
+    import fitz  # pymupdf
+    doc = fitz.open(stream=content, filetype="pdf")
+    text = "\n".join(page.get_text() for page in doc)
+    doc.close()
+    return text
+
+
+def parse_pdf_bytes(content: bytes, source_filename: str = "upload.pdf"):
+    """Entry point: PDF bytes → Invoice domain object or None."""
+    text = extract_text_with_fitz(content)
+    return parse_pdf_text(text, source_filename)
+
+
 def extract_text_from_pdf(file_path: str) -> str:
     """
-    Extract text from a PDF file.
-    Tries pdfplumber first, falls back to basic extraction.
+    Extract text from a PDF file path (legacy — used in tests).
+    Reads file bytes and delegates to extract_text_with_fitz.
     """
-    try:
-        import pdfplumber
-        with pdfplumber.open(file_path) as pdf:
-            pages = []
-            for page in pdf.pages:
-                text = page.extract_text()
-                if text:
-                    pages.append(text)
-            return "\n".join(pages)
-    except ImportError:
-        pass
-
+    with open(file_path, "rb") as f:
+        content = f.read()
     # Fallback: if it's a .txt file pretending to be a PDF (demo mode)
     if file_path.endswith(".txt"):
-        with open(file_path, "r", encoding="utf-8") as f:
-            return f.read()
-
-    raise ValueError(
-        f"Cannot extract PDF text: pdfplumber not installed. "
-        f"Install with: pip install pdfplumber"
-    )
+        return content.decode("utf-8", errors="replace")
+    return extract_text_with_fitz(content)
 
 
 # ========================================

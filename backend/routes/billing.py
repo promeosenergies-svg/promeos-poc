@@ -1,6 +1,7 @@
 """
-PROMEOS — Bill Intelligence Routes (Sprint 7.1)
+PROMEOS — Bill Intelligence Routes (Sprint 7.1 → V66)
 CSV import (idempotent) + audit + summary + site billing + insight workflow.
+V66: org scoping (resolve_org_id), response_model Pydantic, PDF import, anomalies-scoped.
 Prefix: /api/billing
 """
 import csv
@@ -10,7 +11,7 @@ import json
 from datetime import date, datetime
 from typing import Optional, List
 
-from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, UploadFile, File
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -19,6 +20,7 @@ from models import (
     Site, EnergyContract, EnergyInvoice, EnergyInvoiceLine, BillingInsight,
     BillingEnergyType, InvoiceLineType, BillingInvoiceStatus,
     InsightStatus, BillingImportBatch,
+    Portefeuille, EntiteJuridique,
 )
 from services.billing_service import (
     audit_invoice_full,
@@ -28,12 +30,13 @@ from services.billing_service import (
     BILLING_RULES,
 )
 from middleware.auth import get_optional_auth, AuthContext
+from services.scope_utils import resolve_org_id
 
 router = APIRouter(prefix="/api/billing", tags=["Bill Intelligence V2"])
 
 
 # ========================================
-# Pydantic schemas
+# Pydantic schemas — Input
 # ========================================
 
 class ContractCreate(BaseModel):
@@ -65,15 +68,138 @@ class InsightPatch(BaseModel):
 
 
 # ========================================
+# Pydantic schemas — Response (V66 P1.2)
+# ========================================
+
+class ContractResponse(BaseModel):
+    id: int
+    site_id: int
+    energy_type: str
+    supplier_name: str
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    price_ref_eur_per_kwh: Optional[float] = None
+    auto_renew: Optional[bool] = None
+
+    class Config:
+        from_attributes = True
+
+
+class InvoiceResponse(BaseModel):
+    id: int
+    site_id: int
+    invoice_number: str
+    period_start: Optional[str] = None
+    period_end: Optional[str] = None
+    total_eur: Optional[float] = None
+    energy_kwh: Optional[float] = None
+    status: Optional[str] = None
+    source: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class BillingInsightResponse(BaseModel):
+    id: int
+    site_id: int
+    invoice_id: Optional[int] = None
+    type: Optional[str] = None
+    severity: Optional[str] = None
+    message: Optional[str] = None
+    estimated_loss_eur: Optional[float] = None
+    insight_status: Optional[str] = None
+    owner: Optional[str] = None
+    notes: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class BillingSummaryResponse(BaseModel):
+    total_invoices: int
+    total_eur: float
+    total_kwh: float
+    total_insights: int
+    total_estimated_loss_eur: float
+    insights_by_type: dict
+    insights_by_severity: dict
+    invoices_with_anomalies: int
+    invoices_clean: int
+
+
+class ContractListResponse(BaseModel):
+    contracts: List[dict]
+    count: int
+
+
+class InvoiceListResponse(BaseModel):
+    invoices: List[dict]
+    count: int
+
+
+class InsightListResponse(BaseModel):
+    insights: List[dict]
+    count: int
+
+
+# ========================================
+# Org-scoping helpers (V66 P1.1)
+# ========================================
+
+def _org_sites_query(db: Session, model_class, effective_org_id: int):
+    """Filter model_class queries via site→portefeuille→entite_juridique→org."""
+    return (
+        db.query(model_class)
+        .join(Site, Site.id == model_class.site_id)
+        .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
+        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+        .filter(EntiteJuridique.organisation_id == effective_org_id)
+    )
+
+
+def _get_org_site_ids(db: Session, effective_org_id: int) -> List[int]:
+    """Return all site IDs belonging to effective_org_id."""
+    rows = (
+        db.query(Site.id)
+        .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
+        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+        .filter(EntiteJuridique.organisation_id == effective_org_id)
+        .all()
+    )
+    return [r[0] for r in rows]
+
+
+def _check_site_belongs_to_org(db: Session, site_id: int, effective_org_id: int) -> Site:
+    """Return site if it belongs to org, or raise 404."""
+    site = (
+        db.query(Site)
+        .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
+        .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+        .filter(Site.id == site_id, EntiteJuridique.organisation_id == effective_org_id)
+        .first()
+    )
+    if not site:
+        raise HTTPException(status_code=404, detail="Site non trouvé ou accès refusé")
+    return site
+
+
+# ========================================
 # Contract endpoints
 # ========================================
 
 @router.post("/contracts")
-def create_contract(data: ContractCreate, db: Session = Depends(get_db)):
+def create_contract(
+    data: ContractCreate,
+    request: Request,
+    org_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Create an energy contract."""
-    site = db.query(Site).filter(Site.id == data.site_id).first()
-    if not site:
-        raise HTTPException(status_code=404, detail="Site non trouve")
+    effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
+    _check_site_belongs_to_org(db, data.site_id, effective_org_id)
+
     try:
         energy_type = BillingEnergyType(data.energy_type)
     except ValueError:
@@ -107,10 +233,17 @@ def create_contract(data: ContractCreate, db: Session = Depends(get_db)):
     return {"status": "created", "contract_id": contract.id}
 
 
-@router.get("/contracts")
-def list_contracts(site_id: Optional[int] = Query(None), db: Session = Depends(get_db)):
+@router.get("/contracts", response_model=ContractListResponse)
+def list_contracts(
+    request: Request,
+    site_id: Optional[int] = Query(None),
+    org_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """List contracts, optionally filtered by site."""
-    q = db.query(EnergyContract)
+    effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
+    q = _org_sites_query(db, EnergyContract, effective_org_id)
     if site_id:
         q = q.filter(EnergyContract.site_id == site_id)
     contracts = q.all()
@@ -136,9 +269,11 @@ def list_contracts(site_id: Optional[int] = Query(None), db: Session = Depends(g
 
 @router.post("/import-csv")
 def import_invoices_csv(
+    request: Request,
     file: UploadFile = File(...),
     org_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """
     Import invoices from CSV (idempotent).
@@ -146,6 +281,8 @@ def import_invoices_csv(
     Expected columns: site_id,invoice_number,period_start,period_end,issue_date,total_eur,energy_kwh,source
     Optional line columns: line_type,line_label,line_qty,line_unit,line_unit_price,line_amount_eur
     """
+    effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
+
     if not file.filename.endswith(".csv"):
         raise HTTPException(status_code=400, detail="Le fichier doit etre un CSV")
 
@@ -155,7 +292,7 @@ def import_invoices_csv(
     content_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
     existing_batch = db.query(BillingImportBatch).filter(
         BillingImportBatch.content_hash == content_hash,
-        BillingImportBatch.org_id == org_id,
+        BillingImportBatch.org_id == effective_org_id,
     ).first()
     if existing_batch:
         return {
@@ -186,10 +323,16 @@ def import_invoices_csv(
                 errors.append({"row": row_num, "error": "invoice_number manquant"})
                 continue
 
-            # Verify site exists
-            site = db.query(Site).filter(Site.id == site_id).first()
+            # Verify site exists and belongs to org
+            site = (
+                db.query(Site)
+                .join(Portefeuille, Portefeuille.id == Site.portefeuille_id)
+                .join(EntiteJuridique, EntiteJuridique.id == Portefeuille.entite_juridique_id)
+                .filter(Site.id == site_id, EntiteJuridique.organisation_id == effective_org_id)
+                .first()
+            )
             if not site:
-                errors.append({"row": row_num, "error": f"Site {site_id} introuvable"})
+                errors.append({"row": row_num, "error": f"Site {site_id} introuvable ou accès refusé"})
                 continue
 
             # Check duplicate
@@ -248,7 +391,7 @@ def import_invoices_csv(
 
     # --- Record batch ---
     batch = BillingImportBatch(
-        org_id=org_id,
+        org_id=effective_org_id,
         filename=file.filename,
         content_hash=content_hash,
         rows_total=rows_total,
@@ -274,16 +417,21 @@ def import_invoices_csv(
 # Import batches listing (Sprint 7.1)
 # ========================================
 
-@router.get("/import/batches")
+@router.get("/import/batches", response_model=dict)
 def list_import_batches(
+    request: Request,
     org_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """List CSV import batches with stats."""
-    q = db.query(BillingImportBatch)
-    if org_id is not None:
-        q = q.filter(BillingImportBatch.org_id == org_id)
-    batches = q.order_by(BillingImportBatch.imported_at.desc()).all()
+    effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
+    batches = (
+        db.query(BillingImportBatch)
+        .filter(BillingImportBatch.org_id == effective_org_id)
+        .order_by(BillingImportBatch.imported_at.desc())
+        .all()
+    )
     return {
         "batches": [
             {
@@ -307,11 +455,16 @@ def list_import_batches(
 # ========================================
 
 @router.post("/invoices")
-def create_invoice(data: InvoiceCreate, db: Session = Depends(get_db)):
+def create_invoice(
+    data: InvoiceCreate,
+    request: Request,
+    org_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Create a single invoice manually."""
-    site = db.query(Site).filter(Site.id == data.site_id).first()
-    if not site:
-        raise HTTPException(status_code=404, detail="Site non trouve")
+    effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
+    _check_site_belongs_to_org(db, data.site_id, effective_org_id)
 
     invoice = EnergyInvoice(
         site_id=data.site_id,
@@ -356,8 +509,21 @@ def create_invoice(data: InvoiceCreate, db: Session = Depends(get_db)):
 # ========================================
 
 @router.post("/audit/{invoice_id}")
-def audit_invoice_endpoint(invoice_id: int, db: Session = Depends(get_db)):
+def audit_invoice_endpoint(
+    invoice_id: int,
+    request: Request,
+    org_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Run shadow billing + anomaly engine on a persisted invoice."""
+    effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
+    # Verify invoice belongs to org
+    invoice = _org_sites_query(db, EnergyInvoice, effective_org_id).filter(
+        EnergyInvoice.id == invoice_id
+    ).first()
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Facture non trouvée ou accès refusé")
     result = audit_invoice_full(db, invoice_id)
     if "error" in result:
         raise HTTPException(status_code=404, detail=result["error"])
@@ -365,9 +531,15 @@ def audit_invoice_endpoint(invoice_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/audit-all")
-def audit_all_invoices(db: Session = Depends(get_db)):
-    """Audit all imported invoices."""
-    invoices = db.query(EnergyInvoice).all()
+def audit_all_invoices(
+    request: Request,
+    org_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Audit all imported invoices (scoped to org)."""
+    effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
+    invoices = _org_sites_query(db, EnergyInvoice, effective_org_id).all()
     results = []
     for inv in invoices:
         r = audit_invoice_full(db, inv.id)
@@ -388,25 +560,61 @@ def audit_all_invoices(db: Session = Depends(get_db)):
 # Read endpoints
 # ========================================
 
-@router.get("/summary")
-def billing_summary(db: Session = Depends(get_db)):
-    """Aggregate billing summary (invoices, insights, losses)."""
-    return get_billing_summary(db)
-
-
-@router.get("/insights")
-def list_insights(
-    site_id: Optional[int] = Query(None),
-    severity: Optional[str] = Query(None),
-    status: Optional[str] = Query(None),
+@router.get("/summary", response_model=BillingSummaryResponse)
+def billing_summary(
+    request: Request,
+    org_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """List billing insights with optional filters (site, severity, status)."""
-    q = db.query(BillingInsight)
-    # Scope filtering
-    if auth and auth.site_ids is not None:
-        q = q.filter(BillingInsight.site_id.in_(auth.site_ids))
+    """Aggregate billing summary (invoices, insights, losses) — scoped to org."""
+    effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
+    site_ids = _get_org_site_ids(db, effective_org_id)
+
+    invoices = db.query(EnergyInvoice).filter(
+        EnergyInvoice.site_id.in_(site_ids)
+    ).all() if site_ids else []
+
+    insights = db.query(BillingInsight).filter(
+        BillingInsight.site_id.in_(site_ids)
+    ).all() if site_ids else []
+
+    total_eur = sum(i.total_eur or 0 for i in invoices)
+    total_kwh = sum(i.energy_kwh or 0 for i in invoices)
+    total_loss = sum(i.estimated_loss_eur or 0 for i in insights)
+    by_type: dict = {}
+    for i in insights:
+        by_type[i.type] = by_type.get(i.type, 0) + 1
+    by_severity: dict = {}
+    for i in insights:
+        by_severity[i.severity] = by_severity.get(i.severity, 0) + 1
+
+    return {
+        "total_invoices": len(invoices),
+        "total_eur": round(total_eur, 2),
+        "total_kwh": round(total_kwh, 0),
+        "total_insights": len(insights),
+        "total_estimated_loss_eur": round(total_loss, 2),
+        "insights_by_type": by_type,
+        "insights_by_severity": by_severity,
+        "invoices_with_anomalies": len([i for i in invoices if i.status == BillingInvoiceStatus.ANOMALY]),
+        "invoices_clean": len([i for i in invoices if i.status == BillingInvoiceStatus.AUDITED]),
+    }
+
+
+@router.get("/insights", response_model=InsightListResponse)
+def list_insights(
+    request: Request,
+    site_id: Optional[int] = Query(None),
+    severity: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    org_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """List billing insights with optional filters (site, severity, status) — scoped to org."""
+    effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
+    q = _org_sites_query(db, BillingInsight, effective_org_id)
     if site_id:
         q = q.filter(BillingInsight.site_id == site_id)
     if severity:
@@ -438,11 +646,21 @@ def list_insights(
 # ========================================
 
 @router.patch("/insights/{insight_id}")
-def patch_insight(insight_id: int, data: InsightPatch, db: Session = Depends(get_db)):
-    """Update insight status / owner / notes (ops workflow)."""
-    insight = db.query(BillingInsight).filter(BillingInsight.id == insight_id).first()
+def patch_insight(
+    insight_id: int,
+    data: InsightPatch,
+    request: Request,
+    org_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Update insight status / owner / notes (ops workflow) — scoped to org."""
+    effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
+    insight = _org_sites_query(db, BillingInsight, effective_org_id).filter(
+        BillingInsight.id == insight_id
+    ).first()
     if not insight:
-        raise HTTPException(status_code=404, detail="Insight non trouve")
+        raise HTTPException(status_code=404, detail="Insight non trouve ou accès refusé")
 
     if data.status is not None:
         try:
@@ -466,11 +684,21 @@ def patch_insight(insight_id: int, data: InsightPatch, db: Session = Depends(get
 
 
 @router.post("/insights/{insight_id}/resolve")
-def resolve_insight(insight_id: int, notes: Optional[str] = Query(None), db: Session = Depends(get_db)):
-    """Shortcut: mark insight as RESOLVED with optional notes."""
-    insight = db.query(BillingInsight).filter(BillingInsight.id == insight_id).first()
+def resolve_insight(
+    insight_id: int,
+    request: Request,
+    notes: Optional[str] = Query(None),
+    org_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Shortcut: mark insight as RESOLVED with optional notes — scoped to org."""
+    effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
+    insight = _org_sites_query(db, BillingInsight, effective_org_id).filter(
+        BillingInsight.id == insight_id
+    ).first()
     if not insight:
-        raise HTTPException(status_code=404, detail="Insight non trouve")
+        raise HTTPException(status_code=404, detail="Insight non trouve ou accès refusé")
 
     insight.insight_status = InsightStatus.RESOLVED
     if notes:
@@ -484,14 +712,18 @@ def resolve_insight(insight_id: int, notes: Optional[str] = Query(None), db: Ses
     }
 
 
-@router.get("/invoices")
+@router.get("/invoices", response_model=InvoiceListResponse)
 def list_invoices(
+    request: Request,
     site_id: Optional[int] = Query(None),
     status: Optional[str] = Query(None),
+    org_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
-    """List invoices with optional filters."""
-    q = db.query(EnergyInvoice)
+    """List invoices with optional filters — scoped to org."""
+    effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
+    q = _org_sites_query(db, EnergyInvoice, effective_org_id)
     if site_id:
         q = q.filter(EnergyInvoice.site_id == site_id)
     if status:
@@ -516,9 +748,17 @@ def list_invoices(
     }
 
 
-@router.get("/site/{site_id}")
-def site_billing_endpoint(site_id: int, db: Session = Depends(get_db)):
-    """Full billing view for a site (contracts, invoices, insights)."""
+@router.get("/site/{site_id}", response_model=dict)
+def site_billing_endpoint(
+    site_id: int,
+    request: Request,
+    org_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Full billing view for a site (contracts, invoices, insights) — scoped to org."""
+    effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
+    _check_site_belongs_to_org(db, site_id, effective_org_id)
     result = get_site_billing(db, site_id)
     if "error" in result:
         raise HTTPException(status_code=404, detail=result["error"])
@@ -535,6 +775,110 @@ def list_billing_rules():
         ],
         "count": len(BILLING_RULES),
     }
+
+
+# ========================================
+# PDF Import (V66 P2.2)
+# ========================================
+
+@router.post("/import-pdf")
+async def import_invoice_pdf(
+    request: Request,
+    site_id: int = Query(...),
+    file: UploadFile = File(...),
+    run_audit: bool = Query(True),
+    org_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Upload PDF facture → parse EDF/Engie templates → normalise → stocke → audit."""
+    from app.bill_intelligence.parsers.pdf_parser import parse_pdf_bytes
+
+    effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
+    _check_site_belongs_to_org(db, site_id, effective_org_id)
+
+    content = await file.read()
+    invoice_domain = parse_pdf_bytes(content, file.filename or "upload.pdf")
+
+    if not invoice_domain or invoice_domain.confidence < 0.5:
+        raise HTTPException(
+            status_code=422,
+            detail="PDF non reconnu ou confiance insuffisante (< 0.5). "
+                   "Vérifiez le format EDF/Engie ou saisissez manuellement.",
+        )
+
+    db_invoice = EnergyInvoice(
+        site_id=site_id,
+        invoice_number=invoice_domain.invoice_id or f"PDF-{file.filename}",
+        period_start=invoice_domain.period_start,
+        period_end=invoice_domain.period_end,
+        issue_date=invoice_domain.invoice_date,
+        total_eur=invoice_domain.total_ttc,
+        energy_kwh=invoice_domain.total_kwh,
+        status=BillingInvoiceStatus.IMPORTED,
+        source="pdf",
+        raw_json=json.dumps({
+            "supplier": invoice_domain.supplier,
+            "confidence": invoice_domain.confidence,
+            "filename": file.filename,
+        }),
+    )
+    db.add(db_invoice)
+    db.flush()
+
+    anomalies_count = 0
+    if run_audit:
+        result = audit_invoice_full(db, db_invoice.id)
+        anomalies_count = len(result.get("anomalies", []))
+
+    db.commit()
+    return {
+        "status": "imported",
+        "invoice_id": db_invoice.id,
+        "confidence": invoice_domain.confidence,
+        "supplier": invoice_domain.supplier,
+        "anomalies_count": anomalies_count,
+    }
+
+
+# ========================================
+# Anomalies scoped (V66 P2.8)
+# ========================================
+
+@router.get("/anomalies-scoped")
+def get_billing_anomalies_scoped(
+    request: Request,
+    org_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """BillingInsights OPEN de l'org → format Patrimoine anomalies pour AnomaliesPage."""
+    effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
+    insights = (
+        _org_sites_query(db, BillingInsight, effective_org_id)
+        .filter(BillingInsight.insight_status == InsightStatus.OPEN)
+        .order_by(BillingInsight.estimated_loss_eur.desc().nullslast())
+        .all()
+    )
+
+    anomalies = []
+    for i in insights:
+        site = db.query(Site).filter(Site.id == i.site_id).first()
+        anomalies.append({
+            "code": i.type or "billing_anomaly",
+            "severity": (i.severity or "MEDIUM").upper(),
+            "title_fr": i.message or "Anomalie facturation",
+            "detail_fr": i.notes or i.message or "",
+            "fix_hint_fr": "Vérifier la facture dans le module Facturation.",
+            "business_impact": {"estimated_risk_eur": i.estimated_loss_eur or 0},
+            "priority_score": 90 if i.severity == "CRITICAL" else 70 if i.severity == "HIGH" else 50,
+            "framework": "FACTURATION",
+            "site_id": i.site_id,
+            "site_nom": site.nom if site else f"Site {i.site_id}",
+            "insight_id": i.id,
+        })
+
+    return {"anomalies": anomalies, "count": len(anomalies)}
 
 
 # ========================================

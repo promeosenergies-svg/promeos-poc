@@ -17,6 +17,7 @@ import { applyKB } from '../services/api';
 import { getStatusBadgeProps, SEV_BADGE } from '../lib/constants';
 import IntakeWizard from '../components/IntakeWizard';
 import BacsWizard from '../components/BacsWizard';
+import SiteBillingMini from '../components/SiteBillingMini';
 
 const _sb = (k) => { const { variant, label } = getStatusBadgeProps(k); return { status: variant, label }; };
 const STATUT_BADGE = {
@@ -439,7 +440,7 @@ export default function Site360() {
       {/* Tab content */}
       {activeTab === 'resume' && <TabResume site={site} />}
       {activeTab === 'conso' && <TabStub title="Consommation" text="Courbes de charge, historique et benchmark à venir." />}
-      {activeTab === 'factures' && <TabStub title="Factures" text="Analyse factures, shadow billing et optimisation tarifaire à venir." />}
+      {activeTab === 'factures' && <SiteBillingMini siteId={site.id} />}
       {activeTab === 'conformite' && <TabConformite site={site} />}
       {activeTab === 'actions' && <TabStub title="Actions" text="Plan d'action et suivi des recommandations à venir." />}
 

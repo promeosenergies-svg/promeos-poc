@@ -603,6 +603,29 @@ export const patchBillingInsight = (insightId, data) => api.patch(`/billing/insi
 export const resolveBillingInsight = (insightId, notes = null) => api.post(`/billing/insights/${insightId}/resolve`, null, { params: notes ? { notes } : {} }).then(r => r.data);
 export const getImportBatches = (params = {}) => api.get('/billing/import/batches', { params }).then(r => r.data);
 
+// V66 — PDF import + action creation + billing anomalies
+export const importInvoicesPdf = (siteId, file) => {
+  const fd = new FormData();
+  fd.append('file', file);
+  return api.post('/billing/import-pdf', fd, {
+    params: { site_id: siteId },
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }).then(r => r.data);
+};
+
+export const createActionFromBillingInsight = (insightId, title, siteId) =>
+  api.post('/actions', {
+    source_type: 'manual',
+    source_id: String(insightId),
+    source_key: `billing-insight:${insightId}`,
+    idempotency_key: `billing-insight:${insightId}`,
+    title,
+    site_id: siteId,
+  }).then(r => r.data);
+
+export const getBillingAnomaliesScoped = () =>
+  api.get('/billing/anomalies-scoped').then(r => r.data);
+
 // ========================================
 // ACHAT ENERGIE
 // ========================================

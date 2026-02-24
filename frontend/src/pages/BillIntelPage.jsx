@@ -11,6 +11,8 @@ import {
   seedBillingDemo,
   importInvoicesCsv,
   resolveBillingInsight,
+  importInvoicesPdf,
+  createActionFromBillingInsight,
 } from '../services/api';
 import { Card, CardBody, Badge, Button, TrustBadge, PageShell, EmptyState } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
@@ -79,6 +81,8 @@ export default function BillIntelPage() {
   const [auditing, setAuditing] = useState(false);
   const [seeding, setSeeding] = useState(false);
   const [insightFilter, setInsightFilter] = useState('all');
+  const [createdActions, setCreatedActions] = useState(new Set());
+  const [pdfSiteId, setPdfSiteId] = useState('');
 
   async function fetchData() {
     setLoading(true);
@@ -139,6 +143,26 @@ export default function BillIntelPage() {
     } catch { /* ignore */ }
   }
 
+  async function handlePdfImport(e) {
+    const file = e.target.files[0];
+    if (!file || !pdfSiteId) return;
+    try {
+      await importInvoicesPdf(Number(pdfSiteId), file);
+      track('billing_pdf_import', { filename: file.name });
+      await fetchData();
+    } catch { /* ignore */ }
+    e.target.value = '';
+  }
+
+  async function handleCreateAction(insight) {
+    if (createdActions.has(insight.id)) return;
+    try {
+      await createActionFromBillingInsight(insight.id, insight.message || insight.type, insight.site_id);
+      setCreatedActions(prev => new Set([...prev, insight.id]));
+      track('billing_create_action', { insight_id: insight.id });
+    } catch { /* ignore */ }
+  }
+
   const hasData = summary && summary.total_invoices > 0;
 
   return (
@@ -154,6 +178,21 @@ export default function BillIntelPage() {
             </Button>
             <input type="file" accept=".csv" className="sr-only" onChange={handleCsvImport} />
           </label>
+          <div className="inline-flex items-center gap-1">
+            <input
+              type="number"
+              placeholder="Site ID"
+              value={pdfSiteId}
+              onChange={e => setPdfSiteId(e.target.value)}
+              className="w-20 text-xs border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-400"
+            />
+            <label className="inline-flex items-center gap-2 cursor-pointer">
+              <Button variant="secondary" size="sm" as="span" disabled={!pdfSiteId}>
+                <Upload size={14} /> Importer PDF
+              </Button>
+              <input type="file" accept=".pdf" className="sr-only" onChange={handlePdfImport} disabled={!pdfSiteId} />
+            </label>
+          </div>
           {hasData && (
             <Button size="sm" onClick={handleAuditAll} disabled={auditing}>
               <Play size={14} /> {auditing ? 'Audit...' : 'Auditer tout'}
@@ -266,6 +305,18 @@ export default function BillIntelPage() {
                         <CheckCircle2 size={14} /> Resolu
                       </button>
                     )}
+                    <button
+                      onClick={() => handleCreateAction(insight)}
+                      disabled={createdActions.has(insight.id)}
+                      className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium
+                        transition-colors whitespace-nowrap
+                        ${createdActions.has(insight.id)
+                          ? 'text-gray-400 bg-gray-50 cursor-default'
+                          : 'text-blue-700 bg-blue-50 hover:bg-blue-100'}`}
+                      title="Créer action"
+                    >
+                      {createdActions.has(insight.id) ? '✓ Action créée' : 'Créer action'}
+                    </button>
                   </CardBody>
                 </Card>
               );

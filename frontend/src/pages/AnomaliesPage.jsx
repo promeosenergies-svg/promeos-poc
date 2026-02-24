@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { PageShell, EmptyState, Tooltip } from '../ui';
 import { useScope } from '../contexts/ScopeContext';
-import { getPatrimoineAnomalies } from '../services/api';
+import { getPatrimoineAnomalies, getBillingAnomaliesScoped } from '../services/api';
 import {
   getAnomalyAction,
   ACTION_STATUS_LABEL,
@@ -82,15 +82,21 @@ export default function AnomaliesPage() {
     setLoading(true);
     setError(null);
 
-    Promise.all(
-      sitesToFetch.map(site =>
-        getPatrimoineAnomalies(site.id)
-          .then(data => ({ site, data, ok: true }))
-          .catch(() => ({ site, data: null, ok: false }))
-      )
-    ).then(results => {
+    const patrimoinePromises = sitesToFetch.map(site =>
+      getPatrimoineAnomalies(site.id)
+        .then(data => ({ site, data, ok: true }))
+        .catch(() => ({ site, data: null, ok: false }))
+    );
+    const billingPromise = getBillingAnomaliesScoped()
+      .then(data => ({ data, ok: true }))
+      .catch(() => ({ data: null, ok: false }));
+
+    Promise.all([...patrimoinePromises, billingPromise]).then(allResults => {
       if (fetchIdRef.current !== fetchId) return;
-      const flat = results.flatMap(({ site, data, ok }) => {
+      const billingResult = allResults[allResults.length - 1];
+      const patrimoineResults = allResults.slice(0, -1);
+
+      const flat = patrimoineResults.flatMap(({ site, data, ok }) => {
         if (!ok || !data) return [];
         return (data.anomalies ?? []).map(a => ({
           ...a,
@@ -98,6 +104,18 @@ export default function AnomaliesPage() {
           site_nom: site.nom,
         }));
       });
+
+      // Merge billing anomalies — normalize to patrimoine format
+      if (billingResult.ok && billingResult.data?.anomalies?.length) {
+        for (const b of billingResult.data.anomalies) {
+          flat.push({
+            ...b,
+            regulatory_impact: { framework: 'FACTURATION' },
+            _isBilling: true,
+          });
+        }
+      }
+
       setAnomalies(flat);
       setLoading(false);
     }).catch(() => {
@@ -145,8 +163,12 @@ export default function AnomaliesPage() {
     setFilterFw(''); setFilterSev(''); setFilterSite(''); setSearch('');
   }
 
-  function openSite(siteId) {
-    navigate('/patrimoine', { state: { openSiteId: siteId, openTab: 'anomalies' } });
+  function openSite(siteId, isBilling = false) {
+    if (isBilling) {
+      navigate('/bill-intel');
+    } else {
+      navigate('/patrimoine', { state: { openSiteId: siteId, openTab: 'anomalies' } });
+    }
   }
 
   /* ── Rendu ── */
@@ -328,7 +350,7 @@ export default function AnomaliesPage() {
                     <Tooltip text="Ouvrir la fiche site (onglet Anomalies)">
                       <button
                         type="button"
-                        onClick={() => openSite(anom.site_id)}
+                        onClick={() => openSite(anom.site_id, anom._isBilling)}
                         className="flex items-center gap-1 text-[11px] font-medium text-blue-600 bg-blue-50 border border-blue-100 rounded px-2 py-1 hover:bg-blue-100 transition"
                       >
                         Ouvrir site <ChevronRight size={11} />

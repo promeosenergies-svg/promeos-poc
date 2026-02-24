@@ -546,7 +546,7 @@ class TestBillingAPI:
     def test_list_rules(self, client):
         r = client.get("/api/billing/rules")
         assert r.status_code == 200
-        assert r.json()["count"] == 10
+        assert r.json()["count"] == 12  # V66: +2 rules (R11 TTC coherence, R12 contract expiry)
 
     def test_csv_import(self, client, db_session):
         _, site = _create_org_site(db_session)
