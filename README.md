@@ -38,7 +38,8 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 > | Couche IA (5 agents, mode stub sans cle API) | Stable |
 > | Authentification / IAM (JWT + 11 roles + scopes) | Stable |
 > | Patrimoine (import HELIOS, anomalies, impact, cockpit portfolio) | Stable -- V58-V63 |
-> | Suite de tests automatises | **2 087 passes, 0 echec** |
+> | Facturation (org-scoping, PDF import, shadow billing, Action Center) | Stable -- V66 |
+> | Suite de tests automatises | **2 104 passes, 0 echec** |
 
 > **Disclaimer**
 >
@@ -52,9 +53,9 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 <a id="tldr"></a>
 ## TL;DR
 
-- **Backend FastAPI** avec ~150 endpoints, 20+ modeles SQLAlchemy, 4 moteurs de regles reglementaires, 5 connecteurs de donnees, 4 watchers de veille, 5 agents IA (stub), module Patrimoine complet (import HELIOS, anomalies, impact reglementaire, cockpit portfolio V60-V63).
-- **Frontend React 18 + Tailwind + Vite** avec 20+ pages : Dashboard, Cockpit Executif, Patrimoine (heatmap + portfolio), Detail Site, Plan d'action, RegOps, Conso & Usages, Tertiaire OPERAT, IAM Admin, Import, KB Explorer, Veille Reglementaire, et plus.
-- **2 087 tests passent, 0 echec** — pytest backend complet, seed de 120 sites + 10 personas IAM en une commande, demo operationnelle en 2 minutes.
+- **Backend FastAPI** avec ~150 endpoints, 20+ modeles SQLAlchemy, 4 moteurs de regles reglementaires, 5 connecteurs de donnees, 4 watchers de veille, 5 agents IA (stub), module Patrimoine complet (import HELIOS, anomalies, impact reglementaire, cockpit portfolio V60-V63), module Facturation production-grade (org-scoping, PDF EDF/Engie, shadow billing, 12 regles d'anomalie, bridge Action Center).
+- **Frontend React 18 + Tailwind + Vite** avec 20+ pages : Dashboard, Cockpit Executif, Patrimoine (heatmap + portfolio), Detail Site, Plan d'action, RegOps, Conso & Usages, Tertiaire OPERAT, IAM Admin, Import, KB Explorer, Veille Reglementaire, Facturation (BillIntel + SiteBillingMini), et plus.
+- **2 104 tests passent, 0 echec** — pytest backend complet, seed de 120 sites + 10 personas IAM en une commande, demo operationnelle en 2 minutes.
 
 ---
 
@@ -361,6 +362,13 @@ DataPoint         -- Donnees externes horodatees (CO2, meteo, PV)
 RegSourceEvent    -- Evenements de veille reglementaire (hash dedup)
 JobOutbox         -- File d'attente async (recompute, sync, watcher, IA)
 AiInsight         -- Sorties des agents IA (EXPLAIN | SUGGEST | EXEC_BRIEF | ...)
+ActionItem        -- Actions centralisees (source: MANUAL | INSIGHT | BILLING | COMPLIANCE)
+
+EnergyContract    -- Contrat fournisseur energie (site, type, dates, prix ref)
+EnergyInvoice     -- Facture energie (CSV ou PDF, status, raw_json evidence)
+  +-- EnergyInvoiceLine  -- Lignes HT/TVA/TAXES/ENERGY
+BillingInsight    -- Anomalie de facturation (type, severity, estimated_loss_eur)
+BillingImportBatch -- Batch d'import (CSV ou PDF, statut, nb lignes)
 ```
 
 Champs cles du Site :
@@ -393,6 +401,14 @@ Champs cles du Site :
 | `GET` | `/api/patrimoine/portfolio-summary` | Cockpit portfolio : risque global, top sites, trend |
 | `POST` | `/api/patrimoine/staging/upload` | Import HELIOS CSV/XLSX — pipeline staging |
 | `POST` | `/api/patrimoine/staging/{id}/activate` | Activation staging → entites reelles |
+| `GET` | `/api/billing/invoices` | Liste factures org-scopees |
+| `GET` | `/api/billing/insights` | Anomalies de facturation org-scopees |
+| `GET` | `/api/billing/summary` | KPIs facturation (total factures, pertes estimees) |
+| `POST` | `/api/billing/import-csv` | Import factures CSV |
+| `POST` | `/api/billing/import-pdf` | Import facture PDF EDF/Engie (pymupdf) |
+| `POST` | `/api/billing/audit-all` | Lancer les 12 regles d'anomalie sur toutes les factures |
+| `GET` | `/api/billing/site/{id}` | Facturation d'un site (factures + insights) |
+| `GET` | `/api/billing/anomalies-scoped` | Anomalies billing au format Patrimoine (FACTURATION) |
 | `GET` | `/health` | Health check |
 
 Documentation Swagger complete : `http://localhost:8000/docs`
@@ -416,7 +432,7 @@ Documentation Swagger complete : `http://localhost:8000/docs`
 | `/connectors` | Connecteurs | Statut des 5 connecteurs, test/sync manuels |
 | `/watchers` | Veille Reglementaire | Evenements Legifrance/CRE/RTE, revue manuelle |
 | `/kb` | KB Explorer | Knowledge Base : archetypes, regles anomalie, recommendations |
-| `/bill-intelligence` | Bill Intelligence | Analyse factures, shadow billing, 20 regles d'anomalie |
+| `/bill-intel` | Bill Intelligence | Import CSV/PDF, shadow billing 12 regles, anomalies, "Creer action" CTA |
 | `/monitoring` | Monitoring | Alertes actives, KPIs live, badges sidebar |
 | `/purchase` | Achat Energie | Assistant achat multi-sites, note decision, RFP |
 | `/admin/users` | Admin Utilisateurs | Gestion users/roles/scopes, journal d'audit |
@@ -506,7 +522,15 @@ Pour plus de details : [Security Notes](docs/security_notes.md) | [Demo Script](
   - Portfolio Health Bar enrichi (V61) : % sains/warning/critical, top 3 frameworks, trend
   - Portfolio Trend reel (V62) : cache in-memory par org_id, direction up/down/stable
   - Heatmap portefeuille (V63) : grille sites scalable top-15, risque x anomalies x framework
-- **2 087 tests automatises (pytest), 0 echec**
+- **Module Facturation production-grade (V66)** :
+  - Org-scoping sur 13 endpoints (`resolve_org_id` + join `site→portefeuille→entite_juridique→org`)
+  - `response_model` Pydantic sur tous les endpoints GET (Swagger + validation outbound)
+  - Import PDF EDF/Engie via pymupdf (fitz) — templates detectes, confiance >= 0.5
+  - 12 regles d'anomalie : R1-R10 shadow billing + R11 TTC coherence + R12 expiry contrat
+  - Bridge `ActionItem` : chaque anomalie billing cree un ActionItem idempotent (`source_type=BILLING`)
+  - `SiteBillingMini` : KPIs facturation integres dans l'onglet Factures de Site360
+  - `GET /anomalies-scoped` : anomalies billing visibles dans la page Anomalies (framework FACTURATION)
+- **2 104 tests automatises (pytest), 0 echec**
 - 12 items KB valides (archetypes, regles, recommendations)
 - Smoke test "red button" (14 checks avant mise en pilote)
 
@@ -517,7 +541,7 @@ Pour plus de details : [Security Notes](docs/security_notes.md) | [Demo Script](
 - Base de donnees PostgreSQL (SQLite uniquement)
 - CI/CD (fichiers GitHub Actions presents mais vides)
 - Rate limiting / throttling
-- Import de donnees reelles (factures, releves compteurs)
+- Import de donnees reelles (releves compteurs Enedis)
 - Notifications (email, webhook)
 
 ---
@@ -608,7 +632,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 cd backend
 python -m pytest tests/ -v --tb=short
 ```
-Resultat attendu : `2087 passed, 9 skipped`.
+Resultat attendu : `2104 passed, 12 skipped`.
 
 ### Tests IAM uniquement
 
