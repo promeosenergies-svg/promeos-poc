@@ -34,6 +34,7 @@ const SegmentationPage = lazy(() => import('./pages/SegmentationPage'));
 const CompliancePage = lazy(() => import('./pages/CompliancePage'));
 const ConsumptionDiagPage = lazy(() => import('./pages/ConsumptionDiagPage'));
 const BillIntelPage = lazy(() => import('./pages/BillIntelPage'));
+const BillingPage = lazy(() => import('./pages/BillingPage'));
 const KBExplorerPage = lazy(() => import('./pages/KBExplorerPage'));
 const PurchasePage = lazy(() => import('./pages/PurchasePage'));
 const PurchaseAssistantPage = lazy(() => import('./pages/PurchaseAssistantPage'));
@@ -116,6 +117,7 @@ function App() {
                   <Route path="/compliance" element={<PageSuspense><CompliancePage /></PageSuspense>} />
                   <Route path="/diagnostic-conso" element={<PageSuspense><ConsumptionDiagPage /></PageSuspense>} />
                   <Route path="/bill-intel" element={<PageSuspense><BillIntelPage /></PageSuspense>} />
+                  <Route path="/billing" element={<PageSuspense><BillingPage /></PageSuspense>} />
                   <Route path="/achat-energie" element={<PageSuspense><PurchasePage /></PageSuspense>} />
                   <Route path="/achat-assistant" element={<PageSuspense><PurchaseAssistantPage /></PageSuspense>} />
                   <Route path="/kb" element={<PageSuspense><KBExplorerPage /></PageSuspense>} />
@@ -136,7 +138,7 @@ function App() {
                   <Route path="/plan-action" element={<Navigate to="/actions" replace />} />
                   <Route path="/plan-actions" element={<Navigate to="/actions" replace />} />
                   <Route path="/factures" element={<Navigate to="/bill-intel" replace />} />
-                  <Route path="/facturation" element={<Navigate to="/bill-intel" replace />} />
+                  <Route path="/facturation" element={<Navigate to="/billing" replace />} />
                   <Route path="/anomalies" element={<PageSuspense><AnomaliesPage /></PageSuspense>} />
                   <Route path="/diagnostic" element={<Navigate to="/diagnostic-conso" replace />} />
                   <Route path="/performance" element={<Navigate to="/monitoring" replace />} />

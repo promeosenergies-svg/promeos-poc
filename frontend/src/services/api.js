@@ -626,6 +626,16 @@ export const createActionFromBillingInsight = (insightId, title, siteId) =>
 export const getBillingAnomaliesScoped = () =>
   api.get('/billing/anomalies-scoped').then(r => r.data);
 
+/* ── V67 — Timeline & Coverage ── */
+export const getBillingPeriods = (params = {}) =>
+  api.get('/billing/periods', { params }).then(r => r.data);
+
+export const getCoverageSummary = (params = {}) =>
+  api.get('/billing/coverage-summary', { params }).then(r => r.data);
+
+export const getMissingPeriods = (params = {}) =>
+  api.get('/billing/missing-periods', { params }).then(r => r.data);
+
 // ========================================
 // ACHAT ENERGIE
 // ========================================

@@ -441,6 +441,16 @@ export default function Site360() {
       {activeTab === 'resume' && <TabResume site={site} />}
       {activeTab === 'conso' && <TabStub title="Consommation" text="Courbes de charge, historique et benchmark à venir." />}
       {activeTab === 'factures' && <SiteBillingMini siteId={site.id} />}
+      {activeTab === 'factures' && (
+        <div className="flex justify-end mt-2">
+          <button
+            className="text-xs text-amber-600 hover:underline"
+            onClick={() => navigate(`/billing?site_id=${site.id}`)}
+          >
+            Voir timeline complète
+          </button>
+        </div>
+      )}
       {activeTab === 'conformite' && <TabConformite site={site} />}
       {activeTab === 'actions' && <TabStub title="Actions" text="Plan d'action et suivi des recommandations à venir." />}
 

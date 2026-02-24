@@ -8,7 +8,7 @@
  */
 import {
   LayoutDashboard, Building2, ShieldCheck, FileText,
-  Zap, ListChecks, Activity, Import, Users, Receipt,
+  Zap, ListChecks, Activity, Import, Users, Receipt, CalendarRange,
   BookOpen, ShoppingCart, Search, Link2, Eye, Bell, Lock,
   Target, Database, ScanLine, ListPlus, AlertTriangle,
 } from 'lucide-react';
@@ -30,6 +30,7 @@ export const ROUTE_MODULE_MAP = {
   '/consommations/kb': 'analyse',
   '/diagnostic-conso': 'analyse',
   '/monitoring': 'analyse',
+  '/billing': 'marche',
   '/bill-intel': 'marche',
   '/achat-energie': 'marche',
   '/achat-assistant': 'marche',
@@ -205,6 +206,7 @@ export const NAV_SECTIONS = [
     expertOnly: true,
     order: 4,
     items: [
+      { to: '/billing',         icon: CalendarRange, label: 'Timeline facturation', keywords: ['timeline', 'couverture', 'mois', 'manquant', 'periodes'] },
       { to: '/bill-intel',      icon: Receipt,      label: 'Facturation', keywords: ['factures', 'billing', 'invoices'] },
       { to: '/achat-energie',   icon: ShoppingCart,  label: 'Achats énergie', keywords: ['achat', 'purchase', 'scenarios', 'strategie'] },
       { to: '/achat-assistant', icon: Target,        label: 'Assistant Achat', keywords: ['assistant', 'wizard', 'rfp', 'arenh', 'corridor'] },

@@ -861,9 +861,13 @@ def get_billing_anomalies_scoped(
         .all()
     )
 
+    # Fix N+1 : charger tous les sites en une seule requête
+    site_ids = list({i.site_id for i in insights})
+    sites_map = {s.id: s for s in db.query(Site).filter(Site.id.in_(site_ids)).all()} if site_ids else {}
+
     anomalies = []
     for i in insights:
-        site = db.query(Site).filter(Site.id == i.site_id).first()
+        site = sites_map.get(i.site_id)
         anomalies.append({
             "code": i.type or "billing_anomaly",
             "severity": (i.severity or "MEDIUM").upper(),
@@ -879,6 +883,202 @@ def get_billing_anomalies_scoped(
         })
 
     return {"anomalies": anomalies, "count": len(anomalies)}
+
+
+# ========================================
+# V67 — Coverage endpoints
+# ========================================
+
+@router.get("/periods")
+def get_billing_periods(
+    request: Request,
+    site_id: Optional[int] = Query(None),
+    month_from: Optional[str] = Query(None, description="YYYY-MM"),
+    month_to: Optional[str] = Query(None, description="YYYY-MM"),
+    limit: int = Query(24, ge=1, le=120),
+    offset: int = Query(0, ge=0),
+    org_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """
+    Liste des périodes mensuelles avec statut de couverture (covered/partial/missing).
+    Paginée (limit/offset). Tri: plus récent en premier.
+    """
+    from services.billing_coverage import compute_coverage, compute_range
+    effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
+
+    q = _org_sites_query(db, EnergyInvoice, effective_org_id)
+    if site_id:
+        site = _check_site_belongs_to_org(db, site_id, effective_org_id)
+        q = q.filter(EnergyInvoice.site_id == site_id)
+    invoices = q.all()
+
+    range_start, range_end = compute_range(invoices)
+    if not range_start:
+        return {"periods": [], "total": 0, "offset": offset, "limit": limit}
+
+    # Appliquer filtres month_from / month_to
+    if month_from:
+        try:
+            y, m = map(int, month_from.split("-"))
+            from datetime import date as _date
+            range_start = max(range_start, _date(y, m, 1))
+        except (ValueError, TypeError):
+            pass
+    if month_to:
+        try:
+            y, m = map(int, month_to.split("-"))
+            from calendar import monthrange as _mr
+            from datetime import date as _date
+            _, last = _mr(y, m)
+            range_end = min(range_end, _date(y, m, last))
+        except (ValueError, TypeError):
+            pass
+
+    all_months = compute_coverage(invoices, range_start, range_end)
+    # Tri: plus récent en premier
+    all_months.sort(key=lambda x: x.month_key, reverse=True)
+    total = len(all_months)
+    page = all_months[offset: offset + limit]
+
+    return {
+        "periods": [
+            {
+                "month_key": mc.month_key,
+                "month_start": mc.month_start.isoformat(),
+                "month_end": mc.month_end.isoformat(),
+                "coverage_status": mc.coverage_status,
+                "coverage_ratio": mc.coverage_ratio,
+                "invoices_count": mc.invoices_count,
+                "total_ttc": mc.total_ttc,
+                "missing_reason": mc.missing_reason,
+            }
+            for mc in page
+        ],
+        "total": total,
+        "offset": offset,
+        "limit": limit,
+    }
+
+
+@router.get("/coverage-summary")
+def get_coverage_summary(
+    request: Request,
+    site_id: Optional[int] = Query(None),
+    org_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """
+    KPIs globaux de couverture : range, mois couverts/partiels/manquants,
+    liste des mois manquants (max 24), top sites avec le plus de trous.
+    """
+    from services.billing_coverage import compute_coverage, compute_range, compute_top_sites_missing
+    effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
+
+    q = _org_sites_query(db, EnergyInvoice, effective_org_id)
+    if site_id:
+        _check_site_belongs_to_org(db, site_id, effective_org_id)
+        q = q.filter(EnergyInvoice.site_id == site_id)
+    invoices = q.all()
+
+    range_start, range_end = compute_range(invoices)
+    if not range_start:
+        return {
+            "range": None,
+            "months_total": 0,
+            "covered": 0,
+            "partial": 0,
+            "missing": 0,
+            "missing_months": [],
+            "top_sites_missing": [],
+        }
+
+    months = compute_coverage(invoices, range_start, range_end)
+    covered = sum(1 for mc in months if mc.coverage_status == "covered")
+    partial = sum(1 for mc in months if mc.coverage_status == "partial")
+    missing = sum(1 for mc in months if mc.coverage_status == "missing")
+    missing_months = [
+        mc.month_key for mc in sorted(months, key=lambda x: x.month_key, reverse=True)
+        if mc.coverage_status != "covered"
+    ][:24]
+
+    top_sites = compute_top_sites_missing(db, effective_org_id, site_id_filter=site_id)
+
+    return {
+        "range": {
+            "min_month": range_start.strftime("%Y-%m"),
+            "max_month": range_end.strftime("%Y-%m"),
+        },
+        "months_total": len(months),
+        "covered": covered,
+        "partial": partial,
+        "missing": missing,
+        "missing_months": missing_months,
+        "top_sites_missing": top_sites,
+    }
+
+
+@router.get("/missing-periods")
+def get_missing_periods(
+    request: Request,
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    org_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """
+    Liste paginée des mois manquants/partiels, format patrimoine-anomaly.
+    Triée par gravité (missing avant partial) puis par mois décroissant.
+    Compatible avec AnomaliesPage (framework FACTURATION).
+    """
+    from services.billing_coverage import compute_coverage, compute_range
+    effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
+
+    # Charger toutes les factures + sites en 2 requêtes
+    invoices_all = _org_sites_query(db, EnergyInvoice, effective_org_id).all()
+
+    # Grouper par site
+    by_site: dict[int, list] = {}
+    for inv in invoices_all:
+        by_site.setdefault(inv.site_id, []).append(inv)
+
+    site_ids = list(by_site.keys())
+    sites_map = {s.id: s for s in db.query(Site).filter(Site.id.in_(site_ids)).all()} if site_ids else {}
+
+    all_missing: list = []
+    for site_id_key, invs in by_site.items():
+        rs, re = compute_range(invs)
+        if not rs:
+            continue
+        months = compute_coverage(invs, rs, re)
+        site = sites_map.get(site_id_key)
+        site_name = site.nom if site else f"Site {site_id_key}"
+        for mc in months:
+            if mc.coverage_status != "covered":
+                all_missing.append({
+                    "month_key": mc.month_key,
+                    "site_id": site_id_key,
+                    "site_name": site_name,
+                    "coverage_status": mc.coverage_status,
+                    "coverage_ratio": mc.coverage_ratio,
+                    "missing_reason": mc.missing_reason,
+                    "regulatory_impact": {"framework": "FACTURATION"},
+                    "cta_url": f"/bill-intel?site_id={site_id_key}&month={mc.month_key}",
+                })
+
+    # Tri: missing avant partial, puis mois décroissant
+    status_order = {"missing": 0, "partial": 1}
+    all_missing.sort(key=lambda x: (status_order.get(x["coverage_status"], 2), x["month_key"]), reverse=False)
+    all_missing.sort(key=lambda x: x["month_key"], reverse=True)
+    all_missing.sort(key=lambda x: status_order.get(x["coverage_status"], 2))
+
+    total = len(all_missing)
+    page = all_missing[offset: offset + limit]
+
+    return {"items": page, "total": total, "offset": offset, "limit": limit}
 
 
 # ========================================

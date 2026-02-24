@@ -5,7 +5,7 @@ Complement the dataclass-based domain model in app/bill_intelligence/domain.py.
 """
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, Float, Text, Boolean, ForeignKey, Date, DateTime, Enum, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Float, Text, Boolean, ForeignKey, Date, DateTime, Enum, UniqueConstraint, Index
 from sqlalchemy.orm import relationship
 
 from .base import Base, TimestampMixin
@@ -108,6 +108,13 @@ class EnergyInvoice(Base, TimestampMixin):
         "EnergyInvoiceLine", back_populates="invoice",
         cascade="all, delete-orphan",
     )
+
+
+# V67 — Indexes sur les champs période pour les range queries de couverture
+_idx_period_start = Index("ix_energy_invoices_period_start", EnergyInvoice.period_start)
+_idx_period_end = Index("ix_energy_invoices_period_end", EnergyInvoice.period_end)
+_idx_issue_date = Index("ix_energy_invoices_issue_date", EnergyInvoice.issue_date)
+_idx_site_period = Index("ix_energy_invoices_site_period", EnergyInvoice.site_id, EnergyInvoice.period_start)
 
 
 class EnergyInvoiceLine(Base, TimestampMixin):
