@@ -36,8 +36,9 @@ export default function BillingPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Filtre depuis l'URL (?site_id=X)
+  // Filtres depuis l'URL (?site_id=X&month=YYYY-MM)
   const [siteFilter, setSiteFilter] = useState(searchParams.get('site_id') || '');
+  const [activeMonth, setActiveMonth] = useState(searchParams.get('month') || '');
   const [sites, setSites] = useState([]);
 
   const [summary, setSummary] = useState(null);
@@ -192,29 +193,29 @@ export default function BillingPage() {
               <KpiChip
                 icon={CheckCircle}
                 label="Couverts"
-                value={summary.covered}
+                value={summary?.covered ?? 0}
                 color="text-green-600"
               />
               <KpiChip
                 icon={AlertTriangle}
                 label="Partiels"
-                value={summary.partial}
+                value={summary?.partial ?? 0}
                 color="text-orange-500"
               />
               <KpiChip
                 icon={XCircle}
                 label="Manquants"
-                value={summary.missing}
+                value={summary?.missing ?? 0}
                 color="text-red-500"
               />
             </div>
             <CoverageBar
-              covered={summary.covered}
-              partial={summary.partial}
-              missing={summary.missing}
-              total={summary.months_total}
-              minMonth={summary.range?.min_month}
-              maxMonth={summary.range?.max_month}
+              covered={summary?.covered ?? 0}
+              partial={summary?.partial ?? 0}
+              missing={summary?.missing ?? 0}
+              total={summary?.months_total ?? 0}
+              minMonth={summary?.range?.min_month ?? '—'}
+              maxMonth={summary?.range?.max_month ?? '—'}
             />
           </CardBody>
         </Card>
@@ -308,6 +309,7 @@ export default function BillingPage() {
               <BillingTimeline
                 periods={periods}
                 siteId={siteFilter}
+                activeMonth={activeMonth}
                 onCreateAction={handleCreateAction}
                 createdActions={createdActions}
               />

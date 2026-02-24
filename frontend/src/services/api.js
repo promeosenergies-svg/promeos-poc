@@ -636,6 +636,9 @@ export const getCoverageSummary = (params = {}) =>
 export const getMissingPeriods = (params = {}) =>
   api.get('/billing/missing-periods', { params }).then(r => r.data);
 
+export const getNormalizedInvoices = (params = {}) =>
+  api.get('/billing/invoices/normalized', { params }).then(r => r.data);
+
 // ========================================
 // ACHAT ENERGIE
 // ========================================

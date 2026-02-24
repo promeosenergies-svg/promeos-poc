@@ -45,12 +45,13 @@ function formatEur(amount) {
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(amount);
 }
 
-function MonthRow({ period, siteId, onCreateAction, createdActions }) {
+function MonthRow({ period, siteId, onCreateAction, createdActions, activeMonth }) {
   const navigate = useNavigate();
   const cfg = STATUS_CONFIG[period.coverage_status] || STATUS_CONFIG.missing;
   const Icon = cfg.icon;
   const actionKey = `${siteId}-${period.month_key}`;
   const actionCreated = createdActions?.has(actionKey);
+  const isActive = activeMonth && period.month_key === activeMonth;
 
   const handleView = () => {
     const params = new URLSearchParams();
@@ -67,7 +68,7 @@ function MonthRow({ period, siteId, onCreateAction, createdActions }) {
   };
 
   return (
-    <div className={`flex items-center gap-3 px-4 py-3 rounded-lg border ${cfg.bg} ${cfg.border}`}>
+    <div className={`flex items-center gap-3 px-4 py-3 rounded-lg border ${cfg.bg} ${cfg.border}${isActive ? ' ring-2 ring-amber-400' : ''}`}>
       {/* Statut icon */}
       <Icon size={16} className={`flex-shrink-0 ${cfg.color}`} />
 
@@ -127,7 +128,7 @@ function MonthRow({ period, siteId, onCreateAction, createdActions }) {
   );
 }
 
-export default function BillingTimeline({ periods = [], siteId, onCreateAction, createdActions }) {
+export default function BillingTimeline({ periods = [], siteId, onCreateAction, createdActions, activeMonth }) {
   if (periods.length === 0) {
     return (
       <div className="text-center py-8 text-sm text-gray-500">
@@ -143,6 +144,7 @@ export default function BillingTimeline({ periods = [], siteId, onCreateAction, 
           key={period.month_key}
           period={period}
           siteId={siteId}
+          activeMonth={activeMonth}
           onCreateAction={onCreateAction}
           createdActions={createdActions}
         />

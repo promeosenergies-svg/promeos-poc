@@ -546,7 +546,7 @@ class TestBillingAPI:
     def test_list_rules(self, client):
         r = client.get("/api/billing/rules")
         assert r.status_code == 200
-        assert r.json()["count"] == 12  # V66: +2 rules (R11 TTC coherence, R12 contract expiry)
+        assert r.json()["count"] == 14  # V68: +2 rules (R13 réseau mismatch, R14 taxes mismatch)
 
     def test_csv_import(self, client, db_session):
         _, site = _create_org_site(db_session)
@@ -599,9 +599,10 @@ class TestBillingAPI:
         r = client.post("/api/billing/seed-demo")
         assert r.status_code == 200
         data = r.json()
-        assert data["invoices_created"] == 5
-        assert data["good_invoices"] == 3
-        assert data["bad_invoices"] == 2
+        assert data["invoices_created"] == 69   # V68: 34 elec + 35 gaz (36 mois - 3 trous)
+        assert data["contracts_created"] == 2
+        assert data["controlled_gaps"] == 3
+        assert data["controlled_anomalies"] == 3
 
     def test_seed_then_audit_then_summary(self, client, db_session):
         """Integration: seed → audit-all → verify insights created."""
@@ -626,7 +627,7 @@ class TestBillingAPI:
         r = client.get("/api/billing/summary")
         assert r.status_code == 200
         s = r.json()
-        assert s["total_invoices"] == 5
+        assert s["total_invoices"] == 69   # V68: 36 mois × 2 sites - 3 trous
         assert s["total_insights"] > 0
         assert s["total_estimated_loss_eur"] > 0
 
@@ -743,4 +744,4 @@ class TestBillingAPI:
         assert r.status_code == 200
         data = r.json()
         assert "billing" in data
-        assert data["billing"]["total_invoices"] == 5
+        assert data["billing"]["total_invoices"] == 69  # V68: 36 mois × 2 sites - 3 trous

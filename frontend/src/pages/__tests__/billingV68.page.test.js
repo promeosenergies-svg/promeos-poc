@@ -1,0 +1,275 @@
+/**
+ * PROMEOS — V68 Billing Unified — Source-guard tests
+ * Vérifie la présence des constructs V68 dans les fichiers sources.
+ * Tests 100% readFileSync / regex — aucun mock DOM requis.
+ */
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
+import { describe, it, expect } from 'vitest';
+
+const root = resolve(__dirname, '../../../');  // → frontend/
+
+const readSrc = (...parts) => readFileSync(resolve(root, 'src', ...parts), 'utf-8');
+const readBackend = (...parts) => readFileSync(resolve(root, '..', 'backend', ...parts), 'utf-8');
+
+// ============================================================
+// A. api.js — getNormalizedInvoices
+// ============================================================
+describe('api.js — getNormalizedInvoices (V68)', () => {
+  const code = readSrc('services', 'api.js');
+
+  it('exports getNormalizedInvoices', () => {
+    expect(code).toMatch(/export const getNormalizedInvoices/);
+  });
+
+  it('calls /billing/invoices/normalized', () => {
+    expect(code).toMatch(/billing\/invoices\/normalized/);
+  });
+
+  it('accepts params object', () => {
+    expect(code).toMatch(/getNormalizedInvoices\s*=\s*\(params\s*=/);
+  });
+});
+
+// ============================================================
+// B. BillingPage.jsx — ?month= param + activeMonth + null-safe
+// ============================================================
+describe('BillingPage.jsx — V68 enhancements', () => {
+  const code = readSrc('pages', 'BillingPage.jsx');
+
+  it('reads ?month from searchParams', () => {
+    expect(code).toMatch(/searchParams\.get\(['"]month['"]\)/);
+  });
+
+  it('defines activeMonth state', () => {
+    expect(code).toMatch(/activeMonth/);
+  });
+
+  it('passes activeMonth to BillingTimeline', () => {
+    expect(code).toMatch(/activeMonth=\{activeMonth\}/);
+  });
+
+  it('optional chaining on summary.range', () => {
+    expect(code).toMatch(/summary\?\.range\?/);
+  });
+
+  it('uses useSearchParams', () => {
+    expect(code).toMatch(/useSearchParams/);
+  });
+
+  it('imports BillingTimeline', () => {
+    expect(code).toMatch(/import BillingTimeline/);
+  });
+});
+
+// ============================================================
+// C. BillIntelPage.jsx — deep-links V68
+// ============================================================
+describe('BillIntelPage.jsx — deep-links V68', () => {
+  const code = readSrc('pages', 'BillIntelPage.jsx');
+
+  it('imports useSearchParams', () => {
+    expect(code).toMatch(/useSearchParams/);
+  });
+
+  it('imports useNavigate', () => {
+    expect(code).toMatch(/useNavigate/);
+  });
+
+  it('reads ?site_id from searchParams', () => {
+    expect(code).toMatch(/searchParams\.get\(['"]site_id['"]\)/);
+  });
+
+  it('reads ?month from searchParams', () => {
+    expect(code).toMatch(/searchParams\.get\(['"]month['"]\)/);
+  });
+
+  it('defines siteFilter state', () => {
+    expect(code).toMatch(/siteFilter/);
+  });
+
+  it('defines monthFilter state', () => {
+    expect(code).toMatch(/monthFilter/);
+  });
+
+  it('has "Voir timeline" CTA navigating to /billing', () => {
+    expect(code).toMatch(/\/billing\?site_id=/);
+  });
+
+  it('filters invoices by monthFilter', () => {
+    expect(code).toMatch(/filteredInvoices/);
+  });
+
+  it('passes site_id to getBillingInsights', () => {
+    expect(code).toMatch(/site_id.*siteFilter|siteFilter.*site_id/);
+  });
+
+  it('imports CalendarRange for Voir timeline button', () => {
+    expect(code).toMatch(/CalendarRange/);
+  });
+});
+
+// ============================================================
+// D. BillingTimeline.jsx — activeMonth prop
+// ============================================================
+describe('BillingTimeline.jsx — activeMonth V68', () => {
+  const code = readSrc('components', 'BillingTimeline.jsx');
+
+  it('accepts activeMonth prop in MonthRow', () => {
+    expect(code).toMatch(/activeMonth/);
+  });
+
+  it('applies ring/highlight class when active', () => {
+    expect(code).toMatch(/ring-2|ring-amber/);
+  });
+
+  it('exports BillingTimeline with activeMonth in signature', () => {
+    expect(code).toMatch(/BillingTimeline\s*\(\s*\{[^}]*activeMonth/);
+  });
+});
+
+// ============================================================
+// E. Backend — billing_normalization.py
+// ============================================================
+describe('billing_normalization.py — V68 schema', () => {
+  const code = readBackend('services', 'billing_normalization.py');
+
+  it('defines InvoiceNormalized Pydantic model', () => {
+    expect(code).toMatch(/class InvoiceNormalized\(BaseModel\)/);
+  });
+
+  it('has org_id field', () => {
+    expect(code).toMatch(/org_id:\s*int/);
+  });
+
+  it('has ht_fourniture field', () => {
+    expect(code).toMatch(/ht_fourniture/);
+  });
+
+  it('has ht_reseau field', () => {
+    expect(code).toMatch(/ht_reseau/);
+  });
+
+  it('exports normalize_invoice function', () => {
+    expect(code).toMatch(/def normalize_invoice/);
+  });
+
+  it('computes month_key from period_start', () => {
+    expect(code).toMatch(/strftime.*%Y-%m/);
+  });
+});
+
+// ============================================================
+// F. Backend — billing_shadow_v2.py
+// ============================================================
+describe('billing_shadow_v2.py — V68 shadow engine', () => {
+  const code = readBackend('services', 'billing_shadow_v2.py');
+
+  it('defines TURPE constant', () => {
+    expect(code).toMatch(/TURPE_EUR_KWH_ELEC/);
+  });
+
+  it('defines CSPE constant', () => {
+    expect(code).toMatch(/CSPE_EUR_KWH_ELEC/);
+  });
+
+  it('defines TICGN constant', () => {
+    expect(code).toMatch(/TICGN_EUR_KWH_GAZ/);
+  });
+
+  it('exports shadow_billing_v2 function', () => {
+    expect(code).toMatch(/def shadow_billing_v2/);
+  });
+
+  it('returns expected_reseau_ht key', () => {
+    expect(code).toMatch(/expected_reseau_ht/);
+  });
+
+  it('returns delta_reseau key', () => {
+    expect(code).toMatch(/delta_reseau/);
+  });
+
+  it('method is shadow_v2_simplified', () => {
+    expect(code).toMatch(/shadow_v2_simplified/);
+  });
+});
+
+// ============================================================
+// G. Backend — billing_service.py — R13/R14
+// ============================================================
+describe('billing_service.py — R13/R14 rules V68', () => {
+  const code = readBackend('services', 'billing_service.py');
+
+  it('defines _rule_reseau_mismatch (R13)', () => {
+    expect(code).toMatch(/def _rule_reseau_mismatch/);
+  });
+
+  it('defines _rule_taxes_mismatch (R14)', () => {
+    expect(code).toMatch(/def _rule_taxes_mismatch/);
+  });
+
+  it('R13 in BILLING_RULES', () => {
+    expect(code).toMatch(/["']R13["']/);
+  });
+
+  it('R14 in BILLING_RULES', () => {
+    expect(code).toMatch(/["']R14["']/);
+  });
+
+  it('BILLING_RULES has 14 entries', () => {
+    const matches = code.match(/\("R\d+"/g);
+    expect(matches).not.toBeNull();
+    expect(matches.length).toBe(14);
+  });
+});
+
+// ============================================================
+// H. Backend — billing_seed.py — 36 mois
+// ============================================================
+describe('billing_seed.py — 36 mois V68', () => {
+  const code = readBackend('services', 'billing_seed.py');
+
+  it('has MONTHS_COUNT = 36', () => {
+    expect(code).toMatch(/MONTHS_COUNT\s*=\s*36/);
+  });
+
+  it('has SOURCE_TAG seed_36m', () => {
+    expect(code).toMatch(/seed_36m/);
+  });
+
+  it('has idempotency check', () => {
+    expect(code).toMatch(/skipped/);
+  });
+
+  it('has controlled gap 2023-03', () => {
+    expect(code).toMatch(/2023.*3|GAPS_SITE_A/);
+  });
+
+  it('defines ANOMALY_SHADOW_GAP', () => {
+    expect(code).toMatch(/ANOMALY_SHADOW_GAP/);
+  });
+
+  it('defines ANOMALY_RESEAU_MISMATCH', () => {
+    expect(code).toMatch(/ANOMALY_RESEAU_MISMATCH/);
+  });
+});
+
+// ============================================================
+// I. Deep-links bidirectionnels — intégration
+// ============================================================
+describe('Deep-links bidirectionnels V68', () => {
+  it('BillingTimeline.jsx generates /bill-intel?site_id links', () => {
+    const code = readSrc('components', 'BillingTimeline.jsx');
+    expect(code).toMatch(/\/bill-intel/);
+  });
+
+  it('BillIntelPage.jsx generates /billing?site_id link (retour timeline)', () => {
+    const code = readSrc('pages', 'BillIntelPage.jsx');
+    expect(code).toMatch(/\/billing\?site_id/);
+  });
+
+  it('BillingPage.jsx generates /bill-intel link (navigation directe)', () => {
+    const code = readSrc('pages', 'BillingPage.jsx');
+    expect(code).toMatch(/bill-intel/);
+  });
+});

@@ -1,7 +1,10 @@
 """
-PROMEOS — Bill Intelligence Seed Demo
-3 good invoices + 2 bad (anomalous) invoices.
+PROMEOS — Bill Intelligence Seed Demo (V68)
+36 mois (Jan 2023 – Déc 2025) × 2 sites (elec + gaz).
+3 trous + 2 partiels + 3 anomalies contrôlées.
+Idempotent via source tag "seed_36m".
 """
+import calendar
 from datetime import date
 from sqlalchemy.orm import Session
 
@@ -10,186 +13,234 @@ from models import (
     BillingEnergyType, InvoiceLineType, BillingInvoiceStatus,
 )
 
+# ── Constantes seed ──
+SOURCE_TAG     = "seed_36m"
+START_YEAR     = 2023
+START_MONTH    = 1
+MONTHS_COUNT   = 36   # Jan 2023 → Déc 2025
+KWH_ELEC       = 9000
+KWH_GAZ        = 6000
+PRICE_REF_ELEC = 0.18   # EUR/kWh all-in (TTC / kWh dans ce modèle simplifié)
+PRICE_REF_GAZ  = 0.09
+
+# Montants ligne "normaux" pour 9000 kWh elec (total = 1620)
+ELEC_ENERGY_AMT  = 1020.0   # fourniture
+ELEC_NETWORK_AMT = 400.0    # réseau (attendu TURPE ≈ 407.70 → delta < 2%)
+ELEC_TAX_AMT     = 200.0    # taxes (attendu CSPE ≈ 202.50 → delta < 1%)
+
+# Montants ligne "normaux" pour 6000 kWh gaz (total = 540)
+GAZ_ENERGY_AMT  = 192.0     # fourniture
+GAZ_NETWORK_AMT = 220.0     # réseau (attendu ATRD+ATRT ≈ 222 → delta < 1%)
+GAZ_TAX_AMT     = 128.0     # taxes (attendu TICGN ≈ 130.20 → delta < 2%)
+
+# ── Trous contrôlés ──
+GAPS_SITE_A = {
+    (2023, 3): "missing",
+    (2024, 9): "missing",
+}
+PARTIALS_SITE_A = {
+    (2023, 6): 15,   # 15 jours → couverture partielle
+    (2024, 1): 20,   # 20 jours/31 → couverture partielle
+}
+GAPS_SITE_B = {
+    (2025, 2): "missing",
+}
+
+# ── Anomalies contrôlées ──
+ANOMALY_SHADOW_GAP    = (2024, 7)   # R1 : total_eur = shadow × 1.45
+ANOMALY_RESEAU_MISMATCH = (2024, 11)  # R13: NETWORK line = TURPE × 2.3
+ANOMALY_TAXES_MISMATCH  = (2025, 1)   # R14: TAX line = CSPE × 1.08
+
+
+def _iter_months(start_year: int, start_month: int, count: int):
+    """Génère (year, month) pour `count` mois consécutifs."""
+    y, m = start_year, start_month
+    for _ in range(count):
+        yield y, m
+        m += 1
+        if m > 12:
+            m = 1
+            y += 1
+
+
+def _add_elec_invoice(db: Session, site_id: int, contract_id: int, y: int, m: int) -> None:
+    """Crée une facture elec pour le mois (y, m), avec anomalies contrôlées."""
+    # Trou → skip
+    if (y, m) in GAPS_SITE_A:
+        return
+
+    # Période
+    days_in_month = calendar.monthrange(y, m)[1]
+    period_start = date(y, m, 1)
+
+    if (y, m) in PARTIALS_SITE_A:
+        period_end = date(y, m, PARTIALS_SITE_A[(y, m)])
+    else:
+        period_end = date(y, m, days_in_month)
+
+    issue_date = date(y, m + 1 if m < 12 else 1, 5)
+    if m == 12:
+        issue_date = date(y + 1, 1, 5)
+
+    energy_line = ELEC_ENERGY_AMT
+    network_line = ELEC_NETWORK_AMT
+    tax_line = ELEC_TAX_AMT
+
+    # Anomalie R13 : réseau × 2.3
+    if (y, m) == ANOMALY_RESEAU_MISMATCH:
+        network_line = round(9000 * 0.0453 * 2.3, 2)  # 937.71
+
+    # Anomalie R14 : taxes × 1.08
+    if (y, m) == ANOMALY_TAXES_MISMATCH:
+        tax_line = round(9000 * 0.0225 * 1.08, 2)  # 218.70
+
+    total_eur = round(energy_line + network_line + tax_line, 2)
+
+    # Anomalie R1 : surcharge 45%
+    if (y, m) == ANOMALY_SHADOW_GAP:
+        total_eur = round(KWH_ELEC * PRICE_REF_ELEC * 1.45, 2)  # 2349.00
+        energy_line = round(total_eur - network_line - tax_line, 2)
+
+    inv = EnergyInvoice(
+        site_id=site_id,
+        contract_id=contract_id,
+        invoice_number=f"EDF-{y}-{m:02d}",
+        period_start=period_start,
+        period_end=period_end,
+        issue_date=issue_date,
+        total_eur=total_eur,
+        energy_kwh=KWH_ELEC,
+        status=BillingInvoiceStatus.IMPORTED,
+        source=SOURCE_TAG,
+    )
+    db.add(inv)
+    db.flush()
+
+    for lt, label, qty, unit, up, amt in [
+        (InvoiceLineType.ENERGY,  "Consommation elec",  KWH_ELEC, "kWh", round(energy_line / KWH_ELEC, 4), energy_line),
+        (InvoiceLineType.NETWORK, "Acheminement TURPE",     None,  None,  None, network_line),
+        (InvoiceLineType.TAX,     "CSPE / Accise elec",     None,  None,  None, tax_line),
+    ]:
+        db.add(EnergyInvoiceLine(
+            invoice_id=inv.id, line_type=lt, label=label,
+            qty=qty, unit=unit, unit_price=up, amount_eur=amt,
+        ))
+
+
+def _add_gaz_invoice(db: Session, site_id: int, contract_id: int, y: int, m: int) -> None:
+    """Crée une facture gaz pour le mois (y, m)."""
+    if (y, m) in GAPS_SITE_B:
+        return
+
+    days_in_month = calendar.monthrange(y, m)[1]
+    period_start = date(y, m, 1)
+    period_end = date(y, m, days_in_month)
+    issue_date = date(y, m + 1 if m < 12 else 1, 10)
+    if m == 12:
+        issue_date = date(y + 1, 1, 10)
+
+    total_eur = round(GAZ_ENERGY_AMT + GAZ_NETWORK_AMT + GAZ_TAX_AMT, 2)
+
+    inv = EnergyInvoice(
+        site_id=site_id,
+        contract_id=contract_id,
+        invoice_number=f"ENGIE-{y}-{m:02d}",
+        period_start=period_start,
+        period_end=period_end,
+        issue_date=issue_date,
+        total_eur=total_eur,
+        energy_kwh=KWH_GAZ,
+        status=BillingInvoiceStatus.IMPORTED,
+        source=SOURCE_TAG,
+    )
+    db.add(inv)
+    db.flush()
+
+    for lt, label, qty, unit, up, amt in [
+        (InvoiceLineType.ENERGY,  "Terme variable gaz",    KWH_GAZ, "kWh", round(GAZ_ENERGY_AMT / KWH_GAZ, 4), GAZ_ENERGY_AMT),
+        (InvoiceLineType.NETWORK, "Acheminement gaz (ATRD+ATRT)", None, None, None, GAZ_NETWORK_AMT),
+        (InvoiceLineType.TAX,     "TICGN",                  None,  None,  None, GAZ_TAX_AMT),
+    ]:
+        db.add(EnergyInvoiceLine(
+            invoice_id=inv.id, line_type=lt, label=label,
+            qty=qty, unit=unit, unit_price=up, amount_eur=amt,
+        ))
+
 
 def seed_billing_demo(db: Session) -> dict:
     """
-    Seed 2 contracts + 5 invoices (3 clean, 2 anomalous) for existing sites.
-    Returns summary.
+    Seed 36 mois (Jan 2023 – Déc 2025) × 2 sites (elec + gaz).
+    Trous contrôlés : 2023-03, 2024-09 (site_a); 2025-02 (site_b).
+    Partiels : 2023-06 (15j), 2024-01 (20j/31) sur site_a.
+    Anomalies : 2024-07 R1 shadow_gap, 2024-11 R13 reseau, 2025-01 R14 taxes.
+    Idempotent via source="seed_36m".
     """
-    # Get first 3 sites
+    # Idempotency check
+    existing = db.query(EnergyInvoice).filter(
+        EnergyInvoice.source == SOURCE_TAG
+    ).count()
+    if existing > 0:
+        return {"skipped": True, "reason": "already seeded (seed_36m)", "existing": existing}
+
+    # Récupérer les 2 premiers sites
     sites = db.query(Site).limit(3).all()
     if len(sites) < 2:
         return {"error": "Need at least 2 sites to seed billing demo"}
 
-    site_a = sites[0]  # Main site
-    site_b = sites[1]  # Secondary site
+    site_a = sites[0]
+    site_b = sites[1]
 
-    # ── Contract 1: elec for site_a ──
+    # ── Contrats ──
     contract_elec = EnergyContract(
         site_id=site_a.id,
         energy_type=BillingEnergyType.ELEC,
-        supplier_name="EDF Entreprises",
-        start_date=date(2024, 1, 1),
+        supplier_name="EDF ENR",
+        start_date=date(2022, 12, 1),
         end_date=date(2026, 12, 31),
-        price_ref_eur_per_kwh=0.18,
+        price_ref_eur_per_kwh=PRICE_REF_ELEC,
         fixed_fee_eur_per_month=45.0,
     )
     db.add(contract_elec)
 
-    # ── Contract 2: gaz for site_b ──
     contract_gaz = EnergyContract(
         site_id=site_b.id,
         energy_type=BillingEnergyType.GAZ,
         supplier_name="Engie Pro",
-        start_date=date(2024, 1, 1),
+        start_date=date(2022, 12, 1),
         end_date=date(2025, 12, 31),
-        price_ref_eur_per_kwh=0.09,
+        price_ref_eur_per_kwh=PRICE_REF_GAZ,
         fixed_fee_eur_per_month=30.0,
     )
     db.add(contract_gaz)
     db.flush()
 
-    invoices_created = []
+    # ── 36 mois site_a (elec) ──
+    for y, m in _iter_months(START_YEAR, START_MONTH, MONTHS_COUNT):
+        _add_elec_invoice(db, site_a.id, contract_elec.id, y, m)
 
-    # ── Invoice 1: GOOD — site_a elec jan 2025 ──
-    inv1 = EnergyInvoice(
-        site_id=site_a.id,
-        contract_id=contract_elec.id,
-        invoice_number="EDF-2025-001",
-        period_start=date(2025, 1, 1),
-        period_end=date(2025, 1, 31),
-        issue_date=date(2025, 2, 5),
-        total_eur=1620.00,
-        energy_kwh=9000,
-        status=BillingInvoiceStatus.IMPORTED,
-        source="seed",
-    )
-    db.add(inv1)
-    db.flush()
-    # Lines
-    for lt, label, qty, unit, up, amt in [
-        (InvoiceLineType.ENERGY, "Consommation HP", 5400, "kWh", 0.20, 1080.00),
-        (InvoiceLineType.ENERGY, "Consommation HC", 3600, "kWh", 0.14, 504.00),
-        (InvoiceLineType.TAX, "CSPE + ACCISE", None, None, None, 36.00),
-    ]:
-        db.add(EnergyInvoiceLine(
-            invoice_id=inv1.id, line_type=lt, label=label,
-            qty=qty, unit=unit, unit_price=up, amount_eur=amt,
-        ))
-    invoices_created.append(inv1)
-
-    # ── Invoice 2: GOOD — site_a elec feb 2025 ──
-    inv2 = EnergyInvoice(
-        site_id=site_a.id,
-        contract_id=contract_elec.id,
-        invoice_number="EDF-2025-002",
-        period_start=date(2025, 2, 1),
-        period_end=date(2025, 2, 28),
-        issue_date=date(2025, 3, 5),
-        total_eur=1530.00,
-        energy_kwh=8500,
-        status=BillingInvoiceStatus.IMPORTED,
-        source="seed",
-    )
-    db.add(inv2)
-    db.flush()
-    for lt, label, qty, unit, up, amt in [
-        (InvoiceLineType.ENERGY, "Consommation HP", 5100, "kWh", 0.20, 1020.00),
-        (InvoiceLineType.ENERGY, "Consommation HC", 3400, "kWh", 0.14, 476.00),
-        (InvoiceLineType.TAX, "CSPE + ACCISE", None, None, None, 34.00),
-    ]:
-        db.add(EnergyInvoiceLine(
-            invoice_id=inv2.id, line_type=lt, label=label,
-            qty=qty, unit=unit, unit_price=up, amount_eur=amt,
-        ))
-    invoices_created.append(inv2)
-
-    # ── Invoice 3: GOOD — site_b gaz jan 2025 ──
-    inv3 = EnergyInvoice(
-        site_id=site_b.id,
-        contract_id=contract_gaz.id,
-        invoice_number="ENGIE-2025-001",
-        period_start=date(2025, 1, 1),
-        period_end=date(2025, 1, 31),
-        issue_date=date(2025, 2, 10),
-        total_eur=540.00,
-        energy_kwh=6000,
-        status=BillingInvoiceStatus.IMPORTED,
-        source="seed",
-    )
-    db.add(inv3)
-    db.flush()
-    for lt, label, qty, unit, up, amt in [
-        (InvoiceLineType.ENERGY, "Terme variable gaz", 6000, "kWh", 0.08, 480.00),
-        (InvoiceLineType.NETWORK, "Abonnement distribution", 1, "mois", 30.0, 30.00),
-        (InvoiceLineType.TAX, "TICGN", None, None, None, 30.00),
-    ]:
-        db.add(EnergyInvoiceLine(
-            invoice_id=inv3.id, line_type=lt, label=label,
-            qty=qty, unit=unit, unit_price=up, amount_eur=amt,
-        ))
-    invoices_created.append(inv3)
-
-    # ── Invoice 4: BAD — site_a elec overcharge (shadow gap > 20%) ──
-    inv4 = EnergyInvoice(
-        site_id=site_a.id,
-        contract_id=contract_elec.id,
-        invoice_number="EDF-2025-003",
-        period_start=date(2025, 3, 1),
-        period_end=date(2025, 3, 31),
-        issue_date=date(2025, 4, 5),
-        total_eur=2800.00,  # Should be ~1620 for 9000 kWh → overcharge
-        energy_kwh=9000,
-        status=BillingInvoiceStatus.IMPORTED,
-        source="seed",
-    )
-    db.add(inv4)
-    db.flush()
-    # Lines don't match total (lines_sum_mismatch)
-    for lt, label, qty, unit, up, amt in [
-        (InvoiceLineType.ENERGY, "Consommation HP", 5400, "kWh", 0.20, 1080.00),
-        (InvoiceLineType.ENERGY, "Consommation HC", 3600, "kWh", 0.14, 504.00),
-        (InvoiceLineType.OTHER, "Frais supplementaires", None, None, None, 800.00),
-        (InvoiceLineType.TAX, "CSPE + ACCISE", None, None, None, 36.00),
-    ]:
-        db.add(EnergyInvoiceLine(
-            invoice_id=inv4.id, line_type=lt, label=label,
-            qty=qty, unit=unit, unit_price=up, amount_eur=amt,
-        ))
-    invoices_created.append(inv4)
-
-    # ── Invoice 5: BAD — site_b gaz consumption spike + period too long ──
-    inv5 = EnergyInvoice(
-        site_id=site_b.id,
-        contract_id=contract_gaz.id,
-        invoice_number="ENGIE-2025-002",
-        period_start=date(2025, 2, 1),
-        period_end=date(2025, 5, 30),  # 119 days — period_too_long
-        issue_date=date(2025, 6, 10),
-        total_eur=2700.00,
-        energy_kwh=30000,  # 5x normal → consumption_spike
-        status=BillingInvoiceStatus.IMPORTED,
-        source="seed",
-    )
-    db.add(inv5)
-    db.flush()
-    for lt, label, qty, unit, up, amt in [
-        (InvoiceLineType.ENERGY, "Terme variable gaz", 30000, "kWh", 0.08, 2400.00),
-        (InvoiceLineType.NETWORK, "Abonnement distribution", 4, "mois", 30.0, 120.00),
-        (InvoiceLineType.TAX, "TICGN", None, None, None, 180.00),
-    ]:
-        db.add(EnergyInvoiceLine(
-            invoice_id=inv5.id, line_type=lt, label=label,
-            qty=qty, unit=unit, unit_price=up, amount_eur=amt,
-        ))
-    invoices_created.append(inv5)
+    # ── 36 mois site_b (gaz) ──
+    for y, m in _iter_months(START_YEAR, START_MONTH, MONTHS_COUNT):
+        _add_gaz_invoice(db, site_b.id, contract_gaz.id, y, m)
 
     db.commit()
 
+    # Compter
+    n_elec = db.query(EnergyInvoice).filter(
+        EnergyInvoice.site_id == site_a.id,
+        EnergyInvoice.source == SOURCE_TAG,
+    ).count()
+    n_gaz = db.query(EnergyInvoice).filter(
+        EnergyInvoice.site_id == site_b.id,
+        EnergyInvoice.source == SOURCE_TAG,
+    ).count()
+
     return {
         "contracts_created": 2,
-        "invoices_created": len(invoices_created),
-        "good_invoices": 3,
-        "bad_invoices": 2,
+        "invoices_created": n_elec + n_gaz,
+        "elec_invoices": n_elec,
+        "gaz_invoices": n_gaz,
         "sites_used": [site_a.id, site_b.id],
+        "months_range": f"{START_YEAR}-{START_MONTH:02d} → 2025-12",
+        "controlled_gaps": 3,
+        "controlled_anomalies": 3,
     }

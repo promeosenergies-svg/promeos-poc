@@ -712,6 +712,64 @@ def resolve_insight(
     }
 
 
+@router.get("/invoices/normalized")
+def list_invoices_normalized(
+    request: Request,
+    site_id: Optional[int] = Query(None),
+    month_key: Optional[str] = Query(None, description="Filtre YYYY-MM"),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    org_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Factures normalisées (ht/tva/fournisseur calculés) — scoped to org."""
+    from services.billing_normalization import normalize_invoice
+    effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
+    q = _org_sites_query(db, EnergyInvoice, effective_org_id)
+    if site_id:
+        q = q.filter(EnergyInvoice.site_id == site_id)
+    invoices = q.order_by(EnergyInvoice.period_start.desc().nullslast()).all()
+
+    # Filtre month_key (post-query, simple)
+    if month_key:
+        filtered = []
+        for inv in invoices:
+            mk = None
+            if inv.period_start:
+                mk = inv.period_start.strftime("%Y-%m")
+            elif inv.issue_date:
+                mk = inv.issue_date.strftime("%Y-%m")
+            if mk == month_key:
+                filtered.append(inv)
+        invoices = filtered
+
+    total = len(invoices)
+    page = invoices[offset: offset + limit]
+
+    normalized = []
+    for inv in page:
+        lines = db.query(EnergyInvoiceLine).filter(
+            EnergyInvoiceLine.invoice_id == inv.id
+        ).all()
+        contract = (
+            db.query(EnergyContract).filter(
+                EnergyContract.id == inv.contract_id
+            ).first()
+            if inv.contract_id else None
+        )
+        normalized.append(
+            normalize_invoice(inv, lines, contract, effective_org_id).model_dump()
+        )
+
+    return {
+        "invoices": normalized,
+        "total": total,
+        "offset": offset,
+        "limit": limit,
+    }
+
+
 @router.get("/invoices", response_model=InvoiceListResponse)
 def list_invoices(
     request: Request,

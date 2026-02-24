@@ -3,6 +3,7 @@
  * Sprint 7.1: invoices overview, anomaly insights with workflow, seed demo, audit-all.
  */
 import { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   getBillingSummary,
   getBillingInsights,
@@ -19,7 +20,7 @@ import { SkeletonCard } from '../ui/Skeleton';
 import { useToast } from '../ui/ToastProvider';
 import {
   FileText, AlertTriangle, CheckCircle, Upload, Play, Download,
-  DollarSign, Zap, TrendingUp, RefreshCw, CheckCircle2,
+  DollarSign, Zap, TrendingUp, RefreshCw, CheckCircle2, CalendarRange,
 } from 'lucide-react';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { track } from '../services/tracker';
@@ -74,6 +75,13 @@ const INSIGHT_FILTER_OPTIONS = [
 export default function BillIntelPage() {
   const { isExpert } = useExpertMode();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Deep-link params: ?site_id=X&month=YYYY-MM
+  const [siteFilter, setSiteFilter] = useState(searchParams.get('site_id') || '');
+  const [monthFilter, setMonthFilter] = useState(searchParams.get('month') || '');
+
   const [summary, setSummary] = useState(null);
   const [insights, setInsights] = useState([]);
   const [invoices, setInvoices] = useState([]);
@@ -87,11 +95,12 @@ export default function BillIntelPage() {
   async function fetchData() {
     setLoading(true);
     try {
-      const params = insightFilter !== 'all' ? { status: insightFilter } : {};
+      const insightParams = { ...(insightFilter !== 'all' && { status: insightFilter }), ...(siteFilter && { site_id: siteFilter }) };
+      const invoiceParams = { ...(siteFilter && { site_id: siteFilter }) };
       const [s, i, inv] = await Promise.all([
         getBillingSummary(),
-        getBillingInsights(params),
-        getBillingInvoices(),
+        getBillingInsights(insightParams),
+        getBillingInvoices(invoiceParams),
       ]);
       setSummary(s);
       setInsights(i.insights || []);
@@ -102,7 +111,15 @@ export default function BillIntelPage() {
     setLoading(false);
   }
 
-  useEffect(() => { fetchData(); }, [insightFilter]);
+  useEffect(() => { fetchData(); }, [insightFilter, siteFilter]);
+
+  // Filtrage front sur month_key (period_start commence par YYYY-MM)
+  const filteredInvoices = monthFilter
+    ? invoices.filter(inv => {
+        const d = inv.period_start || inv.issue_date || '';
+        return d.startsWith(monthFilter);
+      })
+    : invoices;
 
   async function handleSeedDemo() {
     setSeeding(true);
@@ -172,6 +189,11 @@ export default function BillIntelPage() {
       subtitle="Shadow billing, TURPE/ATRD/ATRT, ecarts & anomalies"
       actions={
         <>
+          {siteFilter && (
+            <Button size="sm" variant="secondary" onClick={() => navigate(`/billing?site_id=${siteFilter}`)}>
+              <CalendarRange size={14} /> Voir timeline
+            </Button>
+          )}
           <label className="inline-flex items-center gap-2 cursor-pointer">
             <Button variant="secondary" size="sm" as="span">
               <Upload size={14} /> Importer CSV
@@ -209,6 +231,20 @@ export default function BillIntelPage() {
         </>
       }
     >
+
+      {/* Breadcrumb filtres actifs */}
+      {(siteFilter || monthFilter) && (
+        <div className="flex items-center gap-2 text-xs text-gray-500 flex-wrap">
+          {siteFilter && <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded-full">Site : {siteFilter}</span>}
+          {monthFilter && <span className="px-2 py-1 bg-amber-50 text-amber-700 rounded-full">Mois : {monthFilter}</span>}
+          <button
+            className="text-gray-400 hover:text-gray-600 underline"
+            onClick={() => { setSiteFilter(''); setMonthFilter(''); }}
+          >
+            Réinitialiser filtres
+          </button>
+        </div>
+      )}
 
       {/* Summary cards */}
       {summary && (
@@ -331,10 +367,10 @@ export default function BillIntelPage() {
       ) : null}
 
       {/* Invoices table */}
-      {invoices.length > 0 && (
+      {filteredInvoices.length > 0 && (
         <div>
           <h3 className="text-sm font-semibold text-gray-700 mb-3">
-            Factures ({invoices.length})
+            Factures ({filteredInvoices.length}{monthFilter ? ` — ${monthFilter}` : ''})
           </h3>
           <Card>
             <div className="overflow-x-auto">
@@ -350,7 +386,7 @@ export default function BillIntelPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {invoices.map((inv) => (
+                  {filteredInvoices.map((inv) => (
                     <tr key={inv.id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="px-4 py-2.5 font-medium text-gray-900">{inv.invoice_number}</td>
                       <td className="px-4 py-2.5 text-gray-600">

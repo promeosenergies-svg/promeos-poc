@@ -469,20 +469,87 @@ def _rule_contract_expiry(invoice: EnergyInvoice, contract: Optional[EnergyContr
     return None
 
 
+# ========================================
+# R13 — Réseau / TURPE mismatch (V68)
+# ========================================
+
+def _rule_reseau_mismatch(invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine]) -> Optional[Dict]:
+    """R13: Coût réseau/TURPE facturé ≠ attendu > 10%."""
+    if not lines:
+        return None
+    from services.billing_shadow_v2 import shadow_billing_v2
+    res = shadow_billing_v2(invoice, lines, contract)
+    if res["expected_reseau_ht"] == 0:
+        return None
+    pct = abs(res["delta_reseau"] / res["expected_reseau_ht"] * 100)
+    if pct > 10:
+        sev = "high" if pct > 20 else "medium"
+        return {
+            "type": "reseau_mismatch",
+            "severity": sev,
+            "message": (
+                f"Coût réseau {res['actual_reseau_ht']:.2f}€ vs attendu "
+                f"{res['expected_reseau_ht']:.2f}€ (Δ {pct:.0f}%)"
+            ),
+            "metrics": {
+                "actual_reseau_ht": res["actual_reseau_ht"],
+                "expected_reseau_ht": res["expected_reseau_ht"],
+                "delta_pct": round(pct, 1),
+                "energy_type": res["energy_type"],
+            },
+            "estimated_loss_eur": round(abs(res["delta_reseau"]), 2),
+        }
+    return None
+
+
+# ========================================
+# R14 — Taxes / CSPE mismatch (V68)
+# ========================================
+
+def _rule_taxes_mismatch(invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine]) -> Optional[Dict]:
+    """R14: Taxes (CSPE/TICGN) facturées ≠ attendu > 5%."""
+    if not lines:
+        return None
+    from services.billing_shadow_v2 import shadow_billing_v2
+    res = shadow_billing_v2(invoice, lines, contract)
+    if res["expected_taxes_ht"] == 0:
+        return None
+    pct = abs(res["delta_taxes"] / res["expected_taxes_ht"] * 100)
+    if pct > 5:
+        return {
+            "type": "taxes_mismatch",
+            "severity": "medium",
+            "message": (
+                f"Taxes {res['actual_taxes_ht']:.2f}€ vs attendu "
+                f"{res['expected_taxes_ht']:.2f}€ (Δ {pct:.0f}%)"
+            ),
+            "metrics": {
+                "actual_taxes_ht": res["actual_taxes_ht"],
+                "expected_taxes_ht": res["expected_taxes_ht"],
+                "delta_pct": round(pct, 1),
+                "energy_type": res["energy_type"],
+            },
+            "estimated_loss_eur": round(abs(res["delta_taxes"]), 2),
+        }
+    return None
+
+
 # All rules
 BILLING_RULES = [
-    ("R1", "Shadow gap", _rule_shadow_gap),
-    ("R2", "Unit price high", _rule_unit_price_high),
-    ("R3", "Duplicate invoice", _rule_duplicate_invoice),
-    ("R4", "Missing period", _rule_missing_period),
-    ("R5", "Period too long", _rule_period_too_long),
-    ("R6", "Negative kWh", _rule_negative_kwh),
-    ("R7", "Zero amount", _rule_zero_amount),
-    ("R8", "Lines sum mismatch", _rule_lines_sum_mismatch),
-    ("R9", "Consumption spike", _rule_consumption_spike),
-    ("R10", "Price drift", _rule_price_drift),
-    ("R11", "TTC coherence", _rule_ttc_coherence),
-    ("R12", "Contract expiry", _rule_contract_expiry),
+    ("R1",  "Shadow gap",         _rule_shadow_gap),
+    ("R2",  "Unit price high",    _rule_unit_price_high),
+    ("R3",  "Duplicate invoice",  _rule_duplicate_invoice),
+    ("R4",  "Missing period",     _rule_missing_period),
+    ("R5",  "Period too long",    _rule_period_too_long),
+    ("R6",  "Negative kWh",       _rule_negative_kwh),
+    ("R7",  "Zero amount",        _rule_zero_amount),
+    ("R8",  "Lines sum mismatch", _rule_lines_sum_mismatch),
+    ("R9",  "Consumption spike",  _rule_consumption_spike),
+    ("R10", "Price drift",        _rule_price_drift),
+    ("R11", "TTC coherence",      _rule_ttc_coherence),
+    ("R12", "Contract expiry",    _rule_contract_expiry),
+    ("R13", "Réseau / TURPE mismatch", _rule_reseau_mismatch),
+    ("R14", "Taxes / CSPE mismatch",   _rule_taxes_mismatch),
 ]
 
 
