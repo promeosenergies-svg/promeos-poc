@@ -755,7 +755,7 @@ describe('AX · ConsumptionPortfolioPage structure', () => {
 
   it('has loading skeletons and empty state', () => {
     expect(code).toMatch(/SkeletonCard/);
-    expect(code).toMatch(/EmptyState/);
+    expect(code).toMatch(/Aucun site ne correspond aux filtres/);
   });
 
   it('has toast error handling', () => {
@@ -901,5 +901,98 @@ describe('BB · Portfolio V1.1 frontend enhancements', () => {
   it('has top_impact section in "Ou agir"', () => {
     expect(code).toMatch(/top_impact/);
     expect(code).toMatch(/Impact estime/);
+  });
+});
+
+// ============================================================
+// BC. Portfolio V1.2 — scope banner + deep-links + empty state
+// ============================================================
+describe('BC · Portfolio V1.2 scope coherence banner', () => {
+  const code = readSrc('pages', 'ConsumptionPortfolioPage.jsx');
+
+  it('imports useScope from ScopeContext', () => {
+    expect(code).toMatch(/useScope/);
+    expect(code).toMatch(/ScopeContext/);
+  });
+
+  it('reads selectedSiteId and resetScope from useScope', () => {
+    expect(code).toMatch(/selectedSiteId/);
+    expect(code).toMatch(/resetScope/);
+  });
+
+  it('shows scope banner when selectedSiteId is set', () => {
+    expect(code).toMatch(/selectedSiteId/);
+    expect(code).toMatch(/Vue portefeuille = multi-sites/);
+  });
+
+  it('has "Passer a Tous les sites" button calling resetScope', () => {
+    expect(code).toMatch(/Passer a Tous les sites/);
+    expect(code).toMatch(/resetScope/);
+  });
+
+  it('does not use PageShell (nested inside ConsommationsPage)', () => {
+    expect(code).not.toMatch(/PageShell/);
+  });
+});
+
+describe('BD · Portfolio V1.2 top-list deep-links', () => {
+  const code = readSrc('pages', 'ConsumptionPortfolioPage.jsx');
+
+  it('has TopListActions component with 4 action buttons', () => {
+    expect(code).toMatch(/TopListActions/);
+  });
+
+  it('top-list actions include Explorer link (site_ids param)', () => {
+    expect(code).toMatch(/\/consommations\/explorer\?site_ids=/);
+  });
+
+  it('top-list actions include Diagnostic link (site_id param)', () => {
+    expect(code).toMatch(/\/diagnostic-conso\?site_id=/);
+  });
+
+  it('top-list actions include Voir facture via deepLinkWithContext', () => {
+    expect(code).toMatch(/deepLinkWithContext/);
+  });
+
+  it('top-list actions include Creer action via deepLinkNewAction', () => {
+    expect(code).toMatch(/deepLinkNewAction.*portfolio_toplist/);
+  });
+
+  it('all 4 top-lists use TopListActions', () => {
+    const matches = code.match(/TopListActions/g);
+    // TopListActions definition + 4 usages in top-lists + table rows don't use it
+    expect(matches.length).toBeGreaterThanOrEqual(5);
+  });
+});
+
+describe('BE · Portfolio V1.2 guided empty state', () => {
+  const code = readSrc('pages', 'ConsumptionPortfolioPage.jsx');
+
+  it('has handleResetFilters function', () => {
+    expect(code).toMatch(/handleResetFilters/);
+  });
+
+  it('has hasActiveFilters computed flag', () => {
+    expect(code).toMatch(/hasActiveFilters/);
+  });
+
+  it('has "Reinitialiser filtres" button with RotateCcw icon', () => {
+    expect(code).toMatch(/Reinitialiser filtres/);
+    expect(code).toMatch(/RotateCcw/);
+  });
+
+  it('has "Aller a Import & Analyse" CTA navigating to /consommations/import', () => {
+    expect(code).toMatch(/Aller a Import & Analyse/);
+    expect(code).toMatch(/\/consommations\/import/);
+  });
+
+  it('has Upload icon for import CTA', () => {
+    expect(code).toMatch(/Upload/);
+  });
+
+  it('shows contextual message based on hasActiveFilters', () => {
+    expect(code).toMatch(/hasActiveFilters/);
+    expect(code).toMatch(/reinitialiser les filtres/i);
+    expect(code).toMatch(/Importez des donnees/);
   });
 });

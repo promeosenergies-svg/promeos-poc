@@ -1,21 +1,22 @@
 /**
- * PROMEOS — ConsumptionPortfolioPage (V1.1)
+ * PROMEOS — ConsumptionPortfolioPage (V1.2)
  * Multi-site B2B portfolio view: 4 KPI cards, top-lists "Ou agir",
  * sortable/filterable site table with row actions.
  * V1.1: impact EUR, actions filter, grouped action CTA.
+ * V1.2: scope coherence banner, deep-links on top-lists, guided empty state.
  */
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Zap, Euro, Leaf, ShieldCheck, AlertTriangle, Moon, Activity,
   Search, ArrowRight, FileText, Plus, BarChart3, TrendingDown,
-  CheckSquare, DollarSign,
+  CheckSquare, DollarSign, Info, RotateCcw, Upload,
 } from 'lucide-react';
 import {
-  PageShell, Card, CardBody, SkeletonCard, EmptyState, TrustBadge,
-  KpiCard,
+  Card, CardBody, SkeletonCard, TrustBadge, KpiCard,
 } from '../ui';
 import { useToast } from '../ui';
+import { useScope } from '../contexts/ScopeContext';
 import { getPortfolioSummary, getPortfolioSites } from '../services/api';
 import { deepLinkWithContext, deepLinkNewAction } from '../services/deepLink';
 
@@ -35,10 +36,47 @@ function fmtNum(n, suffix = '') {
   return n.toLocaleString('fr-FR') + (suffix ? ` ${suffix}` : '');
 }
 
+// ─── Top-list row actions (shared by all 4 lists) ─────────────────────────
+function TopListActions({ siteId, navigate }) {
+  return (
+    <span className="inline-flex items-center gap-0.5 ml-2 shrink-0">
+      <button
+        onClick={() => navigate(`/consommations/explorer?site_ids=${siteId}`)}
+        className="p-0.5 rounded hover:bg-blue-50 text-blue-500"
+        title="Explorer"
+      >
+        <BarChart3 size={11} />
+      </button>
+      <button
+        onClick={() => navigate(`/diagnostic-conso?site_id=${siteId}`)}
+        className="p-0.5 rounded hover:bg-amber-50 text-amber-500"
+        title="Diagnostic"
+      >
+        <TrendingDown size={11} />
+      </button>
+      <button
+        onClick={() => navigate(deepLinkWithContext(siteId))}
+        className="p-0.5 rounded hover:bg-gray-100 text-gray-400"
+        title="Voir facture"
+      >
+        <FileText size={11} />
+      </button>
+      <button
+        onClick={() => navigate(deepLinkNewAction({ type: 'consommation', site_id: siteId, source: 'portfolio_toplist' }))}
+        className="p-0.5 rounded hover:bg-green-50 text-green-500"
+        title="Creer action"
+      >
+        <Plus size={11} />
+      </button>
+    </span>
+  );
+}
+
 // ─── Component ─────────────────────────────────────────────────────────────
 export default function ConsumptionPortfolioPage() {
   const navigate = useNavigate();
   const { addToast } = useToast();
+  const { selectedSiteId, resetScope } = useScope();
   const [dates] = useState(defaultDateRange);
 
   // Summary KPIs
@@ -56,6 +94,17 @@ export default function ConsumptionPortfolioPage() {
   const [actionsFilter, setActionsFilter] = useState(null); // null | 'with' | 'without'
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 25;
+
+  const hasActiveFilters = !!search || !!confidenceFilter || anomalyFilter || !!actionsFilter;
+
+  function handleResetFilters() {
+    setSearch('');
+    setConfidenceFilter(null);
+    setAnomalyFilter(false);
+    setActionsFilter(null);
+    setSort('impact_desc');
+    setPage(0);
+  }
 
   // ─── Fetch summary ────────────────────────────────────────────────────
   useEffect(() => {
@@ -131,11 +180,29 @@ export default function ConsumptionPortfolioPage() {
 
   // ─── Render ───────────────────────────────────────────────────────────
   return (
-    <PageShell
-      icon={BarChart3}
-      title="Portefeuille Consommation"
-      subtitle={`Vue multi-sites — ${dates.from} au ${dates.to}`}
-    >
+    <div className="space-y-6">
+      {/* ═══ SCOPE BANNER ═══ */}
+      {selectedSiteId && (
+        <div className="flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
+          <Info size={16} className="text-blue-500 shrink-0" />
+          <p className="text-sm text-blue-700 flex-1">
+            Vue portefeuille = multi-sites. Le filtre site du bandeau est ignore sur cette page.
+          </p>
+          <button
+            onClick={() => resetScope()}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-white border border-blue-300 rounded-lg hover:bg-blue-100 transition"
+          >
+            Passer a Tous les sites
+          </button>
+        </div>
+      )}
+
+      {/* ═══ HEADER ═══ */}
+      <div>
+        <h2 className="text-lg font-bold text-gray-900">Portefeuille Consommation</h2>
+        <p className="text-sm text-gray-500">Vue multi-sites — {dates.from} au {dates.to}</p>
+      </div>
+
       {/* ═══ KPI CARDS ═══ */}
       {summaryLoading ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -152,7 +219,7 @@ export default function ConsumptionPortfolioPage() {
 
       {/* ═══ OU AGIR MAINTENANT ═══ */}
       {summary && (
-        <div className="mt-6">
+        <div>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold text-gray-700">Ou agir maintenant</h2>
             {top5ForAction.length > 0 && (
@@ -176,9 +243,10 @@ export default function ConsumptionPortfolioPage() {
                 {summary.top_impact?.length > 0 ? (
                   <ul className="space-y-2">
                     {summary.top_impact.map((r) => (
-                      <li key={r.site_id} className="flex items-center justify-between text-xs">
+                      <li key={r.site_id} className="flex items-center text-xs">
                         <span className="text-gray-700 truncate flex-1">{r.site_name}</span>
-                        <span className="text-rose-600 font-medium ml-2">{fmtNum(r.impact_eur_estimated, 'EUR')}</span>
+                        <span className="text-rose-600 font-medium ml-2 shrink-0">{fmtNum(r.impact_eur_estimated, 'EUR')}</span>
+                        <TopListActions siteId={r.site_id} navigate={navigate} />
                       </li>
                     ))}
                   </ul>
@@ -198,16 +266,10 @@ export default function ConsumptionPortfolioPage() {
                 {summary.top_drift?.length > 0 ? (
                   <ul className="space-y-2">
                     {summary.top_drift.map((r) => (
-                      <li key={r.site_id} className="flex items-center justify-between text-xs">
+                      <li key={r.site_id} className="flex items-center text-xs">
                         <span className="text-gray-700 truncate flex-1">{r.site_name}</span>
-                        <span className="text-amber-600 font-medium ml-2">{r.diagnostics_count} alertes</span>
-                        <button
-                          onClick={() => navigate(`/diagnostic-conso?site_id=${r.site_id}`)}
-                          className="ml-2 text-blue-500 hover:text-blue-700"
-                          title="Voir diagnostic"
-                        >
-                          <ArrowRight size={12} />
-                        </button>
+                        <span className="text-amber-600 font-medium ml-2 shrink-0">{r.diagnostics_count} alertes</span>
+                        <TopListActions siteId={r.site_id} navigate={navigate} />
                       </li>
                     ))}
                   </ul>
@@ -227,9 +289,10 @@ export default function ConsumptionPortfolioPage() {
                 {summary.top_base_night?.length > 0 ? (
                   <ul className="space-y-2">
                     {summary.top_base_night.map((r) => (
-                      <li key={r.site_id} className="flex items-center justify-between text-xs">
+                      <li key={r.site_id} className="flex items-center text-xs">
                         <span className="text-gray-700 truncate flex-1">{r.site_name}</span>
-                        <span className="text-indigo-600 font-medium ml-2">{r.base_night_pct}%</span>
+                        <span className="text-indigo-600 font-medium ml-2 shrink-0">{r.base_night_pct}%</span>
+                        <TopListActions siteId={r.site_id} navigate={navigate} />
                       </li>
                     ))}
                   </ul>
@@ -249,9 +312,10 @@ export default function ConsumptionPortfolioPage() {
                 {summary.top_peaks?.length > 0 ? (
                   <ul className="space-y-2">
                     {summary.top_peaks.map((r) => (
-                      <li key={r.site_id} className="flex items-center justify-between text-xs">
+                      <li key={r.site_id} className="flex items-center text-xs">
                         <span className="text-gray-700 truncate flex-1">{r.site_name}</span>
-                        <span className="text-red-600 font-medium ml-2">{r.peak_kw} kW</span>
+                        <span className="text-red-600 font-medium ml-2 shrink-0">{r.peak_kw} kW</span>
+                        <TopListActions siteId={r.site_id} navigate={navigate} />
                       </li>
                     ))}
                   </ul>
@@ -265,7 +329,7 @@ export default function ConsumptionPortfolioPage() {
       )}
 
       {/* ═══ SITES TABLE ═══ */}
-      <div className="mt-6">
+      <div>
         <h2 className="text-sm font-semibold text-gray-700 mb-3">Sites du portefeuille</h2>
 
         {/* Filters bar */}
@@ -355,7 +419,33 @@ export default function ConsumptionPortfolioPage() {
             ))}
           </div>
         ) : sites.length === 0 ? (
-          <EmptyState icon={BarChart3} message="Aucun site ne correspond aux filtres" />
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <BarChart3 size={40} className="text-gray-300 mb-4" />
+            <p className="text-sm text-gray-500 mb-1">Aucun site ne correspond aux filtres.</p>
+            <p className="text-xs text-gray-400 mb-4">
+              {hasActiveFilters
+                ? 'Essayez de reinitialiser les filtres pour voir tous les sites.'
+                : 'Importez des donnees pour remplir le portefeuille.'}
+            </p>
+            <div className="flex items-center gap-3">
+              {hasActiveFilters && (
+                <button
+                  onClick={handleResetFilters}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+                >
+                  <RotateCcw size={14} />
+                  Reinitialiser filtres
+                </button>
+              )}
+              <button
+                onClick={() => navigate('/consommations/import')}
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition"
+              >
+                <Upload size={14} />
+                Aller a Import & Analyse
+              </button>
+            </div>
+          </div>
         ) : (
           <>
             <div className="overflow-x-auto">
@@ -478,6 +568,6 @@ export default function ConsumptionPortfolioPage() {
           </>
         )}
       </div>
-    </PageShell>
+    </div>
   );
 }
