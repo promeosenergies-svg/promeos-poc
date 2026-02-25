@@ -2,7 +2,7 @@
  * PROMEOS - Bill Intelligence Page (/bill-intel)
  * Sprint 7.1: invoices overview, anomaly insights with workflow, seed demo, audit-all.
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   getBillingSummary,
@@ -91,6 +91,8 @@ export default function BillIntelPage() {
   const [insightFilter, setInsightFilter] = useState('all');
   const [createdActions, setCreatedActions] = useState(new Set());
   const [pdfSiteId, setPdfSiteId] = useState('');
+  const [invoiceSearch, setInvoiceSearch] = useState('');
+  const [invoiceStatusFilter, setInvoiceStatusFilter] = useState('');
 
   async function fetchData() {
     setLoading(true);
@@ -113,13 +115,24 @@ export default function BillIntelPage() {
 
   useEffect(() => { fetchData(); }, [insightFilter, siteFilter]);
 
-  // Filtrage front sur month_key (period_start commence par YYYY-MM)
-  const filteredInvoices = monthFilter
-    ? invoices.filter(inv => {
+  // Filtrage front : mois, statut, texte libre (N° facture ou PDL)
+  const filteredInvoices = useMemo(() => {
+    return invoices
+      .filter(inv => {
+        if (!monthFilter) return true;
         const d = inv.period_start || inv.issue_date || '';
         return d.startsWith(monthFilter);
       })
-    : invoices;
+      .filter(inv => !invoiceStatusFilter || inv.status === invoiceStatusFilter)
+      .filter(inv => {
+        if (!invoiceSearch) return true;
+        const q = invoiceSearch.toLowerCase();
+        return (
+          (inv.invoice_number || '').toLowerCase().includes(q) ||
+          (inv.pdl_prm || '').toLowerCase().includes(q)
+        );
+      });
+  }, [invoices, monthFilter, invoiceStatusFilter, invoiceSearch]);
 
   async function handleSeedDemo() {
     setSeeding(true);
@@ -367,11 +380,34 @@ export default function BillIntelPage() {
       ) : null}
 
       {/* Invoices table */}
-      {filteredInvoices.length > 0 && (
+      {(filteredInvoices.length > 0 || invoiceSearch || invoiceStatusFilter) && (
         <div>
           <h3 className="text-sm font-semibold text-gray-700 mb-3">
             Factures ({filteredInvoices.length}{monthFilter ? ` — ${monthFilter}` : ''})
           </h3>
+          {/* Filter bar */}
+          <div className="flex flex-wrap gap-2 mb-3 items-center">
+            <input
+              type="text"
+              placeholder="N° facture ou PDL…"
+              value={invoiceSearch}
+              onChange={e => setInvoiceSearch(e.target.value)}
+              className="border border-gray-200 rounded px-2 py-1 text-sm w-48 focus:outline-none focus:ring-1 focus:ring-blue-400"
+            />
+            {['', 'imported', 'audited', 'anomaly', 'archived'].map(s => (
+              <button
+                key={s}
+                onClick={() => setInvoiceStatusFilter(s)}
+                className={`px-2 py-1 rounded text-xs border ${
+                  invoiceStatusFilter === s
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
+                }`}
+              >
+                {s === '' ? 'Tous' : s === 'imported' ? 'Importé' : s === 'audited' ? 'Audité' : s === 'anomaly' ? 'Anomalie' : 'Archivé'}
+              </button>
+            ))}
+          </div>
           <Card>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
