@@ -137,7 +137,7 @@ export default function EssentialsRow({ kpis = {}, sites = [], onOpenMaturite, o
           ? `${totalSurfaceM2.toLocaleString('fr-FR')} m² total`
           : 'Surface non renseignée'}
         ctaLabel="Voir"
-        onCta={() => onNavigate?.('/sites')}
+        onCta={() => onNavigate?.('/patrimoine')}
       />
 
       {/* 4 — Maturité */}

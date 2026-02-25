@@ -1168,3 +1168,53 @@ describe('AF · 405 fix — router registration + debug method', () => {
     expect(billingRoute).toMatch(/assumptions.*not in metrics/);
   });
 });
+
+/* ─── Section AG — CTA & Routes audit: zero dead links (8 tests) ─── */
+describe('AG · CTA & Routes — zero dead links', () => {
+  const appJsx = readSrc('App.jsx');
+  const essentials = readFileSync(resolve(root, 'src/pages/cockpit/EssentialsRow.jsx'), 'utf-8');
+  const regops = readFileSync(resolve(root, 'src/pages/RegOps.jsx'), 'utf-8');
+  const notFound = readFileSync(resolve(root, 'src/pages/NotFound.jsx'), 'utf-8');
+  const deepLink = readSrc('services', 'deepLink.js');
+
+  // --- Route existence ---
+  it('App.jsx defines /patrimoine route', () => {
+    expect(appJsx).toMatch(/path=["']\/patrimoine["']/);
+  });
+
+  it('App.jsx defines /actions/new route with autoCreate', () => {
+    expect(appJsx).toMatch(/path=["']\/actions\/new["']/);
+    expect(appJsx).toMatch(/autoCreate/);
+  });
+
+  it('App.jsx defines /consommations/import nested route', () => {
+    expect(appJsx).toMatch(/path=["']import["']/);
+  });
+
+  // --- Dead link fixes ---
+  it('EssentialsRow Patrimoine CTA navigates to /patrimoine (not /sites)', () => {
+    expect(essentials).toMatch(/onNavigate.*\/patrimoine/);
+    expect(essentials).not.toMatch(/onNavigate.*['"]\/sites['"]/);
+  });
+
+  it('RegOps fallback navigates to /patrimoine (not /sites)', () => {
+    expect(regops).toMatch(/navigate.*\/patrimoine/);
+    expect(regops).not.toMatch(/navigate.*['"]\/sites['"]\)/);
+  });
+
+  // --- NotFound ---
+  it('NotFound shows pathname + expert mode', () => {
+    expect(notFound).toMatch(/pathname/);
+    expect(notFound).toMatch(/isExpert/);
+  });
+
+  // --- Deep-links ---
+  it('deepLink.js exports deepLinkAction and deepLinkNewAction', () => {
+    expect(deepLink).toMatch(/export function deepLinkAction/);
+    expect(deepLink).toMatch(/export function deepLinkNewAction/);
+  });
+
+  it('deepLink.js exports deepLinkWithContext', () => {
+    expect(deepLink).toMatch(/export function deepLinkWithContext/);
+  });
+});
