@@ -1327,35 +1327,37 @@ export default function ConsumptionExplorerPage() {
 
           {isClassic ? (
             /* ── Classic mode: TimeseriesPanel ALWAYS rendered (handles own loading/empty/error) ── */
-            <TimeseriesPanel
-              key={refreshKey}
-              siteIds={siteIds}
-              energyType={energyType}
-              days={days}
-              startDate={startDate}
-              endDate={endDate}
-              unit={unit}
-              mode={mode}
-              sites={sites}
-              availability={availability}
-              granularityOverride={granularity === 'auto' ? null : granularity}
-              onNavigate={handleNavigate}
-              onExtendPeriod={() => setDays(365)}
-              onSelectAll={sites.length ? () => setSiteIds(sites.map(s => s.id)) : undefined}
-              onGenerateDemo={siteIds.length ? handleGenerateDemo : undefined}
-              onMeta={handleMeta}
-            />
-            {/* Benchmark: reference profile comparison (Classic mode) */}
-            {showContent && (
-              <BenchmarkPanel
-                siteId={siteId}
+            <>
+              <TimeseriesPanel
+                key={refreshKey}
+                siteIds={siteIds}
+                energyType={energyType}
                 days={days}
                 startDate={startDate}
                 endDate={endDate}
-                seriesData={null}
-                toast={toast}
+                unit={unit}
+                mode={mode}
+                sites={sites}
+                availability={availability}
+                granularityOverride={granularity === 'auto' ? null : granularity}
+                onNavigate={handleNavigate}
+                onExtendPeriod={() => setDays(365)}
+                onSelectAll={sites.length ? () => setSiteIds(sites.map(s => s.id)) : undefined}
+                onGenerateDemo={siteIds.length ? handleGenerateDemo : undefined}
+                onMeta={handleMeta}
               />
-            )}
+              {/* Benchmark: reference profile comparison (Classic mode) */}
+              {showContent && (
+                <BenchmarkPanel
+                  siteId={siteId}
+                  days={days}
+                  startDate={startDate}
+                  endDate={endDate}
+                  seriesData={null}
+                  toast={toast}
+                />
+              )}
+            </>
           ) : (
             /* ── Expert mode: tab bar always visible + panel routing ── */
             <>
