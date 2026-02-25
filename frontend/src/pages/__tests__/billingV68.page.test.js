@@ -1055,3 +1055,41 @@ describe('Actions CTA — CreateActionModal + action_id (V71)', () => {
     expect(backend).toMatch(/ActionSourceType\.BILLING/);
   });
 });
+
+/* ─── Section AD — CTA Stabilization (6 tests) ─── */
+describe('AD · CTA Stabilization', () => {
+  const app = readFileSync(resolve(__dirname, '../../App.jsx'), 'utf-8');
+  const actionsPage = readFileSync(resolve(__dirname, '../ActionsPage.jsx'), 'utf-8');
+  const billingPage = readFileSync(resolve(__dirname, '../BillingPage.jsx'), 'utf-8');
+  const notFound = readFileSync(resolve(__dirname, '../NotFound.jsx'), 'utf-8');
+
+  it('App.jsx contains route /actions/new', () => {
+    expect(app).toMatch(/path=["']\/actions\/new["']/);
+    expect(app).toMatch(/autoCreate/);
+  });
+
+  it('App.jsx contains route /actions/:actionId', () => {
+    expect(app).toMatch(/path=["']\/actions\/:actionId["']/);
+  });
+
+  it('ActionsPage reads useParams for actionId', () => {
+    expect(actionsPage).toMatch(/useParams/);
+    expect(actionsPage).toMatch(/urlActionId/);
+  });
+
+  it('ActionsPage supports autoCreate prop', () => {
+    expect(actionsPage).toMatch(/autoCreate\s*=\s*false/);
+    expect(actionsPage).toMatch(/autoCreate\s*&&/);
+  });
+
+  it('BillingPage imports CreateActionModal (not createActionFromBillingInsight)', () => {
+    expect(billingPage).toMatch(/import\s+CreateActionModal/);
+    expect(billingPage).not.toMatch(/createActionFromBillingInsight/);
+  });
+
+  it('NotFound.jsx uses useLocation for pathname display', () => {
+    expect(notFound).toMatch(/useLocation/);
+    expect(notFound).toMatch(/pathname/);
+    expect(notFound).toMatch(/isExpert/);
+  });
+});

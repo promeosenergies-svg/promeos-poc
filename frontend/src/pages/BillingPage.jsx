@@ -11,10 +11,10 @@ import {
   getBillingPeriods,
   getCoverageSummary,
   getMissingPeriods,
-  createActionFromBillingInsight,
   importInvoicesCsv,
   importInvoicesPdf,
 } from '../services/api';
+import CreateActionModal from '../components/CreateActionModal';
 import { Card, CardBody, Button, Badge, EmptyState } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
 import CoverageBar from '../components/CoverageBar';
@@ -60,7 +60,8 @@ export default function BillingPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
 
-  const [createdActions, setCreatedActions] = useState(new Set());
+  const [actionMap, setActionMap] = useState(new Map());
+  const [actionModalContext, setActionModalContext] = useState(null);
 
   // Filtres avancés
   const [statusFilter, setStatusFilter] = useState('all');
@@ -192,17 +193,27 @@ export default function BillingPage() {
     fetchAll(siteFilter, periodsOffset, true);
   };
 
-  const handleCreateAction = async (actionKey, period) => {
-    if (createdActions.has(actionKey)) return;
-    try {
-      await createActionFromBillingInsight(
-        `missing-${period.month_key}-${siteFilter || 'all'}`,
-        `Période manquante : ${period.month_key}${period.missing_reason ? ' — ' + period.missing_reason : ''}`,
-        siteFilter ? parseInt(siteFilter) : null,
-      );
-      setCreatedActions(prev => new Set([...prev, actionKey]));
-    } catch { /* ignore */ }
+  const handleCreateAction = (actionKey, period) => {
+    if (actionMap.has(actionKey)) return;
+    setActionModalContext({
+      key: actionKey,
+      prefill: {
+        titre: `Période manquante : ${period.month_key}${period.missing_reason ? ' — ' + period.missing_reason : ''}`,
+        type: 'facture',
+        description: `Période manquante : ${period.month_key}`,
+      },
+      siteId: siteFilter ? parseInt(siteFilter) : null,
+    });
   };
+
+  function handleActionSaved(result) {
+    const key = actionModalContext?.key;
+    if (key) {
+      setActionMap(prev => new Map([...prev, [key, result?.id || true]]));
+    }
+    setActionModalContext(null);
+    toast('Action créée', 'success');
+  }
 
   const hasMore = periodsOffset < periodsTotal;
 
@@ -446,19 +457,13 @@ export default function BillingPage() {
                     <Button
                       size="xs"
                       variant="ghost"
-                      disabled={createdActions.has(`missing-${item.month_key}-${item.site_id}`)}
-                      onClick={() => {
-                        const key = `missing-${item.month_key}-${item.site_id}`;
-                        if (!createdActions.has(key)) {
-                          createActionFromBillingInsight(
-                            `missing-${item.month_key}-${item.site_id}`,
-                            `Période manquante : ${item.month_key} — ${item.site_name}`,
-                            item.site_id,
-                          ).then(() => setCreatedActions(prev => new Set([...prev, key]))).catch(() => {});
-                        }
-                      }}
+                      disabled={actionMap.has(`missing-${item.month_key}-${item.site_id}`)}
+                      onClick={() => handleCreateAction(
+                        `missing-${item.month_key}-${item.site_id}`,
+                        item
+                      )}
                     >
-                      {createdActions.has(`missing-${item.month_key}-${item.site_id}`) ? '✓' : <Zap size={11} />}
+                      {actionMap.has(`missing-${item.month_key}-${item.site_id}`) ? '✓' : <Zap size={11} />}
                     </Button>
                   </div>
                 </div>
@@ -548,7 +553,7 @@ export default function BillingPage() {
                 siteId={siteFilter}
                 activeMonth={activeMonth}
                 onCreateAction={handleCreateAction}
-                createdActions={createdActions}
+                createdActions={new Set(actionMap.keys())}
                 onImport={handleImportClick}
               />
               {hasMore && (
@@ -571,6 +576,16 @@ export default function BillingPage() {
       {/* Hidden file inputs for contextual import */}
       <input ref={csvInputRef} type="file" accept=".csv" className="sr-only" onChange={handleContextualCsvImport} />
       <input ref={pdfInputRef} type="file" accept=".pdf" className="sr-only" onChange={handleContextualPdfImport} />
+
+      <CreateActionModal
+        open={!!actionModalContext}
+        onClose={() => setActionModalContext(null)}
+        onSave={handleActionSaved}
+        prefill={actionModalContext?.prefill}
+        siteId={actionModalContext?.siteId}
+        sourceType="billing"
+        sourceId={actionModalContext?.key}
+      />
     </div>
   );
 }

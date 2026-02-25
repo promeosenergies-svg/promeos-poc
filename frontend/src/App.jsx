@@ -90,6 +90,8 @@ function App() {
                   <Route path="/patrimoine" element={<PageSuspense><Patrimoine /></PageSuspense>} />
                   <Route path="/sites/:id" element={<PageSuspense><Site360 /></PageSuspense>} />
                   <Route path="/actions" element={<PageSuspense><ActionsPage /></PageSuspense>} />
+                  <Route path="/actions/new" element={<PageSuspense><ActionsPage autoCreate /></PageSuspense>} />
+                  <Route path="/actions/:actionId" element={<PageSuspense><ActionsPage /></PageSuspense>} />
                   <Route path="/conformite" element={<PageSuspense><ConformitePage /></PageSuspense>} />
                   <Route path="/conformite/tertiaire" element={<PageSuspense><TertiaireDashboardPage /></PageSuspense>} />
                   <Route path="/conformite/tertiaire/wizard" element={<PageSuspense><TertiaireWizardPage /></PageSuspense>} />
