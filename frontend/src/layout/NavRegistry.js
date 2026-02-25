@@ -206,8 +206,8 @@ export const NAV_SECTIONS = [
     expertOnly: true,
     order: 4,
     items: [
-      { to: '/billing',         icon: CalendarRange, label: 'Timeline facturation', keywords: ['timeline', 'couverture', 'mois', 'manquant', 'periodes'] },
-      { to: '/bill-intel',      icon: Receipt,      label: 'Facturation', keywords: ['factures', 'billing', 'invoices'] },
+      { to: '/bill-intel',      icon: Receipt,       label: 'Factures & anomalies', keywords: ['factures', 'billing', 'invoices', 'anomalies'] },
+      { to: '/billing',         icon: CalendarRange,  label: 'Timeline & couverture', keywords: ['timeline', 'couverture', 'mois', 'manquant', 'periodes'], indent: true },
       { to: '/achat-energie',   icon: ShoppingCart,  label: 'Achats énergie', keywords: ['achat', 'purchase', 'scenarios', 'strategie'] },
       { to: '/achat-assistant', icon: Target,        label: 'Assistant Achat', keywords: ['assistant', 'wizard', 'rfp', 'arenh', 'corridor'] },
     ],
