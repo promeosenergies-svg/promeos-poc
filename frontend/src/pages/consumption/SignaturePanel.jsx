@@ -8,9 +8,14 @@
  *   siteIds     — selected site IDs
  *   energyType  — 'electricity' | 'gas'
  */
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid,
+  Tooltip as RTooltip, ResponsiveContainer,
+} from 'recharts';
 import useEmsTimeseries from './useEmsTimeseries';
 import HeatmapChart from './HeatmapChart';
+import { Card, CardBody } from '../../ui';
 import { BarChart3 } from 'lucide-react';
 
 // French weekday index: 0=Mon, 1=Tue, ..., 5=Sat, 6=Sun
@@ -79,6 +84,31 @@ export default function SignaturePanel({ siteIds = [], energyType = 'electricity
 
   const heatmapData = useMemo(() => aggregateToHeatmap(seriesData), [seriesData]);
 
+  // P1-2: Filter ouvre/weekend + drill-down state
+  const [dayFilter, setDayFilter] = useState('all');
+  const [drillDown, setDrillDown] = useState(null);
+
+  // Build drill-down chart data from raw series for clicked day+hour
+  const drillDownData = useMemo(() => {
+    if (!drillDown || !seriesData?.[0]?.data) return [];
+    const points = [];
+    for (const pt of seriesData[0].data) {
+      if (pt.v == null) continue;
+      const normalized = typeof pt.t === 'string' ? pt.t.replace(' ', 'T') : pt.t;
+      const d = new Date(normalized);
+      if (isNaN(d.getTime())) continue;
+      const frDay = (d.getDay() + 6) % 7;
+      const hour = d.getHours();
+      if (frDay === drillDown.day && hour === drillDown.hour) {
+        points.push({
+          date: d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
+          kwh: Math.round(pt.v * 100) / 100,
+        });
+      }
+    }
+    return points;
+  }, [drillDown, seriesData]);
+
   // Loading state
   if (status === 'loading') {
     return (
@@ -116,22 +146,76 @@ export default function SignaturePanel({ siteIds = [], energyType = 'electricity
 
   return (
     <div className="space-y-3">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      {/* Header + filter */}
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h3 className="text-sm font-semibold text-gray-800">Signature de consommation</h3>
-          <p className="text-xs text-gray-500">Moyenne kWh par créneau horaire (90 derniers jours)</p>
+          <p className="text-xs text-gray-500">Moyenne kWh par creneau horaire (90 derniers jours)</p>
         </div>
-        <span className="text-xs text-gray-400">{totalPoints.toLocaleString('fr-FR')} points</span>
+        <div className="flex items-center gap-2">
+          {/* P1-2: Day filter pills */}
+          {['all', 'weekday', 'weekend'].map(f => (
+            <button
+              key={f}
+              onClick={() => { setDayFilter(f); setDrillDown(null); }}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition ${
+                dayFilter === f ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              {f === 'all' ? 'Semaine typique' : f === 'weekday' ? 'Ouvre' : 'Week-end'}
+            </button>
+          ))}
+          <span className="text-xs text-gray-400 ml-2">{totalPoints.toLocaleString('fr-FR')} pts</span>
+        </div>
       </div>
 
-      {/* Heatmap */}
-      <HeatmapChart data={heatmapData} unit="kWh" />
+      {/* Heatmap — now clickable */}
+      <HeatmapChart
+        data={heatmapData}
+        unit="kWh"
+        filter={dayFilter}
+        onCellClick={(cell) => setDrillDown(cell)}
+      />
+
+      {/* P1-2: Drill-down chart for selected cell */}
+      {drillDown && drillDownData.length > 0 && (
+        <Card>
+          <CardBody>
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-sm font-semibold text-gray-700">
+                Detail : {drillDown.dayLabel} {drillDown.hour}h ({drillDown.period})
+              </h4>
+              <button
+                onClick={() => setDrillDown(null)}
+                className="text-xs text-gray-400 hover:text-gray-600"
+              >
+                Fermer
+              </button>
+            </div>
+            <ResponsiveContainer width="100%" height={180}>
+              <AreaChart data={drillDownData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="date" tick={{ fontSize: 9 }} angle={-30} textAnchor="end" height={40} />
+                <YAxis tick={{ fontSize: 10 }} label={{ value: 'kWh', angle: -90, position: 'insideLeft', style: { fontSize: 10 } }} />
+                <RTooltip />
+                <Area type="monotone" dataKey="kwh" stroke="#3b82f6" fill="#dbeafe" name="kWh" />
+              </AreaChart>
+            </ResponsiveContainer>
+            <p className="text-[10px] text-gray-400 mt-1">
+              {drillDownData.length} points sur 90 jours pour {drillDown.dayLabel} a {drillDown.hour}h
+            </p>
+          </CardBody>
+        </Card>
+      )}
+
+      {drillDown && drillDownData.length === 0 && (
+        <p className="text-xs text-gray-400 text-center py-4">Aucune donnee pour ce creneau.</p>
+      )}
 
       {/* Legend note */}
       <p className="text-[11px] text-gray-400">
-        HP = Heures Pleines (lun–ven 6h–22h) · HC = Heures Creuses (nuits + week-end)
-        · Intensité = conso moyenne par créneau
+        HP = Heures Pleines (lun-ven 6h-22h) · HC = Heures Creuses (nuits + week-end)
+        · Intensite = conso moyenne par creneau
       </p>
     </div>
   );
