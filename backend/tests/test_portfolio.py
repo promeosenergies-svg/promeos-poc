@@ -354,3 +354,37 @@ class TestPortfolioV13:
         data = r.json()
         assert data["totals"]["kwh_total"] == 0
         assert data["coverage"]["sites_with_data"] == 0
+
+
+class TestPortfolioScopeHeader:
+    """X-Site-Id header must NOT filter portfolio results (defense-in-depth)."""
+
+    def test_summary_ignores_x_site_id(self, env):
+        """Sending X-Site-Id should not change summary results."""
+        client, _, sites = env
+        params = {"from": "2025-03-01", "to": "2025-03-31"}
+        r_no_header = client.get("/api/portfolio/consumption/summary", params=params)
+        r_with_header = client.get(
+            "/api/portfolio/consumption/summary",
+            params=params,
+            headers={"X-Site-Id": str(sites[0].id)},
+        )
+        assert r_no_header.status_code == 200
+        assert r_with_header.status_code == 200
+        assert r_no_header.json()["coverage"]["sites_total"] == r_with_header.json()["coverage"]["sites_total"]
+        assert r_no_header.json()["totals"]["kwh_total"] == r_with_header.json()["totals"]["kwh_total"]
+
+    def test_sites_ignores_x_site_id(self, env):
+        """Sending X-Site-Id should not filter the sites list."""
+        client, _, sites = env
+        params = {"from": "2025-03-01", "to": "2025-03-31"}
+        r_no_header = client.get("/api/portfolio/consumption/sites", params=params)
+        r_with_header = client.get(
+            "/api/portfolio/consumption/sites",
+            params=params,
+            headers={"X-Site-Id": str(sites[0].id)},
+        )
+        assert r_no_header.status_code == 200
+        assert r_with_header.status_code == 200
+        assert r_no_header.json()["total"] == r_with_header.json()["total"]
+        assert r_no_header.json()["total"] == 3  # All 3 sites returned regardless

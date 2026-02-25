@@ -1076,8 +1076,8 @@ describe('BG · Portfolio V1.3 guided empty state', () => {
     expect(code).toMatch(/hasActiveFilters/);
   });
 
-  it('has "Reinitialiser filtres" button with RotateCcw icon', () => {
-    expect(code).toMatch(/Reinitialiser filtres/);
+  it('has "Reinitialiser les filtres" button with RotateCcw icon', () => {
+    expect(code).toMatch(/Reinitialiser les filtres/);
     expect(code).toMatch(/RotateCcw/);
   });
 
@@ -1089,7 +1089,7 @@ describe('BG · Portfolio V1.3 guided empty state', () => {
   it('shows contextual message based on hasActiveFilters', () => {
     expect(code).toMatch(/hasActiveFilters/);
     expect(code).toMatch(/reinitialiser les filtres/i);
-    expect(code).toMatch(/Importez des donnees/);
+    expect(code).toMatch(/Importez vos releves|Importez des donnees/);
   });
 });
 
@@ -1111,5 +1111,64 @@ describe('BH · Explorer scope coherence banner', () => {
 
   it('mentions multi-selection is available', () => {
     expect(code).toMatch(/multi-selection/i);
+  });
+});
+
+// ============================================================
+// BI. Portfolio API — skipSiteHeader defense-in-depth
+// ============================================================
+describe('BI · Portfolio API skipSiteHeader', () => {
+  const apiCode = readSrc('services', 'api.js');
+
+  it('interceptor supports skipSiteHeader flag', () => {
+    expect(apiCode).toMatch(/skipSiteHeader/);
+    expect(apiCode).toMatch(/!config\.skipSiteHeader/);
+  });
+
+  it('getPortfolioSummary passes skipSiteHeader: true', () => {
+    expect(apiCode).toMatch(/getPortfolioSummary.*skipSiteHeader:\s*true/);
+  });
+
+  it('getPortfolioSites passes skipSiteHeader: true', () => {
+    expect(apiCode).toMatch(/getPortfolioSites.*skipSiteHeader:\s*true/);
+  });
+});
+
+// ============================================================
+// BJ. Portfolio empty state — Cas A (no data) vs Cas B (filters)
+// ============================================================
+describe('BJ · Portfolio empty state Cas A vs Cas B', () => {
+  const code = readSrc('pages', 'ConsumptionPortfolioPage.jsx');
+
+  it('has Cas A empty state with data-empty="no-data"', () => {
+    expect(code).toMatch(/data-empty="no-data"/);
+    expect(code).toMatch(/Aucune donnee de consommation disponible/);
+  });
+
+  it('has Cas B empty state with data-empty="filters"', () => {
+    expect(code).toMatch(/data-empty="filters"/);
+    expect(code).toMatch(/Aucun site ne correspond aux filtres/);
+  });
+
+  it('Cas A shows import CTA via toConsoImport', () => {
+    expect(code).toMatch(/toConsoImport/);
+    expect(code).toMatch(/Importer des donnees/);
+  });
+
+  it('Cas B shows reset filters button', () => {
+    expect(code).toMatch(/Reinitialiser les filtres/);
+    expect(code).toMatch(/handleResetFilters/);
+  });
+
+  it('Cas B shows active filter chips (search, confidence, anomaly, actions)', () => {
+    expect(code).toMatch(/confidenceFilter/);
+    expect(code).toMatch(/anomalyFilter/);
+    expect(code).toMatch(/actionsFilter/);
+    expect(code).toMatch(/Anomalies uniquement/);
+  });
+
+  it('distinguishes Cas A vs Cas B via sites_total', () => {
+    expect(code).toMatch(/sites_total/);
+    expect(code).toMatch(/cov\?\.sites_total/);
   });
 });

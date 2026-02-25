@@ -447,33 +447,74 @@ export default function ConsumptionPortfolioPage() {
             ))}
           </div>
         ) : sites.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <BarChart3 size={40} className="text-gray-300 mb-4" />
-            <p className="text-sm text-gray-500 mb-1">Aucun site ne correspond aux filtres.</p>
-            <p className="text-xs text-gray-400 mb-4">
-              {hasActiveFilters
-                ? 'Essayez de reinitialiser les filtres pour voir tous les sites.'
-                : 'Importez des donnees pour remplir le portefeuille.'}
-            </p>
-            <div className="flex items-center gap-3">
-              {hasActiveFilters && (
+          /* Empty state: Cas A (aucune donnee) vs Cas B (filtres trop restrictifs) */
+          (cov?.sites_total || 0) === 0 ? (
+            /* Cas A: aucune donnee du tout */
+            <div className="flex flex-col items-center justify-center py-12 text-center" data-empty="no-data">
+              <BarChart3 size={40} className="text-gray-300 mb-4" />
+              <p className="text-sm text-gray-500 mb-1">Aucune donnee de consommation disponible sur la periode selectionnee.</p>
+              <p className="text-xs text-gray-400 mb-4">
+                Importez vos releves ou changez la periode pour voir vos sites.
+              </p>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => navigate(toConsoImport())}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition"
+                >
+                  <Upload size={14} />
+                  Importer des donnees
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* Cas B: filtres trop restrictifs */
+            <div className="flex flex-col items-center justify-center py-12 text-center" data-empty="filters">
+              <Search size={40} className="text-gray-300 mb-4" />
+              <p className="text-sm text-gray-500 mb-1">Aucun site ne correspond aux filtres.</p>
+              <p className="text-xs text-gray-400 mb-2">
+                {cov.sites_total} sites existent mais sont masques par vos criteres.
+              </p>
+              {/* Active filter chips */}
+              <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
+                {search && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-gray-100 text-gray-600">
+                    Recherche : « {search} »
+                  </span>
+                )}
+                {confidenceFilter && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-blue-100 text-blue-600">
+                    Confiance : {confidenceFilter === 'high' ? 'Haute' : confidenceFilter === 'medium' ? 'Moyenne' : 'Basse'}
+                  </span>
+                )}
+                {anomalyFilter && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-amber-100 text-amber-600">
+                    Anomalies uniquement
+                  </span>
+                )}
+                {actionsFilter && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-green-100 text-green-600">
+                    {actionsFilter === 'with' ? 'Avec actions' : 'Sans action'}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-3">
                 <button
                   onClick={handleResetFilters}
                   className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
                 >
                   <RotateCcw size={14} />
-                  Reinitialiser filtres
+                  Reinitialiser les filtres
                 </button>
-              )}
-              <button
-                onClick={() => navigate(toConsoImport())}
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition"
-              >
-                <Upload size={14} />
-                Importer des donnees
-              </button>
+                <button
+                  onClick={() => navigate(toConsoImport())}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+                >
+                  <Upload size={14} />
+                  Importer des donnees
+                </button>
+              </div>
             </div>
-          </div>
+          )
         ) : (
           <>
             <div className="overflow-x-auto">
