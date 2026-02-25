@@ -17,6 +17,7 @@ import { Card, CardBody, Button, Badge, EmptyState } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
 import CoverageBar from '../components/CoverageBar';
 import BillingTimeline from '../components/BillingTimeline';
+import { useExpertMode } from '../contexts/ExpertModeContext';
 
 const PAGE_TITLE = 'Timeline & Couverture Facturation';
 
@@ -35,6 +36,7 @@ function KpiChip({ icon: Icon, label, value, color }) {
 export default function BillingPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { isExpert } = useExpertMode();
 
   // Filtres depuis l'URL (?site_id=X&month=YYYY-MM)
   const [siteFilter, setSiteFilter] = useState(searchParams.get('site_id') || '');
@@ -73,10 +75,9 @@ export default function BillingPage() {
     if (siteId) params.site_id = siteId;
 
     try {
-      const [summaryData, periodsData, missingData] = await Promise.all([
+      const [summaryData, periodsData] = await Promise.all([
         getCoverageSummary(params),
         getBillingPeriods({ ...params, limit: LIMIT, offset }),
-        offset === 0 ? getMissingPeriods({ limit: 10 }) : Promise.resolve(null),
       ]);
 
       setSummary(summaryData);
@@ -88,15 +89,34 @@ export default function BillingPage() {
       } else {
         setPeriods(periodsData.periods);
       }
-
-      if (missingData) setMissingPeriods(missingData.items || []);
-    } catch {
-      setError('Impossible de charger les données de facturation.');
-    } finally {
+    } catch (err) {
+      const status = err?.response?.status;
+      if (status === 404) {
+        setSiteFilter('');
+        setError('Site introuvable. Retour à la vue tous les sites.');
+      } else {
+        if (isExpert) console.error('[BillingPage] loadData error:', err);
+        setError('Impossible de charger les données de facturation.');
+      }
       setLoading(false);
       setLoadingMore(false);
+      return;
     }
-  }, []);
+
+    setLoading(false);
+    setLoadingMore(false);
+
+    // Missing-periods : non-bloquant, best-effort (offset 0 only)
+    if (offset === 0) {
+      try {
+        const missingData = await getMissingPeriods({ limit: 10 });
+        setMissingPeriods(missingData.items || []);
+      } catch (err) {
+        if (isExpert) console.warn('[BillingPage] getMissingPeriods failed (non-bloquant):', err);
+        setMissingPeriods([]);
+      }
+    }
+  }, [isExpert]);
 
   useEffect(() => {
     fetchAll(siteFilter, 0, false);
