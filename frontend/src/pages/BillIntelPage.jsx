@@ -2,7 +2,7 @@
  * PROMEOS - Bill Intelligence Page (/bill-intel)
  * Sprint 7.1: invoices overview, anomaly insights with workflow, seed demo, audit-all.
  */
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   getBillingSummary,
@@ -96,6 +96,8 @@ export default function BillIntelPage() {
   const [invoiceStatusFilter, setInvoiceStatusFilter] = useState('');
   const [periodPreset, setPeriodPreset] = useState('all');
   const [sites, setSites] = useState([]);
+  const csvInputRef = useRef(null);
+  const pdfInputRef = useRef(null);
 
   async function fetchData() {
     setLoading(true);
@@ -176,18 +178,24 @@ export default function BillIntelPage() {
     setAuditing(false);
   }
 
+  function handleCsvClick() {
+    if (isExpert) console.log('[BillIntelPage] CSV button clicked, pdfSiteId:', pdfSiteId);
+    csvInputRef.current?.click();
+  }
+
   async function handleCsvImport(e) {
     const file = e.target.files[0];
     if (!file) return;
-    if (isExpert) console.log('[BillIntelPage] CSV import start:', file.name, file.size, 'bytes');
+    if (isExpert) console.log('[BillIntelPage] CSV file selected:', file.name, file.size, 'bytes');
     try {
+      if (isExpert) console.log('[BillIntelPage] CSV import request → POST /billing/import-csv');
       const result = await importInvoicesCsv(file);
       if (isExpert) console.log('[BillIntelPage] CSV import response:', result);
       track('billing_csv_import', { filename: file.name });
       toast(`Import CSV réussi : ${result?.imported ?? '?'} facture(s) importée(s)`, 'success');
       await fetchData();
     } catch (err) {
-      if (isExpert) console.error('[BillIntelPage] CSV import error:', err);
+      if (isExpert) console.error('[BillIntelPage] CSV import error:', err?.response?.status, err?.response?.data, err);
       toast('Erreur lors de l\'import CSV', 'error');
     }
     e.target.value = '';
@@ -201,18 +209,24 @@ export default function BillIntelPage() {
     } catch { /* ignore */ }
   }
 
+  function handlePdfClick() {
+    if (isExpert) console.log('[BillIntelPage] PDF button clicked, pdfSiteId:', pdfSiteId);
+    pdfInputRef.current?.click();
+  }
+
   async function handlePdfImport(e) {
     const file = e.target.files[0];
     if (!file || !pdfSiteId) return;
-    if (isExpert) console.log('[BillIntelPage] PDF import start:', file.name, file.size, 'bytes, site_id:', pdfSiteId);
+    if (isExpert) console.log('[BillIntelPage] PDF file selected:', file.name, file.size, 'bytes, site_id:', pdfSiteId);
     try {
+      if (isExpert) console.log('[BillIntelPage] PDF import request → POST /billing/import-pdf, site_id:', pdfSiteId);
       const result = await importInvoicesPdf(Number(pdfSiteId), file);
       if (isExpert) console.log('[BillIntelPage] PDF import response:', result);
       track('billing_pdf_import', { filename: file.name });
       toast(`Import PDF réussi : facture ${result?.invoice_id ?? ''} (confiance ${result?.confidence ?? '?'})`, 'success');
       await fetchData();
     } catch (err) {
-      if (isExpert) console.error('[BillIntelPage] PDF import error:', err);
+      if (isExpert) console.error('[BillIntelPage] PDF import error:', err?.response?.status, err?.response?.data, err);
       toast('Erreur lors de l\'import PDF', 'error');
     }
     e.target.value = '';
@@ -241,15 +255,17 @@ export default function BillIntelPage() {
               <CalendarRange size={14} /> Voir timeline
             </Button>
           )}
-          <label
-            className={`inline-flex items-center gap-2 ${!pdfSiteId ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            disabled={!pdfSiteId}
+            onClick={handleCsvClick}
             title={!pdfSiteId ? 'Sélectionnez un site' : undefined}
           >
-            <Button variant="secondary" size="sm" as="span" disabled={!pdfSiteId}>
-              <Upload size={14} /> Importer CSV
-            </Button>
-            <input type="file" accept=".csv" className="sr-only" onChange={handleCsvImport} disabled={!pdfSiteId} />
-          </label>
+            <Upload size={14} /> Importer CSV
+          </Button>
+          <input ref={csvInputRef} type="file" accept=".csv" className="sr-only" onChange={handleCsvImport} />
           <div className="inline-flex items-center gap-1">
             <select
               value={pdfSiteId}
@@ -261,15 +277,17 @@ export default function BillIntelPage() {
                 <option key={s.id} value={s.id}>{s.nom}</option>
               ))}
             </select>
-            <label
-              className={`inline-flex items-center gap-2 ${!pdfSiteId ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled={!pdfSiteId}
+              onClick={handlePdfClick}
               title={!pdfSiteId ? 'Sélectionnez un site' : undefined}
             >
-              <Button variant="secondary" size="sm" as="span" disabled={!pdfSiteId}>
-                <Upload size={14} /> Importer PDF
-              </Button>
-              <input type="file" accept=".pdf" className="sr-only" onChange={handlePdfImport} disabled={!pdfSiteId} />
-            </label>
+              <Upload size={14} /> Importer PDF
+            </Button>
+            <input ref={pdfInputRef} type="file" accept=".pdf" className="sr-only" onChange={handlePdfImport} />
           </div>
           {hasData && (
             <Button size="sm" onClick={handleAuditAll} disabled={auditing}>
@@ -324,12 +342,9 @@ export default function BillIntelPage() {
               <Button onClick={handleSeedDemo} disabled={seeding}>
                 <Zap size={14} /> {seeding ? 'Génération...' : 'Générer démo (5 factures)'}
               </Button>
-              <label className="inline-flex items-center gap-2 cursor-pointer">
-                <Button variant="secondary" as="span">
-                  <Upload size={14} /> Importer CSV
-                </Button>
-                <input type="file" accept=".csv" className="sr-only" onChange={handleCsvImport} />
-              </label>
+              <Button type="button" variant="secondary" onClick={handleCsvClick}>
+                <Upload size={14} /> Importer CSV
+              </Button>
             </div>
           </CardBody>
         </Card>

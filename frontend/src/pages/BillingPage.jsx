@@ -86,6 +86,19 @@ export default function BillingPage() {
       }
     } catch (err) {
       const status = err?.response?.status;
+      // Build comprehensive debug payload for Expert mode
+      const debugPayload = {
+        endpoint: err?.config?.url || '/billing/periods',
+        params: err?.config?.params || params,
+        status: status || 0,
+        contentType: err?.response?.headers?.['content-type'] || 'N/A',
+        bodySnippet: typeof err?.response?.data === 'string'
+          ? err.response.data.slice(0, 120)
+          : JSON.stringify(err?.response?.data || err?.message || 'no body').slice(0, 120),
+        orgHeader: err?.config?.headers?.['X-Org-Id'] || 'missing',
+      };
+      if (isExpert) console.error('[BillingPage] getBillingPeriods FAILED:', debugPayload, err);
+
       if (status === 404 && siteId) {
         // P0: purge stale siteId from localStorage scope
         try {
@@ -99,14 +112,17 @@ export default function BillingPage() {
         setSiteFilter('');
         const baseMsg = 'Site introuvable. Retour à la vue tous les sites.';
         if (isExpert) {
-          const endpoint = err?.config?.url || '/billing/periods';
-          setError(`${baseMsg} [debug: endpoint=${endpoint}, status=404, site_id=${siteId}]`);
+          setError(`${baseMsg} [debug: endpoint=${debugPayload.endpoint}, status=404, site_id=${siteId}, org=${debugPayload.orgHeader}, ct=${debugPayload.contentType}]`);
         } else {
           setError(baseMsg);
         }
       } else {
-        if (isExpert) console.error('[BillingPage] loadData error:', err);
-        setError('Impossible de charger les données de facturation.');
+        const baseMsg = 'Impossible de charger les données de facturation.';
+        if (isExpert) {
+          setError(`${baseMsg} [debug: endpoint=${debugPayload.endpoint}, status=${debugPayload.status}, org=${debugPayload.orgHeader}, ct=${debugPayload.contentType}, body=${debugPayload.bodySnippet}]`);
+        } else {
+          setError(baseMsg);
+        }
       }
       setLoading(false);
       setLoadingMore(false);

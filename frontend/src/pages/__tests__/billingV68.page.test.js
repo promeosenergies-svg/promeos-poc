@@ -446,8 +446,9 @@ describe('BillIntelPage.jsx — P0 imports UX', () => {
     expect(code).toMatch(/Importer CSV[\s\S]{0,300}disabled=\{!pdfSiteId\}|disabled=\{!pdfSiteId\}[\s\S]{0,300}Importer CSV/);
   });
 
-  it('CSV file input has disabled prop', () => {
-    expect(code).toMatch(/accept=["'].csv["'][\s\S]{0,200}disabled/);
+  it('CSV button uses ref-based file picker (csvInputRef)', () => {
+    expect(code).toMatch(/csvInputRef/);
+    expect(code).toMatch(/handleCsvClick/);
   });
 
   it('shows tooltip Sélectionnez un site when no site selected', () => {
@@ -463,11 +464,14 @@ describe('BillIntelPage.jsx — P0 imports UX', () => {
   });
 
   it('handlePdfImport calls toast on success', () => {
-    expect(code).toMatch(/handlePdfImport[\s\S]{0,500}toast\(/);
+    // Extract handlePdfImport function body specifically
+    const fnBody = code.match(/async function handlePdfImport[\s\S]{0,1500}/)?.[0] || '';
+    expect(fnBody).toMatch(/toast\(/);
   });
 
   it('handlePdfImport calls toast on error', () => {
-    expect(code).toMatch(/handlePdfImport[\s\S]{0,800}catch[\s\S]{0,200}toast\(/);
+    const fnBody = code.match(/async function handlePdfImport[\s\S]{0,1500}/)?.[0] || '';
+    expect(fnBody).toMatch(/catch[\s\S]{0,300}toast\(/);
   });
 
   it('pre-fills pdfSiteId from first site when no siteFilter', () => {
@@ -478,12 +482,20 @@ describe('BillIntelPage.jsx — P0 imports UX', () => {
     expect(code).toMatch(/Importer PDF[\s\S]{0,500}S.lectionnez un site|S.lectionnez un site[\s\S]{0,500}Importer PDF/);
   });
 
-  it('Expert logs on CSV import start (file name + size)', () => {
-    expect(code).toMatch(/isExpert[\s\S]{0,100}CSV import start/);
+  it('Expert logs on CSV button click', () => {
+    expect(code).toMatch(/isExpert[\s\S]{0,100}CSV button clicked/);
   });
 
-  it('Expert logs on PDF import start (file name + site_id)', () => {
-    expect(code).toMatch(/isExpert[\s\S]{0,100}PDF import start/);
+  it('Expert logs on CSV file selected', () => {
+    expect(code).toMatch(/isExpert[\s\S]{0,100}CSV file selected/);
+  });
+
+  it('Expert logs on PDF button click', () => {
+    expect(code).toMatch(/isExpert[\s\S]{0,100}PDF button clicked/);
+  });
+
+  it('Expert logs on PDF file selected', () => {
+    expect(code).toMatch(/isExpert[\s\S]{0,100}PDF file selected/);
   });
 });
 
@@ -535,5 +547,69 @@ describe('api.js — billing routes use /billing/ prefix', () => {
 
   it('importInvoicesPdf uses /billing/import-pdf', () => {
     expect(code).toMatch(/importInvoicesPdf[\s\S]{0,200}\/billing\/import-pdf/);
+  });
+});
+
+// ============================================================
+// R. BillingPage.jsx — Expert debug payload on getBillingPeriods error
+// ============================================================
+describe('BillingPage.jsx — Expert debug payload', () => {
+  const code = readSrc('pages', 'BillingPage.jsx');
+
+  it('builds debugPayload object with endpoint, params, status, contentType, bodySnippet, orgHeader', () => {
+    expect(code).toMatch(/debugPayload/);
+    expect(code).toMatch(/debugPayload[\s\S]{0,300}endpoint/);
+    expect(code).toMatch(/debugPayload[\s\S]{0,300}status/);
+    expect(code).toMatch(/debugPayload[\s\S]{0,300}contentType/);
+    expect(code).toMatch(/debugPayload[\s\S]{0,300}bodySnippet/);
+    expect(code).toMatch(/debugPayload[\s\S]{0,300}orgHeader/);
+  });
+
+  it('console.error logs debugPayload when isExpert', () => {
+    expect(code).toMatch(/isExpert[\s\S]{0,100}getBillingPeriods FAILED[\s\S]{0,50}debugPayload/);
+  });
+
+  it('displays debug info in error banner for non-404 errors in Expert mode', () => {
+    expect(code).toMatch(/debugPayload\.endpoint[\s\S]{0,200}debugPayload\.status/);
+    expect(code).toMatch(/org=.*debugPayload\.orgHeader/);
+    expect(code).toMatch(/ct=.*debugPayload\.contentType/);
+    expect(code).toMatch(/body=.*debugPayload\.bodySnippet/);
+  });
+});
+
+// ============================================================
+// S. BillIntelPage.jsx — ref-based file picker pattern
+// ============================================================
+describe('BillIntelPage.jsx — ref-based file picker', () => {
+  const code = readSrc('pages', 'BillIntelPage.jsx');
+
+  it('imports useRef', () => {
+    expect(code).toMatch(/useRef/);
+  });
+
+  it('declares csvInputRef and pdfInputRef', () => {
+    expect(code).toMatch(/csvInputRef\s*=\s*useRef/);
+    expect(code).toMatch(/pdfInputRef\s*=\s*useRef/);
+  });
+
+  it('handleCsvClick triggers csvInputRef.current.click()', () => {
+    expect(code).toMatch(/handleCsvClick[\s\S]{0,200}csvInputRef\.current[\s\S]{0,20}click/);
+  });
+
+  it('handlePdfClick triggers pdfInputRef.current.click()', () => {
+    expect(code).toMatch(/handlePdfClick[\s\S]{0,200}pdfInputRef\.current[\s\S]{0,20}click/);
+  });
+
+  it('CSV button uses type="button" and onClick={handleCsvClick}', () => {
+    expect(code).toMatch(/handleCsvClick[\s\S]{0,300}Importer CSV|Importer CSV[\s\S]{0,300}handleCsvClick/);
+  });
+
+  it('PDF button uses type="button" and onClick={handlePdfClick}', () => {
+    expect(code).toMatch(/handlePdfClick[\s\S]{0,300}Importer PDF|Importer PDF[\s\S]{0,300}handlePdfClick/);
+  });
+
+  it('hidden input refs have correct accept attributes', () => {
+    expect(code).toMatch(/ref=\{csvInputRef\}[\s\S]{0,100}accept=["'].csv["']/);
+    expect(code).toMatch(/ref=\{pdfInputRef\}[\s\S]{0,100}accept=["'].pdf["']/);
   });
 });
