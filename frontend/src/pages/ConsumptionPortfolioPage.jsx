@@ -1,16 +1,17 @@
 /**
- * PROMEOS — ConsumptionPortfolioPage (V1.2)
- * Multi-site B2B portfolio view: 4 KPI cards, top-lists "Ou agir",
- * sortable/filterable site table with row actions.
- * V1.1: impact EUR, actions filter, grouped action CTA.
- * V1.2: scope coherence banner, deep-links on top-lists, guided empty state.
+ * PROMEOS — ConsumptionPortfolioPage (V1.3)
+ * Vue pilotage multi-sites B2B : KPIs, top-lists "Ou agir", table sites.
+ *
+ * V1.3: route registry, scope coherence, row click → Explorer,
+ *       bandeau pilotage, couverture tooltip, actions column smart.
  */
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Zap, Euro, Leaf, ShieldCheck, AlertTriangle, Moon, Activity,
-  Search, ArrowRight, FileText, Plus, BarChart3, TrendingDown,
-  CheckSquare, DollarSign, Info, RotateCcw, Upload,
+  Search, FileText, Plus, BarChart3, TrendingDown,
+  CheckSquare, DollarSign, Info, RotateCcw, Upload, HelpCircle,
+  Eye,
 } from 'lucide-react';
 import {
   Card, CardBody, SkeletonCard, TrustBadge, KpiCard,
@@ -18,9 +19,11 @@ import {
 import { useToast } from '../ui';
 import { useScope } from '../contexts/ScopeContext';
 import { getPortfolioSummary, getPortfolioSites } from '../services/api';
-import { deepLinkWithContext, deepLinkNewAction } from '../services/deepLink';
+import {
+  toConsoExplorer, toConsoDiag, toBillIntel, toActionNew, toAction, toConsoImport,
+} from '../services/routes';
 
-// ─── Date helpers ──────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────
 function defaultDateRange() {
   const to = new Date();
   const from = new Date();
@@ -36,35 +39,41 @@ function fmtNum(n, suffix = '') {
   return n.toLocaleString('fr-FR') + (suffix ? ` ${suffix}` : '');
 }
 
+function fmtDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
 // ─── Top-list row actions (shared by all 4 lists) ─────────────────────────
 function TopListActions({ siteId, navigate }) {
   return (
     <span className="inline-flex items-center gap-0.5 ml-2 shrink-0">
       <button
-        onClick={() => navigate(`/consommations/explorer?site_ids=${siteId}`)}
+        onClick={(e) => { e.stopPropagation(); navigate(toConsoExplorer({ site_id: siteId })); }}
         className="p-0.5 rounded hover:bg-blue-50 text-blue-500"
-        title="Explorer"
+        title="Explorer ce site"
       >
         <BarChart3 size={11} />
       </button>
       <button
-        onClick={() => navigate(`/diagnostic-conso?site_id=${siteId}`)}
+        onClick={(e) => { e.stopPropagation(); navigate(toConsoDiag({ site_id: siteId })); }}
         className="p-0.5 rounded hover:bg-amber-50 text-amber-500"
         title="Diagnostic"
       >
         <TrendingDown size={11} />
       </button>
       <button
-        onClick={() => navigate(deepLinkWithContext(siteId))}
+        onClick={(e) => { e.stopPropagation(); navigate(toBillIntel({ site_id: siteId })); }}
         className="p-0.5 rounded hover:bg-gray-100 text-gray-400"
-        title="Voir facture"
+        title="Voir factures"
       >
         <FileText size={11} />
       </button>
       <button
-        onClick={() => navigate(deepLinkNewAction({ type: 'consommation', site_id: siteId, source: 'portfolio_toplist' }))}
+        onClick={(e) => { e.stopPropagation(); navigate(toActionNew({ source_type: 'consommation', site_id: siteId, source: 'portfolio_toplist' })); }}
         className="p-0.5 rounded hover:bg-green-50 text-green-500"
-        title="Creer action"
+        title="Creer une action"
       >
         <Plus size={11} />
       </button>
@@ -76,7 +85,7 @@ function TopListActions({ siteId, navigate }) {
 export default function ConsumptionPortfolioPage() {
   const navigate = useNavigate();
   const { addToast } = useToast();
-  const { selectedSiteId, resetScope } = useScope();
+  const { selectedSiteId, resetScope, scopeLabel } = useScope();
   const [dates] = useState(defaultDateRange);
 
   // Summary KPIs
@@ -91,7 +100,7 @@ export default function ConsumptionPortfolioPage() {
   const [search, setSearch] = useState('');
   const [confidenceFilter, setConfidenceFilter] = useState(null);
   const [anomalyFilter, setAnomalyFilter] = useState(false);
-  const [actionsFilter, setActionsFilter] = useState(null); // null | 'with' | 'without'
+  const [actionsFilter, setActionsFilter] = useState(null);
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 25;
 
@@ -138,8 +147,6 @@ export default function ConsumptionPortfolioPage() {
   }, [dates.from, dates.to, sort, confidenceFilter, anomalyFilter, actionsFilter, search, page]);
 
   useEffect(() => { fetchSites(); }, [fetchSites]);
-
-  // Reset page on filter changes
   useEffect(() => { setPage(0); }, [sort, search, confidenceFilter, anomalyFilter, actionsFilter]);
 
   // ─── Computed ─────────────────────────────────────────────────────────
@@ -157,10 +164,13 @@ export default function ConsumptionPortfolioPage() {
     return 'low';
   }, [cov]);
 
-  // Top 5 sites for grouped action CTA
+  const coveragePct = useMemo(() => {
+    if (!cov || !cov.sites_total) return 0;
+    return Math.round((cov.sites_with_data / cov.sites_total) * 100);
+  }, [cov]);
+
   const top5ForAction = useMemo(() => {
     if (!summary?.top_impact?.length && !summary?.top_drift?.length) return [];
-    // Prefer top_impact, fallback to top_drift
     const pool = summary.top_impact?.length ? summary.top_impact : summary.top_drift || [];
     return pool.slice(0, 5);
   }, [summary]);
@@ -168,14 +178,19 @@ export default function ConsumptionPortfolioPage() {
   // ─── Grouped action handler ──────────────────────────────────────────
   function handleGroupedAction() {
     if (top5ForAction.length === 0) return;
-    const siteIds = top5ForAction.map(r => r.site_id).join(',');
-    const titre = `Campagne portfolio — ${top5ForAction.length} sites prioritaires`;
-    navigate(deepLinkNewAction({
-      type: 'consommation',
+    const siteIds = top5ForAction.map(r => r.site_id);
+    navigate(toActionNew({
+      source_type: 'consommation',
       source: 'portfolio_campagne',
-      titre,
-      site_id: top5ForAction[0].site_id,
-    }) + `&campaign_sites=${siteIds}`);
+      title: `Campagne portfolio — ${siteIds.length} sites prioritaires`,
+      site_id: siteIds[0],
+      site_ids: siteIds,
+    }));
+  }
+
+  // ─── Row click → Explorer ─────────────────────────────────────────────
+  function handleRowClick(row) {
+    navigate(toConsoExplorer({ site_id: row.site_id }));
   }
 
   // ─── Render ───────────────────────────────────────────────────────────
@@ -186,21 +201,35 @@ export default function ConsumptionPortfolioPage() {
         <div className="flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
           <Info size={16} className="text-blue-500 shrink-0" />
           <p className="text-sm text-blue-700 flex-1">
-            Vue portefeuille = multi-sites. Le filtre site du bandeau est ignore sur cette page.
+            <strong>Portefeuille = vue multi-sites.</strong> Le bandeau indique « {scopeLabel} »,
+            mais cette page affiche tous vos sites. Pour explorer un site seul, cliquez sur sa ligne.
           </p>
           <button
             onClick={() => resetScope()}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-white border border-blue-300 rounded-lg hover:bg-blue-100 transition"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-white border border-blue-300 rounded-lg hover:bg-blue-100 transition shrink-0"
           >
             Passer a Tous les sites
           </button>
         </div>
       )}
 
-      {/* ═══ HEADER ═══ */}
-      <div>
-        <h2 className="text-lg font-bold text-gray-900">Portefeuille Consommation</h2>
-        <p className="text-sm text-gray-500">Vue multi-sites — {dates.from} au {dates.to}</p>
+      {/* ═══ PILOTAGE HEADER ═══ */}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-bold text-gray-900">Portefeuille Consommation</h2>
+          <p className="text-sm text-gray-500">
+            Vous pilotez {cov?.sites_total ?? '—'} sites sur la periode
+            du {fmtDate(dates.from)} au {fmtDate(dates.to)}
+          </p>
+        </div>
+        {cov && (
+          <div className="flex items-center gap-1.5 shrink-0" title="La couverture indique le % de sites avec des releves sur la periode. Plus elle est elevee, plus les KPIs sont fiables.">
+            <span className={`text-sm font-semibold ${coveragePct >= 80 ? 'text-green-600' : coveragePct >= 50 ? 'text-amber-600' : 'text-red-600'}`}>
+              Couverture {coveragePct}%
+            </span>
+            <HelpCircle size={13} className="text-gray-400 cursor-help" />
+          </div>
+        )}
       </div>
 
       {/* ═══ KPI CARDS ═══ */}
@@ -211,9 +240,19 @@ export default function ConsumptionPortfolioPage() {
       ) : summary ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <KpiCard icon={Zap} label="kWh total" value={fmtNum(Math.round(tot?.kwh_total), 'kWh')} />
-          <KpiCard icon={Euro} label="EUR total" value={fmtNum(Math.round(tot?.eur_total), 'EUR')} sub={tot?.eur_source === 'estime' ? 'Estime' : 'Facture'} />
-          <KpiCard icon={Leaf} label="CO2e" value={fmtNum(Math.round(tot?.co2_total), 'kg')} sub="ADEME 2024" />
-          <KpiCard icon={ShieldCheck} label="Couverture" value={`${cov?.sites_with_data || 0} / ${cov?.sites_total || 0}`} sub={confLevel ? `Confiance ${confLevel}` : undefined} />
+          <KpiCard
+            icon={Euro}
+            label="Cout estime"
+            value={fmtNum(Math.round(tot?.eur_total), 'EUR')}
+            sub={tot?.eur_source === 'estime' ? 'Estimation a 0,18 EUR/kWh' : 'Facture'}
+          />
+          <KpiCard icon={Leaf} label="Emissions CO2" value={fmtNum(Math.round(tot?.co2_total), 'kg')} sub="Facteur ADEME 2024" />
+          <KpiCard
+            icon={ShieldCheck}
+            label="Couverture donnees"
+            value={`${cov?.sites_with_data || 0} / ${cov?.sites_total || 0} sites`}
+            sub={confLevel ? `Confiance ${confLevel === 'high' ? 'haute' : confLevel === 'medium' ? 'moyenne' : 'basse'}` : undefined}
+          />
         </div>
       ) : null}
 
@@ -221,14 +260,14 @@ export default function ConsumptionPortfolioPage() {
       {summary && (
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-gray-700">Ou agir maintenant</h2>
+            <h2 className="text-sm font-semibold text-gray-700">Ou agir en priorite</h2>
             {top5ForAction.length > 0 && (
               <button
                 onClick={handleGroupedAction}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition"
               >
                 <CheckSquare size={14} />
-                Creer action portefeuille ({top5ForAction.length} sites)
+                Lancer campagne ({top5ForAction.length} sites)
               </button>
             )}
           </div>
@@ -238,7 +277,7 @@ export default function ConsumptionPortfolioPage() {
               <CardBody>
                 <div className="flex items-center gap-2 mb-3">
                   <DollarSign size={16} className="text-rose-500" />
-                  <h3 className="text-sm font-semibold text-gray-700">Impact estime</h3>
+                  <h3 className="text-sm font-semibold text-gray-700">Impact financier estime</h3>
                 </div>
                 {summary.top_impact?.length > 0 ? (
                   <ul className="space-y-2">
@@ -284,7 +323,7 @@ export default function ConsumptionPortfolioPage() {
               <CardBody>
                 <div className="flex items-center gap-2 mb-3">
                   <Moon size={16} className="text-indigo-500" />
-                  <h3 className="text-sm font-semibold text-gray-700">Base nocturne elevee</h3>
+                  <h3 className="text-sm font-semibold text-gray-700">Consommation nocturne</h3>
                 </div>
                 {summary.top_base_night?.length > 0 ? (
                   <ul className="space-y-2">
@@ -330,11 +369,10 @@ export default function ConsumptionPortfolioPage() {
 
       {/* ═══ SITES TABLE ═══ */}
       <div>
-        <h2 className="text-sm font-semibold text-gray-700 mb-3">Sites du portefeuille</h2>
+        <h2 className="text-sm font-semibold text-gray-700 mb-3">Tous les sites</h2>
 
         {/* Filters bar */}
         <div className="flex flex-wrap items-center gap-3 mb-3">
-          {/* Search */}
           <div className="relative">
             <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
@@ -346,7 +384,6 @@ export default function ConsumptionPortfolioPage() {
             />
           </div>
 
-          {/* Confidence filter */}
           {['high', 'medium', 'low'].map((c) => (
             <button
               key={c}
@@ -361,25 +398,19 @@ export default function ConsumptionPortfolioPage() {
             </button>
           ))}
 
-          {/* Anomaly toggle */}
           <button
             onClick={() => setAnomalyFilter(!anomalyFilter)}
             className={`px-3 py-1 rounded-full text-xs font-medium transition ${
-              anomalyFilter
-                ? 'bg-amber-100 text-amber-700'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              anomalyFilter ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
             Anomalies
           </button>
 
-          {/* Actions filter */}
           <button
             onClick={() => setActionsFilter(actionsFilter === 'with' ? null : 'with')}
             className={`px-3 py-1 rounded-full text-xs font-medium transition ${
-              actionsFilter === 'with'
-                ? 'bg-green-100 text-green-700'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              actionsFilter === 'with' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
             Avec actions
@@ -387,15 +418,12 @@ export default function ConsumptionPortfolioPage() {
           <button
             onClick={() => setActionsFilter(actionsFilter === 'without' ? null : 'without')}
             className={`px-3 py-1 rounded-full text-xs font-medium transition ${
-              actionsFilter === 'without'
-                ? 'bg-gray-200 text-gray-800'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              actionsFilter === 'without' ? 'bg-gray-200 text-gray-800' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
             Sans action
           </button>
 
-          {/* Sort */}
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value)}
@@ -438,11 +466,11 @@ export default function ConsumptionPortfolioPage() {
                 </button>
               )}
               <button
-                onClick={() => navigate('/consommations/import')}
+                onClick={() => navigate(toConsoImport())}
                 className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition"
               >
                 <Upload size={14} />
-                Aller a Import & Analyse
+                Importer des donnees
               </button>
             </div>
           </div>
@@ -466,7 +494,12 @@ export default function ConsumptionPortfolioPage() {
                 </thead>
                 <tbody>
                   {sites.map((row) => (
-                    <tr key={row.site_id} className="border-b border-gray-100 hover:bg-gray-50 transition">
+                    <tr
+                      key={row.site_id}
+                      className="border-b border-gray-100 hover:bg-gray-50 transition cursor-pointer"
+                      onClick={() => handleRowClick(row)}
+                      title="Cliquez pour explorer ce site"
+                    >
                       <td className="py-2 px-3 font-medium text-gray-800">{row.site_name}</td>
                       <td className="py-2 px-3 text-right">
                         {row.impact_eur_estimated > 0 ? (
@@ -481,20 +514,35 @@ export default function ConsumptionPortfolioPage() {
                       <td className="py-2 px-3 text-right text-gray-700">{row.base_night_pct != null ? `${row.base_night_pct}%` : '—'}</td>
                       <td className="py-2 px-3 text-center">
                         {row.diagnostics_count > 0 ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-700">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); navigate(toConsoDiag({ site_id: row.site_id })); }}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-700 hover:bg-amber-200 transition"
+                            title="Voir les diagnostics"
+                          >
                             {row.diagnostics_count}
-                          </span>
+                          </button>
                         ) : (
                           <span className="text-gray-300">—</span>
                         )}
                       </td>
                       <td className="py-2 px-3 text-center">
                         {row.open_actions_count > 0 ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-700">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); navigate(`/actions?site_id=${row.site_id}`); }}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-700 hover:bg-green-200 transition"
+                            title="Voir les actions en cours"
+                          >
+                            <Eye size={10} />
                             {row.open_actions_count}
-                          </span>
+                          </button>
                         ) : (
-                          <span className="text-gray-300">—</span>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); navigate(toActionNew({ source_type: 'consommation', site_id: row.site_id, source: 'portfolio' })); }}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-500 hover:bg-gray-200 transition"
+                            title="Creer une action"
+                          >
+                            <Plus size={10} />
+                          </button>
                         )}
                       </td>
                       <td className="py-2 px-3 text-center">
@@ -507,30 +555,30 @@ export default function ConsumptionPortfolioPage() {
                       <td className="py-2 px-3 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
-                            onClick={() => navigate(`/consommations/explorer?site_ids=${row.site_id}`)}
+                            onClick={(e) => { e.stopPropagation(); navigate(toConsoExplorer({ site_id: row.site_id })); }}
                             className="p-1 rounded hover:bg-blue-50 text-blue-500"
                             title="Explorer"
                           >
                             <BarChart3 size={14} />
                           </button>
                           <button
-                            onClick={() => navigate(`/diagnostic-conso?site_id=${row.site_id}`)}
+                            onClick={(e) => { e.stopPropagation(); navigate(toConsoDiag({ site_id: row.site_id })); }}
                             className="p-1 rounded hover:bg-amber-50 text-amber-500"
                             title="Diagnostic"
                           >
                             <TrendingDown size={14} />
                           </button>
                           <button
-                            onClick={() => navigate(deepLinkWithContext(row.site_id))}
+                            onClick={(e) => { e.stopPropagation(); navigate(toBillIntel({ site_id: row.site_id })); }}
                             className="p-1 rounded hover:bg-gray-100 text-gray-500"
-                            title="Voir facture"
+                            title="Voir factures"
                           >
                             <FileText size={14} />
                           </button>
                           <button
-                            onClick={() => navigate(deepLinkNewAction({ type: 'consommation', site_id: row.site_id, source: 'portfolio' }))}
+                            onClick={(e) => { e.stopPropagation(); navigate(toActionNew({ source_type: 'consommation', site_id: row.site_id, source: 'portfolio' })); }}
                             className="p-1 rounded hover:bg-green-50 text-green-500"
-                            title="Creer action"
+                            title="Creer une action"
                           >
                             <Plus size={14} />
                           </button>

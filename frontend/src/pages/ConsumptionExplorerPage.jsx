@@ -1001,7 +1001,7 @@ function GasPanel({ siteId, days, onGenerateDemo, toast }) {
 // ========================================
 
 export default function ConsumptionExplorerPage() {
-  const { selectedSiteId, scopedSites, orgSites, scope, sitesLoading } = useScope();
+  const { selectedSiteId, scopedSites, orgSites, scope, sitesLoading, scopeLabel } = useScope();
   const { toast } = useToast();
 
   // ── UI mode (Classic / Expert) — localStorage only, never in URL ───────
@@ -1207,6 +1207,16 @@ export default function ConsumptionExplorerPage() {
 
   return (
     <div className="space-y-5">
+      {/* V1.3: Scope coherence banner — single site indicator */}
+      {selectedSiteId && siteIds.length === 1 && (
+        <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5 text-sm">
+          <Info size={14} className="text-blue-500 shrink-0" />
+          <span className="text-blue-700">
+            Vous explorez <strong>{scopeLabel}</strong>. La multi-selection est disponible via le selecteur de sites ci-dessous.
+          </span>
+        </div>
+      )}
+
       {/* UI Mode toggle — persisted in localStorage, never in URL */}
       <div className="flex justify-end">
         <button
