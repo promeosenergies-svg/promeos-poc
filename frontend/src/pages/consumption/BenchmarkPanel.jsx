@@ -1,7 +1,8 @@
 /**
- * PROMEOS — BenchmarkPanel (P1-1)
- * Courbe de référence grand public (Enedis-inspired).
- * Toggle "Comparer à une courbe de référence" + 2 selectors + KPI écart.
+ * PROMEOS — BenchmarkPanel (P1-1 / P1.1 polish)
+ * Courbe de reference grand public (Enedis-inspired).
+ * Toggle "Comparer a la courbe moyenne de sites similaires" + 2 selectors + KPI ecart.
+ * Confidence tooltip "Comment calcule ?" + KPI source (estime).
  */
 import { useState, useEffect, useCallback } from 'react';
 import {
@@ -12,7 +13,7 @@ import { Card, CardBody, TrustBadge } from '../../ui';
 import { SkeletonCard } from '../../ui';
 import { getEmsReferenceProfile } from '../../services/api';
 import { track } from '../../services/tracker';
-import { BarChart3, TrendingUp, TrendingDown } from 'lucide-react';
+import { BarChart3, HelpCircle, Info } from 'lucide-react';
 
 const FAMILLE_OPTIONS = [
   { value: 'habitat', label: 'Habitat' },
@@ -29,9 +30,9 @@ const PUISSANCE_OPTIONS = [
 ];
 
 const CONFIDENCE_MAP = {
-  high: { label: 'Elevee', variant: 'ok' },
-  medium: { label: 'Moyenne', variant: 'warn' },
-  low: { label: 'Basse', variant: 'crit' },
+  high: { label: 'Elevee', variant: 'ok', desc: 'Couverture > 80 % des points attendus' },
+  medium: { label: 'Moyenne', variant: 'warn', desc: 'Couverture entre 50 % et 80 %' },
+  low: { label: 'Basse', variant: 'crit', desc: 'Couverture < 50 % — profil indicatif' },
 };
 
 function formatDate(t) {
@@ -113,7 +114,7 @@ export default function BenchmarkPanel({ siteId, days, startDate, endDate, serie
             onChange={(e) => setEnabled(e.target.checked)}
             className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
           />
-          <span className="text-sm font-medium text-gray-700">Comparer a une courbe de reference</span>
+          <span className="text-sm font-medium text-gray-700">Comparer a la courbe moyenne de sites similaires</span>
         </label>
       </div>
 
@@ -141,7 +142,12 @@ export default function BenchmarkPanel({ siteId, days, startDate, endDate, serie
                 {PUISSANCE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             </div>
-            {conf && <TrustBadge level={conf.variant} label={`Confiance ${conf.label}`} size="sm" />}
+            {conf && (
+              <span className="inline-flex items-center gap-1" title={`Comment calcule ? ${conf.desc}`}>
+                <TrustBadge level={conf.variant} label={`Confiance ${conf.label}`} size="sm" />
+                <HelpCircle size={12} className="text-gray-400 cursor-help" />
+              </span>
+            )}
           </div>
 
           {loading && <SkeletonCard rows={4} />}
@@ -151,29 +157,32 @@ export default function BenchmarkPanel({ siteId, days, startDate, endDate, serie
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <Card>
                 <CardBody className="py-3 px-4 text-center">
-                  <p className="text-xs text-gray-500">Conso reelle</p>
+                  <p className="text-xs text-gray-500">Votre consommation</p>
                   <p className="text-lg font-bold text-gray-800">{Math.round(kpi.actual_kwh).toLocaleString('fr-FR')} kWh</p>
+                  <p className="text-[10px] text-gray-400" title="Estime a partir des releves compteur">Source : releves</p>
                 </CardBody>
               </Card>
               <Card>
                 <CardBody className="py-3 px-4 text-center">
-                  <p className="text-xs text-gray-500">Reference</p>
+                  <p className="text-xs text-gray-500">Moyenne sites similaires</p>
                   <p className="text-lg font-bold text-blue-600">{Math.round(kpi.reference_kwh).toLocaleString('fr-FR')} kWh</p>
+                  <p className="text-[10px] text-gray-400">Profil statistique</p>
                 </CardBody>
               </Card>
               <Card>
                 <CardBody className="py-3 px-4 text-center">
                   <p className="text-xs text-gray-500">Ecart</p>
                   <p className={`text-lg font-bold ${kpi.delta_pct > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                    {kpi.delta_pct > 0 ? '+' : ''}{kpi.delta_pct}%
+                    {kpi.delta_pct > 0 ? '+' : ''}{kpi.delta_pct} %
                   </p>
                   <p className="text-xs text-gray-400">{kpi.delta_kwh > 0 ? '+' : ''}{Math.round(kpi.delta_kwh).toLocaleString('fr-FR')} kWh</p>
                 </CardBody>
               </Card>
               <Card>
                 <CardBody className="py-3 px-4 text-center">
-                  <p className="text-xs text-gray-500">Couverture</p>
-                  <p className="text-lg font-bold text-gray-800">{kpi.coverage_pct}%</p>
+                  <p className="text-xs text-gray-500">Couverture donnees</p>
+                  <p className="text-lg font-bold text-gray-800">{kpi.coverage_pct} %</p>
+                  <p className="text-[10px] text-gray-400" title="Pourcentage de points de mesure disponibles vs attendus">Points mesures / attendus</p>
                 </CardBody>
               </Card>
             </div>
@@ -183,7 +192,7 @@ export default function BenchmarkPanel({ siteId, days, startDate, endDate, serie
           {chartData.length > 0 && !loading && (
             <Card>
               <CardBody>
-                <h4 className="text-sm font-semibold text-gray-700 mb-3">Consommation reelle vs reference</h4>
+                <h4 className="text-sm font-semibold text-gray-700 mb-3">Votre consommation vs moyenne de sites similaires</h4>
                 <ResponsiveContainer width="100%" height={280}>
                   <AreaChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -191,12 +200,12 @@ export default function BenchmarkPanel({ siteId, days, startDate, endDate, serie
                     <YAxis tick={{ fontSize: 10 }} label={{ value: 'kWh', angle: -90, position: 'insideLeft', style: { fontSize: 11 } }} />
                     <Tooltip />
                     <Legend />
-                    <Area type="monotone" dataKey="reference" stroke="#93c5fd" fill="#dbeafe" fillOpacity={0.5} name="Reference" strokeDasharray="5 5" />
-                    <Area type="monotone" dataKey="actual" stroke="#3b82f6" fill="#bfdbfe" fillOpacity={0.3} name="Conso reelle" />
+                    <Area type="monotone" dataKey="reference" stroke="#93c5fd" fill="#dbeafe" fillOpacity={0.5} name="Moyenne sites similaires" strokeDasharray="5 5" />
+                    <Area type="monotone" dataKey="actual" stroke="#3b82f6" fill="#bfdbfe" fillOpacity={0.3} name="Votre consommation" />
                   </AreaChart>
                 </ResponsiveContainer>
                 <p className="text-[10px] text-gray-400 mt-1 text-center">
-                  Profil: {FAMILLE_OPTIONS.find(o => o.value === famille)?.label} · {PUISSANCE_OPTIONS.find(o => o.value === puissance)?.label}
+                  Profil : {FAMILLE_OPTIONS.find(o => o.value === famille)?.label} · {PUISSANCE_OPTIONS.find(o => o.value === puissance)?.label}
                 </p>
               </CardBody>
             </Card>

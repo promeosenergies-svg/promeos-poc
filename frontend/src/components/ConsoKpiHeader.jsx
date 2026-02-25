@@ -1,18 +1,26 @@
 /**
- * PROMEOS — ConsoKpiHeader (QW2)
+ * PROMEOS — ConsoKpiHeader (QW2 / P1.1 polish)
  * 6-KPI header row for ConsumptionExplorerPage.
  * Reads motor data (tunnel, hphc, progression) to compute:
  *   kWh total, EUR total, EUR/MWh, CO2e, Pic kW (P95), Base nocturne %
  * Respects scope global (site + period) via motor props.
+ *
+ * P1.1: confidence tooltip "Comment calcule ?", EUR source tooltip.
  */
-import { Zap, Euro, TrendingUp, Leaf, Activity, Moon } from 'lucide-react';
+import { Zap, Euro, TrendingUp, Leaf, Activity, Moon, HelpCircle } from 'lucide-react';
 import { TrustBadge } from '../ui';
 
 const CO2E_FACTOR = 0.052; // kgCO2e/kWh (ADEME 2024 France electricity mix)
 
-function KpiTile({ icon: Icon, label, value, sub, color = 'text-gray-900' }) {
+const CONFIDENCE_TOOLTIP = {
+  high: 'Haute : > 500 releves, donnees homogenes',
+  medium: 'Moyenne : entre 100 et 500 releves',
+  low: 'Basse : < 100 releves — indicatif uniquement',
+};
+
+function KpiTile({ icon: Icon, label, value, sub, color = 'text-gray-900', tooltip }) {
   return (
-    <div className="flex items-center gap-3 bg-white rounded-xl border border-gray-200 px-4 py-3 min-w-0">
+    <div className="flex items-center gap-3 bg-white rounded-xl border border-gray-200 px-4 py-3 min-w-0" title={tooltip}>
       <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
         <Icon size={18} className="text-gray-500" />
       </div>
@@ -33,8 +41,9 @@ export default function ConsoKpiHeader({ tunnel, hphc, progression, confidence }
   // --- EUR total (from hphc or progression) ---
   const totalEur = hphc?.total_cost_eur ?? null;
   const eurLabel = totalEur != null ? `${Math.round(totalEur).toLocaleString('fr-FR')} EUR` : '—';
+  const eurSource = hphc?.total_cost_eur != null ? 'Estime HP/HC' : 'Non disponible';
 
-  // --- EUR/MWh réel ---
+  // --- EUR/MWh reel ---
   const eurMwh = totalEur != null && totalKwh > 0
     ? Math.round((totalEur / totalKwh) * 1000 * 100) / 100
     : null;
@@ -65,7 +74,7 @@ export default function ConsoKpiHeader({ tunnel, hphc, progression, confidence }
     if (dayAvg === 0) return null;
     return Math.round((nightAvg / dayAvg) * 100);
   })();
-  const basePctLabel = basePct != null ? `${basePct}%` : '—';
+  const basePctLabel = basePct != null ? `${basePct} %` : '—';
   const basePctColor = basePct != null
     ? (basePct > 60 ? 'text-red-600' : basePct > 40 ? 'text-amber-600' : 'text-green-600')
     : 'text-gray-900';
@@ -73,20 +82,26 @@ export default function ConsoKpiHeader({ tunnel, hphc, progression, confidence }
   const confBadge = confidence
     ? { high: { label: 'Haute', variant: 'ok' }, medium: { label: 'Moyenne', variant: 'warn' }, low: { label: 'Basse', variant: 'crit' } }[confidence] || null
     : null;
+  const confTooltip = confidence ? CONFIDENCE_TOOLTIP[confidence] : null;
 
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <h3 className="text-sm font-semibold text-gray-600">KPIs Consommation</h3>
-        {confBadge && <TrustBadge level={confBadge.variant} label={`Confiance ${confBadge.label}`} size="sm" />}
+        {confBadge && (
+          <span className="inline-flex items-center gap-1" title={`Comment calcule ? ${confTooltip}`}>
+            <TrustBadge level={confBadge.variant} label={`Confiance ${confBadge.label}`} size="sm" />
+            <HelpCircle size={12} className="text-gray-400 cursor-help" />
+          </span>
+        )}
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        <KpiTile icon={Zap} label="kWh total" value={kwhLabel} />
-        <KpiTile icon={Euro} label="EUR total" value={eurLabel} />
-        <KpiTile icon={TrendingUp} label="EUR/MWh" value={eurMwhLabel} />
-        <KpiTile icon={Leaf} label="CO2e" value={co2Label} sub="ADEME 2024" />
-        <KpiTile icon={Activity} label="Pic kW (P95)" value={p95Label} />
-        <KpiTile icon={Moon} label="Base nocturne" value={basePctLabel} color={basePctColor} />
+        <KpiTile icon={Zap} label="kWh total" value={kwhLabel} tooltip="Somme des releves sur la periode selectionnee" />
+        <KpiTile icon={Euro} label="EUR total" value={eurLabel} sub={eurSource} tooltip={`Calcul : ${eurSource}. Basé sur les prix HP/HC du contrat ou estimés.`} />
+        <KpiTile icon={TrendingUp} label="EUR/MWh" value={eurMwhLabel} tooltip="Prix moyen = EUR total / MWh total" />
+        <KpiTile icon={Leaf} label="CO2e" value={co2Label} sub="ADEME 2024" tooltip="Facteur ADEME 2024 : 0,052 kgCO2e/kWh (mix France)" />
+        <KpiTile icon={Activity} label="Pic kW (P95)" value={p95Label} tooltip="95e percentile de puissance sur les creneaux horaires" />
+        <KpiTile icon={Moon} label="Base nocturne" value={basePctLabel} color={basePctColor} tooltip="Ratio consommation nuit (22h-6h) / jour (6h-22h) en semaine" />
       </div>
     </div>
   );

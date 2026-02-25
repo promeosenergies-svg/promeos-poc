@@ -160,7 +160,8 @@ export default function MeteoPanel({ siteIds = [], energyType = 'electricity', d
   const correlationLabel = correlation > 0.5 ? 'Forte' : correlation > 0.2 ? 'Modérée' : 'Faible';
   const correlationColor = correlation > 0.5 ? 'text-blue-700 bg-blue-50' : correlation > 0.2 ? 'text-amber-700 bg-amber-50' : 'text-gray-600 bg-gray-100';
 
-  const weatherSource = utcWeather ? 'UTC (serveur)' : 'synthetique (modele)';
+  const isRealWeather = !!utcWeather;
+  const weatherSource = isRealWeather ? 'Temperature reelle (UTC)' : 'Temperature synthetique (modele)';
 
   // Loading state
   if (status === 'loading') {
@@ -198,7 +199,10 @@ export default function MeteoPanel({ siteIds = [], energyType = 'electricity', d
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h3 className="text-sm font-semibold text-gray-800">Influence climatique</h3>
-          <p className="text-xs text-gray-500">Consommation vs temperature exterieure ({weatherSource})</p>
+          <p className="text-xs text-gray-500">Consommation vs temperature exterieure</p>
+          <span className={`inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-full text-[10px] font-medium ${isRealWeather ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'}`}>
+            {isRealWeather ? 'Meteo reelle' : 'Meteo synthetique'}
+          </span>
         </div>
         <div className="flex items-center gap-2">
           {/* P1-3: Temperature toggle */}

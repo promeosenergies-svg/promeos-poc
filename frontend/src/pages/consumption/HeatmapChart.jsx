@@ -36,8 +36,8 @@ export default function HeatmapChart({ data, unit = 'kWh', onCellClick, filter =
         <div className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded bg-blue-400" /> HC
         </div>
-        <span className="ml-auto">Intensite = conso moyenne ({unit})</span>
-        {onCellClick && <span className="text-blue-500">Cliquez pour le detail</span>}
+        <span className="ml-auto">Intensite = consommation moyenne ({unit})</span>
+        {onCellClick && <span className="text-blue-500">Cliquez sur un creneau pour le detail</span>}
       </div>
 
       <div className="overflow-x-auto">
