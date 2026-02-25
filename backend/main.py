@@ -36,6 +36,7 @@ from routes import (
     dev_tools_router,
     flex_router,
     tertiaire_router,
+    portfolio_router,
 )
 
 # Import KB router
@@ -102,6 +103,7 @@ app.include_router(ems_router)  # EMS Consumption Explorer
 app.include_router(flex_router)  # Flex Mini V0 (demand-side flexibility)
 app.include_router(dev_tools_router)  # Dev Tools (reset_db)
 app.include_router(tertiaire_router)  # Tertiaire / OPERAT V39 (EFA, controls, precheck, export)
+app.include_router(portfolio_router)  # Portfolio Consumption (multi-site B2B view)
 
 # Run safe schema migrations (idempotent, no drop)
 from database import engine as _engine, run_migrations as _run_migrations
