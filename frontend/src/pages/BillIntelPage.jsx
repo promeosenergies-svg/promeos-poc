@@ -13,7 +13,6 @@ import {
   importInvoicesCsv,
   resolveBillingInsight,
   importInvoicesPdf,
-  createActionFromBillingInsight,
   getSites,
 } from '../services/api';
 import { Card, CardBody, Badge, Button, TrustBadge, PageShell, EmptyState } from '../ui';
@@ -26,6 +25,8 @@ import {
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { track } from '../services/tracker';
 import InsightDrawer from '../components/InsightDrawer';
+import CreateActionModal from '../components/CreateActionModal';
+import ActionDetailDrawer from '../components/ActionDetailDrawer';
 
 const SEVERITY_BADGE = {
   critical: 'crit', high: 'warn', medium: 'info', low: 'neutral',
@@ -106,7 +107,9 @@ export default function BillIntelPage() {
   const [auditing, setAuditing] = useState(false);
   const [seeding, setSeeding] = useState(false);
   const [insightFilter, setInsightFilter] = useState('all');
-  const [createdActions, setCreatedActions] = useState(new Set());
+  const [actionMap, setActionMap] = useState(new Map());
+  const [actionModalInsight, setActionModalInsight] = useState(null);
+  const [viewActionId, setViewActionId] = useState(null);
   const [pdfSiteId, setPdfSiteId] = useState('');
   const [invoiceSearch, setInvoiceSearch] = useState('');
   const [invoiceStatusFilter, setInvoiceStatusFilter] = useState('');
@@ -127,7 +130,14 @@ export default function BillIntelPage() {
         getBillingInvoices(invoiceParams),
       ]);
       setSummary(s);
-      setInsights(i.insights || []);
+      const insightsData = i.insights || [];
+      setInsights(insightsData);
+      // Initialize actionMap from backend action_id
+      const newMap = new Map();
+      for (const ins of insightsData) {
+        if (ins.action_id) newMap.set(ins.id, ins.action_id);
+      }
+      setActionMap(newMap);
       setInvoices(inv.invoices || []);
     } catch {
       toast('Erreur lors du chargement de la facturation', 'error');
@@ -249,16 +259,19 @@ export default function BillIntelPage() {
     e.target.value = '';
   }
 
-  async function handleCreateAction(insight) {
-    if (createdActions.has(insight.id)) return;
-    try {
-      await createActionFromBillingInsight(insight.id, insight.message || insight.type, insight.site_id);
-      setCreatedActions(prev => new Set([...prev, insight.id]));
-      track('billing_create_action', { insight_id: insight.id });
-      toast('Action créée — visible dans le Plan d\'actions', 'success');
-    } catch {
-      toast('Erreur lors de la création de l\'action', 'error');
+  function handleOpenCreateAction(insight) {
+    setActionModalInsight(insight);
+  }
+
+  function handleActionSaved(result) {
+    const insightId = actionModalInsight?.id;
+    const actionId = result?.id;
+    if (insightId) {
+      setActionMap(prev => new Map([...prev, [insightId, actionId || true]]));
     }
+    setActionModalInsight(null);
+    track('billing_create_action', { insight_id: insightId, action_id: actionId });
+    toast('Action créée — visible dans le Plan d\'actions', 'success');
   }
 
   const hasData = summary && summary.total_invoices > 0;
@@ -432,9 +445,9 @@ export default function BillIntelPage() {
                         <CheckCircle2 size={14} /> Résolu
                       </button>
                     )}
-                    {createdActions.has(insight.id) ? (
+                    {actionMap.has(insight.id) ? (
                       <button
-                        onClick={() => navigate('/actions')}
+                        onClick={() => setViewActionId(actionMap.get(insight.id))}
                         className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium
                           text-green-700 bg-green-50 hover:bg-green-100 transition-colors whitespace-nowrap"
                       >
@@ -442,7 +455,7 @@ export default function BillIntelPage() {
                       </button>
                     ) : (
                       <button
-                        onClick={() => handleCreateAction(insight)}
+                        onClick={() => handleOpenCreateAction(insight)}
                         className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium
                           text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors whitespace-nowrap"
                         title="Créer action"
@@ -559,6 +572,31 @@ export default function BillIntelPage() {
             </div>
           </Card>
         </div>
+      )}
+
+      <CreateActionModal
+        open={!!actionModalInsight}
+        onClose={() => setActionModalInsight(null)}
+        onSave={handleActionSaved}
+        prefill={{
+          titre: actionModalInsight?.message || '',
+          type: 'facture',
+          impact_eur: actionModalInsight?.estimated_loss_eur || '',
+          description: actionModalInsight?.message || '',
+        }}
+        siteId={actionModalInsight?.site_id}
+        sourceType="billing"
+        sourceId={actionModalInsight ? String(actionModalInsight.id) : null}
+        idempotencyKey={actionModalInsight ? `billing-insight:${actionModalInsight.id}` : null}
+      />
+
+      {viewActionId && (
+        <ActionDetailDrawer
+          action={{ id: viewActionId }}
+          open={!!viewActionId}
+          onClose={() => setViewActionId(null)}
+          onUpdate={() => fetchData()}
+        />
       )}
 
       <InsightDrawer

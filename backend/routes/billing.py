@@ -21,6 +21,7 @@ from models import (
     BillingEnergyType, InvoiceLineType, BillingInvoiceStatus,
     InsightStatus, BillingImportBatch,
     Portefeuille, EntiteJuridique,
+    ActionItem, ActionSourceType,
 )
 from services.billing_service import (
     audit_invoice_full,
@@ -625,6 +626,17 @@ def list_insights(
         except ValueError:
             pass
     insights = q.order_by(BillingInsight.estimated_loss_eur.desc().nullslast()).all()
+
+    # Resolve action_id for each insight (batch query via source_id)
+    insight_ids_str = [str(i.id) for i in insights]
+    action_map = {}
+    if insight_ids_str:
+        actions = db.query(ActionItem.source_id, ActionItem.id).filter(
+            ActionItem.source_type == ActionSourceType.BILLING,
+            ActionItem.source_id.in_(insight_ids_str),
+        ).all()
+        action_map = {a.source_id: a.id for a in actions}
+
     return {
         "insights": [
             {
@@ -634,6 +646,7 @@ def list_insights(
                 "insight_status": i.insight_status.value if i.insight_status else "open",
                 "owner": i.owner,
                 "notes": i.notes,
+                "action_id": action_map.get(str(i.id)),
             }
             for i in insights
         ],
@@ -655,6 +668,11 @@ def get_insight_detail(
     if not insight:
         raise HTTPException(status_code=404, detail="Insight not found")
     _check_site_belongs_to_org(db, insight.site_id, effective_org_id)
+    # Resolve linked action
+    action = db.query(ActionItem).filter(
+        ActionItem.source_type == ActionSourceType.BILLING,
+        ActionItem.source_id == str(insight.id),
+    ).first()
     return {
         "id": insight.id,
         "site_id": insight.site_id,
@@ -666,6 +684,7 @@ def get_insight_detail(
         "insight_status": insight.insight_status.value if insight.insight_status else "open",
         "owner": insight.owner,
         "notes": insight.notes,
+        "action_id": action.id if action else None,
         "metrics": json.loads(insight.metrics_json or "{}"),
         "recommended_actions": json.loads(insight.recommended_actions_json or "[]"),
     }

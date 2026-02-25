@@ -42,7 +42,9 @@ function fmt(v) {
 }
 
 const CAUSE_LABELS = {
-  shadow_gap: (m) => `L'écart entre le montant facturé (${fmt(m.actual_ttc)} €) et le shadow billing (${fmt(m.expected_ttc)} €) dépasse le seuil de ${m.threshold_pct || 10}%.`,
+  shadow_gap: (m) => m.expected_ttc != null
+    ? `L'écart entre le montant facturé (${fmt(m.actual_ttc)} €) et le shadow billing (${fmt(m.expected_ttc)} €) dépasse le seuil de ${m.threshold_pct || 10}%.`
+    : `L'écart entre le montant facturé (${fmt(m.actual_total_eur)} €) et le shadow billing (${fmt(m.shadow_total_eur)} €) dépasse le seuil de ${m.threshold_pct || 10}%.`,
   unit_price_high: (m) => `Le prix unitaire (${m.unit_price?.toFixed(4) || '?'} €/kWh) dépasse le seuil de ${m.threshold || 0.30} €/kWh pour ce type d'énergie.`,
   duplicate_invoice: () => `Cette facture est un doublon (même site, même période, même montant).`,
   missing_period: () => `Aucune facture ne couvre cette période. Vérifiez l'import ou contactez le fournisseur.`,
@@ -124,6 +126,28 @@ export default function InsightDrawer({ open, onClose, insightId }) {
             <p className="text-sm text-gray-800">{cause}</p>
           </div>
 
+          {/* Confiance & Hypothèses */}
+          {m.confidence && (
+            <div>
+              <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">Confiance</h4>
+              <div className="flex items-center gap-2">
+                <Badge status={m.confidence === 'high' ? 'ok' : m.confidence === 'medium' ? 'info' : 'warn'}>
+                  {m.confidence === 'high' ? 'Élevée' : m.confidence === 'medium' ? 'Moyenne' : 'Faible'}
+                </Badge>
+              </div>
+              {m.assumptions?.length > 0 && (
+                <ul className="mt-2 space-y-1">
+                  {m.assumptions.map((a, i) => (
+                    <li key={i} className="text-xs text-gray-600 flex items-center gap-1.5">
+                      <span className="w-1 h-1 rounded-full bg-gray-400 shrink-0" />
+                      {a}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+
           {/* Tableau Facturé vs Attendu */}
           {hasBreakdown && (
             <div>
@@ -168,6 +192,14 @@ export default function InsightDrawer({ open, onClose, insightId }) {
                   </tr>
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {/* Écart détecté (types sans breakdown V2) */}
+          {!hasBreakdown && detail.estimated_loss_eur > 0 && (
+            <div>
+              <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">Écart détecté</h4>
+              <p className="text-lg font-bold text-red-600">{fmt(detail.estimated_loss_eur)} €</p>
             </div>
           )}
 

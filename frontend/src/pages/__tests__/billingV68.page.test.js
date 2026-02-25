@@ -897,14 +897,14 @@ describe('BillIntelPage — 100% Français (V70)', () => {
     expect(code).toMatch(/SEVERITY_LABELS\[/);
   });
 
-  it('handleCreateAction calls toast on success', () => {
-    const fn = code.match(/async function handleCreateAction[\s\S]{0,800}/)?.[0] || '';
+  it('handleActionSaved calls toast on success', () => {
+    const fn = code.match(/function handleActionSaved[\s\S]{0,800}/)?.[0] || '';
     expect(fn).toMatch(/toast\(/);
     expect(fn).toMatch(/Action créée/);
   });
 
-  it('has navigate to /actions for Voir l\'action button', () => {
-    expect(code).toMatch(/navigate\(\s*['"]\/actions['"]\s*\)/);
+  it('has Voir l\'action button with setViewActionId', () => {
+    expect(code).toMatch(/setViewActionId/);
     expect(code).toMatch(/Voir l'action/);
   });
 });
@@ -965,5 +965,93 @@ describe('InsightDrawer — Comprendre l\'écart (V70)', () => {
     const backendCode = readBackend('routes', 'billing.py');
     expect(backendCode).toMatch(/insights\/\{insight_id\}/);
     expect(backendCode).toMatch(/metrics_json/);
+  });
+});
+
+
+// ============================================================
+// AB. Explainability — V2 breakdown + confidence (V71)
+// ============================================================
+describe('Explainability — V2 breakdown + confidence (V71)', () => {
+  const backend = readBackend('services', 'billing_service.py');
+  const drawer = readSrc('components', 'InsightDrawer.jsx');
+
+  it('R1 _rule_shadow_gap imports shadow_billing_v2', () => {
+    const fn = backend.match(/def _rule_shadow_gap[\s\S]{0,1500}/)?.[0] || '';
+    expect(fn).toMatch(/shadow_billing_v2/);
+  });
+
+  it('R1 metrics include confidence + assumptions', () => {
+    const fn = backend.match(/def _rule_shadow_gap[\s\S]{0,1500}/)?.[0] || '';
+    expect(fn).toMatch(/confidence/);
+    expect(fn).toMatch(/assumptions/);
+  });
+
+  it('R13 metrics spread full V2 result (**res)', () => {
+    const fn = backend.match(/def _rule_reseau_mismatch[\s\S]{0,1200}/)?.[0] || '';
+    expect(fn).toMatch(/\*\*res/);
+  });
+
+  it('run_anomaly_engine injects rule_id into metrics', () => {
+    expect(backend).toMatch(/result\["metrics"\]\["rule_id"\]\s*=\s*rule_id/);
+  });
+
+  it('InsightDrawer renders confidence badge (Élevée/Moyenne/Faible)', () => {
+    expect(drawer).toMatch(/Élevée/);
+    expect(drawer).toMatch(/Moyenne/);
+    expect(drawer).toMatch(/Faible/);
+  });
+
+  it('InsightDrawer renders assumptions list', () => {
+    expect(drawer).toMatch(/m\.assumptions/);
+    expect(drawer).toMatch(/assumptions\.map/);
+  });
+
+  it('InsightDrawer CAUSE_LABELS shadow_gap has actual_total_eur fallback', () => {
+    expect(drawer).toMatch(/actual_total_eur/);
+    expect(drawer).toMatch(/shadow_total_eur/);
+  });
+});
+
+
+// ============================================================
+// AC. Actions CTA — CreateActionModal + action_id (V71)
+// ============================================================
+describe('Actions CTA — CreateActionModal + action_id (V71)', () => {
+  const page = readSrc('pages', 'BillIntelPage.jsx');
+  const backend = readBackend('routes', 'billing.py');
+
+  it('BillIntelPage imports CreateActionModal', () => {
+    expect(page).toMatch(/import\s+CreateActionModal\s+from\s+['"]\.\.\/components\/CreateActionModal['"]/);
+  });
+
+  it('BillIntelPage imports ActionDetailDrawer', () => {
+    expect(page).toMatch(/import\s+ActionDetailDrawer\s+from\s+['"]\.\.\/components\/ActionDetailDrawer['"]/);
+  });
+
+  it('BillIntelPage has actionMap state (Map, not Set)', () => {
+    expect(page).toMatch(/actionMap/);
+    expect(page).toMatch(/setActionMap/);
+    expect(page).toMatch(/new Map\(/);
+  });
+
+  it('BillIntelPage has handleOpenCreateAction + handleActionSaved', () => {
+    expect(page).toMatch(/handleOpenCreateAction/);
+    expect(page).toMatch(/handleActionSaved/);
+  });
+
+  it('BillIntelPage renders <CreateActionModal> in JSX', () => {
+    expect(page).toMatch(/<CreateActionModal/);
+    expect(page).toMatch(/actionModalInsight/);
+  });
+
+  it('BillIntelPage renders <ActionDetailDrawer> with viewActionId', () => {
+    expect(page).toMatch(/<ActionDetailDrawer/);
+    expect(page).toMatch(/viewActionId/);
+  });
+
+  it('list_insights includes action_id in response (backend)', () => {
+    expect(backend).toMatch(/action_map\.get\(str\(i\.id\)\)/);
+    expect(backend).toMatch(/ActionSourceType\.BILLING/);
   });
 });
