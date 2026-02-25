@@ -154,6 +154,54 @@ class TestAPICrudChain:
         assert r.status_code == 200
 
 
+class TestBillingRouterMount:
+    """Verify billing router is registered and insight detail uses GET."""
+
+    def test_billing_router_mounted(self, client):
+        """OpenAPI schema must contain /api/billing/ paths."""
+        schema = client.get("/openapi.json").json()
+        billing_paths = [p for p in schema["paths"] if "/api/billing/" in p]
+        assert len(billing_paths) >= 1, "billing router not mounted — check imports"
+
+    def test_insight_detail_is_get(self, client):
+        """The insight detail route must accept GET, not POST."""
+        schema = client.get("/openapi.json").json()
+        path = "/api/billing/insights/{insight_id}"
+        assert path in schema["paths"], f"{path} not in OpenAPI"
+        assert "get" in schema["paths"][path], f"{path} does not accept GET"
+
+    def test_insight_detail_returns_404_for_missing(self, client):
+        """GET /api/billing/insights/999999 should return 404, not 405."""
+        r = client.get("/api/billing/insights/999999")
+        assert r.status_code == 404, f"Expected 404, got {r.status_code}"
+
+    def test_import_sites_router_mounted(self, client):
+        """import_sites router must not crash (Python 3.14 Optional fix)."""
+        schema = client.get("/openapi.json").json()
+        import_paths = [p for p in schema["paths"] if "/api/import/" in p]
+        assert len(import_paths) >= 1, "import router not mounted — Optional import missing?"
+
+    def test_insight_detail_returns_breakdown(self, client):
+        """GET insight detail must include V2 breakdown keys when invoice has lines."""
+        # Get first available insight
+        r = client.get("/api/billing/insights")
+        if r.status_code != 200:
+            pytest.skip("No billing insights endpoint")
+        data = r.json()
+        if not data.get("insights"):
+            pytest.skip("No insights in DB")
+        iid = data["insights"][0]["id"]
+        r2 = client.get(f"/api/billing/insights/{iid}")
+        assert r2.status_code == 200
+        detail = r2.json()
+        m = detail.get("metrics", {})
+        # V2 breakdown keys must be present after on-demand recalculation
+        assert m.get("expected_ttc") is not None, "expected_ttc missing"
+        assert m.get("expected_fourniture_ht") is not None, "expected_fourniture_ht missing"
+        assert m.get("delta_pct") is not None, "delta_pct missing"
+        assert m.get("confidence") is not None, "confidence missing"
+
+
 class TestOpenAPISchema:
     """Verify OpenAPI spec is valid and complete."""
 

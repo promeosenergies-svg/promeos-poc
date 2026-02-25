@@ -1125,3 +1125,46 @@ describe('AE · Insight drawer breakdown guarantee', () => {
     expect(backend).toMatch(/@router\.get\(["']\/insights\/\{insight_id\}["']\)/);
   });
 });
+
+/* ─── Section AF — 405 fix: Optional import + debug method (4 tests) ─── */
+describe('AF · 405 fix — router registration + debug method', () => {
+  const importSites = readFileSync(resolve(__dirname, '../../../../backend/routes/import_sites.py'), 'utf-8');
+  const drawer = readFileSync(resolve(__dirname, '../../components/InsightDrawer.jsx'), 'utf-8');
+  const billingRoute = readFileSync(resolve(__dirname, '../../../../backend/routes/billing.py'), 'utf-8');
+
+  it('import_sites.py imports Optional from typing (Python 3.14 compat)', () => {
+    expect(importSites).toMatch(/from typing import.*Optional/);
+  });
+
+  it('billing.py uses lazy import for shadow_billing_v2 (not module-level)', () => {
+    // Must NOT have module-level import
+    const lines = billingRoute.split('\n');
+    const moduleImports = lines.filter(
+      (l, i) => i < 50 && l.match(/from services\.billing_shadow_v2/)
+    );
+    expect(moduleImports).toHaveLength(0);
+    // Must have lazy import inside function
+    expect(billingRoute).toMatch(/from services\.billing_shadow_v2 import shadow_billing_v2/);
+  });
+
+  it('InsightDrawer error state includes method field', () => {
+    expect(drawer).toMatch(/method:\s*['"]GET['"]/);
+    expect(drawer).toMatch(/error\.method/);
+  });
+
+  it('InsightDrawer debug panel shows Method line', () => {
+    expect(drawer).toMatch(/Method\s*:\s*\{error\.method\}/);
+  });
+
+  it('billing.py recalculation triggers on empty metrics (no falsy guard)', () => {
+    // The condition must NOT have "if metrics and ..." which skips empty dict
+    expect(billingRoute).toMatch(/if metrics\.get\("expected_ttc"\) is None/);
+    // Must NOT have "if metrics and metrics.get" (old buggy guard)
+    expect(billingRoute).not.toMatch(/if metrics and metrics\.get\("expected_ttc"\)/);
+  });
+
+  it('billing.py adds confidence and assumptions when recalculating', () => {
+    expect(billingRoute).toMatch(/confidence.*not in metrics/);
+    expect(billingRoute).toMatch(/assumptions.*not in metrics/);
+  });
+});

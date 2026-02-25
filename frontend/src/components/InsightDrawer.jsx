@@ -80,6 +80,7 @@ export default function InsightDrawer({ open, onClose, insightId }) {
       .catch((err) => {
         setDetail(null);
         setError({
+          method: 'GET',
           status: err?.response?.status,
           message: err?.response?.data?.detail || err?.message || 'Erreur inconnue',
           endpoint: `/billing/insights/${insightId}`,
@@ -106,7 +107,8 @@ export default function InsightDrawer({ open, onClose, insightId }) {
           {isExpert && error && (
             <div className="mt-4 bg-red-50 rounded-lg p-3 text-left">
               <p className="text-xs font-semibold text-red-600">Debug</p>
-              <p className="text-xs text-red-500 mt-1">Endpoint : {error.endpoint}</p>
+              <p className="text-xs text-red-500 mt-1">Method : {error.method}</p>
+              <p className="text-xs text-red-500">Endpoint : {error.endpoint}</p>
               <p className="text-xs text-red-500">Status : {error.status || 'N/A'}</p>
               <p className="text-xs text-red-500">Message : {error.message}</p>
             </div>

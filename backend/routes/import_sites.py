@@ -5,6 +5,7 @@ GET  /api/import/template - Retourne la structure CSV attendue
 """
 import io
 import csv
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request
 from sqlalchemy.orm import Session

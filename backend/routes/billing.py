@@ -676,8 +676,8 @@ def get_insight_detail(
 
     metrics = json.loads(insight.metrics_json or "{}")
 
-    # Recalcul V2 à la demande si breakdown absent
-    if metrics and metrics.get("expected_ttc") is None and metrics.get("expected_fourniture_ht") is None:
+    # Recalcul V2 à la demande si breakdown absent (metrics peut être {} ou None-like)
+    if metrics.get("expected_ttc") is None and metrics.get("expected_fourniture_ht") is None:
         try:
             from services.billing_shadow_v2 import shadow_billing_v2
             invoice = db.query(EnergyInvoice).filter(EnergyInvoice.id == insight.invoice_id).first()
@@ -693,6 +693,14 @@ def get_insight_detail(
                 if lines:
                     v2 = shadow_billing_v2(invoice, lines, contract)
                     metrics.update(v2)
+                    # Ajouter confidence/assumptions si absents
+                    if "confidence" not in metrics:
+                        metrics["confidence"] = "medium"
+                    if "assumptions" not in metrics:
+                        metrics["assumptions"] = [
+                            "Tarifs POC simplifiés (CRE / DGFiP publique)",
+                            "Calcul basé sur les lignes facture disponibles",
+                        ]
                     # Persister pour éviter recalcul futur
                     insight.metrics_json = json.dumps(metrics)
                     db.commit()
