@@ -212,6 +212,30 @@ def api_health():
     }
 
 
+@app.get("/api/meta/version")
+def api_meta_version():
+    """V69: Git sha + branch — visible en mode Expert."""
+    import subprocess, datetime
+    git_sha, branch = "unknown", "unknown"
+    try:
+        git_sha = subprocess.check_output(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=os.path.dirname(__file__), stderr=subprocess.DEVNULL,
+        ).decode().strip()
+        branch = subprocess.check_output(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            cwd=os.path.dirname(__file__), stderr=subprocess.DEVNULL,
+        ).decode().strip()
+    except Exception:
+        pass
+    return {
+        "sha": git_sha,
+        "branch": branch,
+        "build_time": datetime.datetime.now(datetime.UTC).isoformat(),
+        "version": "1.0.0",
+    }
+
+
 @app.get("/health")
 def health_check():
     return {

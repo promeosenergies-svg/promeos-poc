@@ -976,4 +976,8 @@ export const getIssueProofs = (issueCode) =>
 export const createOperatProofTemplates = (efaId, year, body) =>
   api.post(`${TERT_BASE}/efa/${efaId}/proofs/templates`, body, { params: { year } }).then(r => r.data);
 
+// V69: Meta version (sha + branch) — Expert mode display
+export const getMetaVersion = () =>
+  api.get('/meta/version').then(r => r.data).catch(() => null);
+
 export default api;
