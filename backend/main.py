@@ -107,6 +107,16 @@ app.include_router(tertiaire_router)  # Tertiaire / OPERAT V39 (EFA, controls, p
 from database import engine as _engine, run_migrations as _run_migrations
 _run_migrations(_engine)
 
+# Startup route validation: verify critical V67 billing routes are registered
+_REQUIRED_BILLING_PATHS = ["/api/billing/periods", "/api/billing/coverage-summary", "/api/billing/missing-periods"]
+_registered = {r.path for r in app.routes}
+_missing = [p for p in _REQUIRED_BILLING_PATHS if p not in _registered]
+if _missing:
+    import logging
+    logging.getLogger("promeos").error(f"[STARTUP] CRITICAL: billing routes missing from app: {_missing}. Restart uvicorn.")
+else:
+    print(f"[STARTUP] Billing V67 routes OK ({len(_REQUIRED_BILLING_PATHS)} verified)")
+
 
 @app.on_event("startup")
 async def restore_or_seed_helios():

@@ -89,3 +89,50 @@ def test_coverage_summary_empty_db(client, db):
     assert "covered" in data
     assert "missing" in data
     assert data["months_total"] == 0
+
+
+# ========================================
+# Tests GET /api/billing/periods
+# ========================================
+
+def test_periods_empty_db(client, db):
+    """GET /api/billing/periods retourne 200 + liste vide sans factures."""
+    org = Organisation(nom="OrgPeriods", type_client="bureau", actif=True, siren="600099002")
+    db.add(org)
+    db.commit()
+    r = client.get("/api/billing/periods", headers={"X-Org-Id": str(org.id)})
+    assert r.status_code == 200
+    data = r.json()
+    assert "periods" in data
+    assert "total" in data
+    assert data["total"] == 0
+    assert data["periods"] == []
+
+
+def test_missing_periods_empty_db(client, db):
+    """GET /api/billing/missing-periods retourne 200 + items vide sans factures."""
+    org = Organisation(nom="OrgMissing", type_client="bureau", actif=True, siren="600099003")
+    db.add(org)
+    db.commit()
+    r = client.get("/api/billing/missing-periods", headers={"X-Org-Id": str(org.id)})
+    assert r.status_code == 200
+    data = r.json()
+    assert "items" in data
+    assert "total" in data
+    assert data["total"] == 0
+
+
+# ========================================
+# Tests route registration (V67 critical)
+# ========================================
+
+def test_v67_billing_routes_registered():
+    """Critical V67 routes must be present in app.routes."""
+    registered = {r.path for r in app.routes}
+    required = [
+        "/api/billing/periods",
+        "/api/billing/coverage-summary",
+        "/api/billing/missing-periods",
+    ]
+    for route in required:
+        assert route in registered, f"Route {route} not registered — restart uvicorn"
