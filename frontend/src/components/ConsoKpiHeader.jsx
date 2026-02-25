@@ -35,7 +35,10 @@ function KpiTile({ icon: Icon, label, value, sub, color = 'text-gray-900', toolt
 
 export default function ConsoKpiHeader({ tunnel, hphc, progression, confidence }) {
   // --- kWh total ---
-  const totalKwh = tunnel?.total_kwh ?? progression?.ytd_actual_kwh ?? null;
+  // Priority: hphc.total_kwh (sum of readings HP+HC, always available when data exists)
+  // then tunnel.total_kwh (not returned by current tunnel service)
+  // then progression.ytd_actual_kwh (YTD targets — may be null if no targets configured)
+  const totalKwh = hphc?.total_kwh ?? tunnel?.total_kwh ?? progression?.ytd_actual_kwh ?? null;
   const kwhLabel = totalKwh != null ? `${Math.round(totalKwh).toLocaleString('fr-FR')} kWh` : '—';
 
   // --- EUR total (from hphc or progression) ---
