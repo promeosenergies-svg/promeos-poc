@@ -273,3 +273,79 @@ describe('Deep-links bidirectionnels V68', () => {
     expect(code).toMatch(/bill-intel/);
   });
 });
+
+// ============================================================
+// J. BillingPage.jsx — P0 fix : getMissingPeriods non-bloquant
+// ============================================================
+describe('BillingPage.jsx — P0 fix getMissingPeriods non-bloquant', () => {
+  const code = readSrc('pages', 'BillingPage.jsx');
+
+  it('imports useExpertMode from ExpertModeContext', () => {
+    expect(code).toMatch(/useExpertMode.*ExpertModeContext/);
+  });
+
+  it('uses isExpert hook', () => {
+    expect(code).toMatch(/const\s+\{[^}]*isExpert[^}]*\}\s*=\s*useExpertMode/);
+  });
+
+  it('getMissingPeriods is NOT in the main Promise.all', () => {
+    // Promise.all should only contain getCoverageSummary and getBillingPeriods
+    const promiseAllBlock = code.match(/Promise\.all\(\[[\s\S]*?\]\)/)?.[0] || '';
+    expect(promiseAllBlock).not.toMatch(/getMissingPeriods/);
+  });
+
+  it('getMissingPeriods has its own try/catch block', () => {
+    // After the main try/catch, getMissingPeriods should appear in another try block
+    expect(code).toMatch(/getMissingPeriods[\s\S]{0,200}catch/);
+  });
+
+  it('handles 404 with siteFilter reset', () => {
+    expect(code).toMatch(/status.*404|404.*status/);
+    expect(code).toMatch(/setSiteFilter\(['"]{0,2}\)/);
+  });
+
+  it('logs errors with isExpert guard', () => {
+    expect(code).toMatch(/isExpert.*console\.error|console\.error.*isExpert/);
+  });
+});
+
+// ============================================================
+// K. BillIntelPage.jsx — P1 : filter bar sur la liste factures
+// ============================================================
+describe('BillIntelPage.jsx — P1 invoice filter bar', () => {
+  const code = readSrc('pages', 'BillIntelPage.jsx');
+
+  it('imports useMemo', () => {
+    expect(code).toMatch(/useMemo/);
+  });
+
+  it('defines invoiceSearch state', () => {
+    expect(code).toMatch(/invoiceSearch/);
+  });
+
+  it('defines invoiceStatusFilter state', () => {
+    expect(code).toMatch(/invoiceStatusFilter/);
+  });
+
+  it('filteredInvoices uses useMemo', () => {
+    expect(code).toMatch(/filteredInvoices\s*=\s*useMemo/);
+  });
+
+  it('filteredInvoices filters by invoiceStatusFilter', () => {
+    expect(code).toMatch(/invoiceStatusFilter/);
+  });
+
+  it('filteredInvoices filters by invoiceSearch (invoice_number or pdl_prm)', () => {
+    expect(code).toMatch(/invoice_number[\s\S]{0,100}pdl_prm|pdl_prm[\s\S]{0,100}invoice_number/);
+  });
+
+  it('has a text input for invoice search', () => {
+    expect(code).toMatch(/invoiceSearch[\s\S]{0,200}placeholder|placeholder[\s\S]{0,200}invoiceSearch/);
+  });
+
+  it('has status filter chips rendered via map (array.map + invoiceStatusFilter)', () => {
+    // array of statuses rendered via .map(), invoiceStatusFilter used inside for active state
+    expect(code).toMatch(/\[''.*\]\.map|\['',/);
+    expect(code).toMatch(/invoiceStatusFilter/);
+  });
+});

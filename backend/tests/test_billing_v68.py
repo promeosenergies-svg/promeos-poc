@@ -591,3 +591,37 @@ class TestPDFImportDoD:
         assert data["kb_updated"] is True
         assert "kb_rules_applied" in data
         assert isinstance(data["kb_rules_applied"], list)
+
+
+# ========================================
+# TestTimelineAllSites
+# ========================================
+
+class TestTimelineAllSites:
+
+    def test_billing_periods_no_site_id_returns_data(self, client, db):
+        """GET /billing/periods sans site_id retourne des périodes quand des factures existent."""
+        org, site = _make_org_site(db, "OrgTimeline1", "600007001")
+        inv = EnergyInvoice(
+            site_id=site.id,
+            invoice_number="TIMELINE-TEST-001",
+            period_start=date(2024, 3, 1),
+            period_end=date(2024, 3, 31),
+            issue_date=date(2024, 4, 5),
+            total_eur=800.0,
+            energy_kwh=3200.0,
+            status=BillingInvoiceStatus.IMPORTED,
+            source="test",
+        )
+        db.add(inv)
+        db.commit()
+
+        # Sans site_id → agrégation all-org (root cause fix : front ne doit plus envoyer site_id=None)
+        r = client.get("/api/billing/periods", headers=_h(org.id))
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+        data = r.json()
+        assert "periods" in data, "Champ 'periods' absent de la réponse"
+        assert data["total"] >= 1, "Aucune période retournée alors qu'une facture existe"
+        # Vérifier que les champs DoD sont présents
+        period = data["periods"][0]
+        assert "energy_kwh" in period, "Champ energy_kwh absent de la période"
