@@ -369,3 +369,187 @@ describe('AQ · QW5 deep-link facture', () => {
     expect(dl).toMatch(/export function deepLinkNewAction/);
   });
 });
+
+// ============================================================
+// AR. P1-1 — Benchmark reference curve
+// ============================================================
+describe('AR · P1-1 benchmark reference curve', () => {
+  it('BenchmarkPanel.jsx exists', () => {
+    expect(srcExists('pages', 'consumption', 'BenchmarkPanel.jsx')).toBe(true);
+  });
+
+  it('BenchmarkPanel has toggle checkbox', () => {
+    const code = readSrc('pages', 'consumption', 'BenchmarkPanel.jsx');
+    expect(code).toMatch(/Comparer a une courbe de reference/);
+    expect(code).toMatch(/type="checkbox"/);
+  });
+
+  it('BenchmarkPanel has 3 famille options and 5 puissance options', () => {
+    const code = readSrc('pages', 'consumption', 'BenchmarkPanel.jsx');
+    expect(code).toMatch(/habitat/);
+    expect(code).toMatch(/petit_tertiaire/);
+    expect(code).toMatch(/entreprise/);
+    expect(code).toMatch(/0-6/);
+    expect(code).toMatch(/6-9/);
+    expect(code).toMatch(/9-12/);
+    expect(code).toMatch(/12-36/);
+    expect(code).toMatch(/>36/);
+  });
+
+  it('BenchmarkPanel has 4 KPI cards (actual, reference, ecart, couverture)', () => {
+    const code = readSrc('pages', 'consumption', 'BenchmarkPanel.jsx');
+    expect(code).toMatch(/Conso reelle/);
+    expect(code).toMatch(/Reference/);
+    expect(code).toMatch(/Ecart/);
+    expect(code).toMatch(/Couverture/);
+  });
+
+  it('BenchmarkPanel has TrustBadge for confidence', () => {
+    const code = readSrc('pages', 'consumption', 'BenchmarkPanel.jsx');
+    expect(code).toMatch(/TrustBadge/);
+    expect(code).toMatch(/confidence/);
+  });
+
+  it('BenchmarkPanel calls getEmsReferenceProfile', () => {
+    const code = readSrc('pages', 'consumption', 'BenchmarkPanel.jsx');
+    expect(code).toMatch(/getEmsReferenceProfile/);
+  });
+
+  it('BenchmarkPanel renders dual-area chart (actual + reference)', () => {
+    const code = readSrc('pages', 'consumption', 'BenchmarkPanel.jsx');
+    expect(code).toMatch(/dataKey="actual"/);
+    expect(code).toMatch(/dataKey="reference"/);
+  });
+
+  it('ConsumptionExplorerPage integrates BenchmarkPanel in both modes', () => {
+    const explorer = readSrc('pages', 'ConsumptionExplorerPage.jsx');
+    // Should appear at least twice (Classic + Expert)
+    const matches = explorer.match(/BenchmarkPanel/g);
+    expect(matches?.length).toBeGreaterThanOrEqual(3); // import + 2 usages
+  });
+
+  it('api.js exports getEmsReferenceProfile', () => {
+    const api = readSrc('services', 'api.js');
+    expect(api).toMatch(/export const getEmsReferenceProfile/);
+  });
+
+  it('backend has /reference_profile endpoint with REFERENCE_PROFILES', () => {
+    const ems = readBackend('routes', 'ems.py');
+    expect(ems).toMatch(/@router\.get.*reference_profile/);
+    expect(ems).toMatch(/REFERENCE_PROFILES/);
+  });
+});
+
+// ============================================================
+// AS. P1-2 — Heatmap interactive (drill-down + filter)
+// ============================================================
+describe('AS · P1-2 heatmap interactive', () => {
+  it('HeatmapChart accepts onCellClick and filter props', () => {
+    const code = readSrc('pages', 'consumption', 'HeatmapChart.jsx');
+    expect(code).toMatch(/onCellClick/);
+    expect(code).toMatch(/filter/);
+  });
+
+  it('HeatmapChart has cursor-pointer on clickable cells', () => {
+    const code = readSrc('pages', 'consumption', 'HeatmapChart.jsx');
+    expect(code).toMatch(/cursor-pointer/);
+  });
+
+  it('HeatmapChart shows "Cliquez pour le detail" when clickable', () => {
+    const code = readSrc('pages', 'consumption', 'HeatmapChart.jsx');
+    expect(code).toMatch(/Cliquez pour le detail/);
+  });
+
+  it('HeatmapChart has title attribute on cells for native tooltip', () => {
+    const code = readSrc('pages', 'consumption', 'HeatmapChart.jsx');
+    expect(code).toMatch(/title=/);
+  });
+
+  it('HeatmapChart filters weekday/weekend via visibleDays', () => {
+    const code = readSrc('pages', 'consumption', 'HeatmapChart.jsx');
+    expect(code).toMatch(/visibleDays/);
+    expect(code).toMatch(/weekday/);
+    expect(code).toMatch(/weekend/);
+  });
+
+  it('SignaturePanel has drill-down state and dayFilter', () => {
+    const code = readSrc('pages', 'consumption', 'SignaturePanel.jsx');
+    expect(code).toMatch(/drillDown/);
+    expect(code).toMatch(/dayFilter/);
+  });
+
+  it('SignaturePanel has filter pills (Semaine typique / Ouvre / Week-end)', () => {
+    const code = readSrc('pages', 'consumption', 'SignaturePanel.jsx');
+    expect(code).toMatch(/Semaine typique/);
+    expect(code).toMatch(/Ouvre/);
+    expect(code).toMatch(/Week-end/);
+  });
+
+  it('SignaturePanel renders drill-down AreaChart for selected cell', () => {
+    const code = readSrc('pages', 'consumption', 'SignaturePanel.jsx');
+    expect(code).toMatch(/drillDownData/);
+    expect(code).toMatch(/AreaChart/);
+    expect(code).toMatch(/Detail/);
+  });
+
+  it('SignaturePanel passes onCellClick to HeatmapChart', () => {
+    const code = readSrc('pages', 'consumption', 'SignaturePanel.jsx');
+    expect(code).toMatch(/onCellClick/);
+  });
+});
+
+// ============================================================
+// AT. P1-3 — Overlay meteo UTC (DST-safe)
+// ============================================================
+describe('AT · P1-3 overlay meteo UTC', () => {
+  it('MeteoPanel imports getEmsWeatherHourly', () => {
+    const code = readSrc('pages', 'consumption', 'MeteoPanel.jsx');
+    expect(code).toMatch(/getEmsWeatherHourly/);
+  });
+
+  it('MeteoPanel has "Afficher la temperature" toggle', () => {
+    const code = readSrc('pages', 'consumption', 'MeteoPanel.jsx');
+    expect(code).toMatch(/Afficher la temperature/);
+    expect(code).toMatch(/showTemp/);
+  });
+
+  it('MeteoPanel has UTC weather fetch with fallback to synthetic', () => {
+    const code = readSrc('pages', 'consumption', 'MeteoPanel.jsx');
+    expect(code).toMatch(/utcWeather/);
+    expect(code).toMatch(/generateSyntheticTemp/);
+  });
+
+  it('MeteoPanel shows weather source in disclaimer', () => {
+    const code = readSrc('pages', 'consumption', 'MeteoPanel.jsx');
+    expect(code).toMatch(/API UTC.*serveur.*DST-safe/);
+    expect(code).toMatch(/synthetique/);
+  });
+
+  it('MeteoPanel conditionally renders temperature Line and YAxis', () => {
+    const code = readSrc('pages', 'consumption', 'MeteoPanel.jsx');
+    expect(code).toMatch(/showTemp &&/);
+    expect(code).toMatch(/yAxisId="temp"/);
+  });
+
+  it('api.js exports getEmsWeatherHourly', () => {
+    const api = readSrc('services', 'api.js');
+    expect(api).toMatch(/export const getEmsWeatherHourly/);
+  });
+
+  it('backend has /weather_hourly endpoint with UTC timestamps', () => {
+    const ems = readBackend('routes', 'ems.py');
+    expect(ems).toMatch(/@router\.get.*weather_hourly/);
+    expect(ems).toMatch(/timezone.*UTC/);
+  });
+
+  it('backend weather_hourly uses sinusoidal interpolation', () => {
+    const ems = readBackend('routes', 'ems.py');
+    expect(ems).toMatch(/math\.sin/);
+    expect(ems).toMatch(/phase/);
+  });
+
+  it('backend weather_hourly returns Z suffix timestamps', () => {
+    const ems = readBackend('routes', 'ems.py');
+    expect(ems).toMatch(/:00:00Z/);
+  });
+});

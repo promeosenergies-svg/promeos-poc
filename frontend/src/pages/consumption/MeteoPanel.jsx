@@ -1,27 +1,32 @@
 /**
- * PROMEOS — MeteoPanel (Sprint V21)
- * Consumption vs synthetic temperature overlay + DJU badge + Pearson correlation.
+ * PROMEOS — MeteoPanel (Sprint P1-3)
+ * Consumption vs temperature overlay + DJU badge + Pearson correlation.
  *
  * - Left Y-axis: consumption (kWh, AreaChart)
- * - Right Y-axis: synthetic temperature (°C, dashed Line)
+ * - Right Y-axis: temperature (°C, dashed Line)
  * - DJU badge: sum of max(0, 18 - T) for each period
  * - Pearson R between consumption and temperature
  *
- * Temperature is synthetic (deterministic seasonal sine wave) — no external API needed.
+ * Temperature source:
+ *   1) UTC hourly data from /api/ems/weather_hourly (DST-safe, all timestamps in Z)
+ *   2) Fallback to synthetic (deterministic seasonal sine wave) if API unavailable
+ *
+ * Toggle "Afficher la température" controls weather visibility.
  *
  * Props:
  *   siteIds     — selected site IDs
  *   energyType  — 'electricity' | 'gas'
  *   days        — period in days (from main explorer state)
  */
-import { useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   ComposedChart, Area, Line,
   XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
-import { Cloud } from 'lucide-react';
+import { Cloud, Thermometer } from 'lucide-react';
 import useEmsTimeseries from './useEmsTimeseries';
+import { getEmsWeatherHourly } from '../../services/api';
 
 // ── Synthetic temperature (deterministic, no external API) ────────────────────
 
@@ -86,13 +91,56 @@ function MeteoTooltip({ active, payload, label }) {
 export default function MeteoPanel({ siteIds = [], energyType = 'electricity', days = 90 }) {
   const { status, chartData } = useEmsTimeseries({ siteIds, energyType, days });
 
-  // Enrich chartData with synthetic temperature
+  // P1-3: Toggle temperature visibility
+  const [showTemp, setShowTemp] = useState(true);
+
+  // P1-3: UTC weather from backend (DST-safe)
+  const [utcWeather, setUtcWeather] = useState(null);
+
+  useEffect(() => {
+    if (!siteIds?.length) return;
+    const siteId = siteIds[0];
+    const now = new Date();
+    const from = new Date(now.getTime() - days * 86400000);
+    const dateFrom = from.toISOString().slice(0, 10);
+    const dateTo = now.toISOString().slice(0, 10);
+    getEmsWeatherHourly(siteId, dateFrom, dateTo)
+      .then((res) => {
+        // Build date→temp lookup from UTC hours
+        const lookup = {};
+        for (const h of (res?.hours || [])) {
+          // Aggregate hourly to daily average for overlay
+          const dayKey = h.t?.slice(0, 10);
+          if (!dayKey) continue;
+          if (!lookup[dayKey]) lookup[dayKey] = { sum: 0, count: 0 };
+          lookup[dayKey].sum += h.temp_c;
+          lookup[dayKey].count += 1;
+        }
+        const daily = {};
+        for (const [k, v] of Object.entries(lookup)) {
+          daily[k] = Math.round((v.sum / v.count) * 10) / 10;
+        }
+        setUtcWeather(daily);
+      })
+      .catch(() => setUtcWeather(null)); // Fallback to synthetic
+  }, [siteIds, days]);
+
+  // Enrich chartData with temperature — prefer UTC weather, fallback to synthetic
   const enrichedData = useMemo(() => {
-    return chartData.map((p) => ({
-      ...p,
-      temp: p.date ? Math.round(generateSyntheticTemp(p.date) * 10) / 10 : null,
-    }));
-  }, [chartData]);
+    return chartData.map((p) => {
+      let temp = null;
+      if (p.date) {
+        // Try UTC weather first (date key = YYYY-MM-DD)
+        const dayKey = typeof p.date === 'string' ? p.date.slice(0, 10) : null;
+        if (utcWeather && dayKey && utcWeather[dayKey] != null) {
+          temp = utcWeather[dayKey];
+        } else {
+          temp = Math.round(generateSyntheticTemp(p.date) * 10) / 10;
+        }
+      }
+      return { ...p, temp };
+    });
+  }, [chartData, utcWeather]);
 
   // DJU computation (base 18°C): sum of max(0, 18 - T) per period
   const dju = useMemo(() => {
@@ -111,6 +159,8 @@ export default function MeteoPanel({ siteIds = [], energyType = 'electricity', d
 
   const correlationLabel = correlation > 0.5 ? 'Forte' : correlation > 0.2 ? 'Modérée' : 'Faible';
   const correlationColor = correlation > 0.5 ? 'text-blue-700 bg-blue-50' : correlation > 0.2 ? 'text-amber-700 bg-amber-50' : 'text-gray-600 bg-gray-100';
+
+  const weatherSource = utcWeather ? 'UTC (serveur)' : 'synthetique (modele)';
 
   // Loading state
   if (status === 'loading') {
@@ -144,18 +194,30 @@ export default function MeteoPanel({ siteIds = [], energyType = 'electricity', d
 
   return (
     <div className="space-y-3">
-      {/* Header + badges */}
+      {/* Header + badges + toggle */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h3 className="text-sm font-semibold text-gray-800">Influence climatique</h3>
-          <p className="text-xs text-gray-500">Consommation vs température extérieure (synthétique)</p>
+          <p className="text-xs text-gray-500">Consommation vs temperature exterieure ({weatherSource})</p>
         </div>
         <div className="flex items-center gap-2">
+          {/* P1-3: Temperature toggle */}
+          <label className="flex items-center gap-1.5 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={showTemp}
+              onChange={(e) => setShowTemp(e.target.checked)}
+              className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <Thermometer size={13} className="text-blue-500" />
+            <span className="text-xs text-gray-600">Afficher la temperature</span>
+          </label>
+          <span className="text-xs text-gray-300">|</span>
           <span className="text-xs text-gray-500">DJU :</span>
           <span className="px-2 py-0.5 text-xs font-medium bg-indigo-50 text-indigo-700 rounded-full">
             {dju.toLocaleString('fr-FR')} °C·j
           </span>
-          <span className="text-xs text-gray-500">Corrélation :</span>
+          <span className="text-xs text-gray-500">Correlation :</span>
           <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${correlationColor}`}>
             {correlationLabel} ({correlation >= 0 ? '+' : ''}{correlation.toFixed(2)})
           </span>
@@ -183,16 +245,18 @@ export default function MeteoPanel({ siteIds = [], energyType = 'electricity', d
             width={50}
             label={{ value: 'kWh', angle: -90, position: 'insideLeft', fontSize: 10, fill: '#94a3b8' }}
           />
-          {/* Right Y: temperature */}
-          <YAxis
-            yAxisId="temp"
-            orientation="right"
-            tick={{ fontSize: 11, fill: '#60a5fa' }}
-            tickLine={false}
-            axisLine={false}
-            width={40}
-            label={{ value: '°C', angle: 90, position: 'insideRight', fontSize: 10, fill: '#60a5fa' }}
-          />
+          {/* Right Y: temperature — hidden when toggle off */}
+          {showTemp && (
+            <YAxis
+              yAxisId="temp"
+              orientation="right"
+              tick={{ fontSize: 11, fill: '#60a5fa' }}
+              tickLine={false}
+              axisLine={false}
+              width={40}
+              label={{ value: '°C', angle: 90, position: 'insideRight', fontSize: 10, fill: '#60a5fa' }}
+            />
+          )}
           <Tooltip content={<MeteoTooltip />} />
           <Legend
             iconType="circle"
@@ -211,23 +275,26 @@ export default function MeteoPanel({ siteIds = [], energyType = 'electricity', d
             dot={false}
             activeDot={{ r: 3 }}
           />
-          <Line
-            yAxisId="temp"
-            type="monotone"
-            dataKey="temp"
-            name="Température"
-            stroke="#60a5fa"
-            strokeWidth={1.5}
-            strokeDasharray="4 2"
-            dot={false}
-            activeDot={{ r: 3 }}
-          />
+          {showTemp && (
+            <Line
+              yAxisId="temp"
+              type="monotone"
+              dataKey="temp"
+              name="Temperature"
+              stroke="#60a5fa"
+              strokeWidth={1.5}
+              strokeDasharray="4 2"
+              dot={false}
+              activeDot={{ r: 3 }}
+            />
+          )}
         </ComposedChart>
       </ResponsiveContainer>
 
       {/* Disclaimer */}
       <p className="text-[11px] text-gray-400">
-        Température synthétique (modèle saisonnier) · DJU base 18 °C · R de Pearson sur la période
+        Source temperature : {utcWeather ? 'API UTC (serveur, DST-safe)' : 'modele saisonnier synthetique'}
+        {' · '}DJU base 18 °C · R de Pearson sur la periode
       </p>
     </div>
   );
