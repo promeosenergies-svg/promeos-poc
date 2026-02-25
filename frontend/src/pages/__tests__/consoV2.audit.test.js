@@ -724,18 +724,18 @@ describe('AX · ConsumptionPortfolioPage structure', () => {
     expect(code).toMatch(/getPortfolioSites/);
   });
 
-  it('has 4 KPI cards (kWh, EUR, CO2, Couverture)', () => {
+  it('has 4 KPI cards (kWh, EUR/Cout, CO2, Couverture)', () => {
     expect(code).toMatch(/kWh total/);
-    expect(code).toMatch(/EUR total/);
-    expect(code).toMatch(/CO2e/);
+    expect(code).toMatch(/Cout estime|EUR total/);
+    expect(code).toMatch(/CO2|Emissions/);
     expect(code).toMatch(/Couverture/);
   });
 
-  it('has "Ou agir maintenant" section with 4 top-lists', () => {
-    expect(code).toMatch(/Ou agir maintenant/);
-    expect(code).toMatch(/Impact estime/);
+  it('has "Ou agir" section with 4 top-lists', () => {
+    expect(code).toMatch(/Ou agir/);
+    expect(code).toMatch(/Impact.*estime/);
     expect(code).toMatch(/Derives detectees/);
-    expect(code).toMatch(/Base nocturne elevee/);
+    expect(code).toMatch(/nocturne/i);
     expect(code).toMatch(/Pics de puissance/);
   });
 
@@ -747,10 +747,10 @@ describe('AX · ConsumptionPortfolioPage structure', () => {
   });
 
   it('has row actions (Explorer, Diagnostic, Voir facture, Creer action)', () => {
-    expect(code).toMatch(/\/consommations\/explorer\?site_ids=/);
-    expect(code).toMatch(/\/diagnostic-conso\?site_id=/);
-    expect(code).toMatch(/deepLinkWithContext/);
-    expect(code).toMatch(/deepLinkNewAction/);
+    expect(code).toMatch(/toConsoExplorer|\/consommations\/explorer/);
+    expect(code).toMatch(/toConsoDiag|\/diagnostic-conso/);
+    expect(code).toMatch(/toBillIntel|deepLinkWithContext/);
+    expect(code).toMatch(/toActionNew|deepLinkNewAction/);
   });
 
   it('has loading skeletons and empty state', () => {
@@ -862,7 +862,7 @@ describe('BA · Portfolio V1.1 backend enhancements', () => {
   });
 });
 
-describe('BB · Portfolio V1.1 frontend enhancements', () => {
+describe('BB · Portfolio V1.1+ frontend enhancements', () => {
   const code = readSrc('pages', 'ConsumptionPortfolioPage.jsx');
 
   it('has Impact EUR column header', () => {
@@ -893,21 +893,72 @@ describe('BB · Portfolio V1.1 frontend enhancements', () => {
   });
 
   it('has grouped action CTA button', () => {
-    expect(code).toMatch(/Creer action portefeuille/);
     expect(code).toMatch(/handleGroupedAction/);
-    expect(code).toMatch(/campaign_sites/);
+    expect(code).toMatch(/campaign_sites|site_ids/);
+    expect(code).toMatch(/Lancer campagne/);
   });
 
   it('has top_impact section in "Ou agir"', () => {
     expect(code).toMatch(/top_impact/);
-    expect(code).toMatch(/Impact estime/);
+    expect(code).toMatch(/Impact.*estime/);
   });
 });
 
 // ============================================================
-// BC. Portfolio V1.2 — scope banner + deep-links + empty state
+// BC. Route Registry — navigation sans surprise
 // ============================================================
-describe('BC · Portfolio V1.2 scope coherence banner', () => {
+describe('BC · Route registry file exists and exports helpers', () => {
+  const code = readSrc('services', 'routes.js');
+
+  it('exports toConsoExplorer', () => {
+    expect(code).toMatch(/export function toConsoExplorer/);
+  });
+
+  it('exports toConsoDiag', () => {
+    expect(code).toMatch(/export function toConsoDiag/);
+  });
+
+  it('exports toBillIntel', () => {
+    expect(code).toMatch(/export function toBillIntel/);
+  });
+
+  it('exports toActionNew', () => {
+    expect(code).toMatch(/export function toActionNew/);
+  });
+
+  it('exports toAction', () => {
+    expect(code).toMatch(/export function toAction/);
+  });
+
+  it('exports toConsoImport', () => {
+    expect(code).toMatch(/export function toConsoImport/);
+  });
+
+  it('toConsoExplorer builds /consommations/explorer with sites param', () => {
+    expect(code).toMatch(/\/consommations\/explorer/);
+    expect(code).toMatch(/sites/);
+  });
+
+  it('toConsoDiag builds /diagnostic-conso with site_id param', () => {
+    expect(code).toMatch(/\/diagnostic-conso/);
+    expect(code).toMatch(/site_id/);
+  });
+
+  it('toBillIntel builds /bill-intel with site_id and month params', () => {
+    expect(code).toMatch(/\/bill-intel/);
+    expect(code).toMatch(/month/);
+  });
+
+  it('toActionNew builds /actions/new with type, source, campaign_sites', () => {
+    expect(code).toMatch(/\/actions\/new/);
+    expect(code).toMatch(/campaign_sites/);
+  });
+});
+
+// ============================================================
+// BD. Portfolio V1.3 — scope coherence + route registry usage
+// ============================================================
+describe('BD · Portfolio V1.3 scope coherence banner', () => {
   const code = readSrc('pages', 'ConsumptionPortfolioPage.jsx');
 
   it('imports useScope from ScopeContext', () => {
@@ -915,14 +966,15 @@ describe('BC · Portfolio V1.2 scope coherence banner', () => {
     expect(code).toMatch(/ScopeContext/);
   });
 
-  it('reads selectedSiteId and resetScope from useScope', () => {
+  it('reads selectedSiteId, resetScope, scopeLabel from useScope', () => {
     expect(code).toMatch(/selectedSiteId/);
     expect(code).toMatch(/resetScope/);
+    expect(code).toMatch(/scopeLabel/);
   });
 
-  it('shows scope banner when selectedSiteId is set', () => {
-    expect(code).toMatch(/selectedSiteId/);
-    expect(code).toMatch(/Vue portefeuille = multi-sites/);
+  it('shows scope banner with user-friendly message', () => {
+    expect(code).toMatch(/Portefeuille = vue multi-sites/);
+    expect(code).toMatch(/scopeLabel/);
   });
 
   it('has "Passer a Tous les sites" button calling resetScope', () => {
@@ -935,37 +987,85 @@ describe('BC · Portfolio V1.2 scope coherence banner', () => {
   });
 });
 
-describe('BD · Portfolio V1.2 top-list deep-links', () => {
+describe('BE · Portfolio V1.3 uses route registry (no hardcoded routes)', () => {
   const code = readSrc('pages', 'ConsumptionPortfolioPage.jsx');
 
-  it('has TopListActions component with 4 action buttons', () => {
-    expect(code).toMatch(/TopListActions/);
+  it('imports route helpers from services/routes', () => {
+    expect(code).toMatch(/from.*services\/routes/);
+    expect(code).toMatch(/toConsoExplorer/);
+    expect(code).toMatch(/toConsoDiag/);
+    expect(code).toMatch(/toBillIntel/);
+    expect(code).toMatch(/toActionNew/);
   });
 
-  it('top-list actions include Explorer link (site_ids param)', () => {
-    expect(code).toMatch(/\/consommations\/explorer\?site_ids=/);
+  it('does NOT import deepLinkWithContext or deepLinkNewAction (replaced by registry)', () => {
+    expect(code).not.toMatch(/deepLinkWithContext/);
+    expect(code).not.toMatch(/deepLinkNewAction/);
   });
 
-  it('top-list actions include Diagnostic link (site_id param)', () => {
-    expect(code).toMatch(/\/diagnostic-conso\?site_id=/);
+  it('TopListActions uses route registry helpers', () => {
+    expect(code).toMatch(/toConsoExplorer.*site_id.*siteId/);
+    expect(code).toMatch(/toConsoDiag.*site_id.*siteId/);
+    expect(code).toMatch(/toBillIntel.*site_id.*siteId/);
+    expect(code).toMatch(/toActionNew.*source.*portfolio_toplist/);
   });
 
-  it('top-list actions include Voir facture via deepLinkWithContext', () => {
-    expect(code).toMatch(/deepLinkWithContext/);
+  it('table row actions use route registry helpers', () => {
+    expect(code).toMatch(/toConsoExplorer.*site_id.*row\.site_id/);
+    expect(code).toMatch(/toBillIntel.*site_id.*row\.site_id/);
   });
 
-  it('top-list actions include Creer action via deepLinkNewAction', () => {
-    expect(code).toMatch(/deepLinkNewAction.*portfolio_toplist/);
-  });
-
-  it('all 4 top-lists use TopListActions', () => {
+  it('has TopListActions with all 4 top-lists', () => {
     const matches = code.match(/TopListActions/g);
-    // TopListActions definition + 4 usages in top-lists + table rows don't use it
     expect(matches.length).toBeGreaterThanOrEqual(5);
   });
 });
 
-describe('BE · Portfolio V1.2 guided empty state', () => {
+describe('BF · Portfolio V1.3 pilotage UX', () => {
+  const code = readSrc('pages', 'ConsumptionPortfolioPage.jsx');
+
+  it('has pilotage header with site count and period', () => {
+    expect(code).toMatch(/Vous pilotez/);
+    expect(code).toMatch(/sites_total/);
+  });
+
+  it('has coverage % with tooltip', () => {
+    expect(code).toMatch(/coveragePct/);
+    expect(code).toMatch(/Couverture/);
+    expect(code).toMatch(/HelpCircle/);
+  });
+
+  it('has KPI card with "Cout estime" label and source explanation', () => {
+    expect(code).toMatch(/Cout estime/);
+    expect(code).toMatch(/0,18 EUR\/kWh/);
+  });
+
+  it('has KPI card with "Emissions CO2" and ADEME source', () => {
+    expect(code).toMatch(/Emissions CO2/);
+    expect(code).toMatch(/ADEME 2024/);
+  });
+
+  it('has row click handler navigating to Explorer', () => {
+    expect(code).toMatch(/handleRowClick/);
+    expect(code).toMatch(/cursor-pointer/);
+    expect(code).toMatch(/Cliquez pour explorer/);
+  });
+
+  it('Actions column is smart: shows eye icon when actions exist, plus icon otherwise', () => {
+    expect(code).toMatch(/Eye/);
+    expect(code).toMatch(/open_actions_count > 0/);
+    expect(code).toMatch(/Voir les actions en cours/);
+    expect(code).toMatch(/Creer une action/);
+  });
+
+  it('Diagnostics count is a clickable button linking to diag page', () => {
+    expect(code).toMatch(/diagnostics_count > 0/);
+    expect(code).toMatch(/Voir les diagnostics/);
+    expect(code).toMatch(/toConsoDiag/);
+  });
+});
+
+describe('BG · Portfolio V1.3 guided empty state', () => {
   const code = readSrc('pages', 'ConsumptionPortfolioPage.jsx');
 
   it('has handleResetFilters function', () => {
@@ -981,18 +1081,35 @@ describe('BE · Portfolio V1.2 guided empty state', () => {
     expect(code).toMatch(/RotateCcw/);
   });
 
-  it('has "Aller a Import & Analyse" CTA navigating to /consommations/import', () => {
-    expect(code).toMatch(/Aller a Import & Analyse/);
-    expect(code).toMatch(/\/consommations\/import/);
-  });
-
-  it('has Upload icon for import CTA', () => {
-    expect(code).toMatch(/Upload/);
+  it('has "Importer des donnees" CTA using toConsoImport', () => {
+    expect(code).toMatch(/Importer des donnees/);
+    expect(code).toMatch(/toConsoImport/);
   });
 
   it('shows contextual message based on hasActiveFilters', () => {
     expect(code).toMatch(/hasActiveFilters/);
     expect(code).toMatch(/reinitialiser les filtres/i);
     expect(code).toMatch(/Importez des donnees/);
+  });
+});
+
+// ============================================================
+// BH. Explorer scope coherence — single-site banner
+// ============================================================
+describe('BH · Explorer scope coherence banner', () => {
+  const code = readSrc('pages', 'ConsumptionExplorerPage.jsx');
+
+  it('reads scopeLabel from useScope', () => {
+    expect(code).toMatch(/scopeLabel/);
+  });
+
+  it('shows scope banner when selectedSiteId and single site', () => {
+    expect(code).toMatch(/selectedSiteId && siteIds\.length === 1/);
+    expect(code).toMatch(/Vous explorez/);
+    expect(code).toMatch(/scopeLabel/);
+  });
+
+  it('mentions multi-selection is available', () => {
+    expect(code).toMatch(/multi-selection/i);
   });
 });

@@ -311,3 +311,46 @@ class TestPortfolioV11:
         })
         data = r.json()
         assert data["total"] == 0
+
+
+class TestPortfolioV13:
+    """V1.3: stable ordering, non-null fields, query param robustness."""
+
+    def test_sites_ordering_stable_across_calls(self, env):
+        """Same params → same row order (deterministic)."""
+        client, _, _ = env
+        params = {"from": "2025-03-01", "to": "2025-03-31", "sort": "kwh_desc"}
+        r1 = client.get("/api/portfolio/consumption/sites", params=params).json()
+        r2 = client.get("/api/portfolio/consumption/sites", params=params).json()
+        ids1 = [r["site_id"] for r in r1["rows"]]
+        ids2 = [r["site_id"] for r in r2["rows"]]
+        assert ids1 == ids2
+
+    def test_site_row_fields_non_null(self, env):
+        """All required fields are present and non-null (may be 0 or empty string)."""
+        client, _, _ = env
+        r = client.get("/api/portfolio/consumption/sites", params={
+            "from": "2025-03-01", "to": "2025-03-31",
+        })
+        data = r.json()
+        for row in data["rows"]:
+            assert row["site_id"] is not None
+            assert row["site_name"] is not None
+            assert row["kwh"] is not None
+            assert row["eur"] is not None
+            assert row["co2"] is not None
+            assert row["confidence"] in ("high", "medium", "low")
+            assert row["diagnostics_count"] is not None
+            assert row["impact_eur_estimated"] is not None
+            assert row["open_actions_count"] is not None
+
+    def test_summary_with_empty_date_range(self, env):
+        """Date range before any data → totals should be 0, no crash."""
+        client, _, _ = env
+        r = client.get("/api/portfolio/consumption/summary", params={
+            "from": "2020-01-01", "to": "2020-01-31",
+        })
+        assert r.status_code == 200
+        data = r.json()
+        assert data["totals"]["kwh_total"] == 0
+        assert data["coverage"]["sites_with_data"] == 0
