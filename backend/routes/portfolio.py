@@ -1,6 +1,7 @@
 """
-PROMEOS — Portfolio Consumption Endpoints (V1)
+PROMEOS — Portfolio Consumption Endpoints (V1.1)
 Aggregated multi-site view: summary + per-site table.
+V1.1: impact_eur_estimated, open_actions_count, with_actions filter, impact sort.
 """
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
@@ -12,6 +13,8 @@ from database import get_db
 from models import Site
 from models.energy_models import Meter, MeterReading, EnergyVector
 from models.consumption_insight import ConsumptionInsight
+from models.action_item import ActionItem
+from models.enums import ActionStatus
 
 router = APIRouter(prefix="/api/portfolio/consumption", tags=["Portfolio Consumption"])
 
@@ -94,6 +97,63 @@ def _confidence_for_readings(n_readings: int, days: int) -> str:
     return "low"
 
 
+def _site_impact_eur(db: Session, site_id: int, dt_from: datetime) -> float:
+    """Sum of estimated_loss_eur from consumption insights for a site."""
+    total = db.query(func.sum(ConsumptionInsight.estimated_loss_eur)).filter(
+        ConsumptionInsight.site_id == site_id,
+        ConsumptionInsight.period_start >= dt_from,
+        ConsumptionInsight.estimated_loss_eur.isnot(None),
+    ).scalar()
+    return round(total, 2) if total else 0.0
+
+
+def _site_open_actions(db: Session, site_id: int) -> int:
+    """Count of open/in_progress actions for a site."""
+    return db.query(func.count(ActionItem.id)).filter(
+        ActionItem.site_id == site_id,
+        ActionItem.status.in_([ActionStatus.OPEN, ActionStatus.IN_PROGRESS]),
+    ).scalar() or 0
+
+
+def _build_site_row(db, site, dt_from, dt_to, days):
+    """Build a single site row dict with all metrics."""
+    conso = _site_consumption(db, site.id, dt_from, dt_to)
+    kwh = conso.kwh or 0
+    n = conso.n_readings or 0
+    last_reading = conso.last_reading
+    has_data = kwh > 0
+    conf = _confidence_for_readings(n, days) if has_data else "low"
+
+    eur = round(kwh * DEFAULT_EUR_KWH, 2)
+    co2 = round(kwh * CO2E_FACTOR, 1)
+
+    diag_count = db.query(func.count(ConsumptionInsight.id)).filter(
+        ConsumptionInsight.site_id == site.id,
+        ConsumptionInsight.period_start >= dt_from,
+    ).scalar() or 0
+
+    peak_kw = _site_peak_kw(db, site.id, dt_from, dt_to) if has_data else None
+    base_night = _base_night_pct(db, site.id, dt_from, dt_to) if has_data else None
+    impact_eur = _site_impact_eur(db, site.id, dt_from)
+    open_actions = _site_open_actions(db, site.id)
+
+    return {
+        "site_id": site.id,
+        "site_name": site.nom,
+        "kwh": round(kwh, 1),
+        "eur": eur,
+        "co2": co2,
+        "base_night_pct": base_night,
+        "peak_kw": round(peak_kw, 1) if peak_kw else None,
+        "diagnostics_count": diag_count,
+        "impact_eur_estimated": impact_eur,
+        "open_actions_count": open_actions,
+        "confidence": conf,
+        "last_reading_date": last_reading.isoformat() if last_reading else None,
+        "n_readings": n,
+    }
+
+
 # -------------------------------------------------------------------
 # GET /api/portfolio/consumption/summary
 # -------------------------------------------------------------------
@@ -127,73 +187,50 @@ def get_portfolio_summary(
     site_rows = []
 
     for site in sites:
-        conso = _site_consumption(db, site.id, dt_from, dt_to)
-        kwh = conso.kwh or 0
-        n = conso.n_readings or 0
-        last_reading = conso.last_reading
-
-        has_data = kwh > 0
-        if has_data:
+        row = _build_site_row(db, site, dt_from, dt_to, days)
+        if row["kwh"] > 0:
             sites_with_data += 1
-
-        conf = _confidence_for_readings(n, days) if has_data else "low"
-        confidence_split[conf] += 1
-
-        eur = round(kwh * DEFAULT_EUR_KWH, 2)
-        co2 = round(kwh * CO2E_FACTOR, 1)
-
-        # Diagnostics count
-        diag_count = db.query(func.count(ConsumptionInsight.id)).filter(
-            ConsumptionInsight.site_id == site.id,
-            ConsumptionInsight.period_start >= dt_from,
-        ).scalar() or 0
-
-        # Peak & base night (only if data)
-        peak_kw = _site_peak_kw(db, site.id, dt_from, dt_to) if has_data else None
-        base_night = _base_night_pct(db, site.id, dt_from, dt_to) if has_data else None
-
-        kwh_total += kwh
-
-        site_rows.append({
-            "site_id": site.id,
-            "site_name": site.nom,
-            "kwh": round(kwh, 1),
-            "eur": eur,
-            "co2": co2,
-            "base_night_pct": base_night,
-            "peak_kw": round(peak_kw, 1) if peak_kw else None,
-            "diagnostics_count": diag_count,
-            "confidence": conf,
-            "last_reading_date": last_reading.isoformat() if last_reading else None,
-            "n_readings": n,
-        })
+        confidence_split[row["confidence"]] += 1
+        kwh_total += row["kwh"]
+        site_rows.append(row)
 
     eur_total = round(kwh_total * DEFAULT_EUR_KWH, 2)
     co2_total = round(kwh_total * CO2E_FACTOR, 1)
+    impact_eur_total = round(sum(r["impact_eur_estimated"] for r in site_rows), 2)
 
     # Build top-lists
     with_data = [r for r in site_rows if r["kwh"] > 0]
 
-    # Top drift: sites with most diagnostics of type "derive"
     top_drift = sorted(
         [r for r in with_data if r["diagnostics_count"] > 0],
         key=lambda r: r["diagnostics_count"],
         reverse=True,
     )[:5]
 
-    # Top base nocturne: highest night/day ratio
     top_base_night = sorted(
         [r for r in with_data if r["base_night_pct"] is not None],
         key=lambda r: r["base_night_pct"],
         reverse=True,
     )[:5]
 
-    # Top peaks: highest peak_kw
     top_peaks = sorted(
         [r for r in with_data if r["peak_kw"] is not None],
         key=lambda r: r["peak_kw"],
         reverse=True,
     )[:5]
+
+    # V1.1: Top impact — sites with highest estimated loss
+    top_impact = sorted(
+        [r for r in with_data if r["impact_eur_estimated"] > 0],
+        key=lambda r: r["impact_eur_estimated"],
+        reverse=True,
+    )[:5]
+
+    def _top_row(r, extra_keys):
+        base = {"site_id": r["site_id"], "site_name": r["site_name"], "kwh": r["kwh"], "confidence": r["confidence"]}
+        for k in extra_keys:
+            base[k] = r[k]
+        return base
 
     return {
         "period": {"from": d_from.isoformat(), "to": d_to.isoformat(), "days": days},
@@ -202,15 +239,17 @@ def get_portfolio_summary(
             "eur_total": eur_total,
             "eur_source": "estime",
             "co2_total": co2_total,
+            "impact_eur_total": impact_eur_total,
         },
         "coverage": {
             "sites_total": sites_total,
             "sites_with_data": sites_with_data,
             "confidence_split": confidence_split,
         },
-        "top_drift": [{"site_id": r["site_id"], "site_name": r["site_name"], "diagnostics_count": r["diagnostics_count"], "kwh": r["kwh"], "confidence": r["confidence"]} for r in top_drift],
-        "top_base_night": [{"site_id": r["site_id"], "site_name": r["site_name"], "base_night_pct": r["base_night_pct"], "kwh": r["kwh"], "confidence": r["confidence"]} for r in top_base_night],
-        "top_peaks": [{"site_id": r["site_id"], "site_name": r["site_name"], "peak_kw": r["peak_kw"], "kwh": r["kwh"], "confidence": r["confidence"]} for r in top_peaks],
+        "top_drift": [_top_row(r, ["diagnostics_count"]) for r in top_drift],
+        "top_base_night": [_top_row(r, ["base_night_pct"]) for r in top_base_night],
+        "top_peaks": [_top_row(r, ["peak_kw"]) for r in top_peaks],
+        "top_impact": [_top_row(r, ["impact_eur_estimated"]) for r in top_impact],
     }
 
 
@@ -221,9 +260,10 @@ def get_portfolio_summary(
 def get_portfolio_sites(
     date_from: Optional[str] = Query(None, alias="from"),
     date_to: Optional[str] = Query(None, alias="to"),
-    sort: str = Query("kwh_desc", description="kwh_desc|kwh_asc|name|peak|base_night|diagnostics"),
+    sort: str = Query("impact_desc", description="impact_desc|kwh_desc|kwh_asc|name|peak|base_night|diagnostics"),
     confidence: Optional[str] = Query(None, description="high|medium|low"),
     with_anomalies: bool = Query(False),
+    with_actions: Optional[str] = Query(None, description="with|without — filter by open actions"),
     search: Optional[str] = Query(None),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
@@ -232,6 +272,7 @@ def get_portfolio_sites(
 ):
     """
     Paginated site-level consumption table for portfolio view.
+    V1.1: impact_eur_estimated, open_actions_count, with_actions filter, impact sort.
     """
     d_from = _parse_date_or_default(date_from, 90)
     d_to = _parse_date_or_default(date_to, 0) if date_to else date_cls.today()
@@ -247,54 +288,28 @@ def get_portfolio_sites(
         q = q.filter(Site.nom.ilike(f"%{search}%"))
     all_sites = q.all()
 
-    rows = []
-    for site in all_sites:
-        conso = _site_consumption(db, site.id, dt_from, dt_to)
-        kwh = conso.kwh or 0
-        n = conso.n_readings or 0
-        last_reading = conso.last_reading
-        has_data = kwh > 0
-        conf = _confidence_for_readings(n, days) if has_data else "low"
-
-        eur = round(kwh * DEFAULT_EUR_KWH, 2)
-        co2 = round(kwh * CO2E_FACTOR, 1)
-
-        diag_count = db.query(func.count(ConsumptionInsight.id)).filter(
-            ConsumptionInsight.site_id == site.id,
-            ConsumptionInsight.period_start >= dt_from,
-        ).scalar() or 0
-
-        peak_kw = _site_peak_kw(db, site.id, dt_from, dt_to) if has_data else None
-        base_night = _base_night_pct(db, site.id, dt_from, dt_to) if has_data else None
-
-        rows.append({
-            "site_id": site.id,
-            "site_name": site.nom,
-            "kwh": round(kwh, 1),
-            "eur": eur,
-            "co2": co2,
-            "base_night_pct": base_night,
-            "peak_kw": round(peak_kw, 1) if peak_kw else None,
-            "diagnostics_count": diag_count,
-            "confidence": conf,
-            "last_reading_date": last_reading.isoformat() if last_reading else None,
-        })
+    rows = [_build_site_row(db, site, dt_from, dt_to, days) for site in all_sites]
 
     # Filters
     if confidence:
         rows = [r for r in rows if r["confidence"] == confidence]
     if with_anomalies:
         rows = [r for r in rows if r["diagnostics_count"] > 0]
+    if with_actions == "with":
+        rows = [r for r in rows if r["open_actions_count"] > 0]
+    elif with_actions == "without":
+        rows = [r for r in rows if r["open_actions_count"] == 0]
 
     # Sort
     sort_key = {
+        "impact_desc": lambda r: -(r["impact_eur_estimated"] or 0),
         "kwh_desc": lambda r: -(r["kwh"] or 0),
         "kwh_asc": lambda r: r["kwh"] or 0,
         "name": lambda r: (r["site_name"] or "").lower(),
         "peak": lambda r: -(r["peak_kw"] or 0),
         "base_night": lambda r: -(r["base_night_pct"] or 0),
         "diagnostics": lambda r: -(r["diagnostics_count"] or 0),
-    }.get(sort, lambda r: -(r["kwh"] or 0))
+    }.get(sort, lambda r: -(r["impact_eur_estimated"] or 0))
     rows.sort(key=sort_key)
 
     total = len(rows)

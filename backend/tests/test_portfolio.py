@@ -103,6 +103,7 @@ class TestPortfolioSummary:
         assert "top_drift" in data
         assert "top_base_night" in data
         assert "top_peaks" in data
+        assert "top_impact" in data
 
     def test_totals_kwh_positive(self, env):
         client, _, _ = env
@@ -184,7 +185,8 @@ class TestPortfolioSites:
         data = r.json()
         row = data["rows"][0]
         for key in ["site_id", "site_name", "kwh", "eur", "co2", "confidence",
-                     "peak_kw", "base_night_pct", "diagnostics_count"]:
+                     "peak_kw", "base_night_pct", "diagnostics_count",
+                     "impact_eur_estimated", "open_actions_count"]:
             assert key in row, f"Missing key: {key}"
 
     def test_sort_kwh_desc(self, env):
@@ -244,3 +246,68 @@ class TestPortfolioSites:
         })
         data2 = r2.json()
         assert len(data2["rows"]) == 1
+
+
+class TestPortfolioV11:
+    """V1.1: impact_eur_estimated, open_actions_count, with_actions filter, impact sort."""
+
+    def test_impact_eur_in_summary_totals(self, env):
+        client, _, _ = env
+        r = client.get("/api/portfolio/consumption/summary", params={
+            "from": "2025-03-01", "to": "2025-03-31",
+        })
+        data = r.json()
+        assert "impact_eur_total" in data["totals"]
+        # Site Alpha has insight with estimated_loss_eur=90
+        assert data["totals"]["impact_eur_total"] >= 90
+
+    def test_top_impact_list(self, env):
+        client, _, _ = env
+        r = client.get("/api/portfolio/consumption/summary", params={
+            "from": "2025-03-01", "to": "2025-03-31",
+        })
+        data = r.json()
+        assert len(data["top_impact"]) >= 1
+        assert data["top_impact"][0]["impact_eur_estimated"] >= 90
+
+    def test_impact_eur_in_site_row(self, env):
+        client, _, _ = env
+        r = client.get("/api/portfolio/consumption/sites", params={
+            "from": "2025-03-01", "to": "2025-03-31",
+            "search": "Alpha",
+        })
+        data = r.json()
+        row = data["rows"][0]
+        assert row["impact_eur_estimated"] >= 90
+
+    def test_sort_impact_desc(self, env):
+        client, _, _ = env
+        r = client.get("/api/portfolio/consumption/sites", params={
+            "from": "2025-03-01", "to": "2025-03-31",
+            "sort": "impact_desc",
+        })
+        data = r.json()
+        impacts = [r["impact_eur_estimated"] for r in data["rows"]]
+        assert impacts == sorted(impacts, reverse=True)
+
+    def test_filter_with_actions_without(self, env):
+        """No actions seeded → with_actions='without' should return all sites."""
+        client, _, _ = env
+        r = client.get("/api/portfolio/consumption/sites", params={
+            "from": "2025-03-01", "to": "2025-03-31",
+            "with_actions": "without",
+        })
+        data = r.json()
+        assert data["total"] == 3  # All sites have 0 open actions
+        for row in data["rows"]:
+            assert row["open_actions_count"] == 0
+
+    def test_filter_with_actions_with(self, env):
+        """No actions seeded → with_actions='with' should return 0 sites."""
+        client, _, _ = env
+        r = client.get("/api/portfolio/consumption/sites", params={
+            "from": "2025-03-01", "to": "2025-03-31",
+            "with_actions": "with",
+        })
+        data = r.json()
+        assert data["total"] == 0

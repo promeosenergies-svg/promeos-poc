@@ -731,8 +731,9 @@ describe('AX · ConsumptionPortfolioPage structure', () => {
     expect(code).toMatch(/Couverture/);
   });
 
-  it('has "Ou agir maintenant" section with 3 top-lists', () => {
+  it('has "Ou agir maintenant" section with 4 top-lists', () => {
     expect(code).toMatch(/Ou agir maintenant/);
+    expect(code).toMatch(/Impact estime/);
     expect(code).toMatch(/Derives detectees/);
     expect(code).toMatch(/Base nocturne elevee/);
     expect(code).toMatch(/Pics de puissance/);
@@ -799,5 +800,106 @@ describe('AY · Portfolio route & tab integration', () => {
     const api = readSrc('services', 'api.js');
     expect(api).toMatch(/\/portfolio\/consumption\/summary/);
     expect(api).toMatch(/\/portfolio\/consumption\/sites/);
+  });
+});
+
+
+// ============================================================
+// AZ. KPI Explorer coherence fix
+// ============================================================
+describe('AZ · KPI Explorer coherence — totalKwh from hphc', () => {
+  const code = readSrc('components', 'ConsoKpiHeader.jsx');
+
+  it('ConsoKpiHeader uses hphc?.total_kwh as primary kWh source', () => {
+    expect(code).toMatch(/hphc\?\.total_kwh/);
+  });
+
+  it('ConsoKpiHeader fallback chain includes tunnel and progression', () => {
+    // hphc?.total_kwh ?? tunnel?.total_kwh ?? progression?.ytd_actual_kwh
+    expect(code).toMatch(/hphc\?\.total_kwh.*tunnel\?\.total_kwh.*progression\?\.ytd_actual_kwh/);
+  });
+
+  it('ConsoKpiHeader still uses hphc for EUR total', () => {
+    expect(code).toMatch(/hphc\?\.total_cost_eur/);
+  });
+});
+
+
+// ============================================================
+// BA. Portfolio V1.1 — Impact EUR + Actions + CTA groupee
+// ============================================================
+describe('BA · Portfolio V1.1 backend enhancements', () => {
+  const code = readBackend('routes', 'portfolio.py');
+
+  it('imports ActionItem and ActionStatus', () => {
+    expect(code).toMatch(/from models\.action_item import ActionItem/);
+    expect(code).toMatch(/from models\.enums import ActionStatus/);
+  });
+
+  it('has impact_eur_estimated in site row', () => {
+    expect(code).toMatch(/impact_eur_estimated/);
+  });
+
+  it('has open_actions_count in site row', () => {
+    expect(code).toMatch(/open_actions_count/);
+  });
+
+  it('has top_impact list in summary', () => {
+    expect(code).toMatch(/top_impact/);
+  });
+
+  it('has with_actions filter (with/without)', () => {
+    expect(code).toMatch(/with_actions.*with/);
+    expect(code).toMatch(/with_actions.*without/);
+  });
+
+  it('has impact_desc sort option', () => {
+    expect(code).toMatch(/impact_desc/);
+  });
+
+  it('has impact_eur_total in summary totals', () => {
+    expect(code).toMatch(/impact_eur_total/);
+  });
+});
+
+describe('BB · Portfolio V1.1 frontend enhancements', () => {
+  const code = readSrc('pages', 'ConsumptionPortfolioPage.jsx');
+
+  it('has Impact EUR column header', () => {
+    expect(code).toMatch(/Impact EUR/);
+  });
+
+  it('has impact_eur_estimated display in table rows', () => {
+    expect(code).toMatch(/impact_eur_estimated/);
+  });
+
+  it('has open_actions_count display in table rows', () => {
+    expect(code).toMatch(/open_actions_count/);
+  });
+
+  it('has actionsFilter state (with/without)', () => {
+    expect(code).toMatch(/actionsFilter/);
+    expect(code).toMatch(/Avec actions/);
+    expect(code).toMatch(/Sans action/);
+  });
+
+  it('default sort is impact_desc', () => {
+    expect(code).toMatch(/useState\(['"]impact_desc['"]\)/);
+  });
+
+  it('has impact_desc sort option in select', () => {
+    expect(code).toMatch(/value="impact_desc"/);
+    expect(code).toMatch(/Impact EUR decroissant/);
+  });
+
+  it('has grouped action CTA button', () => {
+    expect(code).toMatch(/Creer action portefeuille/);
+    expect(code).toMatch(/handleGroupedAction/);
+    expect(code).toMatch(/campaign_sites/);
+  });
+
+  it('has top_impact section in "Ou agir"', () => {
+    expect(code).toMatch(/top_impact/);
+    expect(code).toMatch(/Impact estime/);
   });
 });

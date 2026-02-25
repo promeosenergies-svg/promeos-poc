@@ -1,13 +1,15 @@
 /**
- * PROMEOS — ConsumptionPortfolioPage (V1)
+ * PROMEOS — ConsumptionPortfolioPage (V1.1)
  * Multi-site B2B portfolio view: 4 KPI cards, top-lists "Ou agir",
  * sortable/filterable site table with row actions.
+ * V1.1: impact EUR, actions filter, grouped action CTA.
  */
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Zap, Euro, Leaf, ShieldCheck, AlertTriangle, Moon, Activity,
   Search, ArrowRight, FileText, Plus, BarChart3, TrendingDown,
+  CheckSquare, DollarSign,
 } from 'lucide-react';
 import {
   PageShell, Card, CardBody, SkeletonCard, EmptyState, TrustBadge,
@@ -47,10 +49,11 @@ export default function ConsumptionPortfolioPage() {
   const [sites, setSites] = useState([]);
   const [sitesTotal, setSitesTotal] = useState(0);
   const [sitesLoading, setSitesLoading] = useState(true);
-  const [sort, setSort] = useState('kwh_desc');
+  const [sort, setSort] = useState('impact_desc');
   const [search, setSearch] = useState('');
   const [confidenceFilter, setConfidenceFilter] = useState(null);
   const [anomalyFilter, setAnomalyFilter] = useState(false);
+  const [actionsFilter, setActionsFilter] = useState(null); // null | 'with' | 'without'
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 25;
 
@@ -72,6 +75,7 @@ export default function ConsumptionPortfolioPage() {
       sort,
       confidence: confidenceFilter || undefined,
       with_anomalies: anomalyFilter || undefined,
+      with_actions: actionsFilter || undefined,
       search: search || undefined,
       limit: PAGE_SIZE,
       offset: page * PAGE_SIZE,
@@ -82,12 +86,12 @@ export default function ConsumptionPortfolioPage() {
       })
       .catch(() => addToast({ type: 'error', message: 'Erreur chargement sites portfolio' }))
       .finally(() => setSitesLoading(false));
-  }, [dates.from, dates.to, sort, confidenceFilter, anomalyFilter, search, page]);
+  }, [dates.from, dates.to, sort, confidenceFilter, anomalyFilter, actionsFilter, search, page]);
 
   useEffect(() => { fetchSites(); }, [fetchSites]);
 
   // Reset page on filter changes
-  useEffect(() => { setPage(0); }, [sort, search, confidenceFilter, anomalyFilter]);
+  useEffect(() => { setPage(0); }, [sort, search, confidenceFilter, anomalyFilter, actionsFilter]);
 
   // ─── Computed ─────────────────────────────────────────────────────────
   const totalPages = Math.ceil(sitesTotal / PAGE_SIZE);
@@ -103,6 +107,27 @@ export default function ConsumptionPortfolioPage() {
     if ((high + medium) / total >= 0.5) return 'medium';
     return 'low';
   }, [cov]);
+
+  // Top 5 sites for grouped action CTA
+  const top5ForAction = useMemo(() => {
+    if (!summary?.top_impact?.length && !summary?.top_drift?.length) return [];
+    // Prefer top_impact, fallback to top_drift
+    const pool = summary.top_impact?.length ? summary.top_impact : summary.top_drift || [];
+    return pool.slice(0, 5);
+  }, [summary]);
+
+  // ─── Grouped action handler ──────────────────────────────────────────
+  function handleGroupedAction() {
+    if (top5ForAction.length === 0) return;
+    const siteIds = top5ForAction.map(r => r.site_id).join(',');
+    const titre = `Campagne portfolio — ${top5ForAction.length} sites prioritaires`;
+    navigate(deepLinkNewAction({
+      type: 'consommation',
+      source: 'portfolio_campagne',
+      titre,
+      site_id: top5ForAction[0].site_id,
+    }) + `&campaign_sites=${siteIds}`);
+  }
 
   // ─── Render ───────────────────────────────────────────────────────────
   return (
@@ -128,8 +153,41 @@ export default function ConsumptionPortfolioPage() {
       {/* ═══ OU AGIR MAINTENANT ═══ */}
       {summary && (
         <div className="mt-6">
-          <h2 className="text-sm font-semibold text-gray-700 mb-3">Ou agir maintenant</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-gray-700">Ou agir maintenant</h2>
+            {top5ForAction.length > 0 && (
+              <button
+                onClick={handleGroupedAction}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition"
+              >
+                <CheckSquare size={14} />
+                Creer action portefeuille ({top5ForAction.length} sites)
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Top impact EUR */}
+            <Card>
+              <CardBody>
+                <div className="flex items-center gap-2 mb-3">
+                  <DollarSign size={16} className="text-rose-500" />
+                  <h3 className="text-sm font-semibold text-gray-700">Impact estime</h3>
+                </div>
+                {summary.top_impact?.length > 0 ? (
+                  <ul className="space-y-2">
+                    {summary.top_impact.map((r) => (
+                      <li key={r.site_id} className="flex items-center justify-between text-xs">
+                        <span className="text-gray-700 truncate flex-1">{r.site_name}</span>
+                        <span className="text-rose-600 font-medium ml-2">{fmtNum(r.impact_eur_estimated, 'EUR')}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-xs text-gray-400">Aucun impact detecte</p>
+                )}
+              </CardBody>
+            </Card>
+
             {/* Top derive */}
             <Card>
               <CardBody>
@@ -251,12 +309,35 @@ export default function ConsumptionPortfolioPage() {
             Anomalies
           </button>
 
+          {/* Actions filter */}
+          <button
+            onClick={() => setActionsFilter(actionsFilter === 'with' ? null : 'with')}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition ${
+              actionsFilter === 'with'
+                ? 'bg-green-100 text-green-700'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            Avec actions
+          </button>
+          <button
+            onClick={() => setActionsFilter(actionsFilter === 'without' ? null : 'without')}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition ${
+              actionsFilter === 'without'
+                ? 'bg-gray-200 text-gray-800'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            Sans action
+          </button>
+
           {/* Sort */}
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value)}
             className="text-xs border rounded-lg px-2 py-1.5 bg-white"
           >
+            <option value="impact_desc">Impact EUR decroissant</option>
             <option value="kwh_desc">kWh decroissant</option>
             <option value="kwh_asc">kWh croissant</option>
             <option value="name">Nom A-Z</option>
@@ -282,29 +363,45 @@ export default function ConsumptionPortfolioPage() {
                 <thead>
                   <tr className="border-b border-gray-200 text-left">
                     <th className="py-2 px-3 text-xs font-semibold text-gray-500">Site</th>
+                    <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-right">Impact EUR</th>
                     <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-right">kWh</th>
                     <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-right">EUR</th>
-                    <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-right">CO2e (kg)</th>
                     <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-right">Pic kW</th>
                     <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-right">Base nuit</th>
                     <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-center">Diag.</th>
+                    <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-center">Actions</th>
                     <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-center">Confiance</th>
-                    <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-right">Actions</th>
+                    <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-right"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {sites.map((row) => (
                     <tr key={row.site_id} className="border-b border-gray-100 hover:bg-gray-50 transition">
                       <td className="py-2 px-3 font-medium text-gray-800">{row.site_name}</td>
+                      <td className="py-2 px-3 text-right">
+                        {row.impact_eur_estimated > 0 ? (
+                          <span className="text-rose-600 font-medium">{fmtNum(row.impact_eur_estimated, 'EUR')}</span>
+                        ) : (
+                          <span className="text-gray-300">—</span>
+                        )}
+                      </td>
                       <td className="py-2 px-3 text-right text-gray-700">{fmtNum(row.kwh)}</td>
                       <td className="py-2 px-3 text-right text-gray-700">{fmtNum(row.eur)}</td>
-                      <td className="py-2 px-3 text-right text-gray-700">{fmtNum(row.co2)}</td>
                       <td className="py-2 px-3 text-right text-gray-700">{row.peak_kw != null ? `${row.peak_kw} kW` : '—'}</td>
                       <td className="py-2 px-3 text-right text-gray-700">{row.base_night_pct != null ? `${row.base_night_pct}%` : '—'}</td>
                       <td className="py-2 px-3 text-center">
                         {row.diagnostics_count > 0 ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-700">
                             {row.diagnostics_count}
+                          </span>
+                        ) : (
+                          <span className="text-gray-300">—</span>
+                        )}
+                      </td>
+                      <td className="py-2 px-3 text-center">
+                        {row.open_actions_count > 0 ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-700">
+                            {row.open_actions_count}
                           </span>
                         ) : (
                           <span className="text-gray-300">—</span>
