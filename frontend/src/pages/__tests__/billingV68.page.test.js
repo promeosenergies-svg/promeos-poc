@@ -1115,4 +1115,13 @@ describe('AE · Insight drawer breakdown guarantee', () => {
     expect(drawer).toMatch(/Debug/);
     expect(drawer).toMatch(/isExpert\s*&&\s*error/);
   });
+
+  it('getInsightDetail uses GET method', () => {
+    const apiSrc = readFileSync(resolve(__dirname, '../../services/api.js'), 'utf-8');
+    expect(apiSrc).toMatch(/getInsightDetail.*api\.get\(/);
+  });
+
+  it('get_insight_detail backend uses @router.get', () => {
+    expect(backend).toMatch(/@router\.get\(["']\/insights\/\{insight_id\}["']\)/);
+  });
 });

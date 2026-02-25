@@ -30,7 +30,6 @@ from services.billing_service import (
     shadow_billing_simple,
     BILLING_RULES,
 )
-from services.billing_shadow_v2 import shadow_billing_v2
 from middleware.auth import get_optional_auth, AuthContext
 from services.scope_utils import resolve_org_id
 
@@ -680,6 +679,7 @@ def get_insight_detail(
     # Recalcul V2 à la demande si breakdown absent
     if metrics and metrics.get("expected_ttc") is None and metrics.get("expected_fourniture_ht") is None:
         try:
+            from services.billing_shadow_v2 import shadow_billing_v2
             invoice = db.query(EnergyInvoice).filter(EnergyInvoice.id == insight.invoice_id).first()
             if invoice:
                 lines = db.query(EnergyInvoiceLine).filter(
