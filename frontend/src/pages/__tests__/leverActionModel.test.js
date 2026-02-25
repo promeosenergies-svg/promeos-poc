@@ -104,24 +104,24 @@ describe('buildActionPayload', () => {
 // ══════════════════════════════════════════════════════════════════════════════
 
 describe('buildLeverDeepLink', () => {
-  it('genere un deep-link avec type, key et impact', () => {
+  it('genere un deep-link vers /actions/new avec type, source et ref_id', () => {
     const url = buildLeverDeepLink(makeLever());
 
-    expect(url).toContain('/command-center?');
-    expect(url).toContain('filter=leviers');
+    expect(url).toContain('/actions/new?');
     expect(url).toContain('type=conformite');
-    expect(url).toContain('key=lev-conf-nc');
-    expect(url).toContain('impact=20000');
+    expect(url).toContain('source=lever_engine');
+    expect(url).toContain('ref_id=lev-conf-nc');
+    expect(url).toContain('titre=');
   });
 
-  it('omet impact si null', () => {
-    const url = buildLeverDeepLink(makeLever({ impactEur: null }));
-    expect(url).not.toContain('impact=');
+  it('ne genere PAS de lien vers /command-center (route morte)', () => {
+    const url = buildLeverDeepLink(makeLever());
+    expect(url).not.toContain('/command-center');
   });
 
-  it('retourne /command-center si lever null', () => {
-    expect(buildLeverDeepLink(null)).toBe('/command-center');
-    expect(buildLeverDeepLink({})).toBe('/command-center');
+  it('retourne /actions si lever null', () => {
+    expect(buildLeverDeepLink(null)).toBe('/actions');
+    expect(buildLeverDeepLink({})).toBe('/actions');
   });
 });
 

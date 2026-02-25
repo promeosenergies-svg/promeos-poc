@@ -1217,4 +1217,16 @@ describe('AG · CTA & Routes — zero dead links', () => {
   it('deepLink.js exports deepLinkWithContext', () => {
     expect(deepLink).toMatch(/export function deepLinkWithContext/);
   });
+
+  // --- Dead route regression guards ---
+  it('leverActionModel does NOT reference /command-center (dead route)', () => {
+    const leverModel = readFileSync(resolve(root, 'src/models/leverActionModel.js'), 'utf-8');
+    expect(leverModel).not.toMatch(/\/command-center/);
+    expect(leverModel).toMatch(/\/actions\/new/);
+  });
+
+  it('ImpactDecisionPanel uses buildLeverDeepLink (not hardcoded route)', () => {
+    const panel = readFileSync(resolve(root, 'src/pages/cockpit/ImpactDecisionPanel.jsx'), 'utf-8');
+    expect(panel).toMatch(/buildLeverDeepLink/);
+  });
 });
