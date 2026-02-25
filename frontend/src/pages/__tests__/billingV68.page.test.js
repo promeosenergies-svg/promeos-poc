@@ -613,3 +613,160 @@ describe('BillIntelPage.jsx — ref-based file picker', () => {
     expect(code).toMatch(/ref=\{pdfInputRef\}[\s\S]{0,100}accept=["'].pdf["']/);
   });
 });
+
+
+// ============================================================
+// T. BillingPage — Scope Unifié (V70)
+// ============================================================
+describe('BillingPage — Scope Unifié (V70)', () => {
+  const code = readSrc('pages', 'BillingPage.jsx');
+
+  it('imports useScope from ScopeContext', () => {
+    expect(code).toMatch(/import\s*\{[^}]*useScope[^}]*\}\s*from\s*['"]\.\.\/contexts\/ScopeContext['"]/);
+  });
+
+  it('imports useToast from ToastProvider', () => {
+    expect(code).toMatch(/import\s*\{[^}]*useToast[^}]*\}\s*from\s*['"]\.\.\/ui\/ToastProvider['"]/);
+  });
+
+  it('destructures selectedSiteId from useScope', () => {
+    expect(code).toMatch(/selectedSiteId\s*:\s*scopeSiteId/);
+  });
+
+  it('destructures orgSites from useScope', () => {
+    expect(code).toMatch(/orgSites\s*\}\s*=\s*useScope/);
+  });
+
+  it('derives scopeHasSite', () => {
+    expect(code).toMatch(/const\s+scopeHasSite\s*=\s*!!scopeSiteId/);
+  });
+
+  it('derives localFilterActive', () => {
+    expect(code).toMatch(/const\s+localFilterActive\s*=/);
+  });
+
+  it('syncs scopeSiteId via useEffect', () => {
+    expect(code).toMatch(/useEffect[\s\S]{0,200}setSiteFilter[\s\S]{0,100}scopeSiteId/);
+  });
+
+  it('renders Hérité chip in JSX', () => {
+    expect(code).toMatch(/Hérité\s*:/);
+  });
+
+  it('renders Vue filtrée indicator in JSX', () => {
+    expect(code).toMatch(/Vue filtrée/);
+  });
+
+  it('does NOT import getSites (replaced by orgSites)', () => {
+    expect(code).not.toMatch(/import\s*\{[^}]*getSites[^}]*\}/);
+  });
+});
+
+
+// ============================================================
+// U. BillingPage — Filtres Timeline (V70)
+// ============================================================
+describe('BillingPage — Filtres Timeline (V70)', () => {
+  const code = readSrc('pages', 'BillingPage.jsx');
+
+  it('has statusFilter state', () => {
+    expect(code).toMatch(/useState\s*\(\s*['"]all['"]\s*\)/);
+    expect(code).toMatch(/statusFilter/);
+  });
+
+  it('has periodPreset state', () => {
+    expect(code).toMatch(/periodPreset/);
+    expect(code).toMatch(/setPeriodPreset/);
+  });
+
+  it('has timelineSearch state', () => {
+    expect(code).toMatch(/timelineSearch/);
+    expect(code).toMatch(/setTimelineSearch/);
+  });
+
+  it('has sortMode state', () => {
+    expect(code).toMatch(/sortMode/);
+    expect(code).toMatch(/setSortMode/);
+  });
+
+  it('defines filteredPeriods with useMemo', () => {
+    expect(code).toMatch(/const\s+filteredPeriods\s*=\s*useMemo/);
+  });
+
+  it('defines statusCounts with useMemo', () => {
+    expect(code).toMatch(/const\s+statusCounts\s*=\s*useMemo/);
+  });
+
+  it('renders status chips with statusCounts', () => {
+    expect(code).toMatch(/statusCounts\[/);
+  });
+
+  it('passes filteredPeriods to BillingTimeline', () => {
+    expect(code).toMatch(/periods=\{filteredPeriods\}/);
+  });
+
+  it('supports last3, last6, last12 presets', () => {
+    expect(code).toMatch(/last3/);
+    expect(code).toMatch(/last6/);
+    expect(code).toMatch(/last12/);
+  });
+
+  it('supports priority_missing sort mode', () => {
+    expect(code).toMatch(/priority_missing/);
+  });
+
+  it('imports Search from lucide-react', () => {
+    expect(code).toMatch(/import\s*\{[^}]*Search[^}]*\}\s*from\s*['"]lucide-react['"]/);
+  });
+});
+
+
+// ============================================================
+// V. BillingPage — Import Contextuel (V70)
+// ============================================================
+describe('BillingPage — Import Contextuel (V70)', () => {
+  const code = readSrc('pages', 'BillingPage.jsx');
+
+  it('imports importInvoicesCsv from api', () => {
+    expect(code).toMatch(/import\s*\{[^}]*importInvoicesCsv[^}]*\}\s*from\s*['"]\.\.\/services\/api['"]/);
+  });
+
+  it('imports importInvoicesPdf from api', () => {
+    expect(code).toMatch(/import\s*\{[^}]*importInvoicesPdf[^}]*\}\s*from\s*['"]\.\.\/services\/api['"]/);
+  });
+
+  it('creates csvInputRef with useRef', () => {
+    expect(code).toMatch(/csvInputRef\s*=\s*useRef/);
+  });
+
+  it('creates pdfInputRef with useRef', () => {
+    expect(code).toMatch(/pdfInputRef\s*=\s*useRef/);
+  });
+
+  it('has importContext state', () => {
+    expect(code).toMatch(/importContext/);
+    expect(code).toMatch(/setImportContext/);
+  });
+
+  it('defines handleContextualCsvImport function', () => {
+    expect(code).toMatch(/handleContextualCsvImport/);
+  });
+
+  it('defines handleContextualPdfImport function', () => {
+    expect(code).toMatch(/handleContextualPdfImport/);
+  });
+
+  it('calls toast in CSV import handler', () => {
+    const fn = code.match(/async function handleContextualCsvImport[\s\S]{0,800}/)?.[0] || '';
+    expect(fn).toMatch(/toast\(/);
+  });
+
+  it('calls toast in PDF import handler', () => {
+    const fn = code.match(/async function handleContextualPdfImport[\s\S]{0,800}/)?.[0] || '';
+    expect(fn).toMatch(/toast\(/);
+  });
+
+  it('resets importContext after import', () => {
+    expect(code).toMatch(/setImportContext\(\s*null\s*\)/);
+  });
+});

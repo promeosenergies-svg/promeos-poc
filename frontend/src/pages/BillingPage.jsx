@@ -1,23 +1,27 @@
 /**
- * PROMEOS — BillingPage (V67)
+ * PROMEOS — BillingPage (V70)
  * Timeline & Couverture Facturation : suivi mensuel, détection périodes manquantes.
+ * Scope unifié via ScopeContext, filtres avancés, import contextuel.
  * Route: /billing (alias /facturation)
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CalendarRange, AlertTriangle, CheckCircle, XCircle, RefreshCw, Upload, Zap } from 'lucide-react';
+import { CalendarRange, AlertTriangle, CheckCircle, XCircle, RefreshCw, Upload, Zap, Search } from 'lucide-react';
 import {
   getBillingPeriods,
   getCoverageSummary,
   getMissingPeriods,
   createActionFromBillingInsight,
-  getSites,
+  importInvoicesCsv,
+  importInvoicesPdf,
 } from '../services/api';
 import { Card, CardBody, Button, Badge, EmptyState } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
 import CoverageBar from '../components/CoverageBar';
 import BillingTimeline from '../components/BillingTimeline';
 import { useExpertMode } from '../contexts/ExpertModeContext';
+import { useScope } from '../contexts/ScopeContext';
+import { useToast } from '../ui/ToastProvider';
 
 const PAGE_TITLE = 'Timeline & Couverture Facturation';
 
@@ -37,11 +41,14 @@ export default function BillingPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { isExpert } = useExpertMode();
+  const { selectedSiteId: scopeSiteId, scopeLabel, orgSites } = useScope();
+  const { toast } = useToast();
 
-  // Filtres depuis l'URL (?site_id=X&month=YYYY-MM)
-  const [siteFilter, setSiteFilter] = useState(searchParams.get('site_id') || '');
+  // Filtres depuis l'URL (?site_id=X&month=YYYY-MM) — init depuis scope global
+  const [siteFilter, setSiteFilter] = useState(
+    searchParams.get('site_id') || (scopeSiteId ? String(scopeSiteId) : '')
+  );
   const [activeMonth, setActiveMonth] = useState(searchParams.get('month') || '');
-  const [sites, setSites] = useState([]);
 
   const [summary, setSummary] = useState(null);
   const [periods, setPeriods] = useState([]);
@@ -55,7 +62,28 @@ export default function BillingPage() {
 
   const [createdActions, setCreatedActions] = useState(new Set());
 
+  // Filtres avancés
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [periodPreset, setPeriodPreset] = useState('all');
+  const [timelineSearch, setTimelineSearch] = useState('');
+  const [sortMode, setSortMode] = useState('date_desc');
+
+  // Import contextuel
+  const [importContext, setImportContext] = useState(null);
+  const csvInputRef = useRef(null);
+  const pdfInputRef = useRef(null);
+
   const LIMIT = 24;
+
+  // Scope indicators
+  const scopeHasSite = !!scopeSiteId;
+  const localFilterActive = siteFilter && String(siteFilter) !== String(scopeSiteId || '');
+
+  // Sync scope global → local
+  useEffect(() => {
+    setSiteFilter(scopeSiteId ? String(scopeSiteId) : '');
+    setPeriodsOffset(0);
+  }, [scopeSiteId]);
 
   // Sync filtre → URL
   useEffect(() => {
@@ -159,12 +187,6 @@ export default function BillingPage() {
     fetchAll(siteFilter, 0, false);
   }, [siteFilter]);
 
-  // Charger la liste des sites pour le filtre
-  useEffect(() => {
-    getSites({ limit: 200 }).catch(() => []).then(data => {
-      setSites(Array.isArray(data?.sites) ? data.sites : Array.isArray(data) ? data : []);
-    });
-  }, []);
 
   const handleLoadMore = () => {
     fetchAll(siteFilter, periodsOffset, true);
@@ -183,6 +205,92 @@ export default function BillingPage() {
   };
 
   const hasMore = periodsOffset < periodsTotal;
+
+  // Client-side filtering
+  const filteredPeriods = useMemo(() => {
+    let result = [...periods];
+
+    // Period preset filter
+    if (periodPreset !== 'all') {
+      const now = new Date();
+      const months = periodPreset === 'last3' ? 3 : periodPreset === 'last6' ? 6 : 12;
+      const cutoff = new Date(now.getFullYear(), now.getMonth() - months, 1);
+      const cutoffKey = `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, '0')}`;
+      result = result.filter(p => p.month_key >= cutoffKey);
+    }
+
+    // Status filter
+    if (statusFilter !== 'all') {
+      result = result.filter(p => p.coverage_status === statusFilter);
+    }
+
+    // Text search
+    if (timelineSearch.trim()) {
+      const q = timelineSearch.trim().toLowerCase();
+      result = result.filter(p =>
+        p.month_key?.toLowerCase().includes(q) ||
+        p.pdl_prm?.toLowerCase().includes(q)
+      );
+    }
+
+    // Sort
+    if (sortMode === 'priority_missing') {
+      const order = { missing: 0, partial: 1, covered: 2 };
+      result.sort((a, b) => {
+        const diff = (order[a.coverage_status] ?? 3) - (order[b.coverage_status] ?? 3);
+        return diff !== 0 ? diff : (b.month_key || '').localeCompare(a.month_key || '');
+      });
+    }
+
+    return result;
+  }, [periods, periodPreset, statusFilter, timelineSearch, sortMode]);
+
+  const statusCounts = useMemo(() => ({
+    all: periods.length,
+    covered: periods.filter(p => p.coverage_status === 'covered').length,
+    partial: periods.filter(p => p.coverage_status === 'partial').length,
+    missing: periods.filter(p => p.coverage_status === 'missing').length,
+  }), [periods]);
+
+  // Import contextuel handlers
+  const handleImportClick = (siteId, monthKey, type) => {
+    setImportContext({ siteId, monthKey });
+    if (isExpert) console.log('[BillingPage] import click:', { siteId, monthKey, type });
+    if (type === 'csv') csvInputRef.current?.click();
+    else pdfInputRef.current?.click();
+  };
+
+  async function handleContextualCsvImport(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (isExpert) console.log('[BillingPage] CSV file selected:', file.name, importContext);
+    try {
+      await importInvoicesCsv(file, importContext?.siteId);
+      toast('Import CSV réussi', 'success');
+      fetchAll(siteFilter, 0, false);
+    } catch (err) {
+      if (isExpert) console.error('[BillingPage] CSV import failed:', err);
+      toast('Échec import CSV', 'error');
+    }
+    setImportContext(null);
+    e.target.value = '';
+  }
+
+  async function handleContextualPdfImport(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (isExpert) console.log('[BillingPage] PDF file selected:', file.name, importContext);
+    try {
+      await importInvoicesPdf(file, importContext?.siteId);
+      toast('Import PDF réussi', 'success');
+      fetchAll(siteFilter, 0, false);
+    } catch (err) {
+      if (isExpert) console.error('[BillingPage] PDF import failed:', err);
+      toast('Échec import PDF', 'error');
+    }
+    setImportContext(null);
+    e.target.value = '';
+  }
 
   if (loading) {
     return (
@@ -212,22 +320,34 @@ export default function BillingPage() {
         </Button>
       </div>
 
-      {/* Filtres */}
-      <div className="flex flex-wrap gap-2">
-        <select
-          className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white text-gray-700"
-          value={siteFilter}
-          onChange={e => { setSiteFilter(e.target.value); setPeriodsOffset(0); }}
-        >
-          <option value="">Tous les sites</option>
-          {sites.map(s => (
-            <option key={s.id} value={s.id}>{s.nom}</option>
-          ))}
-        </select>
-        {siteFilter && (
+      {/* Filtres — scope-aware */}
+      <div className="flex flex-wrap gap-2 items-center">
+        {scopeHasSite ? (
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
+            Hérité : {orgSites.find(s => s.id === scopeSiteId)?.nom || `Site ${scopeSiteId}`}
+          </div>
+        ) : (
+          <select
+            className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white text-gray-700"
+            value={siteFilter}
+            onChange={e => { setSiteFilter(e.target.value); setPeriodsOffset(0); }}
+          >
+            <option value="">Tous les sites</option>
+            {orgSites.map(s => (
+              <option key={s.id} value={s.id}>{s.nom}</option>
+            ))}
+          </select>
+        )}
+        {siteFilter && !scopeHasSite && (
           <Button size="sm" variant="ghost" onClick={() => setSiteFilter('')}>
             Réinitialiser
           </Button>
+        )}
+        {localFilterActive && (
+          <div className="flex items-center gap-1 px-2.5 py-1 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
+            Vue filtrée : Site {orgSites.find(s => String(s.id) === String(siteFilter))?.nom || siteFilter}
+            <span className="text-amber-500">(scope global : {scopeLabel || 'Tous les sites'})</span>
+          </div>
         )}
       </div>
 
@@ -310,9 +430,18 @@ export default function BillingPage() {
                     <Button
                       size="xs"
                       variant="secondary"
-                      onClick={() => navigate(item.cta_url)}
+                      type="button"
+                      onClick={() => handleImportClick(item.site_id, item.month_key, 'csv')}
                     >
-                      <Upload size={11} /> Importer
+                      <Upload size={11} /> CSV
+                    </Button>
+                    <Button
+                      size="xs"
+                      variant="secondary"
+                      type="button"
+                      onClick={() => handleImportClick(item.site_id, item.month_key, 'pdf')}
+                    >
+                      <Upload size={11} /> PDF
                     </Button>
                     <Button
                       size="xs"
@@ -339,6 +468,57 @@ export default function BillingPage() {
         </Card>
       )}
 
+      {/* Barre de filtres timeline */}
+      <div className="flex flex-wrap items-center gap-2">
+        <select
+          className="text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white text-gray-700"
+          value={periodPreset}
+          onChange={e => setPeriodPreset(e.target.value)}
+        >
+          <option value="all">Toutes périodes</option>
+          <option value="last3">3 derniers mois</option>
+          <option value="last6">6 derniers mois</option>
+          <option value="last12">12 derniers mois</option>
+        </select>
+        {[
+          { key: 'all', label: 'Tous' },
+          { key: 'covered', label: 'Couverts' },
+          { key: 'partial', label: 'Partiels' },
+          { key: 'missing', label: 'Manquants' },
+        ].map(opt => (
+          <button
+            key={opt.key}
+            type="button"
+            className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+              statusFilter === opt.key
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+            onClick={() => setStatusFilter(opt.key)}
+          >
+            {opt.label} ({statusCounts[opt.key]})
+          </button>
+        ))}
+        <div className="relative">
+          <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Mois ou PDL..."
+            value={timelineSearch}
+            onChange={e => setTimelineSearch(e.target.value)}
+            className="text-xs border border-gray-200 rounded-lg pl-6 pr-2 py-1.5 bg-white text-gray-700 w-36"
+          />
+        </div>
+        <select
+          className="text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white text-gray-700"
+          value={sortMode}
+          onChange={e => setSortMode(e.target.value)}
+        >
+          <option value="date_desc">Date desc</option>
+          <option value="priority_missing">Priorité manquants</option>
+        </select>
+      </div>
+
       {/* Timeline complète */}
       <Card>
         <CardBody>
@@ -346,7 +526,7 @@ export default function BillingPage() {
             Timeline complète
             {periodsTotal > 0 && (
               <span className="ml-2 text-xs font-normal text-gray-400">
-                {periods.length}/{periodsTotal} mois
+                {filteredPeriods.length}/{periods.length} affichées ({periodsTotal} total)
               </span>
             )}
           </h2>
@@ -364,7 +544,7 @@ export default function BillingPage() {
           ) : (
             <>
               <BillingTimeline
-                periods={periods}
+                periods={filteredPeriods}
                 siteId={siteFilter}
                 activeMonth={activeMonth}
                 onCreateAction={handleCreateAction}
@@ -386,6 +566,10 @@ export default function BillingPage() {
           )}
         </CardBody>
       </Card>
+
+      {/* Hidden file inputs for contextual import */}
+      <input ref={csvInputRef} type="file" accept=".csv" className="sr-only" onChange={handleContextualCsvImport} />
+      <input ref={pdfInputRef} type="file" accept=".pdf" className="sr-only" onChange={handleContextualPdfImport} />
     </div>
   );
 }
