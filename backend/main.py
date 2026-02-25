@@ -186,6 +186,58 @@ async def restore_or_seed_helios():
         db.close()
 
 
+@app.on_event("startup")
+async def seed_hourly_if_missing():
+    """Auto-seed hourly consumption data if only monthly data exists.
+
+    Required for diagnostics (hors_horaires, base_load, pointe, derive, data_gap)
+    which all need hourly readings (min 48+ readings threshold).
+    Idempotent — skips if hourly data already present.
+    """
+    if os.environ.get("PYTEST_CURRENT_TEST"):
+        return
+
+    from database import SessionLocal
+    from sqlalchemy import text
+    import logging
+
+    db = SessionLocal()
+    try:
+        hourly_count = db.execute(
+            text("SELECT COUNT(*) FROM meter_reading WHERE frequency = 'HOURLY'")
+        ).scalar()
+        if hourly_count and hourly_count > 0:
+            return  # Hourly data already exists
+
+        # Get demo sites (max 5)
+        from models import Site
+        sites = db.query(Site).filter(Site.actif == True).limit(5).all()
+        if not sites:
+            return
+
+        from services.consumption_diagnostic import generate_demo_consumption
+        seeded = 0
+        for site in sites:
+            try:
+                result = generate_demo_consumption(db, site.id, days=90)
+                if result and not result.get("error"):
+                    seeded += 1
+            except Exception:
+                pass
+
+        if seeded > 0:
+            logging.getLogger("promeos.startup").info(
+                f"[startup] Auto-seeded hourly consumption for {seeded} sites (90 days each)"
+            )
+    except Exception as exc:
+        import logging as _log
+        _log.getLogger("promeos.startup").warning(
+            f"[startup] Hourly seed failed (non-bloquant): {exc}"
+        )
+    finally:
+        db.close()
+
+
 # Route racine
 @app.get("/")
 def root():
