@@ -4,7 +4,7 @@
  * inline status change, context-aware empty states, impact bulk bar.
  */
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useParams } from 'react-router-dom';
 import {
   Plus, Download, Printer, Clock, ListChecks, RefreshCw,
   MessageSquare, Paperclip, AlertTriangle, BadgeEuro, ShieldCheck,
@@ -302,11 +302,12 @@ function GroupedTableView({ actions, groupBy, onCardClick, selected, onToggleSel
 }
 
 /* ── Main Component ──────────────────────────────────────────── */
-export default function ActionsPage() {
+export default function ActionsPage({ autoCreate = false }) {
   const { scopedSites } = useScope();
   const { isExpert } = useExpertMode();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
+  const { actionId: urlActionId } = useParams();
   const [actions, setActions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -347,6 +348,29 @@ export default function ActionsPage() {
   }, []);
 
   useEffect(() => { fetchActions(); }, [fetchActions]);
+
+  // Auto-open detail drawer when navigating to /actions/:actionId
+  useEffect(() => {
+    if (urlActionId && actions.length > 0 && !detailAction) {
+      const found = actions.find(a => String(a.id) === urlActionId);
+      if (found) setDetailAction(found);
+    }
+  }, [urlActionId, actions]);
+
+  // Auto-open create modal when navigating to /actions/new
+  useEffect(() => {
+    if (autoCreate && !showCreate) {
+      const prefill = {};
+      const type = searchParams.get('type');
+      const siteId = searchParams.get('site_id');
+      const titre = searchParams.get('titre');
+      if (type) prefill.type = type;
+      if (siteId) prefill.site_id = parseInt(siteId);
+      if (titre) prefill.titre = decodeURIComponent(titre);
+      setCreatePrefill(prefill);
+      setShowCreate(true);
+    }
+  }, [autoCreate]);
 
   async function handleSync() {
     setSyncing(true);

@@ -210,23 +210,19 @@ export function buildActionPayload(lever) {
 }
 
 /**
- * Construit un deep-link vers le Command Center avec pre-filtre levier.
+ * Construit un deep-link vers la création d'action avec contexte levier.
  *
  * @param {import('./leverEngineModel').Lever} lever
  * @returns {string}
  */
 export function buildLeverDeepLink(lever) {
-  if (!lever || !lever.actionKey) return '/command-center';
+  if (!lever || !lever.actionKey) return '/actions';
 
-  const params = new URLSearchParams({
-    filter: 'leviers',
-    type: lever.type,
-    key: lever.actionKey,
-  });
+  const params = new URLSearchParams();
+  params.set('type', lever.type || 'levier');
+  params.set('source', 'lever_engine');
+  params.set('ref_id', lever.actionKey);
+  if (lever.label) params.set('titre', lever.label);
 
-  if (lever.impactEur != null) {
-    params.set('impact', String(lever.impactEur));
-  }
-
-  return `/command-center?${params.toString()}`;
+  return `/actions/new?${params.toString()}`;
 }

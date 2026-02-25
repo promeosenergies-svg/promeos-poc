@@ -36,6 +36,7 @@ from routes import (
     dev_tools_router,
     flex_router,
     tertiaire_router,
+    portfolio_router,
 )
 
 # Import KB router
@@ -102,10 +103,142 @@ app.include_router(ems_router)  # EMS Consumption Explorer
 app.include_router(flex_router)  # Flex Mini V0 (demand-side flexibility)
 app.include_router(dev_tools_router)  # Dev Tools (reset_db)
 app.include_router(tertiaire_router)  # Tertiaire / OPERAT V39 (EFA, controls, precheck, export)
+app.include_router(portfolio_router)  # Portfolio Consumption (multi-site B2B view)
 
 # Run safe schema migrations (idempotent, no drop)
 from database import engine as _engine, run_migrations as _run_migrations
 _run_migrations(_engine)
+
+# Startup route validation: verify critical V67 billing routes are registered
+_REQUIRED_BILLING_PATHS = ["/api/billing/periods", "/api/billing/coverage-summary", "/api/billing/missing-periods"]
+_registered = {r.path for r in app.routes}
+_missing = [p for p in _REQUIRED_BILLING_PATHS if p not in _registered]
+if _missing:
+    import logging
+    logging.getLogger("promeos").error(f"[STARTUP] CRITICAL: billing routes missing from app: {_missing}. Restart uvicorn.")
+else:
+    print(f"[STARTUP] Billing V67 routes OK ({len(_REQUIRED_BILLING_PATHS)} verified)")
+
+
+@app.on_event("startup")
+async def restore_or_seed_helios():
+    """
+    Au démarrage : si DEMO_MODE=true, restaurer DemoState depuis la DB
+    (org is_demo=True existante) ou seeder HELIOS fresh si aucune org demo.
+    Idempotent — ne re-seed pas si une org demo existe déjà en DB.
+    """
+    if os.environ.get("PROMEOS_DEMO_MODE", "false").lower() != "true":
+        return
+    # Never run during pytest — test fixtures manage their own DB isolation
+    if os.environ.get("PYTEST_CURRENT_TEST"):
+        return
+
+    from database import SessionLocal
+    from services.demo_state import DemoState
+
+    if DemoState.get_demo_org_id():
+        return  # DemoState déjà rempli (ex: test ou rechargement uvicorn)
+
+    db = SessionLocal()
+    try:
+        from models import Organisation, Site, Portefeuille, EntiteJuridique
+        demo_org = (db.query(Organisation)
+            .filter(Organisation.actif == True, Organisation.is_demo == True)
+            .order_by(Organisation.id.desc())
+            .first())
+
+        if demo_org:
+            # Re-register après restart — pas de re-seed
+            pf_ids = [row.id for row in (
+                db.query(Portefeuille.id)
+                .join(EntiteJuridique,
+                      Portefeuille.entite_juridique_id == EntiteJuridique.id)
+                .filter(EntiteJuridique.organisation_id == demo_org.id)
+                .all()
+            )]
+            sites_q = db.query(Site).filter(
+                Site.portefeuille_id.in_(pf_ids), Site.actif == True
+            )
+            sites_count = sites_q.count()
+            first_site = sites_q.first()
+            DemoState.set_demo_org(
+                org_id=demo_org.id,
+                org_nom=demo_org.nom,
+                pack="helios",
+                size="S",
+                sites_count=sites_count,
+                default_site_id=first_site.id if first_site else None,
+                default_site_name=first_site.nom if first_site else None,
+            )
+        else:
+            # Fresh seed — premier démarrage, DB vide
+            from services.demo_seed import SeedOrchestrator
+            import logging
+            logging.getLogger("promeos.startup").info(
+                "[startup] Seeding HELIOS demo data..."
+            )
+            orch = SeedOrchestrator(db)
+            orch.seed(pack="helios", size="S", rng_seed=42)
+    except Exception as exc:
+        import logging
+        logging.getLogger("promeos.startup").warning(
+            f"[startup] HELIOS init failed (non-bloquant): {exc}"
+        )
+    finally:
+        db.close()
+
+
+@app.on_event("startup")
+async def seed_hourly_if_missing():
+    """Auto-seed hourly consumption data if only monthly data exists.
+
+    Required for diagnostics (hors_horaires, base_load, pointe, derive, data_gap)
+    which all need hourly readings (min 48+ readings threshold).
+    Idempotent — skips if hourly data already present.
+    """
+    if os.environ.get("PYTEST_CURRENT_TEST"):
+        return
+
+    from database import SessionLocal
+    from sqlalchemy import text
+    import logging
+
+    db = SessionLocal()
+    try:
+        hourly_count = db.execute(
+            text("SELECT COUNT(*) FROM meter_reading WHERE frequency = 'HOURLY'")
+        ).scalar()
+        if hourly_count and hourly_count > 0:
+            return  # Hourly data already exists
+
+        # Get demo sites (max 5)
+        from models import Site
+        sites = db.query(Site).filter(Site.actif == True).limit(5).all()
+        if not sites:
+            return
+
+        from services.consumption_diagnostic import generate_demo_consumption
+        seeded = 0
+        for site in sites:
+            try:
+                result = generate_demo_consumption(db, site.id, days=90)
+                if result and not result.get("error"):
+                    seeded += 1
+            except Exception:
+                pass
+
+        if seeded > 0:
+            logging.getLogger("promeos.startup").info(
+                f"[startup] Auto-seeded hourly consumption for {seeded} sites (90 days each)"
+            )
+    except Exception as exc:
+        import logging as _log
+        _log.getLogger("promeos.startup").warning(
+            f"[startup] Hourly seed failed (non-bloquant): {exc}"
+        )
+    finally:
+        db.close()
+
 
 # Route racine
 @app.get("/")
@@ -140,6 +273,30 @@ def api_health():
             "compliance": "1.0",
             "bacs": "bacs_v2.0",
         },
+    }
+
+
+@app.get("/api/meta/version")
+def api_meta_version():
+    """V69: Git sha + branch — visible en mode Expert."""
+    import subprocess, datetime
+    git_sha, branch = "unknown", "unknown"
+    try:
+        git_sha = subprocess.check_output(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=os.path.dirname(__file__), stderr=subprocess.DEVNULL,
+        ).decode().strip()
+        branch = subprocess.check_output(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            cwd=os.path.dirname(__file__), stderr=subprocess.DEVNULL,
+        ).decode().strip()
+    except Exception:
+        pass
+    return {
+        "sha": git_sha,
+        "branch": branch,
+        "build_time": datetime.datetime.now(datetime.UTC).isoformat(),
+        "version": "1.0.0",
     }
 
 

@@ -34,6 +34,7 @@ const SegmentationPage = lazy(() => import('./pages/SegmentationPage'));
 const CompliancePage = lazy(() => import('./pages/CompliancePage'));
 const ConsumptionDiagPage = lazy(() => import('./pages/ConsumptionDiagPage'));
 const BillIntelPage = lazy(() => import('./pages/BillIntelPage'));
+const BillingPage = lazy(() => import('./pages/BillingPage'));
 const KBExplorerPage = lazy(() => import('./pages/KBExplorerPage'));
 const PurchasePage = lazy(() => import('./pages/PurchasePage'));
 const PurchaseAssistantPage = lazy(() => import('./pages/PurchaseAssistantPage'));
@@ -44,11 +45,13 @@ const AdminRolesPage = lazy(() => import('./pages/AdminRolesPage'));
 const AdminAssignmentsPage = lazy(() => import('./pages/AdminAssignmentsPage'));
 const AdminAuditLogPage = lazy(() => import('./pages/AdminAuditLogPage'));
 const ConsumptionExplorerPage = lazy(() => import('./pages/ConsumptionExplorerPage'));
+const ConsumptionPortfolioPage = lazy(() => import('./pages/ConsumptionPortfolioPage'));
 const ActivationPage = lazy(() => import('./pages/ActivationPage'));
 const TertiaireDashboardPage = lazy(() => import('./pages/tertiaire/TertiaireDashboardPage'));
 const TertiaireWizardPage = lazy(() => import('./pages/tertiaire/TertiaireWizardPage'));
 const TertiaireEfaDetailPage = lazy(() => import('./pages/tertiaire/TertiaireEfaDetailPage'));
 const TertiaireAnomaliesPage = lazy(() => import('./pages/tertiaire/TertiaireAnomaliesPage'));
+const AnomaliesPage = lazy(() => import('./pages/AnomaliesPage'));
 
 function PageSuspense({ children }) {
   return (
@@ -88,6 +91,8 @@ function App() {
                   <Route path="/patrimoine" element={<PageSuspense><Patrimoine /></PageSuspense>} />
                   <Route path="/sites/:id" element={<PageSuspense><Site360 /></PageSuspense>} />
                   <Route path="/actions" element={<PageSuspense><ActionsPage /></PageSuspense>} />
+                  <Route path="/actions/new" element={<PageSuspense><ActionsPage autoCreate /></PageSuspense>} />
+                  <Route path="/actions/:actionId" element={<PageSuspense><ActionsPage /></PageSuspense>} />
                   <Route path="/conformite" element={<PageSuspense><ConformitePage /></PageSuspense>} />
                   <Route path="/conformite/tertiaire" element={<PageSuspense><TertiaireDashboardPage /></PageSuspense>} />
                   <Route path="/conformite/tertiaire/wizard" element={<PageSuspense><TertiaireWizardPage /></PageSuspense>} />
@@ -102,10 +107,11 @@ function App() {
                   <Route path="/sites-legacy/:id" element={<PageSuspense><SiteDetail /></PageSuspense>} />
                   <Route path="/action-plan" element={<PageSuspense><ActionPlan /></PageSuspense>} />
                   <Route path="/regops/:id" element={<PageSuspense><RegOps /></PageSuspense>} />
-                  {/* Consommations: 3-tab layout (Explorer | Import & Analyse | KB) */}
+                  {/* Consommations: 4-tab layout (Explorer | Portfolio | Import & Analyse | KB) */}
                   <Route path="/consommations" element={<PageSuspense><ConsommationsPage /></PageSuspense>}>
                     <Route index element={<Navigate to="/consommations/explorer" replace />} />
                     <Route path="explorer" element={<PageSuspense><ConsumptionExplorerPage bare /></PageSuspense>} />
+                    <Route path="portfolio" element={<PageSuspense><ConsumptionPortfolioPage /></PageSuspense>} />
                     <Route path="import" element={<PageSuspense><ConsommationsImportTab /></PageSuspense>} />
                     <Route path="kb" element={<PageSuspense><ConsommationsKBTab /></PageSuspense>} />
                   </Route>
@@ -115,6 +121,7 @@ function App() {
                   <Route path="/compliance" element={<PageSuspense><CompliancePage /></PageSuspense>} />
                   <Route path="/diagnostic-conso" element={<PageSuspense><ConsumptionDiagPage /></PageSuspense>} />
                   <Route path="/bill-intel" element={<PageSuspense><BillIntelPage /></PageSuspense>} />
+                  <Route path="/billing" element={<PageSuspense><BillingPage /></PageSuspense>} />
                   <Route path="/achat-energie" element={<PageSuspense><PurchasePage /></PageSuspense>} />
                   <Route path="/achat-assistant" element={<PageSuspense><PurchaseAssistantPage /></PageSuspense>} />
                   <Route path="/kb" element={<PageSuspense><KBExplorerPage /></PageSuspense>} />
@@ -135,8 +142,8 @@ function App() {
                   <Route path="/plan-action" element={<Navigate to="/actions" replace />} />
                   <Route path="/plan-actions" element={<Navigate to="/actions" replace />} />
                   <Route path="/factures" element={<Navigate to="/bill-intel" replace />} />
-                  <Route path="/facturation" element={<Navigate to="/bill-intel" replace />} />
-                  <Route path="/anomalies" element={<Navigate to="/diagnostic-conso" replace />} />
+                  <Route path="/facturation" element={<Navigate to="/billing" replace />} />
+                  <Route path="/anomalies" element={<PageSuspense><AnomaliesPage /></PageSuspense>} />
                   <Route path="/diagnostic" element={<Navigate to="/diagnostic-conso" replace />} />
                   <Route path="/performance" element={<Navigate to="/monitoring" replace />} />
                   <Route path="/achats" element={<Navigate to="/achat-energie" replace />} />

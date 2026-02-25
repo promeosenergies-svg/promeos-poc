@@ -8,9 +8,9 @@
  */
 import {
   LayoutDashboard, Building2, ShieldCheck, FileText,
-  Zap, ListChecks, Activity, Import, Users, Receipt,
+  Zap, ListChecks, Activity, Import, Users, Receipt, CalendarRange,
   BookOpen, ShoppingCart, Search, Link2, Eye, Bell, Lock,
-  Target, Database, ScanLine, ListPlus,
+  Target, Database, ScanLine, ListPlus, AlertTriangle,
 } from 'lucide-react';
 
 /* ── Route → module mapping (for permission checks + auto-select) ── */
@@ -23,12 +23,14 @@ export const ROUTE_MODULE_MAP = {
   '/conformite/tertiaire/wizard': 'operations',
   '/conformite/tertiaire/anomalies': 'operations',
   '/actions': 'operations',
+  '/anomalies': 'operations',
   '/consommations': 'analyse',
   '/consommations/explorer': 'analyse',
   '/consommations/import': 'analyse',
   '/consommations/kb': 'analyse',
   '/diagnostic-conso': 'analyse',
   '/monitoring': 'analyse',
+  '/billing': 'marche',
   '/bill-intel': 'marche',
   '/achat-energie': 'marche',
   '/achat-assistant': 'marche',
@@ -182,6 +184,7 @@ export const NAV_SECTIONS = [
       { to: '/conformite', icon: ShieldCheck, label: 'Conformité', keywords: ['compliance', 'reglementation', 'decret'] },
       { to: '/conformite/tertiaire', icon: Building2, label: 'Tertiaire / OPERAT', keywords: ['tertiaire', 'operat', 'efa', 'decret', 'declaration'] },
       { to: '/actions',    icon: ListChecks,  label: "Plan d'actions", keywords: ['actions', 'plan', 'todo'] },
+      { to: '/anomalies',  icon: AlertTriangle, label: 'Action Center', keywords: ['anomalies', 'actions', 'risque', 'priorite'] },
     ],
   },
   {
@@ -203,7 +206,8 @@ export const NAV_SECTIONS = [
     expertOnly: true,
     order: 4,
     items: [
-      { to: '/bill-intel',      icon: Receipt,      label: 'Facturation', keywords: ['factures', 'billing', 'invoices'] },
+      { to: '/bill-intel',      icon: Receipt,       label: 'Factures & anomalies', keywords: ['factures', 'billing', 'invoices', 'anomalies'] },
+      { to: '/billing',         icon: CalendarRange,  label: 'Timeline & couverture', keywords: ['timeline', 'couverture', 'mois', 'manquant', 'periodes'], indent: true },
       { to: '/achat-energie',   icon: ShoppingCart,  label: 'Achats énergie', keywords: ['achat', 'purchase', 'scenarios', 'strategie'] },
       { to: '/achat-assistant', icon: Target,        label: 'Assistant Achat', keywords: ['assistant', 'wizard', 'rfp', 'arenh', 'corridor'] },
     ],

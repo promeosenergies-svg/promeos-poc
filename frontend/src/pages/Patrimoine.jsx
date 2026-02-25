@@ -4,7 +4,7 @@
  */
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import {
   Building2, Search, RotateCcw, Download, Star,
   Plus, Upload, MapPin, ChevronRight,
@@ -25,6 +25,8 @@ import PatrimoineWizard from '../components/PatrimoineWizard';
 import PatrimoineHealthCard from '../components/PatrimoineHealthCard';
 import PatrimoinePortfolioHealthBar from '../components/PatrimoinePortfolioHealthBar';
 import PatrimoineHeatmap from '../components/PatrimoineHeatmap';
+import PatrimoineRiskDistributionBar from '../components/PatrimoineRiskDistributionBar';
+import SiteAnomalyPanel from '../components/SiteAnomalyPanel';
 import { getPatrimoineAnomalies } from '../services/api';
 import { track } from '../services/tracker';
 import { fmtEur, fmtEurFull, fmtArea, fmtAreaCompact, fmtKwh, fmtDateFR, pl } from '../utils/format';
@@ -79,6 +81,7 @@ const PRESET_VIEWS = [
 
 export default function Patrimoine() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [sp, setSp] = useSearchParams();
   const { scopedSites, sitesLoading, scope } = useScope();
   const { isExpert } = useExpertMode();
@@ -135,6 +138,17 @@ export default function Patrimoine() {
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, []);
+
+  // V65 — Auto-ouvrir drawer depuis AnomaliesPage (location.state)
+  useEffect(() => {
+    if (!location.state?.openSiteId) return;
+    const site = scopedSites.find(s => s.id === location.state.openSiteId);
+    if (site) {
+      setDrawerSite(site);
+      setDrawerInitialTab(location.state.openTab || 'anomalies');
+      navigate('.', { replace: true, state: {} }); // clear state
+    }
+  }, [location.state, scopedSites]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // V63 — Enrichissement heatmap : anomalies par site (Promise.all, max 10 sites, guard stale)
   useEffect(() => {
@@ -401,11 +415,13 @@ export default function Patrimoine() {
           <PatrimoinePortfolioHealthBar onSiteClick={openDrawerOnAnomalies} orgId={scope.orgId} />
 
           {/* ── V63 — Heatmap portefeuille (risque / anomalies / framework par site) ── */}
+          {/* ── V64 — Distribution du risque insérée via topSlot ── */}
           <PatrimoineHeatmap
             tiles={hmTiles}
             onOpenSite={openDrawerOnAnomalies}
             loading={hmLoading}
             error={hmError}
+            topSlot={<PatrimoineRiskDistributionBar sites={filtered} />}
           />
 
           {/* ── KPI row (compact) ── */}
@@ -630,6 +646,7 @@ export default function Patrimoine() {
             navigate={navigate}
             onCreateAction={() => openActionFromDrawer(drawerSite.nom)}
             initialTab={drawerInitialTab}
+            orgId={scope.orgId}
           />
         )}
       </Drawer>
@@ -672,7 +689,7 @@ const DRAWER_TABS = [
   { id: 'actions', label: 'Actions' },
 ];
 
-function SiteDrawerContent({ site, navigate, onCreateAction, initialTab = 'resume' }) {
+function SiteDrawerContent({ site, navigate, onCreateAction, initialTab = 'resume', orgId = null }) {
   const [tab, setTab] = useState(initialTab);
   const badge = STATUT_BADGE[site.statut_conformite] || STATUT_BADGE.a_evaluer;
   const usageColor = USAGE_COLOR[site.usage] || 'bg-gray-100 text-gray-600 ring-gray-200';
@@ -735,10 +752,10 @@ function SiteDrawerContent({ site, navigate, onCreateAction, initialTab = 'resum
         </div>
       )}
 
-      {/* Tab: Anomalies — V58 PatrimoineHealthCard */}
+      {/* Tab: Anomalies — V65 SiteAnomalyPanel */}
       {tab === 'anomalies' && (
         <div>
-          <PatrimoineHealthCard siteId={site.id} />
+          <SiteAnomalyPanel siteId={site.id} orgId={orgId} />
         </div>
       )}
 

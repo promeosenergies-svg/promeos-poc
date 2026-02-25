@@ -16,7 +16,9 @@ from models import (
     Site, EnergyContract, EnergyInvoice, EnergyInvoiceLine, BillingInsight,
     BillingEnergyType, InvoiceLineType, BillingInvoiceStatus,
     SiteTariffProfile, InsightStatus,
+    ActionItem, Portefeuille, EntiteJuridique,
 )
+from models.enums import ActionSourceType, ActionStatus
 
 
 # ========================================
@@ -160,16 +162,30 @@ def _rule_shadow_gap(invoice: EnergyInvoice, contract: Optional[EnergyContract],
     """R1: Ecart shadow billing > 10%."""
     shadow = shadow_billing_simple(invoice, contract)
     if shadow["delta_pct"] is not None and abs(shadow["delta_pct"]) > 10:
+        metrics = {
+            **shadow,
+            "inputs": _build_inputs(invoice, shadow.get("price_ref_eur_kwh")),
+            "threshold_pct": 10,
+            "delta_calculated_pct": shadow["delta_pct"],
+            "confidence": "medium",
+            "assumptions": [
+                f"Prix ref: {shadow.get('ref_price_source', 'défaut')}",
+                "Tarifs réseau/taxes POC 2025 simplifiés",
+            ],
+        }
+        # Enrich with V2 4-component breakdown when lines available
+        if lines:
+            try:
+                from services.billing_shadow_v2 import shadow_billing_v2
+                v2 = shadow_billing_v2(invoice, lines, contract)
+                metrics.update(v2)
+            except Exception:
+                pass
         return {
             "type": "shadow_gap",
             "severity": "high" if abs(shadow["delta_pct"]) > 20 else "medium",
             "message": f"Ecart shadow billing de {shadow['delta_pct']:+.1f}% ({shadow['delta_eur']:+.2f} EUR)",
-            "metrics": {
-                **shadow,
-                "inputs": _build_inputs(invoice, shadow.get("price_ref_eur_kwh")),
-                "threshold_pct": 10,
-                "delta_calculated_pct": shadow["delta_pct"],
-            },
+            "metrics": metrics,
             "estimated_loss_eur": abs(shadow["delta_eur"]) if shadow["delta_eur"] and shadow["delta_eur"] > 0 else 0,
         }
     return None
@@ -191,6 +207,8 @@ def _rule_unit_price_high(invoice: EnergyInvoice, contract: Optional[EnergyContr
                 "threshold": threshold,
                 "inputs": _build_inputs(invoice, threshold),
                 "delta_calculated": round(unit_price - threshold, 4),
+                "confidence": "high",
+                "assumptions": [f"Seuil: {threshold} €/kWh"],
             },
             "estimated_loss_eur": round((unit_price - threshold) * invoice.energy_kwh, 2),
         }
@@ -216,6 +234,8 @@ def _rule_duplicate_invoice(invoice: EnergyInvoice, contract: Optional[EnergyCon
             "metrics": {
                 "duplicates_count": dupes,
                 "inputs": _build_inputs(invoice),
+                "confidence": "high",
+                "assumptions": ["Même site, période et montant"],
             },
             "estimated_loss_eur": invoice.total_eur or 0,
         }
@@ -233,6 +253,8 @@ def _rule_missing_period(invoice: EnergyInvoice, contract: Optional[EnergyContra
                 "has_start": invoice.period_start is not None,
                 "has_end": invoice.period_end is not None,
                 "inputs": _build_inputs(invoice),
+                "confidence": "high",
+                "assumptions": ["Champs période absents"],
             },
             "estimated_loss_eur": 0,
         }
@@ -254,6 +276,8 @@ def _rule_period_too_long(invoice: EnergyInvoice, contract: Optional[EnergyContr
                 "threshold_days": 62,
                 "delta_calculated_days": days - 62,
                 "inputs": _build_inputs(invoice),
+                "confidence": "high",
+                "assumptions": ["Seuil: 62 jours"],
             },
             "estimated_loss_eur": 0,
         }
@@ -270,6 +294,8 @@ def _rule_negative_kwh(invoice: EnergyInvoice, contract: Optional[EnergyContract
             "metrics": {
                 "energy_kwh": invoice.energy_kwh,
                 "inputs": _build_inputs(invoice),
+                "confidence": "high",
+                "assumptions": ["Relevé négatif"],
             },
             "estimated_loss_eur": 0,
         }
@@ -288,6 +314,8 @@ def _rule_zero_amount(invoice: EnergyInvoice, contract: Optional[EnergyContract]
                 "total_eur": invoice.total_eur,
                 "energy_kwh": invoice.energy_kwh,
                 "inputs": _build_inputs(invoice),
+                "confidence": "high",
+                "assumptions": ["Montant nul avec consommation > 0"],
             },
             "estimated_loss_eur": 0,
         }
@@ -316,6 +344,8 @@ def _rule_lines_sum_mismatch(invoice: EnergyInvoice, contract: Optional[EnergyCo
                 "threshold_pct": 2,
                 "delta_calculated_pct": round(pct, 1),
                 "inputs": _build_inputs(invoice),
+                "confidence": "high",
+                "assumptions": ["Tolérance: 2%"],
             },
             "estimated_loss_eur": round(diff, 2) if diff > 1 else 0,
         }
@@ -344,6 +374,8 @@ def _rule_consumption_spike(invoice: EnergyInvoice, contract: Optional[EnergyCon
                 "threshold_ratio": 2.0,
                 "delta_calculated_ratio": ratio,
                 "inputs": _build_inputs(invoice),
+                "confidence": "medium",
+                "assumptions": ["Moyenne 6 mois glissants", "Seuil: ×2"],
                 "cross_link": {
                     "module": "diagnostic-conso",
                     "site_id": invoice.site_id,
@@ -387,6 +419,8 @@ def _rule_price_drift(invoice: EnergyInvoice, contract: Optional[EnergyContract]
                 "threshold_pct": 15,
                 "delta_calculated_pct": round(drift_pct, 1),
                 "inputs": _build_inputs(invoice, ref),
+                "confidence": "high",
+                "assumptions": ["Comparaison avec prix contrat"],
             },
             "estimated_loss_eur": loss,
         }
@@ -401,18 +435,159 @@ def _energy_type(invoice: EnergyInvoice, contract: Optional[EnergyContract]) -> 
     return "elec"  # default
 
 
+# ========================================
+# R11 — TTC Coherence (V66)
+# ========================================
+
+def _rule_ttc_coherence(invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine]) -> Optional[Dict]:
+    """R11: TTC facturé incohérent avec HT+TVA (tolérance 2%)."""
+    if not invoice.total_eur or not lines:
+        return None
+    sum_ht = sum(l.amount_eur or 0 for l in lines if l.line_type != InvoiceLineType.TAX)
+    sum_tva = sum(l.amount_eur or 0 for l in lines if l.line_type == InvoiceLineType.TAX)
+    expected = sum_ht + sum_tva
+    if expected == 0:
+        return None
+    delta = abs(expected - invoice.total_eur)
+    if delta / max(invoice.total_eur, 1) > 0.02:
+        return {
+            "type": "ttc_mismatch",
+            "severity": "high",
+            "message": f"TTC facturé {invoice.total_eur:.2f}€ ≠ HT+TVA {expected:.2f}€ (écart {delta:.2f}€)",
+            "metrics": {
+                "total_eur_facture": invoice.total_eur,
+                "total_eur_calcule": round(expected, 2),
+                "delta_eur": round(delta, 2),
+                "tolerance_pct": 2,
+                "confidence": "high",
+                "assumptions": ["Tolérance: 2%"],
+            },
+            "estimated_loss_eur": round(delta, 2),
+        }
+    return None
+
+
+# ========================================
+# R12 — Contract Expiry (V66)
+# ========================================
+
+def _rule_contract_expiry(invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine]) -> Optional[Dict]:
+    """R12: Contrat expiré ou expire bientôt (< 90 jours)."""
+    if not contract or not contract.end_date:
+        return None
+    days_left = (contract.end_date - date.today()).days
+    if days_left < 0:
+        return {
+            "type": "contract_expired",
+            "severity": "critical",
+            "message": f"Contrat {contract.supplier_name} expiré le {contract.end_date} ({abs(days_left)}j)",
+            "metrics": {
+                "end_date": str(contract.end_date),
+                "days_overdue": abs(days_left),
+                "supplier": contract.supplier_name,
+                "confidence": "high",
+                "assumptions": [f"Date fin contrat: {contract.end_date}"],
+            },
+            "estimated_loss_eur": round((invoice.total_eur or 0) * 0.1, 2),
+        }
+    elif days_left <= 90:
+        return {
+            "type": "contract_expiry_soon",
+            "severity": "high",
+            "message": f"Contrat {contract.supplier_name} expire dans {days_left}j (le {contract.end_date})",
+            "metrics": {
+                "end_date": str(contract.end_date),
+                "days_left": days_left,
+                "supplier": contract.supplier_name,
+                "confidence": "high",
+                "assumptions": [f"Date fin contrat: {contract.end_date}"],
+            },
+            "estimated_loss_eur": 0,
+        }
+    return None
+
+
+# ========================================
+# R13 — Réseau / TURPE mismatch (V68)
+# ========================================
+
+def _rule_reseau_mismatch(invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine]) -> Optional[Dict]:
+    """R13: Coût réseau/TURPE facturé ≠ attendu > 10%."""
+    if not lines:
+        return None
+    from services.billing_shadow_v2 import shadow_billing_v2
+    res = shadow_billing_v2(invoice, lines, contract)
+    if res["expected_reseau_ht"] == 0:
+        return None
+    pct = abs(res["delta_reseau"] / res["expected_reseau_ht"] * 100)
+    if pct > 10:
+        sev = "high" if pct > 20 else "medium"
+        return {
+            "type": "reseau_mismatch",
+            "severity": sev,
+            "message": (
+                f"Coût réseau {res['actual_reseau_ht']:.2f}€ vs attendu "
+                f"{res['expected_reseau_ht']:.2f}€ (Δ {pct:.0f}%)"
+            ),
+            "metrics": {
+                **res,
+                "delta_pct": round(pct, 1),
+                "confidence": "medium",
+                "assumptions": ["Tarif TURPE simplifié (C5 BT ≤ 36kVA)"],
+            },
+            "estimated_loss_eur": round(abs(res["delta_reseau"]), 2),
+        }
+    return None
+
+
+# ========================================
+# R14 — Taxes / CSPE mismatch (V68)
+# ========================================
+
+def _rule_taxes_mismatch(invoice: EnergyInvoice, contract: Optional[EnergyContract], lines: List[EnergyInvoiceLine]) -> Optional[Dict]:
+    """R14: Taxes (CSPE/TICGN) facturées ≠ attendu > 5%."""
+    if not lines:
+        return None
+    from services.billing_shadow_v2 import shadow_billing_v2
+    res = shadow_billing_v2(invoice, lines, contract)
+    if res["expected_taxes_ht"] == 0:
+        return None
+    pct = abs(res["delta_taxes"] / res["expected_taxes_ht"] * 100)
+    if pct > 5:
+        return {
+            "type": "taxes_mismatch",
+            "severity": "medium",
+            "message": (
+                f"Taxes {res['actual_taxes_ht']:.2f}€ vs attendu "
+                f"{res['expected_taxes_ht']:.2f}€ (Δ {pct:.0f}%)"
+            ),
+            "metrics": {
+                **res,
+                "delta_pct": round(pct, 1),
+                "confidence": "medium",
+                "assumptions": ["Taux CSPE/TICGN 2025 simplifiés"],
+            },
+            "estimated_loss_eur": round(abs(res["delta_taxes"]), 2),
+        }
+    return None
+
+
 # All rules
 BILLING_RULES = [
-    ("R1", "Shadow gap", _rule_shadow_gap),
-    ("R2", "Unit price high", _rule_unit_price_high),
-    ("R3", "Duplicate invoice", _rule_duplicate_invoice),
-    ("R4", "Missing period", _rule_missing_period),
-    ("R5", "Period too long", _rule_period_too_long),
-    ("R6", "Negative kWh", _rule_negative_kwh),
-    ("R7", "Zero amount", _rule_zero_amount),
-    ("R8", "Lines sum mismatch", _rule_lines_sum_mismatch),
-    ("R9", "Consumption spike", _rule_consumption_spike),
-    ("R10", "Price drift", _rule_price_drift),
+    ("R1",  "Shadow gap",         _rule_shadow_gap),
+    ("R2",  "Unit price high",    _rule_unit_price_high),
+    ("R3",  "Duplicate invoice",  _rule_duplicate_invoice),
+    ("R4",  "Missing period",     _rule_missing_period),
+    ("R5",  "Period too long",    _rule_period_too_long),
+    ("R6",  "Negative kWh",       _rule_negative_kwh),
+    ("R7",  "Zero amount",        _rule_zero_amount),
+    ("R8",  "Lines sum mismatch", _rule_lines_sum_mismatch),
+    ("R9",  "Consumption spike",  _rule_consumption_spike),
+    ("R10", "Price drift",        _rule_price_drift),
+    ("R11", "TTC coherence",      _rule_ttc_coherence),
+    ("R12", "Contract expiry",    _rule_contract_expiry),
+    ("R13", "Réseau / TURPE mismatch", _rule_reseau_mismatch),
+    ("R14", "Taxes / CSPE mismatch",   _rule_taxes_mismatch),
 ]
 
 
@@ -435,10 +610,28 @@ def run_anomaly_engine(
             if result:
                 result["rule_id"] = rule_id
                 result["rule_name"] = rule_name
+                if "metrics" in result:
+                    result["metrics"]["rule_id"] = rule_id
+                    result["metrics"]["rule_name"] = rule_name
                 anomalies.append(result)
         except Exception:
             pass
     return anomalies
+
+
+def _resolve_invoice_org_id(db: Session, invoice: EnergyInvoice) -> Optional[int]:
+    """Walk site→portefeuille→entite_juridique→org to resolve org_id for an invoice."""
+    try:
+        site = db.query(Site).filter(Site.id == invoice.site_id).first()
+        if not site or not site.portefeuille_id:
+            return None
+        port = db.query(Portefeuille).filter(Portefeuille.id == site.portefeuille_id).first()
+        if not port or not port.entite_juridique_id:
+            return None
+        entite = db.query(EntiteJuridique).filter(EntiteJuridique.id == port.entite_juridique_id).first()
+        return entite.organisation_id if entite else None
+    except Exception:
+        return None
 
 
 def persist_insights(
@@ -446,9 +639,10 @@ def persist_insights(
     invoice: EnergyInvoice,
     anomalies: List[Dict[str, Any]],
 ) -> List[BillingInsight]:
-    """Persist anomaly results as BillingInsight rows."""
+    """Persist anomaly results as BillingInsight rows + idempotent ActionItem bridge."""
     db.query(BillingInsight).filter(BillingInsight.invoice_id == invoice.id).delete()
 
+    org_id = _resolve_invoice_org_id(db, invoice)
     insights = []
     for a in anomalies:
         insight = BillingInsight(
@@ -463,6 +657,32 @@ def persist_insights(
             insight_status=InsightStatus.OPEN,
         )
         db.add(insight)
+        db.flush()  # get insight.id for idempotency_key
+
+        # V66 P2.4 — Bridge billing anomaly → ActionItem (idempotent)
+        if org_id:
+            idem_key = f"billing:{invoice.id}:{a['type']}"
+            existing_action = db.query(ActionItem).filter(
+                ActionItem.idempotency_key == idem_key
+            ).first()
+            if not existing_action:
+                sev = a.get("severity", "medium").lower()
+                priority = 1 if sev == "critical" else 2 if sev == "high" else 3
+                db.add(ActionItem(
+                    org_id=org_id,
+                    site_id=invoice.site_id,
+                    source_type=ActionSourceType.BILLING,
+                    source_id=str(insight.id),
+                    source_key=f"billing:{invoice.id}:{a['type']}",
+                    idempotency_key=idem_key,
+                    title=a.get("message", a["type"]),
+                    rationale=json.dumps(a.get("metrics", {})),
+                    priority=priority,
+                    severity=sev,
+                    estimated_gain_eur=a.get("estimated_loss_eur"),
+                    status=ActionStatus.OPEN,
+                ))
+
         insights.append(insight)
 
     if anomalies:

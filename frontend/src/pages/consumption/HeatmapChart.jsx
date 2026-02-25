@@ -1,6 +1,7 @@
 /**
  * PROMEOS — HeatmapChart (HP/HC 7x24 grid)
  * Cells colored by HP (red) / HC (blue), intensity = kWh.
+ * P1-2: Clickable cells with drill-down callback + tooltip + filter ouvre/weekend.
  */
 import { useState } from 'react';
 
@@ -13,12 +14,18 @@ function cellColor(avgKwh, isHP, maxKwh) {
   return `rgba(59, 130, 246, ${alpha})`; // blue
 }
 
-export default function HeatmapChart({ data, unit = 'kWh' }) {
+export default function HeatmapChart({ data, unit = 'kWh', onCellClick, filter = 'all' }) {
   const [hover, setHover] = useState(null);
 
   if (!data?.length) return null;
 
-  const maxKwh = Math.max(...data.map(c => c.avg_kwh), 0.01);
+  // Filter: 'all', 'weekday' (Lun-Ven), 'weekend' (Sam-Dim)
+  const visibleDays = filter === 'weekday' ? [0,1,2,3,4]
+    : filter === 'weekend' ? [5,6]
+    : [0,1,2,3,4,5,6];
+
+  const filteredData = data.filter(c => visibleDays.includes(c.day));
+  const maxKwh = Math.max(...filteredData.map(c => c.avg_kwh), 0.01);
 
   return (
     <div className="space-y-2">
@@ -29,7 +36,8 @@ export default function HeatmapChart({ data, unit = 'kWh' }) {
         <div className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded bg-blue-400" /> HC
         </div>
-        <span className="ml-auto">Intensite = conso moyenne ({unit})</span>
+        <span className="ml-auto">Intensite = consommation moyenne ({unit})</span>
+        {onCellClick && <span className="text-blue-500">Cliquez sur un creneau pour le detail</span>}
       </div>
 
       <div className="overflow-x-auto">
@@ -45,11 +53,11 @@ export default function HeatmapChart({ data, unit = 'kWh' }) {
             </tr>
           </thead>
           <tbody>
-            {DAY_LABELS.map((dayLabel, dow) => (
+            {visibleDays.map((dow) => (
               <tr key={dow}>
-                <td className="text-[10px] text-gray-500 font-medium pr-1 text-right">{dayLabel}</td>
+                <td className="text-[10px] text-gray-500 font-medium pr-1 text-right">{DAY_LABELS[dow]}</td>
                 {Array.from({ length: 24 }, (_, h) => {
-                  const cell = data.find(c => c.day === dow && c.hour === h) || { avg_kwh: 0, period: 'HC' };
+                  const cell = filteredData.find(c => c.day === dow && c.hour === h) || { avg_kwh: 0, period: 'HC' };
                   const isHP = cell.period === 'HP';
                   const bg = cellColor(cell.avg_kwh, isHP, maxKwh);
                   const isHovered = hover?.day === dow && hover?.hour === h;
@@ -60,10 +68,12 @@ export default function HeatmapChart({ data, unit = 'kWh' }) {
                       className="p-0"
                       onMouseEnter={() => setHover({ day: dow, hour: h, ...cell })}
                       onMouseLeave={() => setHover(null)}
+                      onClick={() => onCellClick?.({ day: dow, dayLabel: DAY_LABELS[dow], hour: h, ...cell })}
                     >
                       <div
-                        className={`w-7 h-6 rounded-sm border transition ${isHovered ? 'border-gray-500 ring-1 ring-gray-300' : 'border-transparent'}`}
+                        className={`w-7 h-6 rounded-sm border transition ${onCellClick ? 'cursor-pointer' : ''} ${isHovered ? 'border-gray-500 ring-1 ring-gray-300' : 'border-transparent'}`}
                         style={{ backgroundColor: bg }}
+                        title={`${DAY_LABELS[dow]} ${h}h — ${cell.avg_kwh} ${unit} (${cell.period})`}
                       />
                     </td>
                   );

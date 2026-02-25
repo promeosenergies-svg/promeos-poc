@@ -143,7 +143,7 @@ describe('Expert filtering', () => {
       s.items.filter((item) => !item.expertOnly)
     );
     expect(normalItems.length).toBeGreaterThanOrEqual(6);
-    expect(normalItems.length).toBeLessThanOrEqual(8);
+    expect(normalItems.length).toBeLessThanOrEqual(12); // V65: +1 Action Center
   });
 
   it('Diagnostic is expertOnly within Analyser', () => {

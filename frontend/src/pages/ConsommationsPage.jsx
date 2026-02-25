@@ -4,11 +4,12 @@
  * and nested sub-routes via <Outlet />.
  */
 import { NavLink, Outlet } from 'react-router-dom';
-import { BarChart3, Upload, Database, Zap } from 'lucide-react';
+import { BarChart3, Upload, Database, Zap, Building2 } from 'lucide-react';
 import { PageShell } from '../ui';
 
 const TABS = [
   { to: '/consommations/explorer', label: 'Explorer', icon: BarChart3 },
+  { to: '/consommations/portfolio', label: 'Portefeuille', icon: Building2 },
   { to: '/consommations/import', label: 'Import & Analyse', icon: Upload },
   { to: '/consommations/kb', label: 'Knowledge Base', icon: Database },
 ];

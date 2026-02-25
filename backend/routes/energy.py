@@ -416,6 +416,10 @@ def generate_demo_data(
         db.commit()
         db.refresh(meter)
 
+    # Purge existing readings to avoid duplicate constraint violation
+    db.query(MeterReading).filter(MeterReading.meter_id == meter.id).delete()
+    db.flush()
+
     # Archetype-based generation profiles
     profiles = {
         "BUREAU_STANDARD": {
@@ -553,8 +557,7 @@ def _import_csv(content: bytes, meter_id: int, frequency: FrequencyType, db: Ses
 
             # Batch commit every 5000 rows
             if len(batch) >= 5000:
-                db.bulk_save_objects(batch)
-                db.flush()
+                _save_readings_ignore_dupes(db, batch)
                 batch = []
 
         except Exception:
@@ -562,8 +565,7 @@ def _import_csv(content: bytes, meter_id: int, frequency: FrequencyType, db: Ses
 
     # Final batch
     if batch:
-        db.bulk_save_objects(batch)
-        db.flush()
+        _save_readings_ignore_dupes(db, batch)
 
     db.commit()
 
@@ -636,6 +638,22 @@ def _import_json(content: bytes, meter_id: int, frequency: FrequencyType, db: Se
     db.commit()
 
     return rows_imported, rows_skipped, rows_errored, (min_date, max_date)
+
+
+def _save_readings_ignore_dupes(db: Session, readings: list):
+    """Save readings, skipping duplicates on (meter_id, timestamp) unique constraint."""
+    try:
+        db.bulk_save_objects(readings)
+        db.flush()
+    except Exception:
+        db.rollback()
+        # Fallback: insert one-by-one, skip duplicates
+        for r in readings:
+            try:
+                db.add(r)
+                db.flush()
+            except Exception:
+                db.rollback()
 
 
 def _parse_timestamp(ts_str: str) -> datetime:

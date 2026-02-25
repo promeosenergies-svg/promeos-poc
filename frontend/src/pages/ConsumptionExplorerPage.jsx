@@ -19,6 +19,7 @@ import {
 } from 'recharts';
 import { Card, CardBody, Badge, Button, EmptyState, TrustBadge } from '../ui';
 import { SkeletonCard } from '../ui';
+import { useToast } from '../ui/ToastProvider';
 import { useScope } from '../contexts/ScopeContext';
 import { track } from '../services/tracker';
 import {
@@ -57,6 +58,8 @@ import TimeseriesPanel from './consumption/TimeseriesPanel';
 import SignaturePanel from './consumption/SignaturePanel';
 import MeteoPanel from './consumption/MeteoPanel';
 import InsightsPanel from './consumption/InsightsPanel';
+import ConsoKpiHeader from '../components/ConsoKpiHeader';
+import BenchmarkPanel from './consumption/BenchmarkPanel';
 
 // ========================================
 // Constants
@@ -127,7 +130,7 @@ const REASON_CONFIG = {
 // Smart Empty State
 // ========================================
 
-function SmartEmptyState({ reasons, energyTypes, onNavigate, onSwitchEnergy }) {
+function SmartEmptyState({ reasons, energyTypes, onNavigate, onSwitchEnergy, isExpert, onGenerateDemo }) {
   if (!reasons?.length) {
     return (
       <EmptyState
@@ -166,11 +169,23 @@ function SmartEmptyState({ reasons, energyTypes, onNavigate, onSwitchEnergy }) {
             Basculer vers {energyTypes[0]}
           </Button>
         )}
+        {onGenerateDemo && (
+          <Button variant="outline" onClick={onGenerateDemo}>
+            Generer demo
+          </Button>
+        )}
       </div>
       {reasons.length > 1 && (
         <p className="text-xs text-gray-400 mt-4">
           Diagnostics : {reasons.join(', ')}
         </p>
+      )}
+      {isExpert && reasons?.length > 0 && (
+        <div className="mt-4 bg-gray-50 rounded-lg p-3 text-left text-xs max-w-md">
+          <p className="font-semibold text-gray-500">Debug</p>
+          <p className="text-gray-400 mt-1">Reasons: {reasons.join(', ')}</p>
+          {energyTypes?.length > 0 && <p className="text-gray-400">Energy types: {energyTypes.join(', ')}</p>}
+        </div>
       )}
     </div>
   );
@@ -200,7 +215,7 @@ function AvailabilitySkeleton() {
 // Tunnel Panel
 // ========================================
 
-function TunnelPanel({ siteId, days, energyType, showSignature = false }) {
+function TunnelPanel({ siteId, days, energyType, showSignature = false, toast }) {
   const [tunnel, setTunnel] = useState(null);
   const [loading, setLoading] = useState(false);
   const [dayType, setDayType] = useState('weekday');
@@ -218,7 +233,7 @@ function TunnelPanel({ siteId, days, energyType, showSignature = false }) {
       setTunnel(data);
       track('tunnel_loaded', { site_id: siteId, days, energy_type: energyType, mode });
     } catch (e) {
-      console.error('Tunnel load error:', e);
+      toast?.('Erreur chargement tunnel', 'error');
     } finally {
       setLoading(false);
     }
@@ -387,7 +402,7 @@ function TunnelPanel({ siteId, days, energyType, showSignature = false }) {
 // Targets Panel (Objectifs & Budgets)
 // ========================================
 
-function TargetsPanel({ siteId, energyType }) {
+function TargetsPanel({ siteId, energyType, toast }) {
   const [targets, setTargets] = useState([]);
   const [progression, setProgression] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -407,7 +422,7 @@ function TargetsPanel({ siteId, energyType }) {
       setProgression(p);
       track('targets_loaded', { site_id: siteId, year, energy_type: energyType });
     } catch (e) {
-      console.error('Targets load error:', e);
+      toast?.('Erreur chargement objectifs', 'error');
     } finally {
       setLoading(false);
     }
@@ -430,7 +445,7 @@ function TargetsPanel({ siteId, energyType }) {
       setNewTarget({ month: 1, target_kwh: '', target_eur: '' });
       load();
     } catch (e) {
-      console.error('Add target error:', e);
+      toast?.('Erreur ajout objectif', 'error');
     }
   };
 
@@ -439,7 +454,7 @@ function TargetsPanel({ siteId, energyType }) {
       await deleteConsumptionTarget(id);
       load();
     } catch (e) {
-      console.error('Delete target error:', e);
+      toast?.('Erreur suppression objectif', 'error');
     }
   };
 
@@ -629,7 +644,7 @@ function TargetsPanel({ siteId, energyType }) {
 // HP/HC Panel
 // ========================================
 
-function HPHCPanel({ siteId, days }) {
+function HPHCPanel({ siteId, days, toast }) {
   const [breakdown, setBreakdown] = useState(null);
   const [schedule, setSchedule] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -646,7 +661,7 @@ function HPHCPanel({ siteId, days }) {
       setSchedule(s);
       track('hphc_loaded', { site_id: siteId, days });
     } catch (e) {
-      console.error('HP/HC load error:', e);
+      toast?.('Erreur chargement HP/HC', 'error');
     } finally {
       setLoading(false);
     }
@@ -802,7 +817,7 @@ function HPHCPanel({ siteId, days }) {
 // Gas Panel (Beta)
 // ========================================
 
-function GasPanel({ siteId, days, onGenerateDemo }) {
+function GasPanel({ siteId, days, onGenerateDemo, toast }) {
   const [gas, setGas] = useState(null);
   const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -819,7 +834,7 @@ function GasPanel({ siteId, days, onGenerateDemo }) {
       setWeather(w);
       track('gas_loaded', { site_id: siteId, days });
     } catch (e) {
-      console.error('Gas load error:', e);
+      toast?.('Erreur chargement gaz', 'error');
     } finally {
       setLoading(false);
     }
@@ -986,7 +1001,8 @@ function GasPanel({ siteId, days, onGenerateDemo }) {
 // ========================================
 
 export default function ConsumptionExplorerPage() {
-  const { selectedSiteId, scopedSites, orgSites, scope, sitesLoading } = useScope();
+  const { selectedSiteId, scopedSites, orgSites, scope, sitesLoading, scopeLabel } = useScope();
+  const { toast } = useToast();
 
   // ── UI mode (Classic / Expert) — localStorage only, never in URL ───────
   const { uiMode, isClassic, toggleUiMode } = useExplorerMode();
@@ -1145,7 +1161,7 @@ export default function ConsumptionExplorerPage() {
       await fetch(`/api/ems/demo/generate_timeseries?site_id=${siteIds[0]}&days=90&energy_vector=${ev}`, { method: 'POST' });
       setRefreshKey(k => k + 1); // force TimeseriesPanel to remount → fresh fetch
     } catch (e) {
-      console.error('[V21] Demo generation failed', e);
+      toast('Erreur generation demo', 'error');
     }
   }, [siteIds, energyType]);
 
@@ -1191,6 +1207,16 @@ export default function ConsumptionExplorerPage() {
 
   return (
     <div className="space-y-5">
+      {/* V1.3: Scope coherence banner — single site indicator */}
+      {selectedSiteId && siteIds.length === 1 && (
+        <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5 text-sm">
+          <Info size={14} className="text-blue-500 shrink-0" />
+          <span className="text-blue-700">
+            Vous explorez <strong>{scopeLabel}</strong>. La multi-selection est disponible via le selecteur de sites ci-dessous.
+          </span>
+        </div>
+      )}
+
       {/* UI Mode toggle — persisted in localStorage, never in URL */}
       <div className="flex justify-end">
         <button
@@ -1259,6 +1285,16 @@ export default function ConsumptionExplorerPage() {
       {/* Context banner (site info + date range) */}
       <ContextBanner availability={availability} />
 
+      {/* KPI Header — 6 KPIs respecting scope global */}
+      {showContent && (
+        <ConsoKpiHeader
+          tunnel={motor.primaryTunnel}
+          hphc={motor.primaryHphc}
+          progression={motor.primaryProgression}
+          confidence={availability?.confidence}
+        />
+      )}
+
       {/* Loading skeleton */}
       {loading && <AvailabilitySkeleton />}
 
@@ -1269,6 +1305,8 @@ export default function ConsumptionExplorerPage() {
           energyTypes={availability.energy_types}
           onNavigate={handleNavigate}
           onSwitchEnergy={handleSwitchEnergy}
+          isExpert={!isClassic}
+          onGenerateDemo={siteIds.length ? handleGenerateDemo : undefined}
         />
       )}
 
@@ -1299,24 +1337,37 @@ export default function ConsumptionExplorerPage() {
 
           {isClassic ? (
             /* ── Classic mode: TimeseriesPanel ALWAYS rendered (handles own loading/empty/error) ── */
-            <TimeseriesPanel
-              key={refreshKey}
-              siteIds={siteIds}
-              energyType={energyType}
-              days={days}
-              startDate={startDate}
-              endDate={endDate}
-              unit={unit}
-              mode={mode}
-              sites={sites}
-              availability={availability}
-              granularityOverride={granularity === 'auto' ? null : granularity}
-              onNavigate={handleNavigate}
-              onExtendPeriod={() => setDays(365)}
-              onSelectAll={sites.length ? () => setSiteIds(sites.map(s => s.id)) : undefined}
-              onGenerateDemo={siteIds.length ? handleGenerateDemo : undefined}
-              onMeta={handleMeta}
-            />
+            <>
+              <TimeseriesPanel
+                key={refreshKey}
+                siteIds={siteIds}
+                energyType={energyType}
+                days={days}
+                startDate={startDate}
+                endDate={endDate}
+                unit={unit}
+                mode={mode}
+                sites={sites}
+                availability={availability}
+                granularityOverride={granularity === 'auto' ? null : granularity}
+                onNavigate={handleNavigate}
+                onExtendPeriod={() => setDays(365)}
+                onSelectAll={sites.length ? () => setSiteIds(sites.map(s => s.id)) : undefined}
+                onGenerateDemo={siteIds.length ? handleGenerateDemo : undefined}
+                onMeta={handleMeta}
+              />
+              {/* Benchmark: reference profile comparison (Classic mode) */}
+              {showContent && (
+                <BenchmarkPanel
+                  siteId={siteId}
+                  days={days}
+                  startDate={startDate}
+                  endDate={endDate}
+                  seriesData={null}
+                  toast={toast}
+                />
+              )}
+            </>
           ) : (
             /* ── Expert mode: tab bar always visible + panel routing ── */
             <>
@@ -1381,6 +1432,17 @@ export default function ConsumptionExplorerPage() {
                     onMeta={handleMeta}
                   />
                 )}
+                {/* Benchmark: reference profile comparison — below timeseries */}
+                {activeTab === 'timeseries' && showContent && (
+                  <BenchmarkPanel
+                    siteId={siteId}
+                    days={days}
+                    startDate={startDate}
+                    endDate={endDate}
+                    seriesData={null}
+                    toast={toast}
+                  />
+                )}
                 {/* Insights: statistical analysis — own data fetch, no Motor dependency */}
                 {activeTab === 'insights' && (
                   <InsightsPanel siteIds={siteIds} energyType={energyType} days={days} />
@@ -1399,11 +1461,12 @@ export default function ConsumptionExplorerPage() {
                     days={days}
                     energyType={energyType}
                     showSignature={layers.signature}
+                    toast={toast}
                   />
                 )}
-                {activeTab === 'targets' && showContent && <TargetsPanel siteId={siteId} energyType={energyType} />}
-                {activeTab === 'hphc' && showContent && <HPHCPanel siteId={siteId} days={days} />}
-                {activeTab === 'gas' && showContent && <GasPanel siteId={siteId} days={days} onGenerateDemo={siteIds.length ? handleGenerateDemo : undefined} />}
+                {activeTab === 'targets' && showContent && <TargetsPanel siteId={siteId} energyType={energyType} toast={toast} />}
+                {activeTab === 'hphc' && showContent && <HPHCPanel siteId={siteId} days={days} toast={toast} />}
+                {activeTab === 'gas' && showContent && <GasPanel siteId={siteId} days={days} onGenerateDemo={siteIds.length ? handleGenerateDemo : undefined} toast={toast} />}
               </div>
             </>
           )}

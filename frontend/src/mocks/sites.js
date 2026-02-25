@@ -1,50 +1,151 @@
 /**
- * Mock data: 60 sites for Patrimoine + Site 360
- * Structure aligned with backend Site model.
+ * Mock data: 5 sites HELIOS (démo canonique)
+ * Alignés avec le pack "helios" de backend/services/demo_seed/packs.py.
+ * Utilisés comme fallback offline (ScopeContext) et dans MonitoringPage.
  */
 
-const VILLES = [
-  'Paris', 'Lyon', 'Marseille', 'Toulouse', 'Bordeaux', 'Nantes', 'Lille',
-  'Strasbourg', 'Montpellier', 'Rennes', 'Nice', 'Grenoble', 'Rouen',
-  'Dijon', 'Clermont-Ferrand',
-];
-
-const USAGES = ['bureau', 'commerce', 'entrepot', 'hotel', 'sante', 'enseignement', 'copropriete', 'collectivite'];
-const STATUTS = ['conforme', 'non_conforme', 'a_risque', 'a_evaluer'];
-const REGIONS = ['IDF', 'ARA', 'PACA', 'NAQ', 'OCC', 'HDF', 'GE', 'BRE', 'NOR', 'BFC'];
-
-function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
-function pick(arr) { return arr[rand(0, arr.length - 1)]; }
-
-function generateSite(id) {
-  const ville = pick(VILLES);
-  const usage = pick(USAGES);
-  const statut = pick(STATUTS);
-  const surface = rand(200, 15000);
-  const risque = statut === 'conforme' ? 0 : rand(500, 50000);
-  const anomalies = statut === 'conforme' ? rand(0, 1) : rand(1, 8);
-
-  return {
-    id,
-    nom: `${usage === 'bureau' ? 'Bureau' : usage === 'commerce' ? 'Magasin' : usage === 'hotel' ? 'Hotel' : usage === 'sante' ? 'Clinique' : usage === 'entrepot' ? 'Entrepot' : usage === 'enseignement' ? 'Lycee' : usage === 'copropriete' ? 'Residence' : 'Mairie'} ${ville} ${id}`,
-    ville,
-    region: pick(REGIONS),
-    usage,
-    surface_m2: surface,
-    statut_conformite: statut,
-    risque_eur: risque,
-    anomalies_count: anomalies,
-    conso_kwh_an: rand(50000, 2000000),
-    nb_compteurs: rand(1, 5),
+export const mockSites = [
+  {
+    id: 1,
+    nom: 'Siege HELIOS Paris',
+    ville: 'Paris',
+    region: 'IDF',
+    code_postal: '75008',
+    usage: 'bureau',
+    type: 'bureau',
+    surface_m2: 3500,
     actif: true,
-    adresse: `${rand(1, 200)} rue ${pick(['de la Paix', 'Victor Hugo', 'Pasteur', 'Gambetta', 'Jean Jaures', 'de la Republique'])}`,
-    code_postal: `${rand(10, 95)}000`.slice(0, 5),
-    operat_status: pick(['submitted', 'not_started', 'verified', null]),
+    is_demo: true,
+    risque_eur: 45000,
+    risque_financier_euro: 45000,
+    statut_conformite: 'en_cours',
+    statut_decret_tertiaire: 'EN_COURS',
+    statut_bacs: 'CONFORME',
+    avancement_decret_pct: 72,
+    annual_kwh_total: 800000,
+    conso_kwh_an: 800000,
+    anomalies_count: 2,
+    nb_compteurs: 2,
+    portefeuille_id: 1,
+    operat_status: 'SUBMITTED',
     derniere_evaluation: '2026-01-15',
-  };
-}
-
-export const mockSites = Array.from({ length: 60 }, (_, i) => generateSite(i + 1));
+    adresse: 'Avenue des Champs-Élysées, Paris',
+    latitude: 48.8738,
+    longitude: 2.2950,
+  },
+  {
+    id: 2,
+    nom: 'Bureau Regional Lyon',
+    ville: 'Lyon',
+    region: 'ARA',
+    code_postal: '69002',
+    usage: 'bureau',
+    type: 'bureau',
+    surface_m2: 1200,
+    actif: true,
+    is_demo: true,
+    risque_eur: 18000,
+    risque_financier_euro: 18000,
+    statut_conformite: 'conforme',
+    statut_decret_tertiaire: 'CONFORME',
+    statut_bacs: 'A_RISQUE',
+    avancement_decret_pct: 91,
+    annual_kwh_total: 350000,
+    conso_kwh_an: 350000,
+    anomalies_count: 1,
+    nb_compteurs: 1,
+    portefeuille_id: 1,
+    operat_status: 'IN_PROGRESS',
+    derniere_evaluation: '2026-01-15',
+    adresse: 'Rue de la République, Lyon',
+    latitude: 45.7580,
+    longitude: 4.8320,
+  },
+  {
+    id: 3,
+    nom: 'Usine HELIOS Toulouse',
+    ville: 'Toulouse',
+    region: 'OCC',
+    code_postal: '31100',
+    usage: 'entrepot',
+    type: 'entrepot',
+    surface_m2: 6000,
+    actif: true,
+    is_demo: true,
+    risque_eur: 120000,
+    risque_financier_euro: 120000,
+    statut_conformite: 'a_risque',
+    statut_decret_tertiaire: 'A_RISQUE',
+    statut_bacs: 'A_RISQUE',
+    avancement_decret_pct: 34,
+    annual_kwh_total: 2500000,
+    conso_kwh_an: 2500000,
+    anomalies_count: 5,
+    nb_compteurs: 2,
+    portefeuille_id: 2,
+    operat_status: null,
+    derniere_evaluation: '2026-01-15',
+    adresse: 'Zone Industrielle, Toulouse',
+    latitude: 43.5780,
+    longitude: 1.4020,
+  },
+  {
+    id: 4,
+    nom: 'Hotel Helios Nice',
+    ville: 'Nice',
+    region: 'PACA',
+    code_postal: '06000',
+    usage: 'hotel',
+    type: 'hotel',
+    surface_m2: 4000,
+    actif: true,
+    is_demo: true,
+    risque_eur: 62000,
+    risque_financier_euro: 62000,
+    statut_conformite: 'en_cours',
+    statut_decret_tertiaire: 'EN_COURS',
+    statut_bacs: 'CONFORME',
+    avancement_decret_pct: 58,
+    annual_kwh_total: 1200000,
+    conso_kwh_an: 1200000,
+    anomalies_count: 3,
+    nb_compteurs: 2,
+    portefeuille_id: 3,
+    operat_status: 'NOT_STARTED',
+    derniere_evaluation: '2026-01-15',
+    adresse: 'Promenade des Anglais, Nice',
+    latitude: 43.7050,
+    longitude: 7.2650,
+  },
+  {
+    id: 5,
+    nom: 'Ecole Jules Ferry Marseille',
+    ville: 'Marseille',
+    region: 'PACA',
+    code_postal: '13005',
+    usage: 'enseignement',
+    type: 'enseignement',
+    surface_m2: 2800,
+    actif: true,
+    is_demo: true,
+    risque_eur: 28000,
+    risque_financier_euro: 28000,
+    statut_conformite: 'conforme',
+    statut_decret_tertiaire: 'CONFORME',
+    statut_bacs: 'EN_COURS',
+    avancement_decret_pct: 85,
+    annual_kwh_total: 600000,
+    conso_kwh_an: 600000,
+    anomalies_count: 0,
+    nb_compteurs: 1,
+    portefeuille_id: 3,
+    operat_status: 'IN_PROGRESS',
+    derniere_evaluation: '2026-01-15',
+    adresse: 'Rue Jules Ferry, Marseille',
+    latitude: 43.2950,
+    longitude: 5.3950,
+  },
+];
 
 export function getMockSite(id) {
   return mockSites.find((s) => s.id === Number(id));

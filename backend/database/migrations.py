@@ -41,6 +41,9 @@ def run_migrations(engine):
     _add_dp_compteur_cascade_trigger(engine)
     # V39 — Tertiaire / OPERAT
     _create_tertiaire_tables(engine)
+    # V2-Conso — Dedup meter_reading + unique constraint
+    _dedup_meter_reading(engine)
+    _add_unique_meter_reading_index(engine)
 
 
 def _add_soft_delete_columns(engine):
@@ -571,3 +574,76 @@ def _create_tertiaire_tables(engine):
         logger.info("migration: V39 tertiaire — %d table(s) created", created)
     else:
         logger.debug("migration: V39 tertiaire tables already present — no changes")
+
+
+# ========================================
+# V2-Conso — meter_reading dedup + unique
+# ========================================
+
+def _dedup_meter_reading(engine):
+    """Remove duplicate (meter_id, timestamp) rows from meter_reading.
+
+    Strategy: keep the row with the best quality_score, ties broken by most
+    recent created_at, then highest id.  Idempotent — skips if no duplicates.
+    """
+    insp = inspect(engine)
+    if not insp.has_table("meter_reading"):
+        return
+
+    with engine.begin() as conn:
+        dupes = conn.execute(text("""
+            SELECT meter_id, timestamp, COUNT(*) AS cnt
+            FROM meter_reading
+            GROUP BY meter_id, timestamp
+            HAVING cnt > 1
+        """)).fetchall()
+
+        if not dupes:
+            logger.debug("migration: meter_reading — no duplicates found")
+            return
+
+        deleted = 0
+        for meter_id, ts, cnt in dupes:
+            # Keep the best row (highest quality_score, then latest created_at, then highest id)
+            keep = conn.execute(text("""
+                SELECT id FROM meter_reading
+                WHERE meter_id = :mid AND timestamp = :ts
+                ORDER BY
+                    COALESCE(quality_score, -1) DESC,
+                    COALESCE(created_at, '1970-01-01') DESC,
+                    id DESC
+                LIMIT 1
+            """), {"mid": meter_id, "ts": ts}).scalar()
+
+            if keep:
+                result = conn.execute(text("""
+                    DELETE FROM meter_reading
+                    WHERE meter_id = :mid AND timestamp = :ts AND id != :keep_id
+                """), {"mid": meter_id, "ts": ts, "keep_id": keep})
+                deleted += result.rowcount
+
+        logger.info("migration: meter_reading dedup — removed %d duplicate rows from %d pairs",
+                     deleted, len(dupes))
+
+
+def _add_unique_meter_reading_index(engine):
+    """Add UNIQUE index on (meter_id, timestamp) to prevent future duplicates."""
+    idx_name = "uq_meter_reading_meter_ts"
+    insp = inspect(engine)
+
+    if not insp.has_table("meter_reading"):
+        return
+
+    existing = {idx["name"] for idx in insp.get_indexes("meter_reading") if idx.get("name")}
+    if idx_name in existing:
+        return
+
+    with engine.begin() as conn:
+        try:
+            conn.execute(text(
+                f'CREATE UNIQUE INDEX IF NOT EXISTS "{idx_name}" '
+                f'ON "meter_reading" ("meter_id", "timestamp")'
+            ))
+            logger.info("migration: created unique index %s", idx_name)
+        except Exception as e:
+            logger.warning("migration: could not create index %s: %s", idx_name, e)

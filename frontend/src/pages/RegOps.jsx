@@ -93,10 +93,10 @@ export default function RegOps() {
         <div className="text-center">
           <p className="text-gray-500 mb-4">Évaluation non disponible</p>
           <button
-            onClick={() => navigate('/sites')}
+            onClick={() => navigate('/patrimoine')}
             className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
-            Retour aux sites
+            Retour au patrimoine
           </button>
         </div>
       </div>

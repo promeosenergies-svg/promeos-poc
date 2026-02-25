@@ -1119,6 +1119,16 @@ def main():
         patrimoine_result = seed_patrimoine_demo(db)
         db.commit()
 
+        # V68: Billing demo 36 mois
+        from services.billing_seed import seed_billing_demo
+        billing_result = seed_billing_demo(db)
+        if "error" in billing_result:
+            print(f"  ⚠ Billing seed skipped: {billing_result['error']}")
+        elif billing_result.get("skipped"):
+            print(f"  ⚠ Billing seed skipped: {billing_result.get('reason')}")
+        else:
+            print(f"  ✓ Billing demo seeded ({billing_result.get('invoices_created')} factures, 36 mois, 2 sites)")
+
         print("\n" + "=" * 70)
         print("SEED TERMINE AVEC SUCCES !")
         print("=" * 70)

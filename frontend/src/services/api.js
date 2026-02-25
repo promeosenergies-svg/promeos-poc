@@ -112,12 +112,12 @@ api.interceptors.request.use((config) => {
   config._startTime = Date.now();
   config.headers['X-Request-Id'] = config._requestId;
 
-  // Scope injection: skip /demo/* endpoints
+  // Scope injection: skip /demo/* endpoints and skipSiteHeader requests
   if (!isDemoPath(config.url)) {
     if (_apiScope.orgId != null) {
       config.headers['X-Org-Id'] = String(_apiScope.orgId);
     }
-    if (_apiScope.siteId != null) {
+    if (_apiScope.siteId != null && !config.skipSiteHeader) {
       config.headers['X-Site-Id'] = String(_apiScope.siteId);
     }
   }
@@ -182,6 +182,14 @@ export const isSilentUrl = (urlOrConfig) => {
 
 api.interceptors.response.use(
   (response) => {
+    // Guard: detect non-JSON responses (HTML from missing proxy / wrong prefix)
+    const ct = response.headers?.['content-type'] || '';
+    if (ct && !ct.includes('application/json') && !ct.includes('text/plain') && response.config.responseType !== 'blob') {
+      const msg = `[PROMEOS] API returned non-JSON (content-type: ${ct}). Vérifiez le proxy Vite ou le préfixe /api.`;
+      console.error(msg, { url: response.config.url, status: response.status });
+      return Promise.reject(new Error(msg));
+    }
+
     // Track successful request
     const duration = Date.now() - (response.config._startTime || Date.now());
     const entry = {
@@ -586,6 +594,7 @@ export const putSiteTariff = (siteId, data) => api.put(`/site/${siteId}/tariff`,
 
 export const getBillingSummary = () => api.get('/billing/summary').then(r => r.data);
 export const getBillingInsights = (params = {}) => api.get('/billing/insights', { params }).then(r => r.data);
+export const getInsightDetail = (insightId) => api.get(`/billing/insights/${insightId}`).then(r => r.data);
 export const getBillingInvoices = (params = {}) => api.get('/billing/invoices', { params }).then(r => r.data);
 export const getSiteBilling = (siteId) => api.get(`/billing/site/${siteId}`).then(r => r.data);
 export const getBillingRules = () => api.get('/billing/rules').then(r => r.data);
@@ -602,6 +611,42 @@ export const importInvoicesCsv = (file) => {
 export const patchBillingInsight = (insightId, data) => api.patch(`/billing/insights/${insightId}`, data).then(r => r.data);
 export const resolveBillingInsight = (insightId, notes = null) => api.post(`/billing/insights/${insightId}/resolve`, null, { params: notes ? { notes } : {} }).then(r => r.data);
 export const getImportBatches = (params = {}) => api.get('/billing/import/batches', { params }).then(r => r.data);
+
+// V66 — PDF import + action creation + billing anomalies
+export const importInvoicesPdf = (siteId, file) => {
+  const fd = new FormData();
+  fd.append('file', file);
+  return api.post('/billing/import-pdf', fd, {
+    params: { site_id: siteId },
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }).then(r => r.data);
+};
+
+export const createActionFromBillingInsight = (insightId, title, siteId) =>
+  api.post('/actions', {
+    source_type: 'manual',
+    source_id: String(insightId),
+    source_key: `billing-insight:${insightId}`,
+    idempotency_key: `billing-insight:${insightId}`,
+    title,
+    site_id: siteId,
+  }).then(r => r.data);
+
+export const getBillingAnomaliesScoped = () =>
+  api.get('/billing/anomalies-scoped').then(r => r.data);
+
+/* ── V67 — Timeline & Coverage ── */
+export const getBillingPeriods = (params = {}) =>
+  api.get('/billing/periods', { params }).then(r => r.data);
+
+export const getCoverageSummary = (params = {}) =>
+  api.get('/billing/coverage-summary', { params }).then(r => r.data);
+
+export const getMissingPeriods = (params = {}) =>
+  api.get('/billing/missing-periods', { params }).then(r => r.data);
+
+export const getNormalizedInvoices = (params = {}) =>
+  api.get('/billing/invoices/normalized', { params }).then(r => r.data);
 
 // ========================================
 // ACHAT ENERGIE
@@ -848,6 +893,8 @@ export const getEmsTimeseries = (params) => _cachedGet('/ems/timeseries', { para
 export const getEmsTimeseriesSuggest = (dateFrom, dateTo) => _cachedGet('/ems/timeseries/suggest', { params: { date_from: dateFrom, date_to: dateTo } }).then(r => r.data);
 export const getEmsWeather = (siteId, dateFrom, dateTo) => api.get('/ems/weather', { params: { site_id: siteId, date_from: dateFrom, date_to: dateTo } }).then(r => r.data);
 export const getEmsWeatherMulti = (siteIds, dateFrom, dateTo) => api.get('/ems/weather', { params: { site_ids: siteIds.join(','), date_from: dateFrom, date_to: dateTo } }).then(r => r.data);
+export const getEmsReferenceProfile = (siteId, dateFrom, dateTo, famille, puissance, granularity = 'daily') => api.get('/ems/reference_profile', { params: { site_id: siteId, date_from: dateFrom, date_to: dateTo, famille, puissance, granularity } }).then(r => r.data);
+export const getEmsWeatherHourly = (siteId, dateFrom, dateTo) => api.get('/ems/weather_hourly', { params: { site_id: siteId, date_from: dateFrom, date_to: dateTo } }).then(r => r.data);
 export const runEmsSignature = (siteId, dateFrom, dateTo, meterIds = null) => api.post('/ems/signature/run', null, { params: { site_id: siteId, date_from: dateFrom, date_to: dateTo, meter_ids: meterIds } }).then(r => r.data);
 export const runEmsSignaturePortfolio = (siteIds, dateFrom, dateTo) => api.post('/ems/signature/portfolio', null, { params: { site_ids: siteIds.join(','), date_from: dateFrom, date_to: dateTo } }).then(r => r.data);
 export const getEmsViews = (userId = null) => api.get('/ems/views', { params: userId ? { user_id: userId } : {} }).then(r => r.data);
@@ -939,5 +986,17 @@ export const getIssueProofs = (issueCode) =>
 
 export const createOperatProofTemplates = (efaId, year, body) =>
   api.post(`${TERT_BASE}/efa/${efaId}/proofs/templates`, body, { params: { year } }).then(r => r.data);
+
+// ========================================
+// PORTFOLIO CONSUMPTION (V1)
+// ========================================
+
+// skipSiteHeader: portfolio = multi-sites, never filter by single site scope
+export const getPortfolioSummary = (params = {}) => _cachedGet('/portfolio/consumption/summary', { params, skipSiteHeader: true }).then(r => r.data);
+export const getPortfolioSites = (params = {}) => _cachedGet('/portfolio/consumption/sites', { params, skipSiteHeader: true }).then(r => r.data);
+
+// V69: Meta version (sha + branch) — Expert mode display
+export const getMetaVersion = () =>
+  api.get('/meta/version').then(r => r.data).catch(() => null);
 
 export default api;

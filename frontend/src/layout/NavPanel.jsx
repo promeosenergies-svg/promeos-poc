@@ -23,7 +23,7 @@ const BADGE_STYLES = {
 };
 
 /* ── Panel Link (premium active/hover) ── */
-function PanelLink({ to, icon: Icon, label, badge, badgeKey, pinned, onTogglePin, tint }) {
+function PanelLink({ to, icon: Icon, label, badge, badgeKey, pinned, onTogglePin, tint, indent }) {
   const t = TINT_PALETTE[tint] || TINT_PALETTE.slate;
   const badgeStyle = badgeKey ? (BADGE_STYLES[badgeKey] || BADGE_STYLES._default) : BADGE_STYLES._default;
 
@@ -32,7 +32,7 @@ function PanelLink({ to, icon: Icon, label, badge, badgeKey, pinned, onTogglePin
       to={to}
       end={to === '/'}
       className={({ isActive }) =>
-        `group/link flex items-center gap-2.5 h-9 rounded-lg text-[13px] transition-all duration-150 relative px-2.5
+        `group/link flex items-center gap-2.5 h-9 rounded-lg text-[13px] transition-all duration-150 relative px-2.5${indent ? ' ml-4' : ''}
         ${isActive
           ? `${t.activeBg} text-slate-900 font-medium border-l-2 ${t.activeBorder} pl-2`
           : `text-slate-600 hover:${t.hoverBg.replace('bg-', 'bg-')} hover:text-slate-900 font-normal`

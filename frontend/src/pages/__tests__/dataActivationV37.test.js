@@ -267,7 +267,7 @@ describe('LeverActionModel — data_activation template', () => {
     const lever = { type: 'data_activation', actionKey: 'lev-data-cover', impactEur: null };
     const link = buildLeverDeepLink(lever);
     expect(link).toContain('type=data_activation');
-    expect(link).toContain('key=lev-data-cover');
+    expect(link).toContain('ref_id=lev-data-cover');
   });
 });
 
