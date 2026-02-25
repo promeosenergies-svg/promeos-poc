@@ -179,8 +179,10 @@ export default function BillIntelPage() {
   async function handleCsvImport(e) {
     const file = e.target.files[0];
     if (!file) return;
+    if (isExpert) console.log('[BillIntelPage] CSV import start:', file.name, file.size, 'bytes');
     try {
       const result = await importInvoicesCsv(file);
+      if (isExpert) console.log('[BillIntelPage] CSV import response:', result);
       track('billing_csv_import', { filename: file.name });
       toast(`Import CSV réussi : ${result?.imported ?? '?'} facture(s) importée(s)`, 'success');
       await fetchData();
@@ -202,8 +204,10 @@ export default function BillIntelPage() {
   async function handlePdfImport(e) {
     const file = e.target.files[0];
     if (!file || !pdfSiteId) return;
+    if (isExpert) console.log('[BillIntelPage] PDF import start:', file.name, file.size, 'bytes, site_id:', pdfSiteId);
     try {
       const result = await importInvoicesPdf(Number(pdfSiteId), file);
+      if (isExpert) console.log('[BillIntelPage] PDF import response:', result);
       track('billing_pdf_import', { filename: file.name });
       toast(`Import PDF réussi : facture ${result?.invoice_id ?? ''} (confiance ${result?.confidence ?? '?'})`, 'success');
       await fetchData();
