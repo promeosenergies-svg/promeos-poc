@@ -74,16 +74,11 @@ export default function BillingPage() {
     const params = {};
     if (siteId) params.site_id = siteId;
 
+    // Critical: periods — si ça échoue, rien à afficher
     try {
-      const [summaryData, periodsData] = await Promise.all([
-        getCoverageSummary(params),
-        getBillingPeriods({ ...params, limit: LIMIT, offset }),
-      ]);
-
-      setSummary(summaryData);
+      const periodsData = await getBillingPeriods({ ...params, limit: LIMIT, offset });
       setPeriodsTotal(periodsData.total);
       setPeriodsOffset(offset + periodsData.periods.length);
-
       if (append) {
         setPeriods(prev => [...prev, ...periodsData.periods]);
       } else {
@@ -91,7 +86,7 @@ export default function BillingPage() {
       }
     } catch (err) {
       const status = err?.response?.status;
-      if (status === 404) {
+      if (status === 404 && siteId) {
         // P0: purge stale siteId from localStorage scope
         try {
           const raw = localStorage.getItem('promeos_scope');
@@ -104,7 +99,7 @@ export default function BillingPage() {
         setSiteFilter('');
         const baseMsg = 'Site introuvable. Retour à la vue tous les sites.';
         if (isExpert) {
-          const endpoint = err?.config?.url || '/billing/*';
+          const endpoint = err?.config?.url || '/billing/periods';
           setError(`${baseMsg} [debug: endpoint=${endpoint}, status=404, site_id=${siteId}]`);
         } else {
           setError(baseMsg);
@@ -121,7 +116,18 @@ export default function BillingPage() {
     setLoading(false);
     setLoadingMore(false);
 
-    // Missing-periods : non-bloquant, best-effort (offset 0 only)
+    // Non-bloquant : coverage-summary (best-effort, ne casse pas la timeline)
+    if (offset === 0) {
+      try {
+        const summaryData = await getCoverageSummary(params);
+        setSummary(summaryData);
+      } catch (err) {
+        if (isExpert) console.warn('[BillingPage] coverage-summary failed (non-bloquant):', err);
+        setSummary(null);
+      }
+    }
+
+    // Non-bloquant : missing-periods (best-effort)
     if (offset === 0) {
       try {
         const missingData = await getMissingPeriods({ limit: 10 });
