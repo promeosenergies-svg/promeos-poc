@@ -30,6 +30,7 @@ import { mockSites } from '../mocks/sites';
 import { track } from '../services/tracker';
 import CreateActionModal from '../components/CreateActionModal';
 import { fmtKwh, fmtDateFR } from '../utils/format';
+import { toConsoExplorer, toConsoDiag, toActionsList, toPatrimoine } from '../services/routes';
 import {
   getMonitoringKpis,
   runMonitoring,
@@ -227,7 +228,7 @@ function ActionMiniList({ actions, siteId, navigate }) {
       <CardBody>
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-sm font-semibold text-gray-700">Actions du site</h3>
-          <Button variant="ghost" size="xs" onClick={() => navigate(`/actions?site_id=${siteId}`)}>Voir tout</Button>
+          <Button variant="ghost" size="xs" onClick={() => navigate(toActionsList({ site_id: siteId }))}>Voir tout</Button>
         </div>
         <div className="space-y-1.5">
           {actions.map((a) => (
@@ -402,7 +403,7 @@ function ExecutiveSummary({ alerts, kpiData, climate, qualityScore, qualityConf,
         ? ALERT_TYPE_LABELS[topAlert.alert_type] || topAlert.alert_type
         : 'Continuez le suivi',
       ctas: topAlert ? [
-        { label: 'Voir preuves', action: () => onInsight(topAlert) },
+        { label: 'Comprendre', action: () => onInsight(topAlert) },
         { label: 'Créer action', action: () => onCreateAction(topAlert) },
       ] : [],
     },
@@ -412,7 +413,7 @@ function ExecutiveSummary({ alerts, kpiData, climate, qualityScore, qualityConf,
       title: 'Gaspillage estimé',
       value: totalWasteEur > 0 ? `${fmtNum(totalWasteEur, 0)} EUR/an` : 'Non détecté',
       sub: wasteAlerts.length > 0
-        ? `${fmtNum(totalWasteKwh, 0)} kWh · ${wasteAlerts.length} alerte${wasteAlerts.length > 1 ? 's' : ''}${offHoursEst.eur > 0 ? ` · Off-hours: ${offHoursEst.label}` : ''}`
+        ? `${fmtNum(totalWasteKwh, 0)} kWh · ${wasteAlerts.length} alerte${wasteAlerts.length > 1 ? 's' : ''}${offHoursEst.eur > 0 ? ` · Hors horaires: ${offHoursEst.label}` : ''}`
         : 'Aucune anomalie de gaspillage',
       ctas: totalWasteEur > 0 ? [
         { label: 'Explorer', action: onOpenExplorer },
@@ -425,7 +426,7 @@ function ExecutiveSummary({ alerts, kpiData, climate, qualityScore, qualityConf,
       title: 'Confiance données',
       value: confOk ? 'OK' : 'À confirmer',
       sub: qualityConf?.reason || 'Données suffisantes',
-      ctas: [{ label: 'Pourquoi ?', action: onConfidenceDetail }],
+      ctas: [{ label: 'Comprendre', action: onConfidenceDetail }],
     },
     {
       icon: Leaf,
@@ -800,7 +801,7 @@ const OFF_HOURS_TABS = [
   { id: 'actions', label: 'Actions' },
 ];
 
-function OffHoursDrawer({ open, onClose, offHoursRatio, offHoursKwh, schedule, emissions, onCreateAction }) {
+function OffHoursDrawer({ open, onClose, offHoursRatio, offHoursKwh, schedule, emissions, onCreateAction, siteId: drawerSiteId }) {
   const [tab, setTab] = useState('methode');
   const estimate = computeOffHoursEstimate(offHoursKwh);
   const navTo = useNavigate();
@@ -835,7 +836,7 @@ function OffHoursDrawer({ open, onClose, offHoursRatio, offHoursKwh, schedule, e
               ) : (
                 <div className="space-y-2">
                   <p className="text-sm text-gray-400">Horaires non définis — le ratio est basé sur un profil par défaut.</p>
-                  <Button variant="secondary" size="sm" onClick={() => { onClose(); navTo('/patrimoine'); }}>
+                  <Button variant="secondary" size="sm" onClick={() => { onClose(); navTo(toPatrimoine({ site_id: drawerSiteId })); }}>
                     <Clock size={14} />
                     Définir les horaires
                   </Button>
@@ -1291,13 +1292,13 @@ export default function MonitoringPage() {
   };
 
   const handleOpenExplorer = (alert) => {
-    const params = new URLSearchParams({ site_id: siteId });
+    const explorerOpts = { site_id: siteId };
     if (kpis?.period) {
       const parts = kpis.period.split(' - ');
-      if (parts[0]) params.set('date_from', parts[0]);
-      if (parts[1]) params.set('date_to', parts[1]);
+      if (parts[0]) explorerOpts.date_from = parts[0];
+      if (parts[1]) explorerOpts.date_to = parts[1];
     }
-    navigate(`/explorer?${params.toString()}`);
+    navigate(toConsoExplorer(explorerOpts));
   };
 
   // --- Helpers ---
@@ -1473,7 +1474,7 @@ export default function MonitoringPage() {
             ))}
           </select>
           <Link
-            to="/consommations/explorer"
+            to={toConsoExplorer({ site_id: siteId })}
             className="flex items-center gap-1 px-3 py-2 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition"
           >
             <ExternalLink size={14} />
@@ -1483,19 +1484,11 @@ export default function MonitoringPage() {
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
             {loading ? 'Analyse...' : 'Lancer Analyse'}
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => {
-            const params = new URLSearchParams({ site_id: siteId });
-            if (kpis?.period) {
-              const parts = kpis.period.split(' - ');
-              if (parts[0]) params.set('date_from', parts[0]);
-              if (parts[1]) params.set('date_to', parts[1]);
-            }
-            navigate(`/explorer?${params.toString()}`);
-          }}>
+          <Button variant="ghost" size="sm" onClick={() => handleOpenExplorer(null)}>
             <BarChart3 size={14} />
             Explorer
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => navigate('/diagnostic-conso')}>
+          <Button variant="ghost" size="sm" onClick={() => navigate(toConsoDiag({ site_id: siteId }))}>
             <Eye size={14} />
             Diagnostics
           </Button>
@@ -1534,68 +1527,163 @@ export default function MonitoringPage() {
 
       {hasData && (
         <>
-          {/* Usage Panel */}
-          <UsagePanel
-            usage={usageSuggest}
-            loading={usageLoading}
-            scheduleSuggest={scheduleSuggest}
-            onSuggestSchedule={handleSuggestSchedule}
-            onApplySchedule={handleApplySchedule}
-            suggestLoading={suggestLoading}
-          />
+          {/* ═══ SECTION A — Header pilotage ═══ */}
+          <div data-section="header-pilotage" className="mb-6">
+            {/* Usage Panel */}
+            <UsagePanel
+              usage={usageSuggest}
+              loading={usageLoading}
+              scheduleSuggest={scheduleSuggest}
+              onSuggestSchedule={handleSuggestSchedule}
+              onApplySchedule={handleApplySchedule}
+              suggestLoading={suggestLoading}
+            />
 
-          {/* Executive Summary */}
-          <ExecutiveSummary
-            alerts={alerts}
-            kpiData={kpiData}
-            climate={climate}
-            qualityScore={qualityScore}
-            qualityConf={qualityConf}
-            offHoursKwh={offHoursKwh}
-            emissions={emissions}
-            onOpenExplorer={() => handleOpenExplorer(null)}
-            onCreateAction={(a) => {
-              if (a) handleCreateAction(a);
-              else {
+            {/* Quick Actions Bar with primary CTA */}
+            <QuickActionsBar
+              onOpenExplorer={() => handleOpenExplorer(null)}
+              onCreateAction={() => {
                 setActionPrefill({ titre: `Action — Site ${siteId}`, type: 'conso' });
                 setShowActionModal(true);
+              }}
+              compareEnabled={!!kpis?.period}
+              compareMode={compareMode}
+              onCompareChange={setCompareMode}
+              compareLoading={compareLoading}
+            />
+
+            {/* Confidence badge */}
+            {qualityConf && (
+              <div className="flex items-center gap-2 mb-3">
+                <button
+                  onClick={() => setShowConfidenceDrawer(true)}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition hover:shadow-sm"
+                  style={{
+                    borderColor: qualityConf.level === 'high' ? '#bbf7d0' : qualityConf.level === 'medium' ? '#fde68a' : '#fecaca',
+                    backgroundColor: qualityConf.level === 'high' ? '#f0fdf4' : qualityConf.level === 'medium' ? '#fffbeb' : '#fef2f2',
+                    color: qualityConf.level === 'high' ? '#15803d' : qualityConf.level === 'medium' ? '#a16207' : '#dc2626',
+                  }}
+                >
+                  <Database size={12} />
+                  Confiance données : {qualityConf.level === 'high' ? 'Forte' : qualityConf.level === 'medium' ? 'Moyenne' : 'Faible'}
+                </button>
+                {impact?.price?.mode && (
+                  <span className="flex items-center gap-1 text-xs text-gray-500">
+                    <ModeBadge mode={impact.price.mode} />
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* ═══ SECTION B — À retenir ═══ */}
+          <div data-section="a-retenir" className="mb-6">
+            <h2 className="text-base font-semibold text-gray-800 mb-3 flex items-center gap-2">
+              <Info size={16} className="text-blue-500" />
+              À retenir
+            </h2>
+            <ExecutiveSummary
+              alerts={alerts}
+              kpiData={kpiData}
+              climate={climate}
+              qualityScore={qualityScore}
+              qualityConf={qualityConf}
+              offHoursKwh={offHoursKwh}
+              emissions={emissions}
+              onOpenExplorer={() => handleOpenExplorer(null)}
+              onCreateAction={(a) => {
+                if (a) handleCreateAction(a);
+                else {
+                  setActionPrefill({ titre: `Action — Site ${siteId}`, type: 'conso' });
+                  setShowActionModal(true);
+                }
+              }}
+              onInsight={(a) => openInsightDrawer(a)}
+              onConfidenceDetail={() => setShowConfidenceDrawer(true)}
+            />
+          </div>
+
+          {/* ═══ SECTION C — Plan d'action ═══ */}
+          <div data-section="plan-action" className="mb-6">
+            <h2 className="text-base font-semibold text-gray-800 mb-3 flex items-center gap-2">
+              <Zap size={16} className="text-orange-500" />
+              Plan d'action
+              {openCount > 0 && <Badge status="crit">{openCount} à traiter</Badge>}
+            </h2>
+            {(() => {
+              const topPriorities = alerts
+                .filter((a) => a.status === 'open' && a.estimated_impact_eur > 0)
+                .sort((a, b) => (b.estimated_impact_eur || 0) - (a.estimated_impact_eur || 0))
+                .slice(0, 3);
+              if (topPriorities.length === 0) {
+                return (
+                  <Card>
+                    <CardBody className="py-6 text-center">
+                      <CheckCircle size={24} className="mx-auto text-green-300 mb-2" />
+                      <p className="text-sm text-gray-500">Aucune priorité détectée. Lancez une analyse pour identifier des opportunités.</p>
+                    </CardBody>
+                  </Card>
+                );
               }
-            }}
-            onInsight={(a) => openInsightDrawer(a)}
-            onConfidenceDetail={() => setShowConfidenceDrawer(true)}
-          />
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {topPriorities.map((a, i) => (
+                    <Card key={a.id}>
+                      <CardBody className="p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex items-center justify-center w-7 h-7 rounded-full bg-orange-50 text-orange-600 font-bold text-sm shrink-0">
+                            {i + 1}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-gray-800">
+                              {ALERT_TYPE_LABELS[a.alert_type] || a.alert_type}
+                            </p>
+                            <p className="text-xs text-gray-500 line-clamp-2 mt-0.5">{a.explanation}</p>
+                            {a.estimated_impact_eur > 0 && (
+                              <p className="text-sm font-bold text-red-600 mt-1">{fmtNum(a.estimated_impact_eur, 0)} EUR/an</p>
+                            )}
+                            <div className="flex items-center gap-2 mt-2">
+                              <button
+                                onClick={() => openInsightDrawer(a)}
+                                className="text-xs font-medium text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                              >
+                                <Eye size={10} /> Preuve
+                              </button>
+                              <button
+                                onClick={() => handleCreateAction(a)}
+                                className="text-xs font-medium text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                              >
+                                <Zap size={10} /> Créer action
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </CardBody>
+                    </Card>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
 
-          {/* Quick Actions Bar */}
-          <QuickActionsBar
-            onOpenExplorer={() => handleOpenExplorer(null)}
-            onCreateAction={() => {
-              setActionPrefill({ titre: `Action — Site ${siteId}`, type: 'conso' });
-              setShowActionModal(true);
-            }}
-            compareEnabled={!!kpis?.period}
-            compareMode={compareMode}
-            onCompareChange={setCompareMode}
-            compareLoading={compareLoading}
-          />
-
-          {/* Impact mode + Actions mini-list */}
-          {impact?.price?.mode && (
-            <div className="flex items-center gap-2 mb-3 text-xs text-gray-500">
-              <span>Tarification:</span>
-              <ModeBadge mode={impact.price.mode} />
-              <span className="text-gray-400">{impact.price.source_label}</span>
-            </div>
-          )}
+          {/* Actions mini-list */}
           <ActionMiniList actions={siteActions} siteId={siteId} navigate={navigate} />
 
-          {/* Compare period banner */}
-          {compareKpis && (
-            <div className="flex items-center gap-2 mb-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700">
-              <TrendingUp size={12} />
-              <span>Comparaison: <strong>{compareKpis.period}</strong></span>
-              <button onClick={() => setCompareMode(null)} className="ml-auto text-blue-400 hover:text-blue-600">Fermer</button>
-            </div>
-          )}
+          {/* ═══ SECTION D — Détails ═══ */}
+          <div data-section="details" className="mb-6">
+            <h2 className="text-base font-semibold text-gray-800 mb-3 flex items-center gap-2">
+              <BarChart3 size={16} className="text-indigo-500" />
+              Détails
+            </h2>
+
+            {/* Compare period banner */}
+            {compareKpis && (
+              <div className="flex items-center gap-2 mb-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700">
+                <TrendingUp size={12} />
+                <span>Comparaison: <strong>{compareKpis.period}</strong></span>
+                <button onClick={() => setCompareMode(null)} className="ml-auto text-blue-400 hover:text-blue-600">Fermer</button>
+              </div>
+            )}
 
           {/* KPI Strip — 7 cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-6">
@@ -1934,44 +2022,57 @@ export default function MonitoringPage() {
             </CardBody>
           </Card>
 
-          {/* Snapshots History */}
-          <Card className="mb-6">
-            <CardBody>
-              <h2 className="font-semibold text-gray-700 mb-4">Historique Snapshots</h2>
-              {snapshots.length === 0 ? (
-                <p className="text-sm text-gray-400 text-center py-4">Aucun snapshot disponible.</p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b text-left text-gray-500">
-                        <th className="pb-2 pr-4">ID</th>
-                        <th className="pb-2 pr-4">Période</th>
-                        <th className="pb-2 pr-4">Qualite</th>
-                        <th className="pb-2 pr-4">Risque</th>
-                        <th className="pb-2">Date</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {snapshots.map((s) => (
-                        <tr key={s.id} className="border-b hover:bg-gray-50">
-                          <td className="py-2 pr-4">{s.id}</td>
-                          <td className="py-2 pr-4">{s.period}</td>
-                          <td className={`py-2 pr-4 font-medium ${scoreColor(s.data_quality_score || 0)}`}>
-                            {s.data_quality_score ?? '-'}
-                          </td>
-                          <td className={`py-2 pr-4 font-medium ${riskColor(s.risk_power_score || 0)}`}>
-                            {s.risk_power_score ?? '-'}
-                          </td>
-                          <td className="py-2 text-gray-400">{s.created_at?.slice(0, 16)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardBody>
-          </Card>
+          {/* Métriques avancées — expert mode */}
+          {isExpert && (
+            <details data-section="metriques-avancees" className="mb-6">
+              <summary className="cursor-pointer text-sm font-semibold text-gray-600 hover:text-gray-800 flex items-center gap-2 py-2">
+                <ChevronDown size={14} />
+                Métriques avancées
+              </summary>
+              <div className="mt-3 space-y-4">
+                {/* Snapshots History */}
+                <Card>
+                  <CardBody>
+                    <h3 className="font-semibold text-gray-700 mb-4">Historique Snapshots</h3>
+                    {snapshots.length === 0 ? (
+                      <p className="text-sm text-gray-400 text-center py-4">Aucun snapshot disponible.</p>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b text-left text-gray-500">
+                              <th className="pb-2 pr-4">ID</th>
+                              <th className="pb-2 pr-4">Période</th>
+                              <th className="pb-2 pr-4">Qualité</th>
+                              <th className="pb-2 pr-4">Risque</th>
+                              <th className="pb-2">Date</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {snapshots.map((s) => (
+                              <tr key={s.id} className="border-b hover:bg-gray-50">
+                                <td className="py-2 pr-4">{s.id}</td>
+                                <td className="py-2 pr-4">{s.period}</td>
+                                <td className={`py-2 pr-4 font-medium ${scoreColor(s.data_quality_score || 0)}`}>
+                                  {s.data_quality_score ?? '-'}
+                                </td>
+                                <td className={`py-2 pr-4 font-medium ${riskColor(s.risk_power_score || 0)}`}>
+                                  {s.risk_power_score ?? '-'}
+                                </td>
+                                <td className="py-2 text-gray-400">{s.created_at?.slice(0, 16)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </CardBody>
+                </Card>
+              </div>
+            </details>
+          )}
+
+          </div>{/* end data-section="details" */}
 
           {/* Trust Badge + Demo CTA */}
           <div className="flex items-center justify-between flex-wrap gap-2">
@@ -2021,6 +2122,7 @@ export default function MonitoringPage() {
         offHoursKwh={offHoursKwh}
         schedule={schedule}
         emissions={emissions}
+        siteId={siteId}
         onCreateAction={(prefill) => {
           setShowOffHoursDrawer(false);
           setActionPrefill(prefill);

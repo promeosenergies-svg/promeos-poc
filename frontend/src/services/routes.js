@@ -121,6 +121,18 @@ export function toActionsList(opts = {}) {
 }
 
 /**
+ * Patrimoine — gestion sites, horaires, compteurs.
+ * @param {object} opts
+ * @param {number|string} [opts.site_id]
+ */
+export function toPatrimoine(opts = {}) {
+  const p = new URLSearchParams();
+  if (opts.site_id) p.set('site_id', String(opts.site_id));
+  const qs = p.toString();
+  return `/patrimoine${qs ? '?' + qs : ''}`;
+}
+
+/**
  * Import & Analyse consommation.
  */
 export function toConsoImport() {
