@@ -112,12 +112,12 @@ api.interceptors.request.use((config) => {
   config._startTime = Date.now();
   config.headers['X-Request-Id'] = config._requestId;
 
-  // Scope injection: skip /demo/* endpoints
+  // Scope injection: skip /demo/* endpoints and skipSiteHeader requests
   if (!isDemoPath(config.url)) {
     if (_apiScope.orgId != null) {
       config.headers['X-Org-Id'] = String(_apiScope.orgId);
     }
-    if (_apiScope.siteId != null) {
+    if (_apiScope.siteId != null && !config.skipSiteHeader) {
       config.headers['X-Site-Id'] = String(_apiScope.siteId);
     }
   }
@@ -991,8 +991,9 @@ export const createOperatProofTemplates = (efaId, year, body) =>
 // PORTFOLIO CONSUMPTION (V1)
 // ========================================
 
-export const getPortfolioSummary = (params = {}) => _cachedGet('/portfolio/consumption/summary', { params }).then(r => r.data);
-export const getPortfolioSites = (params = {}) => _cachedGet('/portfolio/consumption/sites', { params }).then(r => r.data);
+// skipSiteHeader: portfolio = multi-sites, never filter by single site scope
+export const getPortfolioSummary = (params = {}) => _cachedGet('/portfolio/consumption/summary', { params, skipSiteHeader: true }).then(r => r.data);
+export const getPortfolioSites = (params = {}) => _cachedGet('/portfolio/consumption/sites', { params, skipSiteHeader: true }).then(r => r.data);
 
 // V69: Meta version (sha + branch) — Expert mode display
 export const getMetaVersion = () =>
