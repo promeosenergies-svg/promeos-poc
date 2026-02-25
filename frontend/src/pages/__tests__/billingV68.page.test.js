@@ -1093,3 +1093,26 @@ describe('AD · CTA Stabilization', () => {
     expect(notFound).toMatch(/isExpert/);
   });
 });
+
+/* ─── Section AE — Insight drawer breakdown guarantee (3 tests) ─── */
+describe('AE · Insight drawer breakdown guarantee', () => {
+  const backend = readFileSync(resolve(__dirname, '../../../../backend/routes/billing.py'), 'utf-8');
+  const drawer = readFileSync(resolve(__dirname, '../../components/InsightDrawer.jsx'), 'utf-8');
+
+  it('get_insight_detail recalculates V2 when breakdown absent', () => {
+    expect(backend).toMatch(/shadow_billing_v2/);
+    expect(backend).toMatch(/expected_ttc.*is None/);
+    expect(backend).toMatch(/expected_fourniture_ht.*is None/);
+  });
+
+  it('InsightDrawer captures error state', () => {
+    expect(drawer).toMatch(/setError/);
+    expect(drawer).toMatch(/error\.endpoint/);
+  });
+
+  it('InsightDrawer shows debug panel in expert mode when error', () => {
+    expect(drawer).toMatch(/error\.status/);
+    expect(drawer).toMatch(/Debug/);
+    expect(drawer).toMatch(/isExpert\s*&&\s*error/);
+  });
+});

@@ -69,13 +69,22 @@ export default function InsightDrawer({ open, onClose, insightId }) {
   const { isExpert } = useExpertMode();
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!open || !insightId) { setDetail(null); return; }
+    if (!open || !insightId) { setDetail(null); setError(null); return; }
     setLoading(true);
+    setError(null);
     getInsightDetail(insightId)
-      .then(setDetail)
-      .catch(() => setDetail(null))
+      .then((data) => { setDetail(data); setError(null); })
+      .catch((err) => {
+        setDetail(null);
+        setError({
+          status: err?.response?.status,
+          message: err?.response?.data?.detail || err?.message || 'Erreur inconnue',
+          endpoint: `/billing/insights/${insightId}`,
+        });
+      })
       .finally(() => setLoading(false));
   }, [open, insightId]);
 
@@ -92,7 +101,17 @@ export default function InsightDrawer({ open, onClose, insightId }) {
           <SkeletonCard lines={4} />
         </div>
       ) : !detail ? (
-        <p className="text-sm text-gray-500 text-center py-8">Détail non disponible.</p>
+        <div className="text-center py-8">
+          <p className="text-sm text-gray-500">Détail non disponible.</p>
+          {isExpert && error && (
+            <div className="mt-4 bg-red-50 rounded-lg p-3 text-left">
+              <p className="text-xs font-semibold text-red-600">Debug</p>
+              <p className="text-xs text-red-500 mt-1">Endpoint : {error.endpoint}</p>
+              <p className="text-xs text-red-500">Status : {error.status || 'N/A'}</p>
+              <p className="text-xs text-red-500">Message : {error.message}</p>
+            </div>
+          )}
+        </div>
       ) : (
         <div className="space-y-6">
           {/* En-tête */}
