@@ -14,8 +14,9 @@ Règles:
 """
 from __future__ import annotations
 
+import json
 from calendar import monthrange
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, timedelta
 from typing import List, Optional, Tuple
 
@@ -33,6 +34,8 @@ class MonthCoverage:
     invoices_count: int      # toutes factures incl. avoirs
     total_ttc: Optional[float]  # somme total_eur (incl. avoirs) ou None si vide
     missing_reason: Optional[str]
+    energy_kwh: Optional[float] = field(default=None)   # P0-2: somme kWh factures positives
+    pdl_prm: Optional[str] = field(default=None)         # P0-2: PDL/PRM depuis raw_json
 
 
 def _invoice_period(inv) -> Tuple[Optional[date], Optional[date]]:
@@ -94,6 +97,8 @@ def compute_coverage(invoices: list, range_start: date, range_end: date) -> List
         covered_days: set[date] = set()
         inv_in_month: list = []
         total_ttc = 0.0
+        total_kwh = 0.0           # P0-2
+        pdl_found: Optional[str] = None  # P0-2
 
         for inv in invoices:
             ps, pe = _invoice_period(inv)
@@ -111,6 +116,15 @@ def compute_coverage(invoices: list, range_start: date, range_end: date) -> List
 
             # Avoirs (total_eur <= 0) ne contribuent pas à la couverture
             if (inv.total_eur or 0.0) > 0:
+                total_kwh += (getattr(inv, "energy_kwh", None) or 0.0)  # P0-2: accumuler kWh
+                # P0-2: extraire PDL depuis raw_json si pas encore trouvé
+                if pdl_found is None:
+                    try:
+                        raw = json.loads(getattr(inv, "raw_json", None) or "{}")
+                        if raw.get("pdl_prm"):
+                            pdl_found = raw["pdl_prm"]
+                    except Exception:
+                        pass
                 d = overlap_start
                 while d <= overlap_end:
                     covered_days.add(d)
@@ -140,6 +154,8 @@ def compute_coverage(invoices: list, range_start: date, range_end: date) -> List
             invoices_count=len(inv_in_month),
             total_ttc=round(total_ttc, 2) if inv_in_month else None,
             missing_reason=reason,
+            energy_kwh=round(total_kwh, 1) if inv_in_month else None,  # P0-2
+            pdl_prm=pdl_found,                                          # P0-2
         ))
 
     return results
