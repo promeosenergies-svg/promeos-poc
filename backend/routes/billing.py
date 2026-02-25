@@ -641,6 +641,36 @@ def list_insights(
     }
 
 
+@router.get("/insights/{insight_id}")
+def get_insight_detail(
+    insight_id: int,
+    request: Request,
+    org_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Détail d'un insight avec metrics et recommended_actions."""
+    effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
+    insight = db.query(BillingInsight).filter(BillingInsight.id == insight_id).first()
+    if not insight:
+        raise HTTPException(status_code=404, detail="Insight not found")
+    _check_site_belongs_to_org(db, insight.site_id, effective_org_id)
+    return {
+        "id": insight.id,
+        "site_id": insight.site_id,
+        "invoice_id": insight.invoice_id,
+        "type": insight.type,
+        "severity": insight.severity,
+        "message": insight.message,
+        "estimated_loss_eur": insight.estimated_loss_eur,
+        "insight_status": insight.insight_status.value if insight.insight_status else "open",
+        "owner": insight.owner,
+        "notes": insight.notes,
+        "metrics": json.loads(insight.metrics_json or "{}"),
+        "recommended_actions": json.loads(insight.recommended_actions_json or "[]"),
+    }
+
+
 # ========================================
 # Insight workflow (Sprint 7.1)
 # ========================================

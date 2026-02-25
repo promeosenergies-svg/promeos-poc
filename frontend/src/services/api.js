@@ -594,6 +594,7 @@ export const putSiteTariff = (siteId, data) => api.put(`/site/${siteId}/tariff`,
 
 export const getBillingSummary = () => api.get('/billing/summary').then(r => r.data);
 export const getBillingInsights = (params = {}) => api.get('/billing/insights', { params }).then(r => r.data);
+export const getInsightDetail = (insightId) => api.get(`/billing/insights/${insightId}`).then(r => r.data);
 export const getBillingInvoices = (params = {}) => api.get('/billing/invoices', { params }).then(r => r.data);
 export const getSiteBilling = (siteId) => api.get(`/billing/site/${siteId}`).then(r => r.data);
 export const getBillingRules = () => api.get('/billing/rules').then(r => r.data);

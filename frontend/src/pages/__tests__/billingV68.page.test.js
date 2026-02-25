@@ -856,3 +856,114 @@ describe('NavRegistry — Timeline sous Facturation (V70)', () => {
     expect(code).toMatch(/\/bill-intel[\s\S]{0,150}Factures & anomalies/);
   });
 });
+
+
+// ============================================================
+// Z. BillIntelPage — 100% Français (V70)
+// ============================================================
+describe('BillIntelPage — 100% Français (V70)', () => {
+  const code = readSrc('pages', 'BillIntelPage.jsx');
+
+  it('has STATUS_LABELS with Importé, Validé, Audité, Anomalie, Archivé', () => {
+    expect(code).toMatch(/STATUS_LABELS/);
+    expect(code).toMatch(/Importé/);
+    expect(code).toMatch(/Validé/);
+    expect(code).toMatch(/Audité/);
+    expect(code).toMatch(/Anomalie/);
+    expect(code).toMatch(/Archivé/);
+  });
+
+  it('has SEVERITY_LABELS with Critique, Élevé, Moyen, Faible', () => {
+    expect(code).toMatch(/SEVERITY_LABELS/);
+    expect(code).toMatch(/Critique/);
+    expect(code).toMatch(/Élevé/);
+    expect(code).toMatch(/Moyen/);
+    expect(code).toMatch(/Faible/);
+  });
+
+  it('TYPE_LABELS use proper accents (Écart, élevé, Période, négatifs, Dérive)', () => {
+    expect(code).toMatch(/Écart/);
+    expect(code).toMatch(/élevé/);
+    expect(code).toMatch(/Période/);
+    expect(code).toMatch(/négatifs/);
+    expect(code).toMatch(/Dérive/);
+  });
+
+  it('uses STATUS_LABELS[...] in rendering (not raw English status)', () => {
+    expect(code).toMatch(/STATUS_LABELS\[/);
+  });
+
+  it('uses SEVERITY_LABELS[...] in rendering', () => {
+    expect(code).toMatch(/SEVERITY_LABELS\[/);
+  });
+
+  it('handleCreateAction calls toast on success', () => {
+    const fn = code.match(/async function handleCreateAction[\s\S]{0,800}/)?.[0] || '';
+    expect(fn).toMatch(/toast\(/);
+    expect(fn).toMatch(/Action créée/);
+  });
+
+  it('has navigate to /actions for Voir l\'action button', () => {
+    expect(code).toMatch(/navigate\(\s*['"]\/actions['"]\s*\)/);
+    expect(code).toMatch(/Voir l'action/);
+  });
+});
+
+
+// ============================================================
+// AA. InsightDrawer — Comprendre l'écart (V70)
+// ============================================================
+describe('InsightDrawer — Comprendre l\'écart (V70)', () => {
+  const code = readSrc('components', 'InsightDrawer.jsx');
+  const page = readSrc('pages', 'BillIntelPage.jsx');
+
+  it('InsightDrawer is imported in BillIntelPage', () => {
+    expect(page).toMatch(/import\s+InsightDrawer\s+from\s+['"]\.\.\/components\/InsightDrawer['"]/);
+  });
+
+  it('BillIntelPage has drawerInsightId state', () => {
+    expect(page).toMatch(/drawerInsightId/);
+    expect(page).toMatch(/setDrawerInsightId/);
+  });
+
+  it('BillIntelPage renders InsightDrawer component', () => {
+    expect(page).toMatch(/<InsightDrawer/);
+    expect(page).toMatch(/insightId=\{drawerInsightId\}/);
+  });
+
+  it('BillIntelPage has Comprendre l\'écart button', () => {
+    expect(page).toMatch(/Comprendre l'écart/);
+  });
+
+  it('InsightDrawer imports getInsightDetail from api', () => {
+    expect(code).toMatch(/import\s*\{[^}]*getInsightDetail[^}]*\}\s*from\s*['"]\.\.\/services\/api['"]/);
+  });
+
+  it('InsightDrawer uses Drawer from ui/Drawer', () => {
+    expect(code).toMatch(/import\s+Drawer\s+from\s+['"]\.\.\/ui\/Drawer['"]/);
+  });
+
+  it('CAUSE_LABELS map covers shadow_gap, unit_price_high, duplicate_invoice', () => {
+    expect(code).toMatch(/CAUSE_LABELS/);
+    expect(code).toMatch(/shadow_gap/);
+    expect(code).toMatch(/unit_price_high/);
+    expect(code).toMatch(/duplicate_invoice/);
+  });
+
+  it('has breakdown table with Facturé and Attendu columns', () => {
+    expect(code).toMatch(/Facturé/);
+    expect(code).toMatch(/Attendu/);
+    expect(code).toMatch(/Écart/);
+  });
+
+  it('getInsightDetail exists in api.js', () => {
+    const apiCode = readSrc('services', 'api.js');
+    expect(apiCode).toMatch(/export\s+(const|function)\s+getInsightDetail/);
+  });
+
+  it('backend has GET /insights/{insight_id} endpoint', () => {
+    const backendCode = readBackend('routes', 'billing.py');
+    expect(backendCode).toMatch(/insights\/\{insight_id\}/);
+    expect(backendCode).toMatch(/metrics_json/);
+  });
+});

@@ -25,22 +25,23 @@ import {
 } from 'lucide-react';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { track } from '../services/tracker';
+import InsightDrawer from '../components/InsightDrawer';
 
 const SEVERITY_BADGE = {
   critical: 'crit', high: 'warn', medium: 'info', low: 'neutral',
 };
 
 const TYPE_LABELS = {
-  shadow_gap: 'Ecart shadow billing',
-  unit_price_high: 'Prix unitaire eleve',
+  shadow_gap: 'Écart shadow billing',
+  unit_price_high: 'Prix unitaire élevé',
   duplicate_invoice: 'Doublon facture',
-  missing_period: 'Periode manquante',
-  period_too_long: 'Periode longue',
-  negative_kwh: 'kWh negatifs',
-  zero_amount: 'Montant zero',
-  lines_sum_mismatch: 'Ecart lignes/total',
+  missing_period: 'Période manquante',
+  period_too_long: 'Période longue',
+  negative_kwh: 'kWh négatifs',
+  zero_amount: 'Montant zéro',
+  lines_sum_mismatch: 'Écart lignes/total',
   consumption_spike: 'Pic de consommation',
-  price_drift: 'Derive de prix',
+  price_drift: 'Dérive de prix',
 };
 
 const STATUS_COLORS = {
@@ -49,6 +50,21 @@ const STATUS_COLORS = {
   audited: 'bg-green-100 text-green-700',
   anomaly: 'bg-red-100 text-red-700',
   archived: 'bg-gray-100 text-gray-500',
+};
+
+const STATUS_LABELS = {
+  imported: 'Importé',
+  validated: 'Validé',
+  audited: 'Audité',
+  anomaly: 'Anomalie',
+  archived: 'Archivé',
+};
+
+const SEVERITY_LABELS = {
+  critical: 'Critique',
+  high: 'Élevé',
+  medium: 'Moyen',
+  low: 'Faible',
 };
 
 const INSIGHT_STATUS_COLORS = {
@@ -61,7 +77,7 @@ const INSIGHT_STATUS_COLORS = {
 const INSIGHT_STATUS_LABELS = {
   open: 'Ouvert',
   ack: 'Pris en charge',
-  resolved: 'Resolu',
+  resolved: 'Résolu',
   false_positive: 'Faux positif',
 };
 
@@ -69,7 +85,7 @@ const INSIGHT_FILTER_OPTIONS = [
   { value: 'all', label: 'Tous' },
   { value: 'open', label: 'Ouverts' },
   { value: 'ack', label: 'Pris en charge' },
-  { value: 'resolved', label: 'Resolus' },
+  { value: 'resolved', label: 'Résolus' },
   { value: 'false_positive', label: 'Faux positifs' },
 ];
 
@@ -95,6 +111,7 @@ export default function BillIntelPage() {
   const [invoiceSearch, setInvoiceSearch] = useState('');
   const [invoiceStatusFilter, setInvoiceStatusFilter] = useState('');
   const [periodPreset, setPeriodPreset] = useState('all');
+  const [drawerInsightId, setDrawerInsightId] = useState(null);
   const [sites, setSites] = useState([]);
   const csvInputRef = useRef(null);
   const pdfInputRef = useRef(null);
@@ -238,7 +255,10 @@ export default function BillIntelPage() {
       await createActionFromBillingInsight(insight.id, insight.message || insight.type, insight.site_id);
       setCreatedActions(prev => new Set([...prev, insight.id]));
       track('billing_create_action', { insight_id: insight.id });
-    } catch { /* ignore */ }
+      toast('Action créée — visible dans le Plan d\'actions', 'success');
+    } catch {
+      toast('Erreur lors de la création de l\'action', 'error');
+    }
   }
 
   const hasData = summary && summary.total_invoices > 0;
@@ -247,7 +267,7 @@ export default function BillIntelPage() {
     <PageShell
       icon={FileText}
       title="Facturation"
-      subtitle="Shadow billing, TURPE/ATRD/ATRT, ecarts & anomalies"
+      subtitle="Shadow billing, TURPE/ATRD/ATRT, écarts & anomalies"
       actions={
         <>
           {siteFilter && (
@@ -324,10 +344,10 @@ export default function BillIntelPage() {
       {summary && (
         <div className="grid grid-cols-5 gap-4">
           <SummaryCard icon={FileText} label="Factures" value={summary.total_invoices} color="blue" />
-          <SummaryCard icon={DollarSign} label="Total EUR" value={`${Math.round(summary.total_eur).toLocaleString()}`} color="indigo" />
+          <SummaryCard icon={DollarSign} label="Total €" value={`${Math.round(summary.total_eur).toLocaleString()} €`} color="indigo" />
           <SummaryCard icon={Zap} label="Total kWh" value={`${Math.round(summary.total_kwh).toLocaleString()}`} color="purple" />
           <SummaryCard icon={AlertTriangle} label="Anomalies" value={summary.total_insights} color="red" />
-          <SummaryCard icon={TrendingUp} label="Pertes estimees" value={`${Math.round(summary.total_estimated_loss_eur)} EUR`} color="orange" />
+          <SummaryCard icon={TrendingUp} label="Pertes estimées" value={`${Math.round(summary.total_estimated_loss_eur)} €`} color="orange" />
         </div>
       )}
 
@@ -386,7 +406,7 @@ export default function BillIntelPage() {
                           {TYPE_LABELS[insight.type] || insight.type}
                         </span>
                         <Badge status={SEVERITY_BADGE[insight.severity] || 'neutral'}>
-                          {insight.severity}
+                          {SEVERITY_LABELS[insight.severity] || insight.severity}
                         </Badge>
                         <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${INSIGHT_STATUS_COLORS[istatus] || INSIGHT_STATUS_COLORS.open}`}>
                           {INSIGHT_STATUS_LABELS[istatus] || istatus}
@@ -399,7 +419,7 @@ export default function BillIntelPage() {
                     </div>
                     {insight.estimated_loss_eur > 0 && (
                       <span className="text-sm font-bold text-red-600 whitespace-nowrap">
-                        {insight.estimated_loss_eur.toLocaleString()} EUR
+                        {insight.estimated_loss_eur.toLocaleString()} €
                       </span>
                     )}
                     {istatus !== 'resolved' && istatus !== 'false_positive' && (
@@ -407,22 +427,35 @@ export default function BillIntelPage() {
                         onClick={() => handleResolveInsight(insight.id)}
                         className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium
                           text-green-700 bg-green-50 hover:bg-green-100 transition-colors whitespace-nowrap"
-                        title="Marquer comme resolu"
+                        title="Marquer comme résolu"
                       >
-                        <CheckCircle2 size={14} /> Resolu
+                        <CheckCircle2 size={14} /> Résolu
+                      </button>
+                    )}
+                    {createdActions.has(insight.id) ? (
+                      <button
+                        onClick={() => navigate('/actions')}
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium
+                          text-green-700 bg-green-50 hover:bg-green-100 transition-colors whitespace-nowrap"
+                      >
+                        ✓ Voir l'action
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleCreateAction(insight)}
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium
+                          text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors whitespace-nowrap"
+                        title="Créer action"
+                      >
+                        Créer action
                       </button>
                     )}
                     <button
-                      onClick={() => handleCreateAction(insight)}
-                      disabled={createdActions.has(insight.id)}
-                      className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium
-                        transition-colors whitespace-nowrap
-                        ${createdActions.has(insight.id)
-                          ? 'text-gray-400 bg-gray-50 cursor-default'
-                          : 'text-blue-700 bg-blue-50 hover:bg-blue-100'}`}
-                      title="Créer action"
+                      onClick={() => setDrawerInsightId(insight.id)}
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium
+                        text-purple-700 bg-purple-50 hover:bg-purple-100 transition-colors whitespace-nowrap"
                     >
-                      {createdActions.has(insight.id) ? '✓ Action créée' : 'Créer action'}
+                      Comprendre l'écart
                     </button>
                   </CardBody>
                 </Card>
@@ -508,11 +541,11 @@ export default function BillIntelPage() {
                           : inv.period_start || '-'
                         }
                       </td>
-                      <td className="px-4 py-2.5 text-right font-medium">{inv.total_eur ? `${inv.total_eur.toLocaleString()} EUR` : '-'}</td>
+                      <td className="px-4 py-2.5 text-right font-medium">{inv.total_eur ? `${inv.total_eur.toLocaleString()} €` : '-'}</td>
                       <td className="px-4 py-2.5 text-right">{inv.energy_kwh ? inv.energy_kwh.toLocaleString() : '-'}</td>
                       <td className="px-4 py-2.5 text-center">
                         <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${STATUS_COLORS[inv.status] || STATUS_COLORS.imported}`}>
-                          {inv.status || 'imported'}
+                          {STATUS_LABELS[inv.status] || STATUS_LABELS.imported}
                         </span>
                       </td>
                       <td className="px-4 py-2.5 text-gray-500">{inv.source || '-'}</td>
@@ -527,6 +560,12 @@ export default function BillIntelPage() {
           </Card>
         </div>
       )}
+
+      <InsightDrawer
+        open={!!drawerInsightId}
+        onClose={() => setDrawerInsightId(null)}
+        insightId={drawerInsightId}
+      />
     </PageShell>
   );
 }
