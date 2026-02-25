@@ -1289,3 +1289,85 @@ describe('BL · No hardcoded navigation URLs in conso scope', () => {
     expect(usages).not.toMatch(/navigate\(`\/consommations\/explorer/);
   });
 });
+
+// ============================================================
+// BM. Portfolio V2 — patrimoine-first features
+// ============================================================
+describe('BM · Portfolio V2 patrimoine-first', () => {
+  const code = readSrc('pages', 'ConsumptionPortfolioPage.jsx');
+  const backend = readBackend('routes', 'portfolio.py');
+
+  it('frontend has DataStatusBadge component', () => {
+    expect(code).toMatch(/DataStatusBadge/);
+    expect(code).toMatch(/data_status/);
+    expect(code).toMatch(/coverage_pct/);
+  });
+
+  it('frontend shows data_status badge per row', () => {
+    expect(code).toMatch(/<DataStatusBadge/);
+    expect(code).toMatch(/status=\{row\.data_status\}/);
+  });
+
+  it('frontend has Couverture column in table header', () => {
+    expect(code).toMatch(/Couverture/);
+  });
+
+  it('frontend has "Sans donnees" filter chip', () => {
+    expect(code).toMatch(/noDataFilter/);
+    expect(code).toMatch(/Sans donnees/);
+    expect(code).toMatch(/without_data/);
+  });
+
+  it('frontend has coverage sort option', () => {
+    expect(code).toMatch(/coverage.*Couverture donnees/);
+  });
+
+  it('frontend row click navigates to import if data_status is none', () => {
+    expect(code).toMatch(/data_status === 'none'/);
+    expect(code).toMatch(/toConsoImport/);
+  });
+
+  it('frontend shows inline "Importer" CTA for sites without data', () => {
+    expect(code).toMatch(/Importer/);
+    expect(code).toMatch(/<Upload/);
+  });
+
+  it('frontend shows last_reading_date per site', () => {
+    expect(code).toMatch(/last_reading_date/);
+    expect(code).toMatch(/Dernier releve/);
+  });
+
+  it('frontend passes date_from/date_to to toConsoExplorer in row actions', () => {
+    expect(code).toMatch(/toConsoExplorer\(\{.*date_from.*dates\.from/s);
+  });
+
+  it('frontend shows "X sans donnees" in header when applicable', () => {
+    expect(code).toMatch(/sites_without_data/);
+    expect(code).toMatch(/sans donnees/);
+  });
+
+  it('backend has data_status field (ok/partial/none)', () => {
+    expect(backend).toMatch(/"data_status":\s*data_status/);
+    expect(backend).toMatch(/data_status = "none"/);
+    expect(backend).toMatch(/data_status = "ok"/);
+    expect(backend).toMatch(/data_status = "partial"/);
+  });
+
+  it('backend has coverage_pct per site', () => {
+    expect(backend).toMatch(/"coverage_pct":\s*coverage_pct/);
+  });
+
+  it('backend has without_data filter', () => {
+    expect(backend).toMatch(/without_data/);
+    expect(backend).toMatch(/data_status.*==.*"none"/);
+  });
+
+  it('backend has coverage sort option', () => {
+    expect(backend).toMatch(/"coverage":/);
+    expect(backend).toMatch(/coverage_pct/);
+  });
+
+  it('backend summary includes sites_without_data', () => {
+    expect(backend).toMatch(/sites_without_data/);
+  });
+});

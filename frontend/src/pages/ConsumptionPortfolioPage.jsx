@@ -1,9 +1,10 @@
 /**
- * PROMEOS — ConsumptionPortfolioPage (V1.3)
- * Vue pilotage multi-sites B2B : KPIs, top-lists "Ou agir", table sites.
+ * PROMEOS — ConsumptionPortfolioPage (V2)
+ * Vue pilotage multi-sites B2B — patrimoine-first.
  *
- * V1.3: route registry, scope coherence, row click → Explorer,
- *       bandeau pilotage, couverture tooltip, actions column smart.
+ * V2: tous les sites du patrimoine affiches (meme sans donnees),
+ *     data_status badge, coverage_pct par site, filtre "Sans donnees",
+ *     deep-links avec date_from/date_to, CTA "Importer" inline.
  */
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -11,7 +12,7 @@ import {
   Zap, Euro, Leaf, ShieldCheck, AlertTriangle, Moon, Activity,
   Search, FileText, Plus, BarChart3, TrendingDown,
   CheckSquare, DollarSign, Info, RotateCcw, Upload, HelpCircle,
-  Eye,
+  Eye, Database,
 } from 'lucide-react';
 import {
   Card, CardBody, SkeletonCard, TrustBadge, KpiCard,
@@ -20,7 +21,7 @@ import { useToast } from '../ui';
 import { useScope } from '../contexts/ScopeContext';
 import { getPortfolioSummary, getPortfolioSites } from '../services/api';
 import {
-  toConsoExplorer, toConsoDiag, toBillIntel, toActionNew, toAction, toActionsList, toConsoImport,
+  toConsoExplorer, toConsoDiag, toBillIntel, toActionNew, toActionsList, toConsoImport,
 } from '../services/routes';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
@@ -45,12 +46,35 @@ function fmtDate(iso) {
   return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+/** Data status badge: ok (green), partial (amber), none (gray) */
+function DataStatusBadge({ status, coveragePct }) {
+  if (status === 'ok') {
+    return (
+      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-700" title={`Couverture ${coveragePct}% — Donnees completes`}>
+        {coveragePct}%
+      </span>
+    );
+  }
+  if (status === 'partial') {
+    return (
+      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-700" title={`Couverture ${coveragePct}% — Donnees partielles`}>
+        {coveragePct}%
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-400" title="Aucune donnee sur cette periode">
+      —
+    </span>
+  );
+}
+
 // ─── Top-list row actions (shared by all 4 lists) ─────────────────────────
-function TopListActions({ siteId, navigate }) {
+function TopListActions({ siteId, dates, navigate }) {
   return (
     <span className="inline-flex items-center gap-0.5 ml-2 shrink-0">
       <button
-        onClick={(e) => { e.stopPropagation(); navigate(toConsoExplorer({ site_id: siteId })); }}
+        onClick={(e) => { e.stopPropagation(); navigate(toConsoExplorer({ site_id: siteId, date_from: dates.from, date_to: dates.to })); }}
         className="p-0.5 rounded hover:bg-blue-50 text-blue-500"
         title="Explorer ce site"
       >
@@ -101,16 +125,18 @@ export default function ConsumptionPortfolioPage() {
   const [confidenceFilter, setConfidenceFilter] = useState(null);
   const [anomalyFilter, setAnomalyFilter] = useState(false);
   const [actionsFilter, setActionsFilter] = useState(null);
+  const [noDataFilter, setNoDataFilter] = useState(false);
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 25;
 
-  const hasActiveFilters = !!search || !!confidenceFilter || anomalyFilter || !!actionsFilter;
+  const hasActiveFilters = !!search || !!confidenceFilter || anomalyFilter || !!actionsFilter || noDataFilter;
 
   function handleResetFilters() {
     setSearch('');
     setConfidenceFilter(null);
     setAnomalyFilter(false);
     setActionsFilter(null);
+    setNoDataFilter(false);
     setSort('impact_desc');
     setPage(0);
   }
@@ -134,6 +160,7 @@ export default function ConsumptionPortfolioPage() {
       confidence: confidenceFilter || undefined,
       with_anomalies: anomalyFilter || undefined,
       with_actions: actionsFilter || undefined,
+      without_data: noDataFilter || undefined,
       search: search || undefined,
       limit: PAGE_SIZE,
       offset: page * PAGE_SIZE,
@@ -144,10 +171,10 @@ export default function ConsumptionPortfolioPage() {
       })
       .catch(() => addToast({ type: 'error', message: 'Erreur chargement sites portfolio' }))
       .finally(() => setSitesLoading(false));
-  }, [dates.from, dates.to, sort, confidenceFilter, anomalyFilter, actionsFilter, search, page]);
+  }, [dates.from, dates.to, sort, confidenceFilter, anomalyFilter, actionsFilter, noDataFilter, search, page]);
 
   useEffect(() => { fetchSites(); }, [fetchSites]);
-  useEffect(() => { setPage(0); }, [sort, search, confidenceFilter, anomalyFilter, actionsFilter]);
+  useEffect(() => { setPage(0); }, [sort, search, confidenceFilter, anomalyFilter, actionsFilter, noDataFilter]);
 
   // ─── Computed ─────────────────────────────────────────────────────────
   const totalPages = Math.ceil(sitesTotal / PAGE_SIZE);
@@ -188,9 +215,13 @@ export default function ConsumptionPortfolioPage() {
     }));
   }
 
-  // ─── Row click → Explorer ─────────────────────────────────────────────
+  // ─── Row click → Explorer (with date context) ─────────────────────────
   function handleRowClick(row) {
-    navigate(toConsoExplorer({ site_id: row.site_id }));
+    if (row.data_status === 'none') {
+      navigate(toConsoImport());
+      return;
+    }
+    navigate(toConsoExplorer({ site_id: row.site_id, date_from: dates.from, date_to: dates.to }));
   }
 
   // ─── Render ───────────────────────────────────────────────────────────
@@ -220,6 +251,9 @@ export default function ConsumptionPortfolioPage() {
           <p className="text-sm text-gray-500">
             Vous pilotez {cov?.sites_total ?? '—'} sites sur la periode
             du {fmtDate(dates.from)} au {fmtDate(dates.to)}
+            {cov?.sites_without_data > 0 && (
+              <span className="text-amber-600"> — {cov.sites_without_data} sans donnees</span>
+            )}
           </p>
         </div>
         {cov && (
@@ -285,7 +319,7 @@ export default function ConsumptionPortfolioPage() {
                       <li key={r.site_id} className="flex items-center text-xs">
                         <span className="text-gray-700 truncate flex-1">{r.site_name}</span>
                         <span className="text-rose-600 font-medium ml-2 shrink-0">{fmtNum(r.impact_eur_estimated, 'EUR')}</span>
-                        <TopListActions siteId={r.site_id} navigate={navigate} />
+                        <TopListActions siteId={r.site_id} dates={dates} navigate={navigate} />
                       </li>
                     ))}
                   </ul>
@@ -308,7 +342,7 @@ export default function ConsumptionPortfolioPage() {
                       <li key={r.site_id} className="flex items-center text-xs">
                         <span className="text-gray-700 truncate flex-1">{r.site_name}</span>
                         <span className="text-amber-600 font-medium ml-2 shrink-0">{r.diagnostics_count} alertes</span>
-                        <TopListActions siteId={r.site_id} navigate={navigate} />
+                        <TopListActions siteId={r.site_id} dates={dates} navigate={navigate} />
                       </li>
                     ))}
                   </ul>
@@ -331,7 +365,7 @@ export default function ConsumptionPortfolioPage() {
                       <li key={r.site_id} className="flex items-center text-xs">
                         <span className="text-gray-700 truncate flex-1">{r.site_name}</span>
                         <span className="text-indigo-600 font-medium ml-2 shrink-0">{r.base_night_pct}%</span>
-                        <TopListActions siteId={r.site_id} navigate={navigate} />
+                        <TopListActions siteId={r.site_id} dates={dates} navigate={navigate} />
                       </li>
                     ))}
                   </ul>
@@ -354,7 +388,7 @@ export default function ConsumptionPortfolioPage() {
                       <li key={r.site_id} className="flex items-center text-xs">
                         <span className="text-gray-700 truncate flex-1">{r.site_name}</span>
                         <span className="text-red-600 font-medium ml-2 shrink-0">{r.peak_kw} kW</span>
-                        <TopListActions siteId={r.site_id} navigate={navigate} />
+                        <TopListActions siteId={r.site_id} dates={dates} navigate={navigate} />
                       </li>
                     ))}
                   </ul>
@@ -424,6 +458,15 @@ export default function ConsumptionPortfolioPage() {
             Sans action
           </button>
 
+          <button
+            onClick={() => setNoDataFilter(!noDataFilter)}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition ${
+              noDataFilter ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            Sans donnees
+          </button>
+
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value)}
@@ -436,6 +479,7 @@ export default function ConsumptionPortfolioPage() {
             <option value="peak">Pic kW</option>
             <option value="base_night">Base nocturne</option>
             <option value="diagnostics">Diagnostics</option>
+            <option value="coverage">Couverture donnees</option>
           </select>
         </div>
 
@@ -496,6 +540,11 @@ export default function ConsumptionPortfolioPage() {
                     {actionsFilter === 'with' ? 'Avec actions' : 'Sans action'}
                   </span>
                 )}
+                {noDataFilter && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-red-100 text-red-600">
+                    Sans donnees
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-3">
                 <button
@@ -522,6 +571,7 @@ export default function ConsumptionPortfolioPage() {
                 <thead>
                   <tr className="border-b border-gray-200 text-left">
                     <th className="py-2 px-3 text-xs font-semibold text-gray-500">Site</th>
+                    <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-center" title="Couverture = % de releves horaires disponibles sur la periode">Couverture</th>
                     <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-right">Impact EUR</th>
                     <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-right">kWh</th>
                     <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-right">EUR</th>
@@ -529,7 +579,6 @@ export default function ConsumptionPortfolioPage() {
                     <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-right">Base nuit</th>
                     <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-center">Diag.</th>
                     <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-center">Actions</th>
-                    <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-center">Confiance</th>
                     <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-right"></th>
                   </tr>
                 </thead>
@@ -537,11 +586,19 @@ export default function ConsumptionPortfolioPage() {
                   {sites.map((row) => (
                     <tr
                       key={row.site_id}
-                      className="border-b border-gray-100 hover:bg-gray-50 transition cursor-pointer"
+                      className={`border-b border-gray-100 hover:bg-gray-50 transition cursor-pointer ${row.data_status === 'none' ? 'bg-gray-50/50' : ''}`}
                       onClick={() => handleRowClick(row)}
-                      title="Cliquez pour explorer ce site"
+                      title={row.data_status === 'none' ? 'Aucune donnee — cliquez pour importer' : 'Cliquez pour explorer ce site'}
                     >
-                      <td className="py-2 px-3 font-medium text-gray-800">{row.site_name}</td>
+                      <td className="py-2 px-3">
+                        <span className="font-medium text-gray-800">{row.site_name}</span>
+                        {row.last_reading_date && (
+                          <span className="block text-[10px] text-gray-400">Dernier releve : {fmtDate(row.last_reading_date)}</span>
+                        )}
+                      </td>
+                      <td className="py-2 px-3 text-center">
+                        <DataStatusBadge status={row.data_status} coveragePct={row.coverage_pct} />
+                      </td>
                       <td className="py-2 px-3 text-right">
                         {row.impact_eur_estimated > 0 ? (
                           <span className="text-rose-600 font-medium">{fmtNum(row.impact_eur_estimated, 'EUR')}</span>
@@ -549,8 +606,8 @@ export default function ConsumptionPortfolioPage() {
                           <span className="text-gray-300">—</span>
                         )}
                       </td>
-                      <td className="py-2 px-3 text-right text-gray-700">{fmtNum(row.kwh)}</td>
-                      <td className="py-2 px-3 text-right text-gray-700">{fmtNum(row.eur)}</td>
+                      <td className="py-2 px-3 text-right text-gray-700">{row.data_status !== 'none' ? fmtNum(row.kwh) : '—'}</td>
+                      <td className="py-2 px-3 text-right text-gray-700">{row.data_status !== 'none' ? fmtNum(row.eur) : '—'}</td>
                       <td className="py-2 px-3 text-right text-gray-700">{row.peak_kw != null ? `${row.peak_kw} kW` : '—'}</td>
                       <td className="py-2 px-3 text-right text-gray-700">{row.base_night_pct != null ? `${row.base_night_pct}%` : '—'}</td>
                       <td className="py-2 px-3 text-center">
@@ -586,44 +643,48 @@ export default function ConsumptionPortfolioPage() {
                           </button>
                         )}
                       </td>
-                      <td className="py-2 px-3 text-center">
-                        <TrustBadge
-                          level={row.confidence === 'high' ? 'ok' : row.confidence === 'medium' ? 'warn' : 'crit'}
-                          label={row.confidence === 'high' ? 'Haute' : row.confidence === 'medium' ? 'Moy.' : 'Basse'}
-                          size="sm"
-                        />
-                      </td>
                       <td className="py-2 px-3 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
+                        {row.data_status !== 'none' ? (
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); navigate(toConsoExplorer({ site_id: row.site_id, date_from: dates.from, date_to: dates.to })); }}
+                              className="p-1 rounded hover:bg-blue-50 text-blue-500"
+                              title="Explorer"
+                            >
+                              <BarChart3 size={14} />
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); navigate(toConsoDiag({ site_id: row.site_id })); }}
+                              className="p-1 rounded hover:bg-amber-50 text-amber-500"
+                              title="Diagnostic"
+                            >
+                              <TrendingDown size={14} />
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); navigate(toBillIntel({ site_id: row.site_id })); }}
+                              className="p-1 rounded hover:bg-gray-100 text-gray-500"
+                              title="Voir factures"
+                            >
+                              <FileText size={14} />
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); navigate(toActionNew({ source_type: 'consommation', site_id: row.site_id, source: 'portfolio' })); }}
+                              className="p-1 rounded hover:bg-green-50 text-green-500"
+                              title="Creer une action"
+                            >
+                              <Plus size={14} />
+                            </button>
+                          </div>
+                        ) : (
                           <button
-                            onClick={(e) => { e.stopPropagation(); navigate(toConsoExplorer({ site_id: row.site_id })); }}
-                            className="p-1 rounded hover:bg-blue-50 text-blue-500"
-                            title="Explorer"
+                            onClick={(e) => { e.stopPropagation(); navigate(toConsoImport()); }}
+                            className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition"
+                            title="Importer des donnees pour ce site"
                           >
-                            <BarChart3 size={14} />
+                            <Upload size={10} />
+                            Importer
                           </button>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); navigate(toConsoDiag({ site_id: row.site_id })); }}
-                            className="p-1 rounded hover:bg-amber-50 text-amber-500"
-                            title="Diagnostic"
-                          >
-                            <TrendingDown size={14} />
-                          </button>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); navigate(toBillIntel({ site_id: row.site_id })); }}
-                            className="p-1 rounded hover:bg-gray-100 text-gray-500"
-                            title="Voir factures"
-                          >
-                            <FileText size={14} />
-                          </button>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); navigate(toActionNew({ source_type: 'consommation', site_id: row.site_id, source: 'portfolio' })); }}
-                            className="p-1 rounded hover:bg-green-50 text-green-500"
-                            title="Creer une action"
-                          >
-                            <Plus size={14} />
-                          </button>
-                        </div>
+                        )}
                       </td>
                     </tr>
                   ))}
