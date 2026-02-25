@@ -349,3 +349,55 @@ describe('BillIntelPage.jsx — P1 invoice filter bar', () => {
     expect(code).toMatch(/invoiceStatusFilter/);
   });
 });
+
+// ============================================================
+// L. BillIntelPage.jsx — ÉTAPE 3 : Import PDF site select
+// ============================================================
+describe('BillIntelPage.jsx — PDF import site select (ÉTAPE 3)', () => {
+  const code = readSrc('pages', 'BillIntelPage.jsx');
+
+  it('imports getSites from api', () => {
+    expect(code).toMatch(/getSites/);
+  });
+
+  it('has sites state', () => {
+    expect(code).toMatch(/sites.*useState|useState.*sites/);
+  });
+
+  it('renders a <select> for pdfSiteId (no more number input for pdf)', () => {
+    expect(code).not.toMatch(/type=["']number["'][\s\S]{0,100}pdfSiteId|pdfSiteId[\s\S]{0,100}type=["']number["']/);
+    expect(code).toMatch(/pdfSiteId[\s\S]{0,300}select|select[\s\S]{0,300}pdfSiteId/);
+  });
+
+  it('pre-fills pdfSiteId from siteFilter', () => {
+    expect(code).toMatch(/siteFilter[\s\S]{0,100}pdfSiteId|pdfSiteId[\s\S]{0,100}siteFilter/);
+  });
+});
+
+// ============================================================
+// M. BillIntelPage.jsx — ÉTAPE 4 : Filtre période presets
+// ============================================================
+describe('BillIntelPage.jsx — period filter presets (ÉTAPE 4)', () => {
+  const code = readSrc('pages', 'BillIntelPage.jsx');
+
+  it('has periodPreset state', () => {
+    expect(code).toMatch(/periodPreset/);
+  });
+
+  it('filteredInvoices handles last3/last6/last12 cutoff', () => {
+    expect(code).toMatch(/last3|last6|last12/);
+  });
+
+  it('filteredInvoices uses useMemo with periodPreset dependency', () => {
+    expect(code).toMatch(/filteredInvoices\s*=\s*useMemo/);
+    expect(code).toMatch(/periodPreset[\s\S]{0,200}monthFilter|monthFilter[\s\S]{0,200}periodPreset/);
+  });
+
+  it('has period select UI with Toutes périodes option', () => {
+    expect(code).toMatch(/Toutes p.riodes/);
+  });
+
+  it('shows month input only when specific preset', () => {
+    expect(code).toMatch(/specific[\s\S]{0,200}month|month[\s\S]{0,200}specific/);
+  });
+});
