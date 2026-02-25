@@ -1,7 +1,8 @@
 """
-PROMEOS — Portfolio Consumption Endpoints (V1.1)
+PROMEOS — Portfolio Consumption Endpoints (V2)
 Aggregated multi-site view: summary + per-site table.
-V1.1: impact_eur_estimated, open_actions_count, with_actions filter, impact sort.
+V2: patrimoine-first — all sites shown, data_status badge, coverage_pct per site,
+    without_data filter, coverage sort.
 """
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
@@ -116,13 +117,25 @@ def _site_open_actions(db: Session, site_id: int) -> int:
 
 
 def _build_site_row(db, site, dt_from, dt_to, days):
-    """Build a single site row dict with all metrics."""
+    """Build a single site row dict with all metrics (patrimoine-first)."""
     conso = _site_consumption(db, site.id, dt_from, dt_to)
     kwh = conso.kwh or 0
     n = conso.n_readings or 0
     last_reading = conso.last_reading
     has_data = kwh > 0
     conf = _confidence_for_readings(n, days) if has_data else "low"
+
+    # V2: coverage_pct per site + data_status badge
+    expected = days * 24  # hourly readings expected
+    coverage_pct = round(n / expected * 100) if expected > 0 else 0
+    if coverage_pct > 100:
+        coverage_pct = 100
+    if not has_data:
+        data_status = "none"       # Aucune donnee
+    elif coverage_pct >= 80:
+        data_status = "ok"         # Donnees completes
+    else:
+        data_status = "partial"    # Donnees partielles
 
     eur = round(kwh * DEFAULT_EUR_KWH, 2)
     co2 = round(kwh * CO2E_FACTOR, 1)
@@ -149,6 +162,8 @@ def _build_site_row(db, site, dt_from, dt_to, days):
         "impact_eur_estimated": impact_eur,
         "open_actions_count": open_actions,
         "confidence": conf,
+        "data_status": data_status,
+        "coverage_pct": coverage_pct,
         "last_reading_date": last_reading.isoformat() if last_reading else None,
         "n_readings": n,
     }
@@ -244,6 +259,7 @@ def get_portfolio_summary(
         "coverage": {
             "sites_total": sites_total,
             "sites_with_data": sites_with_data,
+            "sites_without_data": sites_total - sites_with_data,
             "confidence_split": confidence_split,
         },
         "top_drift": [_top_row(r, ["diagnostics_count"]) for r in top_drift],
@@ -260,10 +276,11 @@ def get_portfolio_summary(
 def get_portfolio_sites(
     date_from: Optional[str] = Query(None, alias="from"),
     date_to: Optional[str] = Query(None, alias="to"),
-    sort: str = Query("impact_desc", description="impact_desc|kwh_desc|kwh_asc|name|peak|base_night|diagnostics"),
+    sort: str = Query("impact_desc", description="impact_desc|kwh_desc|kwh_asc|name|peak|base_night|diagnostics|coverage"),
     confidence: Optional[str] = Query(None, description="high|medium|low"),
     with_anomalies: bool = Query(False),
     with_actions: Optional[str] = Query(None, description="with|without — filter by open actions"),
+    without_data: bool = Query(False, description="Show only sites without consumption data"),
     search: Optional[str] = Query(None),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
@@ -299,6 +316,8 @@ def get_portfolio_sites(
         rows = [r for r in rows if r["open_actions_count"] > 0]
     elif with_actions == "without":
         rows = [r for r in rows if r["open_actions_count"] == 0]
+    if without_data:
+        rows = [r for r in rows if r["data_status"] == "none"]
 
     # Sort
     sort_key = {
@@ -309,6 +328,7 @@ def get_portfolio_sites(
         "peak": lambda r: -(r["peak_kw"] or 0),
         "base_night": lambda r: -(r["base_night_pct"] or 0),
         "diagnostics": lambda r: -(r["diagnostics_count"] or 0),
+        "coverage": lambda r: -(r["coverage_pct"] or 0),
     }.get(sort, lambda r: -(r["impact_eur_estimated"] or 0))
     rows.sort(key=sort_key)
 

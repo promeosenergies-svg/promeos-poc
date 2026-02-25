@@ -388,3 +388,75 @@ class TestPortfolioScopeHeader:
         assert r_with_header.status_code == 200
         assert r_no_header.json()["total"] == r_with_header.json()["total"]
         assert r_no_header.json()["total"] == 3  # All 3 sites returned regardless
+
+
+class TestPortfolioV2Patrimoine:
+    """V2: patrimoine-first — data_status, coverage_pct, without_data filter."""
+
+    def test_site_rows_include_data_status(self, env):
+        """Every site row must have data_status field (ok/partial/none)."""
+        client, _, _ = env
+        r = client.get("/api/portfolio/consumption/sites", params={
+            "from": "2025-03-01", "to": "2025-03-31",
+        })
+        data = r.json()
+        for row in data["rows"]:
+            assert row["data_status"] in ("ok", "partial", "none"), f"Bad data_status: {row['data_status']}"
+
+    def test_site_rows_include_coverage_pct(self, env):
+        """Every site row must have coverage_pct (0-100)."""
+        client, _, _ = env
+        r = client.get("/api/portfolio/consumption/sites", params={
+            "from": "2025-03-01", "to": "2025-03-31",
+        })
+        data = r.json()
+        for row in data["rows"]:
+            assert "coverage_pct" in row
+            assert 0 <= row["coverage_pct"] <= 100
+
+    def test_sites_without_data_visible(self, env):
+        """Site Gamma has 0 readings → should appear with data_status='none'."""
+        client, _, _ = env
+        r = client.get("/api/portfolio/consumption/sites", params={
+            "from": "2025-03-01", "to": "2025-03-31",
+        })
+        data = r.json()
+        gamma = [row for row in data["rows"] if row["site_name"] == "Site Gamma"]
+        assert len(gamma) == 1
+        assert gamma[0]["data_status"] == "none"
+        assert gamma[0]["kwh"] == 0
+        assert gamma[0]["coverage_pct"] == 0
+
+    def test_without_data_filter(self, env):
+        """without_data=true → only sites with no readings."""
+        client, _, _ = env
+        r = client.get("/api/portfolio/consumption/sites", params={
+            "from": "2025-03-01", "to": "2025-03-31",
+            "without_data": True,
+        })
+        data = r.json()
+        assert data["total"] == 1  # Only Site Gamma
+        assert data["rows"][0]["data_status"] == "none"
+
+    def test_coverage_sort(self, env):
+        """sort=coverage → highest coverage first."""
+        client, _, _ = env
+        r = client.get("/api/portfolio/consumption/sites", params={
+            "from": "2025-03-01", "to": "2025-03-31",
+            "sort": "coverage",
+        })
+        data = r.json()
+        pcts = [row["coverage_pct"] for row in data["rows"]]
+        assert pcts == sorted(pcts, reverse=True)
+
+    def test_summary_includes_sites_without_data(self, env):
+        """Summary coverage must include sites_without_data count."""
+        client, _, _ = env
+        r = client.get("/api/portfolio/consumption/summary", params={
+            "from": "2025-03-01", "to": "2025-03-31",
+        })
+        data = r.json()
+        cov = data["coverage"]
+        assert "sites_without_data" in cov
+        assert cov["sites_without_data"] == cov["sites_total"] - cov["sites_with_data"]
+        assert cov["sites_without_data"] >= 1  # At least Site Gamma
