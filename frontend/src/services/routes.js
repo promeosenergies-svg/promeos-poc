@@ -9,6 +9,8 @@
  * @param {object} opts
  * @param {number|string|number[]} [opts.site_id] — ID site ou tableau d'IDs
  * @param {number} [opts.days] — periode en jours (7, 30, 90, 365)
+ * @param {string} [opts.date_from] — date debut YYYY-MM-DD (prioritaire sur days)
+ * @param {string} [opts.date_to] — date fin YYYY-MM-DD
  * @param {'electricity'|'gas'} [opts.energy]
  * @param {'kwh'|'kw'|'eur'} [opts.unit]
  * @param {'agrege'|'superpose'|'empile'|'separe'} [opts.mode]
@@ -20,6 +22,8 @@ export function toConsoExplorer(opts = {}) {
     p.set('sites', ids.join(','));
   }
   if (opts.days) p.set('days', String(opts.days));
+  if (opts.date_from) p.set('date_from', opts.date_from);
+  if (opts.date_to) p.set('date_to', opts.date_to);
   if (opts.energy) p.set('energy', opts.energy);
   if (opts.unit) p.set('unit', opts.unit);
   if (opts.mode) p.set('mode', opts.mode);
@@ -86,6 +90,20 @@ export function toActionNew(opts = {}) {
  */
 export function toAction(actionId) {
   return `/actions/${actionId}`;
+}
+
+/**
+ * Liste des actions filtrée.
+ * @param {object} opts
+ * @param {number|string} [opts.site_id] — filtre par site
+ * @param {string} [opts.source] — filtre par origine (operat, portfolio, etc.)
+ */
+export function toActionsList(opts = {}) {
+  const p = new URLSearchParams();
+  if (opts.site_id) p.set('site_id', String(opts.site_id));
+  if (opts.source) p.set('source', opts.source);
+  const qs = p.toString();
+  return `/actions${qs ? '?' + qs : ''}`;
 }
 
 /**

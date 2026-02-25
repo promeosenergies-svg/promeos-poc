@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Upload, BarChart3, AlertTriangle, Lightbulb, Database, Search, RefreshCw, CheckCircle, Zap, ArrowRight, Link2, SlidersHorizontal, GitCompareArrows, Info, HelpCircle, Bell, CalendarRange, Activity, RotateCcw } from 'lucide-react';
 import { PageShell, EmptyState, Tooltip } from '../ui';
+import { toConsoExplorer } from '../services/routes';
 import { SkeletonCard } from '../ui/Skeleton';
 import { useToast } from '../ui/ToastProvider';
 import { useExpertMode } from '../contexts/ExpertModeContext';
@@ -333,12 +334,7 @@ function AnalysisResultView({ result, siteId, dateFrom, dateTo }) {
   const interpKwh = interpretKwhM2(kwhM2, result.archetype);
 
   const handleOpenExplorer = () => {
-    const params = new URLSearchParams();
-    if (siteId) params.set('site_id', siteId);
-    if (dateFrom) params.set('date_from', dateFrom);
-    if (dateTo) params.set('date_to', dateTo);
-    const qs = params.toString();
-    navigate(`/consommations/explorer${qs ? '?' + qs : ''}`);
+    navigate(toConsoExplorer({ site_id: siteId, date_from: dateFrom, date_to: dateTo }));
     toast('Analyse terminée — retrouvez vos données dans l\'Explorer', 'success');
   };
 

@@ -25,6 +25,7 @@ import { track } from '../services/tracker';
 import CreateActionModal from '../components/CreateActionModal';
 import { fmtEur, fmtKwh, fmtDateFR } from '../utils/format';
 import { deepLinkWithContext, deepLinkNewAction } from '../services/deepLink';
+import { toConsoExplorer } from '../services/routes';
 import { SEVERITY_TINT } from '../ui/colorTokens';
 import {
   Zap, ChevronDown, ChevronUp, Settings, Info, Leaf,
@@ -710,11 +711,11 @@ export default function ConsumptionDiagPage() {
 
   // Open in Explorer
   const handleOpenExplorer = useCallback((insight) => {
-    const params = new URLSearchParams();
-    if (insight.site_id) params.set('site_id', insight.site_id);
-    if (insight.period_start) params.set('date_from', insight.period_start.slice(0, 10));
-    if (insight.period_end) params.set('date_to', insight.period_end.slice(0, 10));
-    navigate(`/consommations/explorer?${params.toString()}`);
+    navigate(toConsoExplorer({
+      site_id: insight.site_id,
+      date_from: insight.period_start ? insight.period_start.slice(0, 10) : undefined,
+      date_to: insight.period_end ? insight.period_end.slice(0, 10) : undefined,
+    }));
   }, [navigate]);
 
   // View invoice (deep-link)

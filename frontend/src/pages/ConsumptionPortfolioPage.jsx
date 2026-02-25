@@ -20,7 +20,7 @@ import { useToast } from '../ui';
 import { useScope } from '../contexts/ScopeContext';
 import { getPortfolioSummary, getPortfolioSites } from '../services/api';
 import {
-  toConsoExplorer, toConsoDiag, toBillIntel, toActionNew, toAction, toConsoImport,
+  toConsoExplorer, toConsoDiag, toBillIntel, toActionNew, toAction, toActionsList, toConsoImport,
 } from '../services/routes';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
@@ -569,7 +569,7 @@ export default function ConsumptionPortfolioPage() {
                       <td className="py-2 px-3 text-center">
                         {row.open_actions_count > 0 ? (
                           <button
-                            onClick={(e) => { e.stopPropagation(); navigate(`/actions?site_id=${row.site_id}`); }}
+                            onClick={(e) => { e.stopPropagation(); navigate(toActionsList({ site_id: row.site_id })); }}
                             className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-700 hover:bg-green-200 transition"
                             title="Voir les actions en cours"
                           >
