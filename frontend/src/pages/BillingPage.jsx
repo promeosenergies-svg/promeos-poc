@@ -92,8 +92,23 @@ export default function BillingPage() {
     } catch (err) {
       const status = err?.response?.status;
       if (status === 404) {
+        // P0: purge stale siteId from localStorage scope
+        try {
+          const raw = localStorage.getItem('promeos_scope');
+          if (raw) {
+            const scope = JSON.parse(raw);
+            scope.siteId = null;
+            localStorage.setItem('promeos_scope', JSON.stringify(scope));
+          }
+        } catch { /* ignore storage errors */ }
         setSiteFilter('');
-        setError('Site introuvable. Retour à la vue tous les sites.');
+        const baseMsg = 'Site introuvable. Retour à la vue tous les sites.';
+        if (isExpert) {
+          const endpoint = err?.config?.url || '/billing/*';
+          setError(`${baseMsg} [debug: endpoint=${endpoint}, status=404, site_id=${siteId}]`);
+        } else {
+          setError(baseMsg);
+        }
       } else {
         if (isExpert) console.error('[BillingPage] loadData error:', err);
         setError('Impossible de charger les données de facturation.');
