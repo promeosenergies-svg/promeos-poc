@@ -657,3 +657,147 @@ describe('AV · P1.1 drill-down CTAs', () => {
     expect(explorer).toMatch(/SignaturePanel siteIds=\{siteIds\}/);
   });
 });
+
+
+// ============================================================
+// AW. Portfolio V1 — Backend endpoints
+// ============================================================
+describe('AW · Portfolio V1 backend endpoints', () => {
+  const code = readBackend('routes', 'portfolio.py');
+
+  it('portfolio.py exists', () => {
+    expect(code).toBeDefined();
+  });
+
+  it('has GET /summary endpoint', () => {
+    expect(code).toMatch(/@router\.get\(["']\/summary["']\)/);
+  });
+
+  it('has GET /sites endpoint', () => {
+    expect(code).toMatch(/@router\.get\(["']\/sites["']\)/);
+  });
+
+  it('returns totals with kwh, eur, co2', () => {
+    expect(code).toMatch(/kwh_total/);
+    expect(code).toMatch(/eur_total/);
+    expect(code).toMatch(/co2_total/);
+  });
+
+  it('returns coverage with sites_total and sites_with_data', () => {
+    expect(code).toMatch(/sites_total/);
+    expect(code).toMatch(/sites_with_data/);
+  });
+
+  it('returns top_drift, top_base_night, top_peaks', () => {
+    expect(code).toMatch(/top_drift/);
+    expect(code).toMatch(/top_base_night/);
+    expect(code).toMatch(/top_peaks/);
+  });
+
+  it('sites endpoint supports sort, confidence, search, pagination', () => {
+    expect(code).toMatch(/sort.*kwh_desc/);
+    expect(code).toMatch(/confidence/);
+    expect(code).toMatch(/search/);
+    expect(code).toMatch(/limit.*Query/);
+    expect(code).toMatch(/offset.*Query/);
+  });
+
+  it('portfolio router is registered in main.py', () => {
+    const main = readBackend('main.py');
+    expect(main).toMatch(/portfolio_router/);
+  });
+});
+
+
+// ============================================================
+// AX. Portfolio V1 — Frontend page
+// ============================================================
+describe('AX · ConsumptionPortfolioPage structure', () => {
+  const code = readSrc('pages', 'ConsumptionPortfolioPage.jsx');
+
+  it('ConsumptionPortfolioPage.jsx exists', () => {
+    expect(code).toBeDefined();
+  });
+
+  it('calls getPortfolioSummary and getPortfolioSites', () => {
+    expect(code).toMatch(/getPortfolioSummary/);
+    expect(code).toMatch(/getPortfolioSites/);
+  });
+
+  it('has 4 KPI cards (kWh, EUR, CO2, Couverture)', () => {
+    expect(code).toMatch(/kWh total/);
+    expect(code).toMatch(/EUR total/);
+    expect(code).toMatch(/CO2e/);
+    expect(code).toMatch(/Couverture/);
+  });
+
+  it('has "Ou agir maintenant" section with 3 top-lists', () => {
+    expect(code).toMatch(/Ou agir maintenant/);
+    expect(code).toMatch(/Derives detectees/);
+    expect(code).toMatch(/Base nocturne elevee/);
+    expect(code).toMatch(/Pics de puissance/);
+  });
+
+  it('has site table with search, sort, confidence filters', () => {
+    expect(code).toMatch(/Rechercher un site/);
+    expect(code).toMatch(/setSort/);
+    expect(code).toMatch(/confidenceFilter/);
+    expect(code).toMatch(/anomalyFilter/);
+  });
+
+  it('has row actions (Explorer, Diagnostic, Voir facture, Creer action)', () => {
+    expect(code).toMatch(/\/consommations\/explorer\?site_ids=/);
+    expect(code).toMatch(/\/diagnostic-conso\?site_id=/);
+    expect(code).toMatch(/deepLinkWithContext/);
+    expect(code).toMatch(/deepLinkNewAction/);
+  });
+
+  it('has loading skeletons and empty state', () => {
+    expect(code).toMatch(/SkeletonCard/);
+    expect(code).toMatch(/EmptyState/);
+  });
+
+  it('has toast error handling', () => {
+    expect(code).toMatch(/useToast/);
+    expect(code).toMatch(/addToast.*error/);
+  });
+
+  it('has pagination (Precedent/Suivant)', () => {
+    expect(code).toMatch(/Precedent/);
+    expect(code).toMatch(/Suivant/);
+  });
+});
+
+
+// ============================================================
+// AY. Portfolio V1 — Route & Tab integration
+// ============================================================
+describe('AY · Portfolio route & tab integration', () => {
+  it('App.jsx has ConsumptionPortfolioPage lazy import', () => {
+    const app = readSrc('App.jsx');
+    expect(app).toMatch(/ConsumptionPortfolioPage/);
+  });
+
+  it('App.jsx has /consommations/portfolio route', () => {
+    const app = readSrc('App.jsx');
+    expect(app).toMatch(/path="portfolio".*ConsumptionPortfolioPage/);
+  });
+
+  it('ConsommationsPage has Portefeuille tab', () => {
+    const page = readSrc('pages', 'ConsommationsPage.jsx');
+    expect(page).toMatch(/Portefeuille/);
+    expect(page).toMatch(/\/consommations\/portfolio/);
+  });
+
+  it('api.js exports getPortfolioSummary and getPortfolioSites', () => {
+    const api = readSrc('services', 'api.js');
+    expect(api).toMatch(/export const getPortfolioSummary/);
+    expect(api).toMatch(/export const getPortfolioSites/);
+  });
+
+  it('api.js calls /portfolio/consumption/ endpoints', () => {
+    const api = readSrc('services', 'api.js');
+    expect(api).toMatch(/\/portfolio\/consumption\/summary/);
+    expect(api).toMatch(/\/portfolio\/consumption\/sites/);
+  });
+});

@@ -45,6 +45,7 @@ const AdminRolesPage = lazy(() => import('./pages/AdminRolesPage'));
 const AdminAssignmentsPage = lazy(() => import('./pages/AdminAssignmentsPage'));
 const AdminAuditLogPage = lazy(() => import('./pages/AdminAuditLogPage'));
 const ConsumptionExplorerPage = lazy(() => import('./pages/ConsumptionExplorerPage'));
+const ConsumptionPortfolioPage = lazy(() => import('./pages/ConsumptionPortfolioPage'));
 const ActivationPage = lazy(() => import('./pages/ActivationPage'));
 const TertiaireDashboardPage = lazy(() => import('./pages/tertiaire/TertiaireDashboardPage'));
 const TertiaireWizardPage = lazy(() => import('./pages/tertiaire/TertiaireWizardPage'));
@@ -106,10 +107,11 @@ function App() {
                   <Route path="/sites-legacy/:id" element={<PageSuspense><SiteDetail /></PageSuspense>} />
                   <Route path="/action-plan" element={<PageSuspense><ActionPlan /></PageSuspense>} />
                   <Route path="/regops/:id" element={<PageSuspense><RegOps /></PageSuspense>} />
-                  {/* Consommations: 3-tab layout (Explorer | Import & Analyse | KB) */}
+                  {/* Consommations: 4-tab layout (Explorer | Portfolio | Import & Analyse | KB) */}
                   <Route path="/consommations" element={<PageSuspense><ConsommationsPage /></PageSuspense>}>
                     <Route index element={<Navigate to="/consommations/explorer" replace />} />
                     <Route path="explorer" element={<PageSuspense><ConsumptionExplorerPage bare /></PageSuspense>} />
+                    <Route path="portfolio" element={<PageSuspense><ConsumptionPortfolioPage /></PageSuspense>} />
                     <Route path="import" element={<PageSuspense><ConsommationsImportTab /></PageSuspense>} />
                     <Route path="kb" element={<PageSuspense><ConsommationsKBTab /></PageSuspense>} />
                   </Route>

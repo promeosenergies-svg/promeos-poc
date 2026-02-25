@@ -1,0 +1,386 @@
+/**
+ * PROMEOS — ConsumptionPortfolioPage (V1)
+ * Multi-site B2B portfolio view: 4 KPI cards, top-lists "Ou agir",
+ * sortable/filterable site table with row actions.
+ */
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Zap, Euro, Leaf, ShieldCheck, AlertTriangle, Moon, Activity,
+  Search, ArrowRight, FileText, Plus, BarChart3, TrendingDown,
+} from 'lucide-react';
+import {
+  PageShell, Card, CardBody, SkeletonCard, EmptyState, TrustBadge,
+  KpiCard,
+} from '../ui';
+import { useToast } from '../ui';
+import { getPortfolioSummary, getPortfolioSites } from '../services/api';
+import { deepLinkWithContext, deepLinkNewAction } from '../services/deepLink';
+
+// ─── Date helpers ──────────────────────────────────────────────────────────
+function defaultDateRange() {
+  const to = new Date();
+  const from = new Date();
+  from.setDate(from.getDate() - 90);
+  return {
+    from: from.toISOString().slice(0, 10),
+    to: to.toISOString().slice(0, 10),
+  };
+}
+
+function fmtNum(n, suffix = '') {
+  if (n == null) return '—';
+  return n.toLocaleString('fr-FR') + (suffix ? ` ${suffix}` : '');
+}
+
+// ─── Component ─────────────────────────────────────────────────────────────
+export default function ConsumptionPortfolioPage() {
+  const navigate = useNavigate();
+  const { addToast } = useToast();
+  const [dates] = useState(defaultDateRange);
+
+  // Summary KPIs
+  const [summary, setSummary] = useState(null);
+  const [summaryLoading, setSummaryLoading] = useState(true);
+
+  // Sites table
+  const [sites, setSites] = useState([]);
+  const [sitesTotal, setSitesTotal] = useState(0);
+  const [sitesLoading, setSitesLoading] = useState(true);
+  const [sort, setSort] = useState('kwh_desc');
+  const [search, setSearch] = useState('');
+  const [confidenceFilter, setConfidenceFilter] = useState(null);
+  const [anomalyFilter, setAnomalyFilter] = useState(false);
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 25;
+
+  // ─── Fetch summary ────────────────────────────────────────────────────
+  useEffect(() => {
+    setSummaryLoading(true);
+    getPortfolioSummary({ from: dates.from, to: dates.to })
+      .then(setSummary)
+      .catch(() => addToast({ type: 'error', message: 'Erreur chargement resume portfolio' }))
+      .finally(() => setSummaryLoading(false));
+  }, [dates.from, dates.to]);
+
+  // ─── Fetch sites table ────────────────────────────────────────────────
+  const fetchSites = useCallback(() => {
+    setSitesLoading(true);
+    getPortfolioSites({
+      from: dates.from,
+      to: dates.to,
+      sort,
+      confidence: confidenceFilter || undefined,
+      with_anomalies: anomalyFilter || undefined,
+      search: search || undefined,
+      limit: PAGE_SIZE,
+      offset: page * PAGE_SIZE,
+    })
+      .then((data) => {
+        setSites(data.rows || []);
+        setSitesTotal(data.total || 0);
+      })
+      .catch(() => addToast({ type: 'error', message: 'Erreur chargement sites portfolio' }))
+      .finally(() => setSitesLoading(false));
+  }, [dates.from, dates.to, sort, confidenceFilter, anomalyFilter, search, page]);
+
+  useEffect(() => { fetchSites(); }, [fetchSites]);
+
+  // Reset page on filter changes
+  useEffect(() => { setPage(0); }, [sort, search, confidenceFilter, anomalyFilter]);
+
+  // ─── Computed ─────────────────────────────────────────────────────────
+  const totalPages = Math.ceil(sitesTotal / PAGE_SIZE);
+  const cov = summary?.coverage;
+  const tot = summary?.totals;
+
+  const confLevel = useMemo(() => {
+    if (!cov) return null;
+    const { high = 0, medium = 0, low = 0 } = cov.confidence_split || {};
+    const total = high + medium + low;
+    if (total === 0) return 'low';
+    if (high / total >= 0.7) return 'high';
+    if ((high + medium) / total >= 0.5) return 'medium';
+    return 'low';
+  }, [cov]);
+
+  // ─── Render ───────────────────────────────────────────────────────────
+  return (
+    <PageShell
+      icon={BarChart3}
+      title="Portefeuille Consommation"
+      subtitle={`Vue multi-sites — ${dates.from} au ${dates.to}`}
+    >
+      {/* ═══ KPI CARDS ═══ */}
+      {summaryLoading ? (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => <SkeletonCard key={i} />)}
+        </div>
+      ) : summary ? (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <KpiCard icon={Zap} label="kWh total" value={fmtNum(Math.round(tot?.kwh_total), 'kWh')} />
+          <KpiCard icon={Euro} label="EUR total" value={fmtNum(Math.round(tot?.eur_total), 'EUR')} sub={tot?.eur_source === 'estime' ? 'Estime' : 'Facture'} />
+          <KpiCard icon={Leaf} label="CO2e" value={fmtNum(Math.round(tot?.co2_total), 'kg')} sub="ADEME 2024" />
+          <KpiCard icon={ShieldCheck} label="Couverture" value={`${cov?.sites_with_data || 0} / ${cov?.sites_total || 0}`} sub={confLevel ? `Confiance ${confLevel}` : undefined} />
+        </div>
+      ) : null}
+
+      {/* ═══ OU AGIR MAINTENANT ═══ */}
+      {summary && (
+        <div className="mt-6">
+          <h2 className="text-sm font-semibold text-gray-700 mb-3">Ou agir maintenant</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Top derive */}
+            <Card>
+              <CardBody>
+                <div className="flex items-center gap-2 mb-3">
+                  <AlertTriangle size={16} className="text-amber-500" />
+                  <h3 className="text-sm font-semibold text-gray-700">Derives detectees</h3>
+                </div>
+                {summary.top_drift?.length > 0 ? (
+                  <ul className="space-y-2">
+                    {summary.top_drift.map((r) => (
+                      <li key={r.site_id} className="flex items-center justify-between text-xs">
+                        <span className="text-gray-700 truncate flex-1">{r.site_name}</span>
+                        <span className="text-amber-600 font-medium ml-2">{r.diagnostics_count} alertes</span>
+                        <button
+                          onClick={() => navigate(`/diagnostic-conso?site_id=${r.site_id}`)}
+                          className="ml-2 text-blue-500 hover:text-blue-700"
+                          title="Voir diagnostic"
+                        >
+                          <ArrowRight size={12} />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-xs text-gray-400">Aucune derive detectee</p>
+                )}
+              </CardBody>
+            </Card>
+
+            {/* Top base nocturne */}
+            <Card>
+              <CardBody>
+                <div className="flex items-center gap-2 mb-3">
+                  <Moon size={16} className="text-indigo-500" />
+                  <h3 className="text-sm font-semibold text-gray-700">Base nocturne elevee</h3>
+                </div>
+                {summary.top_base_night?.length > 0 ? (
+                  <ul className="space-y-2">
+                    {summary.top_base_night.map((r) => (
+                      <li key={r.site_id} className="flex items-center justify-between text-xs">
+                        <span className="text-gray-700 truncate flex-1">{r.site_name}</span>
+                        <span className="text-indigo-600 font-medium ml-2">{r.base_night_pct}%</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-xs text-gray-400">Pas de donnees</p>
+                )}
+              </CardBody>
+            </Card>
+
+            {/* Top pics */}
+            <Card>
+              <CardBody>
+                <div className="flex items-center gap-2 mb-3">
+                  <Activity size={16} className="text-red-500" />
+                  <h3 className="text-sm font-semibold text-gray-700">Pics de puissance</h3>
+                </div>
+                {summary.top_peaks?.length > 0 ? (
+                  <ul className="space-y-2">
+                    {summary.top_peaks.map((r) => (
+                      <li key={r.site_id} className="flex items-center justify-between text-xs">
+                        <span className="text-gray-700 truncate flex-1">{r.site_name}</span>
+                        <span className="text-red-600 font-medium ml-2">{r.peak_kw} kW</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-xs text-gray-400">Pas de donnees</p>
+                )}
+              </CardBody>
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ SITES TABLE ═══ */}
+      <div className="mt-6">
+        <h2 className="text-sm font-semibold text-gray-700 mb-3">Sites du portefeuille</h2>
+
+        {/* Filters bar */}
+        <div className="flex flex-wrap items-center gap-3 mb-3">
+          {/* Search */}
+          <div className="relative">
+            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Rechercher un site..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-8 pr-3 py-1.5 text-sm border rounded-lg bg-white focus:ring-1 focus:ring-blue-300 focus:border-blue-400 outline-none w-56"
+            />
+          </div>
+
+          {/* Confidence filter */}
+          {['high', 'medium', 'low'].map((c) => (
+            <button
+              key={c}
+              onClick={() => setConfidenceFilter(confidenceFilter === c ? null : c)}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition ${
+                confidenceFilter === c
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              {c === 'high' ? 'Haute' : c === 'medium' ? 'Moyenne' : 'Basse'}
+            </button>
+          ))}
+
+          {/* Anomaly toggle */}
+          <button
+            onClick={() => setAnomalyFilter(!anomalyFilter)}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition ${
+              anomalyFilter
+                ? 'bg-amber-100 text-amber-700'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            Anomalies
+          </button>
+
+          {/* Sort */}
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+            className="text-xs border rounded-lg px-2 py-1.5 bg-white"
+          >
+            <option value="kwh_desc">kWh decroissant</option>
+            <option value="kwh_asc">kWh croissant</option>
+            <option value="name">Nom A-Z</option>
+            <option value="peak">Pic kW</option>
+            <option value="base_night">Base nocturne</option>
+            <option value="diagnostics">Diagnostics</option>
+          </select>
+        </div>
+
+        {/* Table */}
+        {sitesLoading ? (
+          <div className="space-y-2">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-12 bg-gray-100 rounded animate-pulse" />
+            ))}
+          </div>
+        ) : sites.length === 0 ? (
+          <EmptyState icon={BarChart3} message="Aucun site ne correspond aux filtres" />
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200 text-left">
+                    <th className="py-2 px-3 text-xs font-semibold text-gray-500">Site</th>
+                    <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-right">kWh</th>
+                    <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-right">EUR</th>
+                    <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-right">CO2e (kg)</th>
+                    <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-right">Pic kW</th>
+                    <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-right">Base nuit</th>
+                    <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-center">Diag.</th>
+                    <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-center">Confiance</th>
+                    <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sites.map((row) => (
+                    <tr key={row.site_id} className="border-b border-gray-100 hover:bg-gray-50 transition">
+                      <td className="py-2 px-3 font-medium text-gray-800">{row.site_name}</td>
+                      <td className="py-2 px-3 text-right text-gray-700">{fmtNum(row.kwh)}</td>
+                      <td className="py-2 px-3 text-right text-gray-700">{fmtNum(row.eur)}</td>
+                      <td className="py-2 px-3 text-right text-gray-700">{fmtNum(row.co2)}</td>
+                      <td className="py-2 px-3 text-right text-gray-700">{row.peak_kw != null ? `${row.peak_kw} kW` : '—'}</td>
+                      <td className="py-2 px-3 text-right text-gray-700">{row.base_night_pct != null ? `${row.base_night_pct}%` : '—'}</td>
+                      <td className="py-2 px-3 text-center">
+                        {row.diagnostics_count > 0 ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-700">
+                            {row.diagnostics_count}
+                          </span>
+                        ) : (
+                          <span className="text-gray-300">—</span>
+                        )}
+                      </td>
+                      <td className="py-2 px-3 text-center">
+                        <TrustBadge
+                          level={row.confidence === 'high' ? 'ok' : row.confidence === 'medium' ? 'warn' : 'crit'}
+                          label={row.confidence === 'high' ? 'Haute' : row.confidence === 'medium' ? 'Moy.' : 'Basse'}
+                          size="sm"
+                        />
+                      </td>
+                      <td className="py-2 px-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => navigate(`/consommations/explorer?site_ids=${row.site_id}`)}
+                            className="p-1 rounded hover:bg-blue-50 text-blue-500"
+                            title="Explorer"
+                          >
+                            <BarChart3 size={14} />
+                          </button>
+                          <button
+                            onClick={() => navigate(`/diagnostic-conso?site_id=${row.site_id}`)}
+                            className="p-1 rounded hover:bg-amber-50 text-amber-500"
+                            title="Diagnostic"
+                          >
+                            <TrendingDown size={14} />
+                          </button>
+                          <button
+                            onClick={() => navigate(deepLinkWithContext(row.site_id))}
+                            className="p-1 rounded hover:bg-gray-100 text-gray-500"
+                            title="Voir facture"
+                          >
+                            <FileText size={14} />
+                          </button>
+                          <button
+                            onClick={() => navigate(deepLinkNewAction({ type: 'consommation', site_id: row.site_id, source: 'portfolio' }))}
+                            className="p-1 rounded hover:bg-green-50 text-green-500"
+                            title="Creer action"
+                          >
+                            <Plus size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-4">
+                <p className="text-xs text-gray-400">{sitesTotal} sites</p>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setPage(Math.max(0, page - 1))}
+                    disabled={page === 0}
+                    className="px-3 py-1 text-xs rounded border bg-white disabled:opacity-40"
+                  >
+                    Precedent
+                  </button>
+                  <span className="text-xs text-gray-500">{page + 1} / {totalPages}</span>
+                  <button
+                    onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
+                    disabled={page >= totalPages - 1}
+                    className="px-3 py-1 text-xs rounded border bg-white disabled:opacity-40"
+                  >
+                    Suivant
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </PageShell>
+  );
+}
