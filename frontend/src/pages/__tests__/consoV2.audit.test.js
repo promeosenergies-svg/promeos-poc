@@ -5,7 +5,7 @@
  */
 import { readFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 
 const root = resolve(__dirname, '../../../');
 const readSrc = (...parts) => readFileSync(resolve(root, 'src', ...parts), 'utf-8');
@@ -1170,5 +1170,122 @@ describe('BJ · Portfolio empty state Cas A vs Cas B', () => {
   it('distinguishes Cas A vs Cas B via sites_total', () => {
     expect(code).toMatch(/sites_total/);
     expect(code).toMatch(/cov\?\.sites_total/);
+  });
+});
+
+// ============================================================
+// BK. Route registry — helpers return valid URLs, no undefined
+// ============================================================
+describe('BK · Route registry helpers', () => {
+  // Dynamic import of route helpers (ESM)
+  let routes;
+  beforeAll(async () => {
+    routes = await import('../../services/routes.js');
+  });
+
+  it('toConsoExplorer() returns /consommations/explorer', () => {
+    expect(routes.toConsoExplorer()).toBe('/consommations/explorer');
+  });
+
+  it('toConsoExplorer({ site_id: 5 }) encodes site param', () => {
+    const url = routes.toConsoExplorer({ site_id: 5 });
+    expect(url).toMatch(/^\/consommations\/explorer\?/);
+    expect(url).toContain('sites=5');
+    expect(url).not.toContain('undefined');
+  });
+
+  it('toConsoExplorer supports date_from / date_to', () => {
+    const url = routes.toConsoExplorer({ site_id: 1, date_from: '2025-01-01', date_to: '2025-01-31' });
+    expect(url).toContain('date_from=2025-01-01');
+    expect(url).toContain('date_to=2025-01-31');
+  });
+
+  it('toConsoExplorer supports multi-site array', () => {
+    const url = routes.toConsoExplorer({ site_id: [1, 2, 3] });
+    expect(url).toContain('sites=1%2C2%2C3');
+  });
+
+  it('toConsoDiag() returns /diagnostic-conso', () => {
+    expect(routes.toConsoDiag()).toBe('/diagnostic-conso');
+  });
+
+  it('toConsoDiag({ site_id: 7 }) encodes site_id', () => {
+    const url = routes.toConsoDiag({ site_id: 7 });
+    expect(url).toBe('/diagnostic-conso?site_id=7');
+  });
+
+  it('toBillIntel() returns /bill-intel', () => {
+    expect(routes.toBillIntel()).toBe('/bill-intel');
+  });
+
+  it('toBillIntel({ site_id: 3, month: "2025-06" }) encodes params', () => {
+    const url = routes.toBillIntel({ site_id: 3, month: '2025-06' });
+    expect(url).toContain('site_id=3');
+    expect(url).toContain('month=2025-06');
+  });
+
+  it('toActionNew() returns /actions/new', () => {
+    expect(routes.toActionNew()).toBe('/actions/new');
+  });
+
+  it('toActionNew with campaign encodes site_ids', () => {
+    const url = routes.toActionNew({ site_ids: [1, 2], source: 'portfolio', title: 'Test' });
+    expect(url).toContain('campaign_sites=1%2C2');
+    expect(url).toContain('source=portfolio');
+    expect(url).toContain('titre=Test');
+  });
+
+  it('toAction(42) returns /actions/42', () => {
+    expect(routes.toAction(42)).toBe('/actions/42');
+  });
+
+  it('toActionsList({ site_id: 5 }) returns /actions?site_id=5', () => {
+    expect(routes.toActionsList({ site_id: 5 })).toBe('/actions?site_id=5');
+  });
+
+  it('toConsoImport() returns /consommations/import', () => {
+    expect(routes.toConsoImport()).toBe('/consommations/import');
+  });
+
+  it('no helper returns a URL containing "undefined"', () => {
+    const urls = [
+      routes.toConsoExplorer(),
+      routes.toConsoExplorer({ site_id: 1 }),
+      routes.toConsoDiag(),
+      routes.toBillIntel(),
+      routes.toActionNew(),
+      routes.toAction(1),
+      routes.toActionsList(),
+      routes.toConsoImport(),
+    ];
+    urls.forEach(url => {
+      expect(url).toMatch(/^\//);
+      expect(url).not.toContain('undefined');
+      expect(url).not.toContain('null');
+    });
+  });
+});
+
+// ============================================================
+// BL. Conso pages — zero hardcoded URLs in conso scope
+// ============================================================
+describe('BL · No hardcoded navigation URLs in conso scope', () => {
+  const portfolio = readSrc('pages', 'ConsumptionPortfolioPage.jsx');
+  const diag = readSrc('pages', 'ConsumptionDiagPage.jsx');
+  const usages = readSrc('pages', 'ConsommationsUsages.jsx');
+
+  it('Portfolio uses toActionsList instead of hardcoded /actions?site_id', () => {
+    expect(portfolio).toMatch(/toActionsList/);
+    expect(portfolio).not.toMatch(/navigate\(`\/actions\?site_id=/);
+  });
+
+  it('DiagPage uses toConsoExplorer instead of hardcoded /consommations/explorer', () => {
+    expect(diag).toMatch(/toConsoExplorer/);
+    expect(diag).not.toMatch(/navigate\(`\/consommations\/explorer\?/);
+  });
+
+  it('ConsommationsUsages uses toConsoExplorer instead of hardcoded URL', () => {
+    expect(usages).toMatch(/toConsoExplorer/);
+    expect(usages).not.toMatch(/navigate\(`\/consommations\/explorer/);
   });
 });
