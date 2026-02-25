@@ -182,6 +182,14 @@ export const isSilentUrl = (urlOrConfig) => {
 
 api.interceptors.response.use(
   (response) => {
+    // Guard: detect non-JSON responses (HTML from missing proxy / wrong prefix)
+    const ct = response.headers?.['content-type'] || '';
+    if (ct && !ct.includes('application/json') && !ct.includes('text/plain') && response.config.responseType !== 'blob') {
+      const msg = `[PROMEOS] API returned non-JSON (content-type: ${ct}). Vérifiez le proxy Vite ou le préfixe /api.`;
+      console.error(msg, { url: response.config.url, status: response.status });
+      return Promise.reject(new Error(msg));
+    }
+
     // Track successful request
     const duration = Date.now() - (response.config._startTime || Date.now());
     const entry = {

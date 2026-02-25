@@ -486,3 +486,54 @@ describe('BillIntelPage.jsx — P0 imports UX', () => {
     expect(code).toMatch(/isExpert[\s\S]{0,100}PDF import start/);
   });
 });
+
+// ============================================================
+// P. api.js — content-type guard (non-JSON response detection)
+// ============================================================
+describe('api.js — content-type guard', () => {
+  const code = readSrc('services', 'api.js');
+
+  it('checks response content-type in interceptor', () => {
+    expect(code).toMatch(/content-type/);
+  });
+
+  it('rejects non-JSON responses with explicit proxy/prefix error', () => {
+    expect(code).toMatch(/application\/json/);
+    expect(code).toMatch(/proxy|pr.fixe|prefix/i);
+  });
+
+  it('allows text/plain responses (health-check etc.)', () => {
+    expect(code).toMatch(/text\/plain/);
+  });
+
+  it('skips guard for blob responseType', () => {
+    expect(code).toMatch(/responseType.*blob|blob.*responseType/);
+  });
+});
+
+// ============================================================
+// Q. api.js — billing API routes use /billing/ prefix
+// ============================================================
+describe('api.js — billing routes use /billing/ prefix', () => {
+  const code = readSrc('services', 'api.js');
+
+  it('getBillingPeriods uses /billing/periods', () => {
+    expect(code).toMatch(/getBillingPeriods[\s\S]{0,200}\/billing\/periods/);
+  });
+
+  it('getCoverageSummary uses /billing/coverage-summary', () => {
+    expect(code).toMatch(/getCoverageSummary[\s\S]{0,200}\/billing\/coverage-summary/);
+  });
+
+  it('getNormalizedInvoices uses /billing/invoices/normalized', () => {
+    expect(code).toMatch(/getNormalizedInvoices[\s\S]{0,200}\/billing\/invoices\/normalized/);
+  });
+
+  it('importInvoicesCsv uses /billing/import-csv', () => {
+    expect(code).toMatch(/importInvoicesCsv[\s\S]{0,200}\/billing\/import-csv/);
+  });
+
+  it('importInvoicesPdf uses /billing/import-pdf', () => {
+    expect(code).toMatch(/importInvoicesPdf[\s\S]{0,200}\/billing\/import-pdf/);
+  });
+});
