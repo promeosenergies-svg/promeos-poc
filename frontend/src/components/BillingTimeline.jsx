@@ -45,6 +45,11 @@ function formatEur(amount) {
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(amount);
 }
 
+function formatKwh(kwh) {
+  if (kwh == null) return null;
+  return new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(kwh) + '\u00a0kWh';
+}
+
 function MonthRow({ period, siteId, onCreateAction, createdActions, activeMonth }) {
   const navigate = useNavigate();
   const cfg = STATUS_CONFIG[period.coverage_status] || STATUS_CONFIG.missing;
@@ -98,6 +103,17 @@ function MonthRow({ period, siteId, onCreateAction, createdActions, activeMonth 
         </span>
         {period.total_ttc != null && (
           <span className="font-medium">{formatEur(period.total_ttc)}</span>
+        )}
+        {period.energy_kwh != null && (
+          <span className="flex items-center gap-1">
+            <Zap size={12} />
+            {formatKwh(period.energy_kwh)}
+          </span>
+        )}
+        {period.pdl_prm && (
+          <span className="font-mono text-gray-400" title="PDL/PRM">
+            {period.pdl_prm}
+          </span>
         )}
       </div>
 
