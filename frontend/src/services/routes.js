@@ -68,6 +68,9 @@ export function toBillIntel(opts = {}) {
  * @param {number[]|string} [opts.site_ids] — pour campagnes multi-sites
  * @param {string} [opts.title]
  * @param {string} [opts.source] — identifiant origine (portfolio, explorer, etc.)
+ * @param {number} [opts.impact_eur] — impact estime en EUR
+ * @param {string} [opts.date_from] — date debut YYYY-MM-DD
+ * @param {string} [opts.date_to] — date fin YYYY-MM-DD
  */
 export function toActionNew(opts = {}) {
   const p = new URLSearchParams();
@@ -76,6 +79,9 @@ export function toActionNew(opts = {}) {
   if (opts.source_id) p.set('ref_id', String(opts.source_id));
   if (opts.site_id) p.set('site_id', String(opts.site_id));
   if (opts.title) p.set('titre', opts.title);
+  if (opts.impact_eur != null) p.set('impact_eur', String(opts.impact_eur));
+  if (opts.date_from) p.set('date_from', opts.date_from);
+  if (opts.date_to) p.set('date_to', opts.date_to);
   if (opts.site_ids) {
     const ids = Array.isArray(opts.site_ids) ? opts.site_ids.join(',') : opts.site_ids;
     p.set('campaign_sites', ids);
@@ -97,11 +103,19 @@ export function toAction(actionId) {
  * @param {object} opts
  * @param {number|string} [opts.site_id] — filtre par site
  * @param {string} [opts.source] — filtre par origine (operat, portfolio, etc.)
+ * @param {string} [opts.status] — filtre par statut (backlog, in_progress, done)
+ * @param {string} [opts.source_type] — filtre par type source
+ * @param {string} [opts.date_from] — date debut YYYY-MM-DD
+ * @param {string} [opts.date_to] — date fin YYYY-MM-DD
  */
 export function toActionsList(opts = {}) {
   const p = new URLSearchParams();
   if (opts.site_id) p.set('site_id', String(opts.site_id));
   if (opts.source) p.set('source', opts.source);
+  if (opts.status) p.set('status', opts.status);
+  if (opts.source_type) p.set('source_type', opts.source_type);
+  if (opts.date_from) p.set('date_from', opts.date_from);
+  if (opts.date_to) p.set('date_to', opts.date_to);
   const qs = p.toString();
   return `/actions${qs ? '?' + qs : ''}`;
 }
