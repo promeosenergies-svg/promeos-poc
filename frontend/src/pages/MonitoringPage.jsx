@@ -883,7 +883,7 @@ function OffHoursDrawer({ open, onClose, offHoursRatio, offHoursKwh, schedule, e
                   titre: `Réduction conso hors horaires — Site`,
                   type: 'conso',
                   impact_eur: estimate.eur,
-                  description: `Off-hours ${offHoursRatio != null ? fmtNum(offHoursRatio * 100) : '?'}% — ${fmtNum(offHoursKwh, 0)} kWh sur 90j. Estimation: ${estimate.label}.`,
+                  description: `Hors horaires ${offHoursRatio != null ? fmtNum(offHoursRatio * 100) : '?'}% — ${fmtNum(offHoursKwh, 0)} kWh sur 90j. Estimation: ${estimate.label}.`,
                 })}
               >
                 <Zap size={14} />
