@@ -125,8 +125,12 @@ export default function BillIntelPage() {
   }, []);
 
   useEffect(() => {
-    if (siteFilter && !pdfSiteId) setPdfSiteId(siteFilter);
-  }, [siteFilter]);
+    if (siteFilter) {
+      setPdfSiteId(siteFilter);
+    } else if (!pdfSiteId && sites.length > 0) {
+      setPdfSiteId(String(sites[0].id));
+    }
+  }, [siteFilter, sites]);
 
   // Filtrage front : période (preset ou mois exact), statut, texte libre (N° facture ou PDL)
   const filteredInvoices = useMemo(() => {
@@ -176,10 +180,14 @@ export default function BillIntelPage() {
     const file = e.target.files[0];
     if (!file) return;
     try {
-      await importInvoicesCsv(file);
+      const result = await importInvoicesCsv(file);
       track('billing_csv_import', { filename: file.name });
+      toast(`Import CSV réussi : ${result?.imported ?? '?'} facture(s) importée(s)`, 'success');
       await fetchData();
-    } catch { /* ignore */ }
+    } catch (err) {
+      if (isExpert) console.error('[BillIntelPage] CSV import error:', err);
+      toast('Erreur lors de l\'import CSV', 'error');
+    }
     e.target.value = '';
   }
 
@@ -195,10 +203,14 @@ export default function BillIntelPage() {
     const file = e.target.files[0];
     if (!file || !pdfSiteId) return;
     try {
-      await importInvoicesPdf(Number(pdfSiteId), file);
+      const result = await importInvoicesPdf(Number(pdfSiteId), file);
       track('billing_pdf_import', { filename: file.name });
+      toast(`Import PDF réussi : facture ${result?.invoice_id ?? ''} (confiance ${result?.confidence ?? '?'})`, 'success');
       await fetchData();
-    } catch { /* ignore */ }
+    } catch (err) {
+      if (isExpert) console.error('[BillIntelPage] PDF import error:', err);
+      toast('Erreur lors de l\'import PDF', 'error');
+    }
     e.target.value = '';
   }
 
@@ -225,11 +237,14 @@ export default function BillIntelPage() {
               <CalendarRange size={14} /> Voir timeline
             </Button>
           )}
-          <label className="inline-flex items-center gap-2 cursor-pointer">
-            <Button variant="secondary" size="sm" as="span">
+          <label
+            className={`inline-flex items-center gap-2 ${!pdfSiteId ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+            title={!pdfSiteId ? 'Sélectionnez un site' : undefined}
+          >
+            <Button variant="secondary" size="sm" as="span" disabled={!pdfSiteId}>
               <Upload size={14} /> Importer CSV
             </Button>
-            <input type="file" accept=".csv" className="sr-only" onChange={handleCsvImport} />
+            <input type="file" accept=".csv" className="sr-only" onChange={handleCsvImport} disabled={!pdfSiteId} />
           </label>
           <div className="inline-flex items-center gap-1">
             <select
@@ -242,7 +257,10 @@ export default function BillIntelPage() {
                 <option key={s.id} value={s.id}>{s.nom}</option>
               ))}
             </select>
-            <label className="inline-flex items-center gap-2 cursor-pointer">
+            <label
+              className={`inline-flex items-center gap-2 ${!pdfSiteId ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+              title={!pdfSiteId ? 'Sélectionnez un site' : undefined}
+            >
               <Button variant="secondary" size="sm" as="span" disabled={!pdfSiteId}>
                 <Upload size={14} /> Importer PDF
               </Button>
