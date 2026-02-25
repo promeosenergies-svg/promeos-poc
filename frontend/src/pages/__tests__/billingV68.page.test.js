@@ -288,10 +288,15 @@ describe('BillingPage.jsx — P0 fix getMissingPeriods non-bloquant', () => {
     expect(code).toMatch(/const\s+\{[^}]*isExpert[^}]*\}\s*=\s*useExpertMode/);
   });
 
-  it('getMissingPeriods is NOT in the main Promise.all', () => {
-    // Promise.all should only contain getCoverageSummary and getBillingPeriods
+  it('getCoverageSummary and getMissingPeriods are NOT in Promise.all', () => {
+    // Promise.all should not exist, or if it does, no coverage/missing inside
     const promiseAllBlock = code.match(/Promise\.all\(\[[\s\S]*?\]\)/)?.[0] || '';
     expect(promiseAllBlock).not.toMatch(/getMissingPeriods/);
+    expect(promiseAllBlock).not.toMatch(/getCoverageSummary/);
+  });
+
+  it('getCoverageSummary has its own try/catch (non-bloquant)', () => {
+    expect(code).toMatch(/getCoverageSummary[\s\S]{0,200}catch/);
   });
 
   it('getMissingPeriods has its own try/catch block', () => {
@@ -471,5 +476,13 @@ describe('BillIntelPage.jsx — P0 imports UX', () => {
 
   it('PDF button label has tooltip when no site', () => {
     expect(code).toMatch(/Importer PDF[\s\S]{0,500}S.lectionnez un site|S.lectionnez un site[\s\S]{0,500}Importer PDF/);
+  });
+
+  it('Expert logs on CSV import start (file name + size)', () => {
+    expect(code).toMatch(/isExpert[\s\S]{0,100}CSV import start/);
+  });
+
+  it('Expert logs on PDF import start (file name + site_id)', () => {
+    expect(code).toMatch(/isExpert[\s\S]{0,100}PDF import start/);
   });
 });

@@ -1,6 +1,7 @@
 """
-PROMEOS — V69 Meta Version Tests
+PROMEOS — V69 Meta Version + Coverage Summary Tests
 Couvre: GET /api/meta/version — sha + branch.
+        GET /api/billing/coverage-summary — smoke (empty DB → 200 + keys).
 """
 import sys
 import os
@@ -12,7 +13,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 from fastapi.testclient import TestClient
 
-from models import Base
+from models import Base, Organisation
 from database import get_db
 from main import app
 
@@ -70,3 +71,21 @@ def test_meta_version_sha_nonempty(client):
     # Si git est absent, sha = 'unknown' — on accepte les deux cas
     assert isinstance(data["sha"], str)
     assert len(data["sha"]) > 0
+
+
+# ========================================
+# Tests GET /api/billing/coverage-summary
+# ========================================
+
+def test_coverage_summary_empty_db(client, db):
+    """GET /api/billing/coverage-summary retourne 200 même sans factures."""
+    org = Organisation(nom="OrgCov", type_client="bureau", actif=True, siren="600099001")
+    db.add(org)
+    db.commit()
+    r = client.get("/api/billing/coverage-summary", headers={"X-Org-Id": str(org.id)})
+    assert r.status_code == 200
+    data = r.json()
+    assert "months_total" in data
+    assert "covered" in data
+    assert "missing" in data
+    assert data["months_total"] == 0
