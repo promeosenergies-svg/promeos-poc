@@ -836,8 +836,40 @@ def list_billing_rules():
 
 
 # ========================================
-# PDF Import (V66 P2.2)
+# PDF Import (V66 P2.2 / DoD P0-1)
 # ========================================
+
+# ComponentType.value (lowercase) → InvoiceLineType mapping for P0-1
+_COMPONENT_TO_LINE_TYPE = {
+    # Energie / fourniture
+    "conso_hp": InvoiceLineType.ENERGY,
+    "conso_hc": InvoiceLineType.ENERGY,
+    "conso_base": InvoiceLineType.ENERGY,
+    "conso_pointe": InvoiceLineType.ENERGY,
+    "conso_hph": InvoiceLineType.ENERGY,
+    "conso_hch": InvoiceLineType.ENERGY,
+    "conso_hpe": InvoiceLineType.ENERGY,
+    "conso_hce": InvoiceLineType.ENERGY,
+    "terme_variable": InvoiceLineType.ENERGY,
+    # Réseau / acheminement
+    "turpe_fixe": InvoiceLineType.NETWORK,
+    "turpe_puissance": InvoiceLineType.NETWORK,
+    "turpe_energie": InvoiceLineType.NETWORK,
+    "terme_fixe": InvoiceLineType.NETWORK,
+    # Taxes / contributions
+    "cta": InvoiceLineType.TAX,
+    "accise": InvoiceLineType.TAX,
+    "tva_reduite": InvoiceLineType.TAX,
+    "tva_normale": InvoiceLineType.TAX,
+    "cee": InvoiceLineType.TAX,
+}
+
+
+def _component_to_line_type(comp_type) -> InvoiceLineType:
+    """Mappe ComponentType.value (str lowercase) → InvoiceLineType. Fallback = OTHER."""
+    key = comp_type.value if hasattr(comp_type, "value") else str(comp_type)
+    return _COMPONENT_TO_LINE_TYPE.get(key, InvoiceLineType.OTHER)
+
 
 @router.post("/import-pdf")
 async def import_invoice_pdf(
@@ -858,7 +890,8 @@ async def import_invoice_pdf(
     content = await file.read()
     invoice_domain = parse_pdf_bytes(content, file.filename or "upload.pdf")
 
-    if not invoice_domain or invoice_domain.confidence < 0.5:
+    confidence = getattr(invoice_domain, "parsing_confidence", 0) or 0
+    if not invoice_domain or confidence < 0.5:
         raise HTTPException(
             status_code=422,
             detail="PDF non reconnu ou confiance insuffisante (< 0.5). "
@@ -872,30 +905,50 @@ async def import_invoice_pdf(
         period_end=invoice_domain.period_end,
         issue_date=invoice_domain.invoice_date,
         total_eur=invoice_domain.total_ttc,
-        energy_kwh=invoice_domain.total_kwh,
+        energy_kwh=getattr(invoice_domain, "conso_kwh", None),  # P0-3: correct field name
         status=BillingInvoiceStatus.IMPORTED,
         source="pdf",
         raw_json=json.dumps({
-            "supplier": invoice_domain.supplier,
-            "confidence": invoice_domain.confidence,
-            "filename": file.filename,
+            "supplier": getattr(invoice_domain, "supplier", "") or "",
+            "confidence": getattr(invoice_domain, "parsing_confidence", 0) or 0,
+            "filename": file.filename or "",
+            "pdl_prm": getattr(invoice_domain, "pdl_pce", None) or "",  # P0-3: store PDL
         }),
     )
     db.add(db_invoice)
     db.flush()
 
-    anomalies_count = 0
+    # P0-1: créer les lignes EnergyInvoiceLine depuis les composantes PDF
+    for comp in (getattr(invoice_domain, "components", None) or []):
+        line_type = _component_to_line_type(comp.component_type)
+        db.add(EnergyInvoiceLine(
+            invoice_id=db_invoice.id,
+            line_type=line_type,
+            label=getattr(comp, "label", "") or "",
+            qty=getattr(comp, "quantity", None),
+            unit=getattr(comp, "unit", None),
+            unit_price=getattr(comp, "unit_price", None),
+            amount_eur=(
+                comp.amount_ht if getattr(comp, "amount_ht", None) is not None
+                else getattr(comp, "amount_ttc", None)
+            ),
+        ))
+
+    anomalies_list = []
     if run_audit:
         result = audit_invoice_full(db, db_invoice.id)
-        anomalies_count = len(result.get("anomalies", []))
+        anomalies_list = result.get("anomalies", [])
 
     db.commit()
+
     return {
         "status": "imported",
         "invoice_id": db_invoice.id,
-        "confidence": invoice_domain.confidence,
-        "supplier": invoice_domain.supplier,
-        "anomalies_count": anomalies_count,
+        "confidence": round(float(confidence), 2),
+        "supplier": getattr(invoice_domain, "supplier", "") or "",
+        "anomalies_count": len(anomalies_list),
+        "kb_updated": run_audit,                                              # P0-5
+        "kb_rules_applied": [a.get("rule_id") for a in anomalies_list],      # P0-5
     }
 
 
@@ -1011,6 +1064,8 @@ def get_billing_periods(
                 "invoices_count": mc.invoices_count,
                 "total_ttc": mc.total_ttc,
                 "missing_reason": mc.missing_reason,
+                "energy_kwh": mc.energy_kwh,   # P0-2
+                "pdl_prm": mc.pdl_prm,         # P0-2
             }
             for mc in page
         ],
