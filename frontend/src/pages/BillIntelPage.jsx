@@ -14,6 +14,7 @@ import {
   resolveBillingInsight,
   importInvoicesPdf,
   createActionFromBillingInsight,
+  getSites,
 } from '../services/api';
 import { Card, CardBody, Badge, Button, TrustBadge, PageShell, EmptyState } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
@@ -93,6 +94,8 @@ export default function BillIntelPage() {
   const [pdfSiteId, setPdfSiteId] = useState('');
   const [invoiceSearch, setInvoiceSearch] = useState('');
   const [invoiceStatusFilter, setInvoiceStatusFilter] = useState('');
+  const [periodPreset, setPeriodPreset] = useState('all');
+  const [sites, setSites] = useState([]);
 
   async function fetchData() {
     setLoading(true);
@@ -115,13 +118,28 @@ export default function BillIntelPage() {
 
   useEffect(() => { fetchData(); }, [insightFilter, siteFilter]);
 
-  // Filtrage front : mois, statut, texte libre (N° facture ou PDL)
+  useEffect(() => {
+    getSites({ limit: 200 })
+      .then(data => setSites(Array.isArray(data?.sites) ? data.sites : []))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (siteFilter && !pdfSiteId) setPdfSiteId(siteFilter);
+  }, [siteFilter]);
+
+  // Filtrage front : période (preset ou mois exact), statut, texte libre (N° facture ou PDL)
   const filteredInvoices = useMemo(() => {
+    const now = new Date();
+    const cutoff = periodPreset === 'last3'  ? new Date(now.getFullYear(), now.getMonth() - 3, 1)
+                 : periodPreset === 'last6'  ? new Date(now.getFullYear(), now.getMonth() - 6, 1)
+                 : periodPreset === 'last12' ? new Date(now.getFullYear(), now.getMonth() - 12, 1)
+                 : null;
     return invoices
       .filter(inv => {
-        if (!monthFilter) return true;
-        const d = inv.period_start || inv.issue_date || '';
-        return d.startsWith(monthFilter);
+        if (periodPreset === 'specific') return !monthFilter || (inv.period_start || '').startsWith(monthFilter);
+        if (cutoff) return new Date(inv.period_start || inv.issue_date || '9999') >= cutoff;
+        return true;
       })
       .filter(inv => !invoiceStatusFilter || inv.status === invoiceStatusFilter)
       .filter(inv => {
@@ -132,7 +150,7 @@ export default function BillIntelPage() {
           (inv.pdl_prm || '').toLowerCase().includes(q)
         );
       });
-  }, [invoices, monthFilter, invoiceStatusFilter, invoiceSearch]);
+  }, [invoices, periodPreset, monthFilter, invoiceStatusFilter, invoiceSearch]);
 
   async function handleSeedDemo() {
     setSeeding(true);
@@ -214,13 +232,16 @@ export default function BillIntelPage() {
             <input type="file" accept=".csv" className="sr-only" onChange={handleCsvImport} />
           </label>
           <div className="inline-flex items-center gap-1">
-            <input
-              type="number"
-              placeholder="Site ID"
+            <select
               value={pdfSiteId}
               onChange={e => setPdfSiteId(e.target.value)}
-              className="w-20 text-xs border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-400"
-            />
+              className="text-xs border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-400"
+            >
+              <option value="">Site…</option>
+              {sites.map(s => (
+                <option key={s.id} value={s.id}>{s.nom}</option>
+              ))}
+            </select>
             <label className="inline-flex items-center gap-2 cursor-pointer">
               <Button variant="secondary" size="sm" as="span" disabled={!pdfSiteId}>
                 <Upload size={14} /> Importer PDF
@@ -394,6 +415,25 @@ export default function BillIntelPage() {
               onChange={e => setInvoiceSearch(e.target.value)}
               className="border border-gray-200 rounded px-2 py-1 text-sm w-48 focus:outline-none focus:ring-1 focus:ring-blue-400"
             />
+            <select
+              value={periodPreset}
+              onChange={e => { setPeriodPreset(e.target.value); if (e.target.value !== 'specific') setMonthFilter(''); }}
+              className="border border-gray-200 rounded px-2 py-1 text-sm"
+            >
+              <option value="all">Toutes périodes</option>
+              <option value="last3">3 derniers mois</option>
+              <option value="last6">6 derniers mois</option>
+              <option value="last12">12 derniers mois</option>
+              <option value="specific">Mois spécifique</option>
+            </select>
+            {periodPreset === 'specific' && (
+              <input
+                type="month"
+                value={monthFilter}
+                onChange={e => setMonthFilter(e.target.value)}
+                className="border border-gray-200 rounded px-2 py-1 text-sm"
+              />
+            )}
             {['', 'imported', 'audited', 'anomaly', 'archived'].map(s => (
               <button
                 key={s}
