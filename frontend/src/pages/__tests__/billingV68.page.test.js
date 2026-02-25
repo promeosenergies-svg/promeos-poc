@@ -401,3 +401,75 @@ describe('BillIntelPage.jsx — period filter presets (ÉTAPE 4)', () => {
     expect(code).toMatch(/specific[\s\S]{0,200}month|month[\s\S]{0,200}specific/);
   });
 });
+
+// ============================================================
+// N. BillingPage.jsx — P0 : 404 purge localStorage + expert debug payload
+// ============================================================
+describe('BillingPage.jsx — P0 404 purge + expert debug', () => {
+  const code = readSrc('pages', 'BillingPage.jsx');
+
+  it('reads promeos_scope from localStorage on 404', () => {
+    expect(code).toMatch(/promeos_scope/);
+  });
+
+  it('sets siteId to null in localStorage scope', () => {
+    expect(code).toMatch(/scope\.siteId\s*=\s*null/);
+  });
+
+  it('writes updated scope back to localStorage', () => {
+    expect(code).toMatch(/localStorage\.setItem\(\s*['"]promeos_scope['"]/);
+  });
+
+  it('includes debug payload with endpoint, status, and site_id in expert mode', () => {
+    expect(code).toMatch(/endpoint=/);
+    expect(code).toMatch(/status=404/);
+    expect(code).toMatch(/site_id=/);
+  });
+
+  it('expert debug payload is gated by isExpert', () => {
+    expect(code).toMatch(/isExpert[\s\S]{0,200}endpoint=/);
+  });
+});
+
+// ============================================================
+// O. BillIntelPage.jsx — P0 : imports UX (disabled + tooltip + toast)
+// ============================================================
+describe('BillIntelPage.jsx — P0 imports UX', () => {
+  const code = readSrc('pages', 'BillIntelPage.jsx');
+
+  it('CSV button has disabled prop gated on pdfSiteId', () => {
+    expect(code).toMatch(/Importer CSV[\s\S]{0,300}disabled=\{!pdfSiteId\}|disabled=\{!pdfSiteId\}[\s\S]{0,300}Importer CSV/);
+  });
+
+  it('CSV file input has disabled prop', () => {
+    expect(code).toMatch(/accept=["'].csv["'][\s\S]{0,200}disabled/);
+  });
+
+  it('shows tooltip Sélectionnez un site when no site selected', () => {
+    expect(code).toMatch(/S.lectionnez un site/);
+  });
+
+  it('handleCsvImport calls toast on success', () => {
+    expect(code).toMatch(/handleCsvImport[\s\S]{0,500}toast\(/);
+  });
+
+  it('handleCsvImport calls toast on error', () => {
+    expect(code).toMatch(/handleCsvImport[\s\S]{0,800}catch[\s\S]{0,200}toast\(/);
+  });
+
+  it('handlePdfImport calls toast on success', () => {
+    expect(code).toMatch(/handlePdfImport[\s\S]{0,500}toast\(/);
+  });
+
+  it('handlePdfImport calls toast on error', () => {
+    expect(code).toMatch(/handlePdfImport[\s\S]{0,800}catch[\s\S]{0,200}toast\(/);
+  });
+
+  it('pre-fills pdfSiteId from first site when no siteFilter', () => {
+    expect(code).toMatch(/sites\.length\s*>\s*0[\s\S]{0,100}sites\[0\]/);
+  });
+
+  it('PDF button label has tooltip when no site', () => {
+    expect(code).toMatch(/Importer PDF[\s\S]{0,500}S.lectionnez un site|S.lectionnez un site[\s\S]{0,500}Importer PDF/);
+  });
+});
