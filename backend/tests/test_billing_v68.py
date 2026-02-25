@@ -461,3 +461,133 @@ class TestSeedAndCoverage:
         data = r.json()
         assert data["invoices"] == []
         assert data["total"] == 0
+
+
+# ========================================
+# TestPDFImportDoD — 3 smoke tests E2E
+# ========================================
+
+class TestPDFImportDoD:
+    """DoD P0 smoke tests — vérifie le flux PDF import complet."""
+
+    def _fake_invoice_domain(self):
+        """Construit un faux Invoice domain avec 2 composantes (CONSO_BASE + TURPE_FIXE)."""
+        from app.bill_intelligence.domain import (
+            Invoice, InvoiceComponent, InvoiceStatus,
+            EnergyType, ComponentType,
+        )
+        from datetime import date
+        comp1 = InvoiceComponent(
+            component_type=ComponentType.CONSO_BASE,
+            label="Energie base",
+            quantity=4500.0, unit="kWh", unit_price=0.18,
+            amount_ht=810.0, tva_rate=20.0,
+        )
+        comp2 = InvoiceComponent(
+            component_type=ComponentType.TURPE_FIXE,
+            label="TURPE gestion",
+            amount_ht=150.0, tva_rate=5.5,
+        )
+        comp3 = InvoiceComponent(
+            component_type=ComponentType.ACCISE,
+            label="Accise electricite",
+            amount_ht=101.25, tva_rate=20.0,
+        )
+        return Invoice(
+            invoice_id="TEST-2024-01",
+            energy_type=EnergyType.ELEC,
+            supplier="EDF Test",
+            pdl_pce="12345678901234",
+            period_start=date(2024, 1, 1),
+            period_end=date(2024, 1, 31),
+            invoice_date=date(2024, 2, 5),
+            total_ht=1061.25,
+            total_ttc=1291.25,
+            conso_kwh=4500.0,
+            components=[comp1, comp2, comp3],
+            status=InvoiceStatus.PARSED,
+            parsing_confidence=0.92,
+        )
+
+    def test_pdf_import_creates_invoice_lines(self, client, db):
+        """P0-1 : POST /billing/import-pdf crée des EnergyInvoiceLine depuis les composantes."""
+        from unittest.mock import patch, MagicMock
+        org, site = _make_org_site(db, "OrgPDF1", "600006001")
+        fake_domain = self._fake_invoice_domain()
+
+        fake_bytes = b"%PDF-1.4 fake"
+        with patch(
+            "app.bill_intelligence.parsers.pdf_parser.parse_pdf_bytes",
+            return_value=fake_domain,
+        ):
+            r = client.post(
+                f"/api/billing/import-pdf?site_id={site.id}",
+                files={"file": ("facture.pdf", fake_bytes, "application/pdf")},
+                headers=_h(org.id),
+            )
+
+        assert r.status_code == 200, r.text
+        data = r.json()
+        assert data["status"] == "imported"
+        invoice_id = data["invoice_id"]
+
+        # Vérifier que les lignes ont été créées (P0-1)
+        lines = db.query(EnergyInvoiceLine).filter(
+            EnergyInvoiceLine.invoice_id == invoice_id
+        ).all()
+        assert len(lines) == 3, f"Attendu 3 lignes, eu {len(lines)}"
+
+        line_types = {l.line_type for l in lines}
+        assert InvoiceLineType.ENERGY in line_types
+        assert InvoiceLineType.NETWORK in line_types
+        assert InvoiceLineType.TAX in line_types
+
+    def test_billing_periods_returns_kwh(self, client, db):
+        """P0-2 : GET /billing/periods retourne energy_kwh pour chaque période."""
+        org, site = _make_org_site(db, "OrgPDF2", "600006002")
+        # Créer une facture avec kWh
+        inv = EnergyInvoice(
+            site_id=site.id,
+            invoice_number="TEST-KWH-2024-01",
+            period_start=date(2024, 1, 1),
+            period_end=date(2024, 1, 31),
+            issue_date=date(2024, 2, 5),
+            total_eur=1291.25,
+            energy_kwh=4500.0,
+            status=BillingInvoiceStatus.IMPORTED,
+            source="test",
+        )
+        db.add(inv)
+        db.commit()
+
+        r = client.get(f"/api/billing/periods?site_id={site.id}", headers=_h(org.id))
+        assert r.status_code == 200, r.text
+        data = r.json()
+        assert data["total"] >= 1
+        period = data["periods"][0]
+        assert "energy_kwh" in period, "Champ energy_kwh manquant dans /billing/periods"
+        assert period["energy_kwh"] == 4500.0
+
+    def test_pdf_import_kb_updated_flag(self, client, db):
+        """P0-5 : POST /billing/import-pdf retourne kb_updated=True si run_audit=True."""
+        from unittest.mock import patch
+        org, site = _make_org_site(db, "OrgPDF3", "600006003")
+        fake_domain = self._fake_invoice_domain()
+
+        fake_bytes = b"%PDF-1.4 fake"
+        with patch(
+            "app.bill_intelligence.parsers.pdf_parser.parse_pdf_bytes",
+            return_value=fake_domain,
+        ):
+            r = client.post(
+                f"/api/billing/import-pdf?site_id={site.id}&run_audit=true",
+                files={"file": ("facture.pdf", fake_bytes, "application/pdf")},
+                headers=_h(org.id),
+            )
+
+        assert r.status_code == 200, r.text
+        data = r.json()
+        assert "kb_updated" in data, "Champ kb_updated manquant dans la réponse import-pdf"
+        assert data["kb_updated"] is True
+        assert "kb_rules_applied" in data
+        assert isinstance(data["kb_rules_applied"], list)
