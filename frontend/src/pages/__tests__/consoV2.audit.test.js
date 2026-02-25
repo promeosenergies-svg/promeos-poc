@@ -380,7 +380,7 @@ describe('AR · P1-1 benchmark reference curve', () => {
 
   it('BenchmarkPanel has toggle checkbox', () => {
     const code = readSrc('pages', 'consumption', 'BenchmarkPanel.jsx');
-    expect(code).toMatch(/Comparer a une courbe de reference/);
+    expect(code).toMatch(/Comparer a la courbe moyenne/);
     expect(code).toMatch(/type="checkbox"/);
   });
 
@@ -398,8 +398,8 @@ describe('AR · P1-1 benchmark reference curve', () => {
 
   it('BenchmarkPanel has 4 KPI cards (actual, reference, ecart, couverture)', () => {
     const code = readSrc('pages', 'consumption', 'BenchmarkPanel.jsx');
-    expect(code).toMatch(/Conso reelle/);
-    expect(code).toMatch(/Reference/);
+    expect(code).toMatch(/Votre consommation/);
+    expect(code).toMatch(/Moyenne sites similaires/);
     expect(code).toMatch(/Ecart/);
     expect(code).toMatch(/Couverture/);
   });
@@ -455,9 +455,9 @@ describe('AS · P1-2 heatmap interactive', () => {
     expect(code).toMatch(/cursor-pointer/);
   });
 
-  it('HeatmapChart shows "Cliquez pour le detail" when clickable', () => {
+  it('HeatmapChart shows "Cliquez sur un creneau pour le detail" when clickable', () => {
     const code = readSrc('pages', 'consumption', 'HeatmapChart.jsx');
-    expect(code).toMatch(/Cliquez pour le detail/);
+    expect(code).toMatch(/Cliquez sur un creneau pour le detail/);
   });
 
   it('HeatmapChart has title attribute on cells for native tooltip', () => {
@@ -478,11 +478,11 @@ describe('AS · P1-2 heatmap interactive', () => {
     expect(code).toMatch(/dayFilter/);
   });
 
-  it('SignaturePanel has filter pills (Semaine typique / Ouvre / Week-end)', () => {
+  it('SignaturePanel has filter pills (Semaine typique / Jours ouvres / Week-ends)', () => {
     const code = readSrc('pages', 'consumption', 'SignaturePanel.jsx');
     expect(code).toMatch(/Semaine typique/);
-    expect(code).toMatch(/Ouvre/);
-    expect(code).toMatch(/Week-end/);
+    expect(code).toMatch(/Jours ouvres/);
+    expect(code).toMatch(/Week-ends/);
   });
 
   it('SignaturePanel renders drill-down AreaChart for selected cell', () => {
@@ -551,5 +551,109 @@ describe('AT · P1-3 overlay meteo UTC', () => {
   it('backend weather_hourly returns Z suffix timestamps', () => {
     const ems = readBackend('routes', 'ems.py');
     expect(ems).toMatch(/:00:00Z/);
+  });
+});
+
+// ============================================================
+// AU. P1.1 — Polish UX labels + tooltips + confidence
+// ============================================================
+describe('AU · P1.1 polish labels & tooltips', () => {
+  it('BenchmarkPanel uses "courbe moyenne de sites similaires" label', () => {
+    const code = readSrc('pages', 'consumption', 'BenchmarkPanel.jsx');
+    expect(code).toMatch(/courbe moyenne de sites similaires/);
+  });
+
+  it('BenchmarkPanel KPI shows "Votre consommation" and "Moyenne sites similaires"', () => {
+    const code = readSrc('pages', 'consumption', 'BenchmarkPanel.jsx');
+    expect(code).toMatch(/Votre consommation/);
+    expect(code).toMatch(/Moyenne sites similaires/);
+  });
+
+  it('BenchmarkPanel has confidence tooltip with HelpCircle', () => {
+    const code = readSrc('pages', 'consumption', 'BenchmarkPanel.jsx');
+    expect(code).toMatch(/Comment calcule/);
+    expect(code).toMatch(/HelpCircle/);
+  });
+
+  it('BenchmarkPanel KPI shows source (releves / profil statistique)', () => {
+    const code = readSrc('pages', 'consumption', 'BenchmarkPanel.jsx');
+    expect(code).toMatch(/Source : releves/);
+    expect(code).toMatch(/Profil statistique/);
+  });
+
+  it('ConsoKpiHeader has EUR source (Estime HP/HC)', () => {
+    const code = readSrc('components', 'ConsoKpiHeader.jsx');
+    expect(code).toMatch(/Estime HP\/HC/);
+    expect(code).toMatch(/eurSource/);
+  });
+
+  it('ConsoKpiHeader has confidence tooltip with HelpCircle', () => {
+    const code = readSrc('components', 'ConsoKpiHeader.jsx');
+    expect(code).toMatch(/Comment calcule/);
+    expect(code).toMatch(/HelpCircle/);
+  });
+
+  it('ConsoKpiHeader KPI tiles have tooltip prop', () => {
+    const code = readSrc('components', 'ConsoKpiHeader.jsx');
+    expect(code).toMatch(/tooltip=/);
+    // At least 6 tooltip props (one per tile) — some use template literals
+    const matches = code.match(/tooltip[=]/g);
+    expect(matches?.length).toBeGreaterThanOrEqual(6);
+  });
+
+  it('SignaturePanel uses "Jours ouvres" and "Week-ends" labels', () => {
+    const code = readSrc('pages', 'consumption', 'SignaturePanel.jsx');
+    expect(code).toMatch(/Jours ouvres/);
+    expect(code).toMatch(/Week-ends/);
+  });
+
+  it('HeatmapChart uses "consommation moyenne" label', () => {
+    const code = readSrc('pages', 'consumption', 'HeatmapChart.jsx');
+    expect(code).toMatch(/consommation moyenne/);
+  });
+
+  it('MeteoPanel has weather source badge (reelle vs synthetique)', () => {
+    const code = readSrc('pages', 'consumption', 'MeteoPanel.jsx');
+    expect(code).toMatch(/Meteo reelle/);
+    expect(code).toMatch(/Meteo synthetique/);
+    expect(code).toMatch(/isRealWeather/);
+  });
+});
+
+// ============================================================
+// AV. P1.1 — Drill-down CTAs (Analyser + Voir facture)
+// ============================================================
+describe('AV · P1.1 drill-down CTAs', () => {
+  it('SignaturePanel imports deepLinkWithContext', () => {
+    const code = readSrc('pages', 'consumption', 'SignaturePanel.jsx');
+    expect(code).toMatch(/deepLinkWithContext/);
+  });
+
+  it('SignaturePanel has "Analyser ce creneau" CTA linking to /diagnostic-conso', () => {
+    const code = readSrc('pages', 'consumption', 'SignaturePanel.jsx');
+    expect(code).toMatch(/Analyser ce creneau/);
+    expect(code).toMatch(/diagnostic-conso/);
+  });
+
+  it('SignaturePanel has "Voir facture" CTA with deepLinkWithContext', () => {
+    const code = readSrc('pages', 'consumption', 'SignaturePanel.jsx');
+    expect(code).toMatch(/Voir facture/);
+    expect(code).toMatch(/deepLinkWithContext.*primarySiteId/);
+  });
+
+  it('SignaturePanel uses primarySiteId from siteIds for CTAs', () => {
+    const code = readSrc('pages', 'consumption', 'SignaturePanel.jsx');
+    expect(code).toMatch(/primarySiteId.*=.*siteIds/);
+  });
+
+  it('SignaturePanel passes site_id and hour to diagnostic link', () => {
+    const code = readSrc('pages', 'consumption', 'SignaturePanel.jsx');
+    expect(code).toMatch(/site_id=.*primarySiteId/);
+    expect(code).toMatch(/hour=.*drillDown\.hour/);
+  });
+
+  it('ConsumptionExplorerPage passes siteIds to SignaturePanel (scope coherence)', () => {
+    const explorer = readSrc('pages', 'ConsumptionExplorerPage.jsx');
+    expect(explorer).toMatch(/SignaturePanel siteIds=\{siteIds\}/);
   });
 });

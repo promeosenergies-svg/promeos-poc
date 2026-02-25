@@ -1,8 +1,12 @@
 /**
- * PROMEOS — SignaturePanel (Sprint V21)
- * Heatmap weekday × hour showing average kWh consumption pattern.
+ * PROMEOS — SignaturePanel (Sprint P1.1)
+ * Heatmap weekday x hour showing average kWh consumption pattern.
  * Uses its own useEmsTimeseries call (hourly, 90 days) — independent of main granularity.
  * Reuses HeatmapChart from consumption/HeatmapChart.jsx.
+ *
+ * P1.1: FR labels (Jours ouvres / Week-ends), drill-down CTAs
+ *   "Analyser ce creneau" → /diagnostic-conso?site_id=X
+ *   "Voir facture" → deepLinkWithContext(siteId, month)
  *
  * Props:
  *   siteIds     — selected site IDs
@@ -16,10 +20,11 @@ import {
 import useEmsTimeseries from './useEmsTimeseries';
 import HeatmapChart from './HeatmapChart';
 import { Card, CardBody } from '../../ui';
-import { BarChart3 } from 'lucide-react';
+import { BarChart3, ArrowRight, FileText } from 'lucide-react';
+import { deepLinkWithContext } from '../../services/deepLink';
 
 // French weekday index: 0=Mon, 1=Tue, ..., 5=Sat, 6=Sun
-// JS getDay(): 0=Sun, 1=Mon, ..., 6=Sat → convert: frDay = (jsDay + 6) % 7
+// JS getDay(): 0=Sun, 1=Mon, ..., 6=Sat -> convert: frDay = (jsDay + 6) % 7
 function toFrDay(jsDay) {
   return (jsDay + 6) % 7;
 }
@@ -35,12 +40,12 @@ function getHpHc(frDay, hour) {
 /**
  * Aggregate raw series data into HeatmapChart format.
  * @param {Array} seriesData — raw series from useEmsTimeseries
- * @returns {Array<{day, hour, avg_kwh, period}>} — 7×24 cells (only non-zero)
+ * @returns {Array<{day, hour, avg_kwh, period}>} — 7x24 cells (only non-zero)
  */
 export function aggregateToHeatmap(seriesData) {
   if (!seriesData?.length || !seriesData[0]?.data?.length) return [];
 
-  const matrix = {}; // `${frDay}-${hour}` → { sum, count }
+  const matrix = {}; // `${frDay}-${hour}` -> { sum, count }
 
   for (const point of seriesData[0].data) {
     if (point.v == null || isNaN(point.v)) continue;
@@ -84,9 +89,11 @@ export default function SignaturePanel({ siteIds = [], energyType = 'electricity
 
   const heatmapData = useMemo(() => aggregateToHeatmap(seriesData), [seriesData]);
 
-  // P1-2: Filter ouvre/weekend + drill-down state
+  // P1-2: Filter ouvres/week-ends + drill-down state
   const [dayFilter, setDayFilter] = useState('all');
   const [drillDown, setDrillDown] = useState(null);
+
+  const primarySiteId = siteIds?.[0] || null;
 
   // Build drill-down chart data from raw series for clicked day+hour
   const drillDownData = useMemo(() => {
@@ -102,6 +109,7 @@ export default function SignaturePanel({ siteIds = [], energyType = 'electricity
       if (frDay === drillDown.day && hour === drillDown.hour) {
         points.push({
           date: d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
+          rawDate: d.toISOString().slice(0, 7), // YYYY-MM for deep link
           kwh: Math.round(pt.v * 100) / 100,
         });
       }
@@ -133,16 +141,19 @@ export default function SignaturePanel({ siteIds = [], energyType = 'electricity
           <BarChart3 size={28} className="text-blue-400" />
         </div>
         <h3 className="text-base font-semibold text-gray-700 mb-1">
-          Données insuffisantes pour la signature
+          Donnees insuffisantes pour la signature
         </h3>
         <p className="text-sm text-gray-500 max-w-xs">
-          La signature horaire nécessite au moins 48 heures de données. Importez ou générez des données pour ce site.
+          La signature horaire necessite au moins 48 heures de donnees. Importez ou generez des donnees pour ce site.
         </p>
       </div>
     );
   }
 
   const totalPoints = meta?.n_points || heatmapData.length;
+
+  // Most recent month from drillDownData for deep-link
+  const drillMonth = drillDownData.length > 0 ? drillDownData[drillDownData.length - 1].rawDate : null;
 
   return (
     <div className="space-y-3">
@@ -153,7 +164,7 @@ export default function SignaturePanel({ siteIds = [], energyType = 'electricity
           <p className="text-xs text-gray-500">Moyenne kWh par creneau horaire (90 derniers jours)</p>
         </div>
         <div className="flex items-center gap-2">
-          {/* P1-2: Day filter pills */}
+          {/* P1-2: Day filter pills — FR labels */}
           {['all', 'weekday', 'weekend'].map(f => (
             <button
               key={f}
@@ -162,7 +173,7 @@ export default function SignaturePanel({ siteIds = [], energyType = 'electricity
                 dayFilter === f ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              {f === 'all' ? 'Semaine typique' : f === 'weekday' ? 'Ouvre' : 'Week-end'}
+              {f === 'all' ? 'Semaine typique' : f === 'weekday' ? 'Jours ouvres' : 'Week-ends'}
             </button>
           ))}
           <span className="text-xs text-gray-400 ml-2">{totalPoints.toLocaleString('fr-FR')} pts</span>
@@ -177,7 +188,7 @@ export default function SignaturePanel({ siteIds = [], energyType = 'electricity
         onCellClick={(cell) => setDrillDown(cell)}
       />
 
-      {/* P1-2: Drill-down chart for selected cell */}
+      {/* Drill-down chart for selected cell */}
       {drillDown && drillDownData.length > 0 && (
         <Card>
           <CardBody>
@@ -204,6 +215,28 @@ export default function SignaturePanel({ siteIds = [], energyType = 'electricity
             <p className="text-[10px] text-gray-400 mt-1">
               {drillDownData.length} points sur 90 jours pour {drillDown.dayLabel} a {drillDown.hour}h
             </p>
+
+            {/* P1.1: Cross-brique CTAs */}
+            <div className="flex items-center gap-3 mt-3 pt-3 border-t border-gray-100">
+              {primarySiteId && (
+                <a
+                  href={`/diagnostic-conso?site_id=${primarySiteId}&hour=${drillDown.hour}&day_type=${drillDown.day < 5 ? 'weekday' : 'weekend'}`}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition"
+                >
+                  <ArrowRight size={12} />
+                  Analyser ce creneau
+                </a>
+              )}
+              {primarySiteId && drillMonth && (
+                <a
+                  href={deepLinkWithContext(primarySiteId, drillMonth)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
+                >
+                  <FileText size={12} />
+                  Voir facture
+                </a>
+              )}
+            </div>
           </CardBody>
         </Card>
       )}
@@ -214,8 +247,8 @@ export default function SignaturePanel({ siteIds = [], energyType = 'electricity
 
       {/* Legend note */}
       <p className="text-[11px] text-gray-400">
-        HP = Heures Pleines (lun-ven 6h-22h) · HC = Heures Creuses (nuits + week-end)
-        · Intensite = conso moyenne par creneau
+        HP = Heures Pleines (lun-ven 6h-22h) · HC = Heures Creuses (nuits + week-ends)
+        · Intensite = consommation moyenne par creneau
       </p>
     </div>
   );
