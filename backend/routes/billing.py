@@ -1066,6 +1066,7 @@ def get_billing_periods(
                 "missing_reason": mc.missing_reason,
                 "energy_kwh": mc.energy_kwh,   # P0-2
                 "pdl_prm": mc.pdl_prm,         # P0-2
+                "invoice_ids": mc.invoice_ids,  # V70
             }
             for mc in page
         ],

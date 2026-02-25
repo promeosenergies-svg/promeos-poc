@@ -265,7 +265,7 @@ export default function BillingPage() {
     if (!file) return;
     if (isExpert) console.log('[BillingPage] CSV file selected:', file.name, importContext);
     try {
-      await importInvoicesCsv(file, importContext?.siteId);
+      await importInvoicesCsv(file);
       toast('Import CSV réussi', 'success');
       fetchAll(siteFilter, 0, false);
     } catch (err) {
@@ -281,7 +281,7 @@ export default function BillingPage() {
     if (!file) return;
     if (isExpert) console.log('[BillingPage] PDF file selected:', file.name, importContext);
     try {
-      await importInvoicesPdf(file, importContext?.siteId);
+      await importInvoicesPdf(importContext?.siteId, file);
       toast('Import PDF réussi', 'success');
       fetchAll(siteFilter, 0, false);
     } catch (err) {
@@ -549,6 +549,7 @@ export default function BillingPage() {
                 activeMonth={activeMonth}
                 onCreateAction={handleCreateAction}
                 createdActions={createdActions}
+                onImport={handleImportClick}
               />
               {hasMore && (
                 <div className="mt-4 text-center">

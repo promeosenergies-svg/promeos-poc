@@ -770,3 +770,89 @@ describe('BillingPage — Import Contextuel (V70)', () => {
     expect(code).toMatch(/setImportContext\(\s*null\s*\)/);
   });
 });
+
+
+// ============================================================
+// W. BillingTimeline — CTA Voir avec deepLink (V70)
+// ============================================================
+describe('BillingTimeline — CTA Voir + deepLink (V70)', () => {
+  const code = readSrc('components', 'BillingTimeline.jsx');
+
+  it('imports deepLinkWithContext from services/deepLink', () => {
+    expect(code).toMatch(/import\s*\{[^}]*deepLinkWithContext[^}]*\}\s*from\s*['"]\.\.\/services\/deepLink['"]/);
+  });
+
+  it('uses deepLinkWithContext in handleView', () => {
+    expect(code).toMatch(/deepLinkWithContext\s*\(/);
+  });
+
+  it('passes invoice_ids to deepLinkWithContext (single invoice → detail)', () => {
+    expect(code).toMatch(/invoice_ids/);
+    expect(code).toMatch(/ids\.length\s*===\s*1/);
+  });
+
+  it('renders Eye icon in Voir button', () => {
+    expect(code).toMatch(/Eye/);
+    expect(code).toMatch(/Voir/);
+  });
+
+  it('accepts onImport prop and calls it for CSV/PDF', () => {
+    expect(code).toMatch(/onImport\s*\(/);
+    expect(code).toMatch(/handleImportCsv/);
+    expect(code).toMatch(/handleImportPdf/);
+  });
+
+  it('renders separate CSV and PDF import buttons for non-covered periods', () => {
+    expect(code).toMatch(/CSV/);
+    expect(code).toMatch(/PDF/);
+  });
+});
+
+
+// ============================================================
+// X. deepLink helper — deepLinkWithContext (V70)
+// ============================================================
+describe('deepLink.js — deepLinkWithContext (V70)', () => {
+  const code = readSrc('services', 'deepLink.js');
+
+  it('exports deepLinkWithContext function', () => {
+    expect(code).toMatch(/export\s+function\s+deepLinkWithContext/);
+  });
+
+  it('builds URL with invoice_id param when invoiceId provided', () => {
+    expect(code).toMatch(/invoice_id/);
+  });
+
+  it('builds URL with site_id and month params', () => {
+    expect(code).toMatch(/site_id/);
+    expect(code).toMatch(/month/);
+  });
+
+  it('returns path to /bill-intel', () => {
+    expect(code).toMatch(/\/bill-intel/);
+  });
+});
+
+
+// ============================================================
+// Y. NavRegistry — Timeline sous Facturation (V70)
+// ============================================================
+describe('NavRegistry — Timeline sous Facturation (V70)', () => {
+  const code = readSrc('layout', 'NavRegistry.js');
+
+  it('Factures & anomalies appears before Timeline & couverture', () => {
+    const idxFactures = code.indexOf('Factures & anomalies');
+    const idxTimeline = code.indexOf('Timeline & couverture');
+    expect(idxFactures).toBeGreaterThan(-1);
+    expect(idxTimeline).toBeGreaterThan(-1);
+    expect(idxFactures).toBeLessThan(idxTimeline);
+  });
+
+  it('Timeline has indent: true', () => {
+    expect(code).toMatch(/\/billing[\s\S]{0,200}indent:\s*true/);
+  });
+
+  it('bill-intel label is Factures & anomalies', () => {
+    expect(code).toMatch(/\/bill-intel[\s\S]{0,150}Factures & anomalies/);
+  });
+});

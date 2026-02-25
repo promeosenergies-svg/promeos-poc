@@ -36,6 +36,7 @@ class MonthCoverage:
     missing_reason: Optional[str]
     energy_kwh: Optional[float] = field(default=None)   # P0-2: somme kWh factures positives
     pdl_prm: Optional[str] = field(default=None)         # P0-2: PDL/PRM depuis raw_json
+    invoice_ids: List[int] = field(default_factory=list)  # V70: IDs factures du mois
 
 
 def _invoice_period(inv) -> Tuple[Optional[date], Optional[date]]:
@@ -156,6 +157,7 @@ def compute_coverage(invoices: list, range_start: date, range_end: date) -> List
             missing_reason=reason,
             energy_kwh=round(total_kwh, 1) if inv_in_month else None,  # P0-2
             pdl_prm=pdl_found,                                          # P0-2
+            invoice_ids=[inv.id for inv in inv_in_month],               # V70
         ))
 
     return results

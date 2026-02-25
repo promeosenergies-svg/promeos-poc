@@ -1,11 +1,15 @@
 /**
- * PROMEOS — BillingTimeline (V67)
+ * PROMEOS — BillingTimeline (V70)
  * Liste mensuelle des périodes de facturation.
- * Props: { periods, siteId, onCreateAction, createdActions }
+ * Props: { periods, siteId, onCreateAction, createdActions, activeMonth, onImport }
+ *
+ * CTA Voir: invoice_ids.length === 1 → détail facture, sinon → /bill-intel filtré.
+ * CTA Importer: appelle onImport(siteId, monthKey, type) → file picker parent.
  */
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle, AlertTriangle, XCircle, FileText, Upload, Zap } from 'lucide-react';
+import { CheckCircle, AlertTriangle, XCircle, FileText, Upload, Zap, Eye } from 'lucide-react';
 import { Button, Badge } from '../ui';
+import { deepLinkWithContext } from '../services/deepLink';
 
 const STATUS_CONFIG = {
   covered: {
@@ -50,7 +54,7 @@ function formatKwh(kwh) {
   return new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(kwh) + '\u00a0kWh';
 }
 
-function MonthRow({ period, siteId, onCreateAction, createdActions, activeMonth }) {
+function MonthRow({ period, siteId, onCreateAction, createdActions, activeMonth, onImport }) {
   const navigate = useNavigate();
   const cfg = STATUS_CONFIG[period.coverage_status] || STATUS_CONFIG.missing;
   const Icon = cfg.icon;
@@ -59,17 +63,17 @@ function MonthRow({ period, siteId, onCreateAction, createdActions, activeMonth 
   const isActive = activeMonth && period.month_key === activeMonth;
 
   const handleView = () => {
-    const params = new URLSearchParams();
-    if (siteId) params.set('site_id', siteId);
-    params.set('month', period.month_key);
-    navigate(`/bill-intel?${params.toString()}`);
+    const ids = period.invoice_ids || [];
+    const url = deepLinkWithContext(siteId, period.month_key, ids.length === 1 ? ids[0] : null);
+    navigate(url);
   };
 
-  const handleImport = () => {
-    const params = new URLSearchParams();
-    if (siteId) params.set('site_id', siteId);
-    params.set('month', period.month_key);
-    navigate(`/bill-intel?${params.toString()}`);
+  const handleImportCsv = () => {
+    if (onImport) onImport(siteId, period.month_key, 'csv');
+  };
+
+  const handleImportPdf = () => {
+    if (onImport) onImport(siteId, period.month_key, 'pdf');
   };
 
   return (
@@ -121,12 +125,17 @@ function MonthRow({ period, siteId, onCreateAction, createdActions, activeMonth 
       <div className="flex items-center gap-1 flex-shrink-0">
         {period.coverage_status === 'covered' ? (
           <Button size="xs" variant="ghost" onClick={handleView}>
-            Voir
+            <Eye size={11} /> Voir
           </Button>
         ) : (
-          <Button size="xs" variant="secondary" onClick={handleImport}>
-            <Upload size={11} /> Importer
-          </Button>
+          <>
+            <Button size="xs" variant="secondary" type="button" onClick={handleImportCsv}>
+              <Upload size={11} /> CSV
+            </Button>
+            <Button size="xs" variant="secondary" type="button" onClick={handleImportPdf}>
+              <Upload size={11} /> PDF
+            </Button>
+          </>
         )}
         {period.coverage_status !== 'covered' && onCreateAction && (
           <Button
@@ -144,7 +153,7 @@ function MonthRow({ period, siteId, onCreateAction, createdActions, activeMonth 
   );
 }
 
-export default function BillingTimeline({ periods = [], siteId, onCreateAction, createdActions, activeMonth }) {
+export default function BillingTimeline({ periods = [], siteId, onCreateAction, createdActions, activeMonth, onImport }) {
   if (periods.length === 0) {
     return (
       <div className="text-center py-8 text-sm text-gray-500">
@@ -163,6 +172,7 @@ export default function BillingTimeline({ periods = [], siteId, onCreateAction, 
           activeMonth={activeMonth}
           onCreateAction={onCreateAction}
           createdActions={createdActions}
+          onImport={onImport}
         />
       ))}
     </div>
