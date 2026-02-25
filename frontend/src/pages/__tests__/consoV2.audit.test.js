@@ -259,3 +259,113 @@ describe('AN · Granularity & data quality', () => {
     expect(svc).toMatch(/_detect_data_gap/);
   });
 });
+
+// ============================================================
+// AO. QW6 — Toast errors + empty states + skeletons
+// ============================================================
+describe('AO · QW6 toast errors & empty states', () => {
+  const explorer = readSrc('pages', 'ConsumptionExplorerPage.jsx');
+  const diag = readSrc('pages', 'ConsumptionDiagPage.jsx');
+  const monitoring = readSrc('pages', 'MonitoringPage.jsx');
+
+  it('ConsumptionExplorerPage imports useToast', () => {
+    expect(explorer).toMatch(/useToast/);
+  });
+
+  it('ConsumptionExplorerPage has no console.error', () => {
+    expect(explorer).not.toMatch(/console\.error/);
+  });
+
+  it('ConsumptionExplorerPage passes toast prop to panels', () => {
+    expect(explorer).toMatch(/toast=\{toast\}/);
+  });
+
+  it('ConsumptionExplorerPage SmartEmptyState has onGenerateDemo', () => {
+    expect(explorer).toMatch(/onGenerateDemo/);
+  });
+
+  it('ConsumptionExplorerPage SmartEmptyState has isExpert debug', () => {
+    expect(explorer).toMatch(/isExpert.*&&.*reasons/);
+  });
+
+  it('ConsumptionDiagPage has no console.error', () => {
+    expect(diag).not.toMatch(/console\.error/);
+  });
+
+  it('ConsumptionDiagPage uses SkeletonCard for loading', () => {
+    expect(diag).toMatch(/SkeletonCard/);
+  });
+
+  it('MonitoringPage has no console.error', () => {
+    expect(monitoring).not.toMatch(/console\.error/);
+  });
+
+  it('MonitoringPage uses SkeletonCard', () => {
+    expect(monitoring).toMatch(/SkeletonCard/);
+  });
+});
+
+// ============================================================
+// AP. QW2 — ConsoKpiHeader component
+// ============================================================
+describe('AP · QW2 ConsoKpiHeader', () => {
+  it('ConsoKpiHeader.jsx exists', () => {
+    expect(srcExists('components', 'ConsoKpiHeader.jsx')).toBe(true);
+  });
+
+  it('ConsoKpiHeader has 6 KPI tiles', () => {
+    const code = readSrc('components', 'ConsoKpiHeader.jsx');
+    expect(code).toMatch(/kWh total/);
+    expect(code).toMatch(/EUR total/);
+    expect(code).toMatch(/EUR\/MWh/);
+    expect(code).toMatch(/CO2e/);
+    expect(code).toMatch(/Pic kW.*P95/);
+    expect(code).toMatch(/Base nocturne/);
+  });
+
+  it('ConsoKpiHeader accepts tunnel + hphc + progression props', () => {
+    const code = readSrc('components', 'ConsoKpiHeader.jsx');
+    expect(code).toMatch(/tunnel/);
+    expect(code).toMatch(/hphc/);
+    expect(code).toMatch(/progression/);
+  });
+
+  it('ConsoKpiHeader has confidence badge', () => {
+    const code = readSrc('components', 'ConsoKpiHeader.jsx');
+    expect(code).toMatch(/TrustBadge|confidence/);
+  });
+
+  it('ConsumptionExplorerPage integrates ConsoKpiHeader', () => {
+    const explorer = readSrc('pages', 'ConsumptionExplorerPage.jsx');
+    expect(explorer).toMatch(/ConsoKpiHeader/);
+  });
+});
+
+// ============================================================
+// AQ. QW5 — Deep-link "Voir facture" from diagnostic
+// ============================================================
+describe('AQ · QW5 deep-link facture', () => {
+  const diag = readSrc('pages', 'ConsumptionDiagPage.jsx');
+
+  it('imports deepLinkWithContext', () => {
+    expect(diag).toMatch(/deepLinkWithContext/);
+  });
+
+  it('has onViewInvoice handler', () => {
+    expect(diag).toMatch(/handleViewInvoice|onViewInvoice/);
+  });
+
+  it('EvidenceDrawer has "Voir facture" CTA', () => {
+    expect(diag).toMatch(/Voir facture/);
+  });
+
+  it('navigates to /bill-intel with context', () => {
+    expect(diag).toMatch(/deepLinkWithContext/);
+  });
+
+  it('deepLink.js exports deepLinkWithContext and deepLinkNewAction', () => {
+    const dl = readSrc('services', 'deepLink.js');
+    expect(dl).toMatch(/export function deepLinkWithContext/);
+    expect(dl).toMatch(/export function deepLinkNewAction/);
+  });
+});

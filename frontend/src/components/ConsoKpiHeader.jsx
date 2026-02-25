@@ -1,0 +1,93 @@
+/**
+ * PROMEOS — ConsoKpiHeader (QW2)
+ * 6-KPI header row for ConsumptionExplorerPage.
+ * Reads motor data (tunnel, hphc, progression) to compute:
+ *   kWh total, EUR total, EUR/MWh, CO2e, Pic kW (P95), Base nocturne %
+ * Respects scope global (site + period) via motor props.
+ */
+import { Zap, Euro, TrendingUp, Leaf, Activity, Moon } from 'lucide-react';
+import { TrustBadge } from '../ui';
+
+const CO2E_FACTOR = 0.052; // kgCO2e/kWh (ADEME 2024 France electricity mix)
+
+function KpiTile({ icon: Icon, label, value, sub, color = 'text-gray-900' }) {
+  return (
+    <div className="flex items-center gap-3 bg-white rounded-xl border border-gray-200 px-4 py-3 min-w-0">
+      <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+        <Icon size={18} className="text-gray-500" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium truncate">{label}</p>
+        <p className={`text-lg font-bold ${color} truncate leading-tight`}>{value ?? '—'}</p>
+        {sub && <p className="text-[11px] text-gray-400 truncate">{sub}</p>}
+      </div>
+    </div>
+  );
+}
+
+export default function ConsoKpiHeader({ tunnel, hphc, progression, confidence }) {
+  // --- kWh total ---
+  const totalKwh = tunnel?.total_kwh ?? progression?.ytd_actual_kwh ?? null;
+  const kwhLabel = totalKwh != null ? `${Math.round(totalKwh).toLocaleString('fr-FR')} kWh` : '—';
+
+  // --- EUR total (from hphc or progression) ---
+  const totalEur = hphc?.total_cost_eur ?? null;
+  const eurLabel = totalEur != null ? `${Math.round(totalEur).toLocaleString('fr-FR')} EUR` : '—';
+
+  // --- EUR/MWh réel ---
+  const eurMwh = totalEur != null && totalKwh > 0
+    ? Math.round((totalEur / totalKwh) * 1000 * 100) / 100
+    : null;
+  const eurMwhLabel = eurMwh != null ? `${eurMwh.toLocaleString('fr-FR')} EUR/MWh` : '—';
+
+  // --- CO2e ---
+  const co2Kg = totalKwh != null ? Math.round(totalKwh * CO2E_FACTOR) : null;
+  const co2Label = co2Kg != null ? `${co2Kg.toLocaleString('fr-FR')} kg` : '—';
+
+  // --- Pic kW (P95 from tunnel envelope) ---
+  const p95 = (() => {
+    if (!tunnel?.envelope) return null;
+    const slots = tunnel.envelope.weekday || tunnel.envelope.weekend || [];
+    if (!slots.length) return null;
+    return Math.max(...slots.map(s => s.p95 ?? s.p90 ?? 0));
+  })();
+  const p95Label = p95 != null ? `${Math.round(p95).toLocaleString('fr-FR')} kW` : '—';
+
+  // --- Base nocturne % (ratio of night hours P50 vs overall P50) ---
+  const basePct = (() => {
+    if (!tunnel?.envelope?.weekday) return null;
+    const slots = tunnel.envelope.weekday;
+    if (slots.length < 24) return null;
+    const nightSlots = slots.filter(s => s.hour < 6 || s.hour >= 22);
+    const daySlots = slots.filter(s => s.hour >= 6 && s.hour < 22);
+    const nightAvg = nightSlots.reduce((s, x) => s + (x.p50 || 0), 0) / (nightSlots.length || 1);
+    const dayAvg = daySlots.reduce((s, x) => s + (x.p50 || 0), 0) / (daySlots.length || 1);
+    if (dayAvg === 0) return null;
+    return Math.round((nightAvg / dayAvg) * 100);
+  })();
+  const basePctLabel = basePct != null ? `${basePct}%` : '—';
+  const basePctColor = basePct != null
+    ? (basePct > 60 ? 'text-red-600' : basePct > 40 ? 'text-amber-600' : 'text-green-600')
+    : 'text-gray-900';
+
+  const confBadge = confidence
+    ? { high: { label: 'Haute', variant: 'ok' }, medium: { label: 'Moyenne', variant: 'warn' }, low: { label: 'Basse', variant: 'crit' } }[confidence] || null
+    : null;
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <h3 className="text-sm font-semibold text-gray-600">KPIs Consommation</h3>
+        {confBadge && <TrustBadge level={confBadge.variant} label={`Confiance ${confBadge.label}`} size="sm" />}
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <KpiTile icon={Zap} label="kWh total" value={kwhLabel} />
+        <KpiTile icon={Euro} label="EUR total" value={eurLabel} />
+        <KpiTile icon={TrendingUp} label="EUR/MWh" value={eurMwhLabel} />
+        <KpiTile icon={Leaf} label="CO2e" value={co2Label} sub="ADEME 2024" />
+        <KpiTile icon={Activity} label="Pic kW (P95)" value={p95Label} />
+        <KpiTile icon={Moon} label="Base nocturne" value={basePctLabel} color={basePctColor} />
+      </div>
+    </div>
+  );
+}

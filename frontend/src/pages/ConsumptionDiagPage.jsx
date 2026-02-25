@@ -18,12 +18,13 @@ import {
 } from '../services/api';
 import { useScope } from '../contexts/ScopeContext';
 import { normalizeId } from './consumption/helpers';
-import { Card, CardBody, Badge, Button, PageShell, Drawer, Tooltip, Tabs } from '../ui';
+import { Card, CardBody, Badge, Button, PageShell, Drawer, Tooltip, Tabs, SkeletonCard } from '../ui';
 import { useToast } from '../ui/ToastProvider';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { track } from '../services/tracker';
 import CreateActionModal from '../components/CreateActionModal';
 import { fmtEur, fmtKwh, fmtDateFR } from '../utils/format';
+import { deepLinkWithContext, deepLinkNewAction } from '../services/deepLink';
 import { SEVERITY_TINT } from '../ui/colorTokens';
 import {
   Zap, ChevronDown, ChevronUp, Settings, Info, Leaf,
@@ -429,7 +430,7 @@ function FlexTab({ siteId }) {
 
 // ---- Evidence Drawer ----
 
-function EvidenceDrawer({ insight, open, onClose, onStatusChange, onCreateAction, onOpenExplorer }) {
+function EvidenceDrawer({ insight, open, onClose, onStatusChange, onCreateAction, onOpenExplorer, onViewInvoice }) {
   const [tab, setTab] = useState('evidence');
   if (!insight) return null;
 
@@ -503,6 +504,14 @@ function EvidenceDrawer({ insight, open, onClose, onStatusChange, onCreateAction
           >
             <BarChart3 size={15} className="text-blue-600" />
             Ouvrir dans Explorer
+            <ExternalLink size={12} className="ml-auto text-gray-300" />
+          </button>
+          <button
+            onClick={() => onViewInvoice(insight)}
+            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+          >
+            <ExternalLink size={15} className="text-emerald-600" />
+            Voir facture
             <ExternalLink size={12} className="ml-auto text-gray-300" />
           </button>
           <button
@@ -708,6 +717,13 @@ export default function ConsumptionDiagPage() {
     navigate(`/consommations/explorer?${params.toString()}`);
   }, [navigate]);
 
+  // View invoice (deep-link)
+  const handleViewInvoice = useCallback((insight) => {
+    const month = insight.period_start ? insight.period_start.slice(0, 7) : null;
+    navigate(deepLinkWithContext(insight.site_id, month));
+    track('insight_view_invoice', { type: insight.type, id: insight.id, site_id: insight.site_id });
+  }, [navigate]);
+
   // Save action
   const handleSaveAction = useCallback((action) => {
     track('action_create_from_diagnostic', { titre: action.titre });
@@ -777,7 +793,9 @@ export default function ConsumptionDiagPage() {
       )}
 
       {loading ? (
-        <div className="text-center py-16 text-gray-400">Chargement...</div>
+        <div className="grid grid-cols-5 gap-4 mb-6">
+          {[1, 2, 3, 4, 5].map(i => <SkeletonCard key={i} />)}
+        </div>
       ) : !summary || filteredInsights.length === 0 ? (
         <Card>
           <CardBody className="text-center py-12">
@@ -860,6 +878,7 @@ export default function ConsumptionDiagPage() {
         onStatusChange={handleStatusChange}
         onCreateAction={handleCreateAction}
         onOpenExplorer={handleOpenExplorer}
+        onViewInvoice={handleViewInvoice}
       />
 
       {/* Create Action Modal */}
