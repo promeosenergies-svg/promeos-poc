@@ -834,3 +834,175 @@ def purge_ems_demo(db: Session = Depends(get_db)):
         "deleted_readings": deleted_readings,
         "deleted_weather": deleted_weather,
     }
+
+
+# -------------------------------------------------------------------
+# P1-1: Reference profile (courbe de référence grand public)
+# -------------------------------------------------------------------
+REFERENCE_PROFILES = {
+    # famille → puissance_class → hourly profile (24 values, kWh)
+    "habitat": {
+        "0-6":   [0.3]*6 + [0.8,1.2,1.5,1.0,0.7,0.5,0.6,0.8,1.0,1.2,1.5,1.8,2.0,1.8,1.3,0.8,0.5,0.4],
+        "6-9":   [0.5]*6 + [1.2,2.0,2.5,1.8,1.2,0.8,1.0,1.4,1.8,2.2,2.8,3.5,3.8,3.2,2.2,1.4,0.8,0.6],
+        "9-12":  [0.8]*6 + [1.8,3.0,3.8,2.8,1.8,1.2,1.5,2.2,2.8,3.5,4.2,5.0,5.5,4.8,3.5,2.0,1.2,0.9],
+        "12-36": [1.2]*6 + [2.5,4.5,5.5,4.0,2.8,2.0,2.5,3.5,4.5,5.5,6.5,7.5,8.0,7.0,5.0,3.2,2.0,1.5],
+        ">36":   [2.0]*6 + [4.0,7.0,8.5,6.5,4.5,3.2,4.0,5.5,7.0,8.5,10.0,12.0,12.5,11.0,8.0,5.0,3.0,2.2],
+    },
+    "petit_tertiaire": {
+        "0-6":   [0.2]*6 + [0.5,1.5,2.5,3.0,3.2,3.0,2.8,3.0,3.2,3.0,2.5,1.5,0.5,0.3,0.2,0.2,0.2,0.2],
+        "6-9":   [0.3]*6 + [0.8,2.5,4.0,5.0,5.5,5.0,4.5,5.0,5.5,5.0,4.0,2.5,0.8,0.5,0.3,0.3,0.3,0.3],
+        "9-12":  [0.5]*6 + [1.2,3.5,6.0,7.5,8.0,7.5,6.8,7.5,8.0,7.5,6.0,3.5,1.2,0.8,0.5,0.5,0.5,0.5],
+        "12-36": [0.8]*6 + [2.0,5.5,9.0,11.0,12.0,11.5,10.0,11.5,12.0,11.0,9.0,5.5,2.0,1.2,0.8,0.8,0.8,0.8],
+        ">36":   [1.5]*6 + [3.5,9.0,14.0,17.0,18.0,17.5,16.0,17.5,18.0,17.0,14.0,9.0,3.5,2.0,1.5,1.5,1.5,1.5],
+    },
+    "entreprise": {
+        "0-6":   [1.0]*6 + [2.0,5.0,8.0,10.0,11.0,11.5,11.0,11.5,11.0,10.0,8.0,5.0,2.0,1.5,1.2,1.0,1.0,1.0],
+        "6-9":   [1.5]*6 + [3.0,7.5,12.0,15.0,16.5,17.0,16.0,17.0,16.5,15.0,12.0,7.5,3.0,2.0,1.8,1.5,1.5,1.5],
+        "9-12":  [2.5]*6 + [5.0,12.0,19.0,24.0,26.0,27.0,25.5,27.0,26.0,24.0,19.0,12.0,5.0,3.5,2.8,2.5,2.5,2.5],
+        "12-36": [4.0]*6 + [8.0,18.0,28.0,35.0,38.0,40.0,38.0,40.0,38.0,35.0,28.0,18.0,8.0,5.0,4.5,4.0,4.0,4.0],
+        ">36":   [6.0]*6 + [12.0,28.0,42.0,52.0,56.0,58.0,55.0,58.0,56.0,52.0,42.0,28.0,12.0,8.0,6.5,6.0,6.0,6.0],
+    },
+}
+
+
+@router.get("/reference_profile")
+def get_reference_profile(
+    site_id: int = Query(...),
+    date_from: str = Query(...),
+    date_to: str = Query(...),
+    famille: str = Query("entreprise", description="habitat | petit_tertiaire | entreprise"),
+    puissance: str = Query("9-12", description="0-6 | 6-9 | 9-12 | 12-36 | >36"),
+    granularity: str = Query("hourly", description="hourly | daily"),
+    db: Session = Depends(get_db),
+):
+    """
+    Generate a reference profile curve for the requested period.
+    Returns a timeseries of expected consumption based on (famille, puissance class).
+    Also returns KPI delta vs actual consumption if site has data.
+    """
+    from datetime import date as date_cls, timedelta
+    from services.ems.timeseries_service import query_timeseries
+
+    df = date_cls.fromisoformat(date_from)
+    dt_to = date_cls.fromisoformat(date_to)
+
+    # Build reference series
+    family_profiles = REFERENCE_PROFILES.get(famille, REFERENCE_PROFILES["entreprise"])
+    hourly_profile = family_profiles.get(puissance, family_profiles["9-12"])
+
+    ref_series = []
+    current = df
+    while current <= dt_to:
+        dow = current.weekday()  # 0=Mon, 6=Sun
+        is_weekend = dow >= 5
+        for hour in range(24):
+            base_kwh = hourly_profile[hour]
+            # Weekend factor: 40% for tertiaire/entreprise, 110% for habitat
+            if is_weekend:
+                factor = 1.1 if famille == "habitat" else 0.4
+                base_kwh = base_kwh * factor
+            ref_series.append({
+                "t": f"{current.isoformat()} {hour:02d}:00:00",
+                "v": round(base_kwh, 2),
+            })
+        current += timedelta(days=1)
+
+    # Aggregate to daily if requested
+    if granularity == "daily":
+        daily = {}
+        for pt in ref_series:
+            day = pt["t"][:10]
+            daily[day] = daily.get(day, 0) + pt["v"]
+        ref_series = [{"t": d, "v": round(v, 1)} for d, v in sorted(daily.items())]
+
+    # Get actual consumption for KPI delta
+    kpi = None
+    try:
+        ts_data = query_timeseries(
+            db, [site_id], None,
+            datetime.combine(df, datetime.min.time()),
+            datetime.combine(dt_to, datetime.min.time()),
+            granularity if granularity != "hourly" else "daily",
+            "aggregate", "kwh",
+        )
+        if ts_data["series"] and ts_data["series"][0]["data"]:
+            actual_total = sum(p["v"] for p in ts_data["series"][0]["data"] if p.get("v"))
+            ref_total = sum(p["v"] for p in ref_series)
+            delta_kwh = actual_total - ref_total
+            delta_pct = round(delta_kwh / ref_total * 100, 1) if ref_total > 0 else 0
+            # Confidence based on actual data coverage
+            n_actual = len([p for p in ts_data["series"][0]["data"] if p.get("v")])
+            n_expected = len(ref_series)
+            coverage = min(100, round(n_actual / max(n_expected, 1) * 100))
+            confidence = "high" if coverage >= 80 else "medium" if coverage >= 50 else "low"
+            kpi = {
+                "actual_kwh": round(actual_total, 1),
+                "reference_kwh": round(ref_total, 1),
+                "delta_kwh": round(delta_kwh, 1),
+                "delta_pct": delta_pct,
+                "coverage_pct": coverage,
+                "confidence": confidence,
+            }
+    except Exception:
+        pass
+
+    return {
+        "famille": famille,
+        "puissance": puissance,
+        "granularity": granularity,
+        "series": ref_series,
+        "kpi": kpi,
+    }
+
+
+# -------------------------------------------------------------------
+# P1-3: Weather sub-hourly UTC (for consumption overlay)
+# -------------------------------------------------------------------
+@router.get("/weather_hourly")
+def get_weather_hourly(
+    site_id: int = Query(...),
+    date_from: str = Query(...),
+    date_to: str = Query(...),
+    db: Session = Depends(get_db),
+):
+    """
+    Returns hourly temperature data in UTC for consumption overlay.
+    Interpolates from daily min/max with sinusoidal intraday pattern.
+    All timestamps are UTC — no DST shifting.
+    """
+    from services.ems.weather_service import get_weather
+    from datetime import date as date_cls, timedelta
+    import math
+
+    df = date_cls.fromisoformat(date_from)
+    dt_to = date_cls.fromisoformat(date_to)
+
+    daily = get_weather(db, site_id, df, dt_to)
+    daily_map = {d["date"]: d for d in daily}
+
+    hours = []
+    current = df
+    while current <= dt_to:
+        day_str = current.isoformat()
+        day_data = daily_map.get(day_str)
+        if not day_data:
+            current += timedelta(days=1)
+            continue
+        t_min = day_data["temp_min_c"]
+        t_max = day_data["temp_max_c"]
+        t_avg = day_data["temp_avg_c"]
+        for h in range(24):
+            # Sinusoidal: min at 5h UTC, max at 15h UTC
+            phase = (h - 5) / 24 * 2 * math.pi
+            temp = t_avg + (t_max - t_min) / 2 * math.sin(phase)
+            hours.append({
+                "t": f"{day_str}T{h:02d}:00:00Z",
+                "temp_c": round(temp, 1),
+            })
+        current += timedelta(days=1)
+
+    return {
+        "site_id": site_id,
+        "timezone": "UTC",
+        "hours": hours,
+    }

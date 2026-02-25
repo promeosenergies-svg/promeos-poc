@@ -893,6 +893,8 @@ export const getEmsTimeseries = (params) => _cachedGet('/ems/timeseries', { para
 export const getEmsTimeseriesSuggest = (dateFrom, dateTo) => _cachedGet('/ems/timeseries/suggest', { params: { date_from: dateFrom, date_to: dateTo } }).then(r => r.data);
 export const getEmsWeather = (siteId, dateFrom, dateTo) => api.get('/ems/weather', { params: { site_id: siteId, date_from: dateFrom, date_to: dateTo } }).then(r => r.data);
 export const getEmsWeatherMulti = (siteIds, dateFrom, dateTo) => api.get('/ems/weather', { params: { site_ids: siteIds.join(','), date_from: dateFrom, date_to: dateTo } }).then(r => r.data);
+export const getEmsReferenceProfile = (siteId, dateFrom, dateTo, famille, puissance, granularity = 'daily') => api.get('/ems/reference_profile', { params: { site_id: siteId, date_from: dateFrom, date_to: dateTo, famille, puissance, granularity } }).then(r => r.data);
+export const getEmsWeatherHourly = (siteId, dateFrom, dateTo) => api.get('/ems/weather_hourly', { params: { site_id: siteId, date_from: dateFrom, date_to: dateTo } }).then(r => r.data);
 export const runEmsSignature = (siteId, dateFrom, dateTo, meterIds = null) => api.post('/ems/signature/run', null, { params: { site_id: siteId, date_from: dateFrom, date_to: dateTo, meter_ids: meterIds } }).then(r => r.data);
 export const runEmsSignaturePortfolio = (siteIds, dateFrom, dateTo) => api.post('/ems/signature/portfolio', null, { params: { site_ids: siteIds.join(','), date_from: dateFrom, date_to: dateTo } }).then(r => r.data);
 export const getEmsViews = (userId = null) => api.get('/ems/views', { params: userId ? { user_id: userId } : {} }).then(r => r.data);

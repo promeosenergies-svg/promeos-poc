@@ -59,6 +59,7 @@ import SignaturePanel from './consumption/SignaturePanel';
 import MeteoPanel from './consumption/MeteoPanel';
 import InsightsPanel from './consumption/InsightsPanel';
 import ConsoKpiHeader from '../components/ConsoKpiHeader';
+import BenchmarkPanel from './consumption/BenchmarkPanel';
 
 // ========================================
 // Constants
@@ -1344,6 +1345,17 @@ export default function ConsumptionExplorerPage() {
               onGenerateDemo={siteIds.length ? handleGenerateDemo : undefined}
               onMeta={handleMeta}
             />
+            {/* Benchmark: reference profile comparison (Classic mode) */}
+            {showContent && (
+              <BenchmarkPanel
+                siteId={siteId}
+                days={days}
+                startDate={startDate}
+                endDate={endDate}
+                seriesData={null}
+                toast={toast}
+              />
+            )}
           ) : (
             /* ── Expert mode: tab bar always visible + panel routing ── */
             <>
@@ -1406,6 +1418,17 @@ export default function ConsumptionExplorerPage() {
                     onSelectAll={sites.length ? () => setSiteIds(sites.map(s => s.id)) : undefined}
                     onGenerateDemo={siteIds.length ? handleGenerateDemo : undefined}
                     onMeta={handleMeta}
+                  />
+                )}
+                {/* Benchmark: reference profile comparison — below timeseries */}
+                {activeTab === 'timeseries' && showContent && (
+                  <BenchmarkPanel
+                    siteId={siteId}
+                    days={days}
+                    startDate={startDate}
+                    endDate={endDate}
+                    seriesData={null}
+                    toast={toast}
                   />
                 )}
                 {/* Insights: statistical analysis — own data fetch, no Motor dependency */}
