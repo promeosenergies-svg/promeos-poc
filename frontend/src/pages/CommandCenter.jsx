@@ -14,6 +14,7 @@ import {
 import { Card, Button, SkeletonCard, PageShell, MetricCard, StatusDot, EmptyState, ErrorState, ScopeSummary } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { SEVERITY_TINT } from '../ui/colorTokens';
+import { toActionsList } from '../services/routes';
 import {
   getComplianceBundle, getActionsSummary, getActionsList,
   getNotificationsSummary,
@@ -239,7 +240,7 @@ export default function CommandCenter() {
           value={kpis.risque > 0 ? `${(kpis.risque / 1000).toFixed(0)}k€` : '0€'}
           sub={`${kpis.nonConformes + kpis.aRisque} sites à risque`}
           status={kpis.risqueStatus}
-          onClick={() => navigate('/actions')}
+          onClick={() => navigate(toActionsList())}
         />
         <MetricCard
           accent="alertes"

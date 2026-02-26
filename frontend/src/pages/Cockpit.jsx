@@ -12,6 +12,7 @@ import {
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import useRenderTiming from '../hooks/useRenderTiming';
+import { toActionsList } from '../services/routes';
 import { Button, Card, CardBody, PageShell, Progress, Modal, Pagination, StatusDot, Tabs, EmptyState, ScopeSummary } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { SkeletonCard, SkeletonTable } from '../ui/Skeleton';
@@ -244,7 +245,7 @@ const Cockpit = () => {
                 )}
               </div>
             </div>
-            <Button size="sm" onClick={() => navigate('/actions')}>
+            <Button size="sm" onClick={() => navigate(toActionsList())}>
               Plan d'action <ArrowRight size={14} />
             </Button>
           </div>
@@ -447,7 +448,7 @@ const Cockpit = () => {
           </div>
 
           <button
-            onClick={() => { setShowMaturiteModal(false); navigate('/actions'); }}
+            onClick={() => { setShowMaturiteModal(false); navigate(toActionsList()); }}
             className="w-full text-center py-2.5 bg-gray-50 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-100 transition"
           >
             Voir les actions

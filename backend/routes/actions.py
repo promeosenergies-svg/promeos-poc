@@ -37,6 +37,7 @@ class ActionCreate(BaseModel):
     """Schema for direct action creation from UI."""
     org_id: Optional[int] = None
     site_id: Optional[int] = None
+    campaign_sites: Optional[List[int]] = None
     source_type: str = "manual"
     source_id: Optional[str] = None
     title: str
@@ -87,10 +88,20 @@ def _resolve_org(request: Request, auth: Optional[AuthContext], db: Session, org
 
 
 def _serialize_action(a: ActionItem) -> dict:
+    # campaign_sites stored as JSON in notes field prefix "##CAMPAIGN:"
+    campaign_sites = None
+    if a.notes and a.notes.startswith("##CAMPAIGN:"):
+        import json as _json
+        try:
+            campaign_sites = _json.loads(a.notes.split("##CAMPAIGN:", 1)[1].split("\n", 1)[0])
+        except Exception:
+            pass
+
     return {
         "id": a.id,
         "org_id": a.org_id,
         "site_id": a.site_id,
+        "campaign_sites": campaign_sites,
         "source_type": a.source_type.value if a.source_type else None,
         "source_id": a.source_id,
         "source_key": a.source_key,
@@ -113,6 +124,9 @@ def _serialize_action(a: ActionItem) -> dict:
         "co2e_savings_est_kg": a.co2e_savings_est_kg,
         # V49
         "closure_justification": a.closure_justification,
+        # Timestamps
+        "created_at": a.created_at.isoformat() if a.created_at else None,
+        "updated_at": a.updated_at.isoformat() if a.updated_at else None,
     }
 
 
@@ -214,6 +228,12 @@ def create_action(
         f"{data.title}:{source_id}".encode()
     ).hexdigest()[:16]
 
+    # Encode campaign_sites into notes prefix (no schema migration needed)
+    import json as _json
+    notes = data.notes or ""
+    if data.campaign_sites:
+        notes = f"##CAMPAIGN:{_json.dumps(data.campaign_sites)}\n{notes}"
+
     item = ActionItem(
         org_id=oid,
         site_id=data.site_id,
@@ -228,7 +248,7 @@ def create_action(
         due_date=parsed_due,
         status=ActionStatus.OPEN,
         owner=data.owner,
-        notes=data.notes,
+        notes=notes,
         idempotency_key=data.idempotency_key,
         co2e_savings_est_kg=data.co2e_savings_est_kg,
     )

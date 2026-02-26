@@ -46,7 +46,8 @@ function mapBackendAction(a) {
     priorite: PRIO_TO_FE[a.priority] || 'medium',
     owner: a.owner,
     due_date: a.due_date,
-    created_at: null,
+    created_at: a.created_at || null,
+    campaign_sites: a.campaign_sites || null,
     _backend: a,
   };
 }
