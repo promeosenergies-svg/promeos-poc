@@ -138,3 +138,18 @@ export function toPatrimoine(opts = {}) {
 export function toConsoImport() {
   return '/consommations/import';
 }
+
+/**
+ * Compliance pipeline — portfolio view.
+ */
+export function toCompliancePipeline() {
+  return '/compliance/pipeline';
+}
+
+/**
+ * Compliance site detail — tabs (obligations, preuves, plan).
+ * @param {number|string} siteId
+ */
+export function toSiteCompliance(siteId) {
+  return `/compliance/sites/${siteId}`;
+}

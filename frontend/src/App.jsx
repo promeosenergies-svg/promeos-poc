@@ -52,6 +52,8 @@ const TertiaireWizardPage = lazy(() => import('./pages/tertiaire/TertiaireWizard
 const TertiaireEfaDetailPage = lazy(() => import('./pages/tertiaire/TertiaireEfaDetailPage'));
 const TertiaireAnomaliesPage = lazy(() => import('./pages/tertiaire/TertiaireAnomaliesPage'));
 const AnomaliesPage = lazy(() => import('./pages/AnomaliesPage'));
+const CompliancePipelinePage = lazy(() => import('./pages/CompliancePipelinePage'));
+const SiteCompliancePage = lazy(() => import('./pages/SiteCompliancePage'));
 
 function PageSuspense({ children }) {
   return (
@@ -119,6 +121,8 @@ function App() {
                   <Route path="/watchers" element={<PageSuspense><WatchersPage /></PageSuspense>} />
                   <Route path="/monitoring" element={<PageSuspense><MonitoringPage /></PageSuspense>} />
                   <Route path="/compliance" element={<PageSuspense><CompliancePage /></PageSuspense>} />
+                  <Route path="/compliance/pipeline" element={<PageSuspense><CompliancePipelinePage /></PageSuspense>} />
+                  <Route path="/compliance/sites/:siteId" element={<PageSuspense><SiteCompliancePage /></PageSuspense>} />
                   <Route path="/diagnostic-conso" element={<PageSuspense><ConsumptionDiagPage /></PageSuspense>} />
                   <Route path="/bill-intel" element={<PageSuspense><BillIntelPage /></PageSuspense>} />
                   <Route path="/billing" element={<PageSuspense><BillingPage /></PageSuspense>} />

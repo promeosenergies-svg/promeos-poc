@@ -605,6 +605,12 @@ export const getComplianceBatches = (orgId = null) =>
 export const getFindingDetail = (findingId) =>
   api.get(`/compliance/findings/${findingId}`).then((r) => r.data);
 
+// V68: Compliance Pipeline summaries
+export const getSiteComplianceSummary = (siteId) =>
+  api.get(`/compliance/sites/${siteId}/summary`).then((r) => r.data);
+export const getPortfolioComplianceSummary = (params = {}) =>
+  api.get('/compliance/portfolio/summary', { params }).then((r) => r.data);
+
 // Dev Tools
 export const resetDb = () => api.post('/dev/reset_db').then((r) => r.data);
 
