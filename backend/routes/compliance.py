@@ -20,6 +20,8 @@ from services.compliance_engine import (
     recompute_site,
     recompute_portfolio,
     recompute_organisation,
+    compute_site_compliance_summary,
+    compute_portfolio_compliance_summary,
 )
 from services.compliance_rules import (
     evaluate_organisation,
@@ -407,3 +409,42 @@ def get_finding_detail(
         "created_at": f.created_at.isoformat() if hasattr(f, "created_at") and f.created_at else None,
         "updated_at": f.updated_at.isoformat() if hasattr(f, "updated_at") and f.updated_at else None,
     }
+
+
+# ========================================
+# V68: Compliance Pipeline summaries
+# ========================================
+
+
+@router.get("/sites/{site_id}/summary")
+def site_compliance_summary(
+    site_id: int,
+    db: Session = Depends(get_db),
+):
+    """
+    GET /api/compliance/sites/{site_id}/summary
+
+    V68: Full compliance summary for one site — readiness gate,
+    applicability, scores, deadlines, data trust.
+    """
+    try:
+        return compute_site_compliance_summary(db, site_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.get("/portfolio/summary")
+def portfolio_compliance_summary(
+    request: Request,
+    org_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """
+    GET /api/compliance/portfolio/summary?org_id=
+
+    V68: Portfolio-level compliance summary — KPIs, top blockers,
+    deadlines 30/90/180, untrusted sites, per-site gate status.
+    """
+    org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
+    return compute_portfolio_compliance_summary(db, org_id)
