@@ -179,9 +179,18 @@ def generate_monthly_readings(db, meters: list, site_profiles: dict,
         anomaly_months = set(rng.sample(range(months), min(2, months)))
 
         readings = []
+        seen_months = set()
         for m_offset in range(months):
-            dt = now - timedelta(days=(months - m_offset) * 30)
-            dt = dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            # Compute exact month by subtracting m_offset months from current month
+            target_month = now.month - (months - m_offset)
+            target_year = now.year + (target_month - 1) // 12
+            target_month = ((target_month - 1) % 12) + 1
+            dt = datetime(target_year, target_month, 1)
+            # Skip duplicates (safety)
+            key = (meter.id, dt)
+            if key in seen_months:
+                continue
+            seen_months.add(key)
             month_num = dt.month
 
             # Seasonal variation
