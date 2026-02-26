@@ -289,8 +289,14 @@ class SeedOrchestrator:
                 try:
                     count = self.db.query(model).delete(synchronize_session=False)
                     deleted[label] = count
-                except Exception:
-                    deleted[label] = 0
+                except Exception as exc:
+                    # Log the error instead of silently swallowing it
+                    import logging
+                    logging.getLogger("demo_seed").warning(
+                        "reset hard: failed to delete %s: %s", label, exc
+                    )
+                    self.db.rollback()
+                    deleted[label] = f"error: {exc}"
         else:
             # Soft: only delete data linked to is_demo=True orgs/sites
             demo_org_ids = [r[0] for r in

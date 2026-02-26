@@ -263,7 +263,7 @@ PACKS = {
              "auto_renew": True},
         ],
         "readings_frequency": "monthly",
-        "readings_months": 36,
+        "readings_months": 60,
         "invoices_count": 20,
         "actions_count": 15,
     },
