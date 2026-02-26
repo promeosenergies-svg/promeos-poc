@@ -1,17 +1,23 @@
 /**
- * PROMEOS - Site Compliance V68 (/compliance/sites/:siteId)
+ * PROMEOS - Site Compliance V68+V69 (/compliance/sites/:siteId)
  * 3 tabs: Obligations, Preuves, Plan d'action.
- * Each obligation card shows applicability, gate status, deadline, CTA.
- * "Créer action" opens CreateActionModal with site context.
+ * V69: Plan tab = cockpit "travaux + aides + preuves + suivi M&V"
+ *   - Packages S/M/L with "Créer dossier CEE" CTA
+ *   - Kanban Dossier CEE (devis → engagement → travaux → pv_photos → mv → versement)
+ *   - Widget M&V minimal (baseline, alerts)
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ShieldCheck, AlertTriangle, CheckCircle, Clock, XCircle,
   Upload, Plus, ArrowLeft, FileCheck, ClipboardList,
-  Building, Zap, Sun, ArrowRight,
+  Building, Zap, Sun, ArrowRight, Package, Columns,
+  Activity, ChevronRight, Hammer, Banknote, Eye,
 } from 'lucide-react';
-import { getSiteComplianceSummary, getComplianceFindings, getActionsList } from '../services/api';
+import {
+  getSiteComplianceSummary, getComplianceFindings, getActionsList,
+  getSiteWorkPackages, createWorkPackage, createCeeDossier, advanceCeeStep, getMvSummary,
+} from '../services/api';
 import { toPatrimoine, toConsoImport, toBillIntel, toActionNew, toCompliancePipeline } from '../services/routes';
 import { useToast } from '../ui/ToastProvider';
 import CreateActionModal from '../components/CreateActionModal';
@@ -40,6 +46,24 @@ const CTA_NAVIGATE = {
   consommation: () => toConsoImport(),
   conformite: (siteId) => `/compliance/sites/${siteId}`,
   billing: (siteId) => toBillIntel({ site_id: siteId }),
+};
+
+const SIZE_BADGE = {
+  S: { label: 'S', cls: 'bg-green-100 text-green-700' },
+  M: { label: 'M', cls: 'bg-amber-100 text-amber-700' },
+  L: { label: 'L', cls: 'bg-red-100 text-red-700' },
+};
+
+const CEE_STATUS_BADGE = {
+  a_qualifier: { label: 'À qualifier', cls: 'bg-gray-100 text-gray-600' },
+  ok: { label: 'CEE OK', cls: 'bg-green-100 text-green-700' },
+  non: { label: 'Non éligible', cls: 'bg-red-100 text-red-700' },
+};
+
+const CEE_STEPS = ['devis', 'engagement', 'travaux', 'pv_photos', 'mv', 'versement'];
+const CEE_STEP_LABELS = {
+  devis: 'Devis', engagement: 'Engagement', travaux: 'Travaux',
+  pv_photos: 'PV+Photos', mv: 'M&V', versement: 'Versement',
 };
 
 function Badge({ cfg }) {
@@ -195,17 +219,202 @@ function PreuvesTab({ data }) {
   );
 }
 
-/* ── Tab: Plan d'action ────────────────── */
-function PlanTab({ siteId, navigate, onCreateAction }) {
-  const [actions, setActions] = useState([]);
+/* ── V69: Kanban CEE ────────────────── */
+function KanbanCee({ dossier, toast }) {
+  const currentIdx = CEE_STEPS.indexOf(dossier.current_step);
+  const [advancing, setAdvancing] = useState(false);
+
+  const handleAdvance = async (stepVal) => {
+    setAdvancing(true);
+    try {
+      await advanceCeeStep(dossier.id, stepVal);
+      toast('Dossier CEE avancé', 'success');
+      window.location.reload();
+    } catch {
+      toast('Erreur lors de l\'avancement', 'error');
+    } finally {
+      setAdvancing(false);
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow p-4" data-section="kanban-cee">
+      <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+        <Columns size={16} className="text-purple-500" />
+        Kanban Dossier CEE
+      </h4>
+      <div className="flex gap-2 overflow-x-auto pb-2">
+        {CEE_STEPS.map((step, idx) => {
+          const isCurrent = idx === currentIdx;
+          const isDone = idx < currentIdx;
+          const isNext = idx === currentIdx + 1;
+          return (
+            <div
+              key={step}
+              className={`flex-1 min-w-[100px] rounded-lg border-2 p-2 text-center transition ${
+                isCurrent ? 'border-blue-500 bg-blue-50' :
+                isDone ? 'border-green-300 bg-green-50' :
+                'border-gray-200 bg-gray-50'
+              }`}
+            >
+              <p className={`text-xs font-medium ${isCurrent ? 'text-blue-700' : isDone ? 'text-green-700' : 'text-gray-500'}`}>
+                {CEE_STEP_LABELS[step]}
+              </p>
+              {isDone && <CheckCircle size={14} className="mx-auto mt-1 text-green-500" />}
+              {isCurrent && <ChevronRight size={14} className="mx-auto mt-1 text-blue-500" />}
+              {isNext && (
+                <button
+                  onClick={() => handleAdvance(step)}
+                  disabled={advancing}
+                  className="mt-1 text-xs text-blue-600 hover:underline disabled:opacity-50"
+                  data-testid={`cee-advance-${step}`}
+                >
+                  Avancer
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {/* Evidence items */}
+      {dossier.evidence_items?.length > 0 && (
+        <div className="mt-3 space-y-1">
+          <p className="text-xs text-gray-500 font-medium">Pièces justificatives:</p>
+          {dossier.evidence_items.map((ei) => (
+            <div key={ei.id} className="flex items-center gap-2 text-xs p-1.5 rounded bg-gray-50">
+              {ei.statut === 'manquant' ? (
+                <XCircle size={12} className="text-red-400" />
+              ) : ei.statut === 'valide' ? (
+                <CheckCircle size={12} className="text-green-500" />
+              ) : (
+                <Clock size={12} className="text-amber-500" />
+              )}
+              <span className="flex-1 text-gray-700">{ei.label}</span>
+              <span className={`px-1.5 py-0.5 rounded ${
+                ei.statut === 'manquant' ? 'bg-red-100 text-red-600' :
+                ei.statut === 'valide' ? 'bg-green-100 text-green-600' :
+                'bg-amber-100 text-amber-600'
+              }`}>{ei.statut}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── V69: Widget M&V ────────────────── */
+function MvWidget({ siteId }) {
+  const [mv, setMv] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getActionsList({ site_id: siteId, source_type: 'compliance' })
-      .then((data) => setActions(Array.isArray(data) ? data : []))
-      .catch(() => setActions([]))
+    getMvSummary(siteId)
+      .then(setMv)
+      .catch(() => setMv(null))
       .finally(() => setLoading(false));
   }, [siteId]);
+
+  if (loading) return <div className="bg-white rounded-lg shadow p-4 animate-pulse h-32" />;
+  if (!mv) return null;
+
+  const deltaColor = mv.delta_pct > 10 ? 'text-red-600' : mv.delta_pct < -5 ? 'text-green-600' : 'text-gray-700';
+
+  return (
+    <div className="bg-white rounded-lg shadow p-4" data-section="mv-widget">
+      <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+        <Activity size={16} className="text-indigo-500" />
+        M&V — Mesure & Vérification
+      </h4>
+      <div className="grid grid-cols-3 gap-3 mb-3">
+        <div className="text-center">
+          <p className="text-xs text-gray-500">Baseline</p>
+          <p className="text-sm font-bold text-gray-900">{mv.baseline_kwh_month.toLocaleString('fr-FR')} kWh/m</p>
+        </div>
+        <div className="text-center">
+          <p className="text-xs text-gray-500">Actuel</p>
+          <p className="text-sm font-bold text-gray-900">{mv.current_kwh_month.toLocaleString('fr-FR')} kWh/m</p>
+        </div>
+        <div className="text-center">
+          <p className="text-xs text-gray-500">Delta</p>
+          <p className={`text-sm font-bold ${deltaColor}`}>
+            {mv.delta_pct > 0 ? '+' : ''}{mv.delta_pct}%
+          </p>
+        </div>
+      </div>
+      {mv.alerts.length > 0 && (
+        <div className="space-y-1.5">
+          {mv.alerts.map((a, i) => (
+            <div key={i} className={`flex items-center gap-2 p-2 rounded text-xs ${
+              a.severity === 'high' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'
+            }`}>
+              <AlertTriangle size={12} className="shrink-0" />
+              <span>{a.message}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      {mv.alerts.length === 0 && (
+        <p className="text-xs text-green-600 flex items-center gap-1">
+          <CheckCircle size={12} /> Pas d'alerte M&V.
+        </p>
+      )}
+    </div>
+  );
+}
+
+/* ── Tab: Plan d'action V69 ────────────────── */
+function PlanTab({ siteId, siteName, navigate, onCreateAction, toast }) {
+  const [actions, setActions] = useState([]);
+  const [packages, setPackages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showNewPkg, setShowNewPkg] = useState(false);
+  const [newPkg, setNewPkg] = useState({ label: '', size: 'M', capex_eur: '', savings_eur_year: '' });
+  const [creating, setCreating] = useState(false);
+
+  const reload = useCallback(() => {
+    setLoading(true);
+    Promise.all([
+      getActionsList({ site_id: siteId, source_type: 'compliance' }).catch(() => []),
+      getSiteWorkPackages(siteId).catch(() => []),
+    ]).then(([acts, pkgs]) => {
+      setActions(Array.isArray(acts) ? acts : []);
+      setPackages(Array.isArray(pkgs) ? pkgs : []);
+    }).finally(() => setLoading(false));
+  }, [siteId]);
+
+  useEffect(() => { reload(); }, [reload]);
+
+  const handleCreatePackage = async () => {
+    if (!newPkg.label.trim()) return;
+    setCreating(true);
+    try {
+      await createWorkPackage(siteId, {
+        label: newPkg.label,
+        size: newPkg.size,
+        capex_eur: newPkg.capex_eur ? parseFloat(newPkg.capex_eur) : null,
+        savings_eur_year: newPkg.savings_eur_year ? parseFloat(newPkg.savings_eur_year) : null,
+      });
+      toast('Package créé', 'success');
+      setShowNewPkg(false);
+      setNewPkg({ label: '', size: 'M', capex_eur: '', savings_eur_year: '' });
+      reload();
+    } catch {
+      toast('Erreur lors de la création', 'error');
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleCreateDossier = async (wpId) => {
+    try {
+      await createCeeDossier(siteId, wpId);
+      toast('Dossier CEE créé — preuves + actions générées', 'success');
+      reload();
+    } catch (e) {
+      toast(e?.response?.data?.detail || 'Erreur lors de la création du dossier', 'error');
+    }
+  };
 
   const STATUS_PILL = {
     open: 'bg-gray-100 text-gray-700',
@@ -216,6 +425,121 @@ function PlanTab({ siteId, navigate, onCreateAction }) {
 
   return (
     <div className="space-y-4" data-section="tab-plan">
+      {/* V69: Work Packages S/M/L */}
+      <div className="bg-white rounded-lg shadow p-4" data-section="work-packages">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+            <Package size={16} className="text-indigo-500" />
+            Packages travaux ({packages.length})
+          </h3>
+          <button
+            onClick={() => setShowNewPkg(!showNewPkg)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition"
+            data-testid="cta-add-package"
+          >
+            <Plus size={14} /> Ajouter package
+          </button>
+        </div>
+
+        {/* New package form */}
+        {showNewPkg && (
+          <div className="border border-indigo-200 rounded-lg p-3 mb-3 bg-indigo-50 space-y-2">
+            <input
+              value={newPkg.label}
+              onChange={(e) => setNewPkg(p => ({ ...p, label: e.target.value }))}
+              placeholder="Nom du lot (ex: Isolation combles)"
+              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded"
+              data-testid="pkg-label-input"
+            />
+            <div className="flex gap-2">
+              <select
+                value={newPkg.size}
+                onChange={(e) => setNewPkg(p => ({ ...p, size: e.target.value }))}
+                className="px-2 py-1.5 text-sm border border-gray-300 rounded"
+                data-testid="pkg-size-select"
+              >
+                <option value="S">S (simple)</option>
+                <option value="M">M (moyen)</option>
+                <option value="L">L (complexe)</option>
+              </select>
+              <input
+                value={newPkg.capex_eur}
+                onChange={(e) => setNewPkg(p => ({ ...p, capex_eur: e.target.value }))}
+                placeholder="CAPEX (EUR)"
+                type="number"
+                className="flex-1 px-2 py-1.5 text-sm border border-gray-300 rounded"
+              />
+              <input
+                value={newPkg.savings_eur_year}
+                onChange={(e) => setNewPkg(p => ({ ...p, savings_eur_year: e.target.value }))}
+                placeholder="Économies/an (EUR)"
+                type="number"
+                className="flex-1 px-2 py-1.5 text-sm border border-gray-300 rounded"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setShowNewPkg(false)} className="px-3 py-1 text-xs text-gray-500 hover:text-gray-700">Annuler</button>
+              <button
+                onClick={handleCreatePackage}
+                disabled={creating || !newPkg.label.trim()}
+                className="px-3 py-1 bg-indigo-600 text-white rounded text-xs font-medium hover:bg-indigo-700 disabled:opacity-50"
+                data-testid="pkg-submit"
+              >
+                Créer
+              </button>
+            </div>
+          </div>
+        )}
+
+        {loading ? (
+          <div className="animate-pulse space-y-2">
+            {[1, 2].map(i => <div key={i} className="h-16 bg-gray-200 rounded" />)}
+          </div>
+        ) : packages.length === 0 ? (
+          <p className="text-sm text-gray-500 text-center py-4">Aucun package de travaux.</p>
+        ) : (
+          <div className="space-y-3">
+            {packages.map((wp) => (
+              <div key={wp.id} className="border border-gray-200 rounded-lg p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <Badge cfg={SIZE_BADGE[wp.size] || SIZE_BADGE.M} />
+                  <span className="text-sm font-medium text-gray-900 flex-1">{wp.label}</span>
+                  <Badge cfg={CEE_STATUS_BADGE[wp.cee_status] || CEE_STATUS_BADGE.a_qualifier} />
+                </div>
+                <div className="flex gap-4 text-xs text-gray-500 mb-2">
+                  {wp.capex_eur != null && (
+                    <span className="flex items-center gap-1"><Banknote size={12} /> CAPEX: {wp.capex_eur.toLocaleString('fr-FR')} €</span>
+                  )}
+                  {wp.savings_eur_year != null && (
+                    <span className="flex items-center gap-1"><Hammer size={12} /> Éco: {wp.savings_eur_year.toLocaleString('fr-FR')} €/an</span>
+                  )}
+                  {wp.payback_years != null && (
+                    <span>Payback: {wp.payback_years} ans</span>
+                  )}
+                </div>
+
+                {/* CEE Dossier or CTA */}
+                {wp.dossier ? (
+                  <KanbanCee dossier={wp.dossier} toast={toast} />
+                ) : wp.cee_status !== 'non' ? (
+                  <button
+                    onClick={() => handleCreateDossier(wp.id)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 text-white rounded-lg text-xs font-medium hover:bg-purple-700 transition"
+                    data-testid={`cta-creer-dossier-cee-${wp.id}`}
+                  >
+                    <Plus size={14} /> Créer dossier CEE
+                  </button>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* V69: Widget M&V */}
+      <MvWidget siteId={siteId} />
+
+      {/* Actions list (from V68) */}
       <div className="bg-white rounded-lg shadow p-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
@@ -394,8 +718,10 @@ export default function SiteCompliancePage() {
       {activeTab === 'plan' && (
         <PlanTab
           siteId={siteId}
+          siteName={data.site_nom}
           navigate={navigate}
           onCreateAction={() => setShowCreate(true)}
+          toast={toast}
         />
       )}
 

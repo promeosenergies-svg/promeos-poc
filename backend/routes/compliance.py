@@ -22,7 +22,13 @@ from services.compliance_engine import (
     recompute_organisation,
     compute_site_compliance_summary,
     compute_portfolio_compliance_summary,
+    create_cee_dossier,
+    advance_cee_step,
+    compute_mv_summary,
+    get_site_work_packages,
 )
+from models import WorkPackage
+from models.enums import WorkPackageSize, CeeStatus
 from services.compliance_rules import (
     evaluate_organisation,
     get_summary,
@@ -448,3 +454,127 @@ def portfolio_compliance_summary(
     """
     org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
     return compute_portfolio_compliance_summary(db, org_id)
+
+
+# ========================================
+# V69: CEE Pipeline + M&V
+# ========================================
+
+
+class WorkPackageCreate(BaseModel):
+    label: str
+    size: str = "M"
+    capex_eur: Optional[float] = None
+    savings_eur_year: Optional[float] = None
+    payback_years: Optional[float] = None
+    complexity: Optional[str] = "medium"
+    description: Optional[str] = None
+
+
+@router.get("/sites/{site_id}/packages")
+def list_work_packages(
+    site_id: int,
+    db: Session = Depends(get_db),
+):
+    """
+    GET /api/compliance/sites/{site_id}/packages
+
+    V69: List all work packages (S/M/L) for a site with CEE dossier status.
+    """
+    return get_site_work_packages(db, site_id)
+
+
+@router.post("/sites/{site_id}/packages")
+def create_work_package(
+    site_id: int,
+    data: WorkPackageCreate,
+    db: Session = Depends(get_db),
+):
+    """
+    POST /api/compliance/sites/{site_id}/packages
+
+    V69: Create a new work package for a site.
+    """
+    try:
+        size = WorkPackageSize(data.size)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid size: {data.size}. Must be S, M, or L.")
+
+    wp = WorkPackage(
+        site_id=site_id,
+        label=data.label,
+        size=size,
+        capex_eur=data.capex_eur,
+        savings_eur_year=data.savings_eur_year,
+        payback_years=data.payback_years,
+        complexity=data.complexity,
+        cee_status=CeeStatus.A_QUALIFIER,
+        description=data.description,
+    )
+    db.add(wp)
+    db.commit()
+    db.refresh(wp)
+
+    return {
+        "id": wp.id,
+        "site_id": wp.site_id,
+        "label": wp.label,
+        "size": wp.size.value,
+        "cee_status": wp.cee_status.value,
+    }
+
+
+@router.post("/sites/{site_id}/cee/dossier")
+def create_cee_dossier_endpoint(
+    site_id: int,
+    work_package_id: int = Query(...),
+    db: Session = Depends(get_db),
+):
+    """
+    POST /api/compliance/sites/{site_id}/cee/dossier?work_package_id=
+
+    V69: Create a CEE dossier from a work package.
+    Auto-creates evidence items + Action Center items.
+    """
+    try:
+        return create_cee_dossier(db, site_id, work_package_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+class CeeStepAdvance(BaseModel):
+    step: str
+
+
+@router.patch("/cee/dossier/{dossier_id}/step")
+def advance_cee_step_endpoint(
+    dossier_id: int,
+    data: CeeStepAdvance,
+    db: Session = Depends(get_db),
+):
+    """
+    PATCH /api/compliance/cee/dossier/{dossier_id}/step
+
+    V69: Advance CEE dossier to next kanban step.
+    Updates corresponding Action Center items.
+    """
+    try:
+        return advance_cee_step(db, dossier_id, data.step)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/sites/{site_id}/mv/summary")
+def mv_summary_endpoint(
+    site_id: int,
+    db: Session = Depends(get_db),
+):
+    """
+    GET /api/compliance/sites/{site_id}/mv/summary
+
+    V69: M&V summary — baseline, current, delta, alerts.
+    """
+    try:
+        return compute_mv_summary(db, site_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))

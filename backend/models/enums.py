@@ -500,3 +500,38 @@ class DataQualityIssueStatus(str, enum.Enum):
     ACK = "ack"
     RESOLVED = "resolved"
     FALSE_POSITIVE = "false_positive"
+
+
+# ========================================
+# Enums V69: CEE Pipeline + M&V
+# ========================================
+
+class WorkPackageSize(str, enum.Enum):
+    """Taille du package de travaux."""
+    S = "S"
+    M = "M"
+    L = "L"
+
+
+class CeeDossierStep(str, enum.Enum):
+    """Étapes kanban du dossier CEE."""
+    DEVIS = "devis"
+    ENGAGEMENT = "engagement"
+    TRAVAUX = "travaux"
+    PV_PHOTOS = "pv_photos"
+    MV = "mv"
+    VERSEMENT = "versement"
+
+
+class CeeStatus(str, enum.Enum):
+    """Statut CEE d'un work package."""
+    A_QUALIFIER = "a_qualifier"
+    OK = "ok"
+    NON = "non"
+
+
+class MVAlertType(str, enum.Enum):
+    """Types d'alertes M&V."""
+    BASELINE_DRIFT = "baseline_drift"
+    DEADLINE_APPROACHING = "deadline_approaching"
+    DATA_MISSING = "data_missing"

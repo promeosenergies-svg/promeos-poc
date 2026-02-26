@@ -23,6 +23,7 @@ from .enums import (
     CvcSystemType, CvcArchitecture, BacsTriggerReason, InspectionStatus,
     EfaStatut, EfaRole, DeclarationStatus, PerimeterEventType,
     DataQualityIssueSeverity, DataQualityIssueStatus,
+    WorkPackageSize, CeeDossierStep, CeeStatus, MVAlertType,
 )
 
 # Hierarchie organisation
@@ -121,6 +122,9 @@ from .tertiaire import (
     TertiaireDeclaration, TertiaireProofArtifact, TertiaireDataQualityIssue,
 )
 
+# V69: CEE Pipeline + M&V
+from .cee_models import WorkPackage, CeeDossier, CeeDossierEvidence
+
 # Energy (Consumption & Analytics)
 from .energy_models import (
     Meter, MeterReading, DataImportJob, UsageProfile, Anomaly, Recommendation,
@@ -194,4 +198,7 @@ __all__ = [
     "TertiaireDeclaration", "TertiaireProofArtifact", "TertiaireDataQualityIssue",
     "EfaStatut", "EfaRole", "DeclarationStatus", "PerimeterEventType",
     "DataQualityIssueSeverity", "DataQualityIssueStatus",
+    # V69: CEE Pipeline + M&V
+    "WorkPackage", "CeeDossier", "CeeDossierEvidence",
+    "WorkPackageSize", "CeeDossierStep", "CeeStatus", "MVAlertType",
 ]

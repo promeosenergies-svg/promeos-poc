@@ -611,6 +611,18 @@ export const getSiteComplianceSummary = (siteId) =>
 export const getPortfolioComplianceSummary = (params = {}) =>
   api.get('/compliance/portfolio/summary', { params }).then((r) => r.data);
 
+// V69: CEE Pipeline + M&V
+export const getSiteWorkPackages = (siteId) =>
+  api.get(`/compliance/sites/${siteId}/packages`).then((r) => r.data);
+export const createWorkPackage = (siteId, data) =>
+  api.post(`/compliance/sites/${siteId}/packages`, data).then((r) => r.data);
+export const createCeeDossier = (siteId, workPackageId) =>
+  api.post(`/compliance/sites/${siteId}/cee/dossier`, null, { params: { work_package_id: workPackageId } }).then((r) => r.data);
+export const advanceCeeStep = (dossierId, step) =>
+  api.patch(`/compliance/cee/dossier/${dossierId}/step`, { step }).then((r) => r.data);
+export const getMvSummary = (siteId) =>
+  api.get(`/compliance/sites/${siteId}/mv/summary`).then((r) => r.data);
+
 // Dev Tools
 export const resetDb = () => api.post('/dev/reset_db').then((r) => r.data);
 
