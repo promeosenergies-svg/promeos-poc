@@ -3,8 +3,7 @@ PROMEOS — Achat Energie Endpoints V1.1
 V1: Estimation, hypotheses, preferences, scenarios, recommandation.
 V1.1: Portfolio roll-up, renewals, history, actions.
 """
-
-
+import os
 import uuid
 from datetime import datetime, date, timedelta, timezone
 from typing import Optional
