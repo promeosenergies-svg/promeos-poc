@@ -179,9 +179,18 @@ def generate_monthly_readings(db, meters: list, site_profiles: dict,
         anomaly_months = set(rng.sample(range(months), min(2, months)))
 
         readings = []
+        seen_months = set()
         for m_offset in range(months):
-            dt = now - timedelta(days=(months - m_offset) * 30)
-            dt = dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            # Compute exact month by subtracting m_offset months from current month
+            target_month = now.month - (months - m_offset)
+            target_year = now.year + (target_month - 1) // 12
+            target_month = ((target_month - 1) % 12) + 1
+            dt = datetime(target_year, target_month, 1)
+            # Skip duplicates (safety)
+            key = (meter.id, dt)
+            if key in seen_months:
+                continue
+            seen_months.add(key)
             month_num = dt.month
 
             # Seasonal variation
@@ -206,8 +215,40 @@ def generate_monthly_readings(db, meters: list, site_profiles: dict,
                 value_kwh=value, is_estimated=False,
             ))
 
-        db.bulk_save_objects(readings)
+        _bulk_insert_ignore(db, readings)
         total += len(readings)
 
     db.flush()
     return total
+
+
+def _bulk_insert_ignore(db, readings: list):
+    """
+    Insert readings with ON CONFLICT IGNORE — safety net against duplicate
+    (meter_id, timestamp) pairs that would crash bulk_save_objects.
+    Falls back to bulk_save_objects for non-SQLite engines.
+    """
+    if not readings:
+        return
+    dialect = db.bind.dialect.name if db.bind else "unknown"
+    if dialect == "sqlite":
+        from sqlalchemy import text
+        stmt = text(
+            "INSERT OR IGNORE INTO meter_reading "
+            "(meter_id, timestamp, frequency, value_kwh, is_estimated, created_at) "
+            "VALUES (:meter_id, :ts, :freq, :kwh, :est, :cat)"
+        )
+        params = [
+            {
+                "meter_id": r.meter_id,
+                "ts": r.timestamp.isoformat() if r.timestamp else None,
+                "freq": r.frequency.name if hasattr(r.frequency, "name") else str(r.frequency),
+                "kwh": r.value_kwh,
+                "est": 1 if r.is_estimated else 0,
+                "cat": r.created_at.isoformat() if r.created_at else datetime.utcnow().isoformat(),
+            }
+            for r in readings
+        ]
+        db.execute(stmt, params)
+    else:
+        db.bulk_save_objects(readings)

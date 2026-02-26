@@ -2,7 +2,7 @@
 PROMEOS Energy Models - Consumption Data & Analytics
 Time series data, usage profiles, anomalies, recommendations
 """
-from sqlalchemy import Column, String, Integer, Float, Text, JSON, DateTime, Boolean, ForeignKey, Enum as SQLEnum
+from sqlalchemy import Column, String, Integer, Float, Text, JSON, DateTime, Boolean, ForeignKey, Enum as SQLEnum, UniqueConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import enum
@@ -96,6 +96,9 @@ class Meter(Base):
 class MeterReading(Base):
     """Time series consumption data"""
     __tablename__ = "meter_reading"
+    __table_args__ = (
+        UniqueConstraint("meter_id", "timestamp", name="uq_meter_reading_meter_ts"),
+    )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
 
