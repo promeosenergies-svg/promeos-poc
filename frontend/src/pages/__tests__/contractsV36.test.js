@@ -386,9 +386,9 @@ describe('V36: ImpactDecisionPanel — achats d\'energie', () => {
     expect(panelSrc).toContain('data-testid="purchase-section"');
   });
 
-  it('navigue vers /achat-energie pour le drill-down achat', () => {
-    expect(panelSrc).toContain('/achat-energie?filter=renewal');
-    expect(panelSrc).toContain('/achat-energie?filter=missing');
+  it('navigue vers /achat-energie pour le drill-down achat (via toPurchase)', () => {
+    expect(panelSrc).toContain("toPurchase({ filter: 'renewal' })");
+    expect(panelSrc).toContain("toPurchase({ filter: 'missing' })");
   });
 
   it('affiche les 3 metriques achat (contrats 90j, couverture, manquants)', () => {
