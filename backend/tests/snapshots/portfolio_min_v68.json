@@ -1,0 +1,270 @@
+{
+  "version": "v68",
+  "sites": [
+    {
+      "site_id": 1,
+      "site_nom": "Bureau Paris",
+      "readiness": {
+        "completeness_pct": 66.7,
+        "missing": [
+          {
+            "field": "surface_m2",
+            "level": "recommended",
+            "regulation": "tertiaire_operat",
+            "cta_target": "patrimoine",
+            "cta_label": "Renseigner la surface totale"
+          },
+          {
+            "field": "naf_code",
+            "level": "optional",
+            "regulation": "tertiaire_operat",
+            "cta_target": "patrimoine",
+            "cta_label": "Renseigner le code NAF"
+          },
+          {
+            "field": "cvc_power_kw",
+            "level": "blocking",
+            "regulation": "bacs",
+            "cta_target": "patrimoine",
+            "cta_label": "Renseigner la puissance CVC"
+          },
+          {
+            "field": "parking_type",
+            "level": "recommended",
+            "regulation": "aper",
+            "cta_target": "patrimoine",
+            "cta_label": "Pr\u00e9ciser le type de parking"
+          }
+        ],
+        "gate_status": "BLOCKED"
+      },
+      "applicability": {
+        "tertiaire_operat": {
+          "applicable": true,
+          "reason": "Surface tertiaire 1500 m\u00b2 >= 1000 m\u00b2",
+          "missing_fields": []
+        },
+        "bacs": {
+          "applicable": null,
+          "reason": "Puissance CVC non renseign\u00e9e",
+          "missing_fields": [
+            "cvc_power_kw"
+          ]
+        },
+        "aper": {
+          "applicable": true,
+          "reason": "Parking 2000 m\u00b2 / Toiture 800 m\u00b2",
+          "missing_fields": []
+        }
+      }
+    },
+    {
+      "site_id": 2,
+      "site_nom": "Entrepot Lyon",
+      "readiness": {
+        "completeness_pct": 41.7,
+        "missing": [
+          {
+            "field": "tertiaire_area_m2",
+            "level": "blocking",
+            "regulation": "tertiaire_operat",
+            "cta_target": "patrimoine",
+            "cta_label": "Renseigner surface tertiaire"
+          },
+          {
+            "field": "operat_status",
+            "level": "blocking",
+            "regulation": "tertiaire_operat",
+            "cta_target": "patrimoine",
+            "cta_label": "Mettre \u00e0 jour le statut OPERAT"
+          },
+          {
+            "field": "annual_kwh_total",
+            "level": "blocking",
+            "regulation": "tertiaire_operat",
+            "cta_target": "consommation",
+            "cta_label": "Importer les consommations"
+          },
+          {
+            "field": "surface_m2",
+            "level": "recommended",
+            "regulation": "tertiaire_operat",
+            "cta_target": "patrimoine",
+            "cta_label": "Renseigner la surface totale"
+          },
+          {
+            "field": "naf_code",
+            "level": "optional",
+            "regulation": "tertiaire_operat",
+            "cta_target": "patrimoine",
+            "cta_label": "Renseigner le code NAF"
+          },
+          {
+            "field": "cvc_power_kw",
+            "level": "blocking",
+            "regulation": "bacs",
+            "cta_target": "patrimoine",
+            "cta_label": "Renseigner la puissance CVC"
+          },
+          {
+            "field": "parking_type",
+            "level": "recommended",
+            "regulation": "aper",
+            "cta_target": "patrimoine",
+            "cta_label": "Pr\u00e9ciser le type de parking"
+          }
+        ],
+        "gate_status": "BLOCKED"
+      },
+      "applicability": {
+        "tertiaire_operat": {
+          "applicable": null,
+          "reason": "Surface tertiaire non renseign\u00e9e",
+          "missing_fields": [
+            "tertiaire_area_m2"
+          ]
+        },
+        "bacs": {
+          "applicable": null,
+          "reason": "Puissance CVC non renseign\u00e9e",
+          "missing_fields": [
+            "cvc_power_kw"
+          ]
+        },
+        "aper": {
+          "applicable": false,
+          "reason": "Parking 500 m\u00b2 < 1500 et toiture 200 m\u00b2 < 500",
+          "missing_fields": []
+        }
+      }
+    },
+    {
+      "site_id": 3,
+      "site_nom": "Agence Nantes",
+      "readiness": {
+        "completeness_pct": 50.0,
+        "missing": [
+          {
+            "field": "operat_status",
+            "level": "blocking",
+            "regulation": "tertiaire_operat",
+            "cta_target": "patrimoine",
+            "cta_label": "Mettre \u00e0 jour le statut OPERAT"
+          },
+          {
+            "field": "annual_kwh_total",
+            "level": "blocking",
+            "regulation": "tertiaire_operat",
+            "cta_target": "consommation",
+            "cta_label": "Importer les consommations"
+          },
+          {
+            "field": "surface_m2",
+            "level": "recommended",
+            "regulation": "tertiaire_operat",
+            "cta_target": "patrimoine",
+            "cta_label": "Renseigner la surface totale"
+          },
+          {
+            "field": "naf_code",
+            "level": "optional",
+            "regulation": "tertiaire_operat",
+            "cta_target": "patrimoine",
+            "cta_label": "Renseigner le code NAF"
+          },
+          {
+            "field": "cvc_power_kw",
+            "level": "blocking",
+            "regulation": "bacs",
+            "cta_target": "patrimoine",
+            "cta_label": "Renseigner la puissance CVC"
+          },
+          {
+            "field": "parking_type",
+            "level": "recommended",
+            "regulation": "aper",
+            "cta_target": "patrimoine",
+            "cta_label": "Pr\u00e9ciser le type de parking"
+          }
+        ],
+        "gate_status": "BLOCKED"
+      },
+      "applicability": {
+        "tertiaire_operat": {
+          "applicable": false,
+          "reason": "Surface tertiaire 800 m\u00b2 < 1000 m\u00b2",
+          "missing_fields": []
+        },
+        "bacs": {
+          "applicable": null,
+          "reason": "Puissance CVC non renseign\u00e9e",
+          "missing_fields": [
+            "cvc_power_kw"
+          ]
+        },
+        "aper": {
+          "applicable": false,
+          "reason": "Parking 100 m\u00b2 < 1500 et toiture 100 m\u00b2 < 500",
+          "missing_fields": []
+        }
+      }
+    },
+    {
+      "site_id": 4,
+      "site_nom": "Usine Bordeaux",
+      "readiness": {
+        "completeness_pct": 66.7,
+        "missing": [
+          {
+            "field": "surface_m2",
+            "level": "recommended",
+            "regulation": "tertiaire_operat",
+            "cta_target": "patrimoine",
+            "cta_label": "Renseigner la surface totale"
+          },
+          {
+            "field": "naf_code",
+            "level": "optional",
+            "regulation": "tertiaire_operat",
+            "cta_target": "patrimoine",
+            "cta_label": "Renseigner le code NAF"
+          },
+          {
+            "field": "cvc_power_kw",
+            "level": "blocking",
+            "regulation": "bacs",
+            "cta_target": "patrimoine",
+            "cta_label": "Renseigner la puissance CVC"
+          },
+          {
+            "field": "parking_type",
+            "level": "recommended",
+            "regulation": "aper",
+            "cta_target": "patrimoine",
+            "cta_label": "Pr\u00e9ciser le type de parking"
+          }
+        ],
+        "gate_status": "BLOCKED"
+      },
+      "applicability": {
+        "tertiaire_operat": {
+          "applicable": true,
+          "reason": "Surface tertiaire 3000 m\u00b2 >= 1000 m\u00b2",
+          "missing_fields": []
+        },
+        "bacs": {
+          "applicable": null,
+          "reason": "Puissance CVC non renseign\u00e9e",
+          "missing_fields": [
+            "cvc_power_kw"
+          ]
+        },
+        "aper": {
+          "applicable": true,
+          "reason": "Parking 3000 m\u00b2 / Toiture 1500 m\u00b2",
+          "missing_fields": []
+        }
+      }
+    }
+  ]
+}
