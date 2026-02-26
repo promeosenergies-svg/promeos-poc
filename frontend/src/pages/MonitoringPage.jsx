@@ -1685,8 +1685,8 @@ export default function MonitoringPage() {
               </div>
             )}
 
-          {/* KPI Strip — 7 cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-6">
+          {/* KPI Strip — 4 cols × 2 rows for readability */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
             <StatusKpiCard
               icon={Zap}
               title="Pmax / P95"
@@ -1760,11 +1760,26 @@ export default function MonitoringPage() {
               status={emissions.annualized_co2e_tonnes != null ? 'ok' : 'no_data'}
               color="bg-emerald-600"
             />
+            {/* Climate KPI — 8th card in the same grid */}
+            {climate && (
+              <StatusKpiCard
+                icon={Thermometer}
+                title="Sensibilité Climatique"
+                value={climate.slope_kw_per_c != null ? `${climate.slope_kw_per_c.toFixed(1)} (kWh/j)/°C` : '-'}
+                sub={climate.slope_kw_per_c != null
+                  ? `R²: ${climate.r_squared != null ? climate.r_squared.toFixed(2) : '-'} | ${CLIMATE_LABEL_FR[climate.label] || climate.label || 'Non determine'}`
+                  : (CLIMATE_REASONS[climate.reason] || 'Analyse climatique non disponible')}
+                tooltip={KPI_TOOLTIPS.climate}
+                status={climateStatus}
+                color={climate.slope_kw_per_c != null ? 'bg-cyan-500' : 'bg-slate-400'}
+                confidence={climateConf}
+              />
+            )}
           </div>
 
           {/* Compare deltas row */}
           {compareKpis?.kpis && (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4 -mt-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 -mt-2">
               <div className="text-center text-[10px] text-gray-400">
                 Pmax <KpiDelta current={kpiData.pmax_kw} previous={compareKpis.kpis.pmax_kw} lowerIsBetter />
               </div>
@@ -1783,24 +1798,6 @@ export default function MonitoringPage() {
               <div className="text-center text-[10px] text-gray-400">
                 HH <KpiDelta current={offHoursRatio} previous={compareKpis.kpis.off_hours_ratio} lowerIsBetter />
               </div>
-            </div>
-          )}
-
-          {/* Climate KPI card — always visible, with reason code if no data */}
-          {climate && (
-            <div className="mb-6">
-              <StatusKpiCard
-                icon={Thermometer}
-                title="Sensibilité Climatique"
-                value={climate.slope_kw_per_c != null ? `${climate.slope_kw_per_c.toFixed(1)} (kWh/j)/°C` : '-'}
-                sub={climate.slope_kw_per_c != null
-                  ? `R²: ${climate.r_squared != null ? climate.r_squared.toFixed(2) : '-'} | ${CLIMATE_LABEL_FR[climate.label] || climate.label || 'Non determine'}`
-                  : (CLIMATE_REASONS[climate.reason] || 'Analyse climatique non disponible')}
-                tooltip={KPI_TOOLTIPS.climate}
-                status={climateStatus}
-                color={climate.slope_kw_per_c != null ? 'bg-cyan-500' : 'bg-slate-400'}
-                confidence={climateConf}
-              />
             </div>
           )}
 
