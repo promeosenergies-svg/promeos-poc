@@ -92,6 +92,9 @@ class SeedOrchestrator:
         compliance = generate_compliance(self.db, master["org"], master["sites"], rng)
         result["compliance"] = compliance
 
+        # 4b. Sync site compliance statuses from obligations
+        self._sync_site_compliance_statuses(master["sites"])
+
         # 5. Monitoring (needs hourly data — skip for monthly packs)
         if readings_freq != "monthly":
             from .gen_monitoring import generate_monitoring
@@ -405,6 +408,25 @@ class SeedOrchestrator:
             DemoState.clear_demo_org()
 
         return {"status": "ok", "mode": mode, "deleted": deleted}
+
+    def _sync_site_compliance_statuses(self, sites):
+        """Update Site.statut_decret_tertiaire/bacs from Obligation records."""
+        from models import Obligation, TypeObligation, StatutConformite
+        for site in sites:
+            for type_obl, attr in [
+                (TypeObligation.DECRET_TERTIAIRE, "statut_decret_tertiaire"),
+                (TypeObligation.BACS, "statut_bacs"),
+            ]:
+                obl = (
+                    self.db.query(Obligation)
+                    .filter_by(site_id=site.id, type=type_obl)
+                    .first()
+                )
+                if obl:
+                    setattr(site, attr, obl.statut)
+                else:
+                    setattr(site, attr, None)
+        self.db.flush()
 
     def _create_superuser(self, org):
         """Create demo admin user."""

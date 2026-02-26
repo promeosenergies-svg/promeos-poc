@@ -61,6 +61,11 @@ class Site(Base, TimestampMixin, SoftDeleteMixin):
     operat_last_submission_year = Column(Integer, nullable=True, comment="Derniere annee de declaration OPERAT")
     annual_kwh_total = Column(Float, nullable=True, comment="Consommation annuelle totale (kWh)")
     last_energy_update_at = Column(DateTime, nullable=True, comment="Derniere MAJ donnees energie")
+
+    @property
+    def conso_kwh_an(self):
+        """Alias for annual_kwh_total — used by frontend dashboards."""
+        return self.annual_kwh_total
     is_demo = Column(Boolean, default=False, comment="Donnees de demonstration")
 
     # Data lineage

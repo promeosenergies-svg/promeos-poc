@@ -1,7 +1,7 @@
 """
 PROMEOS - Schémas Pydantic pour validation des données API
 """
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 from typing import Optional, List
 from datetime import datetime, date
 from models import (
@@ -35,6 +35,14 @@ class SiteResponse(SiteBase):
     anomalie_facture: bool = False
     action_recommandee: Optional[str] = None
     risque_financier_euro: float = 0.0
+    annual_kwh_total: Optional[float] = None
+    conso_kwh_an: Optional[float] = None
+
+    @model_validator(mode="after")
+    def _fill_conso_kwh_an(self):
+        if self.conso_kwh_an is None and self.annual_kwh_total is not None:
+            self.conso_kwh_an = self.annual_kwh_total
+        return self
     created_at: datetime
     updated_at: datetime
 
