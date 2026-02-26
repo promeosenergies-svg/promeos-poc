@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
 import pytest
+from unittest.mock import patch
 from datetime import date, datetime, timedelta
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -339,6 +340,7 @@ class TestPurchaseAPI:
         assert resp.status_code == 200
         assert resp.json()["reco_status"] == "accepted"
 
+    @patch("routes.purchase.DEMO_SEED_ENABLED", True)
     def test_seed_demo(self, client, db_session):
         # Need at least 2 sites
         org, site_a = _create_org_site(db_session)
@@ -590,6 +592,7 @@ class TestV11API:
         count = db_session.query(PurchaseScenarioResult).count()
         assert count == 6
 
+    @patch("routes.purchase.DEMO_SEED_ENABLED", True)
     def test_seed_demo_v11(self, client, db_session):
         """Seed demo V1.1 creates contracts."""
         org, site_a = _create_org_site(db_session)
@@ -749,6 +752,7 @@ class TestEnergyGate:
         assert ALLOWED_ENERGY_TYPES == {"elec"}
         assert "gaz" not in ALLOWED_ENERGY_TYPES
 
+    @patch("routes.purchase.DEMO_SEED_ENABLED", True)
     def test_seed_demo_elec_only(self, client, db_session):
         """Seed demo creates ELEC assumptions for both sites (post-Energy Gate)."""
         org, site_a = _create_org_site(db_session)
@@ -779,6 +783,7 @@ class TestEnergyGate:
 class TestWowDatasets:
     """WOW multi-site datasets: happy + dirty modes."""
 
+    @patch("routes.purchase.DEMO_SEED_ENABLED", True)
     def test_seed_wow_happy(self, client, db_session):
         """Happy dataset creates 15 sites with full scenarios."""
         resp = client.post("/api/purchase/seed-wow-happy")
@@ -791,6 +796,7 @@ class TestWowDatasets:
         assert data["contracts_created"] == 15
         assert data["org_id"] is not None
 
+    @patch("routes.purchase.DEMO_SEED_ENABLED", True)
     def test_seed_wow_happy_all_elec(self, client, db_session):
         """Happy dataset: all assumptions are ELEC (Energy Gate)."""
         client.post("/api/purchase/seed-wow-happy")
@@ -798,6 +804,7 @@ class TestWowDatasets:
         for a in assumptions:
             assert a.energy_type == BillingEnergyType.ELEC
 
+    @patch("routes.purchase.DEMO_SEED_ENABLED", True)
     def test_seed_wow_happy_varied_volumes(self, client, db_session):
         """Happy dataset has varied volumes (small to large sites)."""
         client.post("/api/purchase/seed-wow-happy")
@@ -806,6 +813,7 @@ class TestWowDatasets:
         assert min(volumes) < 500_000  # Small site
         assert max(volumes) >= 2_000_000  # Large industrial
 
+    @patch("routes.purchase.DEMO_SEED_ENABLED", True)
     def test_seed_wow_dirty(self, client, db_session):
         """Dirty dataset creates 15 sites with edge cases."""
         resp = client.post("/api/purchase/seed-wow-dirty")
@@ -819,6 +827,7 @@ class TestWowDatasets:
         assert "warnings" in data
         assert len(data["warnings"]) > 0
 
+    @patch("routes.purchase.DEMO_SEED_ENABLED", True)
     def test_seed_wow_dirty_edge_volumes(self, client, db_session):
         """Dirty dataset has zero-volume and extreme-volume sites."""
         client.post("/api/purchase/seed-wow-dirty")
@@ -828,6 +837,7 @@ class TestWowDatasets:
         assert 50 in volumes  # Tiny site
         assert 50_000_000 in volumes  # Absurdly large
 
+    @patch("routes.purchase.DEMO_SEED_ENABLED", True)
     def test_seed_wow_dirty_missing_contracts(self, client, db_session):
         """Dirty dataset: some sites have no contracts."""
         client.post("/api/purchase/seed-wow-dirty")
@@ -836,6 +846,7 @@ class TestWowDatasets:
         # contracts_created < sites_created (some missing)
         assert data["contracts_created"] < data["sites_created"]
 
+    @patch("routes.purchase.DEMO_SEED_ENABLED", True)
     def test_seed_wow_portfolio_compute(self, client, db_session):
         """Can compute portfolio on WOW happy dataset."""
         seed_resp = client.post("/api/purchase/seed-wow-happy")
