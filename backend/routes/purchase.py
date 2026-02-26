@@ -4,8 +4,9 @@ V1: Estimation, hypotheses, preferences, scenarios, recommandation.
 V1.1: Portfolio roll-up, renewals, history, actions.
 """
 
+
 import uuid
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -13,8 +14,10 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from database import get_db
-from middleware.auth import get_optional_auth, AuthContext
+from middleware.auth import get_optional_auth, require_admin, AuthContext
 from services.iam_scope import check_site_access
+
+DEMO_SEED_ENABLED = os.environ.get("DEMO_SEED_ENABLED", "false").lower() == "true"
 from models import (
     PurchaseAssumptionSet,
     PurchasePreference,
@@ -214,7 +217,7 @@ def put_preferences(
         existing.risk_tolerance = data.risk_tolerance
         existing.budget_priority = data.budget_priority
         existing.green_preference = data.green_preference
-        existing.updated_at = datetime.utcnow()
+        existing.updated_at = datetime.now(timezone.utc)
         db.commit()
         return {"id": existing.id, "status": "updated"}
 
@@ -787,7 +790,11 @@ def get_history(site_id: int, db: Session = Depends(get_db), auth: Optional[Auth
 
 
 @router.patch("/results/{result_id}/accept")
-def accept_result(result_id: int, db: Session = Depends(get_db)):
+def accept_result(
+    result_id: int,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Accept a recommended scenario."""
     result = db.query(PurchaseScenarioResult).filter(PurchaseScenarioResult.id == result_id).first()
     if not result:
@@ -934,8 +941,12 @@ def get_assistant_data(
 
 
 @router.post("/seed-demo")
-def seed_demo(db: Session = Depends(get_db)):
+def seed_demo(
+    db: Session = Depends(get_db),
+    _admin: None = Depends(require_admin()),
+):
     """Seed purchase demo data for 2 sites."""
+    _check_seed_enabled()
     from services.purchase_seed import seed_purchase_demo
 
     return seed_purchase_demo(db)
@@ -945,16 +956,24 @@ def seed_demo(db: Session = Depends(get_db)):
 
 
 @router.post("/seed-wow-happy")
-def seed_wow_happy_endpoint(db: Session = Depends(get_db)):
+def seed_wow_happy_endpoint(
+    db: Session = Depends(get_db),
+    _admin: None = Depends(require_admin()),
+):
     """Seed 15-site portfolio with clean, realistic data (happy path demo)."""
+    _check_seed_enabled()
     from services.purchase_seed_wow import seed_wow_happy
 
     return seed_wow_happy(db)
 
 
 @router.post("/seed-wow-dirty")
-def seed_wow_dirty_endpoint(db: Session = Depends(get_db)):
+def seed_wow_dirty_endpoint(
+    db: Session = Depends(get_db),
+    _admin: None = Depends(require_admin()),
+):
     """Seed 15-site portfolio with degraded/edge-case data (dirty demo)."""
+    _check_seed_enabled()
     from services.purchase_seed_wow import seed_wow_dirty
 
     return seed_wow_dirty(db)
