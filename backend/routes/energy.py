@@ -14,7 +14,7 @@ from models import (
 )
 from typing import Optional, List
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import datetime, timezone
 import csv
 import io
 import hashlib
@@ -218,7 +218,7 @@ async def upload_consumption_data(
         file_hash=file_hash,
         site_id=meter.site_id,
         meter_id=meter.id,
-        started_at=datetime.utcnow()
+        started_at=datetime.now(timezone.utc)
     )
     db.add(job)
     db.commit()
@@ -245,7 +245,7 @@ async def upload_consumption_data(
         job.rows_errored = rows_errored
         job.date_start = date_range[0] if date_range else None
         job.date_end = date_range[1] if date_range else None
-        job.completed_at = datetime.utcnow()
+        job.completed_at = datetime.now(timezone.utc)
         db.commit()
 
         return {
@@ -263,7 +263,7 @@ async def upload_consumption_data(
     except Exception as e:
         job.status = ImportStatus.FAILED
         job.error_message = str(e)
-        job.completed_at = datetime.utcnow()
+        job.completed_at = datetime.now(timezone.utc)
         db.commit()
         raise HTTPException(status_code=500, detail=f"Import failed: {str(e)}")
 
@@ -447,7 +447,7 @@ def generate_demo_data(
     profile = profiles.get(request.archetype, profiles["BUREAU_STANDARD"])
 
     # Generate hourly data
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     start = datetime(now.year - 1, now.month, now.day)
     readings = []
     total_kwh = 0.0

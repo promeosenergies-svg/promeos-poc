@@ -2,7 +2,7 @@
 PROMEOS — Achat Energie Seed Demo
 2 sites x 3 scenarios (fixe/indexe/spot) + preferences.
 """
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 from sqlalchemy.orm import Session
 
 from models import (
@@ -82,7 +82,7 @@ def seed_purchase_demo(db: Session) -> dict:
             p90_eur=round(total * p90_mult, 2),
             is_recommended=is_reco,
             reco_status=PurchaseRecoStatus.DRAFT,
-            computed_at=datetime.utcnow(),
+            computed_at=datetime.now(timezone.utc),
         ))
         scenarios_created += 1
 
@@ -108,7 +108,7 @@ def seed_purchase_demo(db: Session) -> dict:
             p90_eur=round(total * p90_mult, 2),
             is_recommended=is_reco,
             reco_status=PurchaseRecoStatus.DRAFT,
-            computed_at=datetime.utcnow(),
+            computed_at=datetime.now(timezone.utc),
         ))
         scenarios_created += 1
 

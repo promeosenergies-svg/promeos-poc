@@ -3,7 +3,7 @@ PROMEOS — Achat Energie Seed WOW (Brique 3)
 Multi-site datasets: 15 sites x 3 scenarios, happy + dirty modes.
 """
 import uuid
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 from sqlalchemy.orm import Session
 
 from models import (
@@ -165,7 +165,7 @@ def seed_wow_happy(db: Session) -> dict:
                 p90_eur=s["p90"],
                 is_recommended=s["is_reco"],
                 reco_status=PurchaseRecoStatus.DRAFT,
-                computed_at=datetime.utcnow(),
+                computed_at=datetime.now(timezone.utc),
             ))
             scenarios_created += 1
 
@@ -268,7 +268,7 @@ def seed_wow_dirty(db: Session) -> dict:
                 p90_eur=s["p90"],
                 is_recommended=s["is_reco"],
                 reco_status=PurchaseRecoStatus.DRAFT,
-                computed_at=datetime.utcnow(),
+                computed_at=datetime.now(timezone.utc),
             ))
             scenarios_created += 1
 

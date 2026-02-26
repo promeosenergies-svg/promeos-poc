@@ -229,7 +229,7 @@ export default function PurchasePage() {
       toast('Erreur lors du chargement des données du site', 'error');
     }
     setLoading(false);
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     if (selectedSiteId) loadSiteData(selectedSiteId);
@@ -246,7 +246,7 @@ export default function PurchasePage() {
         .catch(() => toast('Erreur lors du chargement des echeances', 'error'))
         .finally(() => setRenewalsLoading(false));
     }
-  }, [activeTab, renewals.length]);
+  }, [activeTab, renewals.length, toast]);
 
   // Load history when tab + site selected
   useEffect(() => {
@@ -259,7 +259,7 @@ export default function PurchasePage() {
         .catch(() => toast("Erreur lors du chargement de l'historique", 'error'))
         .finally(() => setHistoryLoading(false));
     }
-  }, [activeTab, selectedSiteId]);
+  }, [activeTab, selectedSiteId, toast]);
 
   const handleSaveAssumptions = async () => {
     if (!selectedSiteId) return;
@@ -903,7 +903,12 @@ export default function PurchasePage() {
                           {r.site_nom || `Site ${r.site_id}`}
                         </td>
                         <td className="px-4 py-3">{r.supplier_name}</td>
-                        <td className="px-4 py-3 capitalize">{r.energy_type}</td>
+                        <td className="px-4 py-3 capitalize">
+                        {r.energy_type}
+                        {r.energy_type === 'gaz' && (
+                          <span className="ml-1 px-1.5 py-0.5 text-[10px] font-medium bg-gray-200 text-gray-500 rounded" title="Simulation achat non disponible pour le gaz dans cette version">hors-perimetre</span>
+                        )}
+                      </td>
                         <td className="px-4 py-3">
                           {new Date(r.end_date).toLocaleDateString('fr-FR')}
                         </td>
