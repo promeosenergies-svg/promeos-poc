@@ -41,7 +41,10 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 > | Facturation (org-scoping, PDF import, shadow billing, Action Center) | Stable -- V66 |
 > | Timeline & couverture facturation (periods, coverage engine, /billing page) | Stable -- V67 |
 > | Billing Unified (shadow V2 TURPE/CSPE, R13/R14, deep-links, seed 36 mois) | Stable -- V68 |
-> | Suite de tests automatises | **2 138 passes, 0 echec** |
+> | Actions Console (gestion centralisee, filtres, batch, detail drawer) | Stable -- V69 |
+> | Performance V2 (4 sections, plan d'action, expert mode, route registry) | Stable -- V70 |
+> | Demo Seed hardening (INSERT OR IGNORE, UniqueConstraint, 60 mois, 8 pytest) | Stable -- V71 |
+> | Suite de tests automatises | **2 850+ passes, 0 regression** |
 
 > **Disclaimer**
 >
@@ -55,9 +58,9 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 <a id="tldr"></a>
 ## TL;DR
 
-- **Backend FastAPI** avec ~150 endpoints, 20+ modeles SQLAlchemy, 4 moteurs de regles reglementaires, 5 connecteurs de donnees, 4 watchers de veille, 5 agents IA (stub), module Patrimoine complet (import HELIOS, anomalies, impact reglementaire, cockpit portfolio V60-V63), module Facturation production-grade (org-scoping, PDF EDF/Engie, shadow billing V2 TURPE/CSPE/TICGN, 14 regles d'anomalie, bridge Action Center), timeline & couverture facturation (periods, coverage engine V67), Billing Unified (InvoiceNormalized, deep-links bidirectionnels, seed 36 mois HELIOS V68).
-- **Frontend React 18 + Tailwind + Vite** avec 20+ pages : Dashboard, Cockpit Executif, Patrimoine (heatmap + portfolio), Detail Site, Plan d'action, RegOps, Conso & Usages, Tertiaire OPERAT, IAM Admin, Import, KB Explorer, Veille Reglementaire, Facturation (BillIntel deep-links site_id/month + BillingPage activeMonth highlight + BillingTimeline ring + SiteBillingMini), et plus.
-- **2 138 tests passent, 0 echec** — pytest backend complet, seed de 120 sites + 10 personas IAM + 36 mois facturation HELIOS en une commande, demo operationnelle en 2 minutes.
+- **Backend FastAPI** avec ~150 endpoints, 20+ modeles SQLAlchemy, 4 moteurs de regles reglementaires, 5 connecteurs de donnees, 4 watchers de veille, 5 agents IA (stub), module Patrimoine complet (import HELIOS, anomalies, impact reglementaire, cockpit portfolio V60-V63), module Facturation production-grade (org-scoping, PDF EDF/Engie, shadow billing V2 TURPE/CSPE/TICGN, 14 regles d'anomalie, bridge Action Center), timeline & couverture facturation (periods, coverage engine V67), Billing Unified (InvoiceNormalized, deep-links bidirectionnels, seed 36 mois HELIOS V68), demo seed hardened (INSERT OR IGNORE, UniqueConstraint, 60 mois, 8 pytest V71).
+- **Frontend React 18 + Tailwind + Vite** avec 20+ pages : Dashboard, Cockpit Executif, Patrimoine (heatmap + portfolio), Detail Site, Plan d'action, RegOps, Conso & Usages, Tertiaire OPERAT, IAM Admin, Import, KB Explorer, Veille Reglementaire, Facturation (BillIntel deep-links + BillingTimeline + CoverageBar), Actions Console (gestion centralisee, filtres, batch, detail drawer V69), Performance V2 (4 sections, plan d'action, expert mode, route registry, 39 vitest V70), et plus.
+- **2 850+ tests passent, 0 regression** — pytest backend + vitest frontend, seed HELIOS 5 sites + 60 mois + 10 personas IAM en une commande, demo operationnelle en 2 minutes.
 
 ---
 
@@ -440,7 +443,8 @@ Documentation Swagger complete : `http://localhost:8000/docs`
 | `/kb` | KB Explorer | Knowledge Base : archetypes, regles anomalie, recommendations |
 | `/bill-intel` | Bill Intelligence | Import CSV/PDF, shadow billing 12 regles, anomalies, "Creer action" CTA |
 | `/billing` | Timeline Facturation | Vue mensuelle couverture (covered/partial/missing), CoverageBar, filtres, pagination |
-| `/monitoring` | Monitoring | Alertes actives, KPIs live, badges sidebar |
+| `/monitoring` | Performance Electrique V2 | 4 sections (header, a retenir, plan d'action, details), 8 KPI cards 4-col, expert mode, route registry |
+| `/actions` | Actions Console | Gestion centralisee, filtres multi-criteres, batch operations, detail drawer |
 | `/purchase` | Achat Energie | Assistant achat multi-sites, note decision, RFP |
 | `/admin/users` | Admin Utilisateurs | Gestion users/roles/scopes, journal d'audit |
 | `/login` | Authentification | Login JWT, switch org, impersonation |
@@ -557,7 +561,27 @@ Pour plus de details : [Security Notes](docs/security_notes.md) | [Demo Script](
   - `BillingTimeline.jsx` : `activeMonth` prop → `ring-2 ring-amber-400` sur la ligne du mois actif
   - Seed 36 mois HELIOS : Jan 2023–Dec 2025 × 2 sites (site_a ELEC 9000 kWh, site_b GAZ 6000 kWh), 3 trous (2023-03, 2024-09, 2025-02), 2 partiels (2023-06 15j, 2024-01 20j), 3 anomalies controlees (2024-07 R1 shadow gap, 2024-11 R13 reseau, 2025-01 R14 taxes). Idempotent via `source="seed_36m"`, integre dans `seed_data.py`
   - 20 tests backend + 49 tests frontend source-guard
-- **2 138 tests automatises (pytest), 0 echec**
+- **Actions Console V69** :
+  - Page `/actions` : gestion centralisee des actions (MANUAL, INSIGHT, BILLING, COMPLIANCE)
+  - Filtres multi-criteres : statut, priorite, source, site
+  - Batch operations : resoudre/supprimer en masse
+  - Detail drawer : contexte complet, timeline, liens source
+- **Performance Electrique V2 (V70)** :
+  - Restructuration en 4 sections : header-pilotage, a-retenir, plan-action, details
+  - Route registry : zero URL hardcodee (`toConsoExplorer`, `toConsoDiag`, `toActionsList`, `toPatrimoine`)
+  - Plan d'action : top 3 priorites par impact EUR/an avec CTA "Creer action"
+  - Expert mode : metriques avancees (snapshots) gatees derriere `isExpert` accordion
+  - "A retenir" : executive summary (risque, gaspillage, confiance, CO2e) avec CTAs "Comprendre"
+  - Labels 100% francais : "Off-hours" → "Hors horaires", CTAs coherentes
+  - 8 KPI cards en grille 4 colonnes (responsive 1/2/4 col) — Climat integre dans la grille
+  - 39 tests vitest source-guard (sections, labels, CTA, route registry, expert mode)
+- **Demo Seed Hardening (V71)** :
+  - `UniqueConstraint(meter_id, timestamp)` sur le modele MeterReading
+  - `INSERT OR IGNORE` comme filet de securite dans gen_readings (SQLite)
+  - 60 mois de readings mensuelles (au-dessus du seuil 48 de l'Explorer)
+  - Logging + rollback au lieu de swallowing silencieux dans `reset()`
+  - 8 tests pytest de regression (unicite, idempotence, reset)
+- **2 850+ tests automatises (pytest + vitest), 0 regression**
 - 12 items KB valides (archetypes, regles, recommendations)
 - Smoke test "red button" (14 checks avant mise en pilote)
 
@@ -659,7 +683,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 cd backend
 python -m pytest tests/ -v --tb=short
 ```
-Resultat attendu : `2138 passed, 12 skipped`.
+Resultat attendu : `2850+ passed`.
 
 ### Tests IAM uniquement
 
