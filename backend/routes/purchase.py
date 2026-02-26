@@ -17,6 +17,17 @@ from middleware.auth import get_optional_auth, require_admin, AuthContext
 from services.iam_scope import check_site_access
 
 DEMO_SEED_ENABLED = os.environ.get("DEMO_SEED_ENABLED", "false").lower() == "true"
+
+
+def _check_seed_enabled():
+    """Guard: seed endpoints are only available when DEMO_SEED_ENABLED=true."""
+    if not DEMO_SEED_ENABLED:
+        raise HTTPException(
+            status_code=403,
+            detail="Demo seed is disabled. Set DEMO_SEED_ENABLED=true to enable.",
+        )
+
+
 from models import (
     PurchaseAssumptionSet,
     PurchasePreference,
@@ -941,6 +952,7 @@ def get_assistant_data(
 
 @router.post("/seed-demo")
 def seed_demo(
+    org_id: int = Query(1),
     db: Session = Depends(get_db),
     _admin: None = Depends(require_admin()),
 ):
@@ -948,7 +960,7 @@ def seed_demo(
     _check_seed_enabled()
     from services.purchase_seed import seed_purchase_demo
 
-    return seed_purchase_demo(db)
+    return seed_purchase_demo(db, org_id=org_id)
 
 
 # ── Brique 3: WOW multi-site datasets ──

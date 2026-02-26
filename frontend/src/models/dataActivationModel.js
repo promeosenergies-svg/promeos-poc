@@ -13,6 +13,7 @@
  */
 
 import { isPurchaseAvailable } from './purchaseSignalsContract';
+import { toPurchase } from '../services/routes';
 
 // ── Constantes ──────────────────────────────────────────────────────────────
 
@@ -100,7 +101,7 @@ export function buildActivationChecklist({ kpis = {}, billingSummary = {}, purch
       available: hasPurchase,
       coverage: purchaseSignals?.coverageContractsPct ?? 0,
       detail: hasPurchase ? `${purchaseSignals.totalContracts} contrat${purchaseSignals.totalContracts > 1 ? 's' : ''}` : null,
-      ctaPath: '/achat-energie',
+      ctaPath: toPurchase(),
       ctaLabel: 'Renseigner les contrats',
     },
   ];

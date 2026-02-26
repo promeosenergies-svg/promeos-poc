@@ -22,6 +22,7 @@ import { computeActionableLevers } from '../../models/leverEngineModel';
 import { buildLeverDeepLink } from '../../models/leverActionModel';
 import { hasProofData, buildProofLink, getProofLabel } from '../../models/proofLinkModel';
 import { normalizePurchaseSignals, isPurchaseAvailable } from '../../models/purchaseSignalsContract';
+import { toPurchase } from '../../services/routes';
 
 // ── KPI tile (inline — small enough) ─────────────────────────────────────────
 
@@ -228,7 +229,7 @@ export default function ImpactDecisionPanel({ kpis }) {
         {isPurchaseAvailable(purchaseSignals) ? (
           <div className="grid grid-cols-3 gap-3">
             <button
-              onClick={() => navigate('/achat-energie?filter=renewal')}
+              onClick={() => navigate(toPurchase({ filter: 'renewal' }))}
               className="text-left p-2 rounded-md hover:bg-gray-50 transition-colors"
               aria-label="Voir les contrats \u00e0 renouveler"
             >
@@ -240,7 +241,7 @@ export default function ImpactDecisionPanel({ kpis }) {
               <p className="text-[10px] text-gray-500">Couverture contrats</p>
             </div>
             <button
-              onClick={() => navigate('/achat-energie?filter=missing')}
+              onClick={() => navigate(toPurchase({ filter: 'missing' }))}
               className="text-left p-2 rounded-md hover:bg-gray-50 transition-colors"
               aria-label="Voir les sites sans contrat"
             >

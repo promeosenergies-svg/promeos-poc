@@ -153,3 +153,24 @@ export function toCompliancePipeline() {
 export function toSiteCompliance(siteId) {
   return `/compliance/sites/${siteId}`;
 }
+
+/**
+ * Achat Energie — simulation, portefeuille, echeances, historique.
+ * @param {object} opts
+ * @param {string} [opts.filter] — filtre preset (renewal, missing, etc.)
+ * @param {string} [opts.tab] — onglet actif (simulation, portefeuille, echeances, historique)
+ */
+export function toPurchase(opts = {}) {
+  const p = new URLSearchParams();
+  if (opts.filter) p.set('filter', opts.filter);
+  if (opts.tab) p.set('tab', opts.tab);
+  const qs = p.toString();
+  return `/achat-energie${qs ? '?' + qs : ''}`;
+}
+
+/**
+ * Assistant Achat — wizard 8 etapes.
+ */
+export function toPurchaseAssistant() {
+  return '/achat-energie/assistant';
+}

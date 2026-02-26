@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { getDashboard2min } from '../services/api';
 import { useScope } from '../contexts/ScopeContext';
+import { toPurchase } from '../services/routes';
 
 const COLOR_MAP = {
   green: { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-700', icon: CheckCircle },
@@ -230,7 +231,7 @@ function Cockpit2MinPage({ onUpgradeClick }) {
                 <span>Risque: {data.achat.recommendation.risk_score}/100</span>
               </div>
             </div>
-            <Link to="/achat-energie"
+            <Link to={toPurchase()}
               className="inline-flex items-center gap-1 text-sm text-indigo-600 hover:text-indigo-800 font-medium shrink-0">
               Voir les scenarios <ArrowRight size={14} />
             </Link>

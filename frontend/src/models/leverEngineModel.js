@@ -13,6 +13,7 @@
 
 import { isComplianceAvailable } from './complianceSignalsContract';
 import { isBillingInsightsAvailable } from './billingInsightsContract';
+import { toPurchase } from '../services/routes';
 import { isPurchaseAvailable } from './purchaseSignalsContract';
 import { computeActivatedCount, ACTIVATION_THRESHOLD } from './dataActivationModel';
 
@@ -149,7 +150,7 @@ export function computeActionableLevers({ kpis = {}, billingSummary = {}, compli
         actionKey: 'lev-achat-renew',
         label: `Renouveler ${expCount} contrat${expCount > 1 ? 's' : ''} d'energie (${expSites.length} site${expSites.length > 1 ? 's' : ''})`,
         impactEur: purchaseSignals.estimatedExposureEur,
-        ctaPath: '/achat-energie?filter=renewal',
+        ctaPath: toPurchase({ filter: 'renewal' }),
         proofHint: 'Contrat de fourniture / avenants / echeancier',
       });
     }
@@ -160,7 +161,7 @@ export function computeActionableLevers({ kpis = {}, billingSummary = {}, compli
         actionKey: 'lev-achat-data',
         label: `Completer ${missingCount} site${missingCount > 1 ? 's' : ''} sans contrat energie`,
         impactEur: null,
-        ctaPath: '/achat-energie?filter=missing',
+        ctaPath: toPurchase({ filter: 'missing' }),
       });
     }
   }

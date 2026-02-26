@@ -12,7 +12,7 @@ from models import (
 )
 
 
-def seed_purchase_demo(db: Session) -> dict:
+def seed_purchase_demo(db: Session, org_id: int = 1) -> dict:
     """
     Seed purchase scenarios for 2 sites.
     Returns summary.
@@ -28,7 +28,7 @@ def seed_purchase_demo(db: Session) -> dict:
     existing_pref = db.query(PurchasePreference).first()
     if not existing_pref:
         pref = PurchasePreference(
-            org_id=1,
+            org_id=org_id,
             risk_tolerance="medium",
             budget_priority=0.6,
             green_preference=False,
