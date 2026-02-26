@@ -5,23 +5,77 @@
  * Steps: Portfolio → Consumption → Persona → Horizon → Offers → Results → Scoring → Decision
  */
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { PageShell, Card, CardHeader, CardBody, Button, Badge, KpiCard, Progress, EmptyState, Modal } from '../ui';
+import {
+  PageShell,
+  Card,
+  CardHeader,
+  CardBody,
+  Button,
+  Badge,
+  KpiCard,
+  Progress,
+  EmptyState,
+  Modal,
+} from '../ui';
 import { useToast } from '../ui/ToastProvider';
 import { useExpertMode } from '../contexts/ExpertModeContext';
+import { useScope } from '../contexts/ScopeContext';
+import { getPurchaseAssistantData } from '../services/api';
 import {
-  ShoppingCart, ChevronLeft, ChevronRight, Check, MapPin, Zap,
-  BarChart3, User, Clock, FileText, Shield, TrendingUp, Target,
-  AlertTriangle, Info, Plus, Trash2, Download, Eye, Lock,
-  ArrowRight, Flame, CheckCircle2, XCircle, Minus, Star,
+  ShoppingCart,
+  ChevronLeft,
+  ChevronRight,
+  Check,
+  MapPin,
+  Zap,
+  BarChart3,
+  User,
+  Clock,
+  FileText,
+  Shield,
+  TrendingUp,
+  Target,
+  AlertTriangle,
+  Info,
+  Plus,
+  Trash2,
+  Download,
+  Eye,
+  Lock,
+  ArrowRight,
+  Flame,
+  CheckCircle2,
+  XCircle,
+  Minus,
+  Star,
 } from 'lucide-react';
 import {
-  EnergyType, OfferStructure, ScenarioPreset, Persona, Confidence, ScoreLevel,
-  BREAKDOWN_LABELS, PERSONA_PROFILES, SCENARIO_PRESETS, DEFAULT_MARKET,
-  BRIQUE3_VERSION, createDefaultWizardState,
-  runEngine, clearEngineCache, scoreOffer, recommend,
-  generateDecisionNote, generateRfpPack, generateComparisonCsv,
-  appendDecision, getAuditLog, downloadAuditFile,
-  DEMO_OFFERS, DEMO_ORGANIZATIONS, aggregateDemoSites, getAllDemoSites,
+  EnergyType,
+  OfferStructure,
+  ScenarioPreset,
+  Persona,
+  Confidence,
+  ScoreLevel,
+  BREAKDOWN_LABELS,
+  PERSONA_PROFILES,
+  SCENARIO_PRESETS,
+  DEFAULT_MARKET,
+  BRIQUE3_VERSION,
+  createDefaultWizardState,
+  runEngine,
+  clearEngineCache,
+  scoreOffer,
+  recommend,
+  generateDecisionNote,
+  generateRfpPack,
+  generateComparisonCsv,
+  appendDecision,
+  getAuditLog,
+  downloadAuditFile,
+  DEMO_OFFERS,
+  DEMO_ORGANIZATIONS,
+  aggregateDemoSites,
+  getAllDemoSites,
 } from '../domain/purchase/index.js';
 
 // ── Constants ──────────────────────────────────────────────────────
@@ -110,6 +164,7 @@ function createEmptyOffer(index) {
 export default function PurchaseAssistantPage() {
   const { toast } = useToast();
   const { isExpert } = useExpertMode();
+  const { scope } = useScope();
 
   // Wizard state
   const [step, setStep] = useState(0);
@@ -123,30 +178,84 @@ export default function PurchaseAssistantPage() {
   const [computing, setComputing] = useState(false);
   const [showAuditModal, setShowAuditModal] = useState(false);
 
-  // Demo sites
-  const demoSites = useMemo(() => getAllDemoSites(), []);
+  // API data for assistant
+  const [apiAssistantData, setApiAssistantData] = useState(null);
+
+  // Fetch assistant data from API on mount / org change
+  useEffect(() => {
+    let cancelled = false;
+    getPurchaseAssistantData(scope.orgId)
+      .then((data) => {
+        if (!cancelled) {
+          setApiAssistantData(data);
+          setIsDemo(data.is_demo);
+        }
+      })
+      .catch(() => {
+        // Fallback to local demo data on error
+        if (!cancelled) setApiAssistantData(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [scope.orgId]);
+
+  // Demo sites — prefer API data, fall back to local demo
+  const demoSites = useMemo(() => {
+    if (apiAssistantData?.sites?.length) {
+      return apiAssistantData.sites.map((s) => ({
+        id: s.id,
+        name: s.name,
+        city: s.city,
+        usage: s.usage,
+        surfaceM2: s.surface_m2,
+        energyType: s.energy_type === 'elec' ? EnergyType.ELEC : EnergyType.GAZ,
+        consumption: {
+          annualKwh: s.annual_kwh,
+          granularity: 'monthly',
+          profileFactor: 1,
+          source: s.source,
+        },
+        organizationName: apiAssistantData.is_demo ? 'Demo' : `Org #${apiAssistantData.org_id}`,
+        entityName: '',
+      }));
+    }
+    return getAllDemoSites();
+  }, [apiAssistantData]);
 
   // Selected sites data
   const selectedSitesData = useMemo(() => {
     if (isDemo) {
       return aggregateDemoSites(wizard.selectedSiteIds);
     }
-    return { annualKwh: wizard.totalAnnualKwh, energyType: wizard.energyType, consumption: null, billing: null, anomalies: [] };
+    return {
+      annualKwh: wizard.totalAnnualKwh,
+      energyType: wizard.energyType,
+      consumption: null,
+      billing: null,
+      anomalies: [],
+    };
   }, [isDemo, wizard.selectedSiteIds, wizard.totalAnnualKwh, wizard.energyType]);
 
   // Current offers
-  const offers = wizard.offers.length > 0 ? wizard.offers : (isDemo ? DEMO_OFFERS : []);
+  const offers = wizard.offers.length > 0 ? wizard.offers : isDemo ? DEMO_OFFERS : [];
 
   // ── Navigation ───────────────────────────────────────────────────
 
   const canAdvance = useMemo(() => {
     switch (step) {
-      case 0: return wizard.selectedSiteIds.length > 0 || !isDemo;
-      case 1: return selectedSitesData.annualKwh > 0;
-      case 2: return !!wizard.persona;
-      case 3: return wizard.horizonMonths > 0;
-      case 4: return offers.length > 0;
-      default: return true;
+      case 0:
+        return wizard.selectedSiteIds.length > 0 || !isDemo;
+      case 1:
+        return selectedSitesData.annualKwh > 0;
+      case 2:
+        return !!wizard.persona;
+      case 3:
+        return wizard.horizonMonths > 0;
+      case 4:
+        return offers.length > 0;
+      default:
+        return true;
     }
   }, [step, wizard, isDemo, selectedSitesData, offers]);
 
@@ -156,12 +265,12 @@ export default function PurchaseAssistantPage() {
       if (step === 4) {
         handleCompute();
       }
-      setStep(s => s + 1);
+      setStep((s) => s + 1);
     }
   }, [step, canAdvance]);
 
   const goBack = useCallback(() => {
-    if (step > 0) setStep(s => s - 1);
+    if (step > 0) setStep((s) => s - 1);
   }, [step]);
 
   // ── Computation ──────────────────────────────────────────────────
@@ -186,18 +295,24 @@ export default function PurchaseAssistantPage() {
       setEngineOutput(output);
 
       // Score each offer
-      const scored = output.results.map(result => {
-        const offer = offers.find(o => o.id === result.offerId);
-        if (!offer) return null;
-        const scores = scoreOffer({
-          offerResult: result, offer,
-          budgetEur: wizard.budgetEur,
-          anomalies: selectedSitesData.anomalies || [],
-          consumption: selectedSitesData.consumption || { source: isDemo ? 'DEMO' : 'USER', granularity: 'monthly' },
-          billing: selectedSitesData.billing,
-        });
-        return { ...result, offer, scores };
-      }).filter(Boolean);
+      const scored = output.results
+        .map((result) => {
+          const offer = offers.find((o) => o.id === result.offerId);
+          if (!offer) return null;
+          const scores = scoreOffer({
+            offerResult: result,
+            offer,
+            budgetEur: wizard.budgetEur,
+            anomalies: selectedSitesData.anomalies || [],
+            consumption: selectedSitesData.consumption || {
+              source: isDemo ? 'DEMO' : 'USER',
+              granularity: 'monthly',
+            },
+            billing: selectedSitesData.billing,
+          });
+          return { ...result, offer, scores };
+        })
+        .filter(Boolean);
       setScoredOffers(scored);
 
       // Recommendation
@@ -206,7 +321,10 @@ export default function PurchaseAssistantPage() {
         offers,
         persona: wizard.persona,
         budgetEur: wizard.budgetEur,
-        consumption: selectedSitesData.consumption || { source: isDemo ? 'DEMO' : 'USER', granularity: 'monthly' },
+        consumption: selectedSitesData.consumption || {
+          source: isDemo ? 'DEMO' : 'USER',
+          granularity: 'monthly',
+        },
         billing: selectedSitesData.billing,
         anomalies: selectedSitesData.anomalies || [],
       });
@@ -231,20 +349,59 @@ export default function PurchaseAssistantPage() {
 
   const renderStep = () => {
     switch (step) {
-      case 0: return <StepPortfolio wizard={wizard} setWizard={setWizard} isDemo={isDemo} setIsDemo={setIsDemo} demoSites={demoSites} />;
-      case 1: return <StepConsumption wizard={wizard} setWizard={setWizard} sitesData={selectedSitesData} isDemo={isDemo} />;
-      case 2: return <StepPersona wizard={wizard} setWizard={setWizard} />;
-      case 3: return <StepHorizon wizard={wizard} setWizard={setWizard} isExpert={isExpert} />;
-      case 4: return <StepOffers wizard={wizard} setWizard={setWizard} isDemo={isDemo} />;
-      case 5: return <StepResults engineOutput={engineOutput} scoredOffers={scoredOffers} recommendation={recommendation} computing={computing} onRecompute={handleCompute} />;
-      case 6: return <StepScoring scoredOffers={scoredOffers} recommendation={recommendation} />;
-      case 7: return <StepDecision
-        recommendation={recommendation} scoredOffers={scoredOffers}
-        engineOutput={engineOutput} offers={offers} wizard={wizard}
-        selectedSitesData={selectedSitesData} isDemo={isDemo}
-        onShowAudit={() => setShowAuditModal(true)} toast={toast}
-      />;
-      default: return null;
+      case 0:
+        return (
+          <StepPortfolio
+            wizard={wizard}
+            setWizard={setWizard}
+            isDemo={isDemo}
+            setIsDemo={setIsDemo}
+            demoSites={demoSites}
+          />
+        );
+      case 1:
+        return (
+          <StepConsumption
+            wizard={wizard}
+            setWizard={setWizard}
+            sitesData={selectedSitesData}
+            isDemo={isDemo}
+          />
+        );
+      case 2:
+        return <StepPersona wizard={wizard} setWizard={setWizard} />;
+      case 3:
+        return <StepHorizon wizard={wizard} setWizard={setWizard} isExpert={isExpert} />;
+      case 4:
+        return <StepOffers wizard={wizard} setWizard={setWizard} isDemo={isDemo} />;
+      case 5:
+        return (
+          <StepResults
+            engineOutput={engineOutput}
+            scoredOffers={scoredOffers}
+            recommendation={recommendation}
+            computing={computing}
+            onRecompute={handleCompute}
+          />
+        );
+      case 6:
+        return <StepScoring scoredOffers={scoredOffers} recommendation={recommendation} />;
+      case 7:
+        return (
+          <StepDecision
+            recommendation={recommendation}
+            scoredOffers={scoredOffers}
+            engineOutput={engineOutput}
+            offers={offers}
+            wizard={wizard}
+            selectedSitesData={selectedSitesData}
+            isDemo={isDemo}
+            onShowAudit={() => setShowAuditModal(true)}
+            toast={toast}
+          />
+        );
+      default:
+        return null;
     }
   };
 
@@ -261,7 +418,9 @@ export default function PurchaseAssistantPage() {
           const isActive = i === step;
           const isDone = i < step;
           return (
-            <button key={s.key} onClick={() => i <= step && setStep(i)}
+            <button
+              key={s.key}
+              onClick={() => i <= step && setStep(i)}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition
                 ${isActive ? 'bg-blue-600 text-white shadow-sm' : isDone ? 'bg-blue-50 text-blue-700 hover:bg-blue-100' : 'bg-gray-50 text-gray-400 cursor-default'}`}
             >
@@ -274,23 +433,31 @@ export default function PurchaseAssistantPage() {
       </div>
 
       {/* Step content */}
-      <div className="min-h-[400px]">
-        {renderStep()}
-      </div>
+      <div className="min-h-[400px]">{renderStep()}</div>
 
       {/* Navigation */}
       <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-        <button onClick={goBack} disabled={step === 0}
-          className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 disabled:opacity-30 disabled:cursor-default transition">
+        <button
+          onClick={goBack}
+          disabled={step === 0}
+          className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 disabled:opacity-30 disabled:cursor-default transition"
+        >
           <ChevronLeft size={16} /> Precedent
         </button>
         <div className="text-xs text-gray-400">
           Etape {step + 1} / {STEPS.length}
-          {isDemo && <span className="ml-2 px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full font-medium">MODE DEMO</span>}
+          {isDemo && (
+            <span className="ml-2 px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full font-medium">
+              MODE DEMO
+            </span>
+          )}
         </div>
         {step < STEPS.length - 1 ? (
-          <button onClick={goNext} disabled={!canAdvance}
-            className="flex items-center gap-2 px-5 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-40 disabled:cursor-default transition">
+          <button
+            onClick={goNext}
+            disabled={!canAdvance}
+            className="flex items-center gap-2 px-5 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-40 disabled:cursor-default transition"
+          >
             Suivant <ChevronRight size={16} />
           </button>
         ) : (
@@ -316,16 +483,16 @@ export default function PurchaseAssistantPage() {
 
 function StepPortfolio({ wizard, setWizard, isDemo, setIsDemo, demoSites }) {
   const toggleSite = (id) => {
-    setWizard(prev => ({
+    setWizard((prev) => ({
       ...prev,
       selectedSiteIds: prev.selectedSiteIds.includes(id)
-        ? prev.selectedSiteIds.filter(x => x !== id)
+        ? prev.selectedSiteIds.filter((x) => x !== id)
         : [...prev.selectedSiteIds, id],
     }));
   };
 
   const selectAll = () => {
-    setWizard(prev => ({ ...prev, selectedSiteIds: demoSites.map(s => s.id) }));
+    setWizard((prev) => ({ ...prev, selectedSiteIds: demoSites.map((s) => s.id) }));
   };
 
   return (
@@ -334,8 +501,12 @@ function StepPortfolio({ wizard, setWizard, isDemo, setIsDemo, demoSites }) {
         <h3 className="text-lg font-semibold text-gray-800">Selection du perimetre</h3>
         <div className="flex items-center gap-3">
           <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={isDemo} onChange={e => setIsDemo(e.target.checked)}
-              className="rounded border-gray-300" />
+            <input
+              type="checkbox"
+              checked={isDemo}
+              onChange={(e) => setIsDemo(e.target.checked)}
+              className="rounded border-gray-300"
+            />
             Mode demo
           </label>
           {isDemo && (
@@ -348,30 +519,38 @@ function StepPortfolio({ wizard, setWizard, isDemo, setIsDemo, demoSites }) {
 
       {isDemo ? (
         <div className="space-y-3">
-          {DEMO_ORGANIZATIONS.map(org => (
+          {DEMO_ORGANIZATIONS.map((org) => (
             <div key={org.id} className="bg-white rounded-lg border border-gray-200 p-4">
               <h4 className="font-medium text-gray-900 mb-3">{org.name}</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {org.entities.flatMap(e => e.sites).map(site => {
-                  const selected = wizard.selectedSiteIds.includes(site.id);
-                  return (
-                    <button key={site.id} onClick={() => toggleSite(site.id)}
-                      className={`text-left p-3 rounded-lg border-2 transition
-                        ${selected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}>
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-sm text-gray-900">{site.name}</span>
-                        <Badge variant={site.energyType === 'ELEC' ? 'blue' : 'orange'}>
-                          {site.energyType === 'ELEC' ? <Zap size={12} /> : <Flame size={12} />}
-                          {site.energyType}
-                        </Badge>
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">{site.city} — {site.usage}</div>
-                      <div className="text-xs text-gray-400 mt-1">
-                        {(site.consumption.annualKwh / 1000).toFixed(0)} MWh/an — {site.surfaceM2.toLocaleString()} m2
-                      </div>
-                    </button>
-                  );
-                })}
+                {org.entities
+                  .flatMap((e) => e.sites)
+                  .map((site) => {
+                    const selected = wizard.selectedSiteIds.includes(site.id);
+                    return (
+                      <button
+                        key={site.id}
+                        onClick={() => toggleSite(site.id)}
+                        className={`text-left p-3 rounded-lg border-2 transition
+                        ${selected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-sm text-gray-900">{site.name}</span>
+                          <Badge variant={site.energyType === 'ELEC' ? 'blue' : 'orange'}>
+                            {site.energyType === 'ELEC' ? <Zap size={12} /> : <Flame size={12} />}
+                            {site.energyType}
+                          </Badge>
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          {site.city} — {site.usage}
+                        </div>
+                        <div className="text-xs text-gray-400 mt-1">
+                          {(site.consumption.annualKwh / 1000).toFixed(0)} MWh/an —{' '}
+                          {site.surfaceM2.toLocaleString()} m2
+                        </div>
+                      </button>
+                    );
+                  })}
               </div>
             </div>
           ))}
@@ -380,8 +559,8 @@ function StepPortfolio({ wizard, setWizard, isDemo, setIsDemo, demoSites }) {
         <Card>
           <CardBody>
             <p className="text-sm text-gray-500">
-              Connectez-vous a votre patrimoine (Brique 1) pour charger les sites reels.
-              En attendant, activez le mode demo pour tester l'assistant.
+              Connectez-vous a votre patrimoine (Brique 1) pour charger les sites reels. En
+              attendant, activez le mode demo pour tester l'assistant.
             </p>
           </CardBody>
         </Card>
@@ -431,16 +610,27 @@ function StepConsumption({ wizard, setWizard, sitesData, isDemo }) {
           <CardBody>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Volume annuel (kWh)</label>
-                <input type="number" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Volume annuel (kWh)
+                </label>
+                <input
+                  type="number"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
                   value={wizard.totalAnnualKwh}
-                  onChange={e => setWizard(prev => ({ ...prev, totalAnnualKwh: Number(e.target.value) }))} />
+                  onChange={(e) =>
+                    setWizard((prev) => ({ ...prev, totalAnnualKwh: Number(e.target.value) }))
+                  }
+                />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Type d'energie</label>
-                <select className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Type d'energie
+                </label>
+                <select
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
                   value={wizard.energyType}
-                  onChange={e => setWizard(prev => ({ ...prev, energyType: e.target.value }))}>
+                  onChange={(e) => setWizard((prev) => ({ ...prev, energyType: e.target.value }))}
+                >
                   <option value={EnergyType.ELEC}>Electricite</option>
                   <option value={EnergyType.GAZ}>Gaz</option>
                 </select>
@@ -457,14 +647,19 @@ function StepConsumption({ wizard, setWizard, sitesData, isDemo }) {
             <div className="flex items-end gap-1 h-24">
               {(sitesData.consumption?.seasonality || []).map((coeff, i) => (
                 <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                  <div className="w-full bg-blue-200 rounded-t" style={{ height: `${coeff * 60}px` }} />
+                  <div
+                    className="w-full bg-blue-200 rounded-t"
+                    style={{ height: `${coeff * 60}px` }}
+                  />
                   <span className="text-[10px] text-gray-400">
                     {['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'][i]}
                   </span>
                 </div>
               ))}
             </div>
-            <p className="text-xs text-gray-400 mt-2">Saisonnalite mensuelle (coefficient normalisé)</p>
+            <p className="text-xs text-gray-400 mt-2">
+              Saisonnalite mensuelle (coefficient normalisé)
+            </p>
           </CardBody>
         </Card>
       )}
@@ -472,12 +667,14 @@ function StepConsumption({ wizard, setWizard, sitesData, isDemo }) {
       {sitesData.anomalies?.length > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
           <div className="flex items-center gap-2 text-sm font-medium text-amber-700 mb-2">
-            <AlertTriangle size={16} /> {sitesData.anomalies.length} anomalie(s) de facturation détectée(s)
+            <AlertTriangle size={16} /> {sitesData.anomalies.length} anomalie(s) de facturation
+            détectée(s)
           </div>
           <ul className="space-y-1">
             {sitesData.anomalies.slice(0, 3).map((a, i) => (
               <li key={i} className="text-xs text-amber-600">
-                {a.message} {a.estimatedLossEur > 0 && `(~${a.estimatedLossEur.toLocaleString()} EUR)`}
+                {a.message}{' '}
+                {a.estimatedLossEur > 0 && `(~${a.estimatedLossEur.toLocaleString()} EUR)`}
               </li>
             ))}
           </ul>
@@ -495,15 +692,21 @@ function StepPersona({ wizard, setWizard }) {
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold text-gray-800">Profil decideur</h3>
-      <p className="text-sm text-gray-500">Choisissez le persona qui correspond au destinataire de l'analyse. Les poids de scoring seront adaptes.</p>
+      <p className="text-sm text-gray-500">
+        Choisissez le persona qui correspond au destinataire de l'analyse. Les poids de scoring
+        seront adaptes.
+      </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {Object.entries(PERSONA_PROFILES).map(([key, profile]) => {
           const selected = wizard.persona === key;
           return (
-            <button key={key} onClick={() => setWizard(prev => ({ ...prev, persona: key }))}
+            <button
+              key={key}
+              onClick={() => setWizard((prev) => ({ ...prev, persona: key }))}
               className={`text-left p-4 rounded-lg border-2 transition
-                ${selected ? 'border-blue-500 bg-blue-50 shadow-sm' : 'border-gray-200 hover:border-gray-300'}`}>
+                ${selected ? 'border-blue-500 bg-blue-50 shadow-sm' : 'border-gray-200 hover:border-gray-300'}`}
+            >
               <div className="flex items-center justify-between mb-2">
                 <span className="font-semibold text-gray-900">{profile.label}</span>
                 {selected && <Check size={18} className="text-blue-600" />}
@@ -513,7 +716,15 @@ function StepPersona({ wizard, setWizard }) {
                 {Object.entries(profile.weights).map(([axis, w]) => (
                   <div key={axis} className="text-center">
                     <div className="font-medium text-gray-700">{Math.round(w * 100)}%</div>
-                    <div className="text-gray-400">{axis === 'budgetRisk' ? 'Budget' : axis === 'transparency' ? 'Transp.' : axis === 'contractRisk' ? 'Contrat' : 'Data'}</div>
+                    <div className="text-gray-400">
+                      {axis === 'budgetRisk'
+                        ? 'Budget'
+                        : axis === 'transparency'
+                          ? 'Transp.'
+                          : axis === 'contractRisk'
+                            ? 'Contrat'
+                            : 'Data'}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -525,13 +736,24 @@ function StepPersona({ wizard, setWizard }) {
       <Card>
         <CardBody>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Budget plafond annuel (EUR) <span className="text-gray-400 font-normal">— optionnel</span>
+            Budget plafond annuel (EUR){' '}
+            <span className="text-gray-400 font-normal">— optionnel</span>
           </label>
-          <input type="number" placeholder="Ex: 500000"
+          <input
+            type="number"
+            placeholder="Ex: 500000"
             className="w-full max-w-xs border border-gray-300 rounded-lg px-3 py-2 text-sm"
             value={wizard.budgetEur || ''}
-            onChange={e => setWizard(prev => ({ ...prev, budgetEur: e.target.value ? Number(e.target.value) : null }))} />
-          <p className="text-xs text-gray-400 mt-1">Si renseigne, le moteur calculera la probabilite de depassement.</p>
+            onChange={(e) =>
+              setWizard((prev) => ({
+                ...prev,
+                budgetEur: e.target.value ? Number(e.target.value) : null,
+              }))
+            }
+          />
+          <p className="text-xs text-gray-400 mt-1">
+            Si renseigne, le moteur calculera la probabilite de depassement.
+          </p>
         </CardBody>
       </Card>
     </div>
@@ -552,10 +774,13 @@ function StepHorizon({ wizard, setWizard, isExpert }) {
           <CardHeader>Horizon contractuel</CardHeader>
           <CardBody>
             <div className="flex gap-3">
-              {[12, 24, 36].map(m => (
-                <button key={m} onClick={() => setWizard(prev => ({ ...prev, horizonMonths: m }))}
+              {[12, 24, 36].map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setWizard((prev) => ({ ...prev, horizonMonths: m }))}
                   className={`flex-1 py-3 rounded-lg text-sm font-medium transition border-2
-                    ${wizard.horizonMonths === m ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                    ${wizard.horizonMonths === m ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
+                >
                   {m} mois
                 </button>
               ))}
@@ -568,9 +793,12 @@ function StepHorizon({ wizard, setWizard, isExpert }) {
           <CardBody>
             <div className="space-y-2">
               {Object.entries(SCENARIO_PRESETS).map(([key, preset]) => (
-                <button key={key} onClick={() => setWizard(prev => ({ ...prev, scenarioPreset: key }))}
+                <button
+                  key={key}
+                  onClick={() => setWizard((prev) => ({ ...prev, scenarioPreset: key }))}
                   className={`w-full text-left p-3 rounded-lg border-2 transition
-                    ${wizard.scenarioPreset === key ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}>
+                    ${wizard.scenarioPreset === key ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}
+                >
                   <div className="flex items-center justify-between">
                     <span className="font-medium text-sm text-gray-900">{preset.label}</span>
                     {wizard.scenarioPreset === key && <Check size={16} className="text-blue-600" />}
@@ -589,25 +817,49 @@ function StepHorizon({ wizard, setWizard, isExpert }) {
           <CardBody>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Iterations MC (max 200)</label>
-                <input type="number" min={10} max={200}
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Iterations MC (max 200)
+                </label>
+                <input
+                  type="number"
+                  min={10}
+                  max={200}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
                   value={wizard.mcIterations}
-                  onChange={e => setWizard(prev => ({ ...prev, mcIterations: Math.min(200, Math.max(10, Number(e.target.value))) }))} />
+                  onChange={(e) =>
+                    setWizard((prev) => ({
+                      ...prev,
+                      mcIterations: Math.min(200, Math.max(10, Number(e.target.value))),
+                    }))
+                  }
+                />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Seed aleatoire</label>
-                <input type="number"
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Seed aleatoire
+                </label>
+                <input
+                  type="number"
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
                   value={wizard.mcSeed}
-                  onChange={e => setWizard(prev => ({ ...prev, mcSeed: Number(e.target.value) }))} />
+                  onChange={(e) =>
+                    setWizard((prev) => ({ ...prev, mcSeed: Number(e.target.value) }))
+                  }
+                />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Prix base spot (EUR/MWh)</label>
-                <input type="number" disabled
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Prix base spot (EUR/MWh)
+                </label>
+                <input
+                  type="number"
+                  disabled
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-gray-50"
-                  value={DEFAULT_MARKET.baseSpotEurPerMwh} />
-                <p className="text-[10px] text-gray-400 mt-0.5">Non modifiable en v{BRIQUE3_VERSION}</p>
+                  value={DEFAULT_MARKET.baseSpotEurPerMwh}
+                />
+                <p className="text-[10px] text-gray-400 mt-0.5">
+                  Non modifiable en v{BRIQUE3_VERSION}
+                </p>
               </div>
             </div>
           </CardBody>
@@ -625,29 +877,34 @@ function StepOffers({ wizard, setWizard, isDemo }) {
   const offers = wizard.offers;
 
   const addOffer = () => {
-    setWizard(prev => ({ ...prev, offers: [...prev.offers, createEmptyOffer(prev.offers.length)] }));
+    setWizard((prev) => ({
+      ...prev,
+      offers: [...prev.offers, createEmptyOffer(prev.offers.length)],
+    }));
   };
 
   const removeOffer = (id) => {
-    setWizard(prev => ({ ...prev, offers: prev.offers.filter(o => o.id !== id) }));
+    setWizard((prev) => ({ ...prev, offers: prev.offers.filter((o) => o.id !== id) }));
   };
 
   const updateOffer = (id, patch) => {
-    setWizard(prev => ({
+    setWizard((prev) => ({
       ...prev,
-      offers: prev.offers.map(o => o.id === id ? { ...o, ...patch } : o),
+      offers: prev.offers.map((o) => (o.id === id ? { ...o, ...patch } : o)),
     }));
   };
 
   const updatePricing = (id, pricingPatch) => {
-    setWizard(prev => ({
+    setWizard((prev) => ({
       ...prev,
-      offers: prev.offers.map(o => o.id === id ? { ...o, pricing: { ...o.pricing, ...pricingPatch } } : o),
+      offers: prev.offers.map((o) =>
+        o.id === id ? { ...o, pricing: { ...o.pricing, ...pricingPatch } } : o
+      ),
     }));
   };
 
   const loadDemoOffers = () => {
-    setWizard(prev => ({ ...prev, offers: [...DEMO_OFFERS] }));
+    setWizard((prev) => ({ ...prev, offers: [...DEMO_OFFERS] }));
   };
 
   return (
@@ -656,8 +913,7 @@ function StepOffers({ wizard, setWizard, isDemo }) {
         <h3 className="text-lg font-semibold text-gray-800">Offres fournisseurs</h3>
         <div className="flex items-center gap-2">
           {isDemo && (
-            <button onClick={loadDemoOffers}
-              className="text-xs text-blue-600 hover:underline">
+            <button onClick={loadDemoOffers} className="text-xs text-blue-600 hover:underline">
               Charger les 5 offres demo
             </button>
           )}
@@ -670,23 +926,30 @@ function StepOffers({ wizard, setWizard, isDemo }) {
       {isDemo && offers.length === 0 && wizard.offers.length === 0 && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-700">
           <Info size={16} className="inline mr-1" />
-          En mode demo, {DEMO_OFFERS.length} offres sont pre-chargees automatiquement.
-          Vous pouvez aussi en creer manuellement.
+          En mode demo, {DEMO_OFFERS.length} offres sont pre-chargees automatiquement. Vous pouvez
+          aussi en creer manuellement.
         </div>
       )}
 
       {offers.length > 0 && (
         <div className="space-y-3">
-          {offers.map(offer => (
-            <OfferCard key={offer.id} offer={offer}
-              onUpdate={updateOffer} onUpdatePricing={updatePricing}
-              onRemove={removeOffer} readOnly={isDemo && DEMO_OFFERS.some(d => d.id === offer.id)} />
+          {offers.map((offer) => (
+            <OfferCard
+              key={offer.id}
+              offer={offer}
+              onUpdate={updateOffer}
+              onUpdatePricing={updatePricing}
+              onRemove={removeOffer}
+              readOnly={isDemo && DEMO_OFFERS.some((d) => d.id === offer.id)}
+            />
           ))}
         </div>
       )}
 
       {wizard.offers.length > 0 && (
-        <p className="text-xs text-gray-400">{wizard.offers.length} offre(s) saisie(s) manuellement</p>
+        <p className="text-xs text-gray-400">
+          {wizard.offers.length} offre(s) saisie(s) manuellement
+        </p>
       )}
     </div>
   );
@@ -699,20 +962,28 @@ function OfferCard({ offer, onUpdate, onUpdatePricing, onRemove, readOnly }) {
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
       <div className="flex items-center justify-between p-4">
         <div className="flex items-center gap-3">
-          <span className={`px-2 py-1 text-xs font-semibold rounded-full ${STRUCTURE_COLORS[offer.structure] || 'bg-gray-100 text-gray-600'}`}>
+          <span
+            className={`px-2 py-1 text-xs font-semibold rounded-full ${STRUCTURE_COLORS[offer.structure] || 'bg-gray-100 text-gray-600'}`}
+          >
             {STRUCTURE_LABELS[offer.structure] || offer.structure}
           </span>
           {readOnly ? (
             <span className="font-medium text-gray-900">{offer.supplierName}</span>
           ) : (
-            <input type="text" placeholder="Nom du fournisseur"
+            <input
+              type="text"
+              placeholder="Nom du fournisseur"
               className="font-medium text-gray-900 border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none px-1"
               value={offer.supplierName}
-              onChange={e => onUpdate(offer.id, { supplierName: e.target.value })} />
+              onChange={(e) => onUpdate(offer.id, { supplierName: e.target.value })}
+            />
           )}
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => setExpanded(!expanded)} className="text-gray-400 hover:text-gray-600">
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="text-gray-400 hover:text-gray-600"
+          >
             <Eye size={16} />
           </button>
           {!readOnly && (
@@ -727,46 +998,71 @@ function OfferCard({ offer, onUpdate, onUpdatePricing, onRemove, readOnly }) {
         <div className="px-4 pb-3 flex items-center gap-4">
           <div>
             <label className="text-xs text-gray-500">Structure</label>
-            <select className="block border border-gray-300 rounded px-2 py-1 text-sm mt-0.5"
+            <select
+              className="block border border-gray-300 rounded px-2 py-1 text-sm mt-0.5"
               value={offer.structure}
-              onChange={e => {
+              onChange={(e) => {
                 const s = e.target.value;
-                const pricingPatch = s === OfferStructure.FIXE
-                  ? { fixedSharePct: 1, indexedSharePct: 0, spotSharePct: 0 }
-                  : s === OfferStructure.INDEXE
-                  ? { fixedSharePct: 0, indexedSharePct: 1, spotSharePct: 0 }
-                  : s === OfferStructure.SPOT
-                  ? { fixedSharePct: 0, indexedSharePct: 0, spotSharePct: 1 }
-                  : {};
+                const pricingPatch =
+                  s === OfferStructure.FIXE
+                    ? { fixedSharePct: 1, indexedSharePct: 0, spotSharePct: 0 }
+                    : s === OfferStructure.INDEXE
+                      ? { fixedSharePct: 0, indexedSharePct: 1, spotSharePct: 0 }
+                      : s === OfferStructure.SPOT
+                        ? { fixedSharePct: 0, indexedSharePct: 0, spotSharePct: 1 }
+                        : {};
                 onUpdate(offer.id, { structure: s });
                 if (Object.keys(pricingPatch).length) onUpdatePricing(offer.id, pricingPatch);
-              }}>
+              }}
+            >
               {Object.entries(STRUCTURE_LABELS).map(([k, v]) => (
-                <option key={k} value={k}>{v}</option>
+                <option key={k} value={k}>
+                  {v}
+                </option>
               ))}
             </select>
           </div>
-          {(offer.structure === OfferStructure.FIXE || offer.structure === OfferStructure.HYBRIDE) && (
+          {(offer.structure === OfferStructure.FIXE ||
+            offer.structure === OfferStructure.HYBRIDE) && (
             <div>
               <label className="text-xs text-gray-500">Prix fixe (EUR/MWh)</label>
-              <input type="number" className="block w-24 border border-gray-300 rounded px-2 py-1 text-sm mt-0.5"
+              <input
+                type="number"
+                className="block w-24 border border-gray-300 rounded px-2 py-1 text-sm mt-0.5"
                 value={offer.pricing.fixedPriceEurPerMwh}
-                onChange={e => onUpdatePricing(offer.id, { fixedPriceEurPerMwh: Number(e.target.value) })} />
+                onChange={(e) =>
+                  onUpdatePricing(offer.id, { fixedPriceEurPerMwh: Number(e.target.value) })
+                }
+              />
             </div>
           )}
-          {(offer.structure === OfferStructure.INDEXE || offer.structure === OfferStructure.HYBRIDE) && (
+          {(offer.structure === OfferStructure.INDEXE ||
+            offer.structure === OfferStructure.HYBRIDE) && (
             <>
               <div>
                 <label className="text-xs text-gray-500">Spread (EUR/MWh)</label>
-                <input type="number" className="block w-20 border border-gray-300 rounded px-2 py-1 text-sm mt-0.5"
+                <input
+                  type="number"
+                  className="block w-20 border border-gray-300 rounded px-2 py-1 text-sm mt-0.5"
                   value={offer.pricing.spreadEurPerMwh || 0}
-                  onChange={e => onUpdatePricing(offer.id, { spreadEurPerMwh: Number(e.target.value) })} />
+                  onChange={(e) =>
+                    onUpdatePricing(offer.id, { spreadEurPerMwh: Number(e.target.value) })
+                  }
+                />
               </div>
               <div>
                 <label className="text-xs text-gray-500">Cap (EUR/MWh)</label>
-                <input type="number" placeholder="—" className="block w-20 border border-gray-300 rounded px-2 py-1 text-sm mt-0.5"
+                <input
+                  type="number"
+                  placeholder="—"
+                  className="block w-20 border border-gray-300 rounded px-2 py-1 text-sm mt-0.5"
                   value={offer.pricing.capEurPerMwh ?? ''}
-                  onChange={e => onUpdatePricing(offer.id, { capEurPerMwh: e.target.value ? Number(e.target.value) : null })} />
+                  onChange={(e) =>
+                    onUpdatePricing(offer.id, {
+                      capEurPerMwh: e.target.value ? Number(e.target.value) : null,
+                    })
+                  }
+                />
               </div>
             </>
           )}
@@ -774,21 +1070,42 @@ function OfferCard({ offer, onUpdate, onUpdatePricing, onRemove, readOnly }) {
             <>
               <div>
                 <label className="text-xs text-gray-500">% Fixe</label>
-                <input type="number" min={0} max={100} className="block w-16 border border-gray-300 rounded px-2 py-1 text-sm mt-0.5"
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  className="block w-16 border border-gray-300 rounded px-2 py-1 text-sm mt-0.5"
                   value={Math.round((offer.pricing.fixedSharePct || 0) * 100)}
-                  onChange={e => onUpdatePricing(offer.id, { fixedSharePct: Number(e.target.value) / 100 })} />
+                  onChange={(e) =>
+                    onUpdatePricing(offer.id, { fixedSharePct: Number(e.target.value) / 100 })
+                  }
+                />
               </div>
               <div>
                 <label className="text-xs text-gray-500">% Indexe</label>
-                <input type="number" min={0} max={100} className="block w-16 border border-gray-300 rounded px-2 py-1 text-sm mt-0.5"
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  className="block w-16 border border-gray-300 rounded px-2 py-1 text-sm mt-0.5"
                   value={Math.round((offer.pricing.indexedSharePct || 0) * 100)}
-                  onChange={e => onUpdatePricing(offer.id, { indexedSharePct: Number(e.target.value) / 100 })} />
+                  onChange={(e) =>
+                    onUpdatePricing(offer.id, { indexedSharePct: Number(e.target.value) / 100 })
+                  }
+                />
               </div>
               <div>
                 <label className="text-xs text-gray-500">% Spot</label>
-                <input type="number" min={0} max={100} className="block w-16 border border-gray-300 rounded px-2 py-1 text-sm mt-0.5"
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  className="block w-16 border border-gray-300 rounded px-2 py-1 text-sm mt-0.5"
                   value={Math.round((offer.pricing.spotSharePct || 0) * 100)}
-                  onChange={e => onUpdatePricing(offer.id, { spotSharePct: Number(e.target.value) / 100 })} />
+                  onChange={(e) =>
+                    onUpdatePricing(offer.id, { spotSharePct: Number(e.target.value) / 100 })
+                  }
+                />
               </div>
             </>
           )}
@@ -797,13 +1114,36 @@ function OfferCard({ offer, onUpdate, onUpdatePricing, onRemove, readOnly }) {
 
       {expanded && (
         <div className="px-4 pb-4 pt-2 border-t border-gray-100 text-xs text-gray-500 space-y-2">
-          <div><strong>Contrat:</strong> {offer.contractTerms?.durationMonths}m, preavis {offer.contractTerms?.noticePeriodDays}j, resiliation: {offer.contractTerms?.earlyTerminationPenalty}</div>
-          <div><strong>SLA:</strong> {offer.contractTerms?.slaLevel} | Indexation: {offer.contractTerms?.indexationClause} | Vert: {offer.contractTerms?.greenCertified ? 'Oui' : 'Non'}</div>
-          <div><strong>Intermediation:</strong> {offer.intermediation?.hasIntermediary ? `Oui (${offer.intermediation.feeDisclosed ? offer.intermediation.feeEurPerMwh + ' EUR/MWh' : 'Non divulgue'})` : 'Non'}</div>
-          <div><strong>Data:</strong> Courbes: {offer.dataTerms?.curvesAccess ? 'Oui' : 'Non'} | J+1: {offer.dataTerms?.dplus1 ? 'Oui' : 'Non'} | CSV: {offer.dataTerms?.csvExport ? 'Oui' : 'Non'} | API: {offer.dataTerms?.apiAccess ? 'Oui' : 'Non'}</div>
-          <div><strong>Decomposition:</strong> {offer.breakdown?.length || 0} composante(s) ({offer.breakdown?.filter(b => b.status === 'KNOWN').length || 0} connue(s))</div>
+          <div>
+            <strong>Contrat:</strong> {offer.contractTerms?.durationMonths}m, preavis{' '}
+            {offer.contractTerms?.noticePeriodDays}j, resiliation:{' '}
+            {offer.contractTerms?.earlyTerminationPenalty}
+          </div>
+          <div>
+            <strong>SLA:</strong> {offer.contractTerms?.slaLevel} | Indexation:{' '}
+            {offer.contractTerms?.indexationClause} | Vert:{' '}
+            {offer.contractTerms?.greenCertified ? 'Oui' : 'Non'}
+          </div>
+          <div>
+            <strong>Intermediation:</strong>{' '}
+            {offer.intermediation?.hasIntermediary
+              ? `Oui (${offer.intermediation.feeDisclosed ? offer.intermediation.feeEurPerMwh + ' EUR/MWh' : 'Non divulgue'})`
+              : 'Non'}
+          </div>
+          <div>
+            <strong>Data:</strong> Courbes: {offer.dataTerms?.curvesAccess ? 'Oui' : 'Non'} | J+1:{' '}
+            {offer.dataTerms?.dplus1 ? 'Oui' : 'Non'} | CSV:{' '}
+            {offer.dataTerms?.csvExport ? 'Oui' : 'Non'} | API:{' '}
+            {offer.dataTerms?.apiAccess ? 'Oui' : 'Non'}
+          </div>
+          <div>
+            <strong>Decomposition:</strong> {offer.breakdown?.length || 0} composante(s) (
+            {offer.breakdown?.filter((b) => b.status === 'KNOWN').length || 0} connue(s))
+          </div>
           {offer.contractTerms?.clauseFlags?.length > 0 && (
-            <div className="text-red-500"><strong>Alertes clauses:</strong> {offer.contractTerms.clauseFlags.join(', ')}</div>
+            <div className="text-red-500">
+              <strong>Alertes clauses:</strong> {offer.contractTerms.clauseFlags.join(', ')}
+            </div>
           )}
         </div>
       )}
@@ -828,7 +1168,13 @@ function StepResults({ engineOutput, scoredOffers, recommendation, computing, on
   }
 
   if (!engineOutput || scoredOffers.length === 0) {
-    return <EmptyState icon={BarChart3} title="Aucun résultat" description="Revenez à l'étape Offres et avancez pour lancer le calcul." />;
+    return (
+      <EmptyState
+        icon={BarChart3}
+        title="Aucun résultat"
+        description="Revenez à l'étape Offres et avancez pour lancer le calcul."
+      />
+    );
   }
 
   const bestId = recommendation?.bestOfferId;
@@ -837,18 +1183,33 @@ function StepResults({ engineOutput, scoredOffers, recommendation, computing, on
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-800">Résultats — Corridor de prix & TCO</h3>
-        <button onClick={onRecompute}
-          className="text-xs text-blue-600 hover:underline">
+        <button onClick={onRecompute} className="text-xs text-blue-600 hover:underline">
           Recalculer
         </button>
       </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <KpiCard label="Offres evaluees" value={scoredOffers.length} icon={<FileText size={18} />} />
-        <KpiCard label="Meilleur P50" value={`${Math.min(...scoredOffers.map(s => s.corridor.p50)).toFixed(1)} EUR/MWh`} icon={<TrendingUp size={18} />} />
-        <KpiCard label="Horizon" value={`${engineOutput.params.horizonMonths} mois`} icon={<Clock size={18} />} />
-        <KpiCard label="Iterations MC" value={engineOutput.params.mcIterations} icon={<BarChart3 size={18} />} />
+        <KpiCard
+          label="Offres evaluees"
+          value={scoredOffers.length}
+          icon={<FileText size={18} />}
+        />
+        <KpiCard
+          label="Meilleur P50"
+          value={`${Math.min(...scoredOffers.map((s) => s.corridor.p50)).toFixed(1)} EUR/MWh`}
+          icon={<TrendingUp size={18} />}
+        />
+        <KpiCard
+          label="Horizon"
+          value={`${engineOutput.params.horizonMonths} mois`}
+          icon={<Clock size={18} />}
+        />
+        <KpiCard
+          label="Iterations MC"
+          value={engineOutput.params.mcIterations}
+          icon={<BarChart3 size={18} />}
+        />
       </div>
 
       {/* Offer comparison table */}
@@ -870,7 +1231,7 @@ function StepResults({ engineOutput, scoredOffers, recommendation, computing, on
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {scoredOffers.map(s => {
+            {scoredOffers.map((s) => {
               const isBest = s.offerId === bestId;
               return (
                 <tr key={s.offerId} className={isBest ? 'bg-blue-50' : 'hover:bg-gray-50'}>
@@ -879,25 +1240,42 @@ function StepResults({ engineOutput, scoredOffers, recommendation, computing, on
                     {s.supplierName}
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${STRUCTURE_COLORS[s.structure]}`}>
+                    <span
+                      className={`px-2 py-0.5 text-xs font-medium rounded-full ${STRUCTURE_COLORS[s.structure]}`}
+                    >
                       {STRUCTURE_LABELS[s.structure]}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums">{s.corridor.p10.toFixed(1)}</td>
-                  <td className="px-4 py-3 text-right tabular-nums font-semibold">{s.corridor.p50.toFixed(1)}</td>
+                  <td className="px-4 py-3 text-right tabular-nums font-semibold">
+                    {s.corridor.p50.toFixed(1)}
+                  </td>
                   <td className="px-4 py-3 text-right tabular-nums">{s.corridor.p90.toFixed(1)}</td>
-                  <td className="px-4 py-3 text-right tabular-nums">{Math.round(s.corridor.tcoP50).toLocaleString()}</td>
-                  <td className="px-4 py-3 text-right tabular-nums">{Math.round(s.annualCostP50).toLocaleString()}</td>
-                  <td className="px-4 py-3 text-right tabular-nums">{Math.round(s.volatility).toLocaleString()}</td>
-                  <td className="px-4 py-3 text-right tabular-nums">{Math.round(s.cvar90).toLocaleString()}</td>
+                  <td className="px-4 py-3 text-right tabular-nums">
+                    {Math.round(s.corridor.tcoP50).toLocaleString()}
+                  </td>
+                  <td className="px-4 py-3 text-right tabular-nums">
+                    {Math.round(s.annualCostP50).toLocaleString()}
+                  </td>
+                  <td className="px-4 py-3 text-right tabular-nums">
+                    {Math.round(s.volatility).toLocaleString()}
+                  </td>
+                  <td className="px-4 py-3 text-right tabular-nums">
+                    {Math.round(s.cvar90).toLocaleString()}
+                  </td>
                   <td className="px-4 py-3 text-right tabular-nums">
                     {s.probExceedBudget != null ? `${(s.probExceedBudget * 100).toFixed(0)}%` : '—'}
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <span className={`inline-block w-10 text-center font-bold text-xs py-0.5 rounded ${
-                      s.scores.overall >= 70 ? 'bg-green-100 text-green-700' :
-                      s.scores.overall >= 40 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
-                    }`}>
+                    <span
+                      className={`inline-block w-10 text-center font-bold text-xs py-0.5 rounded ${
+                        s.scores.overall >= 70
+                          ? 'bg-green-100 text-green-700'
+                          : s.scores.overall >= 40
+                            ? 'bg-amber-100 text-amber-700'
+                            : 'bg-red-100 text-red-700'
+                      }`}
+                    >
                       {s.scores.overall}
                     </span>
                   </td>
@@ -909,12 +1287,14 @@ function StepResults({ engineOutput, scoredOffers, recommendation, computing, on
       </div>
 
       {/* Hybrid normalization warnings */}
-      {scoredOffers.filter(s => s.hybridNormalized).map(s => (
-        <div key={s.offerId} className="bg-amber-50 rounded-lg p-2 text-xs text-amber-700">
-          <AlertTriangle size={12} className="inline mr-1" />
-          {s.supplierName}: {s.hybridNormMessage}
-        </div>
-      ))}
+      {scoredOffers
+        .filter((s) => s.hybridNormalized)
+        .map((s) => (
+          <div key={s.offerId} className="bg-amber-50 rounded-lg p-2 text-xs text-amber-700">
+            <AlertTriangle size={12} className="inline mr-1" />
+            {s.supplierName}: {s.hybridNormMessage}
+          </div>
+        ))}
     </div>
   );
 }
@@ -925,10 +1305,16 @@ function StepResults({ engineOutput, scoredOffers, recommendation, computing, on
 
 function StepScoring({ scoredOffers, recommendation }) {
   const [selectedOfferId, setSelectedOfferId] = useState(null);
-  const selected = scoredOffers.find(s => s.offerId === selectedOfferId) || scoredOffers[0];
+  const selected = scoredOffers.find((s) => s.offerId === selectedOfferId) || scoredOffers[0];
 
   if (scoredOffers.length === 0) {
-    return <EmptyState icon={Shield} title="Pas de scores" description="Lancez d'abord le calcul a l'etape Resultats." />;
+    return (
+      <EmptyState
+        icon={Shield}
+        title="Pas de scores"
+        description="Lancez d'abord le calcul a l'etape Resultats."
+      />
+    );
   }
 
   return (
@@ -937,13 +1323,17 @@ function StepScoring({ scoredOffers, recommendation }) {
 
       {/* Offer selector */}
       <div className="flex gap-2 flex-wrap">
-        {scoredOffers.map(s => (
-          <button key={s.offerId}
+        {scoredOffers.map((s) => (
+          <button
+            key={s.offerId}
             onClick={() => setSelectedOfferId(s.offerId)}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition border
-              ${(selected?.offerId === s.offerId) ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+              ${selected?.offerId === s.offerId ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
+          >
             {s.supplierName}
-            {s.offerId === recommendation?.bestOfferId && <Star size={12} className="inline ml-1 text-blue-500" />}
+            {s.offerId === recommendation?.bestOfferId && (
+              <Star size={12} className="inline ml-1 text-blue-500" />
+            )}
           </button>
         ))}
       </div>
@@ -956,7 +1346,7 @@ function StepScoring({ scoredOffers, recommendation }) {
             { key: 'transparency', label: 'Transparence', icon: Eye },
             { key: 'contractRisk', label: 'Risque Contractuel', icon: Lock },
             { key: 'dataReadiness', label: 'Donnees & Readiness', icon: BarChart3 },
-          ].map(axis => {
+          ].map((axis) => {
             const score = selected.scores[axis.key];
             if (!score) return null;
             const Icon = axis.icon;
@@ -983,7 +1373,10 @@ function StepScoring({ scoredOffers, recommendation }) {
                   <div className="mt-2 pt-2 border-t border-current/10">
                     <p className="text-[10px] font-medium mb-1">Evidence:</p>
                     {score.evidence.map((e, i) => (
-                      <span key={i} className="inline-block mr-1 mb-1 px-1.5 py-0.5 bg-white/50 rounded text-[10px]">
+                      <span
+                        key={i}
+                        className="inline-block mr-1 mb-1 px-1.5 py-0.5 bg-white/50 rounded text-[10px]"
+                      >
                         {e.ruleId}: {e.field}={JSON.stringify(e.value)?.slice(0, 30)}
                       </span>
                     ))}
@@ -1004,15 +1397,23 @@ function StepScoring({ scoredOffers, recommendation }) {
               {selected.offer.breakdown.map((b, i) => (
                 <div key={i} className="flex items-center justify-between text-sm py-1">
                   <div className="flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${b.status === 'KNOWN' ? 'bg-green-500' : b.status === 'ESTIMATED' ? 'bg-amber-500' : 'bg-red-500'}`} />
-                    <span className="text-gray-700">{BREAKDOWN_LABELS[b.component] || b.component}</span>
+                    <span
+                      className={`w-2 h-2 rounded-full ${b.status === 'KNOWN' ? 'bg-green-500' : b.status === 'ESTIMATED' ? 'bg-amber-500' : 'bg-red-500'}`}
+                    />
+                    <span className="text-gray-700">
+                      {BREAKDOWN_LABELS[b.component] || b.component}
+                    </span>
                   </div>
                   <div className="flex items-center gap-4 text-xs">
                     <span className="text-gray-500">{(b.sharePct * 100).toFixed(1)}%</span>
                     <span className="text-gray-700 font-medium w-20 text-right">
                       {b.eurPerMwh != null ? `${b.eurPerMwh.toFixed(2)} EUR/MWh` : 'est.'}
                     </span>
-                    <Badge variant={b.status === 'KNOWN' ? 'green' : b.status === 'ESTIMATED' ? 'yellow' : 'red'}>
+                    <Badge
+                      variant={
+                        b.status === 'KNOWN' ? 'green' : b.status === 'ESTIMATED' ? 'yellow' : 'red'
+                      }
+                    >
                       {b.status}
                     </Badge>
                   </div>
@@ -1030,17 +1431,33 @@ function StepScoring({ scoredOffers, recommendation }) {
 // STEP 8: Decision
 // ═══════════════════════════════════════════════════════════════════
 
-function StepDecision({ recommendation, scoredOffers, engineOutput, offers, wizard, selectedSitesData, isDemo, onShowAudit, toast }) {
+function StepDecision({
+  recommendation,
+  scoredOffers,
+  engineOutput,
+  offers,
+  wizard,
+  selectedSitesData,
+  isDemo,
+  onShowAudit,
+  toast,
+}) {
   if (!recommendation || !recommendation.bestOfferId) {
-    return <EmptyState icon={Target} title="Pas de recommandation" description="Lancez le calcul a l'etape Resultats." />;
+    return (
+      <EmptyState
+        icon={Target}
+        title="Pas de recommandation"
+        description="Lancez le calcul a l'etape Resultats."
+      />
+    );
   }
 
-  const bestScored = scoredOffers.find(s => s.offerId === recommendation.bestOfferId);
+  const bestScored = scoredOffers.find((s) => s.offerId === recommendation.bestOfferId);
 
   const handleExportCsv = () => {
     const csv = generateComparisonCsv(
       recommendation._scoredOffers || scoredOffers,
-      engineOutput?.results || [],
+      engineOutput?.results || []
     );
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -1108,7 +1525,9 @@ function StepDecision({ recommendation, scoredOffers, engineOutput, offers, wiza
 
       {/* Confidence badge */}
       <div className="flex items-center gap-3">
-        <span className={`px-3 py-1 rounded-full text-sm font-semibold ${CONFIDENCE_COLORS[recommendation.confidence]}`}>
+        <span
+          className={`px-3 py-1 rounded-full text-sm font-semibold ${CONFIDENCE_COLORS[recommendation.confidence]}`}
+        >
           Confiance: {recommendation.confidence}
         </span>
         <span className="text-sm text-gray-500">{recommendation.confidenceReason}</span>
@@ -1124,14 +1543,21 @@ function StepDecision({ recommendation, scoredOffers, engineOutput, offers, wiza
               </div>
               <div>
                 <h4 className="font-bold text-gray-900 text-lg">{bestScored.supplierName}</h4>
-                <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${STRUCTURE_COLORS[bestScored.structure]}`}>
+                <span
+                  className={`px-2 py-0.5 text-xs font-medium rounded-full ${STRUCTURE_COLORS[bestScored.structure]}`}
+                >
                   {STRUCTURE_LABELS[bestScored.structure]}
                 </span>
               </div>
             </div>
             <div className="text-right">
-              <div className="text-2xl font-bold text-gray-900">{bestScored.corridor.p50.toFixed(1)} <span className="text-sm font-normal text-gray-500">EUR/MWh</span></div>
-              <div className="text-sm text-gray-500">{Math.round(bestScored.annualCostP50).toLocaleString()} EUR/an</div>
+              <div className="text-2xl font-bold text-gray-900">
+                {bestScored.corridor.p50.toFixed(1)}{' '}
+                <span className="text-sm font-normal text-gray-500">EUR/MWh</span>
+              </div>
+              <div className="text-sm text-gray-500">
+                {Math.round(bestScored.annualCostP50).toLocaleString()} EUR/an
+              </div>
             </div>
           </div>
 
@@ -1170,7 +1596,7 @@ function StepDecision({ recommendation, scoredOffers, engineOutput, offers, wiza
           <CardBody>
             <div className="space-y-2">
               {Object.entries(recommendation.whyNotOthers).map(([offerId, reason]) => {
-                const other = scoredOffers.find(s => s.offerId === offerId);
+                const other = scoredOffers.find((s) => s.offerId === offerId);
                 return (
                   <div key={offerId} className="flex items-center justify-between py-1">
                     <span className="text-sm text-gray-700">{other?.supplierName || offerId}</span>
@@ -1247,14 +1673,19 @@ function AuditTrailView() {
         <div key={record.decisionId || i} className="border border-gray-200 rounded-lg p-3 text-xs">
           <div className="flex items-center justify-between mb-1">
             <span className="font-mono text-gray-400">{record.decisionId}</span>
-            <Badge variant={record.action === 'COMPUTE' ? 'blue' : record.action === 'ACCEPT' ? 'green' : 'gray'}>
+            <Badge
+              variant={
+                record.action === 'COMPUTE' ? 'blue' : record.action === 'ACCEPT' ? 'green' : 'gray'
+              }
+            >
               {record.action}
             </Badge>
           </div>
           <div className="text-gray-500">{new Date(record.timestamp).toLocaleString('fr-FR')}</div>
           <div className="text-gray-600 mt-1">
             {record.outputs?.bestOfferId && `Best: ${record.outputs.bestOfferId}`}
-            {record.recommendation?.confidence && ` | Confidence: ${record.recommendation.confidence}`}
+            {record.recommendation?.confidence &&
+              ` | Confidence: ${record.recommendation.confidence}`}
             {record.outputs?.offerCount && ` | ${record.outputs.offerCount} offres`}
           </div>
         </div>

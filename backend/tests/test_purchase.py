@@ -2,8 +2,10 @@
 PROMEOS - Tests Sprint 8: Achat Energie V1
 Models, service (estimate, scenarios, recommend), endpoints, seed demo.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
@@ -15,11 +17,22 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import (
-    Base, Site, Organisation, EntiteJuridique, Portefeuille,
-    EnergyContract, EnergyInvoice, SiteOperatingSchedule,
-    PurchaseAssumptionSet, PurchasePreference, PurchaseScenarioResult,
-    PurchaseStrategy, PurchaseRecoStatus, BillingEnergyType,
-    BillingInvoiceStatus, TypeSite,
+    Base,
+    Site,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    EnergyContract,
+    EnergyInvoice,
+    SiteOperatingSchedule,
+    PurchaseAssumptionSet,
+    PurchasePreference,
+    PurchaseScenarioResult,
+    PurchaseStrategy,
+    PurchaseRecoStatus,
+    BillingEnergyType,
+    BillingInvoiceStatus,
+    TypeSite,
 )
 from database import get_db
 from main import app
@@ -46,6 +59,7 @@ def client(db_session):
             yield db_session
         finally:
             pass
+
     app.dependency_overrides[get_db] = _override
     yield TestClient(app)
     app.dependency_overrides.clear()
@@ -63,9 +77,13 @@ def _create_org_site(db, surface=2000):
     db.add(pf)
     db.flush()
     site = Site(
-        nom="Site A", type=TypeSite.BUREAU,
-        adresse="1 rue Test", code_postal="75001", ville="Paris",
-        surface_m2=surface, portefeuille_id=pf.id,
+        nom="Site A",
+        type=TypeSite.BUREAU,
+        adresse="1 rue Test",
+        code_postal="75001",
+        ville="Paris",
+        surface_m2=surface,
+        portefeuille_id=pf.id,
     )
     db.add(site)
     db.flush()
@@ -76,9 +94,13 @@ def _create_two_sites(db):
     """Helper: create org + 2 sites."""
     org, site_a = _create_org_site(db)
     site_b = Site(
-        nom="Site B", type=TypeSite.ENTREPOT,
-        adresse="2 rue Test", code_postal="69001", ville="Lyon",
-        surface_m2=5000, portefeuille_id=site_a.portefeuille_id,
+        nom="Site B",
+        type=TypeSite.ENTREPOT,
+        adresse="2 rue Test",
+        code_postal="69001",
+        ville="Lyon",
+        surface_m2=5000,
+        portefeuille_id=site_a.portefeuille_id,
     )
     db.add(site_b)
     db.flush()
@@ -88,6 +110,7 @@ def _create_two_sites(db):
 # ========================================
 # Model tests
 # ========================================
+
 
 class TestModels:
     def test_create_assumption_set(self, db_session):
@@ -142,9 +165,11 @@ class TestModels:
 # Service tests
 # ========================================
 
+
 class TestPurchaseService:
     def test_estimate_from_invoices(self, db_session):
         from services.purchase_service import estimate_consumption
+
         _, site = _create_org_site(db_session)
         # Create an invoice within last 12 months
         contract = EnergyContract(
@@ -175,6 +200,7 @@ class TestPurchaseService:
 
     def test_estimate_fallback(self, db_session):
         from services.purchase_service import estimate_consumption
+
         _, site = _create_org_site(db_session)
         result = estimate_consumption(db_session, site.id)
         assert result["source"] == "default"
@@ -183,6 +209,7 @@ class TestPurchaseService:
 
     def test_compute_scenarios_3_strategies(self, db_session):
         from services.purchase_service import compute_scenarios
+
         _, site = _create_org_site(db_session)
         scenarios = compute_scenarios(db_session, site.id, volume_kwh_an=500000)
         assert len(scenarios) == 3
@@ -198,13 +225,29 @@ class TestPurchaseService:
 
     def test_recommend_low_risk(self, db_session):
         from services.purchase_service import recommend_scenario
+
         scenarios = [
-            {"strategy": "fixe", "risk_score": 15, "savings_vs_current_pct": -5,
-             "total_annual_eur": 105000, "price_eur_per_kwh": 0.189},
-            {"strategy": "indexe", "risk_score": 45, "savings_vs_current_pct": 5,
-             "total_annual_eur": 95000, "price_eur_per_kwh": 0.171},
-            {"strategy": "spot", "risk_score": 75, "savings_vs_current_pct": 12,
-             "total_annual_eur": 88000, "price_eur_per_kwh": 0.1584},
+            {
+                "strategy": "fixe",
+                "risk_score": 15,
+                "savings_vs_current_pct": -5,
+                "total_annual_eur": 105000,
+                "price_eur_per_kwh": 0.189,
+            },
+            {
+                "strategy": "indexe",
+                "risk_score": 45,
+                "savings_vs_current_pct": 5,
+                "total_annual_eur": 95000,
+                "price_eur_per_kwh": 0.171,
+            },
+            {
+                "strategy": "spot",
+                "risk_score": 75,
+                "savings_vs_current_pct": 12,
+                "total_annual_eur": 88000,
+                "price_eur_per_kwh": 0.1584,
+            },
         ]
         result = recommend_scenario(scenarios, risk_tolerance="low", budget_priority=0.5)
         # Spot should be excluded (risk > 50)
@@ -216,6 +259,7 @@ class TestPurchaseService:
 # ========================================
 # API tests
 # ========================================
+
 
 class TestPurchaseAPI:
     def test_estimate_endpoint(self, client, db_session):
@@ -230,11 +274,14 @@ class TestPurchaseAPI:
     def test_put_get_assumptions(self, client, db_session):
         _, site = _create_org_site(db_session)
         # PUT
-        resp = client.put(f"/api/purchase/assumptions/{site.id}", json={
-            "energy_type": "elec",
-            "volume_kwh_an": 750000,
-            "horizon_months": 36,
-        })
+        resp = client.put(
+            f"/api/purchase/assumptions/{site.id}",
+            json={
+                "energy_type": "elec",
+                "volume_kwh_an": 750000,
+                "horizon_months": 36,
+            },
+        )
         assert resp.status_code == 200
         assert resp.json()["status"] == "created"
         # GET
@@ -246,11 +293,14 @@ class TestPurchaseAPI:
 
     def test_put_get_preferences(self, client, db_session):
         # PUT
-        resp = client.put("/api/purchase/preferences", json={
-            "risk_tolerance": "low",
-            "budget_priority": 0.3,
-            "green_preference": True,
-        })
+        resp = client.put(
+            "/api/purchase/preferences",
+            json={
+                "risk_tolerance": "low",
+                "budget_priority": 0.3,
+                "green_preference": True,
+            },
+        )
         assert resp.status_code == 200
         assert resp.json()["status"] == "created"
         # GET
@@ -293,9 +343,13 @@ class TestPurchaseAPI:
         # Need at least 2 sites
         org, site_a = _create_org_site(db_session)
         site_b = Site(
-            nom="Site B", type=TypeSite.ENTREPOT,
-            adresse="2 rue Test", code_postal="69001", ville="Lyon",
-            surface_m2=5000, portefeuille_id=site_a.portefeuille_id,
+            nom="Site B",
+            type=TypeSite.ENTREPOT,
+            adresse="2 rue Test",
+            code_postal="69001",
+            ville="Lyon",
+            surface_m2=5000,
+            portefeuille_id=site_a.portefeuille_id,
         )
         db_session.add(site_b)
         db_session.commit()
@@ -310,6 +364,7 @@ class TestPurchaseAPI:
 # ========================================
 # V1.1 Model tests
 # ========================================
+
 
 class TestV11Models:
     def test_energy_contract_notice_period(self, db_session):
@@ -374,6 +429,7 @@ class TestV11Models:
 # ========================================
 # V1.1 API tests
 # ========================================
+
 
 class TestV11API:
     def _seed_contracts(self, db_session):
@@ -538,9 +594,13 @@ class TestV11API:
         """Seed demo V1.1 creates contracts."""
         org, site_a = _create_org_site(db_session)
         site_b = Site(
-            nom="Site B", type=TypeSite.ENTREPOT,
-            adresse="2 rue Test", code_postal="69001", ville="Lyon",
-            surface_m2=5000, portefeuille_id=site_a.portefeuille_id,
+            nom="Site B",
+            type=TypeSite.ENTREPOT,
+            adresse="2 rue Test",
+            code_postal="69001",
+            ville="Lyon",
+            surface_m2=5000,
+            portefeuille_id=site_a.portefeuille_id,
         )
         db_session.add(site_b)
         db_session.commit()
@@ -557,17 +617,63 @@ class TestV11API:
 # Brique 3: Energy Gate tests
 # ========================================
 
+# ========================================
+# P0-3: Assistant endpoint tests
+# ========================================
+
+
+class TestAssistantEndpoint:
+    def test_assistant_returns_200(self, client, db_session):
+        """GET /purchase/assistant returns 200."""
+        resp = client.get("/api/purchase/assistant")
+        assert resp.status_code == 200
+
+    def test_assistant_demo_fallback(self, client, db_session):
+        """Without org sites, returns demo seed with is_demo=true."""
+        resp = client.get("/api/purchase/assistant")
+        data = resp.json()
+        assert data["is_demo"] is True
+        assert len(data["sites"]) >= 5
+        assert data["total_sites"] == len(data["sites"])
+        assert data["total_annual_kwh"] > 0
+
+    def test_assistant_with_real_org(self, client, db_session):
+        """With org + sites, returns real data with is_demo=false."""
+        org, site = _create_org_site(db_session)
+        resp = client.get(f"/api/purchase/assistant?org_id={org.id}")
+        data = resp.json()
+        assert data["is_demo"] is False
+        assert data["org_id"] == org.id
+        assert len(data["sites"]) >= 1
+        assert data["sites"][0]["name"] == "Site A"
+
+    def test_assistant_demo_sites_structure(self, client, db_session):
+        """Demo sites have required fields."""
+        resp = client.get("/api/purchase/assistant")
+        data = resp.json()
+        for site in data["sites"]:
+            assert "id" in site
+            assert "name" in site
+            assert "city" in site
+            assert "energy_type" in site
+            assert "annual_kwh" in site
+            assert "source" in site
+
+
 class TestEnergyGate:
     """Energy Gate: only ELEC energy type is allowed for purchase scenarios."""
 
     def test_put_assumptions_gaz_rejected(self, client, db_session):
         """PUT assumptions with energy_type=gaz returns 422."""
         _, site = _create_org_site(db_session)
-        resp = client.put(f"/api/purchase/assumptions/{site.id}", json={
-            "energy_type": "gaz",
-            "volume_kwh_an": 300000,
-            "horizon_months": 24,
-        })
+        resp = client.put(
+            f"/api/purchase/assumptions/{site.id}",
+            json={
+                "energy_type": "gaz",
+                "volume_kwh_an": 300000,
+                "horizon_months": 24,
+            },
+        )
         assert resp.status_code == 422
         assert "non supportee" in resp.json()["detail"]
         assert "elec" in resp.json()["detail"]
@@ -575,11 +681,14 @@ class TestEnergyGate:
     def test_put_assumptions_elec_accepted(self, client, db_session):
         """PUT assumptions with energy_type=elec succeeds."""
         _, site = _create_org_site(db_session)
-        resp = client.put(f"/api/purchase/assumptions/{site.id}", json={
-            "energy_type": "elec",
-            "volume_kwh_an": 500000,
-            "horizon_months": 24,
-        })
+        resp = client.put(
+            f"/api/purchase/assumptions/{site.id}",
+            json={
+                "energy_type": "elec",
+                "volume_kwh_an": 500000,
+                "horizon_months": 24,
+            },
+        )
         assert resp.status_code == 200
         assert resp.json()["status"] in ("created", "updated")
 
@@ -611,13 +720,17 @@ class TestEnergyGate:
         org, site_a, site_b = _create_two_sites(db_session)
         # Site A: ELEC assumption
         a_elec = PurchaseAssumptionSet(
-            site_id=site_a.id, energy_type=BillingEnergyType.ELEC,
-            volume_kwh_an=500000, profile_factor=1.0,
+            site_id=site_a.id,
+            energy_type=BillingEnergyType.ELEC,
+            volume_kwh_an=500000,
+            profile_factor=1.0,
         )
         # Site B: GAZ assumption (should be skipped)
         b_gaz = PurchaseAssumptionSet(
-            site_id=site_b.id, energy_type=BillingEnergyType.GAZ,
-            volume_kwh_an=300000, profile_factor=1.0,
+            site_id=site_b.id,
+            energy_type=BillingEnergyType.GAZ,
+            volume_kwh_an=300000,
+            profile_factor=1.0,
         )
         db_session.add_all([a_elec, b_gaz])
         db_session.commit()
@@ -632,6 +745,7 @@ class TestEnergyGate:
     def test_allowed_energy_types_constant(self):
         """ALLOWED_ENERGY_TYPES contains only 'elec'."""
         from routes.purchase import ALLOWED_ENERGY_TYPES
+
         assert ALLOWED_ENERGY_TYPES == {"elec"}
         assert "gaz" not in ALLOWED_ENERGY_TYPES
 
@@ -639,9 +753,13 @@ class TestEnergyGate:
         """Seed demo creates ELEC assumptions for both sites (post-Energy Gate)."""
         org, site_a = _create_org_site(db_session)
         site_b = Site(
-            nom="Site B", type=TypeSite.ENTREPOT,
-            adresse="2 rue Test", code_postal="69001", ville="Lyon",
-            surface_m2=5000, portefeuille_id=site_a.portefeuille_id,
+            nom="Site B",
+            type=TypeSite.ENTREPOT,
+            adresse="2 rue Test",
+            code_postal="69001",
+            ville="Lyon",
+            surface_m2=5000,
+            portefeuille_id=site_a.portefeuille_id,
         )
         db_session.add(site_b)
         db_session.commit()
@@ -656,6 +774,7 @@ class TestEnergyGate:
 # ========================================
 # Brique 3: WOW multi-site dataset tests
 # ========================================
+
 
 class TestWowDatasets:
     """WOW multi-site datasets: happy + dirty modes."""

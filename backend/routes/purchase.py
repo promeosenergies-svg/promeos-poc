@@ -3,6 +3,7 @@ PROMEOS — Achat Energie Endpoints V1.1
 V1: Estimation, hypotheses, preferences, scenarios, recommandation.
 V1.1: Portfolio roll-up, renewals, history, actions.
 """
+
 import uuid
 from datetime import datetime, date, timedelta
 from typing import Optional
@@ -15,9 +16,14 @@ from database import get_db
 from middleware.auth import get_optional_auth, AuthContext
 from services.iam_scope import check_site_access
 from models import (
-    PurchaseAssumptionSet, PurchasePreference, PurchaseScenarioResult,
-    PurchaseStrategy, PurchaseRecoStatus, BillingEnergyType,
-    EnergyContract, Site,
+    PurchaseAssumptionSet,
+    PurchasePreference,
+    PurchaseScenarioResult,
+    PurchaseStrategy,
+    PurchaseRecoStatus,
+    BillingEnergyType,
+    EnergyContract,
+    Site,
 )
 from services.purchase_service import (
     estimate_consumption,
@@ -38,6 +44,7 @@ ALLOWED_ENERGY_TYPES = {"elec"}
 
 # ── Pydantic schemas ──
 
+
 class AssumptionSetIn(BaseModel):
     energy_type: str = "elec"
     volume_kwh_an: float = 0
@@ -57,6 +64,7 @@ class PreferenceIn(BaseModel):
 
 # ── 1. Estimation conso ──
 
+
 @router.get("/estimate/{site_id}")
 def get_estimate(site_id: int, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
     """Estimate annual consumption for a site."""
@@ -69,8 +77,11 @@ def get_estimate(site_id: int, db: Session = Depends(get_db), auth: Optional[Aut
 
 # ── 2-3. Assumptions CRUD ──
 
+
 @router.get("/assumptions/{site_id}")
-def get_assumptions(site_id: int, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
+def get_assumptions(
+    site_id: int, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)
+):
     """Get existing assumptions or defaults."""
     check_site_access(auth, site_id)
     assumption = (
@@ -104,7 +115,12 @@ def get_assumptions(site_id: int, db: Session = Depends(get_db), auth: Optional[
 
 
 @router.put("/assumptions/{site_id}")
-def put_assumptions(site_id: int, data: AssumptionSetIn, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
+def put_assumptions(
+    site_id: int,
+    data: AssumptionSetIn,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """Create or update assumptions for a site."""
     check_site_access(auth, site_id)
     # Energy Gate: block non-ELEC energy types
@@ -112,7 +128,7 @@ def put_assumptions(site_id: int, data: AssumptionSetIn, db: Session = Depends(g
         raise HTTPException(
             status_code=422,
             detail=f"Energie '{data.energy_type}' non supportee. "
-                   f"Seule l'electricite (elec) est disponible dans cette version (post-ARENH).",
+            f"Seule l'electricite (elec) est disponible dans cette version (post-ARENH).",
         )
     existing = (
         db.query(PurchaseAssumptionSet)
@@ -147,6 +163,7 @@ def put_assumptions(site_id: int, data: AssumptionSetIn, db: Session = Depends(g
 
 
 # ── 4-5. Preferences CRUD ──
+
 
 @router.get("/preferences")
 def get_preferences(
@@ -221,6 +238,7 @@ def put_preferences(
 
 # ── V1.1: Renewals ──
 
+
 @router.get("/renewals")
 def get_renewals(
     org_id: Optional[int] = Query(None),
@@ -238,10 +256,14 @@ def get_renewals(
     if not site_ids:
         return {"total": 0, "renewals": []}
 
-    contracts = db.query(EnergyContract).filter(
-        EnergyContract.site_id.in_(site_ids),
-        EnergyContract.end_date.isnot(None),
-    ).all()
+    contracts = (
+        db.query(EnergyContract)
+        .filter(
+            EnergyContract.site_id.in_(site_ids),
+            EnergyContract.end_date.isnot(None),
+        )
+        .all()
+    )
 
     today = date.today()
     renewals = []
@@ -269,26 +291,29 @@ def get_renewals(
             urgency = "gray"
 
         site = site_map.get(c.site_id)
-        renewals.append({
-            "contract_id": c.id,
-            "site_id": c.site_id,
-            "site_nom": site.nom if site else None,
-            "supplier_name": c.supplier_name,
-            "energy_type": c.energy_type.value if c.energy_type else None,
-            "end_date": c.end_date.isoformat(),
-            "notice_period_days": c.notice_period_days,
-            "notice_deadline": notice_deadline.isoformat(),
-            "auto_renew": c.auto_renew,
-            "days_until_expiry": days_until_expiry,
-            "days_until_notice": days_until_notice,
-            "urgency": urgency,
-        })
+        renewals.append(
+            {
+                "contract_id": c.id,
+                "site_id": c.site_id,
+                "site_nom": site.nom if site else None,
+                "supplier_name": c.supplier_name,
+                "energy_type": c.energy_type.value if c.energy_type else None,
+                "end_date": c.end_date.isoformat(),
+                "notice_period_days": c.notice_period_days,
+                "notice_deadline": notice_deadline.isoformat(),
+                "auto_renew": c.auto_renew,
+                "days_until_expiry": days_until_expiry,
+                "days_until_notice": days_until_notice,
+                "urgency": urgency,
+            }
+        )
 
     renewals.sort(key=lambda r: r["days_until_expiry"])
     return {"total": len(renewals), "renewals": renewals}
 
 
 # ── V1.1: Actions ──
+
 
 @router.get("/actions")
 def get_actions(
@@ -303,6 +328,7 @@ def get_actions(
 
 
 # ── V1.1: Portfolio compute ──
+
 
 @router.post("/compute")
 def compute_portfolio(
@@ -325,9 +351,14 @@ def compute_portfolio(
     results_by_site = []
 
     # Get org-level preferences
-    pref = db.query(PurchasePreference).filter(
-        PurchasePreference.org_id == org_id,
-    ).first() or db.query(PurchasePreference).first()
+    pref = (
+        db.query(PurchasePreference)
+        .filter(
+            PurchasePreference.org_id == org_id,
+        )
+        .first()
+        or db.query(PurchasePreference).first()
+    )
     risk_tol = pref.risk_tolerance if pref else "medium"
     budget_pri = pref.budget_priority if pref else 0.5
     green_pref = pref.green_preference if pref else False
@@ -363,7 +394,8 @@ def compute_portfolio(
             continue
 
         scenarios = compute_scenarios(
-            db, sid,
+            db,
+            sid,
             volume_kwh_an=assumption.volume_kwh_an,
             profile_factor=assumption.profile_factor,
             energy_type=energy_type_val,
@@ -371,9 +403,13 @@ def compute_portfolio(
         scenarios = recommend_scenario(scenarios, risk_tol, budget_pri, green_pref)
 
         inputs_hash_val = compute_inputs_hash(
-            assumption.volume_kwh_an, assumption.profile_factor,
-            assumption.horizon_months, energy_type_val,
-            risk_tol, budget_pri, green_pref,
+            assumption.volume_kwh_an,
+            assumption.profile_factor,
+            assumption.horizon_months,
+            energy_type_val,
+            risk_tol,
+            budget_pri,
+            green_pref,
         )
 
         # Persist (keep old results for history)
@@ -403,12 +439,14 @@ def compute_portfolio(
         for i, s in enumerate(scenarios):
             s["id"] = result_ids[i]
 
-        results_by_site.append({
-            "site_id": sid,
-            "run_id": run_id,
-            "volume_kwh_an": assumption.volume_kwh_an,
-            "scenarios": scenarios,
-        })
+        results_by_site.append(
+            {
+                "site_id": sid,
+                "run_id": run_id,
+                "volume_kwh_an": assumption.volume_kwh_an,
+                "scenarios": scenarios,
+            }
+        )
 
     portfolio = aggregate_portfolio_results(results_by_site)
 
@@ -421,6 +459,7 @@ def compute_portfolio(
 
 
 # ── 6. Compute scenarios (per-site) — V1.1: +run_id +inputs_hash, preserve history ──
+
 
 @router.post("/compute/{site_id}")
 def compute(site_id: int, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
@@ -484,9 +523,13 @@ def compute(site_id: int, db: Session = Depends(get_db), auth: Optional[AuthCont
     # V1.1: Generate run_id and inputs_hash
     run_id = str(uuid.uuid4())
     inputs_hash_val = compute_inputs_hash(
-        assumption.volume_kwh_an, assumption.profile_factor,
-        assumption.horizon_months, energy_type_val,
-        risk_tol, budget_pri, green_pref,
+        assumption.volume_kwh_an,
+        assumption.profile_factor,
+        assumption.horizon_months,
+        energy_type_val,
+        risk_tol,
+        budget_pri,
+        green_pref,
     )
 
     # V1.1: No longer delete old results — preserve for history
@@ -527,6 +570,7 @@ def compute(site_id: int, db: Session = Depends(get_db), auth: Optional[AuthCont
 
 
 # ── V1.1: Portfolio results ──
+
 
 @router.get("/results")
 def get_portfolio_results(
@@ -584,20 +628,22 @@ def get_portfolio_results(
         if not results:
             continue
 
-        results_by_site.append({
-            "site_id": sid,
-            "volume_kwh_an": assumption.volume_kwh_an,
-            "scenarios": [
-                {
-                    "strategy": r.strategy.value if r.strategy else None,
-                    "total_annual_eur": r.total_annual_eur,
-                    "risk_score": r.risk_score,
-                    "savings_vs_current_pct": r.savings_vs_current_pct,
-                    "is_recommended": r.is_recommended,
-                }
-                for r in results
-            ],
-        })
+        results_by_site.append(
+            {
+                "site_id": sid,
+                "volume_kwh_an": assumption.volume_kwh_an,
+                "scenarios": [
+                    {
+                        "strategy": r.strategy.value if r.strategy else None,
+                        "total_annual_eur": r.total_annual_eur,
+                        "risk_score": r.risk_score,
+                        "savings_vs_current_pct": r.savings_vs_current_pct,
+                        "is_recommended": r.is_recommended,
+                    }
+                    for r in results
+                ],
+            }
+        )
 
     portfolio = aggregate_portfolio_results(results_by_site)
 
@@ -609,6 +655,7 @@ def get_portfolio_results(
 
 
 # ── 7. Get results (per-site) — V1.1: filter by latest run_id ──
+
 
 @router.get("/results/{site_id}")
 def get_results(site_id: int, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
@@ -676,15 +723,12 @@ def get_results(site_id: int, db: Session = Depends(get_db), auth: Optional[Auth
 
 # ── V1.1: History ──
 
+
 @router.get("/history/{site_id}")
 def get_history(site_id: int, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
     """List past computation runs for a site with timestamps and inputs_hash."""
     check_site_access(auth, site_id)
-    assumptions = (
-        db.query(PurchaseAssumptionSet)
-        .filter(PurchaseAssumptionSet.site_id == site_id)
-        .all()
-    )
+    assumptions = db.query(PurchaseAssumptionSet).filter(PurchaseAssumptionSet.site_id == site_id).all()
     assumption_ids = [a.id for a in assumptions]
     if not assumption_ids:
         return {"site_id": site_id, "total_runs": 0, "runs": []}
@@ -708,16 +752,18 @@ def get_history(site_id: int, db: Session = Depends(get_db), auth: Optional[Auth
                 "computed_at": r.computed_at.isoformat() if r.computed_at else None,
                 "scenarios": [],
             }
-        runs_map[key]["scenarios"].append({
-            "id": r.id,
-            "strategy": r.strategy.value if r.strategy else None,
-            "price_eur_per_kwh": r.price_eur_per_kwh,
-            "total_annual_eur": r.total_annual_eur,
-            "risk_score": r.risk_score,
-            "savings_vs_current_pct": r.savings_vs_current_pct,
-            "is_recommended": r.is_recommended,
-            "reco_status": r.reco_status.value if r.reco_status else None,
-        })
+        runs_map[key]["scenarios"].append(
+            {
+                "id": r.id,
+                "strategy": r.strategy.value if r.strategy else None,
+                "price_eur_per_kwh": r.price_eur_per_kwh,
+                "total_annual_eur": r.total_annual_eur,
+                "risk_score": r.risk_score,
+                "savings_vs_current_pct": r.savings_vs_current_pct,
+                "is_recommended": r.is_recommended,
+                "reco_status": r.reco_status.value if r.reco_status else None,
+            }
+        )
 
     runs = list(runs_map.values())
 
@@ -739,12 +785,11 @@ def get_history(site_id: int, db: Session = Depends(get_db), auth: Optional[Auth
 
 # ── 8. Accept result ──
 
+
 @router.patch("/results/{result_id}/accept")
 def accept_result(result_id: int, db: Session = Depends(get_db)):
     """Accept a recommended scenario."""
-    result = db.query(PurchaseScenarioResult).filter(
-        PurchaseScenarioResult.id == result_id
-    ).first()
+    result = db.query(PurchaseScenarioResult).filter(PurchaseScenarioResult.id == result_id).first()
     if not result:
         raise HTTPException(status_code=404, detail="Result not found")
     result.reco_status = PurchaseRecoStatus.ACCEPTED
@@ -752,21 +797,158 @@ def accept_result(result_id: int, db: Session = Depends(get_db)):
     return {"id": result.id, "reco_status": "accepted"}
 
 
+# ── 9a. Assistant data ──
+
+
+@router.get("/assistant")
+def get_assistant_data(
+    org_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Return portfolio summary data for the Purchase Assistant wizard.
+
+    If real sites exist for the org, returns real data.
+    Otherwise returns a minimal demo seed (flagged is_demo=true).
+    """
+    if auth:
+        org_id = auth.org_id
+
+    sites_out = []
+    is_demo = False
+
+    if org_id:
+        site_ids = get_org_site_ids(db, org_id)
+        if site_ids:
+            sites_q = db.query(Site).filter(Site.id.in_(site_ids)).all()
+            for s in sites_q:
+                est = estimate_consumption(db, s.id)
+                sites_out.append(
+                    {
+                        "id": s.id,
+                        "name": s.nom,
+                        "city": getattr(s, "ville", None),
+                        "usage": s.type.value if s.type else None,
+                        "surface_m2": s.surface_m2,
+                        "energy_type": "elec",
+                        "annual_kwh": est.get("volume_kwh_an", 0),
+                        "source": est.get("source", "default"),
+                    }
+                )
+
+    if not sites_out:
+        is_demo = True
+        sites_out = [
+            {
+                "id": 1,
+                "name": "Usine Lyon",
+                "city": "Lyon",
+                "usage": "industriel",
+                "surface_m2": 12000,
+                "energy_type": "elec",
+                "annual_kwh": 2400000,
+                "source": "DEMO",
+            },
+            {
+                "id": 2,
+                "name": "Entrepot Grenoble",
+                "city": "Grenoble",
+                "usage": "logistique",
+                "surface_m2": 5000,
+                "energy_type": "elec",
+                "annual_kwh": 800000,
+                "source": "DEMO",
+            },
+            {
+                "id": 3,
+                "name": "Bureaux Paris 8e",
+                "city": "Paris",
+                "usage": "bureau",
+                "surface_m2": 3000,
+                "energy_type": "elec",
+                "annual_kwh": 600000,
+                "source": "DEMO",
+            },
+            {
+                "id": 4,
+                "name": "Agence Nantes",
+                "city": "Nantes",
+                "usage": "bureau",
+                "surface_m2": 1500,
+                "energy_type": "elec",
+                "annual_kwh": 350000,
+                "source": "DEMO",
+            },
+            {
+                "id": 5,
+                "name": "Atelier Toulouse",
+                "city": "Toulouse",
+                "usage": "industriel",
+                "surface_m2": 8000,
+                "energy_type": "elec",
+                "annual_kwh": 1800000,
+                "source": "DEMO",
+            },
+            {
+                "id": 6,
+                "name": "Datacenter Marseille",
+                "city": "Marseille",
+                "usage": "datacenter",
+                "surface_m2": 2000,
+                "energy_type": "elec",
+                "annual_kwh": 5000000,
+                "source": "DEMO",
+            },
+            {
+                "id": 7,
+                "name": "Depot Lille",
+                "city": "Lille",
+                "usage": "logistique",
+                "surface_m2": 6000,
+                "energy_type": "elec",
+                "annual_kwh": 450000,
+                "source": "DEMO",
+            },
+            {
+                "id": 8,
+                "name": "Siege Bordeaux",
+                "city": "Bordeaux",
+                "usage": "bureau",
+                "surface_m2": 4000,
+                "energy_type": "elec",
+                "annual_kwh": 700000,
+                "source": "DEMO",
+            },
+        ]
+
+    return {
+        "is_demo": is_demo,
+        "org_id": org_id,
+        "sites": sites_out,
+        "total_sites": len(sites_out),
+        "total_annual_kwh": sum(s["annual_kwh"] for s in sites_out),
+    }
+
+
 # ── 9. Seed demo ──
+
 
 @router.post("/seed-demo")
 def seed_demo(db: Session = Depends(get_db)):
     """Seed purchase demo data for 2 sites."""
     from services.purchase_seed import seed_purchase_demo
+
     return seed_purchase_demo(db)
 
 
 # ── Brique 3: WOW multi-site datasets ──
 
+
 @router.post("/seed-wow-happy")
 def seed_wow_happy_endpoint(db: Session = Depends(get_db)):
     """Seed 15-site portfolio with clean, realistic data (happy path demo)."""
     from services.purchase_seed_wow import seed_wow_happy
+
     return seed_wow_happy(db)
 
 
@@ -774,4 +956,5 @@ def seed_wow_happy_endpoint(db: Session = Depends(get_db)):
 def seed_wow_dirty_endpoint(db: Session = Depends(get_db)):
     """Seed 15-site portfolio with degraded/edge-case data (dirty demo)."""
     from services.purchase_seed_wow import seed_wow_dirty
+
     return seed_wow_dirty(db)
