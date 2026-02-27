@@ -172,5 +172,5 @@ export function toPurchase(opts = {}) {
  * Assistant Achat — wizard 8 etapes.
  */
 export function toPurchaseAssistant() {
-  return '/achat-energie/assistant';
+  return '/achat-assistant';
 }

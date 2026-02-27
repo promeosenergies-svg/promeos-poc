@@ -5,6 +5,7 @@
  * Brique 3: + Energy Gate, WOW datasets, A4 exports.
  * V71: + Scénarios cockpit, actions CTAs.
  * V72: + Scope lock, autosave, volume toggle, confidence badges.
+ * V73: + Scope unlock fix, skipSiteHeader, tab deep-link, assistant CTA, renewals re-fetch.
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -33,7 +34,7 @@ import {
   seedWowHappy,
   seedWowDirty,
 } from '../services/api';
-import { toActionNew, toActionsList } from '../services/routes';
+import { toActionNew, toActionsList, toPurchaseAssistant } from '../services/routes';
 import {
   ShoppingCart,
   Calculator,
@@ -130,8 +131,11 @@ export default function PurchasePage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Tab state — initialise from ?filter= deep-link if present
+  // Tab state — initialise from ?tab= or ?filter= deep-link if present
+  const VALID_TABS = new Set(TABS.map((t) => t.key));
   const [activeTab, setActiveTab] = useState(() => {
+    const tab = searchParams.get('tab');
+    if (tab && VALID_TABS.has(tab)) return tab;
     const filter = searchParams.get('filter');
     return (filter && FILTER_TO_TAB[filter]) || 'simulation';
   });
@@ -158,8 +162,9 @@ export default function PurchasePage() {
     [setSearchParams]
   );
 
-  // V72: Scope lock — if bandeau has a selected site, lock it
-  const isScopeLocked = !!scopeSiteId;
+  // V73: Scope lock — if bandeau has a selected site, lock it (user can unlock via "Changer")
+  const [scopeOverride, setScopeOverride] = useState(false);
+  const isScopeLocked = !!scopeSiteId && !scopeOverride;
 
   // Simulation state (V1)
   const [selectedSiteId, setSelectedSiteId] = useState(null);
@@ -219,14 +224,15 @@ export default function PurchasePage() {
     setSeedingWow(null);
   };
 
-  // V72: Scope-aware site selection — locked if scope has a site
+  // V73: Scope-aware site selection — locked if scope has a site, reset override on scope change
   useEffect(() => {
+    setScopeOverride(false); // reset override when bandeau scope changes
     if (scopeSiteId) {
       setSelectedSiteId(scopeSiteId);
     } else if (scopedSites.length > 0 && !selectedSiteId) {
       setSelectedSiteId(scopedSites[0].id);
     }
-  }, [scopedSites, selectedSiteId, scopeSiteId]);
+  }, [scopedSites, scopeSiteId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load data when site changes
   const loadSiteData = useCallback(async (siteId) => {
@@ -263,18 +269,21 @@ export default function PurchasePage() {
     if (selectedSiteId) loadSiteData(selectedSiteId);
   }, [selectedSiteId, loadSiteData]);
 
-  // Load renewals when tab becomes active
+  // V73: Load renewals when tab becomes active — pass orgId + re-fetch on scope change
+  const renewalsOrgRef = useRef(null);
   useEffect(() => {
-    if (activeTab === 'echeances' && renewals.length === 0) {
+    const orgId = scope.orgId;
+    if (activeTab === 'echeances' && (renewals.length === 0 || renewalsOrgRef.current !== orgId)) {
+      renewalsOrgRef.current = orgId;
       setRenewalsLoading(true);
-      getPurchaseRenewals()
+      getPurchaseRenewals(orgId)
         .then((data) => {
           setRenewals(data.renewals || []);
         })
         .catch(() => toast('Erreur lors du chargement des echeances', 'error'))
         .finally(() => setRenewalsLoading(false));
     }
-  }, [activeTab, renewals.length, toast]);
+  }, [activeTab, renewals.length, scope.orgId, toast]);
 
   // Load history when tab + site selected
   useEffect(() => {
@@ -408,7 +417,8 @@ export default function PurchasePage() {
                       <button
                         data-testid="cta-change-site"
                         onClick={() => {
-                          // Unlock: allow user to change — reset scope lock
+                          // V73: Unlock scope lock — user can pick another site
+                          setScopeOverride(true);
                           setSelectedSiteId(null);
                         }}
                         className="ml-auto text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
@@ -816,8 +826,15 @@ export default function PurchasePage() {
                 <Target size={40} className="mx-auto text-gray-300 mb-3" />
                 <h4 className="text-lg font-semibold text-gray-700 mb-1">Aucun scénario calculé</h4>
                 <p className="text-sm text-gray-500 mb-4">
-                  Renseignez vos hypothèses ci-dessus puis cliquez sur «{'\u00a0'}Calculer les scénarios{'\u00a0'}» pour comparer Fixe / Indexé / Spot.
+                  Renseignez vos hypothèses ci-dessus puis cliquez sur «{'\u00a0'}Comparer les scénarios{'\u00a0'}» pour comparer Fixe / Indexé / Spot.
                 </p>
+                <button
+                  data-testid="cta-assistant-achat"
+                  onClick={() => navigate(toPurchaseAssistant())}
+                  className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  <Target size={14} /> Lancer l'Assistant Achat
+                </button>
               </div>
             )}
             {loading && (
@@ -1012,7 +1029,7 @@ export default function PurchasePage() {
           <ExportPackRFP
             portfolio={portfolioData.portfolio}
             sites={portfolioData.sites}
-            orgName="PROMEOS"
+            orgName={scope.org?.nom || 'Organisation'}
             onClose={() => setShowPackRFP(false)}
           />
         )}

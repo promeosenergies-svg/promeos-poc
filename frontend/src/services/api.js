@@ -854,14 +854,15 @@ export const seedWowHappy = () => api.post('/purchase/seed-wow-happy').then((r) 
 export const seedWowDirty = () => api.post('/purchase/seed-wow-dirty').then((r) => r.data);
 
 // Sprint 8.1: Portfolio, Renewals, History, Actions
+// skipSiteHeader: portfolio = multi-sites, never filter by single site scope
 export const computePortfolio = (orgId) =>
   api
-    .post('/purchase/compute', null, { params: { org_id: orgId, scope: 'org' } })
+    .post('/purchase/compute', null, { params: { org_id: orgId, scope: 'org' }, skipSiteHeader: true })
     .then((r) => r.data);
 export const getPortfolioResults = (orgId) =>
-  api.get('/purchase/results', { params: { org_id: orgId } }).then((r) => r.data);
+  api.get('/purchase/results', { params: { org_id: orgId }, skipSiteHeader: true }).then((r) => r.data);
 export const getPurchaseRenewals = (orgId = null) =>
-  api.get('/purchase/renewals', { params: orgId ? { org_id: orgId } : {} }).then((r) => r.data);
+  api.get('/purchase/renewals', { params: orgId ? { org_id: orgId } : {}, skipSiteHeader: true }).then((r) => r.data);
 export const getPurchaseHistory = (siteId) =>
   api.get(`/purchase/history/${siteId}`).then((r) => r.data);
 export const getPurchaseActions = (orgId = null) =>

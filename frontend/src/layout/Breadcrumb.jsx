@@ -36,6 +36,7 @@ const LABELS = {
   'performance': 'Performance',
   'achats': 'Achats énergie',
   'purchase': 'Achats énergie',
+  'achat-assistant': 'Assistant Achat',
   'referentiels': 'Référentiels',
   'synthese': 'Vue exécutive',
   'executive': 'Vue exécutive',
