@@ -11,6 +11,7 @@
  * V76: + Rename ReFlex → Budget Securise (user-facing labels only), scenario_label in prefills.
  * V77: + Rename Budget Securise → Tarif Heures Solaires, bloc explicability, assistant offer, deep-link CTA.
  * V78: + Audit THS — sous-titre grand public, creneaux ete/hiver sur carte, CTAs enrichis.
+ * V79: + Cross-brique Performance, CTA Voir performance, toMonitoring, dejargon.
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -39,7 +40,7 @@ import {
   seedWowHappy,
   seedWowDirty,
 } from '../services/api';
-import { toActionNew, toActionsList, toPurchaseAssistant, toPurchase, toConsoExplorer, toBillIntel, toConsoDiag } from '../services/routes';
+import { toActionNew, toActionsList, toPurchaseAssistant, toPurchase, toConsoExplorer, toBillIntel, toConsoDiag, toMonitoring } from '../services/routes';
 import {
   ShoppingCart,
   Calculator,
@@ -660,7 +661,7 @@ export default function PurchasePage() {
                 <div data-testid="reflex-report-controls" className="bg-amber-50 rounded-lg p-3 border border-amber-200">
                   <div className="flex items-center justify-between mb-2">
                     <label className="text-sm font-medium text-amber-800 flex items-center gap-1.5">
-                      <Sun size={14} /> Report HP → Solaire
+                      <Sun size={14} /> Décalage heures pleines → solaire
                       <span className="ml-1 px-1.5 py-0.5 text-[10px] font-bold bg-amber-200 text-amber-800 rounded">TARIF HEURES SOLAIRES</span>
                     </label>
                     <button
@@ -883,7 +884,7 @@ export default function PurchasePage() {
                             {s.report_pct != null && s.report_pct > 0 && (
                               <p data-testid="reflex-report-pct" className="text-xs text-amber-700">
                                 <RefreshCw size={10} className="inline mr-1" />
-                                Report HP → Solaire: {s.report_pct}%
+                                Décalage heures pleines → solaire: {s.report_pct}%
                               </p>
                             )}
                             {/* V77: Delta vs Prix Fixe standard */}
@@ -926,6 +927,13 @@ export default function PurchasePage() {
                                 className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800 underline"
                               >
                                 <FileSearch size={12} /> Contrôler facture
+                              </button>
+                              <button
+                                data-testid="cta-perf-monitoring-reflex"
+                                onClick={() => navigate(toMonitoring({ site_id: selectedSiteId }))}
+                                className="flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-800 underline"
+                              >
+                                <Activity size={12} /> Voir performance
                               </button>
                               <button
                                 data-testid="cta-create-action-reflex"

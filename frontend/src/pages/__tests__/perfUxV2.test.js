@@ -251,11 +251,33 @@ describe('I · "À retenir" section', () => {
     expect(code).toMatch(/data-section="a-retenir"[\s\S]*?<ExecutiveSummary/);
   });
 
-  it('ExecutiveSummary has 3+ card definitions', () => {
-    // cards array has at least risk, waste, confidence
+  it('ExecutiveSummary has 4+ card definitions (including THS)', () => {
+    // cards array has risk, waste, confidence, CO₂e, Tarif Heures Solaires
     expect(code).toMatch(/Risque principal/);
     expect(code).toMatch(/Gaspillage estim[eé]/);
     expect(code).toMatch(/Confiance donn[eé]es/);
+    expect(code).toMatch(/Tarif Heures Solaires/);
+  });
+
+  it('has kpi-tarif-heures-solaires testid', () => {
+    expect(code).toContain('kpi-tarif-heures-solaires');
+  });
+
+  it('THS card has "Simuler" CTA linking to toPurchase', () => {
+    expect(code).toContain('toPurchase');
+  });
+
+  it('imports toPurchase from routes', () => {
+    expect(code).toContain('toPurchase');
+    expect(code).toContain("from '../services/routes'");
+  });
+
+  it('no hardcoded /achat-energie in MonitoringPage', () => {
+    expect(code).not.toContain("'/achat-energie");
+  });
+
+  it('V79 header comment', () => {
+    expect(code).toContain('V79:');
   });
 });
 

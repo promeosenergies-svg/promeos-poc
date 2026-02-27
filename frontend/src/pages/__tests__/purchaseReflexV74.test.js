@@ -112,7 +112,7 @@ describe('C · RéFlex card detail', () => {
 
   it('shows report percentage when > 0', () => {
     expect(code).toContain('data-testid="reflex-report-pct"');
-    expect(code).toContain('Report HP');
+    expect(code).toContain('calage heures pleines');
     expect(code).toContain('report_pct');
   });
 });

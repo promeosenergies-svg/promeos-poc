@@ -3,6 +3,7 @@
  * Performance Électrique — premium dashboard.
  * 5 KPI cards, 4 graphs (signature, heatmap, climate scatter, bar chart),
  * InsightDrawer, CreateActionModal, demo profile selector.
+ * V79: + Tarif Heures Solaires KPI card, cross-brique CTA vers Achats.
  */
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -30,7 +31,7 @@ import { mockSites } from '../mocks/sites';
 import { track } from '../services/tracker';
 import CreateActionModal from '../components/CreateActionModal';
 import { fmtKwh, fmtDateFR } from '../utils/format';
-import { toConsoExplorer, toConsoDiag, toActionsList, toPatrimoine } from '../services/routes';
+import { toConsoExplorer, toConsoDiag, toActionsList, toPatrimoine, toPurchase } from '../services/routes';
 import {
   getMonitoringKpis,
   runMonitoring,
@@ -372,7 +373,7 @@ function StatusKpiCard({ icon, title, value, sub, tooltip, status, color, onClic
  * Executive summary v2: top risk, top waste, data confidence — each with CTAs.
  * Confidence downgrade: if qualityConf.level === 'low', risk card shows "(A confirmer)".
  */
-function ExecutiveSummary({ alerts, kpiData, climate, qualityScore, qualityConf, offHoursKwh, emissions, onOpenExplorer, onCreateAction, onInsight, onConfidenceDetail }) {
+function ExecutiveSummary({ alerts, kpiData, climate, qualityScore, qualityConf, offHoursKwh, emissions, onOpenExplorer, onCreateAction, onInsight, onConfidenceDetail, navigate, siteId }) {
   // Top risk: highest EUR impact open alert
   const topAlert = alerts
     .filter((a) => a.status === 'open' && a.estimated_impact_eur)
@@ -390,6 +391,9 @@ function ExecutiveSummary({ alerts, kpiData, climate, qualityScore, qualityConf,
 
   // Data confidence
   const confOk = qualityConf?.level === 'high' || qualityConf?.level === 'medium';
+
+  // V79: Solar hours adoption
+  const offHoursRatio = kpiData?.off_hours_ratio ?? null;
 
   const cards = [
     {
@@ -442,12 +446,31 @@ function ExecutiveSummary({ alerts, kpiData, climate, qualityScore, qualityConf,
         ? [{ label: 'Créer action', action: () => onCreateAction({ alert_type: 'CO2E_REDUCTION', estimated_impact_eur: 0 }) }]
         : [],
     },
+    {
+      icon: Sun,
+      iconColor: 'text-amber-500',
+      title: 'Tarif Heures Solaires',
+      value: offHoursRatio != null
+        ? `${Math.round((1 - offHoursRatio) * 100)}% solaire`
+        : 'Non évalué',
+      sub: offHoursRatio != null
+        ? `${Math.round(offHoursRatio * 100)}% hors créneaux · Gain estimé ${offHoursEst.eur > 0 ? offHoursEst.label : '—'}`
+        : 'Lancez une analyse pour évaluer',
+      testId: 'kpi-tarif-heures-solaires',
+      ctas: [
+        { label: 'Simuler', action: () => navigate(toPurchase({ tab: 'simulation', site_id: siteId })) },
+        ...(offHoursEst.eur > 0 ? [{
+          label: 'Créer action',
+          action: () => onCreateAction({ alert_type: 'TARIF_HEURES_SOLAIRES', estimated_impact_eur: offHoursEst.eur }),
+        }] : []),
+      ],
+    },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
       {cards.map((c, i) => (
-        <Card key={i}>
+        <Card key={i} data-testid={c.testId}>
           <CardBody className="p-4">
             <div className="flex items-start gap-3">
               <div className={`p-2 rounded-lg bg-gray-50 ${c.iconColor}`}>
@@ -1590,6 +1613,8 @@ export default function MonitoringPage() {
               qualityConf={qualityConf}
               offHoursKwh={offHoursKwh}
               emissions={emissions}
+              navigate={navigate}
+              siteId={siteId}
               onOpenExplorer={() => handleOpenExplorer(null)}
               onCreateAction={(a) => {
                 if (a) handleCreateAction(a);
