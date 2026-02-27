@@ -35,8 +35,8 @@ describe('A · Badge Sans pénalité', () => {
     expect(match).not.toBeNull();
   });
 
-  it('badge is inside reflex-badges container', () => {
-    const block = code.match(/data-testid="reflex-badges"[\s\S]*?<\/div>\s*\n/);
+  it('badge is inside option-ths-header (V82: promoted to header)', () => {
+    const block = code.match(/option-ths-header[\s\S]*?<\/div>/);
     expect(block).not.toBeNull();
     expect(block[0]).toContain('reflex-sans-penalite');
   });

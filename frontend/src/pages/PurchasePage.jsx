@@ -14,6 +14,7 @@
  * V79: + Cross-brique Performance, CTA Voir performance, toMonitoring, dejargon.
  * V80: + Badge Sans penalite, nettoyage tooltip jargon, tests audit final.
  * V81: + Header dynamique strategies, CTA Tester dans l'Assistant, deep-link assistant.
+ * V82: + Composant "Option THS" structure (titre, 2 bullets, badge Sans penalite prominent).
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -839,77 +840,99 @@ export default function PurchasePage() {
                           <p className="mt-1.5 text-xs text-gray-600 bg-gray-50 rounded p-2 whitespace-pre-line">{whyText}</p>
                         </details>
 
-                        {/* V74: ReFlex Solar — badges + blocs + cross-brique CTAs */}
+                        {/* V82: Option Tarif Heures Solaires — composant structuré */}
                         {s.strategy === 'reflex_solar' && (
-                          <div data-testid="reflex-solar-detail" className="mb-3 space-y-2">
-                            {/* Badges: Budget / Risque / Effort */}
-                            <div data-testid="reflex-badges" className="flex items-center gap-2 flex-wrap">
-                              <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-green-50 text-green-700">
-                                <TrendingDown size={10} /> Budget {s.savings_vs_current_pct > 0 ? `-${s.savings_vs_current_pct}%` : '—'}
-                              </span>
-                              <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${RISK_COLORS[risk]}`}>
-                                <Shield size={10} /> Risque {s.risk_score}/100
-                              </span>
-                              {s.effort_score != null && (
-                                <span data-testid="reflex-effort-badge" className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${s.effort_score <= 30 ? 'bg-green-50 text-green-700' : s.effort_score <= 60 ? 'bg-yellow-50 text-yellow-700' : 'bg-red-50 text-red-700'}`}>
-                                  <Settings2 size={10} /> Effort {s.effort_score}/100
-                                </span>
-                              )}
-                              <span data-testid="reflex-sans-penalite" className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">
-                                <CheckCircle2 size={10} /> Sans pénalité
+                          <div data-testid="reflex-solar-detail" className="mb-3 rounded-lg border border-amber-200 bg-amber-50/50 overflow-hidden">
+                            {/* Header: titre + badge Sans pénalité */}
+                            <div data-testid="option-ths-header" className="flex items-center justify-between px-3 py-2 bg-amber-100/60 border-b border-amber-200">
+                              <h5 className="text-sm font-semibold text-amber-900 flex items-center gap-1.5">
+                                <Sun size={14} className="text-amber-600" /> Option Tarif Heures Solaires
+                              </h5>
+                              <span data-testid="reflex-sans-penalite" className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                <CheckCircle2 size={12} /> Sans pénalité
                               </span>
                             </div>
-                            {/* V78: Créneaux Heures Solaires (static, visible for all users) */}
-                            <div data-testid="reflex-creneaux" className="text-xs bg-amber-50 rounded p-2">
-                              <p className="font-semibold text-amber-800 flex items-center gap-1 mb-1">
-                                <Clock size={12} /> Créneaux Heures Solaires
+                            {/* 2 bullets grand public */}
+                            <div data-testid="option-ths-bullets" className="px-3 py-2 space-y-1">
+                              <p className="text-xs text-gray-700 flex items-start gap-1.5">
+                                <TrendingDown size={12} className="text-green-600 mt-0.5 shrink-0" />
+                                Profitez d'un prix réduit pendant les heures de forte production solaire — été comme hiver.
                               </p>
-                              <div className="grid grid-cols-2 gap-2 text-gray-700">
-                                <div><span className="font-medium text-amber-700">Été :</span> 13h–16h (sem.) · 10h–17h (WE)</div>
-                                <div><span className="font-medium text-amber-700">Hiver :</span> 8h–10h & 17h–20h</div>
+                              <p className="text-xs text-gray-700 flex items-start gap-1.5">
+                                <Shield size={12} className="text-blue-600 mt-0.5 shrink-0" />
+                                Aucun engagement de décalage : si vous ne changez rien, votre facture reste identique.
+                              </p>
+                            </div>
+                            {/* Badges: Budget / Risque / Effort */}
+                            <div className="px-3 pb-2">
+                              <div data-testid="reflex-badges" className="flex items-center gap-2 flex-wrap">
+                                <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-green-50 text-green-700">
+                                  <TrendingDown size={10} /> Budget {s.savings_vs_current_pct > 0 ? `-${s.savings_vs_current_pct}%` : '—'}
+                                </span>
+                                <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${RISK_COLORS[risk]}`}>
+                                  <Shield size={10} /> Risque {s.risk_score}/100
+                                </span>
+                                {s.effort_score != null && (
+                                  <span data-testid="reflex-effort-badge" className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${s.effort_score <= 30 ? 'bg-green-50 text-green-700' : s.effort_score <= 60 ? 'bg-yellow-50 text-yellow-700' : 'bg-red-50 text-red-700'}`}>
+                                    <Settings2 size={10} /> Effort {s.effort_score}/100
+                                  </span>
+                                )}
                               </div>
                             </div>
-                            {/* Blocs horaires summary */}
-                            {s.blocs && s.blocs.length > 0 && (
-                              <details data-testid="reflex-blocs-detail" className="group">
-                                <summary className="flex items-center gap-1 text-xs text-amber-600 cursor-pointer hover:text-amber-800">
-                                  <BarChart3 size={12} /> {s.blocs.length} blocs horaires
-                                </summary>
-                                <div className="mt-1.5 text-xs bg-amber-50 rounded p-2 space-y-1">
-                                  {s.blocs.map((b) => (
-                                    <div key={b.bloc} className="flex justify-between">
-                                      <span className="text-gray-700">{b.bloc.replace(/_/g, ' ')}</span>
-                                      <span className="font-mono text-gray-600">{b.weight_pct}% — {b.price_eur_kwh.toFixed(4)} EUR/kWh</span>
-                                    </div>
-                                  ))}
+                            {/* Créneaux + détails (collapsible) */}
+                            <div className="px-3 pb-2 space-y-2">
+                              {/* Créneaux Heures Solaires */}
+                              <div data-testid="reflex-creneaux" className="text-xs bg-white/60 rounded p-2 border border-amber-100">
+                                <p className="font-semibold text-amber-800 flex items-center gap-1 mb-1">
+                                  <Clock size={12} /> Créneaux Heures Solaires
+                                </p>
+                                <div className="grid grid-cols-2 gap-2 text-gray-700">
+                                  <div><span className="font-medium text-amber-700">Été :</span> 13h–16h (sem.) · 10h–17h (WE)</div>
+                                  <div><span className="font-medium text-amber-700">Hiver :</span> 8h–10h & 17h–20h</div>
                                 </div>
-                              </details>
-                            )}
-                            {/* Report info */}
-                            {s.report_pct != null && s.report_pct > 0 && (
-                              <p data-testid="reflex-report-pct" className="text-xs text-amber-700">
-                                <RefreshCw size={10} className="inline mr-1" />
-                                Décalage heures pleines → solaire: {s.report_pct}%
-                              </p>
-                            )}
-                            {/* V77: Delta vs Prix Fixe standard */}
-                            {(() => {
-                              const fixeScenario = scenarios.find((sc) => sc.strategy === 'fixe');
-                              if (!fixeScenario || !s.total_annual_eur) return null;
-                              const deltaEur = Math.round(fixeScenario.total_annual_eur - s.total_annual_eur);
-                              const deltaPct = fixeScenario.total_annual_eur > 0 ? round2((deltaEur / fixeScenario.total_annual_eur) * 100) : 0;
-                              return (
-                                <div data-testid="reflex-delta-vs-fixe" className="text-xs bg-green-50 rounded p-2 flex items-center gap-1.5">
-                                  <TrendingDown size={12} className="text-green-600" />
-                                  <span className="text-green-700">
-                                    {deltaEur > 0 ? `-${deltaEur.toLocaleString()} EUR/an` : `+${Math.abs(deltaEur).toLocaleString()} EUR/an`}
-                                    {' '}({deltaPct > 0 ? '-' : '+'}{Math.abs(deltaPct)}%) vs Prix Fixe standard
-                                  </span>
-                                </div>
-                              );
-                            })()}
+                              </div>
+                              {/* Blocs horaires summary */}
+                              {s.blocs && s.blocs.length > 0 && (
+                                <details data-testid="reflex-blocs-detail" className="group">
+                                  <summary className="flex items-center gap-1 text-xs text-amber-600 cursor-pointer hover:text-amber-800">
+                                    <BarChart3 size={12} /> {s.blocs.length} blocs horaires
+                                  </summary>
+                                  <div className="mt-1.5 text-xs bg-white/60 rounded p-2 space-y-1 border border-amber-100">
+                                    {s.blocs.map((b) => (
+                                      <div key={b.bloc} className="flex justify-between">
+                                        <span className="text-gray-700">{b.bloc.replace(/_/g, ' ')}</span>
+                                        <span className="font-mono text-gray-600">{b.weight_pct}% — {b.price_eur_kwh.toFixed(4)} EUR/kWh</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </details>
+                              )}
+                              {/* Report info */}
+                              {s.report_pct != null && s.report_pct > 0 && (
+                                <p data-testid="reflex-report-pct" className="text-xs text-amber-700">
+                                  <RefreshCw size={10} className="inline mr-1" />
+                                  Décalage heures pleines → solaire: {s.report_pct}%
+                                </p>
+                              )}
+                              {/* Delta vs Prix Fixe standard */}
+                              {(() => {
+                                const fixeScenario = scenarios.find((sc) => sc.strategy === 'fixe');
+                                if (!fixeScenario || !s.total_annual_eur) return null;
+                                const deltaEur = Math.round(fixeScenario.total_annual_eur - s.total_annual_eur);
+                                const deltaPct = fixeScenario.total_annual_eur > 0 ? round2((deltaEur / fixeScenario.total_annual_eur) * 100) : 0;
+                                return (
+                                  <div data-testid="reflex-delta-vs-fixe" className="text-xs bg-green-50 rounded p-2 flex items-center gap-1.5">
+                                    <TrendingDown size={12} className="text-green-600" />
+                                    <span className="text-green-700">
+                                      {deltaEur > 0 ? `-${deltaEur.toLocaleString()} EUR/an` : `+${Math.abs(deltaEur).toLocaleString()} EUR/an`}
+                                      {' '}({deltaPct > 0 ? '-' : '+'}{Math.abs(deltaPct)}%) vs Prix Fixe standard
+                                    </span>
+                                  </div>
+                                );
+                              })()}
+                            </div>
                             {/* Cross-brique CTAs */}
-                            <div data-testid="reflex-cross-ctas" className="flex items-center gap-2 flex-wrap pt-1">
+                            <div data-testid="reflex-cross-ctas" className="flex items-center gap-2 flex-wrap px-3 pb-3 pt-1 border-t border-amber-200">
                               <button
                                 data-testid="cta-conso-explorer-reflex"
                                 onClick={() => {
