@@ -53,7 +53,7 @@ describe('A · Labels Tarif Heures Solaires', () => {
   });
 
   it('STRATEGY_META desc is grand-public friendly', () => {
-    expect(code).toContain("Profitez des prix bas quand le soleil produit, sans pénalité si vous ne décalez pas.");
+    expect(code).toContain("Payez moins quand le soleil brille — sans surcoût si vous ne changez rien.");
   });
 
   it('visible in mode normal (not gated by isExpert)', () => {

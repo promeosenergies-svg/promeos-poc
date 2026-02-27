@@ -40,7 +40,7 @@ describe('A · STRATEGY_META reflex_solar', () => {
   });
 
   it('reflex_solar has a desc string', () => {
-    expect(code).toContain("desc: \"Profitez des prix bas quand le soleil produit");
+    expect(code).toContain("desc: \"Payez moins quand le soleil brille");
   });
 });
 
@@ -55,8 +55,8 @@ describe('B · STRATEGY_WHY reflex_solar', () => {
     expect(match).not.toBeNull();
   });
 
-  it('reflex_solar WHY mentions heures solaires', () => {
-    expect(code).toContain('heures solaires');
+  it('reflex_solar WHY mentions surproduction solaire', () => {
+    expect(code).toContain('surproduction solaire');
   });
 
   it('reflex_solar WHY mentions report', () => {

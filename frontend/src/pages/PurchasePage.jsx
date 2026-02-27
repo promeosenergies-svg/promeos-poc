@@ -10,6 +10,7 @@
  * V75: + ReFlex report toggle/slider, portfolio ReFlex table, top-lists, campaign CTA.
  * V76: + Rename ReFlex → Budget Securise (user-facing labels only), scenario_label in prefills.
  * V77: + Rename Budget Securise → Tarif Heures Solaires, bloc explicability, assistant offer, deep-link CTA.
+ * V78: + Audit THS — sous-titre grand public, creneaux ete/hiver sur carte, CTAs enrichis.
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -101,7 +102,7 @@ const STRATEGY_META = {
     label: 'Tarif Heures Solaires',
     icon: Sun,
     color: 'amber',
-    desc: "Profitez des prix bas quand le soleil produit, sans pénalité si vous ne décalez pas.",
+    desc: "Payez moins quand le soleil brille — sans surcoût si vous ne changez rien.",
     dynamic: true,
   },
 };
@@ -145,7 +146,7 @@ const STRATEGY_WHY = {
   fixe: 'Budget prévisible à 100 %. Aucune exposition marché. Idéal si la visibilité budgétaire prime.',
   indexe: "Suit un indice marché avec plafond. Potentiel d'économie ~5-10 % vs Fixe, mais légère exposition à la volatilité.",
   spot: "Prix temps réel sans marge intermédiaire. Économie potentielle maximale, mais forte volatilité. Réservé aux profils avertis.",
-  reflex_solar: "• Prix bas captés sur les heures solaires été (13h-16h sem., 10h-17h WE) grâce à la surproduction PV.\n• Risque modéré (40/100) : moins volatile que Spot, plus d'économies que Fixe.\n• Report optionnel HP → solaire pour augmenter les gains (ajustable en mode Expert).",
+  reflex_solar: "• Été : prix bas de 13h à 16h (sem.) et 10h–17h (WE) grâce à la surproduction solaire.\n• Hiver : créneaux réduits 8h–10h et 17h–20h — restez gagnant toute l'année.\n• Aucune pénalité si vous ne décalez rien. Report optionnel en mode Expert pour maximiser.",
 };
 
 export default function PurchasePage() {
@@ -852,6 +853,16 @@ export default function PurchasePage() {
                                 </span>
                               )}
                             </div>
+                            {/* V78: Créneaux Heures Solaires (static, visible for all users) */}
+                            <div data-testid="reflex-creneaux" className="text-xs bg-amber-50 rounded p-2">
+                              <p className="font-semibold text-amber-800 flex items-center gap-1 mb-1">
+                                <Clock size={12} /> Créneaux Heures Solaires
+                              </p>
+                              <div className="grid grid-cols-2 gap-2 text-gray-700">
+                                <div><span className="font-medium text-amber-700">Été :</span> 13h–16h (sem.) · 10h–17h (WE)</div>
+                                <div><span className="font-medium text-amber-700">Hiver :</span> 8h–10h & 17h–20h</div>
+                              </div>
+                            </div>
                             {/* Blocs horaires summary */}
                             {s.blocs && s.blocs.length > 0 && (
                               <details data-testid="reflex-blocs-detail" className="group">
@@ -895,14 +906,23 @@ export default function PurchasePage() {
                             <div data-testid="reflex-cross-ctas" className="flex items-center gap-2 flex-wrap pt-1">
                               <button
                                 data-testid="cta-conso-explorer-reflex"
-                                onClick={() => navigate(toConsoExplorer({ site_id: selectedSiteId, days: 90 }))}
+                                onClick={() => {
+                                  const now = new Date();
+                                  const from = new Date(now);
+                                  from.setDate(from.getDate() - 90);
+                                  navigate(toConsoExplorer({
+                                    site_id: selectedSiteId,
+                                    date_from: from.toISOString().slice(0, 10),
+                                    date_to: now.toISOString().slice(0, 10),
+                                  }));
+                                }}
                                 className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 underline"
                               >
                                 <BarChart3 size={12} /> Voir preuves conso
                               </button>
                               <button
                                 data-testid="cta-bill-intel-reflex"
-                                onClick={() => navigate(toBillIntel({ site_id: selectedSiteId }))}
+                                onClick={() => navigate(toBillIntel({ site_id: selectedSiteId, month: new Date().toISOString().slice(0, 7) }))}
                                 className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800 underline"
                               >
                                 <FileSearch size={12} /> Contrôler facture

@@ -131,11 +131,11 @@ describe('D · Grand-public subtitle', () => {
   const code = readSrc('pages', 'PurchasePage.jsx');
 
   it('STRATEGY_META desc contains the new subtitle', () => {
-    expect(code).toContain("Profitez des prix bas quand le soleil produit, sans pénalité si vous ne décalez pas.");
+    expect(code).toContain("Payez moins quand le soleil brille — sans surcoût si vous ne changez rien.");
   });
 
   it('subtitle is in reflex_solar desc field', () => {
-    const match = code.match(/reflex_solar:\s*\{[\s\S]*?desc:\s*["']Profitez des prix bas/);
+    const match = code.match(/reflex_solar:\s*\{[\s\S]*?desc:\s*["']Payez moins quand le soleil brille/);
     expect(match).not.toBeNull();
   });
 });
