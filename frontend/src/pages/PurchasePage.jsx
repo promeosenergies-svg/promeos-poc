@@ -1,10 +1,12 @@
 /**
- * PROMEOS — Achat Energie V1.1 + Brique 3
+ * PROMEOS — Achat Energie V2 (V72 UX)
  * Simulateur de scenarios d'achat: Fixe / Indexe / Spot
  * V1.1: + Portfolio roll-up, Echeances, Historique tabs.
  * Brique 3: + Energy Gate, WOW datasets, A4 exports.
+ * V71: + Scénarios cockpit, actions CTAs.
+ * V72: + Scope lock, autosave, volume toggle, confidence badges.
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
@@ -55,6 +57,10 @@ import {
   ExternalLink,
   HelpCircle,
   Target,
+  ToggleLeft,
+  ToggleRight,
+  RefreshCw,
+  BadgeCheck,
 } from 'lucide-react';
 
 const STRATEGY_META = {
@@ -118,7 +124,7 @@ const STRATEGY_WHY = {
 };
 
 export default function PurchasePage() {
-  const { scopedSites, scope } = useScope();
+  const { scopedSites, scope, selectedSiteId: scopeSiteId } = useScope();
   const { isExpert } = useExpertMode();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -152,6 +158,9 @@ export default function PurchasePage() {
     [setSearchParams]
   );
 
+  // V72: Scope lock — if bandeau has a selected site, lock it
+  const isScopeLocked = !!scopeSiteId;
+
   // Simulation state (V1)
   const [selectedSiteId, setSelectedSiteId] = useState(null);
   const [estimate, setEstimate] = useState(null);
@@ -169,9 +178,13 @@ export default function PurchasePage() {
   const [scenarios, setScenarios] = useState([]);
   const [loading, setLoading] = useState(false);
   const [computing, setComputing] = useState(false);
-  const [savingAssumptions, setSavingAssumptions] = useState(false);
-  const [savingPrefs, setSavingPrefs] = useState(false);
   const [acceptedId, setAcceptedId] = useState(null);
+
+  // V72: volume toggle (estimation vs manual)
+  const [useEstimation, setUseEstimation] = useState(true);
+
+  // V72: autosave timer
+  const autosaveTimer = useRef(null);
 
   // V1.1 state
   const [portfolioData, setPortfolioData] = useState(null);
@@ -206,12 +219,14 @@ export default function PurchasePage() {
     setSeedingWow(null);
   };
 
-  // Auto-select first site
+  // V72: Scope-aware site selection — locked if scope has a site
   useEffect(() => {
-    if (scopedSites.length > 0 && !selectedSiteId) {
+    if (scopeSiteId) {
+      setSelectedSiteId(scopeSiteId);
+    } else if (scopedSites.length > 0 && !selectedSiteId) {
       setSelectedSiteId(scopedSites[0].id);
     }
-  }, [scopedSites, selectedSiteId]);
+  }, [scopedSites, selectedSiteId, scopeSiteId]);
 
   // Load data when site changes
   const loadSiteData = useCallback(async (siteId) => {
@@ -274,26 +289,30 @@ export default function PurchasePage() {
     }
   }, [activeTab, selectedSiteId, toast]);
 
-  const handleSaveAssumptions = async () => {
+  // V72: autosave — debounced save on assumption/preference change
+  const autosave = useCallback(() => {
     if (!selectedSiteId) return;
-    setSavingAssumptions(true);
-    try {
-      await putPurchaseAssumptions(selectedSiteId, assumptions);
-    } catch {
-      toast('Erreur lors de la sauvegarde des hypotheses', 'error');
-    }
-    setSavingAssumptions(false);
-  };
+    if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+    autosaveTimer.current = setTimeout(async () => {
+      try {
+        await Promise.all([
+          putPurchaseAssumptions(selectedSiteId, assumptions),
+          putPurchasePreferences(preferences),
+        ]);
+      } catch {
+        /* silent autosave — errors surfaced on compute */
+      }
+    }, 1500);
+  }, [selectedSiteId, assumptions, preferences]);
 
-  const handleSavePreferences = async () => {
-    setSavingPrefs(true);
-    try {
-      await putPurchasePreferences(preferences);
-    } catch {
-      toast('Erreur lors de la sauvegarde des preferences', 'error');
+  useEffect(() => { autosave(); }, [autosave]);
+
+  // V72: when toggling to estimation, sync volume from estimate
+  useEffect(() => {
+    if (useEstimation && estimate) {
+      setAssumptions((prev) => ({ ...prev, volume_kwh_an: estimate.volume_kwh_an || prev.volume_kwh_an }));
     }
-    setSavingPrefs(false);
-  };
+  }, [useEstimation, estimate]);
 
   const handleCompute = async () => {
     if (!selectedSiteId) return;
@@ -369,41 +388,70 @@ export default function PurchasePage() {
           ))}
         </div>
 
-        {/* ══ TAB: Simulation (V1) ══ */}
+        {/* ══ TAB: Simulation (V2 — V72 UX) ══ */}
         {activeTab === 'simulation' && (
           <>
-            {/* Section 1: Site selection + Estimation */}
-            <div className="bg-white rounded-lg shadow p-6">
+            {/* Section 1: Site selection + Estimation + Confidence badges */}
+            <div className="bg-white rounded-lg shadow p-6" data-section="site-estimation">
               <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                <Calculator size={18} /> Selection du site & Estimation
+                <Calculator size={18} /> Sélection du site & Estimation
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Site</label>
-                  <select
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                    value={selectedSiteId || ''}
-                    onChange={(e) => setSelectedSiteId(Number(e.target.value))}
-                  >
-                    <option value="">Choisir un site...</option>
-                    {scopedSites.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.nom} — {s.ville}
-                      </option>
-                    ))}
-                  </select>
+                  {isScopeLocked ? (
+                    <div data-testid="scope-locked-site" className="w-full border border-blue-200 bg-blue-50 rounded-lg px-3 py-2 text-sm flex items-center gap-2">
+                      <Lock size={14} className="text-blue-500" />
+                      <span className="font-medium text-blue-900">
+                        {scopedSites.find((s) => s.id === selectedSiteId)?.nom || `Site #${selectedSiteId}`}
+                      </span>
+                      <button
+                        data-testid="cta-change-site"
+                        onClick={() => {
+                          // Unlock: allow user to change — reset scope lock
+                          setSelectedSiteId(null);
+                        }}
+                        className="ml-auto text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
+                      >
+                        <RefreshCw size={10} /> Changer
+                      </button>
+                    </div>
+                  ) : (
+                    <select
+                      data-testid="site-selector-open"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                      value={selectedSiteId || ''}
+                      onChange={(e) => setSelectedSiteId(Number(e.target.value))}
+                    >
+                      <option value="">Choisir un site...</option>
+                      {scopedSites.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.nom} — {s.ville}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
                 {estimate && (
                   <>
                     <div className="bg-blue-50 rounded-lg p-4">
                       <div className="text-xs text-blue-600 font-medium uppercase">
-                        Volume estime
+                        Volume estimé
                       </div>
                       <div className="text-2xl font-bold text-blue-900">
                         {Math.round(estimate.volume_kwh_an).toLocaleString()} kWh/an
                       </div>
                       <div className="text-xs text-blue-500 mt-1">
                         Source: {estimate.source} ({estimate.months_covered} mois)
+                      </div>
+                      {/* V72: confidence badges */}
+                      <div className="flex gap-1.5 mt-2" data-testid="confidence-badges">
+                        <span className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium ${estimate.source === 'compteur' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                          <BadgeCheck size={10} /> {estimate.source === 'compteur' ? 'Relevé réel' : 'Estimé'}
+                        </span>
+                        <span className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium ${(estimate.months_covered || 0) >= 12 ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                          {estimate.months_covered || 0} mois
+                        </span>
                       </div>
                     </div>
                     <div className="bg-purple-50 rounded-lg p-4">
@@ -426,24 +474,44 @@ export default function PurchasePage() {
               </div>
             </div>
 
-            {/* Section 2: Hypotheses */}
-            <div className="bg-white rounded-lg shadow p-6">
+            {/* Section 2: Hypothèses + Volume toggle */}
+            <div className="bg-white rounded-lg shadow p-6" data-section="hypotheses">
               <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                <Settings2 size={18} /> Hypotheses
+                <Settings2 size={18} /> Hypothèses
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Volume (kWh/an)
-                  </label>
-                  <input
-                    type="number"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                    value={assumptions.volume_kwh_an}
-                    onChange={(e) =>
-                      setAssumptions((prev) => ({ ...prev, volume_kwh_an: Number(e.target.value) }))
-                    }
-                  />
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Volume (kWh/an)
+                    </label>
+                    {/* V72: volume toggle */}
+                    <button
+                      data-testid="volume-toggle"
+                      onClick={() => setUseEstimation((v) => !v)}
+                      className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      {useEstimation ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
+                      {useEstimation ? 'Estimation' : 'Manuel'}
+                    </button>
+                  </div>
+                  {useEstimation ? (
+                    <div data-testid="volume-estimation" className="w-full border border-blue-200 bg-blue-50 rounded-lg px-3 py-2 text-sm text-blue-900 font-medium flex items-center gap-2">
+                      <Zap size={14} className="text-blue-500" />
+                      {Math.round(assumptions.volume_kwh_an).toLocaleString()} kWh/an
+                      <Lock size={12} className="text-blue-300 ml-auto" />
+                    </div>
+                  ) : (
+                    <input
+                      data-testid="volume-manual"
+                      type="number"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                      value={assumptions.volume_kwh_an}
+                      onChange={(e) =>
+                        setAssumptions((prev) => ({ ...prev, volume_kwh_an: Number(e.target.value) }))
+                      }
+                    />
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -465,35 +533,26 @@ export default function PurchasePage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Energie</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Énergie</label>
                   <div className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2 text-sm flex items-center gap-2 text-gray-700">
                     <Zap size={14} className="text-blue-500" />
-                    <span className="font-medium">Electricite</span>
+                    <span className="font-medium">Électricité</span>
                     <Lock size={12} className="text-gray-400 ml-auto" />
                   </div>
                   <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
-                    <Info size={10} /> Post-ARENH — elec uniquement
+                    <Info size={10} /> Post-ARENH — élec uniquement
                   </p>
-                </div>
-                <div className="flex items-end">
-                  <button
-                    onClick={handleSaveAssumptions}
-                    disabled={savingAssumptions}
-                    className="w-full bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition disabled:opacity-50"
-                  >
-                    {savingAssumptions ? 'Sauvegarde...' : 'Sauvegarder'}
-                  </button>
                 </div>
               </div>
             </div>
 
-            {/* Section 3: Preferences */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Preferences</h3>
+            {/* Section 3: Préférences + CTA unique "Comparer les scénarios" */}
+            <div className="bg-white rounded-lg shadow p-6" data-section="preferences">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Préférences</h3>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tolerance au risque
+                    Tolérance au risque
                   </label>
                   <div className="flex gap-2">
                     {['low', 'medium', 'high'].map((level) => (
@@ -508,14 +567,14 @@ export default function PurchasePage() {
                             : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                         }`}
                       >
-                        {level === 'low' ? 'Faible' : level === 'medium' ? 'Moyen' : 'Eleve'}
+                        {level === 'low' ? 'Faible' : level === 'medium' ? 'Moyen' : 'Élevé'}
                       </button>
                     ))}
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Priorite budget: {Math.round(preferences.budget_priority * 100)}%
+                    Priorité budget: {Math.round(preferences.budget_priority * 100)}%
                   </label>
                   <input
                     type="range"
@@ -532,8 +591,8 @@ export default function PurchasePage() {
                     className="w-full"
                   />
                   <div className="flex justify-between text-xs text-gray-400">
-                    <span>Securite</span>
-                    <span>Economies</span>
+                    <span>Sécurité</span>
+                    <span>Économies</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -550,20 +609,15 @@ export default function PurchasePage() {
                     <Leaf size={14} className="text-green-500" /> Offre verte
                   </label>
                 </div>
-                <div className="flex gap-2">
+                <div>
+                  {/* V72: CTA unique — plus de double "Sauvegarder" */}
                   <button
-                    onClick={handleSavePreferences}
-                    disabled={savingPrefs}
-                    className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition disabled:opacity-50"
-                  >
-                    {savingPrefs ? '...' : 'Sauvegarder'}
-                  </button>
-                  <button
+                    data-testid="cta-comparer-scenarios"
                     onClick={handleCompute}
                     disabled={computing || !selectedSiteId}
-                    className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="w-full bg-blue-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
                   >
-                    {computing ? 'Calcul...' : 'Calculer les scenarios'}
+                    {computing ? 'Calcul en cours...' : 'Comparer les scénarios'}
                   </button>
                 </div>
               </div>
