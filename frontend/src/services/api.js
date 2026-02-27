@@ -1378,6 +1378,22 @@ export const getPortfolioSummary = (params = {}) =>
 export const getPortfolioSites = (params = {}) =>
   _cachedGet('/portfolio/consumption/sites', { params, skipSiteHeader: true }).then((r) => r.data);
 
+// CONSUMPTION CONTEXT V0 (Usages & Horaires)
+// ========================================
+
+export const getConsumptionContext = (siteId, days = 30) =>
+  _cachedGet(`/consumption-context/site/${siteId}`, { params: { days } }).then((r) => r.data);
+export const getConsumptionProfile = (siteId, days = 30) =>
+  _cachedGet(`/consumption-context/site/${siteId}/profile`, { params: { days } }).then((r) => r.data);
+export const getConsumptionActivity = (siteId) =>
+  _cachedGet(`/consumption-context/site/${siteId}/activity`).then((r) => r.data);
+export const getConsumptionAnomalies = (siteId, days = 30) =>
+  _cachedGet(`/consumption-context/site/${siteId}/anomalies`, { params: { days } }).then((r) => r.data);
+export const refreshConsumptionDiagnose = (siteId, days = 30) =>
+  api.post(`/consumption-context/site/${siteId}/diagnose`, null, { params: { days } }).then((r) => r.data);
+export const suggestSchedule = (siteId) =>
+  api.get(`/consumption-context/site/${siteId}/suggest-schedule`).then((r) => r.data);
+
 // V69: Meta version (sha + branch) — Expert mode display
 export const getMetaVersion = () =>
   api

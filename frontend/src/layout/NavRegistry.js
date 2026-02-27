@@ -29,6 +29,7 @@ export const ROUTE_MODULE_MAP = {
   '/consommations/import': 'analyse',
   '/consommations/kb': 'analyse',
   '/diagnostic-conso': 'analyse',
+  '/usages-horaires': 'analyse',
   '/monitoring': 'analyse',
   '/billing': 'marche',
   '/bill-intel': 'marche',
@@ -197,6 +198,7 @@ export const NAV_SECTIONS = [
       { to: '/consommations',    icon: Zap,       label: 'Consommations', keywords: ['conso', 'energie', 'import', 'explorer', 'ems', 'timeseries'] },
       { to: '/monitoring',       icon: Activity,  label: 'Performance', badgeKey: 'monitoring', keywords: ['monitoring', 'kpi', 'puissance'] },
       { to: '/diagnostic-conso', icon: Search,    label: 'Diagnostic', expertOnly: true, keywords: ['anomalies', 'diagnostic', 'analyse'] },
+      { to: '/usages-horaires',  icon: Activity,  label: 'Usages & Horaires', expertOnly: true, keywords: ['usages', 'horaires', 'profil', 'heatmap', 'comportement'] },
     ],
   },
   {
