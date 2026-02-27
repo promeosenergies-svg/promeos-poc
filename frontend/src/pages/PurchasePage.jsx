@@ -5,7 +5,7 @@
  * Brique 3: + Energy Gate, WOW datasets, A4 exports.
  */
 import { useState, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { PageShell, EmptyState } from '../ui';
@@ -31,6 +31,7 @@ import {
   seedWowHappy,
   seedWowDirty,
 } from '../services/api';
+import { toActionNew, toActionsList } from '../services/routes';
 import {
   ShoppingCart,
   Calculator,
@@ -50,6 +51,10 @@ import {
   AlertOctagon,
   Printer,
   FileText,
+  Plus,
+  ExternalLink,
+  HelpCircle,
+  Target,
 } from 'lucide-react';
 
 const STRATEGY_META = {
@@ -105,10 +110,18 @@ const FILTER_TO_TAB = {
   missing: 'portefeuille',
 };
 
+/** Hypothèses clés derrière chaque stratégie (affichées dans "Pourquoi ?"). */
+const STRATEGY_WHY = {
+  fixe: 'Budget prévisible à 100 %. Aucune exposition marché. Idéal si la visibilité budgétaire prime.',
+  indexe: "Suit un indice marché avec plafond. Potentiel d'économie ~5-10 % vs Fixe, mais légère exposition à la volatilité.",
+  spot: "Prix temps réel sans marge intermédiaire. Économie potentielle maximale, mais forte volatilité. Réservé aux profils avertis.",
+};
+
 export default function PurchasePage() {
   const { scopedSites, scope } = useScope();
   const { isExpert } = useExpertMode();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Tab state — initialise from ?filter= deep-link if present
@@ -556,12 +569,55 @@ export default function PurchasePage() {
               </div>
             </div>
 
-            {/* Section 4: Scenario Results */}
+            {/* Section 4: Scénarios 2026–2030 — Cockpit décisionnel */}
             {scenarios.length > 0 && (
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                  Resultats des scenarios
+              <div data-section="scenarios-cockpit">
+                <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                  <Target size={18} /> Scénarios 2026–2030
                 </h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  3 stratégies comparées · Horizon {assumptions.horizon_months || 24} mois · Volume {Math.round(assumptions.volume_kwh_an).toLocaleString()} kWh/an
+                </p>
+
+                {/* KPI strip: Budget / Risque / Recommandation */}
+                {(() => {
+                  const reco = scenarios.find((s) => s.is_recommended);
+                  const cheapest = [...scenarios].sort((a, b) => a.total_annual_eur - b.total_annual_eur)[0];
+                  const mostExpensive = [...scenarios].sort((a, b) => b.total_annual_eur - a.total_annual_eur)[0];
+                  const recoMeta = reco ? (STRATEGY_META[reco.strategy] || STRATEGY_META.fixe) : null;
+                  return (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6" data-testid="scenario-kpi-strip">
+                      <div className="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
+                        <div className="text-xs text-gray-500 uppercase font-medium">Budget annuel</div>
+                        <div className="text-2xl font-bold text-gray-900 mt-1">
+                          {cheapest ? `${Math.round(cheapest.total_annual_eur).toLocaleString()} — ${Math.round(mostExpensive.total_annual_eur).toLocaleString()}` : '—'} EUR
+                        </div>
+                        <div className="text-xs text-gray-400 mt-1">Fourchette des 3 stratégies</div>
+                      </div>
+                      <div className="bg-white rounded-lg shadow p-4 border-l-4 border-yellow-500">
+                        <div className="text-xs text-gray-500 uppercase font-medium">Risque moyen</div>
+                        <div className="text-2xl font-bold text-gray-900 mt-1">
+                          {reco ? `${reco.risk_score}/100` : '—'}
+                        </div>
+                        <div className="text-xs text-gray-400 mt-1">Score de la stratégie recommandée</div>
+                      </div>
+                      <div className="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
+                        <div className="text-xs text-gray-500 uppercase font-medium">Recommandation</div>
+                        <div className="text-2xl font-bold text-gray-900 mt-1 flex items-center gap-2">
+                          {recoMeta ? recoMeta.label : 'Aucune'}
+                          {reco?.savings_vs_current_pct > 0 && (
+                            <span className="text-sm font-medium text-green-600">−{reco.savings_vs_current_pct}%</span>
+                          )}
+                        </div>
+                        <div className="text-xs text-gray-400 mt-1">
+                          {reco?.reasoning || 'Calculez les scénarios pour obtenir une recommandation'}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Scenario cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {scenarios.map((s) => {
                     const meta = STRATEGY_META[s.strategy] || STRATEGY_META.fixe;
@@ -569,9 +625,11 @@ export default function PurchasePage() {
                     const risk = riskLevel(s.risk_score);
                     const isReco = s.is_recommended;
                     const isAccepted = s.reco_status === 'accepted' || acceptedId === s.id;
+                    const whyText = STRATEGY_WHY[s.strategy] || '';
                     return (
                       <div
                         key={s.strategy}
+                        data-testid={`scenario-card-${s.strategy}`}
                         className={`bg-white rounded-xl shadow-md p-6 border-2 transition ${isReco ? 'border-blue-500 ring-2 ring-blue-100' : 'border-gray-200'}`}
                       >
                         <div className="flex items-center justify-between mb-4">
@@ -620,12 +678,22 @@ export default function PurchasePage() {
                           </div>
                         </div>
                         {s.p10_eur != null && s.p90_eur != null && (
-                          <div className="text-xs text-gray-500 mb-4">
+                          <div className="text-xs text-gray-500 mb-3">
                             <AlertTriangle size={12} className="inline mr-1" />
                             Fourchette: {Math.round(s.p10_eur).toLocaleString()} —{' '}
                             {Math.round(s.p90_eur).toLocaleString()} EUR/an
                           </div>
                         )}
+
+                        {/* V71: "Pourquoi ?" — explication de la stratégie */}
+                        <details className="mb-3 group" data-testid={`scenario-why-${s.strategy}`}>
+                          <summary className="flex items-center gap-1 text-xs text-blue-600 cursor-pointer hover:text-blue-800">
+                            <HelpCircle size={12} /> Pourquoi cette stratégie ?
+                          </summary>
+                          <p className="mt-1.5 text-xs text-gray-600 bg-gray-50 rounded p-2">{whyText}</p>
+                        </details>
+
+                        {/* Accept CTA (reco only) */}
                         {isReco && !isAccepted && (
                           <button
                             onClick={() => handleAccept(s.id)}
@@ -639,27 +707,63 @@ export default function PurchasePage() {
                             <CheckCircle2 size={16} /> Accepte
                           </div>
                         )}
+
+                        {/* V71: "Créer action" CTA — visible after accepting */}
+                        {isAccepted && (
+                          <button
+                            data-testid={`cta-create-action-${s.strategy}`}
+                            onClick={() => navigate(toActionNew({
+                              source: 'purchase',
+                              source_type: 'achat',
+                              site_id: selectedSiteId,
+                              title: `Achat énergie — ${meta.label} (${Math.round(s.total_annual_eur).toLocaleString()} EUR/an)`,
+                              impact_eur: s.savings_vs_current_pct > 0 ? Math.round(s.total_annual_eur * s.savings_vs_current_pct / 100) : undefined,
+                            }))}
+                            className="w-full mt-2 bg-white border border-green-300 text-green-700 py-2 rounded-lg text-sm font-medium hover:bg-green-50 transition flex items-center justify-center gap-2"
+                          >
+                            <Plus size={14} /> Créer action
+                          </button>
+                        )}
                       </div>
                     );
                   })}
                 </div>
-                {scenarios.find((s) => s.reasoning) && (
-                  <div className="mt-4 bg-blue-50 rounded-lg p-4">
-                    <p className="text-sm text-blue-800">
-                      <strong>Analyse:</strong> {scenarios.find((s) => s.reasoning)?.reasoning}
-                    </p>
+
+                {/* Reasoning + actions bar */}
+                <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                  {scenarios.find((s) => s.reasoning) && (
+                    <div className="flex-1 bg-blue-50 rounded-lg p-4">
+                      <p className="text-sm text-blue-800">
+                        <strong>Analyse:</strong> {scenarios.find((s) => s.reasoning)?.reasoning}
+                      </p>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      data-testid="cta-voir-actions-purchase"
+                      onClick={() => navigate(toActionsList({ source_type: 'achat' }))}
+                      className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition"
+                    >
+                      <ExternalLink size={14} /> Voir les actions
+                    </button>
+                    <button
+                      onClick={() => setShowNoteDecision(true)}
+                      className="flex items-center gap-1.5 bg-white border border-blue-200 text-blue-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-50 transition"
+                    >
+                      <Printer size={14} /> Exporter Note de Decision (A4)
+                    </button>
                   </div>
-                )}
+                </div>
               </div>
             )}
-            {scenarios.length > 0 && (
-              <div className="flex justify-end">
-                <button
-                  onClick={() => setShowNoteDecision(true)}
-                  className="flex items-center gap-1.5 bg-white border border-blue-200 text-blue-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-50 transition"
-                >
-                  <Printer size={14} /> Exporter Note de Decision (A4)
-                </button>
+            {/* V71: empty state guidé quand aucun scénario */}
+            {!loading && scenarios.length === 0 && selectedSiteId && (
+              <div data-testid="empty-state-scenarios" className="bg-white rounded-lg shadow p-8 text-center">
+                <Target size={40} className="mx-auto text-gray-300 mb-3" />
+                <h4 className="text-lg font-semibold text-gray-700 mb-1">Aucun scénario calculé</h4>
+                <p className="text-sm text-gray-500 mb-4">
+                  Renseignez vos hypothèses ci-dessus puis cliquez sur «{'\u00a0'}Calculer les scénarios{'\u00a0'}» pour comparer Fixe / Indexé / Spot.
+                </p>
               </div>
             )}
             {loading && (
