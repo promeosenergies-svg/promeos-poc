@@ -26,8 +26,8 @@ describe('A · toPurchaseAssistant route fix', () => {
   const routes = readSrc('services', 'routes.js');
 
   it('toPurchaseAssistant returns /achat-assistant (not /achat-energie/assistant)', () => {
-    expect(routes).toContain("return '/achat-assistant'");
-    expect(routes).not.toContain("return '/achat-energie/assistant'");
+    expect(routes).toContain('/achat-assistant');
+    expect(routes).not.toContain('/achat-energie/assistant');
   });
 
   it('toPurchaseAssistant is still exported', () => {

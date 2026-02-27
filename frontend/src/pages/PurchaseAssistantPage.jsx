@@ -3,8 +3,10 @@
  * Purchase Assistant — 8-step wizard
  *
  * Steps: Portfolio → Consumption → Persona → Horizon → Offers → Results → Scoring → Decision
+ * V81: + Deep-link support (step, offer, site_id URL params), offer highlight.
  */
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   PageShell,
   Card,
@@ -168,6 +170,12 @@ export default function PurchaseAssistantPage() {
   const { toast } = useToast();
   const { isExpert } = useExpertMode();
   const { scope } = useScope();
+  const [searchParams] = useSearchParams();
+
+  // V81: Deep-link params (step, offer, site_id)
+  const deepLinkStep = searchParams.get('step');
+  const deepLinkOffer = searchParams.get('offer');
+  const deepLinkSiteId = searchParams.get('site_id');
 
   // Wizard state
   const [step, setStep] = useState(0);
@@ -202,6 +210,13 @@ export default function PurchaseAssistantPage() {
       cancelled = true;
     };
   }, [scope.orgId]);
+
+  // V81: Deep-link — jump to step + highlight offer on mount
+  useEffect(() => {
+    if (!deepLinkStep) return;
+    const stepIndex = STEPS.findIndex((s) => s.key === deepLinkStep);
+    if (stepIndex > 0) setStep(stepIndex);
+  }, [deepLinkStep]);
 
   // Demo sites — prefer API data, fall back to local demo
   const demoSites = useMemo(() => {
@@ -376,7 +391,7 @@ export default function PurchaseAssistantPage() {
       case 3:
         return <StepHorizon wizard={wizard} setWizard={setWizard} isExpert={isExpert} />;
       case 4:
-        return <StepOffers wizard={wizard} setWizard={setWizard} isDemo={isDemo} />;
+        return <StepOffers wizard={wizard} setWizard={setWizard} isDemo={isDemo} highlightOffer={deepLinkOffer} />;
       case 5:
         return (
           <StepResults
@@ -876,7 +891,7 @@ function StepHorizon({ wizard, setWizard, isExpert }) {
 // STEP 5: Offers
 // ═══════════════════════════════════════════════════════════════════
 
-function StepOffers({ wizard, setWizard, isDemo }) {
+function StepOffers({ wizard, setWizard, isDemo, highlightOffer }) {
   const offers = wizard.offers;
 
   const addOffer = () => {
@@ -917,7 +932,7 @@ function StepOffers({ wizard, setWizard, isDemo }) {
         <div className="flex items-center gap-2">
           {isDemo && (
             <button onClick={loadDemoOffers} className="text-xs text-blue-600 hover:underline">
-              Charger les 5 offres demo
+              Charger les {DEMO_OFFERS.length} offres demo
             </button>
           )}
           <Button size="sm" onClick={addOffer}>
@@ -944,6 +959,7 @@ function StepOffers({ wizard, setWizard, isDemo }) {
               onUpdatePricing={updatePricing}
               onRemove={removeOffer}
               readOnly={isDemo && DEMO_OFFERS.some((d) => d.id === offer.id)}
+              highlighted={highlightOffer && offer.structure === highlightOffer}
             />
           ))}
         </div>
@@ -958,11 +974,11 @@ function StepOffers({ wizard, setWizard, isDemo }) {
   );
 }
 
-function OfferCard({ offer, onUpdate, onUpdatePricing, onRemove, readOnly }) {
-  const [expanded, setExpanded] = useState(false);
+function OfferCard({ offer, onUpdate, onUpdatePricing, onRemove, readOnly, highlighted }) {
+  const [expanded, setExpanded] = useState(!!highlighted);
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+    <div data-testid={highlighted ? 'offer-highlighted' : undefined} className={`bg-white rounded-lg border overflow-hidden ${highlighted ? 'border-amber-400 ring-2 ring-amber-200' : 'border-gray-200'}`}>
       <div className="flex items-center justify-between p-4">
         <div className="flex items-center gap-3">
           <span

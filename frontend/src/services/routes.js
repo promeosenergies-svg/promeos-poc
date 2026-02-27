@@ -171,9 +171,18 @@ export function toPurchase(opts = {}) {
 
 /**
  * Assistant Achat — wizard 8 etapes.
+ * @param {object} opts
+ * @param {number|string} [opts.site_id] — pre-select site
+ * @param {string} [opts.step] — jump to step key (portfolio, consumption, persona, horizon, offres, results, scoring, decision)
+ * @param {string} [opts.offer] — highlight specific offer structure (e.g. HEURES_SOLAIRES)
  */
-export function toPurchaseAssistant() {
-  return '/achat-assistant';
+export function toPurchaseAssistant(opts = {}) {
+  const p = new URLSearchParams();
+  if (opts.site_id) p.set('site_id', String(opts.site_id));
+  if (opts.step) p.set('step', opts.step);
+  if (opts.offer) p.set('offer', opts.offer);
+  const qs = p.toString();
+  return `/achat-assistant${qs ? '?' + qs : ''}`;
 }
 
 /**

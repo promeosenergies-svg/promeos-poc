@@ -13,6 +13,7 @@
  * V78: + Audit THS — sous-titre grand public, creneaux ete/hiver sur carte, CTAs enrichis.
  * V79: + Cross-brique Performance, CTA Voir performance, toMonitoring, dejargon.
  * V80: + Badge Sans penalite, nettoyage tooltip jargon, tests audit final.
+ * V81: + Header dynamique strategies, CTA Tester dans l'Assistant, deep-link assistant.
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -713,7 +714,7 @@ export default function PurchasePage() {
                   <Target size={18} /> Scénarios 2026–2030
                 </h3>
                 <p className="text-sm text-gray-500 mb-4">
-                  3 stratégies comparées · Horizon {assumptions.horizon_months || 24} mois · Volume {Math.round(assumptions.volume_kwh_an).toLocaleString()} kWh/an
+                  {scenarios.length} stratégies comparées · Horizon {assumptions.horizon_months || 24} mois · Volume {Math.round(assumptions.volume_kwh_an).toLocaleString()} kWh/an
                 </p>
 
                 {/* KPI strip: Budget / Risque / Recommandation */}
@@ -729,7 +730,7 @@ export default function PurchasePage() {
                         <div className="text-2xl font-bold text-gray-900 mt-1">
                           {cheapest ? `${Math.round(cheapest.total_annual_eur).toLocaleString()} — ${Math.round(mostExpensive.total_annual_eur).toLocaleString()}` : '—'} EUR
                         </div>
-                        <div className="text-xs text-gray-400 mt-1">Fourchette des 3 stratégies</div>
+                        <div className="text-xs text-gray-400 mt-1">Fourchette des {scenarios.length} stratégies</div>
                       </div>
                       <div className="bg-white rounded-lg shadow p-4 border-l-4 border-yellow-500">
                         <div className="text-xs text-gray-500 uppercase font-medium">Risque moyen</div>
@@ -959,6 +960,13 @@ export default function PurchasePage() {
                                 className="flex items-center gap-1 text-xs text-amber-600 hover:text-amber-800 underline font-medium"
                               >
                                 <Sun size={12} /> Tester un Tarif Heures Solaires
+                              </button>
+                              <button
+                                data-testid="cta-assistant-ths"
+                                onClick={() => navigate(toPurchaseAssistant({ site_id: selectedSiteId, step: 'offres', offer: 'HEURES_SOLAIRES' }))}
+                                className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 underline"
+                              >
+                                <Rocket size={12} /> Tester dans l'Assistant
                               </button>
                             </div>
                           </div>

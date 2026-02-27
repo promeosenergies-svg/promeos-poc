@@ -62,8 +62,8 @@ describe('A · Scénarios 2026–2030 cockpit', () => {
     expect(code).toContain('assumptions.volume_kwh_an');
   });
 
-  it('shows fourchette des 3 stratégies', () => {
-    expect(code).toContain('Fourchette des 3');
+  it('shows fourchette des N stratégies (dynamic)', () => {
+    expect(code).toContain('Fourchette des {scenarios.length} stratégies');
   });
 });
 
