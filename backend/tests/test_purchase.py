@@ -208,14 +208,14 @@ class TestPurchaseService:
         assert result["volume_kwh_an"] == 500000
         assert result["months_covered"] == 0
 
-    def test_compute_scenarios_3_strategies(self, db_session):
+    def test_compute_scenarios_4_strategies(self, db_session):
         from services.purchase_service import compute_scenarios
 
         _, site = _create_org_site(db_session)
         scenarios = compute_scenarios(db_session, site.id, volume_kwh_an=500000)
-        assert len(scenarios) == 3
+        assert len(scenarios) == 4
         strategies = {s["strategy"] for s in scenarios}
-        assert strategies == {"fixe", "indexe", "spot"}
+        assert strategies == {"fixe", "indexe", "spot", "reflex_solar"}
         # Fixe should have lowest risk
         fixe = next(s for s in scenarios if s["strategy"] == "fixe")
         spot = next(s for s in scenarios if s["strategy"] == "spot")
@@ -318,7 +318,7 @@ class TestPurchaseAPI:
         resp = client.post(f"/api/purchase/compute/{site.id}")
         assert resp.status_code == 200
         data = resp.json()
-        assert len(data["scenarios"]) == 3
+        assert len(data["scenarios"]) == 4
         assert data["assumption_set_id"] is not None
         # Check one is recommended
         reco = [s for s in data["scenarios"] if s.get("is_recommended")]
@@ -327,7 +327,7 @@ class TestPurchaseAPI:
         resp = client.get(f"/api/purchase/results/{site.id}")
         assert resp.status_code == 200
         results = resp.json()
-        assert len(results["scenarios"]) == 3
+        assert len(results["scenarios"]) == 4
 
     def test_accept_result(self, client, db_session):
         _, site = _create_org_site(db_session)
@@ -359,7 +359,7 @@ class TestPurchaseAPI:
         assert resp.status_code == 200
         data = resp.json()
         assert data["assumptions_created"] == 2
-        assert data["scenarios_created"] == 6
+        assert data["scenarios_created"] == 8
         assert len(data["sites_used"]) == 2
 
 
@@ -491,9 +491,9 @@ class TestV11API:
         data = resp.json()
         assert data["total_runs"] == 2
         assert len(data["runs"]) == 2
-        # Each run has 3 scenarios and a summary
+        # Each run has 4 scenarios and a summary
         for run in data["runs"]:
-            assert len(run["scenarios"]) == 3
+            assert len(run["scenarios"]) == 4
             assert "summary" in run
             assert run["run_id"] is not None
 
@@ -537,10 +537,10 @@ class TestV11API:
         assert "portfolio" in data
         assert data["portfolio"]["sites_count"] == 2
         assert data["portfolio"]["total_annual_cost_eur"] > 0
-        # Each site has run_id + 3 scenarios
+        # Each site has run_id + 4 scenarios
         for s in data["sites"]:
             assert "run_id" in s
-            assert len(s["scenarios"]) == 3
+            assert len(s["scenarios"]) == 4
 
     def test_portfolio_results(self, client, db_session):
         """GET /results?org_id=X returns aggregated portfolio after compute."""
@@ -588,9 +588,9 @@ class TestV11API:
         ids_2 = [s["id"] for s in resp2.json()["scenarios"]]
         # IDs should be different (new records)
         assert set(ids_1).isdisjoint(set(ids_2))
-        # Total results should be 6 (3+3), not 3
+        # Total results should be 8 (4+4), not 4
         count = db_session.query(PurchaseScenarioResult).count()
-        assert count == 6
+        assert count == 8
 
     @patch("routes.purchase.DEMO_SEED_ENABLED", True)
     def test_seed_demo_v11(self, client, db_session):
@@ -716,7 +716,7 @@ class TestEnergyGate:
         _, site = _create_org_site(db_session)
         resp = client.post(f"/api/purchase/compute/{site.id}")
         assert resp.status_code == 200
-        assert len(resp.json()["scenarios"]) == 3
+        assert len(resp.json()["scenarios"]) == 4
 
     def test_portfolio_skips_gaz_sites(self, client, db_session):
         """Portfolio compute skips GAZ sites and only processes ELEC."""
@@ -792,7 +792,7 @@ class TestWowDatasets:
         assert data["mode"] == "happy"
         assert data["sites_created"] == 15
         assert data["assumptions_created"] == 15
-        assert data["scenarios_created"] == 45  # 15 sites * 3 strategies
+        assert data["scenarios_created"] == 60  # 15 sites * 4 strategies
         assert data["contracts_created"] == 15
         assert data["org_id"] is not None
 
@@ -823,7 +823,7 @@ class TestWowDatasets:
         assert data["sites_created"] == 15
         # 2 sites skipped (orphans) → 13 assumptions
         assert data["assumptions_created"] == 13
-        assert data["scenarios_created"] == 39  # 13 * 3
+        assert data["scenarios_created"] == 52  # 13 * 4
         assert "warnings" in data
         assert len(data["warnings"]) > 0
 

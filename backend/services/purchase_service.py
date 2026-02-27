@@ -1,6 +1,7 @@
 """
 PROMEOS — Achat Energie Service V1
-Estimation conso, profil, scenarios fixe/indexe/spot, recommandation.
+Estimation conso, profil, scenarios fixe/indexe/spot/reflex_solar, recommandation.
+V74: + RéFlex Solar (blocs horaires, report, effort opérationnel).
 """
 import hashlib
 import json as _json
@@ -114,6 +115,88 @@ def compute_profile_factor(db: Session, site_id: int) -> float:
     return 1.0
 
 
+
+# ══════════════════════════════════════
+# V74 — RéFlex Solar: blocs horaires
+# ══════════════════════════════════════
+
+REFLEX_BLOCS = {
+    "solaire_ete_semaine": {"months": [4, 5, 6, 7, 8, 9], "weekday": True, "hours": (13, 16), "price_mult": 0.72},
+    "solaire_ete_weekend": {"months": [4, 5, 6, 7, 8, 9], "weekday": False, "hours": (10, 17), "price_mult": 0.68},
+    "pointe_hiver_matin":  {"months": [1, 2, 3, 10, 11, 12], "weekday": True, "hours": (8, 10), "price_mult": 1.25},
+    "pointe_hiver_soir":   {"months": [1, 2, 3, 10, 11, 12], "weekday": True, "hours": (17, 20), "price_mult": 1.25},
+    "hc":                  {"months": list(range(1, 13)), "weekday": None, "hours": (0, 6), "price_mult": 0.80},
+    "hp":                  {"months": list(range(1, 13)), "weekday": None, "hours": (6, 22), "price_mult": 1.00},
+}
+
+# Weight of each bloc in total volume (simplified annual distribution)
+REFLEX_BLOC_WEIGHTS = {
+    "solaire_ete_semaine": 0.08,
+    "solaire_ete_weekend": 0.04,
+    "pointe_hiver_matin":  0.06,
+    "pointe_hiver_soir":   0.06,
+    "hc":                  0.25,
+    "hp":                  0.51,
+}
+
+
+def compute_reflex_scenario(
+    ref_price: float,
+    volume_kwh_an: float,
+    profile_factor: float,
+    price_source: str,
+    report_pct: float = 0.0,
+) -> dict:
+    """
+    Compute RéFlex Solar scenario: weighted sum of blocs horaires.
+    report_pct: fraction of HP volume shifted to solaire_ete (0.0=sans report, e.g. 0.15=15%).
+    """
+    blocs_detail = []
+    total_eur = 0.0
+
+    # Apply report: shift report_pct of HP to solaire_ete_semaine
+    weights = dict(REFLEX_BLOC_WEIGHTS)
+    if report_pct > 0:
+        shift = min(report_pct, weights["hp"]) * weights["hp"]
+        weights["hp"] -= shift
+        weights["solaire_ete_semaine"] += shift
+
+    for bloc_name, bloc in REFLEX_BLOCS.items():
+        w = weights.get(bloc_name, 0)
+        bloc_kwh = volume_kwh_an * w
+        bloc_price = round(ref_price * bloc["price_mult"], 4)
+        bloc_cost = round(bloc_price * bloc_kwh, 2)
+        total_eur += bloc_cost
+        blocs_detail.append({
+            "bloc": bloc_name,
+            "weight_pct": round(w * 100, 1),
+            "kwh": round(bloc_kwh, 0),
+            "price_eur_kwh": bloc_price,
+            "cost_eur": bloc_cost,
+            "hours": list(bloc["hours"]),
+        })
+
+    avg_price = round(total_eur / volume_kwh_an, 4) if volume_kwh_an > 0 else 0
+    total_eur = round(total_eur, 2)
+
+    # Effort opérationnel: report requires operational changes
+    effort_score = 20 if report_pct == 0 else min(80, 20 + int(report_pct * 400))
+
+    return {
+        "strategy": PurchaseStrategy.REFLEX_SOLAR.value,
+        "price_eur_per_kwh": avg_price,
+        "total_annual_eur": total_eur,
+        "risk_score": 40,
+        "p10_eur": round(total_eur * 0.82, 2),
+        "p90_eur": round(total_eur * 1.18, 2),
+        "ref_price": ref_price,
+        "ref_price_source": price_source,
+        "effort_score": effort_score,
+        "report_pct": round(report_pct * 100, 1),
+        "blocs": blocs_detail,
+    }
+
+
 def compute_scenarios(
     db: Session,
     site_id: int,
@@ -122,8 +205,8 @@ def compute_scenarios(
     energy_type: str = "elec",
 ) -> list:
     """
-    Generate 3 purchase scenarios: Fixe, Indexe, Spot.
-    Returns list of 3 scenario dicts.
+    Generate 4 purchase scenarios: Fixe, Indexe, Spot, RéFlex Solar.
+    Returns list of 4 scenario dicts.
     """
     ref_price, price_source = get_reference_price(db, site_id, energy_type)
 
@@ -171,6 +254,10 @@ def compute_scenarios(
         "ref_price_source": price_source,
     })
 
+    # ── RéFlex Solar: blocs horaires, 2 modes (sans/avec report) ──
+    reflex = compute_reflex_scenario(ref_price, volume_kwh_an, profile_factor, price_source)
+    scenarios.append(reflex)
+
     # Compute savings vs current (ref_price)
     current_total = round(ref_price * volume_kwh_an, 2)
     for s in scenarios:
@@ -215,8 +302,8 @@ def recommend_scenario(
         safety_score = 100 - s["risk_score"]
         score = (1 - budget_priority) * safety_score + budget_priority * savings_norm
 
-        # Green bonus for indexe
-        if green_preference and s["strategy"] == PurchaseStrategy.INDEXE.value:
+        # Green bonus for indexe and reflex_solar
+        if green_preference and s["strategy"] in (PurchaseStrategy.INDEXE.value, PurchaseStrategy.REFLEX_SOLAR.value):
             score += 5
 
         s["_score"] = round(score, 1)
@@ -227,7 +314,7 @@ def recommend_scenario(
         s["is_recommended"] = (s["strategy"] == best["strategy"])
 
     # Generate reasoning
-    strategy_labels = {"fixe": "Prix Fixe", "indexe": "Indexe", "spot": "Spot"}
+    strategy_labels = {"fixe": "Prix Fixe", "indexe": "Indexe", "spot": "Spot", "reflex_solar": "ReFlex Solar"}
     reasoning_parts = []
     reasoning_parts.append(
         f"Strategie {strategy_labels.get(best['strategy'], best['strategy'])} recommandee"
@@ -243,7 +330,7 @@ def recommend_scenario(
     if savings > 0:
         reasoning_parts.append(f"economie de {savings}% vs prix actuel")
 
-    if green_preference and best["strategy"] == PurchaseStrategy.INDEXE.value:
+    if green_preference and best["strategy"] in (PurchaseStrategy.INDEXE.value, PurchaseStrategy.REFLEX_SOLAR.value):
         reasoning_parts.append("compatible offre verte")
 
     best["reasoning"] = " — ".join(reasoning_parts)

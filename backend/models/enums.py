@@ -234,6 +234,7 @@ class PurchaseStrategy(str, enum.Enum):
     FIXE = "fixe"
     INDEXE = "indexe"
     SPOT = "spot"
+    REFLEX_SOLAR = "reflex_solar"
 
 
 class PurchaseRecoStatus(str, enum.Enum):

@@ -66,6 +66,7 @@ def seed_purchase_demo(db: Session, org_id: int = 1) -> dict:
         (PurchaseStrategy.FIXE,   1.05, 15, 1.0,  1.0,  False),
         (PurchaseStrategy.INDEXE, 0.95, 45, 0.85, 1.20, True),   # Recommended
         (PurchaseStrategy.SPOT,   0.88, 75, 0.70, 1.45, False),
+        (PurchaseStrategy.REFLEX_SOLAR, 0.92, 40, 0.82, 1.18, False),
     ]:
         price = round(ref_a * price_mult, 4)
         total = round(price * 600_000, 2)
@@ -92,6 +93,7 @@ def seed_purchase_demo(db: Session, org_id: int = 1) -> dict:
         (PurchaseStrategy.FIXE,   1.05, 15, 1.0,  1.0,  True),   # Recommended (low risk)
         (PurchaseStrategy.INDEXE, 0.95, 45, 0.85, 1.20, False),
         (PurchaseStrategy.SPOT,   0.88, 75, 0.70, 1.45, False),
+        (PurchaseStrategy.REFLEX_SOLAR, 0.92, 40, 0.82, 1.18, False),
     ]:
         price = round(ref_b * price_mult, 4)
         total = round(price * 300_000, 2)

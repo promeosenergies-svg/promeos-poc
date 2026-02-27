@@ -144,11 +144,12 @@ def seed_wow_happy(db: Session) -> dict:
             ref_price = 0.20  # Small = higher price
 
         # Scenario strategies: alternate recommendations
-        reco_idx = assumptions_created % 3
+        reco_idx = assumptions_created % 4
         strategy_specs = [
             (PurchaseStrategy.FIXE,   1.05, 15, 1.0,  1.0,  reco_idx == 0),
             (PurchaseStrategy.INDEXE, 0.95, 45, 0.85, 1.20, reco_idx == 1),
             (PurchaseStrategy.SPOT,   0.88, 75, 0.70, 1.45, reco_idx == 2),
+            (PurchaseStrategy.REFLEX_SOLAR, 0.92, 40, 0.82, 1.18, reco_idx == 3),
         ]
 
         run_id = str(uuid.uuid4())
@@ -252,6 +253,7 @@ def seed_wow_dirty(db: Session) -> dict:
             (PurchaseStrategy.FIXE,   1.05, 15, 1.0,  1.0,  True),
             (PurchaseStrategy.INDEXE, 0.95, 45, 0.85, 1.20, False),
             (PurchaseStrategy.SPOT,   0.88, 75, 0.70, 1.45, False),
+            (PurchaseStrategy.REFLEX_SOLAR, 0.92, 40, 0.82, 1.18, False),
         ]
 
         run_id = str(uuid.uuid4())
