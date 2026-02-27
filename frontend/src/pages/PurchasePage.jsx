@@ -1,11 +1,12 @@
 /**
  * PROMEOS — Achat Energie V2 (V72 UX)
- * Simulateur de scenarios d'achat: Fixe / Indexe / Spot
+ * Simulateur de scenarios d'achat: Fixe / Indexe / Spot / ReFlex Solar
  * V1.1: + Portfolio roll-up, Echeances, Historique tabs.
  * Brique 3: + Energy Gate, WOW datasets, A4 exports.
  * V71: + Scénarios cockpit, actions CTAs.
  * V72: + Scope lock, autosave, volume toggle, confidence badges.
  * V73: + Scope unlock fix, skipSiteHeader, tab deep-link, assistant CTA, renewals re-fetch.
+ * V74: + ReFlex Solar card, blocs horaires badges, effort score, cross-brique CTAs.
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -34,7 +35,7 @@ import {
   seedWowHappy,
   seedWowDirty,
 } from '../services/api';
-import { toActionNew, toActionsList, toPurchaseAssistant } from '../services/routes';
+import { toActionNew, toActionsList, toPurchaseAssistant, toConsoExplorer, toBillIntel } from '../services/routes';
 import {
   ShoppingCart,
   Calculator,
@@ -62,6 +63,9 @@ import {
   ToggleRight,
   RefreshCw,
   BadgeCheck,
+  Sun,
+  BarChart3,
+  FileSearch,
 } from 'lucide-react';
 
 const STRATEGY_META = {
@@ -82,6 +86,12 @@ const STRATEGY_META = {
     icon: Zap,
     color: 'orange',
     desc: 'Prix marche temps reel, economies max',
+  },
+  reflex_solar: {
+    label: 'ReFlex Solar',
+    icon: Sun,
+    color: 'amber',
+    desc: 'Blocs horaires solaires/pointe, optimisation par report',
   },
 };
 
@@ -122,6 +132,7 @@ const STRATEGY_WHY = {
   fixe: 'Budget prévisible à 100 %. Aucune exposition marché. Idéal si la visibilité budgétaire prime.',
   indexe: "Suit un indice marché avec plafond. Potentiel d'économie ~5-10 % vs Fixe, mais légère exposition à la volatilité.",
   spot: "Prix temps réel sans marge intermédiaire. Économie potentielle maximale, mais forte volatilité. Réservé aux profils avertis.",
+  reflex_solar: "Exploite les blocs horaires solaires (été 13h-16h semaine, WE 10h-17h) pour capter les prix bas. Report optionnel de consommation HP vers solaire pour maximiser l'économie.",
 };
 
 export default function PurchasePage() {
@@ -682,7 +693,7 @@ export default function PurchasePage() {
                 })()}
 
                 {/* Scenario cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   {scenarios.map((s) => {
                     const meta = STRATEGY_META[s.strategy] || STRATEGY_META.fixe;
                     const Icon = meta.icon;
@@ -756,6 +767,66 @@ export default function PurchasePage() {
                           </summary>
                           <p className="mt-1.5 text-xs text-gray-600 bg-gray-50 rounded p-2">{whyText}</p>
                         </details>
+
+                        {/* V74: ReFlex Solar — badges + blocs + cross-brique CTAs */}
+                        {s.strategy === 'reflex_solar' && (
+                          <div data-testid="reflex-solar-detail" className="mb-3 space-y-2">
+                            {/* Badges: Budget / Risque / Effort */}
+                            <div data-testid="reflex-badges" className="flex items-center gap-2 flex-wrap">
+                              <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-green-50 text-green-700">
+                                <TrendingDown size={10} /> Budget {s.savings_vs_current_pct > 0 ? `-${s.savings_vs_current_pct}%` : '—'}
+                              </span>
+                              <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${RISK_COLORS[risk]}`}>
+                                <Shield size={10} /> Risque {s.risk_score}/100
+                              </span>
+                              {s.effort_score != null && (
+                                <span data-testid="reflex-effort-badge" className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${s.effort_score <= 30 ? 'bg-green-50 text-green-700' : s.effort_score <= 60 ? 'bg-yellow-50 text-yellow-700' : 'bg-red-50 text-red-700'}`}>
+                                  <Settings2 size={10} /> Effort {s.effort_score}/100
+                                </span>
+                              )}
+                            </div>
+                            {/* Blocs horaires summary */}
+                            {s.blocs && s.blocs.length > 0 && (
+                              <details data-testid="reflex-blocs-detail" className="group">
+                                <summary className="flex items-center gap-1 text-xs text-amber-600 cursor-pointer hover:text-amber-800">
+                                  <BarChart3 size={12} /> {s.blocs.length} blocs horaires
+                                </summary>
+                                <div className="mt-1.5 text-xs bg-amber-50 rounded p-2 space-y-1">
+                                  {s.blocs.map((b) => (
+                                    <div key={b.bloc} className="flex justify-between">
+                                      <span className="text-gray-700">{b.bloc.replace(/_/g, ' ')}</span>
+                                      <span className="font-mono text-gray-600">{b.weight_pct}% — {b.price_eur_kwh.toFixed(4)} EUR/kWh</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </details>
+                            )}
+                            {/* Report info */}
+                            {s.report_pct != null && s.report_pct > 0 && (
+                              <p data-testid="reflex-report-pct" className="text-xs text-amber-700">
+                                <RefreshCw size={10} className="inline mr-1" />
+                                Report HP → Solaire: {s.report_pct}%
+                              </p>
+                            )}
+                            {/* Cross-brique CTAs */}
+                            <div data-testid="reflex-cross-ctas" className="flex items-center gap-2 pt-1">
+                              <button
+                                data-testid="cta-conso-explorer-reflex"
+                                onClick={() => navigate(toConsoExplorer({ site_id: selectedSiteId, days: 90 }))}
+                                className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 underline"
+                              >
+                                <BarChart3 size={12} /> Voir preuves conso
+                              </button>
+                              <button
+                                data-testid="cta-bill-intel-reflex"
+                                onClick={() => navigate(toBillIntel({ site_id: selectedSiteId }))}
+                                className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800 underline"
+                              >
+                                <FileSearch size={12} /> Contrôler facture
+                              </button>
+                            </div>
+                          </div>
+                        )}
 
                         {/* Accept CTA (reco only) */}
                         {isReco && !isAccepted && (
