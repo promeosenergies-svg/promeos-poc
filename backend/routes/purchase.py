@@ -452,9 +452,11 @@ def compute_portfolio(
         for i, s in enumerate(scenarios):
             s["id"] = result_ids[i]
 
+        site_obj = db.query(Site).filter(Site.id == sid).first()
         results_by_site.append(
             {
                 "site_id": sid,
+                "site_nom": site_obj.nom if site_obj else f"Site {sid}",
                 "run_id": run_id,
                 "volume_kwh_an": assumption.volume_kwh_an,
                 "scenarios": scenarios,
@@ -475,8 +477,13 @@ def compute_portfolio(
 
 
 @router.post("/compute/{site_id}")
-def compute(site_id: int, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
-    """Compute 3 scenarios + recommendation for a site."""
+def compute(
+    site_id: int,
+    report_pct: float = Query(0.0, ge=0.0, le=1.0, description="Fraction of HP shifted to solaire (0.0–1.0)"),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Compute 4 scenarios + recommendation for a site."""
     check_site_access(auth, site_id)
 
     # Energy Gate: verify existing assumption is ELEC
@@ -523,6 +530,7 @@ def compute(site_id: int, db: Session = Depends(get_db), auth: Optional[AuthCont
         volume_kwh_an=assumption.volume_kwh_an,
         profile_factor=assumption.profile_factor,
         energy_type=energy_type_val,
+        report_pct=report_pct,
     )
 
     # Get preferences for recommendation

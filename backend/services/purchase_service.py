@@ -203,9 +203,11 @@ def compute_scenarios(
     volume_kwh_an: float,
     profile_factor: float = 1.0,
     energy_type: str = "elec",
+    report_pct: float = 0.0,
 ) -> list:
     """
     Generate 4 purchase scenarios: Fixe, Indexe, Spot, RéFlex Solar.
+    report_pct: fraction of HP volume shifted to solaire_ete (0.0–1.0).
     Returns list of 4 scenario dicts.
     """
     ref_price, price_source = get_reference_price(db, site_id, energy_type)
@@ -255,7 +257,7 @@ def compute_scenarios(
     })
 
     # ── RéFlex Solar: blocs horaires, 2 modes (sans/avec report) ──
-    reflex = compute_reflex_scenario(ref_price, volume_kwh_an, profile_factor, price_source)
+    reflex = compute_reflex_scenario(ref_price, volume_kwh_an, profile_factor, price_source, report_pct=report_pct)
     scenarios.append(reflex)
 
     # Compute savings vs current (ref_price)
