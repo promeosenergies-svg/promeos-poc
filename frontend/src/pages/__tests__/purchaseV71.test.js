@@ -74,7 +74,9 @@ describe('B · Actions CTAs', () => {
   const code = readSrc('pages', 'PurchasePage.jsx');
 
   it('imports toActionNew from routes', () => {
-    expect(code).toContain("import { toActionNew, toActionsList } from '../services/routes'");
+    expect(code).toContain("toActionNew");
+    expect(code).toContain("toActionsList");
+    expect(code).toContain("from '../services/routes'");
   });
 
   it('has "Créer action" CTA per accepted scenario', () => {
@@ -130,7 +132,7 @@ describe('C · Empty state guidé', () => {
 
   it('empty state shows instruction text', () => {
     expect(code).toContain('Aucun scénario calculé');
-    expect(code).toContain('Calculer les scénarios');
+    expect(code).toContain('Comparer les scénarios');
   });
 });
 

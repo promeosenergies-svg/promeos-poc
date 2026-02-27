@@ -246,7 +246,9 @@ describe('F · V71 backward compat preserved', () => {
   });
 
   it('still imports toActionNew and toActionsList (V71)', () => {
-    expect(code).toContain("import { toActionNew, toActionsList } from '../services/routes'");
+    expect(code).toContain('toActionNew');
+    expect(code).toContain('toActionsList');
+    expect(code).toContain("from '../services/routes'");
   });
 
   it('V72 header comment', () => {

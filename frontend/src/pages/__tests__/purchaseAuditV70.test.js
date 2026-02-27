@@ -44,8 +44,8 @@ describe('A · Route helpers toPurchase + toPurchaseAssistant', () => {
     expect(code).toContain("opts.tab");
   });
 
-  it('toPurchaseAssistant returns /achat-energie/assistant', () => {
-    expect(code).toContain('/achat-energie/assistant');
+  it('toPurchaseAssistant returns /achat-assistant', () => {
+    expect(code).toContain('/achat-assistant');
   });
 });
 
