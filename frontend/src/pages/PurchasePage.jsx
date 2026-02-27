@@ -12,6 +12,7 @@
  * V77: + Rename Budget Securise → Tarif Heures Solaires, bloc explicability, assistant offer, deep-link CTA.
  * V78: + Audit THS — sous-titre grand public, creneaux ete/hiver sur carte, CTAs enrichis.
  * V79: + Cross-brique Performance, CTA Voir performance, toMonitoring, dejargon.
+ * V80: + Badge Sans penalite, nettoyage tooltip jargon, tests audit final.
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -777,7 +778,7 @@ export default function PurchasePage() {
                               <h4 className="font-semibold text-gray-900 flex items-center gap-1.5">
                                 {meta.label}
                                 {s.strategy === 'reflex_solar' && isExpert && (
-                                  <span data-testid="reflex-expert-tooltip" title="Tarification dynamique par blocs horaires avec optimisation solaire (anciennement RéFlex Solar)" className="cursor-help"><Info size={10} className="text-gray-400" /></span>
+                                  <span data-testid="reflex-expert-tooltip" title="Tarification dynamique par blocs horaires avec optimisation solaire" className="cursor-help"><Info size={10} className="text-gray-400" /></span>
                                 )}
                                 {meta.dynamic && (
                                   <span data-testid="reflex-dynamic-badge" className="px-1.5 py-0.5 text-[10px] font-bold bg-amber-100 text-amber-700 rounded">DYNAMIQUE</span>
@@ -853,6 +854,9 @@ export default function PurchasePage() {
                                   <Settings2 size={10} /> Effort {s.effort_score}/100
                                 </span>
                               )}
+                              <span data-testid="reflex-sans-penalite" className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">
+                                <CheckCircle2 size={10} /> Sans pénalité
+                              </span>
                             </div>
                             {/* V78: Créneaux Heures Solaires (static, visible for all users) */}
                             <div data-testid="reflex-creneaux" className="text-xs bg-amber-50 rounded p-2">

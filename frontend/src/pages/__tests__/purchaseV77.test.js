@@ -89,8 +89,8 @@ describe('B · Bloc explicability (delta vs Fixe)', () => {
     expect(match).not.toBeNull();
   });
 
-  it('tooltip mentions anciennement RéFlex Solar', () => {
-    expect(code).toContain('anciennement RéFlex Solar');
+  it('tooltip describes tarification dynamique (no old jargon)', () => {
+    expect(code).toContain('Tarification dynamique par blocs horaires avec optimisation solaire');
   });
 
   it('uses Info icon for tooltip', () => {
