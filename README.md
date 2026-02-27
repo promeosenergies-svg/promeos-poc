@@ -44,7 +44,12 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 > | Actions Console (gestion centralisee, filtres, batch, detail drawer) | Stable -- V69 |
 > | Performance V2 (4 sections, plan d'action, expert mode, route registry) | Stable -- V70 |
 > | Demo Seed hardening (INSERT OR IGNORE, UniqueConstraint, 60 mois, 8 pytest) | Stable -- V71 |
-> | Suite de tests automatises | **2 850+ passes, 0 regression** |
+> | Achat Energie V2 (scope lock, autosave, volume toggle, confidence badges, cockpit) | Stable -- V72 |
+> | Achat Audit (scope unlock, skipSiteHeader, tab deep-link, assistant CTA) | Stable -- V73 |
+> | Tarif Heures Solaires (blocs horaires, badges, effort score, cross-brique CTAs) | Stable -- V74-V82 |
+> | Performance cross-brique (5 KPI cards, THS adoption/gain/risque, CTA Simuler) | Stable -- V79 |
+> | Assistant Achat (8 etapes, deep-link step+offer, 6 offres demo, highlight) | Stable -- V81 |
+> | Suite de tests automatises | **3 700+ passes, 0 regression** |
 
 > **Disclaimer**
 >
@@ -58,9 +63,9 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 <a id="tldr"></a>
 ## TL;DR
 
-- **Backend FastAPI** avec ~150 endpoints, 20+ modeles SQLAlchemy, 4 moteurs de regles reglementaires, 5 connecteurs de donnees, 4 watchers de veille, 5 agents IA (stub), module Patrimoine complet (import HELIOS, anomalies, impact reglementaire, cockpit portfolio V60-V63), module Facturation production-grade (org-scoping, PDF EDF/Engie, shadow billing V2 TURPE/CSPE/TICGN, 14 regles d'anomalie, bridge Action Center), timeline & couverture facturation (periods, coverage engine V67), Billing Unified (InvoiceNormalized, deep-links bidirectionnels, seed 36 mois HELIOS V68), demo seed hardened (INSERT OR IGNORE, UniqueConstraint, 60 mois, 8 pytest V71).
-- **Frontend React 18 + Tailwind + Vite** avec 20+ pages : Dashboard, Cockpit Executif, Patrimoine (heatmap + portfolio), Detail Site, Plan d'action, RegOps, Conso & Usages, Tertiaire OPERAT, IAM Admin, Import, KB Explorer, Veille Reglementaire, Facturation (BillIntel deep-links + BillingTimeline + CoverageBar), Actions Console (gestion centralisee, filtres, batch, detail drawer V69), Performance V2 (4 sections, plan d'action, expert mode, route registry, 39 vitest V70), et plus.
-- **2 850+ tests passent, 0 regression** — pytest backend + vitest frontend, seed HELIOS 5 sites + 60 mois + 10 personas IAM en une commande, demo operationnelle en 2 minutes.
+- **Backend FastAPI** avec ~150 endpoints, 20+ modeles SQLAlchemy, 4 moteurs de regles reglementaires, 5 connecteurs de donnees, 4 watchers de veille, 5 agents IA (stub), module Patrimoine complet (import HELIOS, anomalies, impact reglementaire, cockpit portfolio V60-V63), module Facturation production-grade (org-scoping, PDF EDF/Engie, shadow billing V2 TURPE/CSPE/TICGN, 14 regles d'anomalie, bridge Action Center), timeline & couverture facturation (periods, coverage engine V67), Billing Unified (InvoiceNormalized, deep-links bidirectionnels, seed 36 mois HELIOS V68), demo seed hardened (V71), moteur Achat Energie (4 strategies incluant Tarif Heures Solaires avec 6 blocs horaires, effort score, report_pct, green bonus V74-V75).
+- **Frontend React 18 + Tailwind + Vite** avec 20+ pages : Dashboard, Cockpit Executif, Patrimoine (heatmap + portfolio), Detail Site, Plan d'action, RegOps, Conso & Usages, Tertiaire OPERAT, IAM Admin, Import, KB Explorer, Veille Reglementaire, Facturation (BillIntel deep-links + BillingTimeline + CoverageBar), Actions Console (V69), Performance V2 (5 KPI cards dont THS, expert mode, route registry V70-V79), Achat Energie V2 (4 strategies, "Option Tarif Heures Solaires" structuree avec badges Budget/Risque/Effort/Sans penalite, creneaux ete/hiver, 7 CTAs cross-briques, deep-link assistant V72-V82), Assistant Achat 8 etapes (deep-link step+offer, 6 offres demo, highlight V81).
+- **3 700+ tests passent, 0 regression** — pytest backend + vitest frontend, seed HELIOS 5 sites + 60 mois + 10 personas IAM en une commande, demo operationnelle en 2 minutes.
 
 ---
 
@@ -134,7 +139,7 @@ PROMEOS POC demontre une reponse technique a ces 4 besoins.
 
 ### API Swagger
 
-- Ouvrir `http://localhost:8000/docs` pour explorer les 66 endpoints interactivement.
+- Ouvrir `http://localhost:8000/docs` pour explorer les ~160 endpoints interactivement.
 
 ---
 
@@ -298,7 +303,7 @@ python scripts/kb_smoke.py
                           +-------------------+
                           |   Frontend React  |
                           |  localhost:5173   |
-                          |  8 pages + Vite   |
+                          | 22+ pages + Vite  |
                           +--------+----------+
                                    |
                             proxy /api/*
@@ -306,7 +311,7 @@ python scripts/kb_smoke.py
                           +--------v----------+
                           |   FastAPI Backend  |
                           |  localhost:8000   |
-                          |   66 endpoints    |
+                          |  ~160 endpoints   |
                           +--------+----------+
                                    |
               +--------------------+--------------------+
@@ -418,6 +423,13 @@ Champs cles du Site :
 | `GET` | `/api/billing/periods` | Timeline mensuelle paginee (coverage_status, ratio, total_ttc) |
 | `GET` | `/api/billing/coverage-summary` | KPIs globaux : mois couverts/partiels/manquants, top sites |
 | `GET` | `/api/billing/missing-periods` | Periodes manquantes/partielles paginées avec CTA import |
+| `POST` | `/api/purchase/compute/{site_id}` | Calculer 4 strategies (Fixe/Indexe/Spot/THS) avec report_pct |
+| `GET` | `/api/purchase/results/{site_id}` | Resultats scenarios d'un site |
+| `GET` | `/api/purchase/results` | Resultats portfolio (tous les sites) |
+| `GET` | `/api/purchase/history/{site_id}` | Historique des runs de calcul |
+| `POST` | `/api/purchase/seed-demo` | Seed 2 sites demo avec 4 strategies |
+| `POST` | `/api/purchase/seed-wow-happy` | Seed 15 sites (donnees propres) |
+| `GET` | `/api/monitoring/kpis` | KPIs performance (off_hours_ratio, gaspillage, CO2e) |
 | `GET` | `/health` | Health check |
 
 Documentation Swagger complete : `http://localhost:8000/docs`
@@ -443,9 +455,10 @@ Documentation Swagger complete : `http://localhost:8000/docs`
 | `/kb` | KB Explorer | Knowledge Base : archetypes, regles anomalie, recommendations |
 | `/bill-intel` | Bill Intelligence | Import CSV/PDF, shadow billing 12 regles, anomalies, "Creer action" CTA |
 | `/billing` | Timeline Facturation | Vue mensuelle couverture (covered/partial/missing), CoverageBar, filtres, pagination |
-| `/monitoring` | Performance Electrique V2 | 4 sections (header, a retenir, plan d'action, details), 8 KPI cards 4-col, expert mode, route registry |
+| `/monitoring` | Performance Electrique V2 | 5 KPI cards (dont THS adoption/gain/risque), plan d'action, expert mode, cross-brique Achats |
 | `/actions` | Actions Console | Gestion centralisee, filtres multi-criteres, batch operations, detail drawer |
-| `/purchase` | Achat Energie | Assistant achat multi-sites, note decision, RFP |
+| `/achat-energie` | Achat Energie V2 | 4 strategies (Fixe/Indexe/Spot/THS), cockpit scenariel, "Option THS" structuree, 7 CTAs cross-briques |
+| `/achat-assistant` | Assistant Achat | Wizard 8 etapes, 6 offres demo (dont HEURES_SOLAIRES), deep-link step+offer+site_id |
 | `/admin/users` | Admin Utilisateurs | Gestion users/roles/scopes, journal d'audit |
 | `/login` | Authentification | Login JWT, switch org, impersonation |
 
@@ -581,7 +594,26 @@ Pour plus de details : [Security Notes](docs/security_notes.md) | [Demo Script](
   - 60 mois de readings mensuelles (au-dessus du seuil 48 de l'Explorer)
   - Logging + rollback au lieu de swallowing silencieux dans `reset()`
   - 8 tests pytest de regression (unicite, idempotence, reset)
-- **2 850+ tests automatises (pytest + vitest), 0 regression**
+- **Achat Energie V2 (V72-V82)** :
+  - Simulateur 4 strategies : Prix Fixe, Indexe, Spot, **Tarif Heures Solaires**
+  - Backend : `compute_scenarios()` avec 6 blocs horaires ponderes, `effort_score`, `report_pct`, green bonus (+5 pour THS)
+  - Cockpit scenariel : header dynamique "N strategies comparees", KPI strip (budget/risque/recommandation), grille 4 cartes responsive
+  - "Option Tarif Heures Solaires" structuree : titre + 2 bullets grand public + badge "Sans penalite" proéminent + badges Budget/Risque/Effort + creneaux Ete/Hiver + blocs horaires collapsibles + delta vs Prix Fixe
+  - 7 CTAs cross-briques : Voir preuves conso (date_from/date_to), Controler facture (month), Voir performance (site_id), Creer action (source_type=achat), Tester un THS, Tester dans l'Assistant, Assistant Achat
+  - Onglets : Simulation, Portefeuille (top-lists THS, campagne multi-sites), Echeances, Historique
+  - Scope lock/unlock, autosave, volume toggle, confidence badges, deep-link tab+site_id
+  - Slider report expert-only (Decalage heures pleines → solaire)
+  - Zéro URL hardcodée : routes registry (`toPurchase`, `toActionNew`, `toConsoExplorer`, `toBillIntel`, `toMonitoring`, `toPurchaseAssistant`)
+- **Performance cross-brique THS (V79)** :
+  - 5e KPI card "Tarif Heures Solaires" dans ExecutiveSummary : adoption % solaire, gain estime EUR, CTA "Simuler" → Achats, CTA "Creer action" (TARIF_HEURES_SOLAIRES)
+  - Grille 5 colonnes (lg:grid-cols-5), data-testid="kpi-tarif-heures-solaires"
+  - `toMonitoring()` route helper
+- **Assistant Achat deep-link (V81)** :
+  - `toPurchaseAssistant({ site_id, step, offer })` : deep-link vers etape + offre specifique
+  - Parsing `useSearchParams` : `?step=offres&offer=HEURES_SOLAIRES&site_id=X`
+  - Highlight offre ciblee (amber ring), saut automatique a l'etape Offres
+  - 6 offres demo (dont HEURES_SOLAIRES avec solarSlots ete/hiver + "Aucune penalite")
+- **3 700+ tests automatises (pytest + vitest), 0 regression**
 - 12 items KB valides (archetypes, regles, recommendations)
 - Smoke test "red button" (14 checks avant mise en pilote)
 
@@ -683,7 +715,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 cd backend
 python -m pytest tests/ -v --tb=short
 ```
-Resultat attendu : `2850+ passed`.
+Resultat attendu : `3700+ passed`.
 
 ### Tests IAM uniquement
 
