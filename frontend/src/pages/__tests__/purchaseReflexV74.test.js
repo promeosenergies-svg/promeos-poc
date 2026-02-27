@@ -27,8 +27,8 @@ describe('A · STRATEGY_META reflex_solar', () => {
     expect(code).toContain("reflex_solar: {");
   });
 
-  it("reflex_solar label is 'Budget Sécurisé'", () => {
-    expect(code).toContain("label: 'Budget Sécurisé'");
+  it("reflex_solar label is 'Tarif Heures Solaires'", () => {
+    expect(code).toContain("label: 'Tarif Heures Solaires'");
   });
 
   it('reflex_solar uses Sun icon', () => {
@@ -40,7 +40,7 @@ describe('A · STRATEGY_META reflex_solar', () => {
   });
 
   it('reflex_solar has a desc string', () => {
-    expect(code).toContain("desc: \"Accédez aux opportunités du marché");
+    expect(code).toContain("desc: \"Profitez des prix bas quand le soleil produit");
   });
 });
 

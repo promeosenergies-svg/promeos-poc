@@ -164,6 +164,7 @@ export function toPurchase(opts = {}) {
   const p = new URLSearchParams();
   if (opts.filter) p.set('filter', opts.filter);
   if (opts.tab) p.set('tab', opts.tab);
+  if (opts.site_id) p.set('site_id', String(opts.site_id));
   const qs = p.toString();
   return `/achat-energie${qs ? '?' + qs : ''}`;
 }

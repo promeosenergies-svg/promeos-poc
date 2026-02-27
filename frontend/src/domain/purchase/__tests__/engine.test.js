@@ -552,8 +552,8 @@ describe('Recommend', () => {
 // ── Demo Data ──────────────────────────────────────────────────────
 
 describe('Demo Data', () => {
-  it('has 5 demo offers', () => {
-    expect(DEMO_OFFERS.length).toBe(5);
+  it('has 6 demo offers', () => {
+    expect(DEMO_OFFERS.length).toBe(6);
   });
 
   it('each offer has required fields', () => {

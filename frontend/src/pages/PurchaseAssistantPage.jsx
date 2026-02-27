@@ -45,6 +45,7 @@ import {
   ArrowRight,
   Flame,
   CheckCircle2,
+  Sun,
   XCircle,
   Minus,
   Star,
@@ -96,6 +97,7 @@ const STRUCTURE_LABELS = {
   INDEXE: 'Indexe',
   SPOT: 'Spot',
   HYBRIDE: 'Hybride',
+  HEURES_SOLAIRES: 'Heures Solaires',
 };
 
 const STRUCTURE_COLORS = {
@@ -103,6 +105,7 @@ const STRUCTURE_COLORS = {
   INDEXE: 'bg-green-100 text-green-700',
   SPOT: 'bg-orange-100 text-orange-700',
   HYBRIDE: 'bg-purple-100 text-purple-700',
+  HEURES_SOLAIRES: 'bg-amber-100 text-amber-700',
 };
 
 const SCORE_COLORS = {
@@ -1143,6 +1146,30 @@ function OfferCard({ offer, onUpdate, onUpdatePricing, onRemove, readOnly }) {
           {offer.contractTerms?.clauseFlags?.length > 0 && (
             <div className="text-red-500">
               <strong>Alertes clauses:</strong> {offer.contractTerms.clauseFlags.join(', ')}
+            </div>
+          )}
+          {offer.solarSlots && (
+            <div data-testid="offer-solar-slots" className="bg-amber-50 border border-amber-200 rounded-lg p-3 mt-1">
+              <h5 className="text-xs font-semibold text-amber-800 flex items-center gap-1.5 mb-2">
+                <Sun size={12} /> Créneaux Heures Solaires
+              </h5>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <span className="font-medium text-amber-700">Été :</span>{' '}
+                  <span className="text-gray-700">{offer.solarSlots.summer.start}–{offer.solarSlots.summer.end} ({offer.solarSlots.summer.days})</span>
+                  <br />
+                  <span className="text-gray-500">WE : {offer.solarSlots.summer.weekendStart}–{offer.solarSlots.summer.weekendEnd}</span>
+                </div>
+                <div>
+                  <span className="font-medium text-amber-700">Hiver :</span>{' '}
+                  <span className="text-gray-700">{offer.solarSlots.winter.start}–{offer.solarSlots.winter.end} ({offer.solarSlots.winter.days})</span>
+                  <br />
+                  <span className="text-gray-500">WE : {offer.solarSlots.winter.weekendStart}–{offer.solarSlots.winter.weekendEnd}</span>
+                </div>
+              </div>
+              <p data-testid="offer-no-penalty" className="text-green-700 mt-2 flex items-center gap-1">
+                <CheckCircle2 size={10} /> Pas de pénalité si vous ne décalez pas votre consommation.
+              </p>
             </div>
           )}
         </div>

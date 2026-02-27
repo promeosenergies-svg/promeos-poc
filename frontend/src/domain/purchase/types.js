@@ -15,6 +15,7 @@ export const OfferStructure = /** @type {const} */ ({
   INDEXE: 'INDEXE',
   SPOT: 'SPOT',
   HYBRIDE: 'HYBRIDE',
+  HEURES_SOLAIRES: 'HEURES_SOLAIRES',
 });
 
 export const ScenarioPreset = /** @type {const} */ ({

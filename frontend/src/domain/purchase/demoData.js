@@ -355,6 +355,57 @@ export const DEMO_OFFERS = [
       apiAccess: false,
     },
   },
+  // Offer 6: HEURES_SOLAIRES — EDF Renouvelables
+  {
+    id: 'offer-solaire-edf',
+    supplierName: 'EDF Renouvelables',
+    structure: OfferStructure.HEURES_SOLAIRES,
+    pricing: {
+      fixedPriceEurPerMwh: 88,
+      indexName: 'EPEX Spot FR',
+      spreadEurPerMwh: 2,
+      capEurPerMwh: 110,
+      floorEurPerMwh: 45,
+      fixedSharePct: 0.55,
+      indexedSharePct: 0.30,
+      spotSharePct: 0.15,
+    },
+    solarSlots: {
+      summer: { start: '13:00', end: '16:00', days: 'Lun-Ven', weekendStart: '10:00', weekendEnd: '17:00' },
+      winter: { start: '11:00', end: '14:00', days: 'Lun-Ven', weekendStart: '10:00', weekendEnd: '15:00' },
+    },
+    breakdown: [
+      { component: 'FOURNITURE', sharePct: 0.36, eurPerMwh: 31.7, status: 'KNOWN' },
+      { component: 'ACHEMINEMENT', sharePct: 0.27, eurPerMwh: 23.8, status: 'KNOWN' },
+      { component: 'TAXES_CSPE', sharePct: 0.14, eurPerMwh: 12.3, status: 'KNOWN' },
+      { component: 'CTA', sharePct: 0.03, eurPerMwh: 2.6, status: 'KNOWN' },
+      { component: 'TVA', sharePct: 0.10, eurPerMwh: 8.8, status: 'KNOWN' },
+      { component: 'CEE', sharePct: 0.04, eurPerMwh: 3.5, status: 'KNOWN' },
+      { component: 'CAPACITE', sharePct: 0.03, eurPerMwh: 2.6, status: 'KNOWN' },
+      { component: 'ABONNEMENT', sharePct: 0.02, eurPerMwh: 1.8, status: 'KNOWN' },
+    ],
+    contractTerms: {
+      durationMonths: 24,
+      noticePeriodDays: 60,
+      earlyTerminationPenalty: 'NONE',
+      indexationClause: 'CLEAR',
+      slaLevel: 'PREMIUM',
+      greenCertified: true,
+      clauseFlags: [],
+    },
+    intermediation: {
+      hasIntermediary: false,
+      feeDisclosed: true,
+      feeEurPerMwh: 0,
+      passThroughPolicy: 'FULL',
+    },
+    dataTerms: {
+      curvesAccess: true,
+      dplus1: true,
+      csvExport: true,
+      apiAccess: true,
+    },
+  },
 ];
 
 // ── Aggregate Consumption Helper ───────────────────────────────────

@@ -9,6 +9,7 @@
  * V74: + ReFlex Solar card, blocs horaires badges, effort score, cross-brique CTAs.
  * V75: + ReFlex report toggle/slider, portfolio ReFlex table, top-lists, campaign CTA.
  * V76: + Rename ReFlex → Budget Securise (user-facing labels only), scenario_label in prefills.
+ * V77: + Rename Budget Securise → Tarif Heures Solaires, bloc explicability, assistant offer, deep-link CTA.
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -37,7 +38,7 @@ import {
   seedWowHappy,
   seedWowDirty,
 } from '../services/api';
-import { toActionNew, toActionsList, toPurchaseAssistant, toConsoExplorer, toBillIntel, toConsoDiag } from '../services/routes';
+import { toActionNew, toActionsList, toPurchaseAssistant, toPurchase, toConsoExplorer, toBillIntel, toConsoDiag } from '../services/routes';
 import {
   ShoppingCart,
   Calculator,
@@ -97,10 +98,10 @@ const STRATEGY_META = {
     desc: 'Prix marche temps reel, economies max',
   },
   reflex_solar: {
-    label: 'Budget Sécurisé',
+    label: 'Tarif Heures Solaires',
     icon: Sun,
     color: 'amber',
-    desc: "Accédez aux opportunités du marché sans mettre en danger votre budget.",
+    desc: "Profitez des prix bas quand le soleil produit, sans pénalité si vous ne décalez pas.",
     dynamic: true,
   },
 };
@@ -254,6 +255,12 @@ export default function PurchasePage() {
   // V73: Scope-aware site selection — locked if scope has a site, reset override on scope change
   useEffect(() => {
     setScopeOverride(false); // reset override when bandeau scope changes
+    // V77: URL deep-link site_id takes priority
+    const urlSiteId = searchParams.get('site_id');
+    if (urlSiteId) {
+      const parsed = Number(urlSiteId);
+      if (!isNaN(parsed)) { setSelectedSiteId(parsed); return; }
+    }
     if (scopeSiteId) {
       setSelectedSiteId(scopeSiteId);
     } else if (scopedSites.length > 0 && !selectedSiteId) {
@@ -653,7 +660,7 @@ export default function PurchasePage() {
                   <div className="flex items-center justify-between mb-2">
                     <label className="text-sm font-medium text-amber-800 flex items-center gap-1.5">
                       <Sun size={14} /> Report HP → Solaire
-                      <span className="ml-1 px-1.5 py-0.5 text-[10px] font-bold bg-amber-200 text-amber-800 rounded">BUDGET SÉCURISÉ</span>
+                      <span className="ml-1 px-1.5 py-0.5 text-[10px] font-bold bg-amber-200 text-amber-800 rounded">TARIF HEURES SOLAIRES</span>
                     </label>
                     <button
                       data-testid="report-toggle"
@@ -767,6 +774,9 @@ export default function PurchasePage() {
                             <div>
                               <h4 className="font-semibold text-gray-900 flex items-center gap-1.5">
                                 {meta.label}
+                                {s.strategy === 'reflex_solar' && isExpert && (
+                                  <span data-testid="reflex-expert-tooltip" title="Tarification dynamique par blocs horaires avec optimisation solaire (anciennement RéFlex Solar)" className="cursor-help"><Info size={10} className="text-gray-400" /></span>
+                                )}
                                 {meta.dynamic && (
                                   <span data-testid="reflex-dynamic-badge" className="px-1.5 py-0.5 text-[10px] font-bold bg-amber-100 text-amber-700 rounded">DYNAMIQUE</span>
                                 )}
@@ -865,6 +875,22 @@ export default function PurchasePage() {
                                 Report HP → Solaire: {s.report_pct}%
                               </p>
                             )}
+                            {/* V77: Delta vs Prix Fixe standard */}
+                            {(() => {
+                              const fixeScenario = scenarios.find((sc) => sc.strategy === 'fixe');
+                              if (!fixeScenario || !s.total_annual_eur) return null;
+                              const deltaEur = Math.round(fixeScenario.total_annual_eur - s.total_annual_eur);
+                              const deltaPct = fixeScenario.total_annual_eur > 0 ? round2((deltaEur / fixeScenario.total_annual_eur) * 100) : 0;
+                              return (
+                                <div data-testid="reflex-delta-vs-fixe" className="text-xs bg-green-50 rounded p-2 flex items-center gap-1.5">
+                                  <TrendingDown size={12} className="text-green-600" />
+                                  <span className="text-green-700">
+                                    {deltaEur > 0 ? `-${deltaEur.toLocaleString()} EUR/an` : `+${Math.abs(deltaEur).toLocaleString()} EUR/an`}
+                                    {' '}({deltaPct > 0 ? '-' : '+'}{Math.abs(deltaPct)}%) vs Prix Fixe standard
+                                  </span>
+                                </div>
+                              );
+                            })()}
                             {/* Cross-brique CTAs */}
                             <div data-testid="reflex-cross-ctas" className="flex items-center gap-2 flex-wrap pt-1">
                               <button
@@ -887,13 +913,20 @@ export default function PurchasePage() {
                                   source: 'purchase',
                                   source_type: 'achat',
                                   site_id: selectedSiteId,
-                                  title: `Budget Sécurisé — ${Math.round(s.total_annual_eur).toLocaleString()} EUR/an`,
-                                  scenario_label: 'Budget Sécurisé',
+                                  title: `Tarif Heures Solaires — ${Math.round(s.total_annual_eur).toLocaleString()} EUR/an`,
+                                  scenario_label: 'Tarif Heures Solaires',
                                   impact_eur: s.savings_vs_current_pct > 0 ? Math.round(s.total_annual_eur * s.savings_vs_current_pct / 100) : undefined,
                                 }))}
                                 className="flex items-center gap-1 text-xs text-green-600 hover:text-green-800 underline"
                               >
                                 <Plus size={12} /> Créer action
+                              </button>
+                              <button
+                                data-testid="cta-tester-tarif-solaire"
+                                onClick={() => navigate(toPurchase({ tab: 'simulation', site_id: selectedSiteId }))}
+                                className="flex items-center gap-1 text-xs text-amber-600 hover:text-amber-800 underline font-medium"
+                              >
+                                <Sun size={12} /> Tester un Tarif Heures Solaires
                               </button>
                             </div>
                           </div>
@@ -1099,7 +1132,7 @@ export default function PurchasePage() {
                       <div data-testid="reflex-top-lists" className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="bg-green-50 rounded-lg p-4 border border-green-200">
                           <h4 className="text-xs font-bold text-green-800 uppercase flex items-center gap-1.5 mb-2">
-                            <Award size={14} /> Meilleurs gains Budget Sécurisé
+                            <Award size={14} /> Meilleurs gains Tarif Heures Solaires
                           </h4>
                           {topGains.map((s) => (
                             <div key={s.site_id} className="flex items-center justify-between text-sm py-1">
@@ -1109,7 +1142,7 @@ export default function PurchasePage() {
                                 <button onClick={() => navigate(toConsoExplorer({ site_id: s.site_id, days: 90 }))} className="text-blue-500 hover:text-blue-700" title="Explorer"><BarChart3 size={12} /></button>
                                 <button onClick={() => navigate(toConsoDiag({ site_id: s.site_id }))} className="text-purple-500 hover:text-purple-700" title="Diagnostic"><Activity size={12} /></button>
                                 <button onClick={() => navigate(toBillIntel({ site_id: s.site_id }))} className="text-indigo-500 hover:text-indigo-700" title="Facture"><FileSearch size={12} /></button>
-                                <button onClick={() => navigate(toActionNew({ source: 'purchase', source_type: 'achat', site_id: s.site_id, title: `Budget Sécurisé — gain ${s.gain}%`, scenario_label: 'Budget Sécurisé' }))} className="text-green-500 hover:text-green-700" title="Action"><Plus size={12} /></button>
+                                <button onClick={() => navigate(toActionNew({ source: 'purchase', source_type: 'achat', site_id: s.site_id, title: `Tarif Heures Solaires — gain ${s.gain}%`, scenario_label: 'Tarif Heures Solaires' }))} className="text-green-500 hover:text-green-700" title="Action"><Plus size={12} /></button>
                               </div>
                             </div>
                           ))}
@@ -1126,7 +1159,7 @@ export default function PurchasePage() {
                                 <button onClick={() => navigate(toConsoExplorer({ site_id: s.site_id, days: 90 }))} className="text-blue-500 hover:text-blue-700" title="Explorer"><BarChart3 size={12} /></button>
                                 <button onClick={() => navigate(toConsoDiag({ site_id: s.site_id }))} className="text-purple-500 hover:text-purple-700" title="Diagnostic"><Activity size={12} /></button>
                                 <button onClick={() => navigate(toBillIntel({ site_id: s.site_id }))} className="text-indigo-500 hover:text-indigo-700" title="Facture"><FileSearch size={12} /></button>
-                                <button onClick={() => navigate(toActionNew({ source: 'purchase', source_type: 'achat', site_id: s.site_id, title: `Risque pointe — ${s.reflex?.risk_score}/100`, scenario_label: 'Budget Sécurisé' }))} className="text-green-500 hover:text-green-700" title="Action"><Plus size={12} /></button>
+                                <button onClick={() => navigate(toActionNew({ source: 'purchase', source_type: 'achat', site_id: s.site_id, title: `Risque pointe — ${s.reflex?.risk_score}/100`, scenario_label: 'Tarif Heures Solaires' }))} className="text-green-500 hover:text-green-700" title="Action"><Plus size={12} /></button>
                               </div>
                             </div>
                           ))}
@@ -1143,7 +1176,7 @@ export default function PurchasePage() {
                                 <button onClick={() => navigate(toConsoExplorer({ site_id: s.site_id, days: 90 }))} className="text-blue-500 hover:text-blue-700" title="Explorer"><BarChart3 size={12} /></button>
                                 <button onClick={() => navigate(toConsoDiag({ site_id: s.site_id }))} className="text-purple-500 hover:text-purple-700" title="Diagnostic"><Activity size={12} /></button>
                                 <button onClick={() => navigate(toBillIntel({ site_id: s.site_id }))} className="text-indigo-500 hover:text-indigo-700" title="Facture"><FileSearch size={12} /></button>
-                                <button onClick={() => navigate(toActionNew({ source: 'purchase', source_type: 'achat', site_id: s.site_id, title: `Bascule Budget Sécurisé — effort ${s.reflex?.effort_score}/100`, scenario_label: 'Budget Sécurisé' }))} className="text-green-500 hover:text-green-700" title="Action"><Plus size={12} /></button>
+                                <button onClick={() => navigate(toActionNew({ source: 'purchase', source_type: 'achat', site_id: s.site_id, title: `Bascule Tarif Heures Solaires — effort ${s.reflex?.effort_score}/100`, scenario_label: 'Tarif Heures Solaires' }))} className="text-green-500 hover:text-green-700" title="Action"><Plus size={12} /></button>
                               </div>
                             </div>
                           ))}
@@ -1156,7 +1189,7 @@ export default function PurchasePage() {
                             <tr>
                               <th className="px-4 py-3 text-left">Site</th>
                               <th className="px-4 py-3 text-right">Budget baseline</th>
-                              <th className="px-4 py-3 text-right">Budget Sécurisé</th>
+                              <th className="px-4 py-3 text-right">Tarif Heures Solaires</th>
                               <th className="px-4 py-3 text-right">Gain</th>
                               <th className="px-4 py-3 text-right">Risque</th>
                               <th className="px-4 py-3 text-right">Effort</th>
@@ -1217,13 +1250,13 @@ export default function PurchasePage() {
                               source: 'purchase',
                               source_type: 'achat',
                               site_ids: campaignSites.map((s) => s.site_id),
-                              title: `Campagne Budget Sécurisé — ${campaignSites.length} sites, gain ${campaignGainTotal.toLocaleString()} EUR`,
-                              scenario_label: 'Budget Sécurisé',
+                              title: `Campagne Tarif Heures Solaires — ${campaignSites.length} sites, gain ${campaignGainTotal.toLocaleString()} EUR`,
+                              scenario_label: 'Tarif Heures Solaires',
                               impact_eur: campaignGainTotal,
                             }))}
                             className="flex items-center gap-2 bg-amber-500 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-amber-600 transition"
                           >
-                            <Rocket size={16} /> Lancer campagne Budget Sécurisé ({campaignSites.length} sites)
+                            <Rocket size={16} /> Lancer campagne Tarif Heures Solaires ({campaignSites.length} sites)
                           </button>
                         )}
                         <button

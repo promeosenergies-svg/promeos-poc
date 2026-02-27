@@ -17,35 +17,35 @@ const root = resolve(__dirname, '../../../');
 const readSrc = (...parts) => readFileSync(resolve(root, 'src', ...parts), 'utf-8');
 
 // ============================================================
-// A. Label "Budget Sécurisé" visible en mode normal
+// A. Label "Tarif Heures Solaires" visible en mode normal
 // ============================================================
-describe('A · Label Budget Sécurisé visible (mode normal)', () => {
+describe('A · Label Tarif Heures Solaires visible (mode normal)', () => {
   const code = readSrc('pages', 'PurchasePage.jsx');
 
-  it('STRATEGY_META reflex_solar label is "Budget Sécurisé"', () => {
-    expect(code).toContain("label: 'Budget Sécurisé'");
+  it('STRATEGY_META reflex_solar label is "Tarif Heures Solaires"', () => {
+    expect(code).toContain("label: 'Tarif Heures Solaires'");
   });
 
   it('label is NOT gated by isExpert', () => {
     // The label should be in the STRATEGY_META constant, outside any isExpert condition
-    const match = code.match(/const STRATEGY_META[\s\S]*?reflex_solar:\s*\{[\s\S]*?label:\s*'Budget Sécurisé'/);
+    const match = code.match(/const STRATEGY_META[\s\S]*?reflex_solar:\s*\{[\s\S]*?label:\s*'Tarif Heures Solaires'/);
     expect(match).not.toBeNull();
   });
 
-  it('report controls badge says BUDGET SÉCURISÉ', () => {
-    expect(code).toContain('BUDGET SÉCURISÉ');
+  it('report controls badge says TARIF HEURES SOLAIRES', () => {
+    expect(code).toContain('TARIF HEURES SOLAIRES');
   });
 
-  it('portfolio table column says Budget Sécurisé', () => {
-    expect(code).toContain('>Budget Sécurisé<');
+  it('portfolio table column says Tarif Heures Solaires', () => {
+    expect(code).toContain('>Tarif Heures Solaires<');
   });
 
-  it('top-list heading says Meilleurs gains Budget Sécurisé', () => {
-    expect(code).toContain('Meilleurs gains Budget Sécurisé');
+  it('top-list heading says Meilleurs gains Tarif Heures Solaires', () => {
+    expect(code).toContain('Meilleurs gains Tarif Heures Solaires');
   });
 
-  it('campaign CTA says Lancer campagne Budget Sécurisé', () => {
-    expect(code).toContain('Lancer campagne Budget Sécurisé');
+  it('campaign CTA says Lancer campagne Tarif Heures Solaires', () => {
+    expect(code).toContain('Lancer campagne Tarif Heures Solaires');
   });
 });
 
@@ -131,11 +131,11 @@ describe('D · Grand-public subtitle', () => {
   const code = readSrc('pages', 'PurchasePage.jsx');
 
   it('STRATEGY_META desc contains the new subtitle', () => {
-    expect(code).toContain("Accédez aux opportunités du marché sans mettre en danger votre budget.");
+    expect(code).toContain("Profitez des prix bas quand le soleil produit, sans pénalité si vous ne décalez pas.");
   });
 
   it('subtitle is in reflex_solar desc field', () => {
-    const match = code.match(/reflex_solar:\s*\{[\s\S]*?desc:\s*["']Accédez aux opportunités/);
+    const match = code.match(/reflex_solar:\s*\{[\s\S]*?desc:\s*["']Profitez des prix bas/);
     expect(match).not.toBeNull();
   });
 });
@@ -146,8 +146,8 @@ describe('D · Grand-public subtitle', () => {
 describe('E · Action prefill scenario_label', () => {
   const code = readSrc('pages', 'PurchasePage.jsx');
 
-  it('reflex CTA prefills scenario_label=Budget Sécurisé', () => {
-    const match = code.match(/cta-create-action-reflex[\s\S]*?scenario_label:\s*'Budget Sécurisé'/);
+  it('reflex CTA prefills scenario_label=Tarif Heures Solaires', () => {
+    const match = code.match(/cta-create-action-reflex[\s\S]*?scenario_label:\s*'Tarif Heures Solaires'/);
     expect(match).not.toBeNull();
   });
 
@@ -161,12 +161,12 @@ describe('E · Action prefill scenario_label', () => {
   });
 
   it('top-list gain action has scenario_label', () => {
-    const match = code.match(/Budget Sécurisé — gain[\s\S]*?scenario_label:\s*'Budget Sécurisé'/);
+    const match = code.match(/Tarif Heures Solaires — gain[\s\S]*?scenario_label:\s*'Tarif Heures Solaires'/);
     expect(match).not.toBeNull();
   });
 
   it('campaign CTA includes scenario_label', () => {
-    const match = code.match(/cta-campaign-reflex[\s\S]*?scenario_label:\s*'Budget Sécurisé'/);
+    const match = code.match(/cta-campaign-reflex[\s\S]*?scenario_label:\s*'Tarif Heures Solaires'/);
     expect(match).not.toBeNull();
   });
 
