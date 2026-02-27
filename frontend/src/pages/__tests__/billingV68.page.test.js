@@ -1118,7 +1118,7 @@ describe('AE · Insight drawer breakdown guarantee', () => {
 
   it('getInsightDetail uses GET method', () => {
     const apiSrc = readFileSync(resolve(__dirname, '../../services/api.js'), 'utf-8');
-    expect(apiSrc).toMatch(/getInsightDetail.*api\.get\(/);
+    expect(apiSrc).toMatch(/getInsightDetail[\s\S]*?api\.get\(/);
   });
 
   it('get_insight_detail backend uses @router.get', () => {

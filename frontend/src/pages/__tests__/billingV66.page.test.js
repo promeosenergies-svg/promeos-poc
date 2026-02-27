@@ -51,8 +51,8 @@ describe('B. BillIntelPage.jsx — PDF upload + action CTA', () => {
     expect(code).toMatch(/importInvoicesPdf/);
   });
 
-  it('imports createActionFromBillingInsight', () => {
-    expect(code).toMatch(/createActionFromBillingInsight/);
+  it('imports CreateActionModal (V68: replaced createActionFromBillingInsight)', () => {
+    expect(code).toMatch(/import\s+CreateActionModal/);
   });
 
   it('has PDF import handler (handlePdfImport)', () => {
@@ -63,8 +63,8 @@ describe('B. BillIntelPage.jsx — PDF upload + action CTA', () => {
     expect(code).toMatch(/Cr.*er action/);
   });
 
-  it('has createdActions state (Set)', () => {
-    expect(code).toMatch(/createdActions/);
+  it('has actionMap state for tracking created actions (V68: renamed from createdActions)', () => {
+    expect(code).toMatch(/actionMap/);
   });
 
   it('has pdfSiteId state for site selection', () => {

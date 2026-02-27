@@ -1126,11 +1126,11 @@ describe('BI · Portfolio API skipSiteHeader', () => {
   });
 
   it('getPortfolioSummary passes skipSiteHeader: true', () => {
-    expect(apiCode).toMatch(/getPortfolioSummary.*skipSiteHeader:\s*true/);
+    expect(apiCode).toMatch(/getPortfolioSummary[\s\S]*?skipSiteHeader:\s*true/);
   });
 
   it('getPortfolioSites passes skipSiteHeader: true', () => {
-    expect(apiCode).toMatch(/getPortfolioSites.*skipSiteHeader:\s*true/);
+    expect(apiCode).toMatch(/getPortfolioSites[\s\S]*?skipSiteHeader:\s*true/);
   });
 });
 

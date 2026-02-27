@@ -107,6 +107,7 @@ class TestCoverageEngine:
         from services.billing_coverage import compute_coverage
 
         class FakeInv:
+            id = 1
             period_start = date(2024, 1, 1)
             period_end = date(2024, 1, 31)
             issue_date = None
@@ -124,6 +125,7 @@ class TestCoverageEngine:
         from services.billing_coverage import compute_coverage
 
         class FakeInv:
+            id = 2
             period_start = date(2024, 1, 1)
             period_end = date(2024, 1, 10)
             issue_date = None
@@ -148,6 +150,7 @@ class TestCoverageEngine:
         from services.billing_coverage import compute_coverage
 
         class AvoirInv:
+            id = 3
             period_start = date(2024, 2, 1)
             period_end = date(2024, 2, 29)
             issue_date = None
@@ -163,6 +166,7 @@ class TestCoverageEngine:
         from services.billing_coverage import compute_coverage
 
         class NoDateInv:
+            id = 4
             period_start = None
             period_end = None
             issue_date = date(2024, 5, 15)  # Milieu du mois
@@ -177,12 +181,14 @@ class TestCoverageEngine:
         from services.billing_coverage import compute_coverage
 
         class Inv1:
+            id = 5
             period_start = date(2024, 6, 1)
             period_end = date(2024, 6, 20)
             issue_date = None
             total_eur = 600.0
 
         class Inv2:
+            id = 6
             period_start = date(2024, 6, 10)  # Chevauchement avec Inv1
             period_end = date(2024, 6, 30)
             issue_date = None
@@ -197,6 +203,7 @@ class TestCoverageEngine:
         from services.billing_coverage import compute_coverage
 
         class LongInv:
+            id = 7
             period_start = date(2024, 1, 1)
             period_end = date(2024, 3, 31)
             issue_date = None

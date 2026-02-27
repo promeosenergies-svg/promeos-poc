@@ -257,16 +257,16 @@ class TestScenariosUseRefPrice:
         assert fixe["ref_price"] == 0.18
         assert fixe["ref_price_source"] == "default_elec"
 
-    def test_three_strategies_generated(self, db):
-        """Always generates exactly 3 strategies."""
+    def test_four_strategies_generated(self, db):
+        """Always generates exactly 4 strategies (V79: + reflex_solar)."""
         from services.purchase_service import compute_scenarios
         _, site = _create_org_site(db)
         db.commit()
 
         scenarios = compute_scenarios(db, site.id, volume_kwh_an=500_000)
-        assert len(scenarios) == 3
+        assert len(scenarios) == 4
         strategies = {s["strategy"] for s in scenarios}
-        assert strategies == {"fixe", "indexe", "spot"}
+        assert strategies == {"fixe", "indexe", "spot", "reflex_solar"}
 
     def test_risk_ordering(self, db):
         """Fixe < Indexe < Spot risk ordering."""
@@ -303,7 +303,7 @@ class TestEndToEndCompute:
         resp = client.post(f"/api/purchase/compute/{site.id}")
         assert resp.status_code == 200
         data = resp.json()
-        assert len(data["scenarios"]) == 3
+        assert len(data["scenarios"]) == 4  # V79: + reflex_solar
         fixe = next(s for s in data["scenarios"] if s["strategy"] == "fixe")
         # Fixe price should be based on 0.195, not default 0.18
         expected_fixe_price = round(0.195 * 1.05, 4)
