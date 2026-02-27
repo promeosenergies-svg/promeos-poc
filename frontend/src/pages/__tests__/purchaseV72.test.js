@@ -92,7 +92,7 @@ describe('B · Single CTA — no double Sauvegarder', () => {
   it('handleCompute saves assumptions before computing', () => {
     expect(code).toContain('await putPurchaseAssumptions(selectedSiteId, assumptions)');
     expect(code).toContain('await putPurchasePreferences(preferences)');
-    expect(code).toContain('await computePurchaseScenarios(selectedSiteId)');
+    expect(code).toContain('await computePurchaseScenarios(selectedSiteId,');
   });
 });
 

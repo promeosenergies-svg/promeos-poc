@@ -837,8 +837,8 @@ export const getPurchasePreferences = (params = {}) =>
   api.get('/purchase/preferences', { params }).then((r) => r.data);
 export const putPurchasePreferences = (data) =>
   api.put('/purchase/preferences', data).then((r) => r.data);
-export const computePurchaseScenarios = (siteId) =>
-  api.post(`/purchase/compute/${siteId}`).then((r) => r.data);
+export const computePurchaseScenarios = (siteId, { report_pct } = {}) =>
+  api.post(`/purchase/compute/${siteId}`, null, { params: report_pct != null ? { report_pct } : {} }).then((r) => r.data);
 export const getPurchaseResults = (siteId) =>
   api.get(`/purchase/results/${siteId}`).then((r) => r.data);
 export const acceptPurchaseResult = (resultId) =>

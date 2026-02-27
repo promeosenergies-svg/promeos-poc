@@ -55,8 +55,8 @@ describe('B · STRATEGY_WHY reflex_solar', () => {
     expect(match).not.toBeNull();
   });
 
-  it('reflex_solar WHY mentions blocs horaires solaires', () => {
-    expect(code).toContain('blocs horaires solaires');
+  it('reflex_solar WHY mentions heures solaires', () => {
+    expect(code).toContain('heures solaires');
   });
 
   it('reflex_solar WHY mentions report', () => {

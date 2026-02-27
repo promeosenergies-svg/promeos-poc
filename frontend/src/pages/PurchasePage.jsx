@@ -7,6 +7,7 @@
  * V72: + Scope lock, autosave, volume toggle, confidence badges.
  * V73: + Scope unlock fix, skipSiteHeader, tab deep-link, assistant CTA, renewals re-fetch.
  * V74: + ReFlex Solar card, blocs horaires badges, effort score, cross-brique CTAs.
+ * V75: + ReFlex report toggle/slider, portfolio ReFlex table, top-lists, campaign CTA.
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -35,7 +36,7 @@ import {
   seedWowHappy,
   seedWowDirty,
 } from '../services/api';
-import { toActionNew, toActionsList, toPurchaseAssistant, toConsoExplorer, toBillIntel } from '../services/routes';
+import { toActionNew, toActionsList, toPurchaseAssistant, toConsoExplorer, toBillIntel, toConsoDiag } from '../services/routes';
 import {
   ShoppingCart,
   Calculator,
@@ -66,6 +67,13 @@ import {
   Sun,
   BarChart3,
   FileSearch,
+  Sliders,
+  Award,
+  Flame,
+  ArrowUpDown,
+  Activity,
+  Filter,
+  Rocket,
 } from 'lucide-react';
 
 const STRATEGY_META = {
@@ -92,6 +100,7 @@ const STRATEGY_META = {
     icon: Sun,
     color: 'amber',
     desc: 'Blocs horaires solaires/pointe, optimisation par report',
+    dynamic: true,
   },
 };
 
@@ -107,6 +116,8 @@ const URGENCY_STYLES = {
   yellow: 'bg-yellow-100 text-yellow-700 border-yellow-200',
   gray: 'bg-gray-100 text-gray-600 border-gray-200',
 };
+
+function round2(n) { return Math.round(n * 10) / 10; }
 
 function riskLevel(score) {
   if (score <= 30) return 'low';
@@ -132,7 +143,7 @@ const STRATEGY_WHY = {
   fixe: 'Budget prévisible à 100 %. Aucune exposition marché. Idéal si la visibilité budgétaire prime.',
   indexe: "Suit un indice marché avec plafond. Potentiel d'économie ~5-10 % vs Fixe, mais légère exposition à la volatilité.",
   spot: "Prix temps réel sans marge intermédiaire. Économie potentielle maximale, mais forte volatilité. Réservé aux profils avertis.",
-  reflex_solar: "Exploite les blocs horaires solaires (été 13h-16h semaine, WE 10h-17h) pour capter les prix bas. Report optionnel de consommation HP vers solaire pour maximiser l'économie.",
+  reflex_solar: "• Prix bas captés sur les heures solaires été (13h-16h sem., 10h-17h WE) grâce à la surproduction PV.\n• Risque modéré (40/100) : moins volatile que Spot, plus d'économies que Fixe.\n• Report optionnel HP → solaire pour augmenter les gains (ajustable en mode Expert).",
 };
 
 export default function PurchasePage() {
@@ -198,6 +209,10 @@ export default function PurchasePage() {
 
   // V72: volume toggle (estimation vs manual)
   const [useEstimation, setUseEstimation] = useState(true);
+
+  // V75: RéFlex report toggle + slider
+  const [reportEnabled, setReportEnabled] = useState(false);
+  const [reportPct, setReportPct] = useState(0.15);
 
   // V72: autosave timer
   const autosaveTimer = useRef(null);
@@ -340,7 +355,9 @@ export default function PurchasePage() {
     try {
       await putPurchaseAssumptions(selectedSiteId, assumptions);
       await putPurchasePreferences(preferences);
-      const result = await computePurchaseScenarios(selectedSiteId);
+      const result = await computePurchaseScenarios(selectedSiteId, {
+        report_pct: reportEnabled ? reportPct : 0,
+      });
       setScenarios(result.scenarios || []);
       setAcceptedId(null);
     } catch {
@@ -630,6 +647,40 @@ export default function PurchasePage() {
                     <Leaf size={14} className="text-green-500" /> Offre verte
                   </label>
                 </div>
+                {/* V75: RéFlex report toggle + slider (Expert) */}
+                <div data-testid="reflex-report-controls" className="bg-amber-50 rounded-lg p-3 border border-amber-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-sm font-medium text-amber-800 flex items-center gap-1.5">
+                      <Sun size={14} /> Report HP → Solaire
+                      <span className="ml-1 px-1.5 py-0.5 text-[10px] font-bold bg-amber-200 text-amber-800 rounded">REFLEX</span>
+                    </label>
+                    <button
+                      data-testid="report-toggle"
+                      onClick={() => setReportEnabled((v) => !v)}
+                      className="flex items-center gap-1 text-xs text-amber-700 hover:text-amber-900 font-medium"
+                    >
+                      {reportEnabled ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
+                      {reportEnabled ? 'Avec report' : 'Sans report'}
+                    </button>
+                  </div>
+                  {reportEnabled && isExpert && (
+                    <div data-testid="report-slider" className="flex items-center gap-3">
+                      <Sliders size={12} className="text-amber-600 shrink-0" />
+                      <input
+                        type="range"
+                        min={0}
+                        max={30}
+                        value={Math.round(reportPct * 100)}
+                        onChange={(e) => setReportPct(Number(e.target.value) / 100)}
+                        className="flex-1 h-1.5 rounded-full accent-amber-500"
+                      />
+                      <span className="text-xs font-mono text-amber-700 w-10 text-right">{Math.round(reportPct * 100)}%</span>
+                    </div>
+                  )}
+                  {reportEnabled && !isExpert && (
+                    <p className="text-xs text-amber-600">Report fixé à 15%. Activez le mode Expert pour ajuster.</p>
+                  )}
+                </div>
                 <div>
                   {/* V72: CTA unique — plus de double "Sauvegarder" */}
                   <button
@@ -713,7 +764,12 @@ export default function PurchasePage() {
                               <Icon size={20} className={`text-${meta.color}-600`} />
                             </div>
                             <div>
-                              <h4 className="font-semibold text-gray-900">{meta.label}</h4>
+                              <h4 className="font-semibold text-gray-900 flex items-center gap-1.5">
+                                {meta.label}
+                                {meta.dynamic && (
+                                  <span data-testid="reflex-dynamic-badge" className="px-1.5 py-0.5 text-[10px] font-bold bg-amber-100 text-amber-700 rounded">DYNAMIQUE</span>
+                                )}
+                              </h4>
                               <p className="text-xs text-gray-500">{meta.desc}</p>
                             </div>
                           </div>
@@ -765,7 +821,7 @@ export default function PurchasePage() {
                           <summary className="flex items-center gap-1 text-xs text-blue-600 cursor-pointer hover:text-blue-800">
                             <HelpCircle size={12} /> Pourquoi cette stratégie ?
                           </summary>
-                          <p className="mt-1.5 text-xs text-gray-600 bg-gray-50 rounded p-2">{whyText}</p>
+                          <p className="mt-1.5 text-xs text-gray-600 bg-gray-50 rounded p-2 whitespace-pre-line">{whyText}</p>
                         </details>
 
                         {/* V74: ReFlex Solar — badges + blocs + cross-brique CTAs */}
@@ -809,7 +865,7 @@ export default function PurchasePage() {
                               </p>
                             )}
                             {/* Cross-brique CTAs */}
-                            <div data-testid="reflex-cross-ctas" className="flex items-center gap-2 pt-1">
+                            <div data-testid="reflex-cross-ctas" className="flex items-center gap-2 flex-wrap pt-1">
                               <button
                                 data-testid="cta-conso-explorer-reflex"
                                 onClick={() => navigate(toConsoExplorer({ site_id: selectedSiteId, days: 90 }))}
@@ -823,6 +879,19 @@ export default function PurchasePage() {
                                 className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800 underline"
                               >
                                 <FileSearch size={12} /> Contrôler facture
+                              </button>
+                              <button
+                                data-testid="cta-create-action-reflex"
+                                onClick={() => navigate(toActionNew({
+                                  source: 'purchase',
+                                  source_type: 'achat',
+                                  site_id: selectedSiteId,
+                                  title: `RéFlex Solar — ${Math.round(s.total_annual_eur).toLocaleString()} EUR/an`,
+                                  impact_eur: s.savings_vs_current_pct > 0 ? Math.round(s.total_annual_eur * s.savings_vs_current_pct / 100) : undefined,
+                                }))}
+                                className="flex items-center gap-1 text-xs text-green-600 hover:text-green-800 underline"
+                              >
+                                <Plus size={12} /> Créer action
                               </button>
                             </div>
                           </div>
@@ -1005,74 +1074,164 @@ export default function PurchasePage() {
                     </div>
                   </div>
                 </div>
-                {portfolioData.sites?.length > 0 && (
-                  <div className="bg-white rounded-lg shadow overflow-hidden">
-                    <table className="w-full text-sm">
-                      <thead className="bg-gray-50 text-gray-500 uppercase text-xs">
-                        <tr>
-                          <th className="px-4 py-3 text-left">Site</th>
-                          <th className="px-4 py-3 text-left">Strategie</th>
-                          <th className="px-4 py-3 text-right">Cout annuel</th>
-                          <th className="px-4 py-3 text-right">Risque</th>
-                          <th className="px-4 py-3 text-right">Economies</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {portfolioData.sites.map((site) => {
-                          const reco = site.scenarios?.find((s) => s.is_recommended);
-                          return (
-                            <tr key={site.site_id} className="hover:bg-gray-50">
-                              <td className="px-4 py-3 font-medium text-gray-900">
-                                Site {site.site_id}
-                              </td>
-                              <td className="px-4 py-3">
-                                {reco ? (
-                                  <span className="px-2 py-1 text-xs font-semibold bg-blue-50 text-blue-700 rounded capitalize">
-                                    {reco.strategy}
-                                  </span>
-                                ) : (
-                                  '—'
-                                )}
-                              </td>
-                              <td className="px-4 py-3 text-right">
-                                {reco
-                                  ? `${Math.round(reco.total_annual_eur).toLocaleString()} EUR`
-                                  : '—'}
-                              </td>
-                              <td className="px-4 py-3 text-right">
-                                {reco ? `${reco.risk_score}/100` : '—'}
-                              </td>
-                              <td className="px-4 py-3 text-right">
-                                {reco?.savings_vs_current_pct != null ? (
-                                  <span
-                                    className={
-                                      reco.savings_vs_current_pct > 0
-                                        ? 'text-green-600 font-medium'
-                                        : 'text-red-600'
-                                    }
-                                  >
-                                    {reco.savings_vs_current_pct > 0 ? '-' : '+'}
-                                    {Math.abs(reco.savings_vs_current_pct)}%
-                                  </span>
-                                ) : (
-                                  '—'
-                                )}
-                              </td>
+                {/* V75: RéFlex portfolio table with enhanced columns */}
+                {portfolioData.sites?.length > 0 && (() => {
+                  const enriched = portfolioData.sites.map((site) => {
+                    const reco = site.scenarios?.find((s) => s.is_recommended);
+                    const reflex = site.scenarios?.find((s) => s.strategy === 'reflex_solar');
+                    const fixe = site.scenarios?.find((s) => s.strategy === 'fixe');
+                    const baseline = fixe?.total_annual_eur || reco?.total_annual_eur || 0;
+                    const reflexCost = reflex?.total_annual_eur || 0;
+                    const gain = baseline > 0 ? round2((1 - reflexCost / baseline) * 100) : 0;
+                    return { ...site, reco, reflex, baseline, reflexCost, gain };
+                  });
+                  const topGains = [...enriched].sort((a, b) => b.gain - a.gain).slice(0, 3);
+                  const topRisk = [...enriched].filter((s) => s.reflex).sort((a, b) => (b.reflex?.risk_score || 0) - (a.reflex?.risk_score || 0)).slice(0, 3);
+                  const easiest = [...enriched].filter((s) => s.reflex?.effort_score != null).sort((a, b) => (a.reflex.effort_score || 0) - (b.reflex.effort_score || 0)).slice(0, 3);
+                  const campaignSites = enriched.filter((s) => s.gain > 0);
+                  const campaignGainTotal = campaignSites.reduce((sum, s) => sum + Math.round(s.baseline * s.gain / 100), 0);
+                  return (
+                    <>
+                      {/* V75: Top-lists */}
+                      <div data-testid="reflex-top-lists" className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                          <h4 className="text-xs font-bold text-green-800 uppercase flex items-center gap-1.5 mb-2">
+                            <Award size={14} /> Meilleurs gains RéFlex
+                          </h4>
+                          {topGains.map((s) => (
+                            <div key={s.site_id} className="flex items-center justify-between text-sm py-1">
+                              <span className="text-gray-700">{s.site_nom || `Site ${s.site_id}`}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-green-700">-{s.gain}%</span>
+                                <button onClick={() => navigate(toConsoExplorer({ site_id: s.site_id, days: 90 }))} className="text-blue-500 hover:text-blue-700" title="Explorer"><BarChart3 size={12} /></button>
+                                <button onClick={() => navigate(toConsoDiag({ site_id: s.site_id }))} className="text-purple-500 hover:text-purple-700" title="Diagnostic"><Activity size={12} /></button>
+                                <button onClick={() => navigate(toBillIntel({ site_id: s.site_id }))} className="text-indigo-500 hover:text-indigo-700" title="Facture"><FileSearch size={12} /></button>
+                                <button onClick={() => navigate(toActionNew({ source: 'purchase', source_type: 'achat', site_id: s.site_id, title: `RéFlex Solar — gain ${s.gain}%` }))} className="text-green-500 hover:text-green-700" title="Action"><Plus size={12} /></button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="bg-red-50 rounded-lg p-4 border border-red-200">
+                          <h4 className="text-xs font-bold text-red-800 uppercase flex items-center gap-1.5 mb-2">
+                            <Flame size={14} /> Risque pointe
+                          </h4>
+                          {topRisk.map((s) => (
+                            <div key={s.site_id} className="flex items-center justify-between text-sm py-1">
+                              <span className="text-gray-700">{s.site_nom || `Site ${s.site_id}`}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-red-700">{s.reflex?.risk_score}/100</span>
+                                <button onClick={() => navigate(toConsoExplorer({ site_id: s.site_id, days: 90 }))} className="text-blue-500 hover:text-blue-700" title="Explorer"><BarChart3 size={12} /></button>
+                                <button onClick={() => navigate(toConsoDiag({ site_id: s.site_id }))} className="text-purple-500 hover:text-purple-700" title="Diagnostic"><Activity size={12} /></button>
+                                <button onClick={() => navigate(toBillIntel({ site_id: s.site_id }))} className="text-indigo-500 hover:text-indigo-700" title="Facture"><FileSearch size={12} /></button>
+                                <button onClick={() => navigate(toActionNew({ source: 'purchase', source_type: 'achat', site_id: s.site_id, title: `Risque pointe — ${s.reflex?.risk_score}/100` }))} className="text-green-500 hover:text-green-700" title="Action"><Plus size={12} /></button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                          <h4 className="text-xs font-bold text-blue-800 uppercase flex items-center gap-1.5 mb-2">
+                            <ArrowUpDown size={14} /> Faciles à basculer
+                          </h4>
+                          {easiest.map((s) => (
+                            <div key={s.site_id} className="flex items-center justify-between text-sm py-1">
+                              <span className="text-gray-700">{s.site_nom || `Site ${s.site_id}`}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-blue-700">Effort {s.reflex?.effort_score}/100</span>
+                                <button onClick={() => navigate(toConsoExplorer({ site_id: s.site_id, days: 90 }))} className="text-blue-500 hover:text-blue-700" title="Explorer"><BarChart3 size={12} /></button>
+                                <button onClick={() => navigate(toConsoDiag({ site_id: s.site_id }))} className="text-purple-500 hover:text-purple-700" title="Diagnostic"><Activity size={12} /></button>
+                                <button onClick={() => navigate(toBillIntel({ site_id: s.site_id }))} className="text-indigo-500 hover:text-indigo-700" title="Facture"><FileSearch size={12} /></button>
+                                <button onClick={() => navigate(toActionNew({ source: 'purchase', source_type: 'achat', site_id: s.site_id, title: `Bascule RéFlex — effort ${s.reflex?.effort_score}/100` }))} className="text-green-500 hover:text-green-700" title="Action"><Plus size={12} /></button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      {/* V75: Enhanced portfolio table */}
+                      <div data-testid="reflex-portfolio-table" className="bg-white rounded-lg shadow overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead className="bg-gray-50 text-gray-500 uppercase text-xs">
+                            <tr>
+                              <th className="px-4 py-3 text-left">Site</th>
+                              <th className="px-4 py-3 text-right">Budget baseline</th>
+                              <th className="px-4 py-3 text-right">Budget RéFlex</th>
+                              <th className="px-4 py-3 text-right">Gain</th>
+                              <th className="px-4 py-3 text-right">Risque</th>
+                              <th className="px-4 py-3 text-right">Effort</th>
+                              <th className="px-4 py-3 text-center">Confiance</th>
                             </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-                <div className="flex justify-end mt-4">
-                  <button
-                    onClick={() => setShowPackRFP(true)}
-                    className="flex items-center gap-1.5 bg-white border border-blue-200 text-blue-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-50 transition"
-                  >
-                    <FileText size={14} /> Exporter Pack RFP (A4)
-                  </button>
-                </div>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100">
+                            {enriched.map((site) => (
+                              <tr key={site.site_id} className="hover:bg-gray-50">
+                                <td className="px-4 py-3 font-medium text-gray-900">
+                                  {site.site_nom || `Site ${site.site_id}`}
+                                </td>
+                                <td className="px-4 py-3 text-right text-gray-600">
+                                  {Math.round(site.baseline).toLocaleString()} EUR
+                                </td>
+                                <td className="px-4 py-3 text-right font-medium text-amber-700">
+                                  {site.reflex ? `${Math.round(site.reflexCost).toLocaleString()} EUR` : '—'}
+                                </td>
+                                <td className="px-4 py-3 text-right">
+                                  {site.gain > 0 ? (
+                                    <span className="text-green-600 font-medium">-{site.gain}%</span>
+                                  ) : site.gain < 0 ? (
+                                    <span className="text-red-600">+{Math.abs(site.gain)}%</span>
+                                  ) : '—'}
+                                </td>
+                                <td className="px-4 py-3 text-right">
+                                  {site.reflex ? `${site.reflex.risk_score}/100` : '—'}
+                                </td>
+                                <td className="px-4 py-3 text-right">
+                                  {site.reflex?.effort_score != null ? (
+                                    <span className={site.reflex.effort_score <= 30 ? 'text-green-600' : site.reflex.effort_score <= 60 ? 'text-yellow-600' : 'text-red-600'}>
+                                      {site.reflex.effort_score}/100
+                                    </span>
+                                  ) : '—'}
+                                </td>
+                                <td className="px-4 py-3 text-center">
+                                  {site.volume_kwh_an > 0 ? (
+                                    <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full bg-green-50 text-green-700">
+                                      <BadgeCheck size={10} /> Données
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full bg-yellow-50 text-yellow-700">
+                                      Estimé
+                                    </span>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      {/* V75: Campaign CTA + Export */}
+                      <div className="flex items-center justify-between mt-4">
+                        {campaignSites.length > 0 && (
+                          <button
+                            data-testid="cta-campaign-reflex"
+                            onClick={() => navigate(toActionNew({
+                              source: 'purchase',
+                              source_type: 'achat',
+                              site_ids: campaignSites.map((s) => s.site_id),
+                              title: `Campagne RéFlex Solar — ${campaignSites.length} sites, gain ${campaignGainTotal.toLocaleString()} EUR`,
+                              impact_eur: campaignGainTotal,
+                            }))}
+                            className="flex items-center gap-2 bg-amber-500 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-amber-600 transition"
+                          >
+                            <Rocket size={16} /> Lancer campagne RéFlex ({campaignSites.length} sites)
+                          </button>
+                        )}
+                        <button
+                          onClick={() => setShowPackRFP(true)}
+                          className="flex items-center gap-1.5 bg-white border border-blue-200 text-blue-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-50 transition"
+                        >
+                          <FileText size={14} /> Exporter Pack RFP (A4)
+                        </button>
+                      </div>
+                    </>
+                  );
+                })()}
               </>
             )}
             {!portfolioData && !portfolioLoading && (
