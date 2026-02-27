@@ -8,6 +8,7 @@
  * V73: + Scope unlock fix, skipSiteHeader, tab deep-link, assistant CTA, renewals re-fetch.
  * V74: + ReFlex Solar card, blocs horaires badges, effort score, cross-brique CTAs.
  * V75: + ReFlex report toggle/slider, portfolio ReFlex table, top-lists, campaign CTA.
+ * V76: + Rename ReFlex → Budget Securise (user-facing labels only), scenario_label in prefills.
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -96,10 +97,10 @@ const STRATEGY_META = {
     desc: 'Prix marche temps reel, economies max',
   },
   reflex_solar: {
-    label: 'ReFlex Solar',
+    label: 'Budget Sécurisé',
     icon: Sun,
     color: 'amber',
-    desc: 'Blocs horaires solaires/pointe, optimisation par report',
+    desc: "Accédez aux opportunités du marché sans mettre en danger votre budget.",
     dynamic: true,
   },
 };
@@ -652,7 +653,7 @@ export default function PurchasePage() {
                   <div className="flex items-center justify-between mb-2">
                     <label className="text-sm font-medium text-amber-800 flex items-center gap-1.5">
                       <Sun size={14} /> Report HP → Solaire
-                      <span className="ml-1 px-1.5 py-0.5 text-[10px] font-bold bg-amber-200 text-amber-800 rounded">REFLEX</span>
+                      <span className="ml-1 px-1.5 py-0.5 text-[10px] font-bold bg-amber-200 text-amber-800 rounded">BUDGET SÉCURISÉ</span>
                     </label>
                     <button
                       data-testid="report-toggle"
@@ -886,7 +887,8 @@ export default function PurchasePage() {
                                   source: 'purchase',
                                   source_type: 'achat',
                                   site_id: selectedSiteId,
-                                  title: `RéFlex Solar — ${Math.round(s.total_annual_eur).toLocaleString()} EUR/an`,
+                                  title: `Budget Sécurisé — ${Math.round(s.total_annual_eur).toLocaleString()} EUR/an`,
+                                  scenario_label: 'Budget Sécurisé',
                                   impact_eur: s.savings_vs_current_pct > 0 ? Math.round(s.total_annual_eur * s.savings_vs_current_pct / 100) : undefined,
                                 }))}
                                 className="flex items-center gap-1 text-xs text-green-600 hover:text-green-800 underline"
@@ -921,6 +923,7 @@ export default function PurchasePage() {
                               source_type: 'achat',
                               site_id: selectedSiteId,
                               title: `Achat énergie — ${meta.label} (${Math.round(s.total_annual_eur).toLocaleString()} EUR/an)`,
+                              scenario_label: meta.label,
                               impact_eur: s.savings_vs_current_pct > 0 ? Math.round(s.total_annual_eur * s.savings_vs_current_pct / 100) : undefined,
                             }))}
                             className="w-full mt-2 bg-white border border-green-300 text-green-700 py-2 rounded-lg text-sm font-medium hover:bg-green-50 transition flex items-center justify-center gap-2"
@@ -1096,7 +1099,7 @@ export default function PurchasePage() {
                       <div data-testid="reflex-top-lists" className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="bg-green-50 rounded-lg p-4 border border-green-200">
                           <h4 className="text-xs font-bold text-green-800 uppercase flex items-center gap-1.5 mb-2">
-                            <Award size={14} /> Meilleurs gains RéFlex
+                            <Award size={14} /> Meilleurs gains Budget Sécurisé
                           </h4>
                           {topGains.map((s) => (
                             <div key={s.site_id} className="flex items-center justify-between text-sm py-1">
@@ -1106,7 +1109,7 @@ export default function PurchasePage() {
                                 <button onClick={() => navigate(toConsoExplorer({ site_id: s.site_id, days: 90 }))} className="text-blue-500 hover:text-blue-700" title="Explorer"><BarChart3 size={12} /></button>
                                 <button onClick={() => navigate(toConsoDiag({ site_id: s.site_id }))} className="text-purple-500 hover:text-purple-700" title="Diagnostic"><Activity size={12} /></button>
                                 <button onClick={() => navigate(toBillIntel({ site_id: s.site_id }))} className="text-indigo-500 hover:text-indigo-700" title="Facture"><FileSearch size={12} /></button>
-                                <button onClick={() => navigate(toActionNew({ source: 'purchase', source_type: 'achat', site_id: s.site_id, title: `RéFlex Solar — gain ${s.gain}%` }))} className="text-green-500 hover:text-green-700" title="Action"><Plus size={12} /></button>
+                                <button onClick={() => navigate(toActionNew({ source: 'purchase', source_type: 'achat', site_id: s.site_id, title: `Budget Sécurisé — gain ${s.gain}%`, scenario_label: 'Budget Sécurisé' }))} className="text-green-500 hover:text-green-700" title="Action"><Plus size={12} /></button>
                               </div>
                             </div>
                           ))}
@@ -1123,7 +1126,7 @@ export default function PurchasePage() {
                                 <button onClick={() => navigate(toConsoExplorer({ site_id: s.site_id, days: 90 }))} className="text-blue-500 hover:text-blue-700" title="Explorer"><BarChart3 size={12} /></button>
                                 <button onClick={() => navigate(toConsoDiag({ site_id: s.site_id }))} className="text-purple-500 hover:text-purple-700" title="Diagnostic"><Activity size={12} /></button>
                                 <button onClick={() => navigate(toBillIntel({ site_id: s.site_id }))} className="text-indigo-500 hover:text-indigo-700" title="Facture"><FileSearch size={12} /></button>
-                                <button onClick={() => navigate(toActionNew({ source: 'purchase', source_type: 'achat', site_id: s.site_id, title: `Risque pointe — ${s.reflex?.risk_score}/100` }))} className="text-green-500 hover:text-green-700" title="Action"><Plus size={12} /></button>
+                                <button onClick={() => navigate(toActionNew({ source: 'purchase', source_type: 'achat', site_id: s.site_id, title: `Risque pointe — ${s.reflex?.risk_score}/100`, scenario_label: 'Budget Sécurisé' }))} className="text-green-500 hover:text-green-700" title="Action"><Plus size={12} /></button>
                               </div>
                             </div>
                           ))}
@@ -1140,7 +1143,7 @@ export default function PurchasePage() {
                                 <button onClick={() => navigate(toConsoExplorer({ site_id: s.site_id, days: 90 }))} className="text-blue-500 hover:text-blue-700" title="Explorer"><BarChart3 size={12} /></button>
                                 <button onClick={() => navigate(toConsoDiag({ site_id: s.site_id }))} className="text-purple-500 hover:text-purple-700" title="Diagnostic"><Activity size={12} /></button>
                                 <button onClick={() => navigate(toBillIntel({ site_id: s.site_id }))} className="text-indigo-500 hover:text-indigo-700" title="Facture"><FileSearch size={12} /></button>
-                                <button onClick={() => navigate(toActionNew({ source: 'purchase', source_type: 'achat', site_id: s.site_id, title: `Bascule RéFlex — effort ${s.reflex?.effort_score}/100` }))} className="text-green-500 hover:text-green-700" title="Action"><Plus size={12} /></button>
+                                <button onClick={() => navigate(toActionNew({ source: 'purchase', source_type: 'achat', site_id: s.site_id, title: `Bascule Budget Sécurisé — effort ${s.reflex?.effort_score}/100`, scenario_label: 'Budget Sécurisé' }))} className="text-green-500 hover:text-green-700" title="Action"><Plus size={12} /></button>
                               </div>
                             </div>
                           ))}
@@ -1153,7 +1156,7 @@ export default function PurchasePage() {
                             <tr>
                               <th className="px-4 py-3 text-left">Site</th>
                               <th className="px-4 py-3 text-right">Budget baseline</th>
-                              <th className="px-4 py-3 text-right">Budget RéFlex</th>
+                              <th className="px-4 py-3 text-right">Budget Sécurisé</th>
                               <th className="px-4 py-3 text-right">Gain</th>
                               <th className="px-4 py-3 text-right">Risque</th>
                               <th className="px-4 py-3 text-right">Effort</th>
@@ -1214,12 +1217,13 @@ export default function PurchasePage() {
                               source: 'purchase',
                               source_type: 'achat',
                               site_ids: campaignSites.map((s) => s.site_id),
-                              title: `Campagne RéFlex Solar — ${campaignSites.length} sites, gain ${campaignGainTotal.toLocaleString()} EUR`,
+                              title: `Campagne Budget Sécurisé — ${campaignSites.length} sites, gain ${campaignGainTotal.toLocaleString()} EUR`,
+                              scenario_label: 'Budget Sécurisé',
                               impact_eur: campaignGainTotal,
                             }))}
                             className="flex items-center gap-2 bg-amber-500 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-amber-600 transition"
                           >
-                            <Rocket size={16} /> Lancer campagne RéFlex ({campaignSites.length} sites)
+                            <Rocket size={16} /> Lancer campagne Budget Sécurisé ({campaignSites.length} sites)
                           </button>
                         )}
                         <button

@@ -134,8 +134,8 @@ describe('D · Portfolio RéFlex table', () => {
     expect(code).toContain('Budget baseline');
   });
 
-  it('table has Budget RéFlex column', () => {
-    expect(code).toContain('Budget RéFlex');
+  it('table has Budget Sécurisé column', () => {
+    expect(code).toContain('>Budget Sécurisé<');
   });
 
   it('table has Gain column', () => {
@@ -174,8 +174,8 @@ describe('E · Portfolio top-lists', () => {
     expect(code).toContain('data-testid="reflex-top-lists"');
   });
 
-  it('has "Meilleurs gains RéFlex" top-list', () => {
-    expect(code).toContain('Meilleurs gains RéFlex');
+  it('has "Meilleurs gains Budget Sécurisé" top-list', () => {
+    expect(code).toContain('Meilleurs gains Budget Sécurisé');
   });
 
   it('has "Risque pointe" top-list', () => {
@@ -216,8 +216,8 @@ describe('F · Campaign CTA', () => {
     expect(code).toContain('data-testid="cta-campaign-reflex"');
   });
 
-  it('campaign CTA text includes "Lancer campagne RéFlex"', () => {
-    expect(code).toContain('Lancer campagne RéFlex');
+  it('campaign CTA text includes "Lancer campagne Budget Sécurisé"', () => {
+    expect(code).toContain('Lancer campagne Budget Sécurisé');
   });
 
   it('campaign CTA passes site_ids array', () => {
@@ -290,7 +290,7 @@ describe('I · V74 backward compat preserved', () => {
     expect(code).toContain("label: 'Prix Fixe'");
     expect(code).toContain("label: 'Indexe'");
     expect(code).toContain("label: 'Spot'");
-    expect(code).toContain("label: 'ReFlex Solar'");
+    expect(code).toContain("label: 'Budget Sécurisé'");
   });
 
   it('still has reflex-solar-detail (V74)', () => {
