@@ -195,13 +195,16 @@ describe('HorairesAnomaliesTab — anomalies', () => {
 describe('HorairesAnomaliesTab — schedule', () => {
   const code = readSrc('pages', 'consumption', 'HorairesAnomaliesTab.jsx');
 
-  it('renders ScheduleDisplay', () => {
-    expect(code).toMatch(/ScheduleDisplay/);
+  it('renders ScheduleEditor (formerly ScheduleDisplay)', () => {
+    // ScheduleDisplay was merged into ScheduleEditor (inline editing with save)
+    expect(code).toMatch(/ScheduleEditor/);
   });
 
-  it('shows open/close blocks per day', () => {
-    expect(code).toMatch(/openDays/);
-    expect(code).toMatch(/isOpen/);
+  it('shows open/close blocks per day (in ScheduleEditor)', () => {
+    // openDays / isOpen live in ScheduleEditor.jsx, not HorairesAnomaliesTab.jsx
+    const editorCode = readSrc('pages', 'consumption', 'ScheduleEditor.jsx');
+    expect(editorCode).toMatch(/openDays/);
+    expect(editorCode).toMatch(/isOpen/);
   });
 
   it('renders WeekendActiveAlert', () => {
