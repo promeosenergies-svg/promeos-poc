@@ -3,6 +3,7 @@
  * Multi-site selector with search, chips, collections, and quick picks.
  */
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, X, Star, FolderOpen, ChevronDown, Save, Check } from 'lucide-react';
 import { getEmsCollections, createEmsCollection } from '../services/api';
 
@@ -19,21 +20,27 @@ function saveRecent(ids) {
 export default function SitePicker({ sites, selectedIds, onChange, maxSelection = 8 }) {
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
+  const [openCoords, setOpenCoords] = useState(null);
   const [collections, setCollections] = useState([]);
   const [showCollections, setShowCollections] = useState(false);
   const [saveName, setSaveName] = useState('');
   const [recent] = useState(loadRecent);
   const ref = useRef(null);
+  const triggerRef = useRef(null);
+  const dropRef = useRef(null);
 
   // Load collections on mount
   useEffect(() => {
     getEmsCollections().then(setCollections).catch(() => {});
   }, []);
 
-  // Close on outside click
+  // Close on outside click — check both trigger area and portaled dropdown
   useEffect(() => {
     function onClick(e) {
-      if (ref.current && !ref.current.contains(e.target)) {
+      if (
+        ref.current && !ref.current.contains(e.target) &&
+        !(dropRef.current && dropRef.current.contains(e.target))
+      ) {
         setOpen(false);
         setShowCollections(false);
       }
@@ -96,7 +103,14 @@ export default function SitePicker({ sites, selectedIds, onChange, maxSelection 
     <div ref={ref} className="relative">
       {/* Trigger button */}
       <button
-        onClick={() => setOpen(!open)}
+        ref={triggerRef}
+        onClick={() => {
+          if (!open && triggerRef.current) {
+            const r = triggerRef.current.getBoundingClientRect();
+            setOpenCoords({ top: r.bottom + 4, left: r.left });
+          }
+          setOpen(o => !o);
+        }}
         className="flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white
           hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition min-w-[180px]"
       >
@@ -123,9 +137,13 @@ export default function SitePicker({ sites, selectedIds, onChange, maxSelection 
         </div>
       )}
 
-      {/* Dropdown */}
-      {open && (
-        <div className="absolute z-50 top-full mt-1 left-0 w-80 bg-white border border-gray-200 rounded-xl shadow-xl max-h-[420px] flex flex-col">
+      {/* Dropdown — portaled to body to escape overflow/stacking-context clipping */}
+      {open && openCoords && createPortal(
+        <div
+          ref={dropRef}
+          className="fixed z-[120] w-80 bg-white border border-gray-200 rounded-xl shadow-xl max-h-[420px] flex flex-col"
+          style={{ top: openCoords.top, left: openCoords.left }}
+        >
           {/* Search */}
           <div className="p-2 border-b border-gray-100">
             <div className="relative">
@@ -239,7 +257,8 @@ export default function SitePicker({ sites, selectedIds, onChange, maxSelection 
               <Save size={14} />
             </button>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
