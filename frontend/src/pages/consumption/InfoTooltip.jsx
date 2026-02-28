@@ -12,6 +12,9 @@ import { useState } from 'react';
 export default function InfoTooltip({ text, position = 'top' }) {
   const [show, setShow] = useState(false);
 
+  // Guard: no text → render nothing (hooks must run unconditionally first)
+  if (!text) return null;
+
   return (
     <span className="relative inline-flex items-center">
       <button
