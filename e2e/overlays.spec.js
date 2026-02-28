@@ -1,14 +1,17 @@
 /**
- * PROMEOS — Overlay Layering Smoke Tests
+ * PROMEOS — Overlay Premium Smoke Tests (V2)
  * Validates that portal-based overlays are:
  *   - Rendered as direct children of <body> (createPortal)
- *   - Using position:fixed (not absolute — immune to stacking-context trapping)
- *   - Carrying z-index ≥ 120 (above sticky header z-40 and sidebar z-30)
- *   - Occupying visible screen space (not clipped behind other layers)
+ *   - Using position:fixed (immune to stacking-context trapping)
+ *   - z-index ≥ 120 (above sticky header z-40, sidebar z-30, StickyFilterBar z-20)
+ *   - Correctly positioned relative to their trigger
+ *   - Stable after scroll + viewport resize (useFloatingPortalPosition hook)
  *
  * Regressions guarded:
- *   1. ScopeSwitcher dropdown clipped on /consommations behind sticky+backdrop-blur
- *   2. InfoTip rendering empty black dots when content prop was undefined
+ *   1. ScopeSwitcher dropdown clipped behind sticky+backdrop-blur (backdrop-filter stacking context)
+ *   2. InfoTip rendering empty black dots (content prop undefined)
+ *   3. Dropdowns drifting from trigger after scroll or viewport resize
+ *   4. TooltipPortal z-[9999] — now standardized to z-[120]
  *
  * Requires: backend on :8000, frontend on :5173, demo data seeded.
  */
@@ -25,138 +28,157 @@ async function login(page) {
   await page.fill('input[type="email"]', 'sophie@atlas.demo');
   await page.fill('input[type="password"]', 'demo2024');
   await page.click('button[type="submit"]');
-  await page.waitForURL((url) => !url.pathname.includes('/login'), {
-    timeout: 10_000,
-  });
+  await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 10_000 });
+}
+
+/** Assert the overlay element is portaled to <body>, position:fixed, z >= 120. */
+async function assertPremiumPortal(el, label = 'overlay') {
+  const parentTag = await el.evaluate((node) => node.parentElement?.tagName ?? 'UNKNOWN');
+  expect(parentTag, `${label}: must be portaled to <body>`).toBe('BODY');
+
+  const position = await el.evaluate((node) => window.getComputedStyle(node).position);
+  expect(position, `${label}: must use position:fixed`).toBe('fixed');
+
+  const zIndex = await el.evaluate((node) => parseInt(window.getComputedStyle(node).zIndex, 10));
+  expect(zIndex, `${label}: z-index must be ≥ 120`).toBeGreaterThanOrEqual(120);
+}
+
+/** Assert panel bounding box is near the trigger (within tolerance px). */
+async function assertAlignedNear(trigger, panel, label = 'panel', tolerance = 40) {
+  const tBox = await trigger.boundingBox();
+  const pBox = await panel.boundingBox();
+  expect(tBox, `${label}: trigger must be visible`).not.toBeNull();
+  expect(pBox, `${label}: panel must have a bounding box`).not.toBeNull();
+
+  // Panel Y should be below the trigger bottom (within tolerance)
+  expect(pBox.y, `${label}: panel top should be near trigger bottom`)
+    .toBeGreaterThanOrEqual(tBox.y + tBox.height - tolerance);
+  expect(pBox.y, `${label}: panel should not be far below trigger`)
+    .toBeLessThan(tBox.y + tBox.height + tolerance + 200); // allow for panel height
+
+  // Panel X should be near the trigger X
+  expect(Math.abs(pBox.x - tBox.x), `${label}: panel X should be near trigger X`)
+    .toBeLessThan(tolerance);
 }
 
 test.beforeAll(() => {
   fs.mkdirSync(SCREENSHOTS, { recursive: true });
 });
 
-test.describe('Overlay layering — portal + z-index regression', () => {
+test.describe('Overlay premium — portal + z-index + scroll/resize regression', () => {
 
-  // ── Test 1: ScopeSwitcher dropdown ──────────────────────────────────────────
-  test(
-    'Consommations explorer: ScopeSwitcher dropdown is portaled, position:fixed, z≥120',
-    async ({ page }) => {
-      await login(page);
-      await page.goto('/consommations');
+  // ── Test 1: ScopeSwitcher dropdown — portal + fixed + z + scroll + resize ──
+  test('ScopeSwitcher: portaled, fixed, z≥120, stable on scroll and resize', async ({ page }) => {
+    await login(page);
+    await page.goto('/consommations');
+    await page.waitForTimeout(2000);
 
-      // Wait for the page to stabilize (data fetch + React hydration)
-      await page.waitForTimeout(2000);
+    const trigger = page.locator('[data-testid="scope-switcher-trigger"]');
+    await expect(trigger).toBeVisible({ timeout: 8_000 });
 
-      // Locate the ScopeSwitcher trigger (the scope pill in the header)
-      const trigger = page.locator('button[aria-haspopup="listbox"]');
-      await expect(trigger).toBeVisible({ timeout: 8_000 });
+    // Open dropdown
+    await trigger.click();
+    const panel = page.locator('[data-testid="scope-switcher-panel"]');
+    await expect(panel).toBeVisible({ timeout: 5_000 });
 
-      // Open the dropdown
-      await trigger.click();
+    // ── Premium assertions ───────────────────────────────────────────────────
+    await assertPremiumPortal(panel, 'ScopeSwitcher panel');
 
-      // Dropdown must appear
-      const listbox = page.locator('[role="listbox"]');
-      await expect(listbox).toBeVisible({ timeout: 5_000 });
+    // Bounding box: non-zero, visible
+    const box = await panel.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box.width).toBeGreaterThan(100);
+    expect(box.height).toBeGreaterThan(20);
 
-      // ── Portal assertion: must be a direct child of <body> ─────────────────
-      const parentTag = await listbox.evaluate((el) =>
-        el.parentElement?.tagName ?? 'UNKNOWN',
-      );
-      expect(parentTag, 'Listbox must be portaled to <body>').toBe('BODY');
+    // Content visible
+    await expect(panel.locator('text=Organisation')).toBeVisible();
 
-      // ── position:fixed — immune to ancestor stacking-context trapping ──────
-      const position = await listbox.evaluate((el) =>
-        window.getComputedStyle(el).position,
-      );
-      expect(position, 'Listbox must use position:fixed').toBe('fixed');
+    // Alignment: panel is near trigger
+    await assertAlignedNear(trigger, panel, 'ScopeSwitcher initial');
 
-      // ── z-index ≥ 120 — above sticky header (z-40) and sidebar (z-30) ──────
-      const zIndex = await listbox.evaluate((el) =>
-        parseInt(window.getComputedStyle(el).zIndex, 10),
-      );
-      expect(zIndex, 'Listbox z-index must be ≥ 120').toBeGreaterThanOrEqual(120);
+    await page.screenshot({ path: path.join(SCREENSHOTS, 'scope-switcher-open.png') });
 
-      // ── Visible bounding box (not zero-size, not off-screen) ───────────────
-      const box = await listbox.boundingBox();
-      expect(box, 'Listbox must have a non-null bounding box').not.toBeNull();
-      expect(box.width, 'Listbox must have visible width').toBeGreaterThan(100);
-      expect(box.height, 'Listbox must have visible height').toBeGreaterThan(20);
+    // ── Scroll 400px — panel must follow trigger (trigger is in sticky header) ─
+    await page.evaluate(() => window.scrollBy(0, 400));
+    await page.waitForTimeout(200); // rAF + visualViewport settle
 
-      // ── Contains expected content ───────────────────────────────────────────
-      await expect(listbox.locator('text=Organisation')).toBeVisible();
+    await expect(panel).toBeVisible({ timeout: 3_000 });
+    await assertAlignedNear(trigger, panel, 'ScopeSwitcher after scroll');
 
-      // Regression screenshot — dropdown visible above page content
-      await page.screenshot({
-        path: path.join(SCREENSHOTS, 'scope-switcher-open.png'),
-        fullPage: false,
-      });
+    await page.screenshot({ path: path.join(SCREENSHOTS, 'scope-switcher-after-scroll.png') });
 
-      await page.keyboard.press('Escape');
-    },
-  );
+    // ── Resize viewport — panel must clamp within new bounds ─────────────────
+    await page.setViewportSize({ width: 900, height: 600 });
+    await page.waitForTimeout(200);
 
-  // ── Test 2: InfoTip on Vue exécutive ────────────────────────────────────────
-  test(
-    'Vue exécutive: InfoTip icons show non-empty tooltip, no ghost bubbles',
-    async ({ page }) => {
-      await login(page);
-      await page.goto('/cockpit');
+    await expect(panel).toBeVisible({ timeout: 3_000 });
+    const panelBox = await panel.boundingBox();
+    expect(panelBox.x + panelBox.width).toBeLessThan(900 + 20); // within viewport (+ clamp margin)
 
-      // Wait for ImpactDecisionPanel to finish loading (billing summary fetch)
-      await page.waitForSelector('[data-testid="impact-decision-panel"]', {
-        timeout: 15_000,
-      });
-      // Extra wait for async billing data
-      await page.waitForTimeout(1500);
+    // ESC closes
+    await page.keyboard.press('Escape');
+    await expect(panel).not.toBeVisible({ timeout: 2_000 });
+  });
 
-      // ── No ghost tooltip rendered before any hover ──────────────────────────
-      await expect(
-        page.locator('[role="tooltip"]'),
-        'No tooltip should be visible without hover',
-      ).toHaveCount(0);
+  // ── Test 2: InfoTip — portal + fixed + z + non-empty text ──────────────────
+  test('InfoTip: portaled tooltip, z≥120, never empty', async ({ page }) => {
+    await login(page);
+    await page.goto('/cockpit');
 
-      // ── At least one InfoTip icon exists on the executive view ─────────────
-      const infotips = page.locator('button[aria-label="Aide contextuelle"]');
-      const count = await infotips.count();
-      expect(count, 'At least one InfoTip button must be rendered').toBeGreaterThan(0);
-      await expect(infotips.first()).toBeVisible({ timeout: 5_000 });
+    await page.waitForSelector('[data-testid="impact-decision-panel"]', { timeout: 15_000 });
+    await page.waitForTimeout(1500);
 
-      // ── Hover → tooltip appears with non-empty text content ─────────────────
-      await infotips.first().hover();
-      const tooltip = page.locator('[role="tooltip"]');
-      await expect(tooltip, 'Tooltip must appear on hover').toBeVisible({
-        timeout: 3_000,
-      });
+    // No ghost tooltip before hover
+    await expect(page.locator('[role="tooltip"]')).toHaveCount(0);
 
-      const text = (await tooltip.textContent()).trim();
-      expect(
-        text.length,
-        'Tooltip must contain meaningful text (no empty bubble)',
-      ).toBeGreaterThan(5);
+    // At least one InfoTip button
+    const infotips = page.locator('[data-testid="infotip"]');
+    expect(await infotips.count()).toBeGreaterThan(0);
+    await expect(infotips.first()).toBeVisible({ timeout: 5_000 });
 
-      // ── Portal assertion: tooltip must be in <body> ─────────────────────────
-      const parentTag = await tooltip.evaluate((el) =>
-        el.parentElement?.tagName ?? 'UNKNOWN',
-      );
-      expect(parentTag, 'Tooltip must be portaled to <body>').toBe('BODY');
+    // Hover → tooltip appears with non-empty text
+    await infotips.first().hover();
+    const tooltip = page.locator('[role="tooltip"]');
+    await expect(tooltip).toBeVisible({ timeout: 3_000 });
 
-      // ── position:fixed ──────────────────────────────────────────────────────
-      const position = await tooltip.evaluate((el) =>
-        window.getComputedStyle(el).position,
-      );
-      expect(position, 'Tooltip must use position:fixed').toBe('fixed');
+    const text = (await tooltip.textContent() ?? '').trim();
+    expect(text.length, 'Tooltip must contain meaningful text (no empty bubble)').toBeGreaterThan(5);
 
-      // Regression screenshot — tooltip visible above executive content
-      await page.screenshot({
-        path: path.join(SCREENSHOTS, 'infotip-tooltip-visible.png'),
-        fullPage: false,
-      });
+    // Premium assertions
+    await assertPremiumPortal(tooltip, 'InfoTip tooltip');
 
-      // ── Move away — tooltip must disappear (no lingering phantom ────────────
-      await page.mouse.move(0, 0);
-      await expect(
-        page.locator('[role="tooltip"]'),
-        'Tooltip must disappear after mouse leaves',
-      ).toHaveCount(0, { timeout: 2_000 });
-    },
-  );
+    await page.screenshot({ path: path.join(SCREENSHOTS, 'infotip-tooltip-visible.png') });
+
+    // Mouse away → tooltip disappears
+    await page.mouse.move(0, 0);
+    await expect(page.locator('[role="tooltip"]')).toHaveCount(0, { timeout: 2_000 });
+  });
+
+  // ── Test 3: StickyFilterBar dropdowns ───────────────────────────────────────
+  test('StickyFilterBar: presets dropdown portaled, fixed, z≥120', async ({ page }) => {
+    await login(page);
+
+    // Navigate to a consumption page with presets enabled
+    await page.goto('/consommations');
+    await page.waitForTimeout(3000);
+
+    // Locate presets trigger (only visible when savedPresets.length > 0)
+    const presetsTrigger = page.locator('[data-testid="sticky-presets-trigger"]');
+    const presetsVisible = await presetsTrigger.isVisible().catch(() => false);
+
+    if (!presetsVisible) {
+      test.skip(true, 'No saved presets available in this demo session — skip presets test');
+      return;
+    }
+
+    await presetsTrigger.click();
+    const presetsPanel = page.locator('[data-testid="sticky-presets-panel"]');
+    await expect(presetsPanel).toBeVisible({ timeout: 5_000 });
+
+    await assertPremiumPortal(presetsPanel, 'Presets panel');
+    await assertAlignedNear(presetsTrigger, presetsPanel, 'Presets panel');
+
+    await page.screenshot({ path: path.join(SCREENSHOTS, 'presets-panel-open.png') });
+  });
+
 });

@@ -9,6 +9,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Building2, ChevronDown, X, Briefcase, MapPin } from 'lucide-react';
 import { useScope } from '../contexts/ScopeContext';
+import useFloatingPortalPosition from '../hooks/useFloatingPortalPosition';
 
 export default function ScopeSwitcher() {
   const {
@@ -16,11 +17,17 @@ export default function ScopeSwitcher() {
     setOrg, setPortefeuille, setSite, resetScope,
   } = useScope();
   const [open, setOpen] = useState(false);
-  const [dropCoords, setDropCoords] = useState(null);
   const triggerRef = useRef(null);
   const dropRef    = useRef(null);
 
-  // Close on outside click — checks both the trigger pill and the portal dropdown
+  // Premium positioning: scroll/resize/zoom auto-reposition
+  const { style: dropStyle } = useFloatingPortalPosition({
+    isOpen: open,
+    triggerRef,
+    portalRef: dropRef,
+  });
+
+  // Close on outside click (cross-portal) + ESC
   useEffect(() => {
     if (!open) return;
     function onClickOutside(e) {
@@ -28,17 +35,18 @@ export default function ScopeSwitcher() {
       if (dropRef.current?.contains(e.target)) return;
       setOpen(false);
     }
+    function onKeyDown(e) {
+      if (e.key === 'Escape') setOpen(false);
+    }
     document.addEventListener('mousedown', onClickOutside);
-    return () => document.removeEventListener('mousedown', onClickOutside);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onClickOutside);
+      document.removeEventListener('keydown', onKeyDown);
+    };
   }, [open]);
 
-  const toggleOpen = useCallback(() => {
-    if (!open && triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      setDropCoords({ top: rect.bottom + 4, left: rect.left });
-    }
-    setOpen((prev) => !prev);
-  }, [open]);
+  const toggleOpen = useCallback(() => setOpen((prev) => !prev), []);
 
   const hasSites = orgSites.length > 0;
 
@@ -50,6 +58,7 @@ export default function ScopeSwitcher() {
         onClick={toggleOpen}
         aria-haspopup="listbox"
         aria-expanded={open}
+        data-testid="scope-switcher-trigger"
         className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-full text-sm text-blue-700 hover:bg-blue-100 transition"
       >
         <Building2 size={14} />
@@ -75,13 +84,14 @@ export default function ScopeSwitcher() {
         </button>
       )}
 
-      {/* Dropdown — portal to document.body, position:fixed, z-[120] */}
-      {open && dropCoords && createPortal(
+      {/* Dropdown — portal to document.body, position:fixed, z-[120], auto-repositions on scroll/resize */}
+      {open && createPortal(
         <div
           ref={dropRef}
           role="listbox"
+          data-testid="scope-switcher-panel"
           className="fixed w-72 bg-white rounded-lg shadow-xl border border-gray-200 py-2 max-h-[80vh] overflow-y-auto z-[120]"
-          style={{ top: dropCoords.top, left: dropCoords.left }}
+          style={dropStyle}
         >
           {/* Org selector */}
           <div className="px-3 py-1.5">

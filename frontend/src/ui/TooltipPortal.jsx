@@ -112,7 +112,7 @@ export default function TooltipPortal({
       {visible && coords && createPortal(
         <span
           id={tooltipId.current}
-          className="fixed z-[9999] px-2 py-1 text-xs text-white bg-gray-900 rounded shadow-lg whitespace-nowrap pointer-events-none transition-opacity duration-100 motion-reduce:transition-none"
+          className="fixed z-[120] px-2 py-1 text-xs text-white bg-gray-900 rounded shadow-lg whitespace-nowrap pointer-events-none transition-opacity duration-100 motion-reduce:transition-none"
           style={{ top: coords.top, left: coords.left, transform: coords.transform }}
           role="tooltip"
         >
