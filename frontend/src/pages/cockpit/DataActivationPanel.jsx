@@ -73,7 +73,7 @@ export default function DataActivationPanel({ kpis }) {
           <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
             Activation des données
           </h4>
-          <Tooltip content="Couverture des 5 briques de donnees necessaires aux recommandations">
+          <Tooltip text="Couverture des 5 briques de données nécessaires aux recommandations">
             <Info size={12} className="text-gray-400 cursor-help" />
           </Tooltip>
         </div>

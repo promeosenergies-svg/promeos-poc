@@ -51,7 +51,7 @@ function ImpactKpiTile({ icon: Icon, label, value, available, tooltip, accent, o
             </span>
           )}
           {tooltip && (
-            <Tooltip content={tooltip}>
+            <Tooltip text={tooltip}>
               <Info size={12} className="text-gray-400 cursor-help" />
             </Tooltip>
           )}
@@ -168,7 +168,7 @@ export default function ImpactDecisionPanel({ kpis }) {
         <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
           Impact & Décision
         </h3>
-        <Tooltip content="Calculs V1 — règles déterministes basées sur vos données réelles">
+        <Tooltip text="Calculs V1 — règles déterministes basées sur vos données réelles">
           <span className="text-[10px] text-gray-400 border border-gray-200 rounded px-1.5 py-0.5 cursor-help">
             V1
           </span>
@@ -222,7 +222,7 @@ export default function ImpactDecisionPanel({ kpis }) {
           <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
             Achats d&apos;energie
           </h4>
-          <Tooltip content="Signaux d\u00e9riv\u00e9s des contrats renseign\u00e9s \u2014 heuristique V1">
+          <Tooltip text="Signaux dérivés des contrats renseignés — heuristique V1">
             <Info size={12} className="text-gray-400 cursor-help" />
           </Tooltip>
         </div>
