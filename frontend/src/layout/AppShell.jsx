@@ -2,7 +2,8 @@
  * PROMEOS — AppShell Layout (Rail + Panel)
  * Sidebar (Rail+Panel) + Header + Content with module-tinted header bands.
  */
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Search, LogOut, ChevronDown, Building2, Command } from 'lucide-react';
 import Sidebar from './Sidebar';
@@ -35,15 +36,29 @@ const ROLE_LABELS = {
 function UserMenu() {
   const { user, org, role, orgs, logout, switchOrg, isAuthenticated } = useAuth();
   const [open, setOpen] = useState(false);
-  const ref = useRef(null);
+  const [dropCoords, setDropCoords] = useState(null);
+  const triggerRef = useRef(null);
+  const dropRef    = useRef(null);
 
+  // Close on outside click — checks both trigger and portal dropdown
   useEffect(() => {
+    if (!open) return;
     function onClickOutside(e) {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+      if (triggerRef.current?.contains(e.target)) return;
+      if (dropRef.current?.contains(e.target)) return;
+      setOpen(false);
     }
     document.addEventListener('mousedown', onClickOutside);
     return () => document.removeEventListener('mousedown', onClickOutside);
-  }, []);
+  }, [open]);
+
+  const toggleOpen = useCallback(() => {
+    if (!open && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setDropCoords({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    }
+    setOpen((prev) => !prev);
+  }, [open]);
 
   if (!isAuthenticated) {
     return (
@@ -56,9 +71,12 @@ function UserMenu() {
   const initials = `${(user.prenom || '')[0] || ''}${(user.nom || '')[0] || ''}`.toUpperCase() || 'U';
 
   return (
-    <div className="relative" ref={ref}>
+    <div>
       <button
-        onClick={() => setOpen(!open)}
+        ref={triggerRef}
+        onClick={toggleOpen}
+        aria-haspopup="menu"
+        aria-expanded={open}
         className="flex items-center gap-2 hover:bg-gray-50 rounded-lg px-2 py-1 transition"
       >
         <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">
@@ -71,8 +89,14 @@ function UserMenu() {
         <ChevronDown size={14} className="text-gray-400" />
       </button>
 
-      {open && (
-        <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+      {/* Menu — portal to document.body, position:fixed right-aligned, z-[120] */}
+      {open && dropCoords && createPortal(
+        <div
+          ref={dropRef}
+          role="menu"
+          className="fixed w-64 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-[120]"
+          style={{ top: dropCoords.top, right: dropCoords.right }}
+        >
           <div className="px-4 py-2 border-b border-gray-100">
             <p className="text-sm font-medium text-gray-800">{user.prenom} {user.nom}</p>
             <p className="text-xs text-gray-400">{user.email}</p>
@@ -91,7 +115,7 @@ function UserMenu() {
 
           {orgs && orgs.length > 1 && (
             <div className="px-4 py-2 border-b border-gray-100">
-              <p className="text-[10px] uppercase text-gray-400 font-semibold tracking-wide mb-1">Changer d'org</p>
+              <p className="text-[10px] uppercase text-gray-400 font-semibold tracking-wide mb-1">Changer d&apos;org</p>
               {orgs.filter(o => o.id !== org?.id).map(o => (
                 <button
                   key={o.id}
@@ -111,7 +135,8 @@ function UserMenu() {
             <LogOut size={14} />
             Deconnexion
           </button>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
@@ -153,7 +178,7 @@ export default function AppShell() {
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header — glass surface */}
-        <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/70 px-6 py-3 flex items-center justify-between sticky top-0 z-10">
+        <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/70 px-6 py-3 flex items-center justify-between sticky top-0 z-40">
           <div className="flex items-center gap-4">
             <Breadcrumb />
             <div className="relative">
