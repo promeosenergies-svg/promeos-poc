@@ -88,10 +88,10 @@ export default function Sidebar() {
 
   return (
     // ── Z-index layer map ─────────────────────────────────────────────────────
-    // z-10     App header  (AppShell.jsx — sticky top-0 z-10 backdrop-blur-md)
-    // z-30     Sidebar aside — explicit stacking context, above header
-    // z-50     Modals, UserMenu, ScopeSwitcher dropdowns
-    // z-[9999] TooltipPortal  (document.body — always topmost)
+    // z-30     Sidebar aside   (sticky, left column)
+    // z-40     App header      (AppShell.jsx — sticky top-0 backdrop-blur-md)
+    // z-[120]  Overlays        (dropdowns/popovers/tooltips — portal to body)
+    // z-[200]  Modals          (full-screen overlays — portal to body)
     // ─────────────────────────────────────────────────────────────────────────
     <aside className="flex h-screen sticky top-0 z-30 shrink-0" aria-label="Navigation principale">
       <NavRail

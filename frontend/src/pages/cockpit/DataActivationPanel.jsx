@@ -8,9 +8,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Database, CheckCircle2, Circle, ArrowRight, Loader2, Info,
+  Database, CheckCircle2, Circle, ArrowRight, Loader2,
 } from 'lucide-react';
-import { Card, CardBody, Tooltip, Button, Progress } from '../../ui';
+import { Card, CardBody, InfoTip, Button, Progress } from '../../ui';
+import { TOOLTIPS } from '../../ui/tooltips';
 import { getBillingSummary, getPurchaseRenewals, patrimoineContracts } from '../../services/api';
 import { normalizePurchaseSignals } from '../../models/purchaseSignalsContract';
 import { buildActivationChecklist } from '../../models/dataActivationModel';
@@ -73,9 +74,7 @@ export default function DataActivationPanel({ kpis }) {
           <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
             Activation des données
           </h4>
-          <Tooltip content="Couverture des 5 briques de donnees necessaires aux recommandations">
-            <Info size={12} className="text-gray-400 cursor-help" />
-          </Tooltip>
+          <InfoTip content={TOOLTIPS.executive.activationDonnees} />
         </div>
         <span className="text-xs font-medium text-gray-500">
           {activation.activatedCount}/{activation.totalDimensions} briques

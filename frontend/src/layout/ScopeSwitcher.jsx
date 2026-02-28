@@ -1,8 +1,12 @@
 /**
  * PROMEOS - Scope Switcher
  * Dropdown selectors: Org → Portefeuille → Site, plus a "scope pill" showing current scope.
+ *
+ * Dropdown rendered via createPortal (document.body, position:fixed, z-[120])
+ * to escape the header's backdrop-blur-md stacking context.
  */
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Building2, ChevronDown, X, Briefcase, MapPin } from 'lucide-react';
 import { useScope } from '../contexts/ScopeContext';
 
@@ -12,21 +16,40 @@ export default function ScopeSwitcher() {
     setOrg, setPortefeuille, setSite, resetScope,
   } = useScope();
   const [open, setOpen] = useState(false);
-  const ref = useRef(null);
+  const [dropCoords, setDropCoords] = useState(null);
+  const triggerRef = useRef(null);
+  const dropRef    = useRef(null);
 
+  // Close on outside click — checks both the trigger pill and the portal dropdown
   useEffect(() => {
-    function handleClick(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, []);
+    if (!open) return;
+    function onClickOutside(e) {
+      if (triggerRef.current?.contains(e.target)) return;
+      if (dropRef.current?.contains(e.target)) return;
+      setOpen(false);
+    }
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, [open]);
+
+  const toggleOpen = useCallback(() => {
+    if (!open && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setDropCoords({ top: rect.bottom + 4, left: rect.left });
+    }
+    setOpen((prev) => !prev);
+  }, [open]);
 
   const hasSites = orgSites.length > 0;
 
   return (
-    <div className="flex items-center gap-2" ref={ref}>
-      {/* Scope pill */}
+    <div className="flex items-center gap-2">
+      {/* Scope pill trigger */}
       <button
-        onClick={() => setOpen(!open)}
+        ref={triggerRef}
+        onClick={toggleOpen}
+        aria-haspopup="listbox"
+        aria-expanded={open}
         className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-full text-sm text-blue-700 hover:bg-blue-100 transition"
       >
         <Building2 size={14} />
@@ -52,9 +75,14 @@ export default function ScopeSwitcher() {
         </button>
       )}
 
-      {/* Dropdown */}
-      {open && (
-        <div className="absolute top-full left-0 mt-1 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-50 py-2 max-h-[80vh] overflow-y-auto">
+      {/* Dropdown — portal to document.body, position:fixed, z-[120] */}
+      {open && dropCoords && createPortal(
+        <div
+          ref={dropRef}
+          role="listbox"
+          className="fixed w-72 bg-white rounded-lg shadow-xl border border-gray-200 py-2 max-h-[80vh] overflow-y-auto z-[120]"
+          style={{ top: dropCoords.top, left: dropCoords.left }}
+        >
           {/* Org selector */}
           <div className="px-3 py-1.5">
             <p className="text-xs font-semibold text-gray-400 uppercase mb-1">Organisation</p>
@@ -127,7 +155,8 @@ export default function ScopeSwitcher() {
               </div>
             </>
           )}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

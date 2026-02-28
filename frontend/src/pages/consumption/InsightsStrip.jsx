@@ -2,12 +2,14 @@
  * PROMEOS — InsightsStrip
  * Horizontal scrollable strip of auto-generated insight badges.
  * Displayed below the tab bar, above the active panel.
+ * V2: detail popup portaled to body (escapes sticky/overflow clipping).
  *
  * Props:
  *   insights  {object[]}  array of { id, label, severity, detail }
  *                         severity: 'info' | 'warn' | 'crit'
  */
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Info, AlertTriangle, AlertOctagon, X } from 'lucide-react';
 
 const SEVERITY_STYLES = {
@@ -33,14 +35,27 @@ const SEVERITY_STYLES = {
 
 function InsightBadge({ insight, onDismiss }) {
   const [expanded, setExpanded] = useState(false);
+  const [coords, setCoords] = useState(null);
+  const badgeRef = useRef(null);
   const style = SEVERITY_STYLES[insight.severity] || SEVERITY_STYLES.info;
   const Icon = style.Icon;
 
+  const handleToggle = () => {
+    if (!expanded && badgeRef.current) {
+      const r = badgeRef.current.getBoundingClientRect();
+      setCoords({ top: r.bottom + 4, left: r.left });
+    }
+    setExpanded(v => !v);
+  };
+
   return (
-    <div className={`relative flex-shrink-0 border rounded-lg px-3 py-1.5 ${style.bg} ${style.text} max-w-xs`}>
+    <div
+      ref={badgeRef}
+      className={`relative flex-shrink-0 border rounded-lg px-3 py-1.5 ${style.bg} ${style.text} max-w-xs`}
+    >
       <button
         className="flex items-center gap-1.5 text-xs font-medium"
-        onClick={() => setExpanded(v => !v)}
+        onClick={handleToggle}
         title="Voir le detail"
       >
         <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${style.dot}`} />
@@ -48,9 +63,12 @@ function InsightBadge({ insight, onDismiss }) {
         <span>{insight.label}</span>
       </button>
 
-      {/* Detail tooltip on click */}
-      {expanded && insight.detail && (
-        <div className="absolute top-full left-0 mt-1 z-30 bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-xs text-gray-700 w-64">
+      {/* Detail popup on click — portaled to escape overflow/stacking clipping */}
+      {expanded && insight.detail && coords && createPortal(
+        <div
+          className="fixed z-[120] bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-xs text-gray-700 w-64"
+          style={{ top: coords.top, left: coords.left }}
+        >
           {insight.detail}
           <button
             onClick={(e) => { e.stopPropagation(); setExpanded(false); }}
@@ -58,7 +76,8 @@ function InsightBadge({ insight, onDismiss }) {
           >
             <X size={12} />
           </button>
-        </div>
+        </div>,
+        document.body,
       )}
 
       {/* Dismiss */}
