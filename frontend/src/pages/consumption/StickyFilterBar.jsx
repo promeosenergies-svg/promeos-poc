@@ -36,6 +36,7 @@
  *   onDeletePreset(name)        delete preset callback
  */
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Zap, Flame, Save, RotateCcw, Link, ChevronDown, Trash2, Plus, LayoutGrid } from 'lucide-react';
 import { TrustBadge } from '../../ui';
 import { computeGranularity, colorForSite, getAvailableGranularities } from './helpers';
@@ -85,19 +86,50 @@ function todayISO() {
 }
 
 // ── Site Search Dropdown ──────────────────────────────────────────────────────
-function SiteSearchDropdown({ sites, selectedIds, onAdd, onClose }) {
+// Portaled to document.body — escapes the sticky+backdrop-blur stacking context.
+function SiteSearchDropdown({ sites, selectedIds, onAdd, onClose, anchorRef }) {
   const [query, setQuery] = useState('');
+  const [coords, setCoords] = useState(null);
   const inputRef = useRef(null);
+  const dropRef = useRef(null);
 
   useEffect(() => { inputRef.current?.focus(); }, []);
+
+  // Compute fixed position from the anchor element
+  useEffect(() => {
+    if (anchorRef?.current) {
+      const r = anchorRef.current.getBoundingClientRect();
+      setCoords({ top: r.bottom + 4, left: r.left });
+    }
+  }, [anchorRef]);
+
+  // Outside-click closes the dropdown (checks both anchor and portaled div)
+  useEffect(() => {
+    function handler(e) {
+      if (
+        dropRef.current && !dropRef.current.contains(e.target) &&
+        anchorRef?.current && !anchorRef.current.contains(e.target)
+      ) {
+        onClose();
+      }
+    }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [onClose, anchorRef]);
 
   const available = sites.filter(
     s => !selectedIds.includes(s.id) &&
       s.nom.toLowerCase().includes(query.toLowerCase())
   );
 
-  return (
-    <div className="absolute top-full left-0 mt-1 w-60 bg-white rounded-lg shadow-lg border border-gray-200 z-40 py-1">
+  if (!coords) return null;
+
+  return createPortal(
+    <div
+      ref={dropRef}
+      className="fixed w-60 bg-white rounded-lg shadow-lg border border-gray-200 z-[120] py-1"
+      style={{ top: coords.top, left: coords.left }}
+    >
       <div className="px-2 py-1.5 border-b border-gray-100">
         <input
           ref={inputRef}
@@ -125,7 +157,8 @@ function SiteSearchDropdown({ sites, selectedIds, onAdd, onClose }) {
           );
         })}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -261,18 +294,24 @@ export default function StickyFilterBar({
   const [showAddSite, setShowAddSite] = useState(false);
 
   const addRef = useRef(null);
+  const presetsBtnRef = useRef(null);
+  const presetsDropRef = useRef(null);
+  const [presetsCoords, setPresetsCoords] = useState(null);
 
-  // Close site search on outside click
+  // Close presets dropdown on outside click
   useEffect(() => {
-    if (!showAddSite) return;
+    if (!showPresets) return;
     const handler = (e) => {
-      if (addRef.current && !addRef.current.contains(e.target)) {
-        setShowAddSite(false);
+      if (
+        presetsDropRef.current && !presetsDropRef.current.contains(e.target) &&
+        presetsBtnRef.current && !presetsBtnRef.current.contains(e.target)
+      ) {
+        setShowPresets(false);
       }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
-  }, [showAddSite]);
+  }, [showPresets]);
 
   const gran = computeGranularity(days);
   const confidence = availability?.has_data
@@ -376,7 +415,7 @@ export default function StickyFilterBar({
 
             {/* "+" add site button — only when more sites exist to add */}
             {effectiveSiteIds.length < MAX_SITES && sites.length > effectiveSiteIds.length && (
-              <div className="relative" ref={addRef}>
+              <div ref={addRef}>
                 <button
                   onClick={() => setShowAddSite(v => !v)}
                   className="flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition"
@@ -386,6 +425,7 @@ export default function StickyFilterBar({
                 </button>
                 {showAddSite && (
                   <SiteSearchDropdown
+                    anchorRef={addRef}
                     sites={sites}
                     selectedIds={effectiveSiteIds}
                     onAdd={(id) => { toggleSite(id); }}
@@ -626,16 +666,27 @@ export default function StickyFilterBar({
 
           {/* Presets dropdown */}
           {savedPresets.length > 0 && onLoadPreset && (
-            <div className="relative">
+            <div>
               <button
-                onClick={() => setShowPresets(v => !v)}
+                ref={presetsBtnRef}
+                onClick={() => {
+                  if (!showPresets && presetsBtnRef.current) {
+                    const r = presetsBtnRef.current.getBoundingClientRect();
+                    setPresetsCoords({ top: r.bottom + 4, left: r.left });
+                  }
+                  setShowPresets(v => !v);
+                }}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
               >
                 Presets ({savedPresets.length})
                 <ChevronDown size={11} />
               </button>
-              {showPresets && (
-                <div className="absolute top-full left-0 mt-1 w-52 bg-white rounded-lg shadow-lg border border-gray-200 z-30 py-1">
+              {showPresets && presetsCoords && createPortal(
+                <div
+                  ref={presetsDropRef}
+                  className="fixed w-52 bg-white rounded-lg shadow-lg border border-gray-200 z-[120] py-1"
+                  style={{ top: presetsCoords.top, left: presetsCoords.left }}
+                >
                   {savedPresets.map(p => (
                     <div key={p.name} className="flex items-center gap-1 px-2 py-1.5 hover:bg-gray-50 group">
                       <button
@@ -656,7 +707,8 @@ export default function StickyFilterBar({
                       )}
                     </div>
                   ))}
-                </div>
+                </div>,
+                document.body,
               )}
             </div>
           )}

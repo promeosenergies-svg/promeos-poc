@@ -213,6 +213,8 @@ PACKS = {
         ],
         "readings_frequency": "monthly",
         "readings_months": 60,
+        "hourly_days": 730,    # V85: 2 ans d'historique horaire (signature energetique, EMS Explorer)
+        "min15_days": 30,      # V85: 30 jours de granularite 15 min (monitoring precis)
         "invoices_count": 20,
         "actions_count": 15,
     },

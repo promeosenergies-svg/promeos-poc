@@ -18,19 +18,19 @@ class SeedOrchestrator:
 
     Usage:
         orch = SeedOrchestrator(db)
-        result = orch.seed(pack="helios", size="S")
+        result = orch.seed(pack="casino", size="S")
     """
 
     def __init__(self, db: Session):
         self.db = db
 
-    def seed(self, pack: str = "helios", size: str = "S",
+    def seed(self, pack: str = "casino", size: str = "S",
              rng_seed: Optional[int] = None, days: int = 90) -> dict:
         """
         Seed demo data for a given pack and size.
 
         Args:
-            pack: pack name ("helios", "tertiaire")
+            pack: pack name ("casino", "tertiaire")
             size: "S" or "M"
             rng_seed: optional seed for deterministic generation
             days: readings lookback period
@@ -60,9 +60,12 @@ class SeedOrchestrator:
         result["default_site_id"] = master["sites"][0].id if master["sites"] else None
         result["default_site_name"] = master["sites"][0].nom if master["sites"] else None
 
-        # 2-3. Weather + Readings — monthly branch for helios
+        # 2-3. Weather + Readings
         readings_freq = pack_def.get("readings_frequency", "hourly")
-        hourly_days = 90  # always generate 90 days of hourly data for HELIOS too
+        # V85: pack can specify extended hourly window (helios → 730 days = 2 years)
+        hourly_days = pack_def.get("hourly_days", days)
+        temp_lookup = {}
+
         if readings_freq == "monthly":
             # Monthly readings (helios) — 60 months historical billing
             from .gen_readings import generate_monthly_readings
@@ -74,17 +77,27 @@ class SeedOrchestrator:
             result["readings_count"] = readings_count
             result["readings_frequency"] = "monthly"
 
-            # V83: also generate 90 days of hourly data for monitoring + context
+            # V85: weather for the full hourly window
             from .gen_weather import generate_weather
             temp_lookup = generate_weather(self.db, master["sites"], hourly_days, rng)
             result["weather_days"] = hourly_days
 
+            # V85: hourly readings over extended window (730 days for helios)
             from .gen_readings import generate_readings
             hourly_count = generate_readings(
                 self.db, master["meters"], master["site_profiles"],
                 temp_lookup, hourly_days, rng
             )
             result["hourly_readings_count"] = hourly_count
+
+            # V85: 15-min readings for recent monitoring window (30 days)
+            from .gen_readings import generate_15min_readings
+            min15_days = pack_def.get("min15_days", 30)
+            min15_count = generate_15min_readings(
+                self.db, master["meters"], master["site_profiles"],
+                temp_lookup, min15_days, rng
+            )
+            result["min15_readings_count"] = min15_count
         else:
             # Hourly readings (tertiaire) — with weather
             from .gen_weather import generate_weather
@@ -107,7 +120,7 @@ class SeedOrchestrator:
         # 4b. Sync site compliance statuses from obligations
         self._sync_site_compliance_statuses(master["sites"])
 
-        # 5. Monitoring (needs hourly data)
+        # 5. Monitoring (hourly data now available for all packs)
         from .gen_monitoring import generate_monitoring
         monitoring = generate_monitoring(
             self.db, master["sites"], master["meters"],
@@ -145,17 +158,7 @@ class SeedOrchestrator:
         )
         result["tertiaire"] = tertiaire
 
-        # 10. TOU Schedules (HP/HC) — V83
-        from .gen_tou import generate_tou
-        tou = generate_tou(self.db, master["sites"], rng)
-        result["tou"] = tou
-
-        # 11. Notifications — V83
-        from .gen_notifications import generate_notifications
-        notifs = generate_notifications(self.db, master["org"], master["sites"], rng)
-        result["notifications"] = notifs
-
-        # 12. Superuser
+        # 10. Superuser
         self._create_superuser(master["org"])
 
         # Enable demo mode and register current org in DemoState (single source of truth)
@@ -190,8 +193,6 @@ class SeedOrchestrator:
             MonitoringAlert, EnergyInvoice, ActionItem, ComplianceFinding,
             ConsumptionInsight, PurchaseScenarioResult, EmsWeatherCache,
         )
-        from models.tou_schedule import TOUSchedule
-        from models.notification import NotificationEvent
         from services.demo_state import DemoState
 
         effective_org_id = org_id or DemoState.get_demo_org_id()
@@ -231,8 +232,6 @@ class SeedOrchestrator:
             ("compliance_findings", ComplianceFinding),
             ("insights", ConsumptionInsight),
             ("purchase_scenarios", PurchaseScenarioResult),
-            ("tou_schedules", TOUSchedule),
-            ("notifications", NotificationEvent),
         ]:
             try:
                 counts[label] = self.db.query(model).count()
@@ -261,8 +260,6 @@ class SeedOrchestrator:
             PurchaseAssumptionSet, PurchaseScenarioResult,
             EmsWeatherCache, SiteOperatingSchedule,
         )
-        from models.tou_schedule import TOUSchedule
-        from models.notification import NotificationEvent, NotificationBatch
         from models.tertiaire import (
             TertiaireDataQualityIssue, TertiaireProofArtifact,
             TertiaireDeclaration, TertiairePerimeterEvent,
@@ -302,9 +299,6 @@ class SeedOrchestrator:
             ("evidences", Evidence),
             ("obligations", Obligation),
             ("operating_schedules", SiteOperatingSchedule),
-            ("tou_schedules", TOUSchedule),
-            ("notifications", NotificationEvent),
-            ("notification_batches", NotificationBatch),
             ("meters", Meter),
             ("compteurs", Compteur),
             ("batiments", Batiment),
@@ -413,11 +407,6 @@ class SeedOrchestrator:
             _del("obligations", Obligation, Obligation.site_id, demo_site_ids)
             _del("operating_schedules", SiteOperatingSchedule,
                  SiteOperatingSchedule.site_id, demo_site_ids)
-            _del("tou_schedules", TOUSchedule, TOUSchedule.site_id, demo_site_ids)
-            _del("notifications", NotificationEvent,
-                 NotificationEvent.org_id, demo_org_ids)
-            _del("notification_batches", NotificationBatch,
-                 NotificationBatch.org_id, demo_org_ids)
             _del("meters", Meter, Meter.site_id, demo_site_ids)
             _del("compteurs", Compteur, Compteur.site_id, demo_site_ids)
             _del("batiments", Batiment, Batiment.site_id, demo_site_ids)
