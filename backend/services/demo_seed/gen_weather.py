@@ -1,12 +1,43 @@
 """
 PROMEOS - Demo Seed: Weather Data Generator
-Generates 90 days of daily weather per site (sinusoidal + noise).
+Generates daily weather per site (sinusoidal + noise).
+Supports arbitrary lookback period (default 90 days, helios 730 days).
 """
 import math
 import random
 from datetime import datetime, timedelta
 
 from models import EmsWeatherCache
+
+
+def _insert_weather_ignore(db, records: list):
+    """INSERT OR IGNORE into ems_weather_cache — idempotent re-seed safety."""
+    if not records:
+        return
+    dialect = db.bind.dialect.name if db.bind else "unknown"
+    if dialect == "sqlite":
+        from sqlalchemy import text
+        now_iso = datetime.utcnow().isoformat()
+        stmt = text(
+            "INSERT OR IGNORE INTO ems_weather_cache "
+            "(site_id, date, temp_avg_c, temp_min_c, temp_max_c, source, created_at, updated_at) "
+            "VALUES (:sid, :dt, :avg, :mn, :mx, :src, :cat, :uat)"
+        )
+        db.execute(stmt, [
+            {
+                "sid": r.site_id,
+                "dt": r.date.strftime("%Y-%m-%d %H:%M:%S") if r.date else None,
+                "avg": r.temp_avg_c,
+                "mn": r.temp_min_c,
+                "mx": r.temp_max_c,
+                "src": r.source,
+                "cat": now_iso,
+                "uat": now_iso,
+            }
+            for r in records
+        ])
+    else:
+        db.bulk_save_objects(records)
 
 
 def generate_weather(db, sites: list, days: int, rng: random.Random) -> dict:
@@ -48,7 +79,7 @@ def generate_weather(db, sites: list, days: int, rng: random.Random) -> dict:
                 source="demo_seed",
             ))
 
-        db.bulk_save_objects(records)
+        _insert_weather_ignore(db, records)
         temp_lookup[site.id] = site_temps
 
     db.flush()
