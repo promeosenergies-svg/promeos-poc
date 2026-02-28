@@ -96,7 +96,7 @@ describe('isDemoPath — scope-exempt guard for /demo/* endpoints', () => {
   });
 
   it('absolute URL with /demo/ is detected', () => {
-    expect(isDemoPath('http://localhost:8000/api/demo/seed-pack?pack=casino')).toBe(true);
+    expect(isDemoPath('http://localhost:8000/api/demo/seed-pack?pack=helios')).toBe(true);
   });
 
   it('null/undefined/empty returns false', () => {
@@ -160,14 +160,14 @@ describe('ImportPage: scope switching after seed/reset', () => {
     clearScope();
     callOrder.push('clearScope');
 
-    const seedResult = { org_id: 789, org_nom: 'Groupe Casino' };
+    const seedResult = { org_id: 789, org_nom: 'Groupe HELIOS' };
     if (seedResult.org_id) {
       applyDemoScope({ orgId: seedResult.org_id, orgNom: seedResult.org_nom });
       callOrder.push('applyDemoScope');
     }
 
     expect(callOrder).toEqual(['clearScope', 'applyDemoScope']);
-    expect(applyDemoScope).toHaveBeenCalledWith({ orgId: 789, orgNom: 'Groupe Casino' });
+    expect(applyDemoScope).toHaveBeenCalledWith({ orgId: 789, orgNom: 'Groupe HELIOS' });
   });
 
   it('status-pack with org_id triggers applyDemoScope on init', () => {
@@ -278,19 +278,19 @@ describe('ImportPage: syncInProgress mismatch logic', () => {
   }
 
   it('no mismatch when org_ids match', () => {
-    const packStatus = { org_id: 42, org_nom: 'Groupe Casino' };
+    const packStatus = { org_id: 42, org_nom: 'Groupe HELIOS' };
     const scope = { orgId: 42 };
     expect(computeSyncInProgress(packStatus, scope)).toBe(false);
   });
 
   it('mismatch when org_ids differ', () => {
-    const packStatus = { org_id: 42, org_nom: 'Groupe Casino' };
+    const packStatus = { org_id: 42, org_nom: 'Groupe HELIOS' };
     const scope = { orgId: 99 };
     expect(computeSyncInProgress(packStatus, scope)).toBe(true);
   });
 
   it('no mismatch when scope has no orgId (empty scope)', () => {
-    const packStatus = { org_id: 42, org_nom: 'Groupe Casino' };
+    const packStatus = { org_id: 42, org_nom: 'Groupe HELIOS' };
     const scope = { orgId: null };
     expect(computeSyncInProgress(packStatus, scope)).toBe(false);
   });
@@ -303,13 +303,13 @@ describe('ImportPage: syncInProgress mismatch logic', () => {
 
   it('mismatch triggers applyDemoScope with packStatus org info', () => {
     const applyDemoScope = vi.fn();
-    const packStatus = { org_id: 42, org_nom: 'Groupe Casino' };
+    const packStatus = { org_id: 42, org_nom: 'Groupe HELIOS' };
     const scope = { orgId: 99 };
     const syncInProgress = computeSyncInProgress(packStatus, scope);
     if (syncInProgress && packStatus?.org_id && packStatus?.org_nom) {
       applyDemoScope({ orgId: packStatus.org_id, orgNom: packStatus.org_nom });
     }
-    expect(applyDemoScope).toHaveBeenCalledWith({ orgId: 42, orgNom: 'Groupe Casino' });
+    expect(applyDemoScope).toHaveBeenCalledWith({ orgId: 42, orgNom: 'Groupe HELIOS' });
   });
 
   it('after applyDemoScope, syncInProgress becomes false', () => {
@@ -413,9 +413,9 @@ describe('Demo Pack regression: optimistic packStatus after seed', () => {
   });
 
   it('packStatus.pack equals the seeded pack key', () => {
-    const res = { org_id: 99, org_nom: 'Groupe Casino', pack: 'casino', size: 'S', total_rows: 36000 };
+    const res = { org_id: 99, org_nom: 'Groupe HELIOS', pack: 'helios', size: 'S', total_rows: 5000 };
     const { packStatus } = simulatePerformSeed(res);
-    expect(packStatus.pack).toBe('casino');
+    expect(packStatus.pack).toBe('helios');
   });
 
   it('applyDemoScope is called exactly once per seed (not twice)', () => {
@@ -444,23 +444,23 @@ describe('Demo Pack regression: isLoaded badge logic', () => {
   it('isLoaded = true when packStatus.pack matches pack key (tertiaire)', () => {
     const packStatus = { pack: 'tertiaire', org_nom: 'SCI Les Terrasses' };
     expect(computeIsLoaded(packStatus, 'tertiaire')).toBe(true);
-    expect(computeIsLoaded(packStatus, 'casino')).toBe(false);
+    expect(computeIsLoaded(packStatus, 'helios')).toBe(false);
   });
 
-  it('isLoaded = false when packStatus.pack is a different key (casino loaded)', () => {
-    const packStatus = { pack: 'casino', org_nom: 'Groupe Casino' };
+  it('isLoaded = false when packStatus.pack is a different key (helios loaded)', () => {
+    const packStatus = { pack: 'helios', org_nom: 'Groupe HELIOS' };
     expect(computeIsLoaded(packStatus, 'tertiaire')).toBe(false);
-    expect(computeIsLoaded(packStatus, 'casino')).toBe(true);
+    expect(computeIsLoaded(packStatus, 'helios')).toBe(true);
   });
 
   it('isLoaded = false when packStatus is null (nothing loaded)', () => {
-    expect(computeIsLoaded(null, 'casino')).toBe(false);
+    expect(computeIsLoaded(null, 'helios')).toBe(false);
     expect(computeIsLoaded(null, 'tertiaire')).toBe(false);
   });
 
   it('isLoaded = false when packStatus has no pack field', () => {
     const packStatus = { org_id: 5, org_nom: 'Org sans pack' };
-    expect(computeIsLoaded(packStatus, 'casino')).toBe(false);
+    expect(computeIsLoaded(packStatus, 'helios')).toBe(false);
   });
 });
 

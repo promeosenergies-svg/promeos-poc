@@ -2,7 +2,7 @@
 PROMEOS - Demo Mode API Routes
 POST /api/demo/enable, POST /api/demo/disable, GET /api/demo/status
 POST /api/demo/seed - Peuple la DB avec un jeu de donnees demo (legacy 3 sites)
-POST /api/demo/seed-pack - Seed complet par pack (casino, tertiaire)
+POST /api/demo/seed-pack - Seed complet par pack (helios, tertiaire)
 POST /api/demo/reset-pack - Reset des donnees demo
 GET /api/demo/status-pack - Status detaille des donnees demo
 GET /api/demo/packs - Liste des packs disponibles

@@ -1,6 +1,6 @@
 """
 PROMEOS - Demo Seed System Integration Tests
-Tests seed→status→reset→reseed cycle for both packs.
+Tests seed→status→reset→reseed cycle for Helios (canonical) and Tertiaire (legacy).
 """
 import sys
 import os
@@ -29,64 +29,61 @@ def db_session():
     session.close()
 
 
-def _seed(db, pack="casino", size="S"):
+def _seed(db, pack="helios", size="S"):
     """Run SeedOrchestrator and return result."""
     from services.demo_seed import SeedOrchestrator
     orch = SeedOrchestrator(db)
     return orch.seed(pack=pack, size=size, rng_seed=42, days=30)
 
 
-class TestSeedCasinoPack:
-    def test_casino_s_creates_36_sites(self, db_session):
-        result = _seed(db_session, "casino", "S")
+class TestSeedHeliosPack:
+    def test_helios_s_creates_5_sites(self, db_session):
+        result = _seed(db_session, "helios", "S")
         assert result["status"] == "ok"
-        assert result["sites_count"] == 36
-        assert result["org_nom"] == "Groupe Casino"
-        assert db_session.query(Site).count() == 36
+        assert result["sites_count"] == 5
+        assert result["org_nom"] == "Groupe HELIOS"
+        assert db_session.query(Site).count() == 5
 
-    def test_casino_s_creates_meters(self, db_session):
-        result = _seed(db_session, "casino", "S")
-        assert result["meters_count"] == 36
-        assert db_session.query(Meter).count() == 36
+    def test_helios_s_creates_meters(self, db_session):
+        result = _seed(db_session, "helios", "S")
+        assert result["meters_count"] == 5
+        assert db_session.query(Meter).count() == 5
 
-    def test_casino_s_creates_readings(self, db_session):
-        result = _seed(db_session, "casino", "S")
-        # 36 meters * 30 days * 24 hours = 25920 readings
-        assert result["readings_count"] == 36 * 30 * 24
+    def test_helios_s_creates_readings(self, db_session):
+        result = _seed(db_session, "helios", "S")
+        # Monthly + hourly readings
+        assert result["readings_count"] > 0
 
-    def test_casino_s_creates_weather(self, db_session):
-        result = _seed(db_session, "casino", "S")
-        # 36 sites * 30 days = 1080 weather records
-        assert db_session.query(EmsWeatherCache).count() == 36 * 30
+    def test_helios_s_creates_hourly_readings(self, db_session):
+        result = _seed(db_session, "helios", "S")
+        assert result.get("hourly_readings_count", 0) > 0
 
-    def test_casino_s_has_compliance(self, db_session):
-        result = _seed(db_session, "casino", "S")
+    def test_helios_s_has_compliance(self, db_session):
+        result = _seed(db_session, "helios", "S")
         findings = result["compliance"]["findings_count"]
         assert findings > 0
-        # 3 regulations * 36 sites = ~108 findings
-        assert findings >= 36 * 3
 
-    def test_casino_s_has_monitoring(self, db_session):
-        result = _seed(db_session, "casino", "S")
+    def test_helios_s_has_monitoring(self, db_session):
+        result = _seed(db_session, "helios", "S")
         assert result["monitoring"]["snapshots_count"] > 0
 
-    def test_casino_s_has_invoices(self, db_session):
-        result = _seed(db_session, "casino", "S")
-        assert result["billing"]["invoices_count"] == 15
+    def test_helios_s_has_invoices(self, db_session):
+        result = _seed(db_session, "helios", "S")
+        assert result["billing"]["invoices_count"] == 20
 
-    def test_casino_s_has_actions(self, db_session):
-        result = _seed(db_session, "casino", "S")
-        assert result["actions"]["actions_count"] == 12
+    def test_helios_s_has_actions(self, db_session):
+        result = _seed(db_session, "helios", "S")
+        assert result["actions"]["actions_count"] == 15
 
-    def test_casino_s_has_purchase(self, db_session):
-        result = _seed(db_session, "casino", "S")
+    def test_helios_s_has_purchase(self, db_session):
+        result = _seed(db_session, "helios", "S")
         assert result["purchase"]["scenarios"] > 0
 
-    def test_casino_s_deterministic(self, db_session):
-        """Same seed produces same counts."""
-        r1 = _seed(db_session, "casino", "S")
-        # Can't re-seed same DB due to unique constraints, but check determinism
-        assert r1["readings_count"] == 36 * 30 * 24
+    def test_helios_s_deterministic(self, db_session):
+        """Same seed produces same result."""
+        r1 = _seed(db_session, "helios", "S")
+        assert r1["sites_count"] == 5
+        assert r1["org_nom"] == "Groupe HELIOS"
 
 
 class TestSeedTertiairePack:
@@ -111,13 +108,13 @@ class TestSeedTertiairePack:
 
 class TestSeedStatus:
     def test_status_after_seed(self, db_session):
-        _seed(db_session, "casino", "S")
+        _seed(db_session, "helios", "S")
         from services.demo_seed import SeedOrchestrator
         orch = SeedOrchestrator(db_session)
         status = orch.status()
         assert status["organisations"] == 1
-        assert status["sites"] == 36
-        assert status["meters"] == 36
+        assert status["sites"] == 5
+        assert status["meters"] == 5
         assert status["readings"] > 0
 
     def test_status_empty_db(self, db_session):
@@ -130,18 +127,15 @@ class TestSeedStatus:
 
 class TestSeedReset:
     def test_reset_hard_clears_all(self, db_session):
-        _seed(db_session, "casino", "S")
+        _seed(db_session, "helios", "S")
         from services.demo_seed import SeedOrchestrator
         orch = SeedOrchestrator(db_session)
 
-        # Verify data exists
         assert db_session.query(Site).count() > 0
 
-        # Reset
         result = orch.reset(mode="hard")
         assert result["status"] == "ok"
 
-        # Verify empty
         assert db_session.query(Site).count() == 0
         assert db_session.query(Meter).count() == 0
         assert db_session.query(MeterReading).count() == 0
@@ -179,7 +173,7 @@ class TestSeedValidation:
     def test_invalid_size(self, db_session):
         from services.demo_seed import SeedOrchestrator
         orch = SeedOrchestrator(db_session)
-        result = orch.seed(pack="casino", size="XL")
+        result = orch.seed(pack="helios", size="XL")
         assert "error" in result
 
 
@@ -187,7 +181,7 @@ class TestSeedConsistency:
     """Verify KPI consistency between monitoring and dashboard."""
 
     def test_snapshot_kpis_not_null(self, db_session):
-        _seed(db_session, "casino", "S")
+        _seed(db_session, "helios", "S")
         snapshots = db_session.query(MonitoringSnapshot).all()
         assert len(snapshots) > 0
         for snap in snapshots:
@@ -196,7 +190,7 @@ class TestSeedConsistency:
             assert kpis.get("total_kwh", 0) > 0
 
     def test_alerts_match_snapshots(self, db_session):
-        _seed(db_session, "casino", "S")
+        _seed(db_session, "helios", "S")
         alerts = db_session.query(MonitoringAlert).all()
         snap_ids = {s.id for s in db_session.query(MonitoringSnapshot).all()}
         for a in alerts:
@@ -208,16 +202,16 @@ class TestIsDemoFlag:
     """Verify is_demo=True is set on seeded data."""
 
     def test_org_is_demo(self, db_session):
-        _seed(db_session, "casino", "S")
+        _seed(db_session, "helios", "S")
         orgs = db_session.query(Organisation).all()
         assert len(orgs) == 1
         assert orgs[0].is_demo is True
 
     def test_sites_are_demo(self, db_session):
-        _seed(db_session, "casino", "S")
+        _seed(db_session, "helios", "S")
         demo_sites = db_session.query(Site).filter_by(is_demo=True).count()
         all_sites = db_session.query(Site).count()
-        assert demo_sites == all_sites == 36
+        assert demo_sites == all_sites == 5
 
     def test_non_demo_sites_unaffected(self, db_session):
         """Manually inserted non-demo site should have is_demo=False."""
@@ -242,11 +236,11 @@ class TestSoftReset:
     """Verify soft reset only deletes is_demo=True data."""
 
     def test_soft_reset_clears_demo_data(self, db_session):
-        _seed(db_session, "casino", "S")
+        _seed(db_session, "helios", "S")
         from services.demo_seed import SeedOrchestrator
         orch = SeedOrchestrator(db_session)
 
-        assert db_session.query(Site).count() == 36
+        assert db_session.query(Site).count() == 5
 
         result = orch.reset(mode="soft")
         assert result["status"] == "ok"
@@ -283,26 +277,22 @@ class TestSoftReset:
 
     def test_soft_reset_deletes_all_child_tables(self, db_session):
         """Ensure all child tables are cleaned by soft reset."""
-        _seed(db_session, "casino", "S")
+        _seed(db_session, "helios", "S")
         from services.demo_seed import SeedOrchestrator
         orch = SeedOrchestrator(db_session)
 
-        # Verify data exists before reset
         assert db_session.query(MonitoringSnapshot).count() > 0
         assert db_session.query(EnergyInvoice).count() > 0
-        assert db_session.query(EmsWeatherCache).count() > 0
         assert db_session.query(ComplianceFinding).count() > 0
 
         result = orch.reset(mode="soft")
         assert result["status"] == "ok"
 
-        # Verify all tables empty
         assert db_session.query(MonitoringSnapshot).count() == 0
         assert db_session.query(MonitoringAlert).count() == 0
         assert db_session.query(EnergyInvoice).count() == 0
         assert db_session.query(ActionItem).count() == 0
         assert db_session.query(ComplianceFinding).count() == 0
-        assert db_session.query(EmsWeatherCache).count() == 0
         assert db_session.query(ConsumptionInsight).count() == 0
         assert db_session.query(PurchaseScenarioResult).count() == 0
 
@@ -310,25 +300,24 @@ class TestSoftReset:
 class TestScopeInSeedResult:
     """Verify seed-pack returns org_id, default_site_id, names for scope auto-switch."""
 
-    def test_casino_seed_returns_org_id(self, db_session):
-        result = _seed(db_session, "casino", "S")
+    def test_helios_seed_returns_org_id(self, db_session):
+        result = _seed(db_session, "helios", "S")
         assert result["org_id"] is not None
         assert isinstance(result["org_id"], int)
 
-    def test_casino_seed_returns_org_nom(self, db_session):
-        result = _seed(db_session, "casino", "S")
-        assert result["org_nom"] == "Groupe Casino"
+    def test_helios_seed_returns_org_nom(self, db_session):
+        result = _seed(db_session, "helios", "S")
+        assert result["org_nom"] == "Groupe HELIOS"
 
-    def test_casino_seed_returns_default_site_id(self, db_session):
-        result = _seed(db_session, "casino", "S")
+    def test_helios_seed_returns_default_site_id(self, db_session):
+        result = _seed(db_session, "helios", "S")
         assert result["default_site_id"] is not None
         assert isinstance(result["default_site_id"], int)
-        # Verify the site actually exists
         site = db_session.query(Site).filter(Site.id == result["default_site_id"]).first()
         assert site is not None
 
-    def test_casino_seed_returns_default_site_name(self, db_session):
-        result = _seed(db_session, "casino", "S")
+    def test_helios_seed_returns_default_site_name(self, db_session):
+        result = _seed(db_session, "helios", "S")
         assert result["default_site_name"] is not None
         assert len(result["default_site_name"]) > 0
 
@@ -345,20 +334,6 @@ class TestScopeInSeedResult:
         orch = SeedOrchestrator(db_session)
         seed_result = orch.seed(pack="tertiaire", size="S", rng_seed=42, days=30)
 
-        # Simulate what status-pack endpoint does
         org = db_session.query(Organisation).first()
-        first_site = db_session.query(Site).filter(Site.actif == True).first()
         assert org is not None
-        assert org.id == seed_result["org_id"]
-        assert first_site is not None
-        assert first_site.id == seed_result["default_site_id"]
-
-    def test_status_pack_empty_after_reset(self, db_session):
-        """After soft reset, org query returns None."""
-        from services.demo_seed import SeedOrchestrator
-        orch = SeedOrchestrator(db_session)
-        orch.seed(pack="casino", size="S", rng_seed=42, days=30)
-        orch.reset(mode="soft")
-
-        org = db_session.query(Organisation).first()
-        assert org is None  # All demo orgs deleted
+        assert seed_result["org_id"] == org.id

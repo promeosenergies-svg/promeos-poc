@@ -4,26 +4,6 @@ Pre-built demo data profiles for different client types.
 """
 
 DEMO_PROFILES = {
-    "casino_retail": {
-        "id": "casino_retail",
-        "label": "Casino Retail (120 sites)",
-        "description": "Grande distribution : 90 magasins + 30 sites logistique/bureaux",
-        "organisation": {
-            "nom": "Groupe Casino",
-            "type_client": "retail",
-        },
-        "portefeuilles": [
-            {"nom": "Retail IDF", "nb_sites": 50},
-            {"nom": "Retail Sud", "nb_sites": 40},
-            {"nom": "Bureaux & Logistique", "nb_sites": 30},
-        ],
-        "stats_preview": {
-            "total_sites": 120,
-            "sites_non_conformes": "~25%",
-            "risque_financier": "~300k EUR",
-            "bacs_concernes": "~80 sites",
-        },
-    },
     "industriel": {
         "id": "industriel",
         "label": "Groupe Industriel (80 sites)",

@@ -40,7 +40,7 @@ def reset_demo_state():
     DemoState.clear_demo_org()
 
 
-def _seed(db, pack="casino", size="S"):
+def _seed(db, pack="helios", size="S"):
     """Run SeedOrchestrator and return result."""
     from services.demo_seed import SeedOrchestrator
     orch = SeedOrchestrator(db)
@@ -113,7 +113,7 @@ class TestManifestNoSeed:
 class TestManifestAfterSeed:
     def test_manifest_returns_structure(self, db_session):
         """After seed, manifest has all expected keys."""
-        _seed(db_session, "casino", "S")
+        _seed(db_session, "helios", "S")
         manifest = _get_manifest(db_session)
 
         assert "org_id" in manifest
@@ -124,25 +124,25 @@ class TestManifestAfterSeed:
         assert "total_sites" in manifest
         assert "total_compteurs" in manifest
         assert "all_site_ids" in manifest
-        assert manifest["org_nom"] == "Groupe Casino"
-        assert manifest["pack"] == "casino"
+        assert manifest["org_nom"] == "Groupe HELIOS"
+        assert manifest["pack"] == "helios"
         assert manifest["size"] == "S"
 
     def test_manifest_site_count_matches_pack(self, db_session):
-        """Casino S = 36 sites. Manifest count must match DB count."""
-        _seed(db_session, "casino", "S")
+        """Helios S = 5 sites. Manifest count must match DB count."""
+        _seed(db_session, "helios", "S")
         manifest = _get_manifest(db_session)
 
-        assert manifest["total_sites"] == 36
+        assert manifest["total_sites"] == 5
         # Cross-check with DB
         db_count = db_session.query(Site).count()
         assert manifest["total_sites"] == db_count
         # all_site_ids length must match
-        assert len(manifest["all_site_ids"]) == 36
+        assert len(manifest["all_site_ids"]) == 5
 
     def test_manifest_portefeuilles_sum(self, db_session):
         """Sum of sites_count across portefeuilles == total_sites."""
-        _seed(db_session, "casino", "S")
+        _seed(db_session, "helios", "S")
         manifest = _get_manifest(db_session)
 
         pf_sum = sum(p["sites_count"] for p in manifest["portefeuilles"])
@@ -150,7 +150,7 @@ class TestManifestAfterSeed:
 
     def test_manifest_compteurs_count(self, db_session):
         """Manifest total_compteurs matches DB count."""
-        _seed(db_session, "casino", "S")
+        _seed(db_session, "helios", "S")
         manifest = _get_manifest(db_session)
 
         db_count = db_session.query(Compteur).count()

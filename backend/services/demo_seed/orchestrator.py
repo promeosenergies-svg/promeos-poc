@@ -18,19 +18,19 @@ class SeedOrchestrator:
 
     Usage:
         orch = SeedOrchestrator(db)
-        result = orch.seed(pack="casino", size="S")
+        result = orch.seed(pack="helios", size="S")
     """
 
     def __init__(self, db: Session):
         self.db = db
 
-    def seed(self, pack: str = "casino", size: str = "S",
+    def seed(self, pack: str = "helios", size: str = "S",
              rng_seed: Optional[int] = None, days: int = 90) -> dict:
         """
         Seed demo data for a given pack and size.
 
         Args:
-            pack: pack name ("casino", "tertiaire")
+            pack: pack name ("helios", "tertiaire")
             size: "S" or "M"
             rng_seed: optional seed for deterministic generation
             days: readings lookback period
@@ -86,7 +86,7 @@ class SeedOrchestrator:
             )
             result["hourly_readings_count"] = hourly_count
         else:
-            # Hourly readings (casino / tertiaire) — with weather
+            # Hourly readings (tertiaire) — with weather
             from .gen_weather import generate_weather
             temp_lookup = generate_weather(self.db, master["sites"], days, rng)
             result["weather_days"] = days

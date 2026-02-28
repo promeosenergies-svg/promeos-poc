@@ -63,14 +63,15 @@ def reset_db(db: Session = Depends(get_db)):
     except Exception:
         pass  # migrations are best-effort
 
-    # 4. Reseed: Groupe Casino (36 sites) + compliance findings + superuser
+    # 4. Reseed: Groupe HELIOS (5 sites E2E) — demo canonique
     seed_result = None
     try:
         new_db = next(get_db())
-        from scripts.seed_casino import seed_casino_36
-        seed_result = seed_casino_36(new_db)
+        from services.demo_seed import SeedOrchestrator
+        orch = SeedOrchestrator(new_db)
+        seed_result = orch.seed(pack="helios", size="S", rng_seed=42)
     except Exception as exc:
-        logger.warning("Casino seed after reset: %s", exc)
+        logger.warning("Helios seed after reset: %s", exc)
         seed_result = {"status": "seed_skipped", "reason": str(exc)}
 
     return {

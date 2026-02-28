@@ -433,8 +433,8 @@ export const getAiRecommendations = (siteId) =>
   api.get(`/ai/site/${siteId}/recommend`).then((r) => r.data);
 export const getAiDataQuality = (siteId) =>
   api.get(`/ai/site/${siteId}/data-quality`).then((r) => r.data);
-export const getAiExecBrief = (orgId = 1) =>
-  api.get('/ai/org/brief', { params: { org_id: orgId } }).then((r) => r.data);
+export const getAiExecBrief = (orgId = null) =>
+  api.get('/ai/org/brief', { params: orgId ? { org_id: orgId } : {} }).then((r) => r.data);
 export const listAiInsights = (params = {}) =>
   api.get('/ai/insights', { params }).then((r) => r.data);
 

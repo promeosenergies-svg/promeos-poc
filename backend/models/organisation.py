@@ -1,6 +1,6 @@
 """
 PROMEOS - Modèle Organisation
-Niveau groupe/client COMEX (ex: "Groupe Casino", "Ville de Lyon")
+Niveau groupe/client COMEX (ex: "Groupe HELIOS", "Ville de Lyon")
 """
 from sqlalchemy import Column, Integer, String, Boolean
 from sqlalchemy.orm import relationship
