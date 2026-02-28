@@ -3,6 +3,7 @@
  * Dropdown selectors: Org → Portefeuille → Site, plus a "scope pill" showing current scope.
  */
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Building2, ChevronDown, X, Briefcase, MapPin } from 'lucide-react';
 import { useScope } from '../contexts/ScopeContext';
 
@@ -12,13 +13,28 @@ export default function ScopeSwitcher() {
     setOrg, setPortefeuille, setSite, resetScope,
   } = useScope();
   const [open, setOpen] = useState(false);
+  const [dropCoords, setDropCoords] = useState(null);
   const ref = useRef(null);
+  const dropRef = useRef(null);
 
   useEffect(() => {
-    function handleClick(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
+    function handleClick(e) {
+      const inTrigger = ref.current && ref.current.contains(e.target);
+      const inDrop    = dropRef.current && dropRef.current.contains(e.target);
+      if (!inTrigger && !inDrop) setOpen(false);
+    }
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
+
+  function toggleOpen() {
+    if (!open && ref.current) {
+      // Compute anchor position once, at open time
+      const r = ref.current.getBoundingClientRect();
+      setDropCoords({ top: r.bottom + 4, left: r.left });
+    }
+    setOpen((o) => !o);
+  }
 
   const hasSites = orgSites.length > 0;
 
@@ -26,7 +42,7 @@ export default function ScopeSwitcher() {
     <div className="flex items-center gap-2" ref={ref}>
       {/* Scope pill */}
       <button
-        onClick={() => setOpen(!open)}
+        onClick={toggleOpen}
         className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-full text-sm text-blue-700 hover:bg-blue-100 transition"
       >
         <Building2 size={14} />
@@ -52,9 +68,13 @@ export default function ScopeSwitcher() {
         </button>
       )}
 
-      {/* Dropdown */}
-      {open && (
-        <div className="absolute top-full left-0 mt-1 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-50 py-2 max-h-[80vh] overflow-y-auto">
+      {/* Dropdown — rendered in a portal to escape the header's stacking context (backdrop-filter) */}
+      {open && dropCoords && createPortal(
+        <div
+          ref={dropRef}
+          className="fixed w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-[9990] py-2 max-h-[80vh] overflow-y-auto"
+          style={{ top: dropCoords.top, left: dropCoords.left }}
+        >
           {/* Org selector */}
           <div className="px-3 py-1.5">
             <p className="text-xs font-semibold text-gray-400 uppercase mb-1">Organisation</p>
@@ -127,7 +147,8 @@ export default function ScopeSwitcher() {
               </div>
             </>
           )}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
