@@ -458,6 +458,57 @@ def suggest_schedule_from_naf(db: Session, site_id: int) -> Optional[dict]:
 
 
 # ========================================
+# Portfolio summary (ranked by behavior_score)
+# ========================================
+
+def get_portfolio_behavior_summary(db: Session, org_id: int, days: int = 30) -> dict:
+    """Return all org sites ranked by behavior_score, with KPI deltas."""
+    sites = db.query(Site).filter(Site.org_id == org_id, Site.actif == True).all()
+
+    rows = []
+    for site in sites:
+        try:
+            anomalies = get_anomalies_and_score(db, site.id, days)
+            profile = get_consumption_profile(db, site.id, days)
+            rows.append({
+                "site_id": site.id,
+                "site_name": site.name,
+                "behavior_score": anomalies.get("behavior_score"),
+                "max_severity": anomalies.get("max_severity"),
+                "offhours_pct": (anomalies.get("kpis") or {}).get("offhours_pct", 0),
+                "baseload_kw": profile.get("baseload_kw", 0),
+                "total_kwh": profile.get("total_kwh", 0),
+                "insights_count": len(anomalies.get("insights") or []),
+                "weekend_active": (anomalies.get("weekend_active") or {}).get("detected", False),
+            })
+        except Exception:
+            rows.append({
+                "site_id": site.id,
+                "site_name": site.name,
+                "behavior_score": None,
+                "max_severity": None,
+                "offhours_pct": 0,
+                "baseload_kw": 0,
+                "total_kwh": 0,
+                "insights_count": 0,
+                "weekend_active": False,
+            })
+
+    # Sort: sites with score first (ascending = worst first), then no-score
+    scored = sorted([r for r in rows if r["behavior_score"] is not None], key=lambda r: r["behavior_score"])
+    unscored = [r for r in rows if r["behavior_score"] is None]
+
+    return {
+        "org_id": org_id,
+        "days": days,
+        "sites_count": len(rows),
+        "sites_scored": len(scored),
+        "avg_behavior_score": round(sum(r["behavior_score"] for r in scored) / len(scored), 1) if scored else None,
+        "sites": scored + unscored,
+    }
+
+
+# ========================================
 # Full context (aggregator)
 # ========================================
 

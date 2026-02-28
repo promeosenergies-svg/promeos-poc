@@ -1393,6 +1393,8 @@ export const refreshConsumptionDiagnose = (siteId, days = 30) =>
   api.post(`/consumption-context/site/${siteId}/diagnose`, null, { params: { days } }).then((r) => r.data);
 export const suggestSchedule = (siteId) =>
   api.get(`/consumption-context/site/${siteId}/suggest-schedule`).then((r) => r.data);
+export const getPortfolioBehaviorSummary = (days = 30) =>
+  _cachedGet('/consumption-context/portfolio/summary', { params: { days } }).then((r) => r.data);
 
 // V69: Meta version (sha + branch) — Expert mode display
 export const getMetaVersion = () =>

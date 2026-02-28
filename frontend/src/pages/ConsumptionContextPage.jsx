@@ -126,6 +126,7 @@ export default function ConsumptionContextPage() {
             anomalies={anomalyData}
             siteId={siteId}
             loading={loading}
+            onRefresh={load}
           />
         )}
       </div>

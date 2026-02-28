@@ -1,47 +1,12 @@
 /**
  * PROMEOS — HorairesAnomaliesTab
- * Tab 2: Horaires d'activité + Anomalies + behavior_score.
+ * Tab 2: Horaires d'activité (éditables) + Anomalies + behavior_score.
  */
-import { Card, CardBody, Badge, KpiCard } from '../../ui';
-import { AlertTriangle, Clock, Building2, Calendar } from 'lucide-react';
-
-const DAY_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+import { Card, CardBody, Badge } from '../../ui';
+import { AlertTriangle, Building2, Calendar } from 'lucide-react';
+import ScheduleEditor from './ScheduleEditor';
 
 const SEV_VARIANT = { critical: 'crit', high: 'warn', medium: 'info', low: 'neutral' };
-
-function ScheduleDisplay({ schedule }) {
-  if (!schedule) return null;
-
-  const openDays = (schedule.open_days || '0,1,2,3,4').split(',').map(Number);
-  const openH = parseInt((schedule.open_time || '08:00').split(':')[0], 10);
-  const closeH = parseInt((schedule.close_time || '19:00').split(':')[0], 10);
-
-  return (
-    <Card>
-      <CardBody>
-        <div className="flex items-center gap-2 mb-3">
-          <Clock className="w-4 h-4 text-indigo-500" />
-          <h3 className="text-sm font-semibold text-gray-700">Horaires d'activité</h3>
-          <Badge variant="neutral">{schedule.source || 'default'}</Badge>
-          {schedule.is_24_7 && <Badge variant="info">24/7</Badge>}
-        </div>
-        <div className="grid grid-cols-7 gap-1">
-          {DAY_LABELS.map((label, d) => {
-            const isOpen = openDays.includes(d);
-            return (
-              <div key={d} className="text-center">
-                <div className="text-[10px] text-gray-400 mb-1">{label}</div>
-                <div className={`h-6 rounded text-[10px] flex items-center justify-center ${isOpen ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-400'}`}>
-                  {isOpen ? `${openH}h-${closeH}h` : 'Fermé'}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </CardBody>
-    </Card>
-  );
-}
 
 function ArchetypeCard({ archetype, nafCode }) {
   if (!archetype) {
@@ -173,12 +138,17 @@ function WeekendActiveAlert({ weekendActive }) {
   );
 }
 
-export default function HorairesAnomaliesTab({ activity, anomalies, siteId, loading }) {
+export default function HorairesAnomaliesTab({ activity, anomalies, siteId, loading, onRefresh }) {
   if (loading) return <Card><CardBody><div className="h-64 animate-pulse bg-gray-100 rounded" /></CardBody></Card>;
 
   return (
     <div className="space-y-6">
-      <ScheduleDisplay schedule={activity?.schedule} />
+      {/* Horaires — maintenant éditables */}
+      <ScheduleEditor
+        schedule={activity?.schedule}
+        siteId={siteId}
+        onSaved={onRefresh}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <ArchetypeCard archetype={activity?.archetype} nafCode={activity?.naf_code} />

@@ -1,5 +1,6 @@
 """
 PROMEOS — Routes Consumption Context V0
+GET /api/consumption-context/portfolio/summary         — sites ranked by behavior_score
 GET /api/consumption-context/site/{site_id}           — contexte complet
 GET /api/consumption-context/site/{site_id}/profile    — heatmap + daily profile + baseload
 GET /api/consumption-context/site/{site_id}/activity   — schedule + archetype + TOU
@@ -21,11 +22,25 @@ from services.consumption_context_service import (
     get_activity_context,
     get_anomalies_and_score,
     suggest_schedule_from_naf,
+    get_portfolio_behavior_summary,
 )
 from services.consumption_diagnostic import run_diagnostic
 from services.scope_utils import resolve_org_id
 
 router = APIRouter(prefix="/api/consumption-context", tags=["Consumption Context"])
+
+
+@router.get("/portfolio/summary")
+def portfolio_behavior_summary(
+    request: Request,
+    days: int = Query(30, ge=7, le=365),
+    org_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Rank all org sites by behavior_score (worst first)."""
+    resolved_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
+    return get_portfolio_behavior_summary(db, resolved_org_id, days)
 
 
 def _get_site_or_404(db: Session, site_id: int) -> Site:
