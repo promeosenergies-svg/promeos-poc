@@ -1,5 +1,53 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-02-28
+
+### V84 — Consumption Context V0 + ULTIMATE++ ScheduleEditor + UX Overlays
+
+**Consumption Context V0 (Usages & Horaires):**
+- Nouveau service `backend/services/consumption_context_service.py` :
+  - `get_consumption_profile()` : heatmap 7x24, profil journee 24 pts, baseload Q10, peak P90, load_factor
+  - `get_activity_context()` : SiteOperatingSchedule + archetype NAF + TOUSchedule actif
+  - `get_anomalies_and_score()` : orchestration run_diagnostic() + ConsumptionInsight existants
+  - `get_full_context()` : agregation complete
+  - `compute_behavior_score()` : score 0-100 deterministe (4 penalites transparentes : hors-horaires 40pts, baseload 25pts, derive 20pts, weekend 15pts)
+  - `detect_weekend_active()` : comparaison avg kWh weekend vs semaine avec seuils 0.5/0.8
+  - `get_portfolio_behavior_summary()` : classement tous sites org par score ascending
+- 6 routes `backend/routes/consumption_context.py` (prefixe `/api/consumption-context`) :
+  - `GET /site/{id}`, `GET /site/{id}/profile`, `GET /site/{id}/activity`, `GET /site/{id}/anomalies`
+  - `POST /site/{id}/diagnose`, `GET /portfolio/summary`
+- 20 tests pytest `backend/tests/test_consumption_context.py` (A-E : score, weekend, profile, activity, API)
+- Page `/usages-horaires` (ConsumptionContextPage.jsx) : 4 KpiCards + 2 tabs
+  - Tab "Profil & Heatmap" (ProfileHeatmapTab.jsx) : HeatmapGrid 7x24, DailyProfileChart, BaseloadCard
+  - Tab "Horaires & Anomalies" (HorairesAnomaliesTab.jsx) : ScheduleEditor, ArchetypeCard, ScoreBadge, AnomalyList, WeekendActiveAlert
+- 6 fonctions API frontend (`getConsumptionContext`, `getConsumptionProfile`, `getConsumptionActivity`, `getConsumptionAnomalies`, `refreshConsumptionDiagnose`, `suggestSchedule`)
+- `toUsagesHoraires()` dans routes.js, route React `/usages-horaires`, entree nav "Usages & Horaires"
+- 44 tests vitest source-guard `consumptionContextV0.test.js`
+
+**ULTIMATE++ — ScheduleEditor interactif:**
+- `frontend/src/pages/consumption/ScheduleEditor.jsx` : edition inline des horaires (7 jours toggle Set, heure debut/fin, is_24_7, bouton "Suggestion NAF", save → PUT schedule + POST diagnose)
+- Rafraichissement de la page via `onSaved` prop → `onRefresh={load}` dans ConsumptionContextPage
+
+**Demo HELIOS canonique (V83):**
+- Suppression complete de Groupe Casino : pack `packs.py`, `demo_templates.py`, `seed_casino.py`, `test_seed_casino.py`
+- `dev_tools.py` reset_db reseed HELIOS (etait Casino)
+- Defaults orchestrator + CLI : `--pack helios`
+- Tests mis a jour : `test_demo_seed_packs.py` (TestSeedHeliosPack, 5 sites), `test_demo_manifest.py`, `test_compliance_bundle.py`
+- `getAiExecBrief(orgId = null)` : suppression du org_id=1 hardcode
+- `DemoScopeUltime.test.js` : heliosMock5 (5 sites), "Groupe HELIOS"
+
+**UX Overlays (fix/ux-overlays):**
+- `Tooltip.jsx` : early return si `!text` → pas de span invisible en DOM (zero point noir)
+- `TooltipPortal.jsx` : guard dans `show()` callback, `text` ajoute aux deps useCallback
+- `InfoTooltip.jsx` : `return null` apres useState si `!text`
+- `ScopeSwitcher.jsx` : dropdown via `createPortal(…, document.body)` + `position:fixed z-[9990]` — corrige le clipping par le stacking context `backdrop-blur-md` du header sticky; `dropRef` exclu du outside-click handler
+
+**Tests:**
+- Frontend : 3 596 passes (105 fichiers de test), 0 regression
+- Backend : 2 400+ passes, 0 regression
+
+---
+
 ## [Unreleased] — 2026-02-18
 
 ### Quality Gate CI/CD — Front + Back + E2E
