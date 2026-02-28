@@ -79,6 +79,7 @@ export default function InfoTip({
         type="button"
         aria-label="Aide contextuelle"
         aria-describedby={visible ? tooltipId.current : undefined}
+        data-testid="infotip"
         className={`inline-flex items-center justify-center shrink-0 text-gray-400
           hover:text-gray-600 rounded cursor-help transition-colors
           focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1

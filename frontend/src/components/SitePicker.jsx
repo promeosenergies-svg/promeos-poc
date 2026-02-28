@@ -6,6 +6,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, X, Star, FolderOpen, ChevronDown, Save, Check } from 'lucide-react';
 import { getEmsCollections, createEmsCollection } from '../services/api';
+import useFloatingPortalPosition from '../hooks/useFloatingPortalPosition';
 
 const MAX_RECENT = 5;
 const LS_KEY = 'promeos_ems_recent_sites';
@@ -20,7 +21,6 @@ function saveRecent(ids) {
 export default function SitePicker({ sites, selectedIds, onChange, maxSelection = 8 }) {
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
-  const [openCoords, setOpenCoords] = useState(null);
   const [collections, setCollections] = useState([]);
   const [showCollections, setShowCollections] = useState(false);
   const [saveName, setSaveName] = useState('');
@@ -28,6 +28,13 @@ export default function SitePicker({ sites, selectedIds, onChange, maxSelection 
   const ref = useRef(null);
   const triggerRef = useRef(null);
   const dropRef = useRef(null);
+
+  // Premium positioning: scroll/resize/zoom auto-reposition
+  const { style: dropStyle } = useFloatingPortalPosition({
+    isOpen: open,
+    triggerRef,
+    portalRef: dropRef,
+  });
 
   // Load collections on mount
   useEffect(() => {
@@ -104,13 +111,7 @@ export default function SitePicker({ sites, selectedIds, onChange, maxSelection 
       {/* Trigger button */}
       <button
         ref={triggerRef}
-        onClick={() => {
-          if (!open && triggerRef.current) {
-            const r = triggerRef.current.getBoundingClientRect();
-            setOpenCoords({ top: r.bottom + 4, left: r.left });
-          }
-          setOpen(o => !o);
-        }}
+        onClick={() => setOpen(o => !o)}
         className="flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white
           hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition min-w-[180px]"
       >
@@ -137,12 +138,12 @@ export default function SitePicker({ sites, selectedIds, onChange, maxSelection 
         </div>
       )}
 
-      {/* Dropdown — portaled to body to escape overflow/stacking-context clipping */}
-      {open && openCoords && createPortal(
+      {/* Dropdown — portaled to body, auto-repositions on scroll/resize/zoom */}
+      {open && createPortal(
         <div
           ref={dropRef}
           className="fixed z-[120] w-80 bg-white border border-gray-200 rounded-xl shadow-xl max-h-[420px] flex flex-col"
-          style={{ top: openCoords.top, left: openCoords.left }}
+          style={dropStyle}
         >
           {/* Search */}
           <div className="p-2 border-b border-gray-100">

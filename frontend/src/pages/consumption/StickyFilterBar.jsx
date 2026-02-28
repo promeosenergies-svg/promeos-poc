@@ -37,6 +37,7 @@
  */
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import useFloatingPortalPosition from '../../hooks/useFloatingPortalPosition';
 import { X, Zap, Flame, Save, RotateCcw, Link, ChevronDown, Trash2, Plus, LayoutGrid } from 'lucide-react';
 import { TrustBadge } from '../../ui';
 import { computeGranularity, colorForSite, getAvailableGranularities } from './helpers';
@@ -89,19 +90,17 @@ function todayISO() {
 // Portaled to document.body — escapes the sticky+backdrop-blur stacking context.
 function SiteSearchDropdown({ sites, selectedIds, onAdd, onClose, anchorRef }) {
   const [query, setQuery] = useState('');
-  const [coords, setCoords] = useState(null);
   const inputRef = useRef(null);
   const dropRef = useRef(null);
 
-  useEffect(() => { inputRef.current?.focus(); }, []);
+  // Premium positioning: component only mounts when visible → isOpen always true
+  const { style } = useFloatingPortalPosition({
+    isOpen: true,
+    triggerRef: anchorRef,
+    portalRef: dropRef,
+  });
 
-  // Compute fixed position from the anchor element
-  useEffect(() => {
-    if (anchorRef?.current) {
-      const r = anchorRef.current.getBoundingClientRect();
-      setCoords({ top: r.bottom + 4, left: r.left });
-    }
-  }, [anchorRef]);
+  useEffect(() => { inputRef.current?.focus(); }, []);
 
   // Outside-click closes the dropdown (checks both anchor and portaled div)
   useEffect(() => {
@@ -122,13 +121,12 @@ function SiteSearchDropdown({ sites, selectedIds, onAdd, onClose, anchorRef }) {
       s.nom.toLowerCase().includes(query.toLowerCase())
   );
 
-  if (!coords) return null;
-
   return createPortal(
     <div
       ref={dropRef}
+      data-testid="sticky-sitesearch-panel"
       className="fixed w-60 bg-white rounded-lg shadow-lg border border-gray-200 z-[120] py-1"
-      style={{ top: coords.top, left: coords.left }}
+      style={style}
     >
       <div className="px-2 py-1.5 border-b border-gray-100">
         <input
@@ -296,7 +294,13 @@ export default function StickyFilterBar({
   const addRef = useRef(null);
   const presetsBtnRef = useRef(null);
   const presetsDropRef = useRef(null);
-  const [presetsCoords, setPresetsCoords] = useState(null);
+
+  // Premium positioning for Presets dropdown
+  const { style: presetsStyle } = useFloatingPortalPosition({
+    isOpen: showPresets,
+    triggerRef: presetsBtnRef,
+    portalRef: presetsDropRef,
+  });
 
   // Close presets dropdown on outside click
   useEffect(() => {
@@ -417,6 +421,7 @@ export default function StickyFilterBar({
             {effectiveSiteIds.length < MAX_SITES && sites.length > effectiveSiteIds.length && (
               <div ref={addRef}>
                 <button
+                  data-testid="sticky-sitesearch-trigger"
                   onClick={() => setShowAddSite(v => !v)}
                   className="flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition"
                   title="Ajouter un site"
@@ -669,23 +674,19 @@ export default function StickyFilterBar({
             <div>
               <button
                 ref={presetsBtnRef}
-                onClick={() => {
-                  if (!showPresets && presetsBtnRef.current) {
-                    const r = presetsBtnRef.current.getBoundingClientRect();
-                    setPresetsCoords({ top: r.bottom + 4, left: r.left });
-                  }
-                  setShowPresets(v => !v);
-                }}
+                data-testid="sticky-presets-trigger"
+                onClick={() => setShowPresets(v => !v)}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
               >
                 Presets ({savedPresets.length})
                 <ChevronDown size={11} />
               </button>
-              {showPresets && presetsCoords && createPortal(
+              {showPresets && createPortal(
                 <div
                   ref={presetsDropRef}
+                  data-testid="sticky-presets-panel"
                   className="fixed w-52 bg-white rounded-lg shadow-lg border border-gray-200 z-[120] py-1"
-                  style={{ top: presetsCoords.top, left: presetsCoords.left }}
+                  style={presetsStyle}
                 >
                   {savedPresets.map(p => (
                     <div key={p.name} className="flex items-center gap-1 px-2 py-1.5 hover:bg-gray-50 group">
