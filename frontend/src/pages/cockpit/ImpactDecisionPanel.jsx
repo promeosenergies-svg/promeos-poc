@@ -11,9 +11,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ShieldAlert, Receipt, TrendingUp, ArrowRight, Info, Loader2, Zap, ShoppingCart,
+  ShieldAlert, Receipt, TrendingUp, ArrowRight, Loader2, Zap, ShoppingCart,
 } from 'lucide-react';
-import { Card, CardBody, Badge, Tooltip, Button } from '../../ui';
+import { Card, CardBody, Badge, InfoTip, Button } from '../../ui';
+import { TOOLTIPS } from '../../ui/tooltips';
 import { KPI_ACCENTS } from '../../ui/colorTokens';
 import { fmtEur } from '../../utils/format';
 import { getBillingSummary, getPurchaseRenewals, patrimoineContracts } from '../../services/api';
@@ -50,11 +51,7 @@ function ImpactKpiTile({ icon: Icon, label, value, available, tooltip, accent, o
               Prioritaire
             </span>
           )}
-          {tooltip && (
-            <Tooltip text={tooltip}>
-              <Info size={12} className="text-gray-400 cursor-help" />
-            </Tooltip>
-          )}
+          <InfoTip content={tooltip} />
         </div>
         <p className="text-lg font-bold text-gray-900 mt-0.5">
           {available ? fmtEur(value) : '—'}
@@ -168,11 +165,12 @@ export default function ImpactDecisionPanel({ kpis }) {
         <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
           Impact & Décision
         </h3>
-        <Tooltip text="Calculs V1 — règles déterministes basées sur vos données réelles">
-          <span className="text-[10px] text-gray-400 border border-gray-200 rounded px-1.5 py-0.5 cursor-help">
+        <div className="flex items-center gap-1">
+          <span className="text-[10px] text-gray-400 border border-gray-200 rounded px-1.5 py-0.5">
             V1
           </span>
-        </Tooltip>
+          <InfoTip content={TOOLTIPS.executive.calculsV1} />
+        </div>
       </div>
 
       {/* ── 3 KPIs ── */}
@@ -182,7 +180,7 @@ export default function ImpactDecisionPanel({ kpis }) {
           label="Risque conformité"
           value={impact.risqueConformite}
           available={impact.risqueAvailable}
-          tooltip="Somme des risques financiers des sites non conformes ou à risque dans le périmètre actif"
+          tooltip={TOOLTIPS.executive.risqueConformite}
           accent="risque"
           onClick={() => handleDrillDown('risque')}
           ariaLabel="Voir les sites à risque conformité"
@@ -194,7 +192,7 @@ export default function ImpactDecisionPanel({ kpis }) {
           label="Surcoût facture"
           value={impact.surcoutFacture}
           available={impact.surcoutAvailable}
-          tooltip="Total des pertes identifiées par le moteur d'audit facture (shadow billing)"
+          tooltip={TOOLTIPS.executive.surcoutFacture}
           accent="alertes"
           onClick={() => handleDrillDown('surcout')}
           ariaLabel="Voir les anomalies de facturation"
@@ -206,7 +204,7 @@ export default function ImpactDecisionPanel({ kpis }) {
           label="Opportunité optimisation"
           value={impact.opportuniteOptim}
           available={impact.optimAvailable}
-          tooltip="Heuristique V1 : 1 % du montant facturé total — affiné à mesure que les données s'enrichissent"
+          tooltip={TOOLTIPS.executive.opportuniteOptim}
           accent="conformite"
           onClick={() => handleDrillDown('optimisation')}
           ariaLabel="Voir les sites énergivores"
@@ -222,9 +220,7 @@ export default function ImpactDecisionPanel({ kpis }) {
           <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
             Achats d&apos;energie
           </h4>
-          <Tooltip text="Signaux dérivés des contrats renseignés — heuristique V1">
-            <Info size={12} className="text-gray-400 cursor-help" />
-          </Tooltip>
+          <InfoTip content={TOOLTIPS.executive.achatsEnergie} />
         </div>
         {isPurchaseAvailable(purchaseSignals) ? (
           <div className="grid grid-cols-3 gap-3">

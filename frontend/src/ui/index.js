@@ -34,3 +34,7 @@ export { default as ScopeSummary } from './ScopeSummary';
 
 // Design System V5 — Conventions & UX standardisation
 export { LAYOUT, TYPO, LABELS_FR } from './conventions';
+
+// Design System V6 — InfoTip + Tooltip content map
+export { default as InfoTip } from './InfoTip';
+export { TOOLTIPS } from './tooltips';
