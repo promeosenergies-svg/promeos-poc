@@ -60,10 +60,14 @@ class SeedOrchestrator:
         result["default_site_id"] = master["sites"][0].id if master["sites"] else None
         result["default_site_name"] = master["sites"][0].nom if master["sites"] else None
 
-        # 2-3. Weather + Readings — monthly branch for helios
+        # 2-3. Weather + Readings
         readings_freq = pack_def.get("readings_frequency", "hourly")
+        # V85: pack can specify extended hourly window (helios → 730 days = 2 years)
+        hourly_days = pack_def.get("hourly_days", days)
+        temp_lookup = {}
+
         if readings_freq == "monthly":
-            # Monthly readings (helios) — skip weather + monitoring
+            # Monthly readings (helios) — 60 months historical billing
             from .gen_readings import generate_monthly_readings
             readings_months = pack_def.get("readings_months", 36)
             readings_count = generate_monthly_readings(
@@ -72,9 +76,30 @@ class SeedOrchestrator:
             )
             result["readings_count"] = readings_count
             result["readings_frequency"] = "monthly"
-            result["weather_days"] = 0
+
+            # V85: weather for the full hourly window
+            from .gen_weather import generate_weather
+            temp_lookup = generate_weather(self.db, master["sites"], hourly_days, rng)
+            result["weather_days"] = hourly_days
+
+            # V85: hourly readings over extended window (730 days for helios)
+            from .gen_readings import generate_readings
+            hourly_count = generate_readings(
+                self.db, master["meters"], master["site_profiles"],
+                temp_lookup, hourly_days, rng
+            )
+            result["hourly_readings_count"] = hourly_count
+
+            # V85: 15-min readings for recent monitoring window (30 days)
+            from .gen_readings import generate_15min_readings
+            min15_days = pack_def.get("min15_days", 30)
+            min15_count = generate_15min_readings(
+                self.db, master["meters"], master["site_profiles"],
+                temp_lookup, min15_days, rng
+            )
+            result["min15_readings_count"] = min15_count
         else:
-            # Hourly readings (casino / tertiaire) — with weather
+            # Hourly readings (tertiaire) — with weather
             from .gen_weather import generate_weather
             temp_lookup = generate_weather(self.db, master["sites"], days, rng)
             result["weather_days"] = days
@@ -95,16 +120,13 @@ class SeedOrchestrator:
         # 4b. Sync site compliance statuses from obligations
         self._sync_site_compliance_statuses(master["sites"])
 
-        # 5. Monitoring (needs hourly data — skip for monthly packs)
-        if readings_freq != "monthly":
-            from .gen_monitoring import generate_monitoring
-            monitoring = generate_monitoring(
-                self.db, master["sites"], master["meters"],
-                master["site_profiles"], rng
-            )
-            result["monitoring"] = monitoring
-        else:
-            result["monitoring"] = {"skipped": True, "reason": "monthly_readings"}
+        # 5. Monitoring (hourly data now available for all packs)
+        from .gen_monitoring import generate_monitoring
+        monitoring = generate_monitoring(
+            self.db, master["sites"], master["meters"],
+            master["site_profiles"], rng
+        )
+        result["monitoring"] = monitoring
 
         # 6. Billing
         from .gen_billing import generate_billing
