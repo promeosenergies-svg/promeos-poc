@@ -48,17 +48,17 @@ def client(db_session):
 def _seed_two_orgs(db_session):
     """Create 2 orgs with different site counts to verify scope isolation."""
     org1 = Organisation(id=1, nom="Nexity")
-    org2 = Organisation(id=2, nom="Groupe Casino")
+    org2 = Organisation(id=2, nom="Groupe Tertiaire")
     db_session.add_all([org1, org2])
     db_session.flush()
 
     ej1 = EntiteJuridique(id=1, nom="EJ Nexity", siren="111111111", organisation_id=1)
-    ej2 = EntiteJuridique(id=2, nom="EJ Casino", siren="222222222", organisation_id=2)
+    ej2 = EntiteJuridique(id=2, nom="EJ Tertiaire", siren="222222222", organisation_id=2)
     db_session.add_all([ej1, ej2])
     db_session.flush()
 
     pf1 = Portefeuille(id=1, nom="PF Nexity", entite_juridique_id=1)
-    pf2 = Portefeuille(id=2, nom="PF Casino", entite_juridique_id=2)
+    pf2 = Portefeuille(id=2, nom="PF Tertiaire", entite_juridique_id=2)
     db_session.add_all([pf1, pf2])
     db_session.flush()
 
@@ -67,7 +67,7 @@ def _seed_two_orgs(db_session):
         db_session.add(Site(id=i, nom=f"Site Nexity {i}", type=TypeSite.BUREAU,
                             portefeuille_id=1, actif=True))
     for i in range(4, 6):
-        db_session.add(Site(id=i, nom=f"Site Casino {i}", type=TypeSite.BUREAU,
+        db_session.add(Site(id=i, nom=f"Site Tertiaire {i}", type=TypeSite.BUREAU,
                             portefeuille_id=2, actif=True))
     db_session.flush()
 
@@ -81,7 +81,7 @@ def _seed_two_orgs(db_session):
     for sid in [4, 5]:
         db_session.add(ComplianceFinding(
             site_id=sid, regulation="bacs", rule_id="BACS_SCOPE",
-            status="OK", severity="low", evidence="test casino",
+            status="OK", severity="low", evidence="test tertiaire",
         ))
     db_session.commit()
 
@@ -98,7 +98,7 @@ class TestBundleEndpoint:
         assert len(data["sites"]) == 3
 
     def test_bundle_org_scope_org2(self, client, db_session):
-        """GET /bundle?org_id=2 returns only org2 data (2 sites, Casino names)."""
+        """GET /bundle?org_id=2 returns only org2 data (2 sites, Tertiaire names)."""
         _seed_two_orgs(db_session)
         r = client.get("/api/compliance/bundle", params={"org_id": 2})
         assert r.status_code == 200
@@ -107,7 +107,7 @@ class TestBundleEndpoint:
         assert data["summary"]["total_sites"] == 2
         assert len(data["sites"]) == 2
         site_names = [s["site_nom"] for s in data["sites"]]
-        assert all("Casino" in n for n in site_names)
+        assert all("Tertiaire" in n for n in site_names)
 
     def test_bundle_site_scope(self, client, db_session):
         """GET /bundle?org_id=1&site_id=1 returns single site."""

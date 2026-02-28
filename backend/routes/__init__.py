@@ -37,6 +37,7 @@ from .dev_tools import router as dev_tools_router
 from .flex import router as flex_router
 from .tertiaire import router as tertiaire_router
 from .portfolio import router as portfolio_router
+from .consumption_context import router as consumption_context_router
 
 __all__ = [
     "sites_router",
@@ -75,4 +76,5 @@ __all__ = [
     "flex_router",
     "tertiaire_router",
     "portfolio_router",
+    "consumption_context_router",
 ]

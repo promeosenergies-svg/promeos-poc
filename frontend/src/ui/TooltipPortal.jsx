@@ -75,6 +75,8 @@ export default function TooltipPortal({
   const tooltipId  = useRef(`tp-${Math.random().toString(36).slice(2)}`);
 
   const show = useCallback(() => {
+    // Guard: no text → never show tooltip
+    if (!text) return;
     clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       if (triggerRef.current) {
@@ -86,7 +88,7 @@ export default function TooltipPortal({
       }
       setVisible(true);
     }, delayMs);
-  }, [position, delayMs]);
+  }, [text, position, delayMs]);
 
   const hide = useCallback(() => {
     clearTimeout(timerRef.current);

@@ -3,6 +3,9 @@
  * CSS-only hover tooltip. No JS positioning needed for a POC.
  */
 export default function Tooltip({ text, children, position = 'top', className = '' }) {
+  // Guard: no text → render children as-is, no invisible tooltip bubble
+  if (!text) return <span className={`inline-flex ${className}`}>{children}</span>;
+
   const posClass = {
     top: 'bottom-full left-1/2 -translate-x-1/2 mb-2',
     bottom: 'top-full left-1/2 -translate-x-1/2 mt-2',

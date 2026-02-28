@@ -96,13 +96,13 @@ describe('requestId stale-response guard (V18-A RC3)', () => {
     const guard = makeRequestGuard();
     let apiSites = [];
 
-    const casinoReqId = guard.newRequest();   // org=Casino, id=1
+    const heliosReqId = guard.newRequest();   // org=Helios, id=1
     const tertiReqId  = guard.newRequest();   // org=Tertiaire, id=2
 
-    // Casino API responds (stale)
-    const casinoSites = Array.from({ length: 36 }, (_, i) => ({ id: i + 1 }));
-    if (guard.isFresh(casinoReqId)) {
-      apiSites = casinoSites; // should NOT execute
+    // Helios API responds (stale)
+    const heliosSites = Array.from({ length: 5 }, (_, i) => ({ id: i + 1 }));
+    if (guard.isFresh(heliosReqId)) {
+      apiSites = heliosSites; // should NOT execute
     }
 
     // Tertiaire API responds (fresh)
@@ -111,7 +111,7 @@ describe('requestId stale-response guard (V18-A RC3)', () => {
       apiSites = tertiSites; // should execute
     }
 
-    expect(apiSites).toHaveLength(10);  // Tertiaire wins, no 36-Casino contamination
+    expect(apiSites).toHaveLength(10);  // Tertiaire wins, no stale-Helios contamination
     expect(apiSites).toBe(tertiSites);
   });
 

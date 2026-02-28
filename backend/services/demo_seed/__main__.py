@@ -1,6 +1,6 @@
 """
 PROMEOS - Demo Seed CLI
-Usage: python -m services.demo_seed --pack casino --size S [--reset] [--seed 42]
+Usage: python -m services.demo_seed --pack helios --size S [--reset] [--seed 42]
 """
 import argparse
 import json
@@ -16,8 +16,8 @@ from .packs import list_packs
 
 def main():
     parser = argparse.ArgumentParser(description="PROMEOS Demo Seed CLI")
-    parser.add_argument("--pack", default="casino", choices=["casino", "tertiaire"],
-                        help="Pack to seed (default: casino)")
+    parser.add_argument("--pack", default="helios", choices=["helios", "tertiaire"],
+                        help="Pack to seed (default: helios)")
     parser.add_argument("--size", default="S", choices=["S", "M"],
                         help="Size: S (small) or M (medium)")
     parser.add_argument("--seed", type=int, default=42,

@@ -51,6 +51,7 @@ const TertiaireDashboardPage = lazy(() => import('./pages/tertiaire/TertiaireDas
 const TertiaireWizardPage = lazy(() => import('./pages/tertiaire/TertiaireWizardPage'));
 const TertiaireEfaDetailPage = lazy(() => import('./pages/tertiaire/TertiaireEfaDetailPage'));
 const TertiaireAnomaliesPage = lazy(() => import('./pages/tertiaire/TertiaireAnomaliesPage'));
+const ConsumptionContextPage = lazy(() => import('./pages/ConsumptionContextPage'));
 const AnomaliesPage = lazy(() => import('./pages/AnomaliesPage'));
 const CompliancePipelinePage = lazy(() => import('./pages/CompliancePipelinePage'));
 const SiteCompliancePage = lazy(() => import('./pages/SiteCompliancePage'));
@@ -124,6 +125,7 @@ function App() {
                   <Route path="/compliance/pipeline" element={<PageSuspense><CompliancePipelinePage /></PageSuspense>} />
                   <Route path="/compliance/sites/:siteId" element={<PageSuspense><SiteCompliancePage /></PageSuspense>} />
                   <Route path="/diagnostic-conso" element={<PageSuspense><ConsumptionDiagPage /></PageSuspense>} />
+                  <Route path="/usages-horaires" element={<PageSuspense><ConsumptionContextPage /></PageSuspense>} />
                   <Route path="/bill-intel" element={<PageSuspense><BillIntelPage /></PageSuspense>} />
                   <Route path="/billing" element={<PageSuspense><BillingPage /></PageSuspense>} />
                   <Route path="/achat-energie" element={<PageSuspense><PurchasePage /></PageSuspense>} />

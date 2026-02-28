@@ -186,6 +186,20 @@ export function toPurchaseAssistant(opts = {}) {
 }
 
 /**
+ * Usages & Horaires — contexte consommation, profil, anomalies.
+ * @param {object} opts
+ * @param {number|string} [opts.site_id]
+ * @param {string} [opts.tab] — 'profile' | 'horaires'
+ */
+export function toUsagesHoraires(opts = {}) {
+  const p = new URLSearchParams();
+  if (opts.site_id) p.set('site_id', String(opts.site_id));
+  if (opts.tab) p.set('tab', opts.tab);
+  const qs = p.toString();
+  return `/usages-horaires${qs ? '?' + qs : ''}`;
+}
+
+/**
  * Performance Electrique — dashboard monitoring.
  * @param {object} opts
  * @param {number|string} [opts.site_id]

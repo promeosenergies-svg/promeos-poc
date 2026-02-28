@@ -49,7 +49,12 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 > | Tarif Heures Solaires (blocs horaires, badges, effort score, cross-brique CTAs) | Stable -- V74-V82 |
 > | Performance cross-brique (5 KPI cards, THS adoption/gain/risque, CTA Simuler) | Stable -- V79 |
 > | Assistant Achat (8 etapes, deep-link step+offer, 6 offres demo, highlight) | Stable -- V81 |
-> | Suite de tests automatises | **3 700+ passes, 0 regression** |
+> | Demo HELIOS canonique (Casino supprime, seed deterministe 5 sites/7 bat./60 mois) | Stable -- V83 |
+> | Consumption Context V0 — Usages & Horaires (heatmap 7x24, profil, behavior_score) | Stable -- V84 |
+> | ScheduleEditor interactif (edition horaires + recalcul anomalies inline) | Stable -- V84 |
+> | Portfolio Behavior Summary (classement sites par score comportemental) | Stable -- V84 |
+> | UX Overlays fixes (tooltips vides, ScopeSwitcher portal z-index) | Stable -- fix/ux-overlays |
+> | Suite de tests automatises | **3 596 frontend + 2 400+ backend, 0 regression** |
 
 > **Disclaimer**
 >
@@ -64,8 +69,9 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 ## TL;DR
 
 - **Backend FastAPI** avec ~150 endpoints, 20+ modeles SQLAlchemy, 4 moteurs de regles reglementaires, 5 connecteurs de donnees, 4 watchers de veille, 5 agents IA (stub), module Patrimoine complet (import HELIOS, anomalies, impact reglementaire, cockpit portfolio V60-V63), module Facturation production-grade (org-scoping, PDF EDF/Engie, shadow billing V2 TURPE/CSPE/TICGN, 14 regles d'anomalie, bridge Action Center), timeline & couverture facturation (periods, coverage engine V67), Billing Unified (InvoiceNormalized, deep-links bidirectionnels, seed 36 mois HELIOS V68), demo seed hardened (V71), moteur Achat Energie (4 strategies incluant Tarif Heures Solaires avec 6 blocs horaires, effort score, report_pct, green bonus V74-V75).
-- **Frontend React 18 + Tailwind + Vite** avec 20+ pages : Dashboard, Cockpit Executif, Patrimoine (heatmap + portfolio), Detail Site, Plan d'action, RegOps, Conso & Usages, Tertiaire OPERAT, IAM Admin, Import, KB Explorer, Veille Reglementaire, Facturation (BillIntel deep-links + BillingTimeline + CoverageBar), Actions Console (V69), Performance V2 (5 KPI cards dont THS, expert mode, route registry V70-V79), Achat Energie V2 (4 strategies, "Option Tarif Heures Solaires" structuree avec badges Budget/Risque/Effort/Sans penalite, creneaux ete/hiver, 7 CTAs cross-briques, deep-link assistant V72-V82), Assistant Achat 8 etapes (deep-link step+offer, 6 offres demo, highlight V81).
-- **3 700+ tests passent, 0 regression** — pytest backend + vitest frontend, seed HELIOS 5 sites + 60 mois + 10 personas IAM en une commande, demo operationnelle en 2 minutes.
+- **Frontend React 18 + Tailwind + Vite** avec 22+ pages : Dashboard, Cockpit Executif, Patrimoine (heatmap + portfolio), Detail Site, Plan d'action, RegOps, Conso & Usages, Usages & Horaires (Consumption Context V0 : heatmap 7x24, profil journee, behavior_score, ScheduleEditor inline V84), Tertiaire OPERAT, IAM Admin, Import, KB Explorer, Veille Reglementaire, Facturation (BillIntel deep-links + BillingTimeline + CoverageBar), Actions Console (V69), Performance V2 (5 KPI cards dont THS, expert mode, route registry V70-V79), Achat Energie V2 (4 strategies, "Option Tarif Heures Solaires" structuree avec badges Budget/Risque/Effort/Sans penalite, creneaux ete/hiver, 7 CTAs cross-briques, deep-link assistant V72-V82), Assistant Achat 8 etapes (deep-link step+offer, 6 offres demo, highlight V81).
+- **Demo HELIOS canonique** : Groupe Casino supprime, demo unifiee Groupe HELIOS (3 entites, 5 sites, 7 batiments — bureaux, industrie, hotel, ecole, seed deterministe RNG=42, 60 mois de readings V83).
+- **3 596 frontend + 2 400+ backend = 6 000+ tests, 0 regression** — pytest backend + vitest frontend, seed HELIOS 5 sites + 60 mois + 10 personas IAM en une commande, demo operationnelle en 2 minutes.
 
 ---
 
@@ -430,6 +436,12 @@ Champs cles du Site :
 | `POST` | `/api/purchase/seed-demo` | Seed 2 sites demo avec 4 strategies |
 | `POST` | `/api/purchase/seed-wow-happy` | Seed 15 sites (donnees propres) |
 | `GET` | `/api/monitoring/kpis` | KPIs performance (off_hours_ratio, gaspillage, CO2e) |
+| `GET` | `/api/consumption-context/site/{id}` | Contexte complet (profile + activity + anomalies + behavior_score) |
+| `GET` | `/api/consumption-context/site/{id}/profile` | Heatmap 7x24, profil journee 24 pts, baseload/peak |
+| `GET` | `/api/consumption-context/site/{id}/activity` | Schedule, archetype NAF, TOU schedule actif |
+| `GET` | `/api/consumption-context/site/{id}/anomalies` | behavior_score 0-100, insights, weekend_active |
+| `POST` | `/api/consumption-context/site/{id}/diagnose` | Refresh diagnostic + recalcul score |
+| `GET` | `/api/consumption-context/portfolio/summary` | Classement sites par behavior_score (pires en premier) |
 | `GET` | `/health` | Health check |
 
 Documentation Swagger complete : `http://localhost:8000/docs`
@@ -459,6 +471,7 @@ Documentation Swagger complete : `http://localhost:8000/docs`
 | `/actions` | Actions Console | Gestion centralisee, filtres multi-criteres, batch operations, detail drawer |
 | `/achat-energie` | Achat Energie V2 | 4 strategies (Fixe/Indexe/Spot/THS), cockpit scenariel, "Option THS" structuree, 7 CTAs cross-briques |
 | `/achat-assistant` | Assistant Achat | Wizard 8 etapes, 6 offres demo (dont HEURES_SOLAIRES), deep-link step+offer+site_id |
+| `/usages-horaires` | Usages & Horaires | Heatmap 7x24, profil journee (24 pts), talon/peak, ScheduleEditor inline, behavior_score 0-100, anomalies off-hours + weekend |
 | `/admin/users` | Admin Utilisateurs | Gestion users/roles/scopes, journal d'audit |
 | `/login` | Authentification | Login JWT, switch org, impersonation |
 
@@ -613,7 +626,31 @@ Pour plus de details : [Security Notes](docs/security_notes.md) | [Demo Script](
   - Parsing `useSearchParams` : `?step=offres&offer=HEURES_SOLAIRES&site_id=X`
   - Highlight offre ciblee (amber ring), saut automatique a l'etape Offres
   - 6 offres demo (dont HEURES_SOLAIRES avec solarSlots ete/hiver + "Aucune penalite")
-- **3 700+ tests automatises (pytest + vitest), 0 regression**
+- **Demo HELIOS canonique (V83)** :
+  - Groupe Casino completement supprime (pack, seed, tests, templates)
+  - Groupe HELIOS = seule demo : 3 entites, 5 sites, 7 batiments, seed deterministe RNG=42
+  - `POST /api/dev/reset_db` reseed automatiquement HELIOS
+  - Coherence scope : X-Org-Id resolu dynamiquement, zero org_id hardcode
+- **Consumption Context V0 — Usages & Horaires (V84)** :
+  - Page `/usages-horaires` : 2 tabs (Profil & Heatmap / Horaires & Anomalies)
+  - Heatmap 7x24 heures : intensite couleur, labels HP/HC
+  - Profil journee 24 points : AreaChart Recharts, bande min-max, baseload Q10 + peak P90
+  - behavior_score 0-100 : transparent (4 penalites : hors-horaires, baseload, derive, weekend)
+  - `get_consumption_profile()`, `get_activity_context()`, `get_anomalies_and_score()`, `get_full_context()`
+  - 6 endpoints REST, 20 tests pytest, 44 tests vitest source-guard
+- **ScheduleEditor interactif (ULTIMATE++ V84)** :
+  - Edition des horaires d'activite : 7 jours toggle, heure debut/fin, mode 24/7
+  - Bouton "Suggestion NAF" (pre-rempli depuis l'archetype)
+  - Save → `PUT /api/site-config/{id}/schedule` puis recalcul anomalies via `POST /diagnose`
+  - Rafraichissement automatique de la page apres sauvegarde
+- **Portfolio Behavior Summary** :
+  - `GET /api/consumption-context/portfolio/summary` : classement tous les sites par behavior_score ascending (pires en premier) avec `avg_behavior_score`, `worst_site`, `best_site`
+- **UX Overlays (fix/ux-overlays)** :
+  - `Tooltip.jsx` : early return si text vide → zero point noir invisible
+  - `TooltipPortal.jsx` : guard dans `show()` → skip timer si text falsy
+  - `InfoTooltip.jsx` : return null apres hooks si text vide
+  - `ScopeSwitcher.jsx` : dropdown via `createPortal(…, document.body)` + `position:fixed z-[9990]` → corrige le clipping par `backdrop-blur-md` du header
+- **3 596 frontend + 2 400+ backend = 6 000+ tests automatises, 0 regression**
 - 12 items KB valides (archetypes, regles, recommendations)
 - Smoke test "red button" (14 checks avant mise en pilote)
 
@@ -715,7 +752,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 cd backend
 python -m pytest tests/ -v --tb=short
 ```
-Resultat attendu : `3700+ passed`.
+Resultat attendu : `2400+ passed`.
 
 ### Tests IAM uniquement
 

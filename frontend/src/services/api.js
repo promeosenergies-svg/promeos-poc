@@ -433,8 +433,8 @@ export const getAiRecommendations = (siteId) =>
   api.get(`/ai/site/${siteId}/recommend`).then((r) => r.data);
 export const getAiDataQuality = (siteId) =>
   api.get(`/ai/site/${siteId}/data-quality`).then((r) => r.data);
-export const getAiExecBrief = (orgId = 1) =>
-  api.get('/ai/org/brief', { params: { org_id: orgId } }).then((r) => r.data);
+export const getAiExecBrief = (orgId = null) =>
+  api.get('/ai/org/brief', { params: orgId ? { org_id: orgId } : {} }).then((r) => r.data);
 export const listAiInsights = (params = {}) =>
   api.get('/ai/insights', { params }).then((r) => r.data);
 
@@ -1377,6 +1377,24 @@ export const getPortfolioSummary = (params = {}) =>
   );
 export const getPortfolioSites = (params = {}) =>
   _cachedGet('/portfolio/consumption/sites', { params, skipSiteHeader: true }).then((r) => r.data);
+
+// CONSUMPTION CONTEXT V0 (Usages & Horaires)
+// ========================================
+
+export const getConsumptionContext = (siteId, days = 30) =>
+  _cachedGet(`/consumption-context/site/${siteId}`, { params: { days } }).then((r) => r.data);
+export const getConsumptionProfile = (siteId, days = 30) =>
+  _cachedGet(`/consumption-context/site/${siteId}/profile`, { params: { days } }).then((r) => r.data);
+export const getConsumptionActivity = (siteId) =>
+  _cachedGet(`/consumption-context/site/${siteId}/activity`).then((r) => r.data);
+export const getConsumptionAnomalies = (siteId, days = 30) =>
+  _cachedGet(`/consumption-context/site/${siteId}/anomalies`, { params: { days } }).then((r) => r.data);
+export const refreshConsumptionDiagnose = (siteId, days = 30) =>
+  api.post(`/consumption-context/site/${siteId}/diagnose`, null, { params: { days } }).then((r) => r.data);
+export const suggestSchedule = (siteId) =>
+  api.get(`/consumption-context/site/${siteId}/suggest-schedule`).then((r) => r.data);
+export const getPortfolioBehaviorSummary = (days = 30) =>
+  _cachedGet('/consumption-context/portfolio/summary', { params: { days } }).then((r) => r.data);
 
 // V69: Meta version (sha + branch) — Expert mode display
 export const getMetaVersion = () =>

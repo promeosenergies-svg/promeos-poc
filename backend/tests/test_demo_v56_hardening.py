@@ -61,18 +61,17 @@ class TestPackVisibility:
         helios = [p for p in visible if p["key"] == "helios"][0]
         assert helios["is_default"] is True
 
-    def test_hidden_packs_include_casino_tertiaire(self):
+    def test_hidden_packs_include_tertiaire(self):
         from services.demo_seed.packs import list_packs
         all_packs = list_packs(include_hidden=True)
         keys = [p["key"] for p in all_packs]
-        assert "casino" in keys
         assert "tertiaire" in keys
         assert "helios" in keys
 
-    def test_casino_not_visible(self):
+    def test_casino_pack_removed(self):
         from services.demo_seed.packs import get_pack
         casino = get_pack("casino")
-        assert casino["visible"] is False
+        assert casino is None
 
     def test_tertiaire_not_visible(self):
         from services.demo_seed.packs import get_pack

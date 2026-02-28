@@ -185,7 +185,7 @@ def generate_master(db, pack: dict, size: str, rng: random.Random) -> dict:
         db.flush()
 
     else:
-        # ── Randomized sites mode (casino / tertiaire) ──────────────────
+        # ── Randomized sites mode (tertiaire) ──────────────────
         sites_per_pf = size_cfg["sites_per_pf"]
         site_groups = pack["site_groups"]
 

@@ -57,17 +57,17 @@ describe('Org-change siteIds validation — V17-A', () => {
     return orgSites.length <= N_AUTO ? orgSites.map(s => s.id) : [orgSites[0].id];
   }
 
-  it('stale Casino siteId reset to first Tertiaire site when N > 5', () => {
-    const casinoSites = [1, 2, 3]; // IDs from Casino
+  it('stale siteId reset to first Tertiaire site when N > 5', () => {
+    const staleSites = [1, 2, 3]; // IDs from previous org
     const tertiaireSites = Array.from({ length: 10 }, (_, i) => ({ id: 10 + i }));
-    const result = resolveNewSiteIds(casinoSites, tertiaireSites, null);
+    const result = resolveNewSiteIds(staleSites, tertiaireSites, null);
     expect(result).toEqual([tertiaireSites[0].id]);
   });
 
-  it('stale Casino siteId reset to ALL Tertiaire sites when N ≤ 5', () => {
-    const casinoSites = [99];
+  it('stale siteId reset to ALL Tertiaire sites when N ≤ 5', () => {
+    const staleSites = [99];
     const smallOrg = [{ id: 1 }, { id: 2 }, { id: 3 }]; // N=3 ≤ 5
-    const result = resolveNewSiteIds(casinoSites, smallOrg, null);
+    const result = resolveNewSiteIds(staleSites, smallOrg, null);
     expect(result).toEqual([1, 2, 3]);
   });
 
@@ -132,8 +132,8 @@ describe('Auto-select threshold (N ≤ 5) — V17-A', () => {
     expect(autoSelect(sites)).toEqual([1]);
   });
 
-  it('N=36 (Casino) → only first site', () => {
-    const sites = Array.from({ length: 36 }, (_, i) => ({ id: i + 1 }));
+  it('N=10 (Tertiaire) → only first site', () => {
+    const sites = Array.from({ length: 10 }, (_, i) => ({ id: i + 1 }));
     expect(autoSelect(sites)).toEqual([1]);
   });
 });

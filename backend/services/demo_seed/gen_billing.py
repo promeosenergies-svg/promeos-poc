@@ -56,7 +56,7 @@ def generate_billing(db, org, sites: list, invoices_count: int,
                 contract_map[site.id] = contract
             contracts_created += 1
     else:
-        # ── Randomized contracts (casino / tertiaire) ────────────────
+        # ── Randomized contracts (tertiaire) ────────────────
         for site in sites:
             supplier = _SUPPLIERS[rng.randint(0, len(_SUPPLIERS) - 1)]
             price = round(rng.uniform(0.10, 0.25), 4)

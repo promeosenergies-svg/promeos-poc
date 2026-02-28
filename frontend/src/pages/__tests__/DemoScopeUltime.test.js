@@ -72,7 +72,7 @@ describe('DemoState: org tracking', () => {
 
   it('re-seeding with different org updates correctly (no stale data)', () => {
     const ds = makeDemoState();
-    ds.set_demo_org({ org_id: 1, org_nom: 'Groupe Casino', pack: 'casino', size: 'S', sites_count: 36 });
+    ds.set_demo_org({ org_id: 1, org_nom: 'Groupe HELIOS', pack: 'helios', size: 'S', sites_count: 5 });
     ds.set_demo_org({ org_id: 42, org_nom: 'SCI Les Terrasses', pack: 'tertiaire', size: 'S', sites_count: 10 });
     expect(ds.get_demo_org_id()).toBe(42);
     expect(ds.get_demo_context().sites_count).toBe(10);
@@ -113,13 +113,13 @@ describe('status-pack: scoped response', () => {
     expect(resp.size).toBe('M');
   });
 
-  it('returns 36 for Casino S pack (not confused with Tertiaire)', () => {
-    const ctx = { org_id: 1, pack: 'casino', size: 'S' };
-    const org = { id: 1, nom: 'Groupe Casino' };
-    const resp = buildStatusPackResponse(ctx, org, 36);
-    expect(resp.sites_count).toBe(36);
-    expect(resp.pack).toBe('casino');
-    expect(resp.org_nom).toBe('Groupe Casino');
+  it('returns 5 for Helios S pack (not confused with Tertiaire)', () => {
+    const ctx = { org_id: 1, pack: 'helios', size: 'S' };
+    const org = { id: 1, nom: 'Groupe HELIOS' };
+    const resp = buildStatusPackResponse(ctx, org, 5);
+    expect(resp.sites_count).toBe(5);
+    expect(resp.pack).toBe('helios');
+    expect(resp.org_nom).toBe('Groupe HELIOS');
   });
 
   it('returns no_org when no org in DB after reset', () => {
@@ -170,9 +170,9 @@ describe('ScopeSummary: label logic', () => {
     expect(label).toContain('(20)');
   });
 
-  it('shows (36) for Casino S pack', () => {
-    const label = buildScopeLabel({ orgNom: 'Groupe Casino', scopeLabel: 'Tous les sites', sitesCount: 36, selectedSiteId: null });
-    expect(label).toContain('(36)');
+  it('shows (5) for Helios S pack', () => {
+    const label = buildScopeLabel({ orgNom: 'Groupe HELIOS', scopeLabel: 'Tous les sites', sitesCount: 5, selectedSiteId: null });
+    expect(label).toContain('(5)');
   });
 });
 
@@ -194,9 +194,9 @@ describe('Page subtitles: use sitesCount (orgSites.length) not scopedSites.lengt
     expect(subtitle).toBe('SCI Les Terrasses · 20 sites');
   });
 
-  it('CommandCenter subtitle: "Groupe Casino · 36 sites" for Casino S pack', () => {
-    const subtitle = buildSubtitle('Groupe Casino', 36);
-    expect(subtitle).toBe('Groupe Casino · 36 sites');
+  it('CommandCenter subtitle: "Groupe HELIOS · 5 sites" for Helios S pack', () => {
+    const subtitle = buildSubtitle('Groupe HELIOS', 5);
+    expect(subtitle).toBe('Groupe HELIOS · 5 sites');
   });
 
   it('correct pluralization: "1 site" singular', () => {
@@ -237,22 +237,22 @@ describe('Scope coherence: apiSites vs mockSites precedence', () => {
   }
 
   const tertiaire10 = Array.from({ length: 10 }, (_, i) => ({ id: i + 1, org_id: 42, nom: `Site ${i + 1}` }));
-  const casinoMock36 = Array.from({ length: 36 }, (_, i) => ({ id: i + 1, org_id: 1, nom: `Casino ${i + 1}` }));
+  const heliosMock5 = Array.from({ length: 5 }, (_, i) => ({ id: i + 1, org_id: 1, nom: `Site HELIOS ${i + 1}` }));
 
   it('apiSites loaded → orgSites = apiSites (10 for S pack)', () => {
-    const orgSites = computeOrgSites(tertiaire10, casinoMock36, 42);
+    const orgSites = computeOrgSites(tertiaire10, heliosMock5, 42);
     expect(orgSites).toHaveLength(10);
     expect(orgSites[0].nom).toContain('Site');
   });
 
   it('apiSites empty → fallback to mockSites filtered by org', () => {
-    const orgSites = computeOrgSites([], casinoMock36, 1);
-    expect(orgSites).toHaveLength(36);
+    const orgSites = computeOrgSites([], heliosMock5, 1);
+    expect(orgSites).toHaveLength(5);
   });
 
-  it('apiSites loaded → mockSites ignored (no 36-sites contamination)', () => {
-    const orgSites = computeOrgSites(tertiaire10, casinoMock36, 42);
-    // Even though casinoMock36 has 36 entries, apiSites wins
+  it('apiSites loaded → mockSites ignored (no mock contamination)', () => {
+    const orgSites = computeOrgSites(tertiaire10, heliosMock5, 42);
+    // Even though heliosMock5 has 5 entries, apiSites wins
     expect(orgSites).toHaveLength(10);
     expect(orgSites.every(s => s.org_id === 42)).toBe(true);
   });
@@ -332,7 +332,7 @@ describe('setApiScope: header injection logic', () => {
 
   it('after reset + re-seed: new org_id replaces old', () => {
     const api = makeApiScope();
-    api.setApiScope({ orgId: 1, siteId: null });   // Casino
+    api.setApiScope({ orgId: 1, siteId: null });   // Helios
     api.setApiScope({ orgId: 42, siteId: null });   // Tertiaire
     const headers = api.getHeaders('/api/dashboard');
     expect(headers['X-Org-Id']).toBe('42');
@@ -342,16 +342,16 @@ describe('setApiScope: header injection logic', () => {
 // ── Fix: orgSites mock fallback guard (NEW — prevents "36 sites" bug) ─────────
 
 describe('ScopeContext fix: orgSites mock fallback guard', () => {
-  // Simulates the FIXED orgSites computation (no more 36 Casino sites for real orgs)
+  // Simulates the FIXED orgSites computation (no more stale mock sites for real orgs)
   function computeOrgSitesFixed(apiSites, effectiveOrgId, mockSampleFor_null_org = []) {
     if (apiSites.length > 0) return apiSites;
     if (effectiveOrgId) return []; // real org but API still loading → empty, not mock
     return mockSampleFor_null_org; // offline / truly no org
   }
 
-  it('[FIX] effectiveOrgId=1 + empty apiSites → [] (NOT 36 Casino mock sites)', () => {
-    const casinoMock36 = Array.from({ length: 36 }, (_, i) => ({ id: i + 1 }));
-    const result = computeOrgSitesFixed([], 1, casinoMock36);
+  it('[FIX] effectiveOrgId=1 + empty apiSites → [] (NOT stale mock sites)', () => {
+    const heliosMock5 = Array.from({ length: 5 }, (_, i) => ({ id: i + 1 }));
+    const result = computeOrgSitesFixed([], 1, heliosMock5);
     expect(result).toHaveLength(0); // was 36 before fix
   });
 
@@ -362,8 +362,8 @@ describe('ScopeContext fix: orgSites mock fallback guard', () => {
 
   it('[FIX] apiSites=[10 sites] → always returns apiSites (API wins)', () => {
     const apiSites = Array.from({ length: 10 }, (_, i) => ({ id: i + 1 }));
-    const casinoMock36 = Array.from({ length: 36 }, (_, i) => ({ id: i + 1 }));
-    const result = computeOrgSitesFixed(apiSites, 42, casinoMock36);
+    const heliosMock5 = Array.from({ length: 5 }, (_, i) => ({ id: i + 1 }));
+    const result = computeOrgSitesFixed(apiSites, 42, heliosMock5);
     expect(result).toHaveLength(10);
     expect(result).toBe(apiSites);
   });
@@ -399,7 +399,7 @@ describe('ScopeContext fix: setApiScope runs before getSites', () => {
   });
 
   it('[BUG-was] old order: getSites used stale header (old org)', () => {
-    let capturedHeader = 'old_org_1'; // stale Casino
+    let capturedHeader = 'old_org_1'; // stale
 
     // OLD broken order: getSites BEFORE setApiScope
     const headerUsedByGetSitesOld = capturedHeader; // still old_org_1!
