@@ -62,8 +62,9 @@ class SeedOrchestrator:
 
         # 2-3. Weather + Readings — monthly branch for helios
         readings_freq = pack_def.get("readings_frequency", "hourly")
+        hourly_days = 90  # always generate 90 days of hourly data for HELIOS too
         if readings_freq == "monthly":
-            # Monthly readings (helios) — skip weather + monitoring
+            # Monthly readings (helios) — 60 months historical billing
             from .gen_readings import generate_monthly_readings
             readings_months = pack_def.get("readings_months", 36)
             readings_count = generate_monthly_readings(
@@ -72,7 +73,18 @@ class SeedOrchestrator:
             )
             result["readings_count"] = readings_count
             result["readings_frequency"] = "monthly"
-            result["weather_days"] = 0
+
+            # V83: also generate 90 days of hourly data for monitoring + context
+            from .gen_weather import generate_weather
+            temp_lookup = generate_weather(self.db, master["sites"], hourly_days, rng)
+            result["weather_days"] = hourly_days
+
+            from .gen_readings import generate_readings
+            hourly_count = generate_readings(
+                self.db, master["meters"], master["site_profiles"],
+                temp_lookup, hourly_days, rng
+            )
+            result["hourly_readings_count"] = hourly_count
         else:
             # Hourly readings (casino / tertiaire) — with weather
             from .gen_weather import generate_weather
@@ -95,16 +107,13 @@ class SeedOrchestrator:
         # 4b. Sync site compliance statuses from obligations
         self._sync_site_compliance_statuses(master["sites"])
 
-        # 5. Monitoring (needs hourly data — skip for monthly packs)
-        if readings_freq != "monthly":
-            from .gen_monitoring import generate_monitoring
-            monitoring = generate_monitoring(
-                self.db, master["sites"], master["meters"],
-                master["site_profiles"], rng
-            )
-            result["monitoring"] = monitoring
-        else:
-            result["monitoring"] = {"skipped": True, "reason": "monthly_readings"}
+        # 5. Monitoring (needs hourly data)
+        from .gen_monitoring import generate_monitoring
+        monitoring = generate_monitoring(
+            self.db, master["sites"], master["meters"],
+            master["site_profiles"], rng
+        )
+        result["monitoring"] = monitoring
 
         # 6. Billing
         from .gen_billing import generate_billing
@@ -136,7 +145,17 @@ class SeedOrchestrator:
         )
         result["tertiaire"] = tertiaire
 
-        # 10. Superuser
+        # 10. TOU Schedules (HP/HC) — V83
+        from .gen_tou import generate_tou
+        tou = generate_tou(self.db, master["sites"], rng)
+        result["tou"] = tou
+
+        # 11. Notifications — V83
+        from .gen_notifications import generate_notifications
+        notifs = generate_notifications(self.db, master["org"], master["sites"], rng)
+        result["notifications"] = notifs
+
+        # 12. Superuser
         self._create_superuser(master["org"])
 
         # Enable demo mode and register current org in DemoState (single source of truth)
@@ -171,6 +190,8 @@ class SeedOrchestrator:
             MonitoringAlert, EnergyInvoice, ActionItem, ComplianceFinding,
             ConsumptionInsight, PurchaseScenarioResult, EmsWeatherCache,
         )
+        from models.tou_schedule import TOUSchedule
+        from models.notification import NotificationEvent
         from services.demo_state import DemoState
 
         effective_org_id = org_id or DemoState.get_demo_org_id()
@@ -210,6 +231,8 @@ class SeedOrchestrator:
             ("compliance_findings", ComplianceFinding),
             ("insights", ConsumptionInsight),
             ("purchase_scenarios", PurchaseScenarioResult),
+            ("tou_schedules", TOUSchedule),
+            ("notifications", NotificationEvent),
         ]:
             try:
                 counts[label] = self.db.query(model).count()
@@ -238,6 +261,8 @@ class SeedOrchestrator:
             PurchaseAssumptionSet, PurchaseScenarioResult,
             EmsWeatherCache, SiteOperatingSchedule,
         )
+        from models.tou_schedule import TOUSchedule
+        from models.notification import NotificationEvent, NotificationBatch
         from models.tertiaire import (
             TertiaireDataQualityIssue, TertiaireProofArtifact,
             TertiaireDeclaration, TertiairePerimeterEvent,
@@ -277,6 +302,9 @@ class SeedOrchestrator:
             ("evidences", Evidence),
             ("obligations", Obligation),
             ("operating_schedules", SiteOperatingSchedule),
+            ("tou_schedules", TOUSchedule),
+            ("notifications", NotificationEvent),
+            ("notification_batches", NotificationBatch),
             ("meters", Meter),
             ("compteurs", Compteur),
             ("batiments", Batiment),
@@ -385,6 +413,11 @@ class SeedOrchestrator:
             _del("obligations", Obligation, Obligation.site_id, demo_site_ids)
             _del("operating_schedules", SiteOperatingSchedule,
                  SiteOperatingSchedule.site_id, demo_site_ids)
+            _del("tou_schedules", TOUSchedule, TOUSchedule.site_id, demo_site_ids)
+            _del("notifications", NotificationEvent,
+                 NotificationEvent.org_id, demo_org_ids)
+            _del("notification_batches", NotificationBatch,
+                 NotificationBatch.org_id, demo_org_ids)
             _del("meters", Meter, Meter.site_id, demo_site_ids)
             _del("compteurs", Compteur, Compteur.site_id, demo_site_ids)
             _del("batiments", Batiment, Batiment.site_id, demo_site_ids)
