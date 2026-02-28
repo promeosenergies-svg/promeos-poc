@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, literal_column, Integer as SAInteger, cast
 
 from models import Meter, MeterReading, Site
-from models.energy_models import EnergyVector
+from models.energy_models import EnergyVector, FrequencyType
 
 # -------------------------------------------------------------------
 # Constants
@@ -32,6 +32,18 @@ _STRFTIME_FORMATS = {
     "hourly": "%Y-%m-%d %H:00:00",
     "daily": "%Y-%m-%d",
     "monthly": "%Y-%m",
+}
+
+# When aggregating at granularity G, only include readings whose frequency is
+# G or finer — prevents monthly aggregate values from polluting daily/hourly charts.
+_COMPATIBLE_FREQS = {
+    "15min":   [FrequencyType.MIN_15],
+    "30min":   [FrequencyType.MIN_15, FrequencyType.MIN_30],
+    "hourly":  [FrequencyType.MIN_15, FrequencyType.MIN_30, FrequencyType.HOURLY],
+    "daily":   [FrequencyType.MIN_15, FrequencyType.MIN_30,
+                FrequencyType.HOURLY, FrequencyType.DAILY],
+    "monthly": [FrequencyType.MIN_15, FrequencyType.MIN_30,
+                FrequencyType.HOURLY, FrequencyType.DAILY, FrequencyType.MONTHLY],
 }
 
 
@@ -265,8 +277,18 @@ def _bucket_key_expr(granularity: str):
         return func.strftime(fmt, MeterReading.timestamp)
 
 
-def _base_query(db, meter_ids, bucket_expr, date_from, date_to):
-    """Shared bucket query base."""
+def _base_query(db, meter_ids, bucket_expr, date_from, date_to, granularity: str = "daily"):
+    """Shared bucket query base.
+
+    Filters readings to frequencies that are ≤ the requested granularity so that
+    monthly aggregate values never pollute daily or hourly chart buckets.
+    """
+    compatible = _COMPATIBLE_FREQS.get(granularity, list(FrequencyType))
+    meter_filter = (
+        MeterReading.meter_id.in_(meter_ids)
+        if isinstance(meter_ids, list)
+        else MeterReading.meter_id == meter_ids
+    )
     return (
         db.query(
             bucket_expr.label("bucket"),
@@ -275,9 +297,10 @@ def _base_query(db, meter_ids, bucket_expr, date_from, date_to):
             func.avg(cast(MeterReading.is_estimated, SAInteger)).label("est_pct"),
         )
         .filter(
-            MeterReading.meter_id.in_(meter_ids) if isinstance(meter_ids, list) else MeterReading.meter_id == meter_ids,
+            meter_filter,
             MeterReading.timestamp >= date_from,
             MeterReading.timestamp < date_to,
+            MeterReading.frequency.in_(compatible),
         )
         .group_by(literal_column("bucket"))
         .order_by(literal_column("bucket"))
@@ -302,12 +325,12 @@ def _rows_to_series(key: str, label: str, rows, granularity: str, metric: str) -
 
 def _query_aggregate(db, meter_ids, bucket_expr, date_from, date_to, granularity, metric,
                      key="total", label="Total"):
-    rows = _base_query(db, meter_ids, bucket_expr, date_from, date_to).all()
+    rows = _base_query(db, meter_ids, bucket_expr, date_from, date_to, granularity).all()
     return _rows_to_series(key, label, rows, granularity, metric)
 
 
 def _query_single(db, meter, bucket_expr, date_from, date_to, granularity, metric):
-    rows = _base_query(db, meter.id, bucket_expr, date_from, date_to).all()
+    rows = _base_query(db, meter.id, bucket_expr, date_from, date_to, granularity).all()
     label = meter.name or meter.meter_id or f"Meter {meter.id}"
     return _rows_to_series(f"meter_{meter.id}", label, rows, granularity, metric)
 

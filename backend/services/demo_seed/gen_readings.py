@@ -1,6 +1,13 @@
 """
 PROMEOS - Demo Seed: Meter Readings Generator
-Generates 90 days of hourly readings per meter with profile-aware patterns.
+Generates hourly and 15-min readings per meter with realistic building profiles.
+
+V86 — rich intraday patterns:
+  - Per-hour normalized pattern (24 values, 0.0–1.0) per building type
+  - Peak consumption scaled by subscribed power (psub / 100 kVA)
+  - Day-of-week variation (weekday vs weekend)
+  - Temperature sensitivity (heating < 15 °C, cooling > 22 °C)
+  - Seasonal multiplier from _SEASONAL_MULT (shared with monthly generator)
 """
 import math
 import random
@@ -9,21 +16,96 @@ from datetime import datetime, timedelta
 from models import MeterReading, FrequencyType
 
 
-# Usage profiles — consumption patterns per hour
+# ── Legacy profile dict (kept for vacation_weeks + backward compat) ──────────
 _PROFILES = {
-    "office":    {"peak": 35, "shoulder": 18, "night": 6, "weekend": 5,
-                  "peak_h": (8, 18), "heat": 1.5, "cool": 0.8},
-    "hotel":     {"peak": 25, "shoulder": 20, "night": 15, "weekend": 22,
-                  "peak_h": (7, 22), "heat": 2.0, "cool": 1.2},
-    "retail":    {"peak": 40, "shoulder": 15, "night": 4, "weekend": 38,
-                  "peak_h": (9, 20), "heat": 1.0, "cool": 1.5},
-    "warehouse": {"peak": 20, "shoulder": 15, "night": 12, "weekend": 10,
-                  "peak_h": (6, 20), "heat": 0.5, "cool": 0.3},
-    "school":    {"peak": 28, "shoulder": 12, "night": 3, "weekend": 3,
-                  "peak_h": (8, 17), "heat": 2.5, "cool": 0.3,
+    "office":    {"heat": 1.5, "cool": 0.8, "peak_h": (8, 18)},
+    "hotel":     {"heat": 2.0, "cool": 1.2, "peak_h": (7, 22)},
+    "retail":    {"heat": 1.0, "cool": 1.5, "peak_h": (9, 20)},
+    "warehouse": {"heat": 0.5, "cool": 0.3, "peak_h": (6, 20)},
+    "school":    {"heat": 2.5, "cool": 0.3, "peak_h": (8, 17),
                   "vacation_weeks": [1, 2, 7, 8, 16, 17, 27, 28, 29, 30, 31, 32, 33, 34]},
-    "hospital":  {"peak": 45, "shoulder": 35, "night": 28, "weekend": 30,
-                  "peak_h": (7, 21), "heat": 2.0, "cool": 1.8},
+    "hospital":  {"heat": 2.0, "cool": 1.8, "peak_h": (7, 21)},
+}
+
+# ── Per-hour normalized patterns (index 0 = 00:00 … 23 = 23:00) ─────────────
+# Values 0.0–1.0: fraction of peak kW consumed at that hour on a typical weekday.
+_HOURLY_PATTERN = {
+    # Office: clear 8h–18h activity, morning ramp, lunch dip at 12h, low nights
+    "office": [
+        0.12, 0.10, 0.10, 0.10, 0.11, 0.14,  # 00–05 night standby
+        0.22, 0.48, 0.74, 0.92, 1.00, 0.96,  # 06–11 morning ramp → peak
+        0.76, 0.79, 1.00, 0.97, 0.92, 0.74,  # 12–17 lunch dip, afternoon plateau
+        0.50, 0.30, 0.22, 0.17, 0.14, 0.12,  # 18–23 wind-down
+    ],
+    # Hotel: high baseload 24/7, breakfast spike, dinner peak
+    "hotel": [
+        0.52, 0.48, 0.44, 0.42, 0.44, 0.55,  # 00–05 night ops
+        0.68, 0.88, 0.96, 0.90, 0.82, 0.88,  # 06–11 breakfast peak
+        0.90, 0.84, 0.78, 0.80, 0.85, 0.92,  # 12–17 lunch + afternoon
+        1.00, 1.00, 0.96, 0.88, 0.74, 0.62,  # 18–23 dinner peak
+    ],
+    # Warehouse / industrial: two shifts, lunch break, minimal nights
+    "warehouse": [
+        0.28, 0.25, 0.22, 0.22, 0.26, 0.42,  # 00–05 security + standby
+        0.65, 0.85, 1.00, 1.00, 0.97, 0.82,  # 06–11 morning shift
+        0.58, 0.80, 0.98, 1.00, 0.95, 0.80,  # 12–17 lunch break → afternoon
+        0.55, 0.40, 0.33, 0.30, 0.28, 0.28,  # 18–23 evening
+    ],
+    # School: strong 8h–17h, lunch dip, very low evenings/weekends
+    "school": [
+        0.10, 0.08, 0.08, 0.08, 0.09, 0.14,  # 00–05 standby
+        0.25, 0.52, 0.82, 0.94, 1.00, 0.96,  # 06–11 morning ramp
+        0.62, 0.52, 0.88, 0.94, 0.75, 0.50,  # 12–17 lunch break, afternoon
+        0.26, 0.18, 0.14, 0.12, 0.10, 0.10,  # 18–23 minimal
+    ],
+    # Hospital: 24/7, slight overnight dip, afternoon peak
+    "hospital": [
+        0.65, 0.60, 0.56, 0.55, 0.58, 0.65,  # 00–05 overnight
+        0.75, 0.86, 0.94, 0.99, 1.00, 0.99,  # 06–11 morning
+        0.94, 0.92, 0.98, 1.00, 0.99, 0.95,  # 12–17 afternoon peak
+        0.90, 0.85, 0.82, 0.78, 0.74, 0.68,  # 18–23 evening
+    ],
+    # Retail: closed nights, ramp at opening, peak midday + late afternoon
+    "retail": [
+        0.12, 0.10, 0.08, 0.08, 0.10, 0.16,  # 00–05 overnight
+        0.22, 0.40, 0.65, 0.84, 0.95, 1.00,  # 06–11 opening ramp
+        1.00, 0.98, 0.96, 0.99, 1.00, 0.95,  # 12–17 peak shopping
+        0.85, 0.72, 0.52, 0.30, 0.18, 0.13,  # 18–23 closing
+    ],
+}
+
+# ── Peak consumption at 100 kVA subscribed power baseline (kWh/h ≡ kW) ──────
+# Scaled at runtime by (psub / 100), so a 200 kVA office gets 2× these values.
+# Calibrated so annual consumption roughly matches packs.py annual_kwh targets.
+_BASE_KW = {
+    "office":    80,   # ×2.0 (200 kVA) → ~160 kW peak, ~700k kWh/yr
+    "hotel":     65,   # ×2.5 (250 kVA) → ~162 kW peak, ~1.0 M kWh/yr
+    "warehouse": 110,  # ×4.0 (400 kVA) → ~440 kW peak, ~2.3 M kWh/yr
+    "school":    70,   # ×1.5 (150 kVA) → ~105 kW peak, ~420k kWh/yr
+    "hospital":  85,   # → varies
+    "retail":    75,
+}
+
+# ── Day-of-week multipliers (Mon=0 … Sun=6) ──────────────────────────────────
+_DOW_MULT = {
+    "office":    [1.00, 0.98, 0.97, 0.97, 0.94, 0.38, 0.25],
+    "hotel":     [0.88, 0.86, 0.88, 0.92, 0.95, 1.00, 1.00],
+    "warehouse": [1.00, 1.00, 0.98, 0.98, 0.95, 0.65, 0.40],
+    "school":    [1.00, 0.99, 0.98, 0.98, 0.95, 0.15, 0.12],
+    "hospital":  [1.00, 1.00, 1.00, 1.00, 1.00, 0.95, 0.90],
+    "retail":    [0.85, 0.88, 0.90, 0.92, 0.98, 1.00, 0.95],
+}
+
+# ── Temperature sensitivity (multiplicative, per °C outside comfort zone) ────
+# heat_pct: % increase per °C below 15 °C
+# cool_pct: % increase per °C above 22 °C
+_TEMP_SENS = {
+    "office":    (0.035, 0.015),
+    "hotel":     (0.030, 0.025),
+    "warehouse": (0.015, 0.008),
+    "school":    (0.040, 0.010),
+    "hospital":  (0.025, 0.020),
+    "retail":    (0.020, 0.018),
 }
 
 
@@ -53,7 +135,7 @@ def generate_readings(db, meters: list, site_profiles: dict,
         psub = meter.subscribed_power_kva or 80
 
         readings = _gen_meter_readings(
-            meter.id, profile, site_temps, start, days, psub, rng
+            meter.id, profile_name, profile, site_temps, start, days, psub, rng
         )
         _bulk_insert_ignore(db, readings)
         total += len(readings)
@@ -62,61 +144,69 @@ def generate_readings(db, meters: list, site_profiles: dict,
     return total
 
 
-def _gen_meter_readings(meter_id: int, profile: dict, temps: dict,
-                        start: datetime, days: int, psub: float,
+def _gen_meter_readings(meter_id: int, profile_name: str, profile: dict,
+                        temps: dict, start: datetime, days: int, psub: float,
                         rng: random.Random) -> list:
-    """Generate readings for a single meter."""
+    """
+    Generate hourly readings for a single meter.
+
+    Uses per-hour normalized patterns (_HOURLY_PATTERN) scaled by psub,
+    day-of-week variation (_DOW_MULT), temperature sensitivity (_TEMP_SENS),
+    and seasonal multiplier (_SEASONAL_MULT) for realistic building load curves.
+    """
     readings = []
-    peak_start, peak_end = profile["peak_h"]
+    pattern   = _HOURLY_PATTERN.get(profile_name, _HOURLY_PATTERN["office"])
+    base_kw   = _BASE_KW.get(profile_name, _BASE_KW["office"])
+    dow_mult  = _DOW_MULT.get(profile_name, _DOW_MULT["office"])
+    heat_pct, cool_pct = _TEMP_SENS.get(profile_name, (0.030, 0.015))
+    scale     = psub / 100.0          # calibrate to site subscribed power
+    max_kw    = psub * 1.2            # realistic guardrail (120% of psub)
     vacation_weeks = profile.get("vacation_weeks", [])
-    max_kw = psub * 3  # guardrail
 
     for day_offset in range(days):
-        dt = start + timedelta(days=day_offset)
-        is_weekend = dt.weekday() >= 5
+        dt      = start + timedelta(days=day_offset)
+        dow     = dt.weekday()        # 0=Mon … 6=Sun
         day_key = dt.date().isoformat()
-        temp = temps.get(day_key, 12.0)
+        temp    = temps.get(day_key, 12.0)
         is_vacation = dt.isocalendar()[1] in vacation_weeks if vacation_weeks else False
+
+        # Day-level multipliers
+        day_dow = dow_mult[dow]
+        if is_vacation:
+            day_dow *= 0.15           # school/office during holiday = near-zero
+
+        # Seasonal (matches monthly generator: peak winter, low summer)
+        seasonal = _SEASONAL_MULT.get(dt.month, 1.0)
+
+        # Temperature adjustment (multiplicative: +% per °C outside comfort band)
+        temp_adj = 1.0 + heat_pct * max(0.0, 15.0 - temp) \
+                       + cool_pct * max(0.0, temp - 22.0)
 
         for hour in range(24):
             ts = dt.replace(hour=hour, minute=0, second=0, microsecond=0)
 
-            # Base from profile
-            if is_weekend or is_vacation:
-                base = profile["weekend"]
-            elif peak_start <= hour <= peak_end:
-                base = profile["peak"]
-            elif hour == peak_start - 1 or peak_end < hour <= peak_end + 2:
-                base = profile["shoulder"]
-            else:
-                base = profile["night"]
+            # Core value: pattern × psub calibration × time factors
+            value = base_kw * scale * pattern[hour] * day_dow * seasonal * temp_adj
 
-            # Temperature sensitivity
-            base += profile["heat"] * max(0, 15 - temp)
-            base += profile["cool"] * max(0, temp - 22)
-
-            # Seasonal variation
-            seasonal = 1.0 + 0.15 * math.cos(2 * math.pi * (dt.month - 1) / 12.0)
-            value = base * seasonal
-
-            # Anomaly 1: high night base (days 30-44)
-            if 30 <= day_offset <= 44 and (hour < peak_start or hour > peak_end) and not is_weekend:
+            # ── Anomalies (same temporal windows as V1, rescaled) ───────────
+            # Anomaly 1: elevated night baseload (days 30–44, weeknights only)
+            if 30 <= day_offset <= 44 and pattern[hour] < 0.25 and dow < 5:
                 value *= 2.5
 
-            # Anomaly 2: weekend spike (days 35-36)
-            if day_offset in [35, 36] and is_weekend:
-                value = 40.0
+            # Anomaly 2: unexpected weekend spike (days 35–36)
+            if day_offset in [35, 36] and dow >= 5:
+                value = base_kw * scale * 1.3
 
-            # Anomaly 3: sudden ramp (day 55 14:00)
+            # Anomaly 3: sudden demand spike (day 55, 14:00)
             if day_offset == 55 and hour == 14:
-                value = profile["peak"] * 3.0
+                value = base_kw * scale * 2.8
 
-            # Anomaly 4: flat curve (days 70-73)
+            # Anomaly 4: flat curve / equipment malfunction (days 70–73)
             if 70 <= day_offset <= 73:
-                value = 15.0
+                value = base_kw * scale * 0.15
 
-            # Noise + guardrail
-            value *= rng.uniform(0.90, 1.10)
+            # Noise ±7% + guardrail
+            value *= rng.uniform(0.93, 1.07)
             value = max(0.1, min(round(value, 2), max_kw))
 
             readings.append(MeterReading(
@@ -231,7 +321,7 @@ def generate_15min_readings(db, meters: list, site_profiles: dict,
     Generate 15-minute interval readings for the last `days` days.
 
     Each 15-min slot = hourly_value / 4 + intra-hour noise (±5%).
-    Shares the same profile patterns and anomaly injection as generate_readings().
+    Uses same rich patterns as generate_readings().
     Idempotent via INSERT OR IGNORE.
 
     Returns:
@@ -248,7 +338,7 @@ def generate_15min_readings(db, meters: list, site_profiles: dict,
         psub = meter.subscribed_power_kva or 80
 
         readings = _gen_15min_meter_readings(
-            meter.id, profile, site_temps, start, days, psub, rng
+            meter.id, profile_name, profile, site_temps, start, days, psub, rng
         )
         _bulk_insert_ignore(db, readings)
         total += len(readings)
@@ -257,49 +347,48 @@ def generate_15min_readings(db, meters: list, site_profiles: dict,
     return total
 
 
-def _gen_15min_meter_readings(meter_id: int, profile: dict, temps: dict,
-                               start: datetime, days: int, psub: float,
-                               rng: random.Random) -> list:
+def _gen_15min_meter_readings(meter_id: int, profile_name: str, profile: dict,
+                               temps: dict, start: datetime, days: int,
+                               psub: float, rng: random.Random) -> list:
     """Generate 15-min readings for a single meter (4 slots per hour)."""
     readings = []
-    peak_start, peak_end = profile["peak_h"]
+    pattern   = _HOURLY_PATTERN.get(profile_name, _HOURLY_PATTERN["office"])
+    base_kw   = _BASE_KW.get(profile_name, _BASE_KW["office"])
+    dow_mult  = _DOW_MULT.get(profile_name, _DOW_MULT["office"])
+    heat_pct, cool_pct = _TEMP_SENS.get(profile_name, (0.030, 0.015))
+    scale     = psub / 100.0
+    max_kw    = psub * 1.2
     vacation_weeks = profile.get("vacation_weeks", [])
-    max_kw = psub * 3
 
     for day_offset in range(days):
-        dt = start + timedelta(days=day_offset)
-        is_weekend = dt.weekday() >= 5
+        dt      = start + timedelta(days=day_offset)
+        dow     = dt.weekday()
         day_key = dt.date().isoformat()
-        temp = temps.get(day_key, 12.0)
+        temp    = temps.get(day_key, 12.0)
         is_vacation = dt.isocalendar()[1] in vacation_weeks if vacation_weeks else False
+
+        day_dow  = dow_mult[dow]
+        if is_vacation:
+            day_dow *= 0.15
+        seasonal = _SEASONAL_MULT.get(dt.month, 1.0)
+        temp_adj = 1.0 + heat_pct * max(0.0, 15.0 - temp) \
+                       + cool_pct * max(0.0, temp - 22.0)
 
         for hour in range(24):
             # Compute hourly base (same logic as _gen_meter_readings)
-            if is_weekend or is_vacation:
-                base = profile["weekend"]
-            elif peak_start <= hour <= peak_end:
-                base = profile["peak"]
-            elif hour == peak_start - 1 or peak_end < hour <= peak_end + 2:
-                base = profile["shoulder"]
-            else:
-                base = profile["night"]
+            hourly_value = base_kw * scale * pattern[hour] * day_dow * seasonal * temp_adj
 
-            base += profile["heat"] * max(0, 15 - temp)
-            base += profile["cool"] * max(0, temp - 22)
-            seasonal = 1.0 + 0.15 * math.cos(2 * math.pi * (dt.month - 1) / 12.0)
-            hourly_value = base * seasonal
-
-            # Anomaly injection (same windows as hourly generator)
-            if 30 <= day_offset <= 44 and (hour < peak_start or hour > peak_end) and not is_weekend:
+            # Anomaly injection (same windows)
+            if 30 <= day_offset <= 44 and pattern[hour] < 0.25 and dow < 5:
                 hourly_value *= 2.5
-            if day_offset in [35, 36] and is_weekend:
-                hourly_value = 40.0
+            if day_offset in [35, 36] and dow >= 5:
+                hourly_value = base_kw * scale * 1.3
             if day_offset == 55 and hour == 14:
-                hourly_value = profile["peak"] * 3.0
+                hourly_value = base_kw * scale * 2.8
             if 70 <= day_offset <= 73:
-                hourly_value = 15.0
+                hourly_value = base_kw * scale * 0.15
 
-            hourly_value *= rng.uniform(0.90, 1.10)
+            hourly_value *= rng.uniform(0.93, 1.07)
             hourly_value = max(0.1, min(hourly_value, max_kw))
 
             # Split into 4 × 15-min slots with intra-hour noise
