@@ -57,7 +57,8 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 > | Demo Seed V86 (730j horaire + 30j 15min + meteo 5 sites) | Stable -- V86 |
 > | Demo Seed V87 (BACS assets, Consumption Targets, EMS Views, 60 invoices) | Stable -- V87 |
 > | Quality Gate V88 — P0/P1/P2 (overlays, lint 0, memo, dead code) | Stable -- V88 |
-> | Suite de tests automatises | **3 665 frontend + 2 400+ backend, 0 regression** |
+> | Evidence Drawer V0 — "Pourquoi ce chiffre ?" (Cockpit + Explorer) | Stable -- V89 |
+> | Suite de tests automatises | **3 699 frontend + 2 400+ backend, 0 regression** |
 
 > **Disclaimer**
 >
@@ -76,7 +77,8 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 - **Demo HELIOS canonique** : Groupe Casino supprime, demo unifiee Groupe HELIOS (3 entites, 5 sites, 7 batiments — bureaux, industrie, hotel, ecole, seed deterministe RNG=42, 60 mois de readings V83).
 - **Demo Seed V86-V87** : 730 jours de lectures horaires + 30 jours 15min + meteo 5 sites (V86). BACS assets/systemes/assessments/inspections, ConsumptionTargets (yearly+monthly 2024-2026), EMS Explorer vues pre-configurees, 60 factures (V87).
 - **Quality Gate V88** — ESLint zero warnings (`--max-warnings=0`, 211→0), `React.memo` + `useMemo` sur charts lourds (HeatmapChart O(1) Map lookup, PortfolioPanel, ProfileHeatmapTab), shared `ui/Badge` dans SiteDetail/Site360, dead code supprime (Cockpit2MinPage), tooltips consolides (TooltipPortal + InfoTip), z-index normalise (Modal/Drawer z-200), `useActivationData` hook dedup.
-- **3 665 frontend + 2 400+ backend = 6 000+ tests, 0 regression** — pytest backend + vitest frontend, seed HELIOS 5 sites + 60 mois + 10 personas IAM en une commande, demo operationnelle en 2 minutes.
+- **Evidence Drawer V0 (V89)** — "Pourquoi ce chiffre ?" : modele Evidence (CONFIDENCE_CFG, SOURCE_KIND, buildEvidence), EvidenceDrawer generique (Drawer z-200, 5 sections : Sources/Methode/Hypotheses/Liens/Dernier calcul), 4 fixtures factory (conformite, risque, kWh, CO2e). Integration Cockpit (Conformite + Risque KPIs) et Explorer (kWh total + CO2e). 32 source-guard tests, 0 regression.
+- **3 699 frontend + 2 400+ backend = 6 100+ tests, 0 regression** — pytest backend + vitest frontend, seed HELIOS 5 sites + 60 mois + 10 personas IAM en une commande, demo operationnelle en 2 minutes.
 
 ---
 
@@ -673,7 +675,15 @@ Pour plus de details : [Security Notes](docs/security_notes.md) | [Demo Script](
   - **P1 Qualite** : ScopeSummary dedup (source unique), tooltips consolides (TooltipPortal + InfoTip), `useActivationData` hook (dedupe fetches activation), ESLint 211→0 warnings (`--max-warnings=0`)
   - **P2 Perf & Hygiene** : `ui/Badge` partage dans SiteDetail + Site360, dead code supprime (`Cockpit2MinPage` 330 lignes + route), `React.memo` + `useMemo` sur HeatmapChart (Map O(1) vs .find() O(n)), PortfolioPanel (MiniSparkline + RankingTable memo), ProfileHeatmapTab (HeatmapGrid + DailyProfileChart memo), prop stability (setDrillDown direct)
   - Lazy-load : toutes les routes deja en `React.lazy` + `Suspense`
-- **3 665 frontend + 2 400+ backend = 6 000+ tests automatises, 0 regression**
+- **Evidence Drawer V0 — "Pourquoi ce chiffre ?" (V89)** :
+  - Modele Evidence (`ui/evidence.js`) : JSDoc typedefs, `CONFIDENCE_CFG` (haute/moyenne/basse), `SOURCE_KIND` (enedis/invoice/manual/calc), `buildEvidence()` factory
+  - `EvidenceDrawer.jsx` : drawer generique base sur `ui/Drawer` (z-200, focus trap, ESC close), 5 sections (Sources + ConfidencePill, Methode de calcul, Hypotheses, Liens navigation, Dernier calcul)
+  - 4 fixtures factory (`evidenceConformite`, `evidenceRisque`, `evidenceKwhTotal`, `evidenceCO2e`) dans `evidence.fixtures.js`
+  - Integration Cockpit : `ExecutiveKpiRow` HelpCircle button (conformite + risque), `Cockpit.jsx` evidenceMap + EvidenceDrawer
+  - Integration Explorer : `ConsoKpiHeader` HelpCircle button (kWh total + CO2e), `ConsumptionExplorerPage` GenericEvidenceDrawer
+  - 32 source-guard tests (6 describe blocks), barrel export `ui/index.js`
+  - 2 tests pre-existants corriges (source-guard contractsV36 + dataActivationV37) → 100% green
+- **3 699 frontend + 2 400+ backend = 6 100+ tests automatises, 0 regression**
 - 12 items KB valides (archetypes, regles, recommendations)
 - Smoke test "red button" (14 checks avant mise en pilote)
 

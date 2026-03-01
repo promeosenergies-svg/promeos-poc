@@ -2,6 +2,45 @@
 
 ## [Unreleased] — 2026-03-01
 
+### V89 — Evidence Drawer V0 ("Pourquoi ce chiffre ?") + Tests 100% Green
+
+**Test Fixes (fix/tests-zero-fail):**
+- `contractsV36.test.js` : source-guard corrige — tooltip `heuristique V1` deplace vers `TOOLTIPS.executive.calculsV1`
+- `dataActivationV37.test.js` : source-guard corrige — `Couverture des 5 briques` remplace par template dynamique (`briques` + `couverture moyenne`)
+
+**Evidence Model (ui/evidence.js):**
+- JSDoc typedefs `Evidence` et `EvidenceSource`
+- `CONFIDENCE_CFG` : config d'affichage haute/moyenne/basse (couleurs, dots, borders)
+- `SOURCE_KIND` : 4 types de source (enedis, invoice, manual, calc) avec labels et emojis
+- `buildEvidence()` : factory function avec `lastComputedAt` automatique
+
+**EvidenceDrawer Component (ui/EvidenceDrawer.jsx):**
+- Drawer generique "Pourquoi ce chiffre ?" base sur le `Drawer` reutilisable (z-200, focus trap, ESC)
+- 5 sections : Header (titre + valeur + scope/period), Sources (SourceCard + ConfidencePill), Methode de calcul (bullets), Hypotheses (amber box), Footer (liens navigation + last computed)
+- Props : `open`, `onClose`, `evidence`
+- Navigation interne via `useNavigate()` + fermeture du drawer
+
+**Evidence Fixtures (ui/evidence.fixtures.js):**
+- `evidenceConformite(scopeLabel)` — RegOps 4 reglementations + donnees patrimoniales
+- `evidenceRisque(scopeLabel, risqueEur)` — Heuristique V1 + findings reglementaires
+- `evidenceKwhTotal(scopeLabel, periodLabel, kwhValue)` — Enedis courbe + agregation
+- `evidenceCO2e(scopeLabel, periodLabel, co2Value)` — kWh x ADEME 0.052 factor
+
+**Cockpit Integration:**
+- `ExecutiveKpiRow.jsx` : `EVIDENCE_KPIS` Set (conformite, risque), HelpCircle button avec `data-testid` et `aria-label="Pourquoi ce chiffre"`
+- `Cockpit.jsx` : `evidenceOpen` state, `evidenceMap` useMemo, `<EvidenceDrawer>` rendu en bas de PageShell
+
+**Explorer Integration:**
+- `ConsoKpiHeader.jsx` : `evidenceId` + `onEvidence` props sur KpiTile, HelpCircle button, wiring kWh total + CO2e
+- `ConsumptionExplorerPage.jsx` : `GenericEvidenceDrawer` (alias pour eviter conflit avec tunnel EvidenceDrawer), `evidenceKpiOpen` state, `consoEvidenceMap` useMemo
+
+**Tests:**
+- 32 source-guard tests (6 describe blocks : Evidence model, EvidenceDrawer component, Evidence fixtures, Barrel export, Cockpit integration, Explorer integration)
+- Frontend : 3 699 passes (107 fichiers de test), 0 regression, 0 fail
+- ESLint : 0 erreurs, 0 warnings
+
+---
+
 ### V88 — Quality Gate (P0/P1/P2) — Overlays, Lint Zero, Perf Memoization
 
 **P0 — Overlays (fix/p0-overlays-vague1):**
