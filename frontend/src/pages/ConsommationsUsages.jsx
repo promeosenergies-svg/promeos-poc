@@ -1,22 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, BarChart3, AlertTriangle, Lightbulb, Database, Search, RefreshCw, CheckCircle, Zap, ArrowRight, Link2, SlidersHorizontal, GitCompareArrows, Info, HelpCircle, Bell, CalendarRange, Activity, RotateCcw } from 'lucide-react';
-import { PageShell, EmptyState, Tooltip } from '../ui';
+import { Upload, BarChart3, AlertTriangle, Lightbulb, Database, RefreshCw, CheckCircle, Zap, ArrowRight, Link2, SlidersHorizontal, GitCompareArrows, Info, HelpCircle, Bell, CalendarRange, Activity, RotateCcw } from 'lucide-react';
+import { PageShell, Tooltip } from '../ui';
 import { toConsoExplorer } from '../services/routes';
-import { SkeletonCard } from '../ui/Skeleton';
 import { useToast } from '../ui/ToastProvider';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { useScope } from '../contexts/ScopeContext';
 import {
   getMeters, createMeter, uploadConsumptionData,
-  runAnalysis, getAnalysisSummary, generateDemoEnergy,
+  runAnalysis, generateDemoEnergy,
   getKBStats, getKBArchetypes, getKBRules, getKBRecommendations, reloadKB,
   seedDemoKB, pingKB
 } from '../services/api';
 
 // ---- Import Wizard (7 steps) ----
 export function ImportWizard() {
-  const { toast } = useToast();
+  const { toast: _toast } = useToast();
   const { orgSites } = useScope();
   const [step, setStep] = useState(1);
   const sites = orgSites;
@@ -621,6 +620,7 @@ export function KBAdminPanel() {
 
   useEffect(() => {
     checkAndLoad();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const checkAndLoad = async () => {
@@ -894,7 +894,7 @@ export function KBAdminPanel() {
 // ---- Main Page (standalone fallback — normally rendered via ConsommationsPage tabs) ----
 export default function ConsommationsUsages() {
   const [tab, setTab] = useState('import');
-  const { isExpert } = useExpertMode();
+  const { isExpert: _isExpert } = useExpertMode();
 
   return (
     <PageShell

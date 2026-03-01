@@ -30,7 +30,7 @@ import useEmsTimeseries from './useEmsTimeseries';
 import { colorForSite } from './helpers';
 import { useScope } from '../../contexts/ScopeContext';
 
-const UNIT_LABELS = { kwh: 'kWh', kw: 'kW', eur: 'EUR' };
+const _UNIT_LABELS = { kwh: 'kWh', kw: 'kW', eur: 'EUR' };
 
 const GRAN_LABELS = {
   daily: 'Journalière',
@@ -223,7 +223,7 @@ export default function TimeseriesPanel({
   endDate = null,
   unit = 'kwh',
   mode = 'agrege',
-  sites = [],
+  sites: _sites = [],
   siteColors = {},
   availability = null,
   granularityOverride = null,  // V21-C: user-selected granularity or null for auto

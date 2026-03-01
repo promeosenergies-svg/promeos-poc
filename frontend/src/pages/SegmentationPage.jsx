@@ -49,6 +49,7 @@ export default function SegmentationPage() {
     }).catch(() => {
       toast('Erreur lors du chargement de la segmentation', 'error');
     }).finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleAnswer = (questionId, value) => {

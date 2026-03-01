@@ -80,7 +80,7 @@ describe('colorTokens integrity', () => {
   });
 
   it('each KPI accent has all required fields', () => {
-    for (const [key, cfg] of Object.entries(KPI_ACCENTS)) {
+    for (const [_key, cfg] of Object.entries(KPI_ACCENTS)) {
       expect(cfg).toHaveProperty('accent');
       expect(cfg).toHaveProperty('iconBg');
       expect(cfg).toHaveProperty('iconText');

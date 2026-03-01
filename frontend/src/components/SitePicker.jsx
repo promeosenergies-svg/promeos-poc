@@ -22,7 +22,7 @@ export default function SitePicker({ sites, selectedIds, onChange, maxSelection 
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
   const [collections, setCollections] = useState([]);
-  const [showCollections, setShowCollections] = useState(false);
+  const [_showCollections, setShowCollections] = useState(false);
   const [saveName, setSaveName] = useState('');
   const [recent] = useState(loadRecent);
   const ref = useRef(null);

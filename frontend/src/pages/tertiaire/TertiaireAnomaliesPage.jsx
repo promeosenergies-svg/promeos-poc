@@ -5,7 +5,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  AlertTriangle, ShieldAlert, CheckCircle2, Loader2, Filter,
+  ShieldAlert, CheckCircle2, Loader2, Filter,
   Building2, ArrowRight, FileText, Plus,
 } from 'lucide-react';
 import { PageShell, Card, CardBody, Button, Badge } from '../../ui';
@@ -61,6 +61,7 @@ export default function TertiaireAnomaliesPage() {
       .finally(() => setLoading(false));
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchIssues(); }, [filterSeverity, filterStatus]);
 
   const handleStatusChange = async (issueId, newStatus) => {

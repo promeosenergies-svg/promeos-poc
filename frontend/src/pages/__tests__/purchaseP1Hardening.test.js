@@ -10,7 +10,7 @@
  *  6) Toast: dedup prevents same message within 2s
  *  7) Toast: provider renders without crash
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { EnergyType, SEASONALITY_ELEC, SEASONALITY_GAZ, BREAKDOWN_DEFAULTS_GAZ, BREAKDOWN_DEFAULTS_ELEC } from '../../domain/purchase/types.js';
 import { distributeMonthly, getSeasonality } from '../../domain/purchase/assumptions.js';
 

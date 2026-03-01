@@ -6,10 +6,10 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { createRng, generateMonteCarloTrajectories } from '../scenarioLibrary.js';
 import { computeOfferMonthlyPrices, computeTco, monteCarloOffer, volatilityProxy, cvar90, probExceedBudget } from '../risk.js';
 import { runEngine, clearEngineCache, normalizeHybridShares, validateBreakdown, fillBreakdownDefaults } from '../engine.js';
-import { scoreBudgetRisk, scoreTransparency, scoreContractRisk, scoreDataReadiness, scoreOffer } from '../scoring.js';
+import { scoreBudgetRisk, scoreTransparency, scoreContractRisk, scoreOffer } from '../scoring.js';
 import { recommend } from '../recommend.js';
 import { distributeMonthly } from '../assumptions.js';
-import { OfferStructure, EnergyType, ScenarioPreset, Persona, Confidence, ScoreLevel } from '../types.js';
+import { EnergyType, ScenarioPreset, Persona, Confidence, ScoreLevel } from '../types.js';
 import { DEMO_OFFERS, aggregateDemoSites } from '../demoData.js';
 
 // ── Helpers ────────────────────────────────────────────────────────

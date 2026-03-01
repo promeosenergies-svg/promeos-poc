@@ -39,6 +39,7 @@ export default function WatchersPage() {
 
   useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterSource, filterStatus]);
 
   const loadData = async () => {

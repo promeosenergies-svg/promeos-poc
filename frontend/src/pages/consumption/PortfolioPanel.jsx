@@ -12,11 +12,11 @@
  *   unit        — 'kwh' | 'kw' | 'eur'
  */
 import { useMemo } from 'react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { colorForSite } from './helpers';
 import { Card, CardBody } from '../../ui';
 
-const EUR_FACTOR = 0.18;
+const _EUR_FACTOR = 0.18;
 
 /** Compute a single site's KPIs from its tunnel data */
 function computeSiteKPIs(tunnel) {
@@ -68,7 +68,7 @@ function fmt(v, dec = 0) {
 }
 
 /** Single ranking table for one metric */
-function RankingTable({ rows, valueKey, valueLabel, unit, suffix = '' }) {
+function RankingTable({ rows, valueKey, valueLabel: _valueLabel, unit: _unit, suffix = '' }) {
   const sorted = [...rows]
     .filter(r => r.kpis?.[valueKey] != null)
     .sort((a, b) => (b.kpis[valueKey] ?? 0) - (a.kpis[valueKey] ?? 0))

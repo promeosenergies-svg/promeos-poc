@@ -365,7 +365,7 @@ describe('TINT_PALETTE', () => {
   });
 
   it('each palette entry has all required semantic keys', () => {
-    for (const [name, palette] of Object.entries(TINT_PALETTE)) {
+    for (const [_name, palette] of Object.entries(TINT_PALETTE)) {
       for (const key of REQUIRED_KEYS) {
         expect(typeof palette[key]).toBe('string');
       }

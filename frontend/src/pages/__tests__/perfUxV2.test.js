@@ -63,7 +63,7 @@ describe('B · No forbidden English labels', () => {
       // Match only in JSX output strings (inside > < or in template literals)
       // Allow in const definitions and comments
       const lines = code.split('\n');
-      const violations = lines.filter((line, i) => {
+      const violations = lines.filter((line, _i) => {
         const lower = line.toLowerCase();
         if (!lower.includes(term.toLowerCase())) return false;
         // Allow in const/comment/tooltip/import lines

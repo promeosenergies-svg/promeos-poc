@@ -7,7 +7,6 @@ import { ClipboardList, ChevronLeft, ChevronRight, Filter, ChevronDown, ChevronU
 import { getAuditLogs } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { PageShell, EmptyState } from '../ui';
-import { SkeletonCard } from '../ui/Skeleton';
 import { useToast } from '../ui/ToastProvider';
 
 const ACTION_COLORS = {
@@ -88,6 +87,7 @@ export default function AdminAuditLogPage() {
       })
       .catch(() => toast('Erreur lors du chargement de l\'audit log', 'error'))
       .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, actionFilter, resourceFilter]);
 
   useEffect(() => { load(); }, [load]);

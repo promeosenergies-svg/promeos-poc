@@ -1393,6 +1393,12 @@ export const refreshConsumptionDiagnose = (siteId, days = 30) =>
   api.post(`/consumption-context/site/${siteId}/diagnose`, null, { params: { days } }).then((r) => r.data);
 export const suggestSchedule = (siteId) =>
   api.get(`/consumption-context/site/${siteId}/suggest-schedule`).then((r) => r.data);
+export const getDetectedSchedule = (siteId, windowDays = 56) =>
+  api.get(`/consumption-context/site/${siteId}/activity/detected`, { params: { window_days: windowDays } }).then((r) => r.data);
+export const compareSchedules = (siteId, windowDays = 56) =>
+  api.get(`/consumption-context/site/${siteId}/activity/compare`, { params: { window_days: windowDays } }).then((r) => r.data);
+export const applyDetectedSchedule = (siteId, windowDays = 56) =>
+  api.post(`/consumption-context/site/${siteId}/activity/apply_detected`, null, { params: { window_days: windowDays } }).then((r) => r.data);
 export const getPortfolioBehaviorSummary = (days = 30) =>
   _cachedGet('/consumption-context/portfolio/summary', { params: { days } }).then((r) => r.data);
 

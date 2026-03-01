@@ -58,7 +58,7 @@ describe('SEVERITY_COLOR', () => {
   });
 
   it('each severity has Tailwind classes', () => {
-    for (const [key, value] of Object.entries(SEVERITY_COLOR)) {
+    for (const [_key, value] of Object.entries(SEVERITY_COLOR)) {
       expect(value).toContain('bg-');
       expect(value).toContain('text-');
       expect(value).toContain('ring-');

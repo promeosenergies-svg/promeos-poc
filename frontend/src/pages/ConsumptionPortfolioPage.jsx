@@ -12,10 +12,10 @@ import {
   Zap, Euro, Leaf, ShieldCheck, AlertTriangle, Moon, Activity,
   Search, FileText, Plus, BarChart3, TrendingDown,
   CheckSquare, DollarSign, Info, RotateCcw, Upload, HelpCircle,
-  Eye, Database,
+  Eye,
 } from 'lucide-react';
 import {
-  Card, CardBody, SkeletonCard, TrustBadge, KpiCard,
+  Card, CardBody, SkeletonCard, KpiCard,
 } from '../ui';
 import { useToast } from '../ui';
 import { useScope } from '../contexts/ScopeContext';
@@ -129,7 +129,7 @@ export default function ConsumptionPortfolioPage() {
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 25;
 
-  const hasActiveFilters = !!search || !!confidenceFilter || anomalyFilter || !!actionsFilter || noDataFilter;
+  const _hasActiveFilters = !!search || !!confidenceFilter || anomalyFilter || !!actionsFilter || noDataFilter;
 
   function handleResetFilters() {
     setSearch('');
@@ -148,6 +148,7 @@ export default function ConsumptionPortfolioPage() {
       .then(setSummary)
       .catch(() => addToast({ type: 'error', message: 'Erreur chargement resume portfolio' }))
       .finally(() => setSummaryLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dates.from, dates.to]);
 
   // ─── Fetch sites table ────────────────────────────────────────────────
@@ -171,6 +172,7 @@ export default function ConsumptionPortfolioPage() {
       })
       .catch(() => addToast({ type: 'error', message: 'Erreur chargement sites portfolio' }))
       .finally(() => setSitesLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dates.from, dates.to, sort, confidenceFilter, anomalyFilter, actionsFilter, noDataFilter, search, page]);
 
   useEffect(() => { fetchSites(); }, [fetchSites]);

@@ -6,7 +6,7 @@
  * Memoized: only recomputes when params change.
  */
 import { OfferStructure, BREAKDOWN_DEFAULTS_ELEC, BREAKDOWN_DEFAULTS_GAZ, EnergyType } from './types.js';
-import { distributeMonthly, DEFAULT_MARKET } from './assumptions.js';
+import { distributeMonthly } from './assumptions.js';
 import { monteCarloOffer, computeWorstMonth, probExceedBudget, cvar90, volatilityProxy } from './risk.js';
 
 // ── Memoization ────────────────────────────────────────────────────

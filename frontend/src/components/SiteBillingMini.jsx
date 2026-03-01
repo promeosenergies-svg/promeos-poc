@@ -7,7 +7,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getSiteBilling } from '../services/api';
-import { Card, CardBody, Badge, Button, EmptyState } from '../ui';
+import { Card, CardBody, Button, EmptyState } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
 import { FileText, AlertTriangle, Calendar, ExternalLink } from 'lucide-react';
 

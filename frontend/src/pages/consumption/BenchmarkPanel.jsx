@@ -6,14 +6,14 @@
  */
 import { useState, useEffect, useCallback } from 'react';
 import {
-  AreaChart, Area, Line, XAxis, YAxis, CartesianGrid,
+  AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
 import { Card, CardBody, TrustBadge } from '../../ui';
 import { SkeletonCard } from '../../ui';
 import { getEmsReferenceProfile } from '../../services/api';
 import { track } from '../../services/tracker';
-import { BarChart3, HelpCircle, Info } from 'lucide-react';
+import { HelpCircle } from 'lucide-react';
 
 const FAMILLE_OPTIONS = [
   { value: 'habitat', label: 'Habitat' },
@@ -69,6 +69,7 @@ export default function BenchmarkPanel({ siteId, days, startDate, endDate, serie
     } finally {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, siteId, dateFrom, dateTo, famille, puissance]);
 
   useEffect(() => { load(); }, [load]);

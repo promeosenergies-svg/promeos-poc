@@ -8,7 +8,7 @@ import {
   Building2, AlertTriangle, CheckCircle2, Clock, FileText, Download,
   Loader2, ArrowRight, ShieldAlert, Users, Calendar, Zap, Link2, Plus,
 } from 'lucide-react';
-import { PageShell, Card, CardBody, Button, Badge, Tooltip } from '../../ui';
+import { PageShell, Card, CardBody, Button, Badge } from '../../ui';
 import {
   getTertiaireEfa, runTertiaireControls, precheckTertiaireDeclaration,
   exportTertiairePack, getTertiaireEfaProofs, createAction,
@@ -78,6 +78,7 @@ export default function TertiaireEfaDetailPage() {
       .catch(() => setProofsStatus(null));
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchEfa(); fetchProofsStatus(); }, [id]);
 
   const handleRunControls = async () => {

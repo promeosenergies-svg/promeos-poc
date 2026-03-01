@@ -96,8 +96,8 @@ describe('PatrimoineHealthCard composant', () => {
 // ── Intégration dans Patrimoine.jsx ───────────────────────────────────────
 
 describe('Intégration PatrimoineHealthCard dans Patrimoine.jsx', () => {
-  test('importe PatrimoineHealthCard', () => {
-    expect(PATRIMOINE_JSX).toMatch(/import PatrimoineHealthCard/);
+  test('importe SiteAnomalyPanel (V65: replaces PatrimoineHealthCard)', () => {
+    expect(PATRIMOINE_JSX).toMatch(/import SiteAnomalyPanel/);
   });
 
   test('utilise SiteAnomalyPanel dans l\'onglet anomalies (V65)', () => {

@@ -7,7 +7,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   FileText, ArrowRight, Search, ShieldCheck, TrendingDown, AlertTriangle,
-  Building2, Zap, Loader2,
+  Zap,
 } from 'lucide-react';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
@@ -32,7 +32,7 @@ import ExecutiveSummaryCard from './cockpit/ExecutiveSummaryCard';
 import ExecutiveKpiRow from './cockpit/ExecutiveKpiRow';
 import ImpactDecisionPanel from './cockpit/ImpactDecisionPanel';
 import DataActivationPanel from './cockpit/DataActivationPanel';
-import { RISK_THRESHOLDS, READINESS_WEIGHTS, ACTIONS_SCORE, getRiskStatus, getStatusBadgeProps } from '../lib/constants';
+import { READINESS_WEIGHTS, ACTIONS_SCORE, getRiskStatus, getStatusBadgeProps } from '../lib/constants';
 
 // ── Consistency banner (inline — too small for its own file) ─────────────────
 function ConsistencyBanner({ issues }) {
@@ -48,7 +48,7 @@ function ConsistencyBanner({ issues }) {
 const Cockpit = () => {
   useRenderTiming('Cockpit');
   const navigate = useNavigate();
-  const { org, portefeuille, portefeuilles, scopedSites, sitesCount, sitesLoading } = useScope();
+  const { org, portefeuille, portefeuilles, scopedSites, sitesLoading } = useScope();
   const { isExpert } = useExpertMode();
   const [showMaturiteModal, setShowMaturiteModal] = useState(false);
   const [siteSort, setSiteSort] = useState({ col: '', dir: '' });
@@ -92,9 +92,9 @@ const Cockpit = () => {
   const topSites          = useMemo(() => buildTopSites(scopedSites),                                 [scopedSites]);              // eslint-disable-line react-hooks/exhaustive-deps
   const executiveSummary  = useMemo(() => buildExecutiveSummary(kpis, topSites),                      [kpis, topSites]);           // eslint-disable-line react-hooks/exhaustive-deps
   const executiveKpis     = useMemo(() => buildExecutiveKpis(kpis, scopedSites),                      [kpis, scopedSites]);        // eslint-disable-line react-hooks/exhaustive-deps
-  const todayActions      = useMemo(() => buildTodayActions(kpis, watchlist, opportunities),          [kpis, watchlist, opportunities]); // eslint-disable-line react-hooks/exhaustive-deps
+  const _todayActions     = useMemo(() => buildTodayActions(kpis, watchlist, opportunities),          [kpis, watchlist, opportunities]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const scopeLabel = portefeuille
+  const _scopeLabel = portefeuille
     ? `${org?.nom || 'Organisation'} / ${portefeuille.nom}`
     : (org?.nom || 'Organisation');
 

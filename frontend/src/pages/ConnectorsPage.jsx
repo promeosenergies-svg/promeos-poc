@@ -26,6 +26,7 @@ export default function ConnectorsPage() {
 
   useEffect(() => {
     loadConnectors();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadConnectors = async () => {

@@ -48,7 +48,7 @@ export default function BillingPage() {
   const [siteFilter, setSiteFilter] = useState(
     searchParams.get('site_id') || (scopeSiteId ? String(scopeSiteId) : '')
   );
-  const [activeMonth, setActiveMonth] = useState(searchParams.get('month') || '');
+  const [activeMonth, _setActiveMonth] = useState(searchParams.get('month') || '');
 
   const [summary, setSummary] = useState(null);
   const [periods, setPeriods] = useState([]);
@@ -93,6 +93,7 @@ export default function BillingPage() {
     } else {
       setSearchParams({}, { replace: true });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [siteFilter]);
 
   const fetchAll = useCallback(async (siteId, offset = 0, append = false) => {
@@ -186,6 +187,7 @@ export default function BillingPage() {
 
   useEffect(() => {
     fetchAll(siteFilter, 0, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [siteFilter]);
 
 

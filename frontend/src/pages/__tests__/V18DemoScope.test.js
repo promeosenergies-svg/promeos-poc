@@ -77,7 +77,7 @@ describe('requestId stale-response guard (V18-A RC3)', () => {
   it('stale response (old requestId) is ignored', () => {
     const guard = makeRequestGuard();
     const req1 = guard.newRequest(); // org switch 1 → id=1
-    const req2 = guard.newRequest(); // org switch 2 → id=2
+    const _req2 = guard.newRequest(); // org switch 2 → id=2
 
     // req1 resolves last (stale)
     expect(guard.isFresh(req1)).toBe(false); // id=1 !== currentId=2 → ignore
@@ -85,7 +85,7 @@ describe('requestId stale-response guard (V18-A RC3)', () => {
 
   it('fresh response (latest requestId) is accepted', () => {
     const guard = makeRequestGuard();
-    const req1 = guard.newRequest();
+    const _req1 = guard.newRequest();
     const req2 = guard.newRequest();
 
     // req2 resolves (fresh)
@@ -123,7 +123,7 @@ describe('requestId stale-response guard (V18-A RC3)', () => {
     const ids = Array.from({ length: 5 }, () => guard.newRequest());
 
     // All responses arrive in reverse order
-    [...ids].reverse().forEach((id, i) => {
+    [...ids].reverse().forEach((id, _i) => {
       if (guard.isFresh(id)) {
         accepted.push(id);
       }

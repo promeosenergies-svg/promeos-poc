@@ -10,7 +10,7 @@ import {
   Shield, ExternalLink, FileCheck,
 } from 'lucide-react';
 import Drawer from '../ui/Drawer';
-import { Badge, Button, TrustBadge } from '../ui';
+import { Badge, Button } from '../ui';
 import { useToast } from '../ui/ToastProvider';
 import {
   getActionDetail, getActionComments, addActionComment,
@@ -26,7 +26,7 @@ import {
   PROOF_STATUS_LABELS, PROOF_STATUS_BADGE,
 } from '../models/actionProofLinkModel';
 
-const STATUS_TO_BE = { backlog: 'open', in_progress: 'in_progress', done: 'done', planned: 'blocked' };
+const _STATUS_TO_BE = { backlog: 'open', in_progress: 'in_progress', done: 'done', planned: 'blocked' };
 const STATUS_TO_FE = { open: 'backlog', in_progress: 'in_progress', done: 'done', blocked: 'planned', false_positive: 'done' };
 
 const TABS = [

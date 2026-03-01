@@ -42,7 +42,7 @@ export function generateDecisionNote({
   const profile = PERSONA_PROFILES[persona] || PERSONA_PROFILES[Persona.DAF];
   const bestOffer = offers.find(o => o.id === recommendation.bestOfferId);
   const bestResult = offerResults.find(r => r.offerId === recommendation.bestOfferId);
-  const bestScored = scoredOffers?.find(s => s.offerId === recommendation.bestOfferId);
+  const _bestScored = scoredOffers?.find(s => s.offerId === recommendation.bestOfferId);
 
   return {
     title: `Note de Decision — Achat Energie ${energyType}`,

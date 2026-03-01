@@ -10,12 +10,12 @@ import {
   patchNotification,
   getNotificationsSummary,
 } from '../services/api';
-import { Card, Badge, Button, PageShell, MetricCard, StatusDot, EmptyState, ErrorState, SkeletonCard, Pagination, Tabs, Drawer } from '../ui';
+import { Card, Button, PageShell, MetricCard, StatusDot, EmptyState, ErrorState, SkeletonCard, Pagination, Tabs, Drawer } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { useToast } from '../ui/ToastProvider';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import {
-  Bell, RefreshCw, ExternalLink, Eye, X, Trash2, Search, ArrowRight, Clock, Database,
+  Bell, RefreshCw, ExternalLink, Eye, X, Trash2, Search, Clock, Database,
 } from 'lucide-react';
 
 const SEVERITY_STATUS = { critical: 'crit', warn: 'warn', info: 'info' };

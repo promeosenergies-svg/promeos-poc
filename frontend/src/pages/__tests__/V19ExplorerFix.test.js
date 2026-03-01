@@ -85,8 +85,8 @@ describe('handleSwitchEnergy does not clobber timeseries tab (V19-A RC6)', () =>
 
 describe('Site selector always-visible logic (V19-B RC2)', () => {
   // Simulates V19 isMultiMode + rendering decision
-  function getV19SiteSectionState({ setSiteIds, sites, effectiveSiteIds, sitesLoading, isPortfolioMode }) {
-    const isMultiMode = Boolean(setSiteIds); // V19 fix: was: sites.length > 1 && setSiteIds
+  function getV19SiteSectionState({ setSiteIds, sites: _sites, effectiveSiteIds, sitesLoading, isPortfolioMode }) {
+    const _isMultiMode = Boolean(setSiteIds); // V19 fix: was: sites.length > 1 && setSiteIds
     const showSection = Boolean(setSiteIds) && !isPortfolioMode;
 
     if (!showSection) return { visible: false, content: null };

@@ -7,7 +7,7 @@
  * Falls back to demo data when APIs are unavailable.
  */
 import {
-  getSites, getSite, getSiteStats,
+  getSites, getSite,
 } from '../../services/api.js';
 import {
   getSiteBilling, getBillingInsights,

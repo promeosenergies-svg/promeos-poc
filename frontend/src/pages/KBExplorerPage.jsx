@@ -8,10 +8,9 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Search, BookOpen, ShieldCheck, Zap, Sun, Receipt, Wind,
   ChevronDown, ChevronUp, ExternalLink, Filter, AlertTriangle,
-  Upload, FileText, CheckCircle, X, ArrowLeft,
+  Upload, FileText, X, ArrowLeft,
 } from 'lucide-react';
-import { PageShell, Card, CardBody, Badge, Button, TrustBadge, EmptyState } from '../ui';
-import { SkeletonCard } from '../ui/Skeleton';
+import { PageShell, Card, CardBody, Badge, TrustBadge } from '../ui';
 import { searchKBItems, getKBFullStats, uploadKBDoc, getKBDocs, changeKBDocStatus, linkTertiaireProof, linkProofToAction } from '../services/api';
 import { DOC_STATUS_LABELS, DOC_STATUS_BADGE } from '../models/proofLinkModel';
 
@@ -84,6 +83,7 @@ export default function KBExplorerPage() {
         action_id: searchParams.get('action_id') || null,
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Load stats on mount
@@ -101,11 +101,13 @@ export default function KBExplorerPage() {
       doSearch();
     }, 300);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, domain, typeFilter, activeTab]);
 
   // V38: Load docs when switching to docs tab
   useEffect(() => {
     if (activeTab === 'docs') loadDocs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, domain, statusFilter]);
 
   async function doSearch() {

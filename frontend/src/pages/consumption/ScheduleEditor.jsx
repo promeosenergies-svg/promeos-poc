@@ -330,7 +330,7 @@ export default function ScheduleEditor({ schedule, siteId, onSaved }) {
                     )}
 
                     {!isOpen && (
-                      <span className="text-[10px] text-gray-300 italic">Ferm\u00e9</span>
+                      <span className="text-[10px] text-gray-300 italic">Fermé</span>
                     )}
                   </div>
 

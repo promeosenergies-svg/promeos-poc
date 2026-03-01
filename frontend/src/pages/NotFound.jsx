@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Home } from 'lucide-react';
-import { Button, EmptyState } from '../ui';
+import { EmptyState } from '../ui';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 
 export default function NotFound() {

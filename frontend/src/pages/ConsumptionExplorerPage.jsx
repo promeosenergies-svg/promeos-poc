@@ -12,7 +12,7 @@ import {
   Grid3x3, Cloud, Lightbulb,
 } from 'lucide-react';
 import {
-  AreaChart, Area, BarChart, Bar, ComposedChart, Line,
+  Bar, ComposedChart, Line,
   ScatterChart, Scatter,
   XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend,
@@ -23,13 +23,11 @@ import { useToast } from '../ui/ToastProvider';
 import { useScope } from '../contexts/ScopeContext';
 import { track } from '../services/tracker';
 import {
-  getConsumptionTunnel, getConsumptionTunnelV2,
+  getConsumptionTunnelV2,
   getConsumptionTargets,
   createConsumptionTarget,
   deleteConsumptionTarget,
-  getTargetsProgression,
   getActiveTOUSchedule,
-  getHPHCRatio,
   getTargetsProgressionV2,
   getHPHCBreakdownV2,
   getGasSummary,
@@ -237,6 +235,7 @@ function TunnelPanel({ siteId, days, energyType, showSignature = false, toast })
     } finally {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [siteId, days, energyType, mode]);
 
   useEffect(() => { load(); }, [load]);
@@ -253,7 +252,7 @@ function TunnelPanel({ siteId, days, energyType, showSignature = false, toast })
   }
 
   const conf = CONFIDENCE_BADGE[tunnel.confidence] || CONFIDENCE_BADGE.low;
-  const unit = tunnel.unit || (mode === 'power' ? 'kW' : 'kWh');
+  const _unit = tunnel.unit || (mode === 'power' ? 'kW' : 'kWh');
   const envelope = tunnel.envelope?.[dayType] || [];
   const chartData = envelope.map(s => ({
     hour: `${s.hour}h`,
@@ -426,6 +425,7 @@ function TargetsPanel({ siteId, energyType, toast }) {
     } finally {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [siteId, year, energyType]);
 
   useEffect(() => { load(); }, [load]);
@@ -665,6 +665,7 @@ function HPHCPanel({ siteId, days, toast }) {
     } finally {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [siteId, days]);
 
   useEffect(() => { load(); }, [load]);
@@ -838,6 +839,7 @@ function GasPanel({ siteId, days, onGenerateDemo, toast }) {
     } finally {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [siteId, days]);
 
   useEffect(() => { load(); }, [load]);
@@ -1001,7 +1003,7 @@ function GasPanel({ siteId, days, onGenerateDemo, toast }) {
 // ========================================
 
 export default function ConsumptionExplorerPage() {
-  const { selectedSiteId, scopedSites, orgSites, scope, sitesLoading, scopeLabel } = useScope();
+  const { selectedSiteId, orgSites, sitesLoading, scopeLabel } = useScope();
   const { toast } = useToast();
 
   // ── UI mode (Classic / Expert) — localStorage only, never in URL ───────
@@ -1040,7 +1042,7 @@ export default function ConsumptionExplorerPage() {
 
   const {
     state: { siteIds, energyType, days, mode, unit, layers },
-    setSiteIds, setEnergyType, setDays, setMode, setUnit, toggleLayer,
+    setSiteIds, setEnergyType, setDays, setMode, setUnit, _toggleLayer,
     mergedAvailability,
     primarySiteId,
     primaryAvailability,
@@ -1163,6 +1165,7 @@ export default function ConsumptionExplorerPage() {
     } catch (e) {
       toast('Erreur generation demo', 'error');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [siteIds, energyType]);
 
   // ── Presets (V11.1-C) ──────────────────────────────────────────────────

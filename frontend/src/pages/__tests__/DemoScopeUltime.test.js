@@ -7,7 +7,7 @@
  *   - CommandCenter/Cockpit/Conformité: utilisent sitesCount (orgSites.length)
  *   - Scénarios end-to-end: seed S(10), reset, switch org
  */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
 // ── Simulate DemoState singleton logic ────────────────────────────────────────
 

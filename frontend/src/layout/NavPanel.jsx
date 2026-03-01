@@ -7,8 +7,8 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { ChevronDown, Star, Clock } from 'lucide-react';
 import {
-  NAV_MODULES, NAV_SECTIONS, ROUTE_MODULE_MAP, ALL_NAV_ITEMS,
-  QUICK_ACTIONS, SECTION_TINTS, SIDEBAR_ITEM_TINTS, TINT_PALETTE,
+  NAV_MODULES, ROUTE_MODULE_MAP,
+  QUICK_ACTIONS, SECTION_TINTS, TINT_PALETTE,
   getSectionsForModule,
 } from './NavRegistry';
 import { useExpertMode } from '../contexts/ExpertModeContext';

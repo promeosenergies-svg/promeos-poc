@@ -5,6 +5,7 @@
 import { Card, CardBody, Badge } from '../../ui';
 import { AlertTriangle, Building2, Calendar } from 'lucide-react';
 import ScheduleEditor from './ScheduleEditor';
+import ScheduleDetectionPanel from './ScheduleDetectionPanel';
 
 const SEV_VARIANT = { critical: 'crit', high: 'warn', medium: 'info', low: 'neutral' };
 
@@ -149,6 +150,9 @@ export default function HorairesAnomaliesTab({ activity, anomalies, siteId, load
         siteId={siteId}
         onSaved={onRefresh}
       />
+
+      {/* Détection automatique — comparaison déclaré vs courbe de charge */}
+      <ScheduleDetectionPanel siteId={siteId} onApplied={onRefresh} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <ArchetypeCard archetype={activity?.archetype} nafCode={activity?.naf_code} />

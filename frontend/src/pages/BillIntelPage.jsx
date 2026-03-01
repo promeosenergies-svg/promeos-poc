@@ -15,11 +15,10 @@ import {
   importInvoicesPdf,
   getSites,
 } from '../services/api';
-import { Card, CardBody, Badge, Button, TrustBadge, PageShell, EmptyState } from '../ui';
-import { SkeletonCard } from '../ui/Skeleton';
+import { Card, CardBody, Badge, Button, TrustBadge, PageShell } from '../ui';
 import { useToast } from '../ui/ToastProvider';
 import {
-  FileText, AlertTriangle, CheckCircle, Upload, Play, Download,
+  FileText, AlertTriangle, Upload, Play,
   DollarSign, Zap, TrendingUp, RefreshCw, CheckCircle2, CalendarRange,
 } from 'lucide-react';
 import { useExpertMode } from '../contexts/ExpertModeContext';
@@ -145,6 +144,7 @@ export default function BillIntelPage() {
     setLoading(false);
   }
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchData(); }, [insightFilter, siteFilter]);
 
   useEffect(() => {
@@ -159,6 +159,7 @@ export default function BillIntelPage() {
     } else if (!pdfSiteId && sites.length > 0) {
       setPdfSiteId(String(sites[0].id));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [siteFilter, sites]);
 
   // Filtrage front : période (preset ou mois exact), statut, texte libre (N° facture ou PDL)

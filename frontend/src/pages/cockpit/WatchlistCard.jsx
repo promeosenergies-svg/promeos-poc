@@ -9,7 +9,7 @@
  *   onNavigate   {fn}           — navigate(path)
  */
 import { CheckCircle, AlertTriangle } from 'lucide-react';
-import { Card, CardBody, Button, Badge } from '../../ui';
+import { Card, CardBody, Button } from '../../ui';
 import { SEVERITY_TINT } from '../../ui/colorTokens';
 
 // ── Severity dot ─────────────────────────────────────────────────────────────

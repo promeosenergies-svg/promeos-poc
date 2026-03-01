@@ -60,11 +60,12 @@ function StatusPage() {
     setLoading(false);
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { runChecks(); }, []);
 
   const backendOk = status?.health?.ok;
   const version = status?.health?.data?.version || '-';
-  const allOk = status && Object.values(status).every(v => typeof v === 'object' ? v.ok !== false : true);
+  const _allOk = status && Object.values(status).every(v => typeof v === 'object' ? v.ok !== false : true);
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">

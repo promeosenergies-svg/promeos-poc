@@ -136,7 +136,7 @@ function StepEligibilite({ data, setData, onNext }) {
 
 // ── Phase 2: Inventaire CVC ──
 
-function StepInventaire({ systems, setSystems, putile, onNext, onPrev }) {
+function StepInventaire({ systems, setSystems, _putile, onNext, onPrev }) {
   const [editing, setEditing] = useState(null); // index or null
 
   const addSystem = () => {

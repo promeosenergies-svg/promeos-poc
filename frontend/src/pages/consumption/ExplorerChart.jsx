@@ -22,11 +22,10 @@ import { useMemo } from 'react';
 import { BarChart3 } from 'lucide-react';
 import {
   ComposedChart,
-  Area, Bar, Line, ReferenceLine,
+  Area, Line,
   XAxis, YAxis, CartesianGrid,
   Tooltip, Legend, ResponsiveContainer, Brush,
 } from 'recharts';
-import { UNIT_LABELS } from './types';
 import { colorForSite } from './helpers';
 
 const UNIT_AXIS_LABELS = {

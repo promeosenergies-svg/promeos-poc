@@ -8,7 +8,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Building2, AlertTriangle, CheckCircle2, FileText, Plus,
+  Building2, AlertTriangle, FileText, Plus,
   Loader2, ArrowRight, ShieldAlert, MapPin, HelpCircle, X,
   Check, Filter,
 } from 'lucide-react';

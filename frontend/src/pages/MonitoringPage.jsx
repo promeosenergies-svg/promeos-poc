@@ -9,15 +9,15 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Activity, AlertTriangle, Zap, BarChart3, CheckCircle, Clock,
-  Shield, TrendingUp, ChevronDown, ChevronUp, Eye, PlayCircle,
+  Shield, TrendingUp, ChevronDown, Eye, PlayCircle,
   Database, RefreshCw, Thermometer, Sun, Info, UserCheck,
-  CheckCircle2, XCircle, ExternalLink, Leaf, Loader2,
+  CheckCircle2, ExternalLink, Leaf, Loader2,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip as RTooltip, ResponsiveContainer,
-  ComposedChart, Area, ScatterChart, Scatter, Line, Legend,
+  ComposedChart, Area, ScatterChart, Scatter, Legend,
 } from 'recharts';
 import {
   Card, CardBody, Badge, Button, EmptyState, TrustBadge,
@@ -30,7 +30,7 @@ import { useExpertMode } from '../contexts/ExpertModeContext';
 import { mockSites } from '../mocks/sites';
 import { track } from '../services/tracker';
 import CreateActionModal from '../components/CreateActionModal';
-import { fmtKwh, fmtDateFR } from '../utils/format';
+import { fmtDateFR } from '../utils/format';
 import { toConsoExplorer, toConsoDiag, toActionsList, toPatrimoine, toPurchase } from '../services/routes';
 import {
   getMonitoringKpis,
@@ -373,7 +373,7 @@ function StatusKpiCard({ icon, title, value, sub, tooltip, status, color, onClic
  * Executive summary v2: top risk, top waste, data confidence — each with CTAs.
  * Confidence downgrade: if qualityConf.level === 'low', risk card shows "(A confirmer)".
  */
-function ExecutiveSummary({ alerts, kpiData, climate, qualityScore, qualityConf, offHoursKwh, emissions, onOpenExplorer, onCreateAction, onInsight, onConfidenceDetail, navigate, siteId }) {
+function ExecutiveSummary({ alerts, kpiData, _climate, _qualityScore, qualityConf, offHoursKwh, emissions, onOpenExplorer, onCreateAction, onInsight, onConfidenceDetail, navigate, siteId }) {
   // Top risk: highest EUR impact open alert
   const topAlert = alerts
     .filter((a) => a.status === 'open' && a.estimated_impact_eur)
@@ -1116,7 +1116,7 @@ function InsightDrawer({ alert, open, onClose, onAck, onResolve, onCreateAction,
 // --- Main component ---
 
 export default function MonitoringPage() {
-  const { scope, scopedSites, setSite, sitesLoading } = useScope();
+  const { scope, setSite, sitesLoading } = useScope();
   const { isExpert } = useExpertMode();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -1314,7 +1314,7 @@ export default function MonitoringPage() {
     }
   };
 
-  const handleOpenExplorer = (alert) => {
+  const handleOpenExplorer = (_alert) => {
     const explorerOpts = { site_id: siteId };
     if (kpis?.period) {
       const parts = kpis.period.split(' - ');
@@ -1345,7 +1345,8 @@ export default function MonitoringPage() {
   const schedule = kpis?.schedule || null;
   const offHoursRatio = kpiData.off_hours_ratio ?? null;
   const offHoursKwh = kpiData.off_hours_kwh ?? null;
-  const impact = kpis?.impact || {};
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const impact = useMemo(() => kpis?.impact || {}, [kpis]);
   const emissions = kpis?.emissions || {};
   const offHoursEstimate = useMemo(() => {
     // Use server-side impact if available, fallback to client-side
@@ -1354,6 +1355,7 @@ export default function MonitoringPage() {
       return { eur, label: `~${fmtNum(eur, 0)} EUR/an`, price: impact.off_hours.price_eur_kwh, mode: impact.off_hours.mode, confidence: impact.off_hours.confidence, assumptions: impact.off_hours.assumptions };
     }
     return computeOffHoursEstimate(offHoursKwh);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [offHoursKwh, impact]);
 
   const weekdayProfile = kpiData.weekday_profile_kw;

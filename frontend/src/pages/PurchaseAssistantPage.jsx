@@ -48,17 +48,12 @@ import {
   Flame,
   CheckCircle2,
   Sun,
-  XCircle,
   Minus,
   Star,
 } from 'lucide-react';
 import {
   EnergyType,
   OfferStructure,
-  ScenarioPreset,
-  Persona,
-  Confidence,
-  ScoreLevel,
   BREAKDOWN_LABELS,
   PERSONA_PROFILES,
   SCENARIO_PRESETS,
@@ -175,7 +170,7 @@ export default function PurchaseAssistantPage() {
   // V81: Deep-link params (step, offer, site_id)
   const deepLinkStep = searchParams.get('step');
   const deepLinkOffer = searchParams.get('offer');
-  const deepLinkSiteId = searchParams.get('site_id');
+  const _deepLinkSiteId = searchParams.get('site_id');
 
   // Wizard state
   const [step, setStep] = useState(0);
@@ -256,7 +251,8 @@ export default function PurchaseAssistantPage() {
   }, [isDemo, wizard.selectedSiteIds, wizard.totalAnnualKwh, wizard.energyType]);
 
   // Current offers
-  const offers = wizard.offers.length > 0 ? wizard.offers : isDemo ? DEMO_OFFERS : [];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const offers = useMemo(() => wizard.offers.length > 0 ? wizard.offers : isDemo ? DEMO_OFFERS : [], [wizard.offers, isDemo]);
 
   // ── Navigation ───────────────────────────────────────────────────
 
@@ -275,6 +271,7 @@ export default function PurchaseAssistantPage() {
       default:
         return true;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, wizard, isDemo, selectedSitesData, offers]);
 
   const goNext = useCallback(() => {
@@ -285,6 +282,7 @@ export default function PurchaseAssistantPage() {
       }
       setStep((s) => s + 1);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, canAdvance]);
 
   const goBack = useCallback(() => {
@@ -361,6 +359,7 @@ export default function PurchaseAssistantPage() {
       toast('Erreur lors du calcul: ' + (err.message || 'erreur inconnue'), 'error');
     }
     setComputing(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [offers, wizard, selectedSitesData, isDemo, toast]);
 
   // ── Render Step Content ──────────────────────────────────────────
@@ -1481,7 +1480,7 @@ function StepDecision({
   offers,
   wizard,
   selectedSitesData,
-  isDemo,
+  _isDemo,
   onShowAudit,
   toast,
 }) {

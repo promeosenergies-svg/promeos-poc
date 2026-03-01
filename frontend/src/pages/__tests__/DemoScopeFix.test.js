@@ -3,7 +3,7 @@
  * Covers: setApiScope interceptor, ScopeContext orgSites/sitesCount,
  * scopedSites using apiSites, ScopeSwitcher site-selector logic.
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
 // ── setApiScope / interceptor logic ─────────────────────────────────────────
 

@@ -177,7 +177,7 @@ export function buildTopSites(sites = []) {
  *
  * Opportunity: { id, label, sub, icon, path, cta }
  */
-export function buildOpportunities(kpis, sites = [], { isExpert = false } = {}) {
+export function buildOpportunities(kpis, _sites = [], { isExpert = false } = {}) {
   if (!isExpert) return [];
 
   const items = [];
@@ -233,7 +233,7 @@ export function buildOpportunities(kpis, sites = [], { isExpert = false } = {}) 
  *
  * BriefingItem: { id, label, severity, path }
  */
-export function buildBriefing(kpis, watchlist = []) {
+export function buildBriefing(kpis, _watchlist = []) {
   const bullets = [];
 
   // 1. Non-conformes → critical
@@ -322,7 +322,7 @@ export function buildTodayActions(kpis, watchlist = [], opportunities = []) {
  *
  * ExecBullet: { id, type: 'positive'|'negative'|'warn'|'opportunity', label, sub?, path? }
  */
-export function buildExecutiveSummary(kpis, topSites = {}) {
+export function buildExecutiveSummary(kpis, _topSites = {}) {
   const bullets = [];
   const { total, conformes, nonConformes, aRisque, risqueTotal, couvertureDonnees } = kpis;
   const pctConf = total > 0 ? Math.round(conformes / total * 100) : 0;

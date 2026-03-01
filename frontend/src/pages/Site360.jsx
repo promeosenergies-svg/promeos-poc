@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft, ShieldCheck, Zap, BadgeEuro, AlertTriangle,
-  FileText, ListChecks, MapPin, Ruler,
+  MapPin, Ruler,
   BookOpen, ChevronDown, ChevronUp, Clock, ExternalLink, ClipboardCheck,
 } from 'lucide-react';
 import { Card, CardBody, Badge, Button, Tabs, EmptyState, TrustBadge } from '../ui';

@@ -1,4 +1,3 @@
-import { Info } from 'lucide-react';
 
 const CONFIDENCE = {
   high:   { label: 'Confiance elevee', color: 'bg-green-50 text-green-700', dot: 'bg-green-500' },

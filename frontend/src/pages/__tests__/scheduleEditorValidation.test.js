@@ -274,3 +274,188 @@ describe('Backend route — site_config.py V1.1', () => {
     expect(code).toMatch(/intervals_json.*sched\.intervals_json/);
   });
 });
+
+// ============================================================
+// G. ScheduleDetectionPanel — source structure
+// ============================================================
+describe('ScheduleDetectionPanel — source structure', () => {
+  const code = readSrc('pages', 'consumption', 'ScheduleDetectionPanel.jsx');
+
+  it('imports compareSchedules and applyDetectedSchedule from api', () => {
+    expect(code).toMatch(/import.*compareSchedules.*api/);
+    expect(code).toMatch(/import.*applyDetectedSchedule.*api/);
+  });
+
+  it('has detect button with data-testid', () => {
+    expect(code).toMatch(/data-testid="detect-schedule-btn"/);
+  });
+
+  it('has confidence badge with data-testid', () => {
+    expect(code).toMatch(/data-testid="confidence-badge"/);
+  });
+
+  it('has mismatch banner with data-testid', () => {
+    expect(code).toMatch(/data-testid="mismatch-banner"/);
+  });
+
+  it('has apply button with data-testid', () => {
+    expect(code).toMatch(/data-testid="apply-detected-btn"/);
+  });
+
+  it('has detection result container with data-testid', () => {
+    expect(code).toMatch(/data-testid="detection-result"/);
+  });
+
+  it('has evidence details with data-testid', () => {
+    expect(code).toMatch(/data-testid="evidence-details"/);
+  });
+
+  it('has per-day comparison rows', () => {
+    expect(code).toMatch(/data-testid=\{`compare-row-/);
+  });
+
+  it('renders ELEVEE/MOYEN/FAIBLE confidence labels', () => {
+    expect(code).toMatch(/ELEVEE/);
+    expect(code).toMatch(/MOYEN/);
+    expect(code).toMatch(/FAIBLE/);
+  });
+
+  it('shows error state with data-testid', () => {
+    expect(code).toMatch(/data-testid="detection-error"/);
+  });
+});
+
+// ============================================================
+// H. HorairesAnomaliesTab — detection integration
+// ============================================================
+describe('HorairesAnomaliesTab — detection integration', () => {
+  const code = readSrc('pages', 'consumption', 'HorairesAnomaliesTab.jsx');
+
+  it('imports ScheduleDetectionPanel', () => {
+    expect(code).toMatch(/import ScheduleDetectionPanel/);
+  });
+
+  it('renders ScheduleDetectionPanel component', () => {
+    expect(code).toMatch(/<ScheduleDetectionPanel/);
+  });
+
+  it('passes siteId to ScheduleDetectionPanel', () => {
+    expect(code).toMatch(/siteId=\{siteId\}/);
+  });
+
+  it('passes onApplied callback to ScheduleDetectionPanel', () => {
+    expect(code).toMatch(/onApplied=\{onRefresh\}/);
+  });
+});
+
+// ============================================================
+// I. Backend: schedule_detection_service — source guards
+// ============================================================
+describe('Backend: schedule_detection_service — source guards', () => {
+  const code = readFileSync(
+    resolve(root, '..', 'backend', 'services', 'schedule_detection_service.py'),
+    'utf-8'
+  );
+
+  it('defines detect_schedule function', () => {
+    expect(code).toMatch(/def detect_schedule/);
+  });
+
+  it('defines compare_schedules function', () => {
+    expect(code).toMatch(/def compare_schedules/);
+  });
+
+  it('defines get_declared_intervals function', () => {
+    expect(code).toMatch(/def get_declared_intervals/);
+  });
+
+  it('uses MeterReading for data access', () => {
+    expect(code).toMatch(/MeterReading/);
+  });
+
+  it('computes confidence with coverage, stability, separation', () => {
+    expect(code).toMatch(/coverage/);
+    expect(code).toMatch(/stability_score/);
+    expect(code).toMatch(/separation_score/);
+  });
+
+  it('implements gap fill and minimum interval post-processing', () => {
+    expect(code).toMatch(/GAP_FILL_MINUTES/);
+    expect(code).toMatch(/MIN_INTERVAL_MINUTES/);
+  });
+
+  it('raises ValueError for insufficient data', () => {
+    expect(code).toMatch(/raise ValueError/);
+  });
+});
+
+// ============================================================
+// J. Backend route: detection endpoints — source guards
+// ============================================================
+describe('Backend route: detection endpoints', () => {
+  const code = readFileSync(
+    resolve(root, '..', 'backend', 'routes', 'consumption_context.py'),
+    'utf-8'
+  );
+
+  it('imports detect_schedule and compare_schedules', () => {
+    expect(code).toMatch(/from services\.schedule_detection_service import/);
+    expect(code).toMatch(/detect_schedule/);
+    expect(code).toMatch(/compare_schedules/);
+  });
+
+  it('defines detected_schedule endpoint', () => {
+    expect(code).toMatch(/def detected_schedule/);
+  });
+
+  it('defines compare_declared_detected endpoint', () => {
+    expect(code).toMatch(/def compare_declared_detected/);
+  });
+
+  it('defines apply_detected_schedule endpoint', () => {
+    expect(code).toMatch(/def apply_detected_schedule/);
+  });
+
+  it('routes: activity/detected, activity/compare, activity/apply_detected', () => {
+    expect(code).toMatch(/activity\/detected/);
+    expect(code).toMatch(/activity\/compare/);
+    expect(code).toMatch(/activity\/apply_detected/);
+  });
+
+  it('uses check_site_access for auth on detection endpoints', () => {
+    // At least 3 occurrences of check_site_access in detection endpoints area
+    const matches = code.match(/check_site_access/g);
+    expect(matches.length).toBeGreaterThanOrEqual(6); // 3 original + 3 new
+  });
+});
+
+// ============================================================
+// K. Frontend API — detection functions
+// ============================================================
+describe('Frontend API — detection functions', () => {
+  const code = readSrc('services', 'api.js');
+
+  it('exports getDetectedSchedule', () => {
+    expect(code).toMatch(/export const getDetectedSchedule/);
+  });
+
+  it('exports compareSchedules', () => {
+    expect(code).toMatch(/export const compareSchedules/);
+  });
+
+  it('exports applyDetectedSchedule', () => {
+    expect(code).toMatch(/export const applyDetectedSchedule/);
+  });
+
+  it('calls activity/detected endpoint', () => {
+    expect(code).toMatch(/activity\/detected/);
+  });
+
+  it('calls activity/compare endpoint', () => {
+    expect(code).toMatch(/activity\/compare/);
+  });
+
+  it('calls activity/apply_detected endpoint', () => {
+    expect(code).toMatch(/activity\/apply_detected/);
+  });
+});

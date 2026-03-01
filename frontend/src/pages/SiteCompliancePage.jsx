@@ -12,13 +12,13 @@ import {
   ShieldCheck, AlertTriangle, CheckCircle, Clock, XCircle,
   Upload, Plus, ArrowLeft, FileCheck, ClipboardList,
   Building, Zap, Sun, ArrowRight, Package, Columns,
-  Activity, ChevronRight, Hammer, Banknote, Eye,
+  Activity, ChevronRight, Hammer, Banknote,
 } from 'lucide-react';
 import {
-  getSiteComplianceSummary, getComplianceFindings, getActionsList,
+  getSiteComplianceSummary, getActionsList,
   getSiteWorkPackages, createWorkPackage, createCeeDossier, advanceCeeStep, getMvSummary,
 } from '../services/api';
-import { toPatrimoine, toConsoImport, toBillIntel, toActionNew, toCompliancePipeline } from '../services/routes';
+import { toPatrimoine, toConsoImport, toBillIntel, toCompliancePipeline } from '../services/routes';
 import { useToast } from '../ui/ToastProvider';
 import CreateActionModal from '../components/CreateActionModal';
 
@@ -364,7 +364,7 @@ function MvWidget({ siteId }) {
 }
 
 /* ── Tab: Plan d'action V69 ────────────────── */
-function PlanTab({ siteId, siteName, navigate, onCreateAction, toast }) {
+function PlanTab({ siteId, siteName: _siteName, navigate, onCreateAction, toast }) {
   const [actions, setActions] = useState([]);
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);

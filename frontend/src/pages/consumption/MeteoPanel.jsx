@@ -161,7 +161,7 @@ export default function MeteoPanel({ siteIds = [], energyType = 'electricity', d
   const correlationColor = correlation > 0.5 ? 'text-blue-700 bg-blue-50' : correlation > 0.2 ? 'text-amber-700 bg-amber-50' : 'text-gray-600 bg-gray-100';
 
   const isRealWeather = !!utcWeather;
-  const weatherSource = isRealWeather ? 'Temperature reelle (UTC)' : 'Temperature synthetique (modele)';
+  const _weatherSource = isRealWeather ? 'Temperature reelle (UTC)' : 'Temperature synthetique (modele)';
 
   // Loading state
   if (status === 'loading') {

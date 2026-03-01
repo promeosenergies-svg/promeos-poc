@@ -79,6 +79,7 @@ const UpgradeWizard = ({ onClose }) => {
         ejSiren: prev.orgSiren,
       }));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
   const updateField = (key, value) => {

@@ -20,7 +20,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
-import { PageShell, EmptyState } from '../ui';
+import { PageShell } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
 import { useToast } from '../ui/ToastProvider';
 import ExportNoteDecision from '../components/ExportNoteDecision';
@@ -79,7 +79,6 @@ import {
   Flame,
   ArrowUpDown,
   Activity,
-  Filter,
   Rocket,
 } from 'lucide-react';
 

@@ -5,9 +5,9 @@
  * Print via window.print() with @media print styles.
  */
 import { useRef } from 'react';
-import { Printer, X, Shield, TrendingDown, Zap, CheckCircle2 } from 'lucide-react';
+import { Printer, X, Shield, TrendingDown, Zap } from 'lucide-react';
 
-const STRATEGY_ICONS = { fixe: Shield, indexe: TrendingDown, spot: Zap };
+const _STRATEGY_ICONS = { fixe: Shield, indexe: TrendingDown, spot: Zap };
 const STRATEGY_LABELS = { fixe: 'Prix Fixe', indexe: 'Indexe Marche', spot: 'Spot Temps Reel' };
 
 export default function ExportNoteDecision({ data, onClose }) {

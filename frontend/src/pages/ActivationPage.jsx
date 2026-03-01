@@ -8,7 +8,7 @@ import {
   Database, CheckCircle2, Circle, ArrowRight, Search,
 } from 'lucide-react';
 import { useScope } from '../contexts/ScopeContext';
-import { PageShell, Card, CardBody, Badge, Button, Progress, EmptyState } from '../ui';
+import { PageShell, Card, CardBody, Button, Progress, EmptyState } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { buildActivationChecklist, ACTIVATION_DIMENSIONS } from '../models/dataActivationModel';
 import useActivationData from '../hooks/useActivationData';

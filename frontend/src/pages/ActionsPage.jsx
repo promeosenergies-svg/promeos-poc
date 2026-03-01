@@ -6,9 +6,9 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useSearchParams, useParams } from 'react-router-dom';
 import {
-  Plus, Download, Printer, Clock, ListChecks, RefreshCw,
-  MessageSquare, Paperclip, AlertTriangle, BadgeEuro, ShieldCheck,
-  Tag, Users, ArrowUpDown, UserPlus, FileText,
+  Plus, Download, Printer, ListChecks, RefreshCw,
+  AlertTriangle, BadgeEuro, ShieldCheck,
+  Users, ArrowUpDown, UserPlus, FileText,
   Columns3, List, ChevronRight, ChevronDown, Search, CheckCircle, X,
 } from 'lucide-react';
 import { Card, CardBody, Badge, Button, Select, Pagination, EmptyState, Tabs, TrustBadge, PageShell } from '../ui';
@@ -126,7 +126,7 @@ function defaultSort(a, b) {
 }
 
 /* ── Kanban Board ────────────────────────────────────────────── */
-function KanbanBoard({ actions, onStatusChange, onCardClick, selected, onToggleSelect }) {
+function KanbanBoard({ actions, onStatusChange, onCardClick, selected, onToggleSelect: _onToggleSelect }) {
   const [dragId, setDragId] = useState(null);
 
   const columnActions = useMemo(() => {
@@ -210,7 +210,7 @@ function KanbanBoard({ actions, onStatusChange, onCardClick, selected, onToggleS
 }
 
 /* ── Grouped Table View ──────────────────────────────────────── */
-function GroupedTableView({ actions, groupBy, onCardClick, selected, onToggleSelect, onInlineStatus }) {
+function GroupedTableView({ actions, groupBy, onCardClick, selected, onToggleSelect: _onToggleSelect, onInlineStatus }) {
   const [collapsed, setCollapsed] = useState(new Set());
 
   const groups = useMemo(() => {
@@ -310,7 +310,7 @@ export default function ActionsPage({ autoCreate = false }) {
   const [searchParams] = useSearchParams();
   const { actionId: urlActionId } = useParams();
   const [actions, setActions] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [_loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [filterStatut, setFilterStatut] = useState('');
   const [filterType, setFilterType] = useState(searchParams.get('source') === 'operat' ? 'operat' : '');
@@ -356,6 +356,7 @@ export default function ActionsPage({ autoCreate = false }) {
       const found = actions.find(a => String(a.id) === urlActionId);
       if (found) setDetailAction(found);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlActionId, actions]);
 
   // Auto-open create modal when navigating to /actions/new
@@ -371,6 +372,7 @@ export default function ActionsPage({ autoCreate = false }) {
       setCreatePrefill(prefill);
       setShowCreate(true);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoCreate]);
 
   async function handleSync() {

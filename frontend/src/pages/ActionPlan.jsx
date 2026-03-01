@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Navigation, ShieldCheck, ShieldAlert, ShieldX,
-  AlertTriangle, Euro, FileWarning, ChevronRight,
-  Building2, Filter,
+  Euro, ChevronRight,
+  Filter,
 } from 'lucide-react';
 
 const API = 'http://127.0.0.1:8000';
@@ -45,6 +45,7 @@ const ActionPlan = () => {
       .then(r => r.json())
       .then(json => setPortefeuilles(json.portefeuilles || []))
       .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleFilterChange = (ptfId) => {

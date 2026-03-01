@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import { Shield, Check, X } from 'lucide-react';
 import { getAdminRoles } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
-import { PageShell, Badge, EmptyState } from '../ui';
+import { PageShell, EmptyState } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
 import { useToast } from '../ui/ToastProvider';
 
@@ -83,6 +83,7 @@ export default function AdminRolesPage() {
       .then(setRoles)
       .catch(() => toast('Erreur lors du chargement des roles', 'error'))
       .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (!hasPermission('admin')) {

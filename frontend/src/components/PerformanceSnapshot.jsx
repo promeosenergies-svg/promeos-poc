@@ -7,7 +7,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, CheckCircle, Zap, Clock, Thermometer, TrendingUp, PlayCircle } from 'lucide-react';
-import { Card, CardBody, Badge } from '../ui';
+import { Card, CardBody } from '../ui';
 import { getMonitoringKpis } from '../services/api';
 
 // Legacy severity color map — prefer SEVERITY_TINT from ui/colorTokens for new code

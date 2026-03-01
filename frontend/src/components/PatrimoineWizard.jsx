@@ -7,7 +7,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import {
   X, ChevronRight, ChevronLeft, Check, Upload, Download,
   FileSpreadsheet, AlertTriangle, ShieldCheck, Zap, Search,
-  Building2, Play, XCircle,
+  Building2, Play,
   SkipForward, RefreshCw, CheckCircle2, Sparkles,
   ExternalLink, FileText, File, Trash2,
 } from 'lucide-react';
@@ -735,7 +735,7 @@ function NxStep({ icon: Icon, label, desc }) {
   );
 }
 
-function FixBtn({ f, ev, onFix }) {
+function FixBtn({ f, _ev, onFix }) {
   const skipA = () => onFix(f, 'skip', { staging_site_id: f.staging_site_id, staging_compteur_id: f.staging_compteur_id });
   const skipS = () => onFix(f, 'skip', { staging_site_id: f.staging_site_id });
   const skipC = () => onFix(f, 'skip', { staging_compteur_id: f.staging_compteur_id });

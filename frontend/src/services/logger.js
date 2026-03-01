@@ -4,7 +4,7 @@
  * Sentry: optionnel — actif seulement si VITE_SENTRY_DSN est defini et @sentry/react installe.
  */
 
-const LOG_LEVELS = { debug: 0, info: 1, warn: 2, error: 3 };
+const _LOG_LEVELS = { debug: 0, info: 1, warn: 2, error: 3 };
 
 function log(level, tag, message, data) {
   const entry = { ts: new Date().toISOString(), level, tag, message, ...data };

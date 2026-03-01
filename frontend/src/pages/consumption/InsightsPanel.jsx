@@ -101,7 +101,7 @@ const KPI_CONFIG = [
     iconBg: 'bg-blue-50',
     iconText: 'text-blue-500',
     format: (v) => v >= 1000 ? `${(v / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} MWh` : `${v.toLocaleString('fr-FR')} kWh`,
-    sub: (kpis) => `sur la période analysée`,
+    sub: (_kpis) => `sur la période analysée`,
   },
   {
     id: 'avg_per_day',

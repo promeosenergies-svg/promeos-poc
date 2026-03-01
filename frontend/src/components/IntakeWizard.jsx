@@ -3,11 +3,11 @@
  * Wizard max 8 questions with before/after compliance preview.
  * Modes: WIZARD (step-by-step), DEMO (auto-fill 10s).
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import {
-  X, ChevronRight, ChevronLeft, Check, Zap, Play,
+  X, ChevronRight, ChevronLeft, Check, Zap,
   ClipboardCheck, HelpCircle, ArrowRight, Sparkles,
-  AlertTriangle, CheckCircle2, Info,
+  AlertTriangle, CheckCircle2,
 } from 'lucide-react';
 import {
   getIntakeQuestions, submitIntakeAnswer, completeIntake,
@@ -44,7 +44,7 @@ export default function IntakeWizard({ siteId, onClose }) {
   const [error, setError] = useState(null);
 
   // Data from API
-  const [sessionId, setSessionId] = useState(null);
+  const [_sessionId, setSessionId] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [prefills, setPrefills] = useState({});
 

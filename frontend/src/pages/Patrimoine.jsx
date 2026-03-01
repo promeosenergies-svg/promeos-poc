@@ -6,15 +6,15 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import {
-  Building2, Search, RotateCcw, Download, Star,
+  Building2, Search, Download, Star,
   Plus, Upload, MapPin, ChevronRight,
-  ShieldCheck, AlertTriangle, Ruler, BadgeEuro, Zap,
-  ExternalLink, Eye, Lightbulb, Gauge,
-  X, ArrowUpDown, SlidersHorizontal, ChevronDown,
+  ShieldCheck, AlertTriangle, BadgeEuro, Zap,
+  ExternalLink, Eye, Lightbulb,
+  X, ArrowUpDown,
 } from 'lucide-react';
 import {
   Card, Badge, Button, EmptyState,
-  PageShell, KpiCardCompact, Modal, Input, Drawer, Tabs, Tooltip,
+  PageShell, KpiCardCompact, Drawer, Tabs, Tooltip,
 } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td, ThCheckbox, TdCheckbox } from '../ui';
 import { SkeletonCard, SkeletonTable } from '../ui/Skeleton';
@@ -22,7 +22,6 @@ import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import CreateActionModal from '../components/CreateActionModal';
 import PatrimoineWizard from '../components/PatrimoineWizard';
-import PatrimoineHealthCard from '../components/PatrimoineHealthCard';
 import PatrimoinePortfolioHealthBar from '../components/PatrimoinePortfolioHealthBar';
 import PatrimoineHeatmap from '../components/PatrimoineHeatmap';
 import PatrimoineRiskDistributionBar from '../components/PatrimoineRiskDistributionBar';
@@ -353,7 +352,7 @@ export default function Patrimoine() {
     setShowActionModal(true);
   }, []);
 
-  const hasFilters = search || filterUsage || filterStatut || filterAnomalies;
+  const _hasFilters = search || filterUsage || filterStatut || filterAnomalies;
   const activeChips = [];
   if (search) activeChips.push({ label: `"${search}"`, clear: () => setParams({ q: '' }) });
   if (filterUsage) activeChips.push({ label: USAGE_OPTIONS.find(o => o.value === filterUsage)?.label || filterUsage, clear: () => setParams({ usage: '' }) });

@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Users, Shield, Search, Eye, MapPin, Building2, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
-import { getAdminUsers, getEffectiveAccess, setAdminScopes } from '../services/api';
+import { Users, Shield, Search, Eye, MapPin, Building2, ChevronUp, RefreshCw } from 'lucide-react';
+import { getAdminUsers, getEffectiveAccess } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { PageShell, Button, EmptyState } from '../ui';
-import { SkeletonCard } from '../ui/Skeleton';
 import { useToast } from '../ui/ToastProvider';
 
 const ROLE_LABELS = {
@@ -132,6 +131,7 @@ export default function AdminUsersPage() {
       .finally(() => setLoading(false));
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, []);
 
   const filtered = users.filter((u) =>

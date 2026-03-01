@@ -217,7 +217,7 @@ function WizardExpress({ users, roles, onDone }) {
   );
 }
 
-function MatrixView({ users, roles }) {
+function MatrixView({ users, roles: _roles }) {
   const [search, setSearch] = useState('');
 
   const filtered = users.filter((u) =>
@@ -301,6 +301,7 @@ export default function AdminAssignmentsPage() {
       .finally(() => setLoading(false));
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, []);
 
   if (!hasPermission('admin')) {

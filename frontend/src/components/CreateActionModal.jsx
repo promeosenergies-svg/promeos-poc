@@ -53,6 +53,7 @@ export default function CreateActionModal({ open, onClose, onSave, defaultSite =
         ...(prefill || {}),
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, prefill]);
 
   function handleChange(field, value) {

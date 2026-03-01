@@ -259,7 +259,7 @@ describe('formatPercentFR', () => {
 // ── describe: copy hygiene ────────────────────────────────────────────────────
 
 describe('copy hygiene — no raw \\u00a0 escape sequences in model strings', () => {
-  const NBSP_ESCAPE = '\u00a0'; // actual non-breaking space — check strings don't use raw esc
+  const _NBSP_ESCAPE = '\u00a0'; // actual non-breaking space — check strings don't use raw esc
 
   it('buildWatchlist labels contain no raw \\u00a0 literal escape (6-char sequence)', () => {
     const kpis = makeKpis({ nonConformes: 2, aRisque: 1, couvertureDonnees: 30, total: 5 });

@@ -12,7 +12,7 @@ import {
   UserCheck, CheckCircle2, XCircle, X, Eye, Search,
   ClipboardList, Database, FolderOpen,
 } from 'lucide-react';
-import { Card, CardBody, Badge, Button, EmptyState, TrustBadge, PageShell, Progress, Drawer } from '../ui';
+import { Card, CardBody, Badge, Button, EmptyState, TrustBadge, PageShell, Drawer } from '../ui';
 import Tabs from '../ui/Tabs';
 import { useToast } from '../ui/ToastProvider';
 import CreateActionModal from '../components/CreateActionModal';
@@ -442,7 +442,7 @@ function KBObligationsSection({ scopedSites }) {
  * Transform API sitesData (from /compliance/sites) into obligation-like objects
  * grouped by regulation, for display in ObligationCard.
  */
-export function sitesToObligations(sitesData, summary) {
+export function sitesToObligations(sitesData, _summary) {
   if (!sitesData || !sitesData.length) return [];
   const byReg = {};
 

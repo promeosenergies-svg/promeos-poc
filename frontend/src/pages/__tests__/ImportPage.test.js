@@ -10,7 +10,7 @@
  * - scopeLabel correctly derives "Tous les sites" vs "Site : <name>"
  */
 import { describe, it, expect, vi } from 'vitest';
-import { isSilentUrl, normalizePathFromAxiosConfig, isDemoPath } from '../../services/api';
+import { isSilentUrl, isDemoPath } from '../../services/api';
 
 // ── Silent URL: status-pack ───────────────────────────────────────────────
 
@@ -469,7 +469,7 @@ describe('Demo Pack regression: refreshStatus catch must not overwrite optimisti
    * The old bug: .catch(() => { setPackStatus(null); setStatusError(true); })
    * After fix:   .catch(() => { setStatusError(true); })
    */
-  function simulateRefreshStatusCatch_OLD(currentPackStatus) {
+  function simulateRefreshStatusCatch_OLD(_currentPackStatus) {
     // OLD behavior: always reset to null
     return null;
   }

@@ -199,6 +199,7 @@ export default function CompliancePage() {
       .finally(() => setLoading(false));
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadData(); }, [filterReg, filterStatus, filterSeverity]);
 
   const handleRecompute = async () => {

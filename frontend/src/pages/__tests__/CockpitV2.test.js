@@ -28,7 +28,7 @@ function makeKpis(overrides = {}) {
   };
 }
 
-function makeWatchlist() {
+function _makeWatchlist() {
   return [
     { id: 'non_conformes', label: '2 sites non conformes', severity: 'critical', path: '/conformite', cta: 'Voir conformité' },
     { id: 'a_risque', label: '1 site à risque', severity: 'high', path: '/actions', cta: "Plan d'action" },

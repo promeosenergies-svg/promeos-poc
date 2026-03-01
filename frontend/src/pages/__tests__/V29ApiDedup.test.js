@@ -11,7 +11,7 @@
  *   - Cache invalidated after clearApiCache()
  *   - POST/mutation calls are never cached (api.post still works)
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 
 // We test the exported cache utilities directly
 import { clearApiCache, getApiCacheSize } from '../../services/api';

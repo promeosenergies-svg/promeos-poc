@@ -10,7 +10,7 @@ import {
   ChevronRight, XCircle, AlertOctagon, ArrowRight, Building,
 } from 'lucide-react';
 import { getPortfolioComplianceSummary } from '../services/api';
-import { toSiteCompliance, toPatrimoine, toConsoImport, toBillIntel, toActionNew } from '../services/routes';
+import { toSiteCompliance, toPatrimoine, toConsoImport, toBillIntel } from '../services/routes';
 import { useToast } from '../ui/ToastProvider';
 import CreateActionModal from '../components/CreateActionModal';
 

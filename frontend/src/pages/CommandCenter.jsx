@@ -13,7 +13,6 @@ import {
 } from 'lucide-react';
 import { Card, Button, SkeletonCard, PageShell, MetricCard, StatusDot, EmptyState, ErrorState, ScopeSummary } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
-import { SEVERITY_TINT } from '../ui/colorTokens';
 import { toActionsList } from '../services/routes';
 import {
   getComplianceBundle, getActionsSummary, getActionsList,
@@ -51,13 +50,13 @@ export function normalizeDashboardModel({ kpis, topActions, alertsCount }) {
 
 export default function CommandCenter() {
   const navigate = useNavigate();
-  const { org, scopedSites, sitesCount } = useScope();
+  const { org, scopedSites } = useScope();
   const { isExpert } = useExpertMode();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const [compliance, setCompliance] = useState(null);
-  const [actionsSummary, setActionsSummary] = useState(null);
+  const [_actionsSummary, setActionsSummary] = useState(null);
   const [actions, setActions] = useState([]);
   const [alertsSummary, setAlertsSummary] = useState(null);
   const [lastSync, setLastSync] = useState(null);
@@ -143,7 +142,7 @@ export default function CommandCenter() {
   }, [alertsSummary]);
 
   // Normalized model (no contradictions)
-  const { kpis, topActions, alertsCount, isAllClear } = useMemo(
+  const { kpis, alertsCount } = useMemo(
     () => normalizeDashboardModel({ kpis: rawKpis, topActions: rawTopActions, alertsCount: rawAlertsCount }),
     [rawKpis, rawTopActions, rawAlertsCount],
   );

@@ -9,7 +9,7 @@ import {
   Building2, MapPin, Users, Calendar, CheckCircle2,
   ArrowRight, ArrowLeft, Loader2, AlertTriangle,
 } from 'lucide-react';
-import { PageShell, Card, CardBody, Button, Input, Select, Badge } from '../../ui';
+import { PageShell, Card, CardBody, Button, Input } from '../../ui';
 import {
   createTertiaireEfa, addTertiaireResponsibility, getTertiaireCatalog,
 } from '../../services/api';

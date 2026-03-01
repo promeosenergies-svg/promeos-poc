@@ -80,6 +80,7 @@ export default function useActivationData(totalSites) {
     mountRef.current = true;
     fetchData();
     return () => { mountRef.current = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [totalSites]);
 
   return {

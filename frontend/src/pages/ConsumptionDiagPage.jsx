@@ -24,11 +24,11 @@ import { useExpertMode } from '../contexts/ExpertModeContext';
 import { track } from '../services/tracker';
 import CreateActionModal from '../components/CreateActionModal';
 import { fmtEur, fmtKwh, fmtDateFR } from '../utils/format';
-import { deepLinkWithContext, deepLinkNewAction } from '../services/deepLink';
+import { deepLinkWithContext } from '../services/deepLink';
 import { toConsoExplorer } from '../services/routes';
 import { SEVERITY_TINT } from '../ui/colorTokens';
 import {
-  Zap, ChevronDown, ChevronUp, Settings, Info, Leaf,
+  Zap, Info,
   ExternalLink, UserCheck, CheckCircle2, XCircle, BarChart3,
 } from 'lucide-react';
 
@@ -600,7 +600,7 @@ function EvidenceTab({ insight }) {
 
 export default function ConsumptionDiagPage() {
   const navigate = useNavigate();
-  const { isExpert } = useExpertMode();
+  const { isExpert: _isExpert } = useExpertMode();
   const { toast } = useToast();
   const { org, selectedSiteId, scopeLabel, sitesCount } = useScope();
   const [summary, setSummary] = useState(null);
@@ -632,6 +632,7 @@ export default function ConsumptionDiagPage() {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, []);
 
   const handleSeedDemo = async () => {
@@ -731,7 +732,8 @@ export default function ConsumptionDiagPage() {
     toast('Action creee avec succes', 'success');
   }, [toast]);
 
-  const insights = summary?.insights || [];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const insights = useMemo(() => summary?.insights || [], [summary]);
 
   // V15-B: scope-aware filtering
   const filteredInsights = useMemo(() => {
@@ -739,6 +741,7 @@ export default function ConsumptionDiagPage() {
     // V16-D: normalizeId prevents type mismatch (API number vs store number/string)
     if (selectedSiteId) return insights.filter(i => normalizeId(i.site_id) === normalizeId(selectedSiteId));
     return insights;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [insights, selectedSiteId]);
 
   const displayedSummary = useMemo(

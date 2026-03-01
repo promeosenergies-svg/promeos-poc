@@ -215,7 +215,7 @@ describe('routes/patrimoine.py — V60 logique endpoint', () => {
   test('sans Organisation.first() (multi-org guard)', () => {
     // Dans la fonction get_portfolio_summary uniquement
     const fnMatch = ROUTES_PY.match(
-      /def get_portfolio_summary[\s\S]*?(?=\n@router|\nclass |\Z)/
+      /def get_portfolio_summary[\s\S]*?(?=\n@router|\nclass |$)/
     );
     if (fnMatch) {
       expect(fnMatch[0]).not.toMatch(/Organisation\s*\)\s*\.first\(\)/);
