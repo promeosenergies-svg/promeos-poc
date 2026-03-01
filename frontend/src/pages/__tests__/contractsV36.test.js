@@ -363,19 +363,14 @@ describe('V36: ImpactDecisionPanel — achats d\'energie', () => {
     expect(panelSrc).toContain('ShoppingCart');
   });
 
-  it('importe getPurchaseRenewals et patrimoineContracts depuis api', () => {
-    expect(panelSrc).toContain('getPurchaseRenewals');
-    expect(panelSrc).toContain('patrimoineContracts');
-  });
-
-  it('importe normalizePurchaseSignals depuis purchaseSignalsContract', () => {
-    expect(panelSrc).toContain('normalizePurchaseSignals');
-    expect(panelSrc).toContain('purchaseSignalsContract');
-  });
-
-  it('contient un state purchaseSignals', () => {
+  it('uses useActivationData hook for purchase signals', () => {
+    expect(panelSrc).toContain('useActivationData');
     expect(panelSrc).toContain('purchaseSignals');
-    expect(panelSrc).toContain('setPurchaseSignals');
+  });
+
+  it('still imports isPurchaseAvailable from purchaseSignalsContract', () => {
+    expect(panelSrc).toContain('isPurchaseAvailable');
+    expect(panelSrc).toContain('purchaseSignalsContract');
   });
 
   it('affiche la section "Achats d\'energie"', () => {

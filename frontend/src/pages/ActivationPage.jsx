@@ -2,7 +2,7 @@
  * PROMEOS — ActivationPage V37
  * Page dediee /activation : checklist par dimension + table par site.
  */
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Database, CheckCircle2, Circle, ArrowRight, Search,
@@ -10,9 +10,8 @@ import {
 import { useScope } from '../contexts/ScopeContext';
 import { PageShell, Card, CardBody, Badge, Button, Progress, EmptyState } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
-import { getBillingSummary, getPurchaseRenewals, patrimoineContracts } from '../services/api';
-import { normalizePurchaseSignals } from '../models/purchaseSignalsContract';
 import { buildActivationChecklist, ACTIVATION_DIMENSIONS } from '../models/dataActivationModel';
+import useActivationData from '../hooks/useActivationData';
 
 // ── Status icon inline ──────────────────────────────────────────────────────
 function DimStatus({ ok }) {
@@ -37,10 +36,6 @@ export default function ActivationPage() {
   const { scopedSites } = useScope();
   const filterDim = sp.get('dim') || 'all';
 
-  const [billingSummary, setBillingSummary] = useState(null);
-  const [purchaseSignals, setPurchaseSignals] = useState(null);
-  const [contractSiteIds, setContractSiteIds] = useState(new Set());
-  const [loading, setLoading] = useState(true);
   const [siteSearch, setSiteSearch] = useState('');
 
   // Compute kpis from scopedSites (same formula as Cockpit.jsx L58-79)
@@ -56,35 +51,7 @@ export default function ActivationPage() {
     return { total, conformes, nonConformes, aRisque, couvertureDonnees };
   }, [scopedSites]);
 
-  // Fetch billing + contracts
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    Promise.all([
-      getBillingSummary().catch(() => ({})),
-      getPurchaseRenewals().catch(() => ({ total: 0, renewals: [] })),
-      patrimoineContracts().catch(() => ({ total: 0, contracts: [] })),
-    ]).then(([billing, renewals, contracts]) => {
-      if (!cancelled) {
-        setBillingSummary(billing);
-        setPurchaseSignals(normalizePurchaseSignals({
-          renewals,
-          contracts,
-          totalSites: kpis.total,
-        }));
-        // Build set of site_ids with contracts
-        const rawContracts = contracts?.contracts ?? contracts?.data ?? [];
-        const sIds = new Set(
-          (Array.isArray(rawContracts) ? rawContracts : [])
-            .map((c) => c?.site_id)
-            .filter(Boolean),
-        );
-        setContractSiteIds(sIds);
-        setLoading(false);
-      }
-    });
-    return () => { cancelled = true; };
-  }, [kpis.total]);
+  const { billingSummary, purchaseSignals, contractSiteIds, loading } = useActivationData(kpis.total);
 
   const activation = useMemo(
     () => buildActivationChecklist({

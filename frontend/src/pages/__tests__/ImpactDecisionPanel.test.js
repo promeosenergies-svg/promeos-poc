@@ -308,11 +308,11 @@ describe('V32: Compteurs contextuels', () => {
     expect(panelSrc).toContain('available && subLabel');
   });
 
-  it('aucune nouvelle API appelée (contrainte V32)', () => {
-    // Seule API : getBillingSummary (existante V30)
+  it('uses useActivationData hook instead of direct API calls (V32)', () => {
+    expect(panelSrc).toContain('useActivationData');
+    // No direct API import — all fetches delegated to shared hook
     const apiCalls = panelSrc.match(/from '\.\.\/\.\.\/services\/api'/g) || [];
-    expect(apiCalls).toHaveLength(1);
-    expect(panelSrc).toContain('getBillingSummary');
+    expect(apiCalls).toHaveLength(0);
   });
 });
 
@@ -371,9 +371,10 @@ describe('V33: Leviers activables', () => {
     expect(modelSrc).not.toContain('computeActionableLevers');
   });
 
-  it('aucune nouvelle API ajoutee (contrainte V33)', () => {
+  it('no direct API imports — uses shared hook (contrainte V33)', () => {
+    expect(panelSrc).toContain('useActivationData');
     const apiImports = panelSrc.match(/from '\.\.\/\.\.\/services\/api'/g) || [];
-    expect(apiImports).toHaveLength(1);
+    expect(apiImports).toHaveLength(0);
   });
 });
 

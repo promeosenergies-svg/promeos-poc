@@ -288,16 +288,11 @@ describe('DataActivationPanel — V37 guards', () => {
     expect(src).toContain('dataActivationModel');
   });
 
-  it('importe getBillingSummary, getPurchaseRenewals, patrimoineContracts', () => {
-    expect(src).toContain('getBillingSummary');
-    expect(src).toContain('getPurchaseRenewals');
-    expect(src).toContain('patrimoineContracts');
-  });
-
-  it('state billingSummary / purchaseSignals / loading', () => {
+  it('uses useActivationData hook (shared fetch)', () => {
+    expect(src).toContain('useActivationData');
     expect(src).toContain('billingSummary');
     expect(src).toContain('purchaseSignals');
-    expect(src).toContain('setLoading');
+    expect(src).toContain('loading');
   });
 
   it('data-testid="data-activation-panel"', () => {
@@ -317,8 +312,8 @@ describe('DataActivationPanel — V37 guards', () => {
     expect(src).toContain('/activation');
   });
 
-  it('normalizePurchaseSignals import', () => {
-    expect(src).toContain('normalizePurchaseSignals');
+  it('activation data fetched via shared hook', () => {
+    expect(src).toContain('useActivationData');
   });
 
   it('affiche activatedCount/totalDimensions', () => {

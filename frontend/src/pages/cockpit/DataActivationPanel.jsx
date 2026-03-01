@@ -5,43 +5,19 @@
  *
  * Props: { kpis }
  */
-import { useState, useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Database, CheckCircle2, Circle, ArrowRight, Loader2,
 } from 'lucide-react';
 import { Card, CardBody, InfoTip, Button, Progress } from '../../ui';
 import { TOOLTIPS } from '../../ui/tooltips';
-import { getBillingSummary, getPurchaseRenewals, patrimoineContracts } from '../../services/api';
-import { normalizePurchaseSignals } from '../../models/purchaseSignalsContract';
 import { buildActivationChecklist } from '../../models/dataActivationModel';
+import useActivationData from '../../hooks/useActivationData';
 
 export default function DataActivationPanel({ kpis }) {
   const navigate = useNavigate();
-  const [billingSummary, setBillingSummary] = useState(null);
-  const [purchaseSignals, setPurchaseSignals] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    Promise.all([
-      getBillingSummary().catch(() => ({})),
-      getPurchaseRenewals().catch(() => ({ total: 0, renewals: [] })),
-      patrimoineContracts().catch(() => ({ total: 0, contracts: [] })),
-    ]).then(([billing, renewals, contracts]) => {
-      if (!cancelled) {
-        setBillingSummary(billing);
-        setPurchaseSignals(normalizePurchaseSignals({
-          renewals,
-          contracts,
-          totalSites: kpis?.total ?? 0,
-        }));
-        setLoading(false);
-      }
-    });
-    return () => { cancelled = true; };
-  }, [kpis?.total]);
+  const { billingSummary, purchaseSignals, loading } = useActivationData(kpis?.total);
 
   const activation = useMemo(
     () => buildActivationChecklist({

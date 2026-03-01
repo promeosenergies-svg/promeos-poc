@@ -8,7 +8,7 @@
  *   - getBillingSummary()   → surcoût facture + base opportunité
  * Aucune nouvelle API créée.
  */
-import { useState, useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ShieldAlert, Receipt, TrendingUp, ArrowRight, Loader2, Zap, ShoppingCart,
@@ -17,13 +17,13 @@ import { Card, CardBody, Badge, InfoTip, Button } from '../../ui';
 import { TOOLTIPS } from '../../ui/tooltips';
 import { KPI_ACCENTS } from '../../ui/colorTokens';
 import { fmtEur } from '../../utils/format';
-import { getBillingSummary, getPurchaseRenewals, patrimoineContracts } from '../../services/api';
 import { computeImpactKpis, computeRecommendation } from '../../models/impactDecisionModel';
 import { computeActionableLevers } from '../../models/leverEngineModel';
 import { buildLeverDeepLink } from '../../models/leverActionModel';
 import { hasProofData, buildProofLink, getProofLabel } from '../../models/proofLinkModel';
-import { normalizePurchaseSignals, isPurchaseAvailable } from '../../models/purchaseSignalsContract';
+import { isPurchaseAvailable } from '../../models/purchaseSignalsContract';
 import { toPurchase } from '../../services/routes';
+import useActivationData from '../../hooks/useActivationData';
 
 // ── KPI tile (inline — small enough) ─────────────────────────────────────────
 
@@ -71,37 +71,7 @@ function ImpactKpiTile({ icon: Icon, label, value, available, tooltip, accent, o
 
 export default function ImpactDecisionPanel({ kpis }) {
   const navigate = useNavigate();
-  const [billingSummary, setBillingSummary] = useState(null);
-  const [purchaseSignals, setPurchaseSignals] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    getBillingSummary()
-      .then((data) => { if (!cancelled) setBillingSummary(data); })
-      .catch(() => { if (!cancelled) setBillingSummary({}); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, []);
-
-  // V36 — Fetch purchase signals (renewals + contracts)
-  useEffect(() => {
-    let cancelled = false;
-    Promise.all([
-      getPurchaseRenewals().catch(() => ({ total: 0, renewals: [] })),
-      patrimoineContracts().catch(() => ({ total: 0, contracts: [] })),
-    ]).then(([renewals, contracts]) => {
-      if (!cancelled) {
-        setPurchaseSignals(normalizePurchaseSignals({
-          renewals,
-          contracts,
-          totalSites: kpis?.total ?? 0,
-        }));
-      }
-    });
-    return () => { cancelled = true; };
-  }, [kpis?.total]);
+  const { billingSummary, purchaseSignals, loading } = useActivationData(kpis?.total);
 
   const impact = useMemo(
     () => computeImpactKpis(kpis, billingSummary || {}),
