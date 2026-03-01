@@ -84,22 +84,7 @@ describe('DemoBanner scope discipline', () => {
   });
 });
 
-// ── 4. Cockpit2MinPage re-fetches on org change ──────────────────────────
-
-describe('Cockpit2MinPage scope reactivity', () => {
-  const src = readPage('Cockpit2MinPage.jsx');
-
-  it('imports useScope from ScopeContext', () => {
-    expect(src).toContain("import { useScope } from '../contexts/ScopeContext'");
-  });
-
-  it('useEffect depends on scope.orgId', () => {
-    // The useEffect line should contain scope.orgId in its dependency array
-    expect(src).toMatch(/useEffect\(\(\)\s*=>\s*\{\s*fetchData\(\);\s*\},\s*\[scope\.orgId\]\)/);
-  });
-});
-
-// ── 5. api.js exports getDemoManifest ─────────────────────────────────────
+// ── 4. api.js exports getDemoManifest ─────────────────────────────────────
 
 describe('API layer: getDemoManifest', () => {
   const src = readFileSync(resolve(__dirname, '..', '..', 'services', 'api.js'), 'utf8');

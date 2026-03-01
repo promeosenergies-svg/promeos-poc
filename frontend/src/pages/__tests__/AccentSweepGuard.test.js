@@ -238,11 +238,6 @@ describe('Batch C — Others accents', () => {
     const src = read('ConsommationsPage.jsx');
     expect(src).not.toMatch(/donnees energie/);
   });
-  it('Cockpit2MinPage: estimées / conformité', () => {
-    const src = read('Cockpit2MinPage.jsx');
-    expect(src).not.toMatch(/estimees liees/);
-    expect(src).not.toMatch(/non-conformite reglementaire/);
-  });
   it('AdminRolesPage: Conformité / rôles / configuré', () => {
     const src = read('AdminRolesPage.jsx');
     expect(src).not.toMatch(/Resp\. Conformite/);

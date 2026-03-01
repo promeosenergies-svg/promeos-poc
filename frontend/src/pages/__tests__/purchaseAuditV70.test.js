@@ -77,12 +77,6 @@ describe('B · No hardcoded /achat-energie in models/cockpit', () => {
     expect(code).not.toContain("navigate('/achat-energie");
   });
 
-  it('Cockpit2MinPage uses toPurchase import', () => {
-    const code = readSrc('pages', 'Cockpit2MinPage.jsx');
-    expect(code).toContain("import { toPurchase } from '../services/routes'");
-    expect(code).toContain('toPurchase()');
-    expect(code).not.toContain('to="/achat-energie"');
-  });
 });
 
 // ============================================================

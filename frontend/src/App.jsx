@@ -104,8 +104,6 @@ function App() {
 
                   {/* Existing pages */}
                   <Route path="/dashboard-legacy" element={<PageSuspense><Dashboard onUpgradeClick={() => setShowUpgradeWizard(true)} /></PageSuspense>} />
-                  {/* /cockpit-2min redirige vers la vue exécutive canonique */}
-                  <Route path="/cockpit-2min" element={<Navigate to="/cockpit" replace />} />
                   <Route path="/cockpit" element={<PageSuspense><Cockpit /></PageSuspense>} />
                   <Route path="/sites-legacy/:id" element={<PageSuspense><SiteDetail /></PageSuspense>} />
                   <Route path="/action-plan" element={<PageSuspense><ActionPlan /></PageSuspense>} />
