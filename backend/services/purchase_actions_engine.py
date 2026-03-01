@@ -8,9 +8,10 @@ from typing import Optional
 from sqlalchemy.orm import Session
 
 from models import (
-    Site, EnergyContract, EntiteJuridique, Portefeuille,
+    Site, EnergyContract,
     PurchaseScenarioResult, PurchaseAssumptionSet, PurchaseRecoStatus,
 )
+from services.purchase_service import get_org_site_ids
 
 # Priority weights
 _ACTION_WEIGHTS = {
@@ -27,7 +28,7 @@ def compute_purchase_actions(db: Session, org_id: Optional[int] = None) -> dict:
     Build prioritized purchase action list from contracts + scenarios.
     Pure computation, nothing persisted.
     """
-    site_ids = _get_site_ids(db, org_id)
+    site_ids = get_org_site_ids(db, org_id) if org_id else [s.id for s in db.query(Site.id).filter(Site.actif == True).all()]
     if not site_ids:
         return {"total_actions": 0, "actions": [], "gain_potentiel_eur": 0}
 
@@ -172,21 +173,3 @@ def compute_purchase_actions(db: Session, org_id: Optional[int] = None) -> dict:
     }
 
 
-def _get_site_ids(db: Session, org_id: Optional[int]) -> list:
-    """Resolve site IDs for an org (or all active if org_id is None)."""
-    if org_id is None:
-        return [s.id for s in db.query(Site.id).filter(Site.actif == True).all()]
-
-    ej_ids = [ej.id for ej in db.query(EntiteJuridique.id).filter(
-        EntiteJuridique.organisation_id == org_id,
-    ).all()]
-    if not ej_ids:
-        return []
-    pf_ids = [p.id for p in db.query(Portefeuille.id).filter(
-        Portefeuille.entite_juridique_id.in_(ej_ids),
-    ).all()]
-    if not pf_ids:
-        return []
-    return [s.id for s in db.query(Site.id).filter(
-        Site.portefeuille_id.in_(pf_ids), Site.actif == True,
-    ).all()]

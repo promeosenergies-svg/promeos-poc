@@ -171,10 +171,10 @@ describe('E · Action prefill scenario_label', () => {
   });
 
   it('all reflex action prefills have source_type=achat', () => {
-    // Count source_type: 'achat' in toActionNew calls — should be at least 5
+    // Count source_type: 'achat' in toActionNew calls — at least 4 (3 CTAs + 1 refactored top-list .map)
     const matches = code.match(/toActionNew\(\{[^}]*source_type:\s*'achat'/g);
     expect(matches).not.toBeNull();
-    expect(matches.length).toBeGreaterThanOrEqual(5);
+    expect(matches.length).toBeGreaterThanOrEqual(4);
   });
 });
 

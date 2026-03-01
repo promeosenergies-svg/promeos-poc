@@ -5,8 +5,11 @@ V74: + RéFlex Solar (blocs horaires, report, effort opérationnel).
 """
 import hashlib
 import json as _json
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -211,6 +214,7 @@ def compute_scenarios(
     Returns list of 4 scenario dicts.
     """
     ref_price, price_source = get_reference_price(db, site_id, energy_type)
+    logger.info("compute_scenarios: site=%d vol=%.0f pf=%.2f ref_price=%.4f src=%s", site_id, volume_kwh_an, profile_factor, ref_price, price_source)
 
     scenarios = []
 
@@ -336,6 +340,7 @@ def recommend_scenario(
         reasoning_parts.append("compatible offre verte")
 
     best["reasoning"] = " — ".join(reasoning_parts)
+    logger.info("recommend_scenario: best=%s score risk=%s savings=%.1f%%", best["strategy"], best["risk_score"], best.get("savings_vs_current_pct", 0))
 
     # Clean internal scores
     for s in scenarios:

@@ -1192,57 +1192,35 @@ export default function PurchasePage() {
                     <>
                       {/* V75: Top-lists */}
                       <div data-testid="reflex-top-lists" className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                          <h4 className="text-xs font-bold text-green-800 uppercase flex items-center gap-1.5 mb-2">
-                            <Award size={14} /> Meilleurs gains Tarif Heures Solaires
-                          </h4>
-                          {topGains.map((s) => (
-                            <div key={s.site_id} className="flex items-center justify-between text-sm py-1">
-                              <span className="text-gray-700">{s.site_nom || `Site ${s.site_id}`}</span>
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium text-green-700">-{s.gain}%</span>
-                                <button onClick={() => navigate(toConsoExplorer({ site_id: s.site_id, days: 90 }))} className="text-blue-500 hover:text-blue-700" title="Explorer"><BarChart3 size={12} /></button>
-                                <button onClick={() => navigate(toConsoDiag({ site_id: s.site_id }))} className="text-purple-500 hover:text-purple-700" title="Diagnostic"><Activity size={12} /></button>
-                                <button onClick={() => navigate(toBillIntel({ site_id: s.site_id }))} className="text-indigo-500 hover:text-indigo-700" title="Facture"><FileSearch size={12} /></button>
-                                <button onClick={() => navigate(toActionNew({ source: 'purchase', source_type: 'achat', site_id: s.site_id, title: `Tarif Heures Solaires — gain ${s.gain}%`, scenario_label: 'Tarif Heures Solaires' }))} className="text-green-500 hover:text-green-700" title="Action"><Plus size={12} /></button>
+                        {[
+                          { items: topGains, bg: 'green', icon: <Award size={14} />, title: 'Meilleurs gains Tarif Heures Solaires',
+                            metric: (s) => <span className="font-medium text-green-700">-{s.gain}%</span>,
+                            actionTitle: (s) => `Tarif Heures Solaires — gain ${s.gain}%` },
+                          { items: topRisk, bg: 'red', icon: <Flame size={14} />, title: 'Risque pointe',
+                            metric: (s) => <span className="font-medium text-red-700">{s.reflex?.risk_score}/100</span>,
+                            actionTitle: (s) => `Risque pointe — ${s.reflex?.risk_score}/100` },
+                          { items: easiest, bg: 'blue', icon: <ArrowUpDown size={14} />, title: 'Faciles à basculer',
+                            metric: (s) => <span className="font-medium text-blue-700">Effort {s.reflex?.effort_score}/100</span>,
+                            actionTitle: (s) => `Bascule Tarif Heures Solaires — effort ${s.reflex?.effort_score}/100` },
+                        ].map(({ items, bg, icon, title, metric, actionTitle }) => (
+                          <div key={title} className={`bg-${bg}-50 rounded-lg p-4 border border-${bg}-200`}>
+                            <h4 className={`text-xs font-bold text-${bg}-800 uppercase flex items-center gap-1.5 mb-2`}>
+                              {icon} {title}
+                            </h4>
+                            {items.map((s) => (
+                              <div key={s.site_id} className="flex items-center justify-between text-sm py-1">
+                                <span className="text-gray-700">{s.site_nom || `Site ${s.site_id}`}</span>
+                                <div className="flex items-center gap-2">
+                                  {metric(s)}
+                                  <button onClick={() => navigate(toConsoExplorer({ site_id: s.site_id, days: 90 }))} className="text-blue-500 hover:text-blue-700" title="Explorer"><BarChart3 size={12} /></button>
+                                  <button onClick={() => navigate(toConsoDiag({ site_id: s.site_id }))} className="text-purple-500 hover:text-purple-700" title="Diagnostic"><Activity size={12} /></button>
+                                  <button onClick={() => navigate(toBillIntel({ site_id: s.site_id }))} className="text-indigo-500 hover:text-indigo-700" title="Facture"><FileSearch size={12} /></button>
+                                  <button onClick={() => navigate(toActionNew({ source: 'purchase', source_type: 'achat', site_id: s.site_id, title: actionTitle(s), scenario_label: 'Tarif Heures Solaires' }))} className="text-green-500 hover:text-green-700" title="Action"><Plus size={12} /></button>
+                                </div>
                               </div>
-                            </div>
-                          ))}
-                        </div>
-                        <div className="bg-red-50 rounded-lg p-4 border border-red-200">
-                          <h4 className="text-xs font-bold text-red-800 uppercase flex items-center gap-1.5 mb-2">
-                            <Flame size={14} /> Risque pointe
-                          </h4>
-                          {topRisk.map((s) => (
-                            <div key={s.site_id} className="flex items-center justify-between text-sm py-1">
-                              <span className="text-gray-700">{s.site_nom || `Site ${s.site_id}`}</span>
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium text-red-700">{s.reflex?.risk_score}/100</span>
-                                <button onClick={() => navigate(toConsoExplorer({ site_id: s.site_id, days: 90 }))} className="text-blue-500 hover:text-blue-700" title="Explorer"><BarChart3 size={12} /></button>
-                                <button onClick={() => navigate(toConsoDiag({ site_id: s.site_id }))} className="text-purple-500 hover:text-purple-700" title="Diagnostic"><Activity size={12} /></button>
-                                <button onClick={() => navigate(toBillIntel({ site_id: s.site_id }))} className="text-indigo-500 hover:text-indigo-700" title="Facture"><FileSearch size={12} /></button>
-                                <button onClick={() => navigate(toActionNew({ source: 'purchase', source_type: 'achat', site_id: s.site_id, title: `Risque pointe — ${s.reflex?.risk_score}/100`, scenario_label: 'Tarif Heures Solaires' }))} className="text-green-500 hover:text-green-700" title="Action"><Plus size={12} /></button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                        <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                          <h4 className="text-xs font-bold text-blue-800 uppercase flex items-center gap-1.5 mb-2">
-                            <ArrowUpDown size={14} /> Faciles à basculer
-                          </h4>
-                          {easiest.map((s) => (
-                            <div key={s.site_id} className="flex items-center justify-between text-sm py-1">
-                              <span className="text-gray-700">{s.site_nom || `Site ${s.site_id}`}</span>
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium text-blue-700">Effort {s.reflex?.effort_score}/100</span>
-                                <button onClick={() => navigate(toConsoExplorer({ site_id: s.site_id, days: 90 }))} className="text-blue-500 hover:text-blue-700" title="Explorer"><BarChart3 size={12} /></button>
-                                <button onClick={() => navigate(toConsoDiag({ site_id: s.site_id }))} className="text-purple-500 hover:text-purple-700" title="Diagnostic"><Activity size={12} /></button>
-                                <button onClick={() => navigate(toBillIntel({ site_id: s.site_id }))} className="text-indigo-500 hover:text-indigo-700" title="Facture"><FileSearch size={12} /></button>
-                                <button onClick={() => navigate(toActionNew({ source: 'purchase', source_type: 'achat', site_id: s.site_id, title: `Bascule Tarif Heures Solaires — effort ${s.reflex?.effort_score}/100`, scenario_label: 'Tarif Heures Solaires' }))} className="text-green-500 hover:text-green-700" title="Action"><Plus size={12} /></button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+                            ))}
+                          </div>
+                        ))}
                       </div>
                       {/* V75: Enhanced portfolio table */}
                       <div data-testid="reflex-portfolio-table" className="bg-white rounded-lg shadow overflow-x-auto">

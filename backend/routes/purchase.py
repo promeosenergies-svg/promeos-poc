@@ -3,10 +3,13 @@ PROMEOS — Achat Energie Endpoints V1.1
 V1: Estimation, hypotheses, preferences, scenarios, recommandation.
 V1.1: Portfolio roll-up, renewals, history, actions.
 """
+import logging
 import os
 import uuid
 from datetime import datetime, date, timedelta, timezone
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
@@ -372,8 +375,13 @@ def compute_portfolio(
     if not site_ids:
         raise HTTPException(404, "No active sites found for this org")
 
+    logger.info("Portfolio compute: org_id=%s, %d sites", org_id, len(site_ids))
     batch_id = str(uuid.uuid4())
     results_by_site = []
+    skipped_sites = []
+
+    # Batch-fetch all Site objects to avoid N+1 queries in loop
+    site_map = {s.id: s for s in db.query(Site).filter(Site.id.in_(site_ids)).all()}
 
     # Get org-level preferences
     pref = (
@@ -388,95 +396,103 @@ def compute_portfolio(
     budget_pri = pref.budget_priority if pref else 0.5
     green_pref = pref.green_preference if pref else False
 
-    for sid in site_ids:
-        run_id = str(uuid.uuid4())
+    try:
+        for sid in site_ids:
+            run_id = str(uuid.uuid4())
 
-        # Get or create assumptions
-        assumption = _get_latest_assumption(db, sid)
-        if not assumption:
-            est = estimate_consumption(db, sid)
-            pf = compute_profile_factor(db, sid)
-            assumption = PurchaseAssumptionSet(
-                site_id=sid,
-                energy_type=BillingEnergyType.ELEC,
-                volume_kwh_an=est["volume_kwh_an"],
-                profile_factor=pf,
-                horizon_months=24,
+            # Get or create assumptions
+            assumption = _get_latest_assumption(db, sid)
+            if not assumption:
+                est = estimate_consumption(db, sid)
+                pf = compute_profile_factor(db, sid)
+                assumption = PurchaseAssumptionSet(
+                    site_id=sid,
+                    energy_type=BillingEnergyType.ELEC,
+                    volume_kwh_an=est["volume_kwh_an"],
+                    profile_factor=pf,
+                    horizon_months=24,
+                )
+                db.add(assumption)
+                db.commit()
+                db.refresh(assumption)
+
+            energy_type_val = assumption.energy_type.value if assumption.energy_type else "elec"
+
+            # Energy Gate: skip non-ELEC sites in portfolio
+            if energy_type_val not in ALLOWED_ENERGY_TYPES:
+                skipped_sites.append({"site_id": sid, "reason": f"energy_type '{energy_type_val}' not supported"})
+                continue
+
+            scenarios = compute_scenarios(
+                db,
+                sid,
+                volume_kwh_an=assumption.volume_kwh_an,
+                profile_factor=assumption.profile_factor,
+                energy_type=energy_type_val,
             )
-            db.add(assumption)
+            scenarios = recommend_scenario(scenarios, risk_tol, budget_pri, green_pref)
+
+            inputs_hash_val = compute_inputs_hash(
+                assumption.volume_kwh_an,
+                assumption.profile_factor,
+                assumption.horizon_months,
+                energy_type_val,
+                risk_tol,
+                budget_pri,
+                green_pref,
+            )
+
+            # Persist (keep old results for history)
+            result_ids = []
+            for s in scenarios:
+                result = PurchaseScenarioResult(
+                    assumption_set_id=assumption.id,
+                    run_id=run_id,
+                    batch_id=batch_id,
+                    inputs_hash=inputs_hash_val,
+                    strategy=PurchaseStrategy(s["strategy"]),
+                    price_eur_per_kwh=s["price_eur_per_kwh"],
+                    total_annual_eur=s["total_annual_eur"],
+                    risk_score=s["risk_score"],
+                    savings_vs_current_pct=s.get("savings_vs_current_pct"),
+                    p10_eur=s.get("p10_eur"),
+                    p90_eur=s.get("p90_eur"),
+                    is_recommended=s.get("is_recommended", False),
+                    reco_status=PurchaseRecoStatus.DRAFT,
+                )
+                db.add(result)
+                db.flush()
+                result_ids.append(result.id)
+
             db.commit()
-            db.refresh(assumption)
 
-        energy_type_val = assumption.energy_type.value if assumption.energy_type else "elec"
+            for i, s in enumerate(scenarios):
+                s["id"] = result_ids[i]
 
-        # Energy Gate: skip non-ELEC sites in portfolio
-        if energy_type_val not in ALLOWED_ENERGY_TYPES:
-            continue
-
-        scenarios = compute_scenarios(
-            db,
-            sid,
-            volume_kwh_an=assumption.volume_kwh_an,
-            profile_factor=assumption.profile_factor,
-            energy_type=energy_type_val,
-        )
-        scenarios = recommend_scenario(scenarios, risk_tol, budget_pri, green_pref)
-
-        inputs_hash_val = compute_inputs_hash(
-            assumption.volume_kwh_an,
-            assumption.profile_factor,
-            assumption.horizon_months,
-            energy_type_val,
-            risk_tol,
-            budget_pri,
-            green_pref,
-        )
-
-        # Persist (keep old results for history)
-        result_ids = []
-        for s in scenarios:
-            result = PurchaseScenarioResult(
-                assumption_set_id=assumption.id,
-                run_id=run_id,
-                batch_id=batch_id,
-                inputs_hash=inputs_hash_val,
-                strategy=PurchaseStrategy(s["strategy"]),
-                price_eur_per_kwh=s["price_eur_per_kwh"],
-                total_annual_eur=s["total_annual_eur"],
-                risk_score=s["risk_score"],
-                savings_vs_current_pct=s.get("savings_vs_current_pct"),
-                p10_eur=s.get("p10_eur"),
-                p90_eur=s.get("p90_eur"),
-                is_recommended=s.get("is_recommended", False),
-                reco_status=PurchaseRecoStatus.DRAFT,
+            site_obj = site_map.get(sid)
+            results_by_site.append(
+                {
+                    "site_id": sid,
+                    "site_nom": site_obj.nom if site_obj else f"Site {sid}",
+                    "run_id": run_id,
+                    "volume_kwh_an": assumption.volume_kwh_an,
+                    "scenarios": scenarios,
+                }
             )
-            db.add(result)
-            db.flush()
-            result_ids.append(result.id)
-
-        db.commit()
-
-        for i, s in enumerate(scenarios):
-            s["id"] = result_ids[i]
-
-        site_obj = db.query(Site).filter(Site.id == sid).first()
-        results_by_site.append(
-            {
-                "site_id": sid,
-                "site_nom": site_obj.nom if site_obj else f"Site {sid}",
-                "run_id": run_id,
-                "volume_kwh_an": assumption.volume_kwh_an,
-                "scenarios": scenarios,
-            }
-        )
+    except Exception:
+        db.rollback()
+        logger.exception("Portfolio compute failed: org_id=%s, batch_id=%s", org_id, batch_id)
+        raise
 
     portfolio = aggregate_portfolio_results(results_by_site)
+    logger.info("Portfolio compute done: batch_id=%s, %d sites computed, %d skipped", batch_id, len(results_by_site), len(skipped_sites))
 
     return {
         "batch_id": batch_id,
         "org_id": org_id,
         "portfolio": portfolio,
         "sites": results_by_site,
+        "skipped_sites": skipped_sites,
     }
 
 
@@ -503,83 +519,91 @@ def compute(
                 detail=f"Energie '{et}' non supportee. Modifiez les hypotheses vers 'elec' avant de calculer.",
             )
 
-    # Get or create assumptions
-    assumption = _get_latest_assumption(db, site_id)
-    if not assumption:
-        est = estimate_consumption(db, site_id)
-        pf = compute_profile_factor(db, site_id)
-        assumption = PurchaseAssumptionSet(
-            site_id=site_id,
-            energy_type=BillingEnergyType.ELEC,
-            volume_kwh_an=est["volume_kwh_an"],
-            profile_factor=pf,
-            horizon_months=24,
+    logger.info("Single-site compute: site_id=%d, report_pct=%.2f", site_id, report_pct)
+    try:
+        # Get or create assumptions
+        assumption = _get_latest_assumption(db, site_id)
+        if not assumption:
+            est = estimate_consumption(db, site_id)
+            pf = compute_profile_factor(db, site_id)
+            assumption = PurchaseAssumptionSet(
+                site_id=site_id,
+                energy_type=BillingEnergyType.ELEC,
+                volume_kwh_an=est["volume_kwh_an"],
+                profile_factor=pf,
+                horizon_months=24,
+            )
+            db.add(assumption)
+            db.commit()
+            db.refresh(assumption)
+
+        # Compute scenarios
+        energy_type_val = assumption.energy_type.value if assumption.energy_type else "elec"
+        scenarios = compute_scenarios(
+            db,
+            site_id,
+            volume_kwh_an=assumption.volume_kwh_an,
+            profile_factor=assumption.profile_factor,
+            energy_type=energy_type_val,
+            report_pct=report_pct,
         )
-        db.add(assumption)
+
+        # Get preferences for recommendation (scoped by org)
+        site_obj = db.query(Site).filter(Site.id == site_id).first()
+        org_id = _resolve_org_id(db, site_obj) if site_obj else None
+        pref = (
+            db.query(PurchasePreference)
+            .filter(PurchasePreference.org_id == org_id)
+            .first()
+        ) if org_id else db.query(PurchasePreference).first()
+        risk_tol = pref.risk_tolerance if pref else "medium"
+        budget_pri = pref.budget_priority if pref else 0.5
+        green_pref = pref.green_preference if pref else False
+
+        scenarios = recommend_scenario(scenarios, risk_tol, budget_pri, green_pref)
+
+        # V1.1: Generate run_id and inputs_hash
+        run_id = str(uuid.uuid4())
+        inputs_hash_val = compute_inputs_hash(
+            assumption.volume_kwh_an,
+            assumption.profile_factor,
+            assumption.horizon_months,
+            energy_type_val,
+            risk_tol,
+            budget_pri,
+            green_pref,
+        )
+
+        # V1.1: No longer delete old results — preserve for history
+
+        # Persist results
+        result_ids = []
+        for s in scenarios:
+            result = PurchaseScenarioResult(
+                assumption_set_id=assumption.id,
+                run_id=run_id,
+                inputs_hash=inputs_hash_val,
+                strategy=PurchaseStrategy(s["strategy"]),
+                price_eur_per_kwh=s["price_eur_per_kwh"],
+                total_annual_eur=s["total_annual_eur"],
+                risk_score=s["risk_score"],
+                savings_vs_current_pct=s.get("savings_vs_current_pct"),
+                p10_eur=s.get("p10_eur"),
+                p90_eur=s.get("p90_eur"),
+                is_recommended=s.get("is_recommended", False),
+                reco_status=PurchaseRecoStatus.DRAFT,
+            )
+            db.add(result)
+            db.flush()
+            result_ids.append(result.id)
+
         db.commit()
-        db.refresh(assumption)
+    except Exception:
+        db.rollback()
+        logger.exception("Single-site compute failed: site_id=%d", site_id)
+        raise
 
-    # Compute scenarios
-    energy_type_val = assumption.energy_type.value if assumption.energy_type else "elec"
-    scenarios = compute_scenarios(
-        db,
-        site_id,
-        volume_kwh_an=assumption.volume_kwh_an,
-        profile_factor=assumption.profile_factor,
-        energy_type=energy_type_val,
-        report_pct=report_pct,
-    )
-
-    # Get preferences for recommendation (scoped by org)
-    site_obj = db.query(Site).filter(Site.id == site_id).first()
-    org_id = _resolve_org_id(db, site_obj) if site_obj else None
-    pref = (
-        db.query(PurchasePreference)
-        .filter(PurchasePreference.org_id == org_id)
-        .first()
-    ) if org_id else db.query(PurchasePreference).first()
-    risk_tol = pref.risk_tolerance if pref else "medium"
-    budget_pri = pref.budget_priority if pref else 0.5
-    green_pref = pref.green_preference if pref else False
-
-    scenarios = recommend_scenario(scenarios, risk_tol, budget_pri, green_pref)
-
-    # V1.1: Generate run_id and inputs_hash
-    run_id = str(uuid.uuid4())
-    inputs_hash_val = compute_inputs_hash(
-        assumption.volume_kwh_an,
-        assumption.profile_factor,
-        assumption.horizon_months,
-        energy_type_val,
-        risk_tol,
-        budget_pri,
-        green_pref,
-    )
-
-    # V1.1: No longer delete old results — preserve for history
-
-    # Persist results
-    result_ids = []
-    for s in scenarios:
-        result = PurchaseScenarioResult(
-            assumption_set_id=assumption.id,
-            run_id=run_id,
-            inputs_hash=inputs_hash_val,
-            strategy=PurchaseStrategy(s["strategy"]),
-            price_eur_per_kwh=s["price_eur_per_kwh"],
-            total_annual_eur=s["total_annual_eur"],
-            risk_score=s["risk_score"],
-            savings_vs_current_pct=s.get("savings_vs_current_pct"),
-            p10_eur=s.get("p10_eur"),
-            p90_eur=s.get("p90_eur"),
-            is_recommended=s.get("is_recommended", False),
-            reco_status=PurchaseRecoStatus.DRAFT,
-        )
-        db.add(result)
-        db.flush()
-        result_ids.append(result.id)
-
-    db.commit()
+    logger.info("Single-site compute done: site_id=%d, run_id=%s, %d scenarios", site_id, run_id, len(scenarios))
 
     # Add result IDs to response
     for i, s in enumerate(scenarios):
