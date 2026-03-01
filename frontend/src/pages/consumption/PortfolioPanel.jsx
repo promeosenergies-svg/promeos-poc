@@ -11,7 +11,7 @@
  *   sites       — [{id, nom}] full site list
  *   unit        — 'kwh' | 'kw' | 'eur'
  */
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { colorForSite } from './helpers';
 import { Card, CardBody } from '../../ui';
@@ -48,9 +48,9 @@ function computeSiteKPIs(tunnel) {
 }
 
 /** Inline mini sparkline using recharts */
-function MiniSparkline({ data, color }) {
+const MiniSparkline = memo(function MiniSparkline({ data, color }) {
+  const chartData = useMemo(() => (data || []).map((v, i) => ({ i, v })), [data]);
   if (!data?.length) return <span className="w-16 h-6 bg-gray-100 rounded inline-block" />;
-  const chartData = data.map((v, i) => ({ i, v }));
   return (
     <div style={{ width: 64, height: 24, display: 'inline-block' }}>
       <ResponsiveContainer width="100%" height="100%">
@@ -60,7 +60,7 @@ function MiniSparkline({ data, color }) {
       </ResponsiveContainer>
     </div>
   );
-}
+});
 
 function fmt(v, dec = 0) {
   if (v == null) return '—';
@@ -68,11 +68,11 @@ function fmt(v, dec = 0) {
 }
 
 /** Single ranking table for one metric */
-function RankingTable({ rows, valueKey, valueLabel: _valueLabel, unit: _unit, suffix = '' }) {
-  const sorted = [...rows]
+const RankingTable = memo(function RankingTable({ rows, valueKey, valueLabel: _valueLabel, unit: _unit, suffix = '' }) {
+  const sorted = useMemo(() => [...rows]
     .filter(r => r.kpis?.[valueKey] != null)
     .sort((a, b) => (b.kpis[valueKey] ?? 0) - (a.kpis[valueKey] ?? 0))
-    .slice(0, 10);
+    .slice(0, 10), [rows, valueKey]);
 
   if (!sorted.length) {
     return <p className="text-xs text-gray-400 py-4 text-center">Aucune donnée disponible</p>;
@@ -107,7 +107,7 @@ function RankingTable({ rows, valueKey, valueLabel: _valueLabel, unit: _unit, su
       })}
     </div>
   );
-}
+});
 
 /** Aggregate chart across all sites */
 function AggregateChart({ rows, unit }) {

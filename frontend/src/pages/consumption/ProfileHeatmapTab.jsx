@@ -2,7 +2,7 @@
  * PROMEOS — ProfileHeatmapTab
  * Tab 1: Heatmap 7×24 + daily profile (24pts) + baseload/peak/load_factor.
  */
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip as RTooltip, ResponsiveContainer,
@@ -21,7 +21,7 @@ function intensityColor(val, max) {
   return 'bg-green-50';
 }
 
-function HeatmapGrid({ heatmap }) {
+const HeatmapGrid = memo(function HeatmapGrid({ heatmap }) {
   const grid = useMemo(() => {
     const matrix = Array.from({ length: 7 }, () => Array(24).fill(0));
     let maxVal = 0;
@@ -61,9 +61,9 @@ function HeatmapGrid({ heatmap }) {
       </div>
     </div>
   );
-}
+});
 
-function DailyProfileChart({ dailyProfile }) {
+const DailyProfileChart = memo(function DailyProfileChart({ dailyProfile }) {
   const chartData = useMemo(() => (dailyProfile || []).map((pt) => ({
     hour: `${pt.hour}h`,
     avg: pt.avg_kwh,
@@ -86,7 +86,7 @@ function DailyProfileChart({ dailyProfile }) {
       </AreaChart>
     </ResponsiveContainer>
   );
-}
+});
 
 export default function ProfileHeatmapTab({ profile, loading }) {
   if (loading) return <Card><CardBody><div className="h-64 animate-pulse bg-gray-100 rounded" /></CardBody></Card>;

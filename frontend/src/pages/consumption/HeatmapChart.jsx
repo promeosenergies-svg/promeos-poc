@@ -3,7 +3,7 @@
  * Cells colored by HP (red) / HC (blue), intensity = kWh.
  * P1-2: Clickable cells with drill-down callback + tooltip + filter ouvre/weekend.
  */
-import { useState } from 'react';
+import { memo, useState, useMemo } from 'react';
 
 const DAY_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
@@ -14,18 +14,30 @@ function cellColor(avgKwh, isHP, maxKwh) {
   return `rgba(59, 130, 246, ${alpha})`; // blue
 }
 
-export default function HeatmapChart({ data, unit = 'kWh', onCellClick, filter = 'all' }) {
+export default memo(function HeatmapChart({ data, unit = 'kWh', onCellClick, filter = 'all' }) {
   const [hover, setHover] = useState(null);
-
-  if (!data?.length) return null;
 
   // Filter: 'all', 'weekday' (Lun-Ven), 'weekend' (Sam-Dim)
   const visibleDays = filter === 'weekday' ? [0,1,2,3,4]
     : filter === 'weekend' ? [5,6]
     : [0,1,2,3,4,5,6];
 
-  const filteredData = data.filter(c => visibleDays.includes(c.day));
-  const maxKwh = Math.max(...filteredData.map(c => c.avg_kwh), 0.01);
+  // Index lookup: O(1) per cell instead of O(n) .find()
+  const { cellIndex, maxKwh } = useMemo(() => {
+    if (!data?.length) return { cellIndex: new Map(), maxKwh: 0.01 };
+    const idx = new Map();
+    let max = 0.01;
+    data.forEach(c => {
+      if (visibleDays.includes(c.day)) {
+        idx.set(c.day * 24 + c.hour, c);
+        if (c.avg_kwh > max) max = c.avg_kwh;
+      }
+    });
+    return { cellIndex: idx, maxKwh: max };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, filter]);
+
+  if (!data?.length) return null;
 
   return (
     <div className="space-y-2">
@@ -57,7 +69,7 @@ export default function HeatmapChart({ data, unit = 'kWh', onCellClick, filter =
               <tr key={dow}>
                 <td className="text-[10px] text-gray-500 font-medium pr-1 text-right">{DAY_LABELS[dow]}</td>
                 {Array.from({ length: 24 }, (_, h) => {
-                  const cell = filteredData.find(c => c.day === dow && c.hour === h) || { avg_kwh: 0, period: 'HC' };
+                  const cell = cellIndex.get(dow * 24 + h) || { avg_kwh: 0, period: 'HC' };
                   const isHP = cell.period === 'HP';
                   const bg = cellColor(cell.avg_kwh, isHP, maxKwh);
                   const isHovered = hover?.day === dow && hover?.hour === h;
@@ -96,4 +108,4 @@ export default function HeatmapChart({ data, unit = 'kWh', onCellClick, filter =
       )}
     </div>
   );
-}
+});

@@ -185,7 +185,7 @@ export default function SignaturePanel({ siteIds = [], energyType = 'electricity
         data={heatmapData}
         unit="kWh"
         filter={dayFilter}
-        onCellClick={(cell) => setDrillDown(cell)}
+        onCellClick={setDrillDown}
       />
 
       {/* Drill-down chart for selected cell */}
