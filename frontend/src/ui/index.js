@@ -38,3 +38,6 @@ export { LAYOUT, TYPO, LABELS_FR } from './conventions';
 // Design System V6 — InfoTip + Tooltip content map
 export { default as InfoTip } from './InfoTip';
 export { TOOLTIPS } from './tooltips';
+
+// Design System V7 — Evidence Drawer ("Pourquoi ce chiffre ?")
+export { default as EvidenceDrawer } from './EvidenceDrawer';
