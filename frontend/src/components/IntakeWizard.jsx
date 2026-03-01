@@ -138,7 +138,7 @@ export default function IntakeWizard({ siteId, onClose }) {
   const currentStep = phase === 'intro' ? 0 : phase === 'questions' ? currentQ + 1 : totalSteps - 1;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">

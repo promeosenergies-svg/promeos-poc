@@ -60,7 +60,7 @@ export function ToastProvider({ children }) {
     <ToastContext.Provider value={{ toast }}>
       {children}
       {/* Toast container */}
-      <div className="fixed top-4 right-4 z-[60] flex flex-col gap-2 pointer-events-none" aria-live="polite">
+      <div className="fixed top-4 right-4 z-[250] flex flex-col gap-2 pointer-events-none" aria-live="polite">
         {toasts.map((t) => {
           const Icon = TOAST_ICONS[t.type] || TOAST_ICONS.info;
           const style = TOAST_STYLES[t.type] || TOAST_STYLES.info;

@@ -46,7 +46,7 @@ export default function Drawer({ open, onClose, title, children, side = 'right',
   const widthClass = wide ? 'w-full max-w-2xl' : 'w-full max-w-md';
 
   return (
-    <div className="fixed inset-0 z-50 flex" role="dialog" aria-modal="true" aria-label={title}>
+    <div className="fixed inset-0 z-[200] flex" role="dialog" aria-modal="true" aria-label={title}>
       <div className="absolute inset-0 bg-black/40 animate-[fadeIn_0.2s_ease-out]" onClick={onClose} />
       <div
         ref={ref}

@@ -91,7 +91,9 @@ export default function Sidebar() {
     // z-30     Sidebar aside   (sticky, left column)
     // z-40     App header      (AppShell.jsx — sticky top-0 backdrop-blur-md)
     // z-[120]  Overlays        (dropdowns/popovers/tooltips — portal to body)
-    // z-[200]  Modals          (full-screen overlays — portal to body)
+    // z-[200]  Modals/Drawers  (full-screen overlays — Modal.jsx, Drawer.jsx, wizards)
+    // z-[210]  Nested modals   (confirm dialogs inside modals — PatrimoineWizard)
+    // z-[250]  Toasts          (always on top — ToastProvider.jsx)
     // ─────────────────────────────────────────────────────────────────────────
     <aside className="flex h-screen sticky top-0 z-30 shrink-0" aria-label="Navigation principale">
       <NavRail
