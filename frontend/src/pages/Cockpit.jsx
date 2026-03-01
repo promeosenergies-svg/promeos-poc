@@ -13,7 +13,7 @@ import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import useRenderTiming from '../hooks/useRenderTiming';
 import { toActionsList } from '../services/routes';
-import { Button, Card, CardBody, PageShell, Progress, Modal, Pagination, StatusDot, Tabs, EmptyState, ScopeSummary } from '../ui';
+import { Button, Card, CardBody, PageShell, Progress, Modal, Pagination, StatusDot, Tabs, EmptyState, ScopeSummary, EvidenceDrawer } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { SkeletonCard, SkeletonTable } from '../ui/Skeleton';
 import { KPI_ACCENTS } from '../ui/colorTokens';
@@ -33,6 +33,7 @@ import ExecutiveKpiRow from './cockpit/ExecutiveKpiRow';
 import ImpactDecisionPanel from './cockpit/ImpactDecisionPanel';
 import DataActivationPanel from './cockpit/DataActivationPanel';
 import { READINESS_WEIGHTS, ACTIONS_SCORE, getRiskStatus, getStatusBadgeProps } from '../lib/constants';
+import { evidenceConformite, evidenceRisque } from '../ui/evidence.fixtures';
 
 // ── Consistency banner (inline — too small for its own file) ─────────────────
 function ConsistencyBanner({ issues }) {
@@ -55,6 +56,7 @@ const Cockpit = () => {
   const [siteSearch, setSiteSearch] = useState('');
   const [sitePage, setSitePage] = useState(1);
   const [activePtf, setActivePtf] = useState('all');
+  const [evidenceOpen, setEvidenceOpen] = useState(null); // KPI id or null
   const sitePageSize = 20;
 
   const kpis = useMemo(() => {
@@ -94,9 +96,14 @@ const Cockpit = () => {
   const executiveKpis     = useMemo(() => buildExecutiveKpis(kpis, scopedSites),                      [kpis, scopedSites]);        // eslint-disable-line react-hooks/exhaustive-deps
   const _todayActions     = useMemo(() => buildTodayActions(kpis, watchlist, opportunities),          [kpis, watchlist, opportunities]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const _scopeLabel = portefeuille
+  const scopeLabel = portefeuille
     ? `${org?.nom || 'Organisation'} / ${portefeuille.nom}`
     : (org?.nom || 'Organisation');
+
+  const evidenceMap = useMemo(() => ({
+    conformite: evidenceConformite(scopeLabel),
+    risque: evidenceRisque(scopeLabel, kpis.risqueTotal),
+  }), [scopeLabel, kpis.risqueTotal]);
 
   const ptfWithCounts = useMemo(() => {
     return portefeuilles.map(pf => {
@@ -188,7 +195,7 @@ const Cockpit = () => {
       <ExecutiveSummaryCard bullets={executiveSummary} onNavigate={navigate} />
 
       {/* ── KPIs décideur 4 tuiles (Cockpit V2) ── */}
-      <ExecutiveKpiRow kpis={executiveKpis} onNavigate={navigate} />
+      <ExecutiveKpiRow kpis={executiveKpis} onNavigate={navigate} onEvidence={setEvidenceOpen} />
 
       {/* ── Impact & Décision ── */}
       <ImpactDecisionPanel kpis={kpis} />
@@ -455,6 +462,13 @@ const Cockpit = () => {
           </button>
         </div>
       </Modal>
+
+      {/* ── Evidence Drawer ("Pourquoi ce chiffre ?") ── */}
+      <EvidenceDrawer
+        open={!!evidenceOpen}
+        onClose={() => setEvidenceOpen(null)}
+        evidence={evidenceOpen ? evidenceMap[evidenceOpen] : null}
+      />
     </PageShell>
   );
 };
