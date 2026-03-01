@@ -18,9 +18,9 @@ const CONFIDENCE_TOOLTIP = {
   low: 'Basse : < 100 releves — indicatif uniquement',
 };
 
-function KpiTile({ icon: Icon, label, value, sub, color = 'text-gray-900', tooltip }) {
+function KpiTile({ icon: Icon, label, value, sub, color = 'text-gray-900', tooltip, evidenceId, onEvidence }) {
   return (
-    <div className="flex items-center gap-3 bg-white rounded-xl border border-gray-200 px-4 py-3 min-w-0" title={tooltip}>
+    <div className="relative flex items-center gap-3 bg-white rounded-xl border border-gray-200 px-4 py-3 min-w-0" title={tooltip}>
       <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
         <Icon size={18} className="text-gray-500" />
       </div>
@@ -29,11 +29,22 @@ function KpiTile({ icon: Icon, label, value, sub, color = 'text-gray-900', toolt
         <p className={`text-lg font-bold ${color} truncate leading-tight`}>{value ?? '—'}</p>
         {sub && <p className="text-[11px] text-gray-400 truncate">{sub}</p>}
       </div>
+      {evidenceId && onEvidence && (
+        <button
+          onClick={() => onEvidence(evidenceId)}
+          className="absolute top-1.5 right-1.5 p-1 rounded-md text-gray-300 hover:text-blue-500 hover:bg-blue-50 transition
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          aria-label={`Pourquoi ce chiffre : ${label}`}
+          data-testid={`evidence-open-${evidenceId}`}
+        >
+          <HelpCircle size={13} />
+        </button>
+      )}
     </div>
   );
 }
 
-export default function ConsoKpiHeader({ tunnel, hphc, progression, confidence }) {
+export default function ConsoKpiHeader({ tunnel, hphc, progression, confidence, onEvidence }) {
   // --- kWh total ---
   // Priority: hphc.total_kwh (sum of readings HP+HC, always available when data exists)
   // then tunnel.total_kwh (not returned by current tunnel service)
@@ -99,10 +110,10 @@ export default function ConsoKpiHeader({ tunnel, hphc, progression, confidence }
         )}
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        <KpiTile icon={Zap} label="kWh total" value={kwhLabel} tooltip="Somme des releves sur la periode selectionnee" />
+        <KpiTile icon={Zap} label="kWh total" value={kwhLabel} tooltip="Somme des releves sur la periode selectionnee" evidenceId="conso-kwh-total" onEvidence={onEvidence} />
         <KpiTile icon={Euro} label="EUR total" value={eurLabel} sub={eurSource} tooltip={`Calcul : ${eurSource}. Basé sur les prix HP/HC du contrat ou estimés.`} />
         <KpiTile icon={TrendingUp} label="EUR/MWh" value={eurMwhLabel} tooltip="Prix moyen = EUR total / MWh total" />
-        <KpiTile icon={Leaf} label="CO2e" value={co2Label} sub="ADEME 2024" tooltip="Facteur ADEME 2024 : 0,052 kgCO2e/kWh (mix France)" />
+        <KpiTile icon={Leaf} label="CO2e" value={co2Label} sub="ADEME 2024" tooltip="Facteur ADEME 2024 : 0,052 kgCO2e/kWh (mix France)" evidenceId="conso-co2e" onEvidence={onEvidence} />
         <KpiTile icon={Activity} label="Pic kW (P95)" value={p95Label} tooltip="95e percentile de puissance sur les creneaux horaires" />
         <KpiTile icon={Moon} label="Base nocturne" value={basePctLabel} color={basePctColor} tooltip="Ratio consommation nuit (22h-6h) / jour (6h-22h) en semaine" />
       </div>

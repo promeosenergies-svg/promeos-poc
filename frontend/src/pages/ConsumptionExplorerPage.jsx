@@ -17,7 +17,7 @@ import {
   XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
-import { Card, CardBody, Badge, Button, EmptyState, TrustBadge } from '../ui';
+import { Card, CardBody, Badge, Button, EmptyState, TrustBadge, EvidenceDrawer as GenericEvidenceDrawer } from '../ui';
 import { SkeletonCard } from '../ui';
 import { useToast } from '../ui/ToastProvider';
 import { useScope } from '../contexts/ScopeContext';
@@ -58,6 +58,7 @@ import MeteoPanel from './consumption/MeteoPanel';
 import InsightsPanel from './consumption/InsightsPanel';
 import ConsoKpiHeader from '../components/ConsoKpiHeader';
 import BenchmarkPanel from './consumption/BenchmarkPanel';
+import { evidenceKwhTotal, evidenceCO2e } from '../ui/evidence.fixtures';
 
 // ========================================
 // Constants
@@ -1070,6 +1071,21 @@ export default function ConsumptionExplorerPage() {
   }, [isPortfolioMode, sites, selectedSiteId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Custom date range (V11.1-A) ────────────────────────────────────────
+  // ── Evidence Drawer ("Pourquoi ce chiffre ?") ─────────────────────────
+  const [evidenceKpiOpen, setEvidenceKpiOpen] = useState(null);
+  const consoEvidenceMap = useMemo(() => {
+    const periodStr = `${days} jours`;
+    const hphc = motor.primaryHphc;
+    const totalKwh = hphc?.total_kwh ?? motor.primaryTunnel?.total_kwh ?? null;
+    const kwhStr = totalKwh != null ? `${Math.round(totalKwh).toLocaleString('fr-FR')} kWh` : null;
+    const co2Kg = totalKwh != null ? Math.round(totalKwh * 0.052) : null;
+    const co2Str = co2Kg != null ? `${co2Kg.toLocaleString('fr-FR')} kg CO2e` : null;
+    return {
+      'conso-kwh-total': evidenceKwhTotal(scopeLabel, periodStr, kwhStr),
+      'conso-co2e': evidenceCO2e(scopeLabel, periodStr, co2Str),
+    };
+  }, [scopeLabel, days, motor.primaryHphc, motor.primaryTunnel]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const [startDate, setStartDate] = useState(urlState.startDate || null);
   const [endDate, setEndDate] = useState(urlState.endDate || null);
 
@@ -1295,6 +1311,7 @@ export default function ConsumptionExplorerPage() {
           hphc={motor.primaryHphc}
           progression={motor.primaryProgression}
           confidence={availability?.confidence}
+          onEvidence={setEvidenceKpiOpen}
         />
       )}
 
@@ -1495,6 +1512,13 @@ export default function ConsumptionExplorerPage() {
           </button>
         </div>
       )}
+
+      {/* ── Evidence Drawer ("Pourquoi ce chiffre ?") ── */}
+      <GenericEvidenceDrawer
+        open={!!evidenceKpiOpen}
+        onClose={() => setEvidenceKpiOpen(null)}
+        evidence={evidenceKpiOpen ? consoEvidenceMap[evidenceKpiOpen] : null}
+      />
     </div>
   );
 }
