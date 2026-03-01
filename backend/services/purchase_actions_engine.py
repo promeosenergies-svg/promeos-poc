@@ -116,10 +116,16 @@ def compute_purchase_actions(db: Session, org_id: Optional[int] = None) -> dict:
         PurchaseScenarioResult.reco_status == PurchaseRecoStatus.DRAFT,
     ).all()
 
+    # Batch-fetch assumptions for all recos (avoid N+1 and double query)
+    assumption_ids = {r.assumption_set_id for r in recos}
+    assumptions_list = db.query(PurchaseAssumptionSet).filter(
+        PurchaseAssumptionSet.id.in_(assumption_ids),
+    ).all() if assumption_ids else []
+    assumption_map = {a.id: a for a in assumptions_list}
+
+    gain_potentiel = 0.0
     for r in recos:
-        assumption = db.query(PurchaseAssumptionSet).filter(
-            PurchaseAssumptionSet.id == r.assumption_set_id,
-        ).first()
+        assumption = assumption_map.get(r.assumption_set_id)
         if not assumption or assumption.site_id not in site_ids:
             continue
 
@@ -151,20 +157,14 @@ def compute_purchase_actions(db: Session, org_id: Optional[int] = None) -> dict:
                 "severity": "blue",
             })
 
+        # Accumulate gain potentiel in same loop (no second pass needed)
+        if r.savings_vs_current_pct and r.savings_vs_current_pct > 0:
+            gain_potentiel += abs(r.savings_vs_current_pct) / 100 * r.total_annual_eur
+
     # Sort by priority DESC
     actions.sort(key=lambda a: -a["priority"])
     for i, action in enumerate(actions):
         action["rank"] = i + 1
-
-    # Gain potentiel: savings from all recommended draft scenarios
-    gain_potentiel = 0.0
-    for r in recos:
-        assumption = db.query(PurchaseAssumptionSet).filter(
-            PurchaseAssumptionSet.id == r.assumption_set_id,
-            PurchaseAssumptionSet.site_id.in_(site_ids),
-        ).first()
-        if assumption and r.savings_vs_current_pct and r.savings_vs_current_pct > 0:
-            gain_potentiel += abs(r.savings_vs_current_pct) / 100 * r.total_annual_eur
 
     return {
         "total_actions": len(actions),

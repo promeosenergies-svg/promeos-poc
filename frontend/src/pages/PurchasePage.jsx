@@ -1212,10 +1212,10 @@ export default function PurchasePage() {
                                 <span className="text-gray-700">{s.site_nom || `Site ${s.site_id}`}</span>
                                 <div className="flex items-center gap-2">
                                   {metric(s)}
-                                  <button onClick={() => navigate(toConsoExplorer({ site_id: s.site_id, days: 90 }))} className="text-blue-500 hover:text-blue-700" title="Explorer"><BarChart3 size={12} /></button>
-                                  <button onClick={() => navigate(toConsoDiag({ site_id: s.site_id }))} className="text-purple-500 hover:text-purple-700" title="Diagnostic"><Activity size={12} /></button>
-                                  <button onClick={() => navigate(toBillIntel({ site_id: s.site_id }))} className="text-indigo-500 hover:text-indigo-700" title="Facture"><FileSearch size={12} /></button>
-                                  <button onClick={() => navigate(toActionNew({ source: 'purchase', source_type: 'achat', site_id: s.site_id, title: actionTitle(s), scenario_label: 'Tarif Heures Solaires' }))} className="text-green-500 hover:text-green-700" title="Action"><Plus size={12} /></button>
+                                  <button aria-label="Explorer conso" onClick={() => navigate(toConsoExplorer({ site_id: s.site_id, days: 90 }))} className="text-blue-500 hover:text-blue-700" title="Explorer"><BarChart3 size={12} /></button>
+                                  <button aria-label="Diagnostic" onClick={() => navigate(toConsoDiag({ site_id: s.site_id }))} className="text-purple-500 hover:text-purple-700" title="Diagnostic"><Activity size={12} /></button>
+                                  <button aria-label="Facture" onClick={() => navigate(toBillIntel({ site_id: s.site_id }))} className="text-indigo-500 hover:text-indigo-700" title="Facture"><FileSearch size={12} /></button>
+                                  <button aria-label="Creer action" onClick={() => navigate(toActionNew({ source: 'purchase', source_type: 'achat', site_id: s.site_id, title: actionTitle(s), scenario_label: 'Tarif Heures Solaires' }))} className="text-green-500 hover:text-green-700" title="Action"><Plus size={12} /></button>
                                 </div>
                               </div>
                             ))}

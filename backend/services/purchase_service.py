@@ -23,6 +23,16 @@ from services.billing_service import get_reference_price
 # Fallback volume if no data found
 DEFAULT_VOLUME_KWH_AN = 500_000
 
+# ── Strategy pricing multipliers (vs reference price) ──
+FIXE_PREMIUM = 1.05          # Fixed = ref * 1.05 (risk premium for budget certainty)
+INDEXE_DISCOUNT = 0.95       # Indexed = ref * 0.95 (slight market exposure discount)
+SPOT_DISCOUNT = 0.88         # Spot = ref * 0.88 (full market exposure, max savings)
+
+# ── Profile factor thresholds ──
+PROFILE_FLAT_24_7 = 0.85     # Flat/constant load profile
+PROFILE_PEAK = 1.25          # Peak business hours profile
+PROFILE_DEFAULT = 1.0        # Standard profile
+
 
 def estimate_consumption(db: Session, site_id: int) -> dict:
     """
@@ -109,13 +119,13 @@ def compute_profile_factor(db: Session, site_id: int) -> float:
         return 1.0
 
     if schedule.is_24_7:
-        return 0.85  # Flat profile
+        return PROFILE_FLAT_24_7
 
     # Standard business hours (8h-19h weekdays) → peak profile
     if schedule.open_time <= "08:00" and schedule.close_time >= "19:00":
-        return 1.25
+        return PROFILE_PEAK
 
-    return 1.0
+    return PROFILE_DEFAULT
 
 
 
@@ -218,8 +228,8 @@ def compute_scenarios(
 
     scenarios = []
 
-    # ── Fixe: price = ref * 1.05 (risk premium), low risk ──
-    fixe_price = round(ref_price * 1.05, 4)
+    # ── Fixe: price = ref * FIXE_PREMIUM (risk premium), low risk ──
+    fixe_price = round(ref_price * FIXE_PREMIUM, 4)
     fixe_total = round(fixe_price * volume_kwh_an, 2)
     scenarios.append({
         "strategy": PurchaseStrategy.FIXE.value,
@@ -232,8 +242,8 @@ def compute_scenarios(
         "ref_price_source": price_source,
     })
 
-    # ── Indexe: price = ref * 0.95, medium risk ──
-    indexe_price = round(ref_price * 0.95, 4)
+    # ── Indexe: price = ref * INDEXE_DISCOUNT, medium risk ──
+    indexe_price = round(ref_price * INDEXE_DISCOUNT, 4)
     indexe_total = round(indexe_price * volume_kwh_an, 2)
     scenarios.append({
         "strategy": PurchaseStrategy.INDEXE.value,
@@ -246,8 +256,8 @@ def compute_scenarios(
         "ref_price_source": price_source,
     })
 
-    # ── Spot: price = ref * 0.88 * profile_factor, high risk ──
-    spot_price = round(ref_price * 0.88 * profile_factor, 4)
+    # ── Spot: price = ref * SPOT_DISCOUNT * profile_factor, high risk ──
+    spot_price = round(ref_price * SPOT_DISCOUNT * profile_factor, 4)
     spot_total = round(spot_price * volume_kwh_an, 2)
     scenarios.append({
         "strategy": PurchaseStrategy.SPOT.value,
@@ -407,14 +417,17 @@ def aggregate_portfolio_results(results_by_site: list) -> dict:
     total_risk_weighted = 0.0
     total_volume_kwh = 0.0
     total_savings_weighted = 0.0
-    sites_count = len(results_by_site)
+    sites_with_reco = 0
 
     for site_result in results_by_site:
         reco = next((s for s in site_result["scenarios"] if s.get("is_recommended")), None)
         if not reco:
             continue
+        sites_with_reco += 1
         total_cost_eur += reco.get("total_annual_eur", 0)
         volume = site_result.get("volume_kwh_an", 0)
+        if volume <= 0:
+            continue  # Skip 0-volume sites from weighted averages
         total_volume_kwh += volume
         total_risk_weighted += reco.get("risk_score", 0) * volume
         total_savings_weighted += (reco.get("savings_vs_current_pct", 0) or 0) * volume
@@ -423,7 +436,7 @@ def aggregate_portfolio_results(results_by_site: list) -> dict:
     weighted_savings = round(total_savings_weighted / total_volume_kwh, 1) if total_volume_kwh > 0 else 0
 
     return {
-        "sites_count": sites_count,
+        "sites_count": sites_with_reco,
         "total_annual_cost_eur": round(total_cost_eur, 2),
         "weighted_risk_score": weighted_risk,
         "weighted_savings_pct": weighted_savings,
