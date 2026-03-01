@@ -64,12 +64,12 @@ function HeatmapGrid({ heatmap }) {
 }
 
 function DailyProfileChart({ dailyProfile }) {
-  const chartData = (dailyProfile || []).map((pt) => ({
+  const chartData = useMemo(() => (dailyProfile || []).map((pt) => ({
     hour: `${pt.hour}h`,
     avg: pt.avg_kwh,
     min: pt.min_kwh,
     max: pt.max_kwh,
-  }));
+  })), [dailyProfile]);
 
   if (!chartData.length) return null;
 

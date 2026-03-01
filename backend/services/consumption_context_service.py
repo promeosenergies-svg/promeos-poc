@@ -10,14 +10,17 @@ Reutilise 100% des services existants:
 - kb archetypes (NAF → archetype lookup)
 """
 import json
+import logging
 import math
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 
 from sqlalchemy.orm import Session
 
-from models import Site, Meter, MeterReading, ConsumptionInsight
+from models import Site, Meter, MeterReading, ConsumptionInsight, Portefeuille, EntiteJuridique
 from models.energy_models import FrequencyType, EnergyVector
+
+logger = logging.getLogger(__name__)
 
 
 # ========================================
@@ -226,13 +229,14 @@ def get_consumption_profile(db: Session, site_id: int, days: int = 30) -> dict:
 
 def get_activity_context(db: Session, site_id: int) -> dict:
     """Get activity context: operating schedule, archetype from NAF, active TOU."""
+    from fastapi import HTTPException
     from routes.site_config import get_site_schedule_params
     from services.tou_service import get_active_schedule
     from models.site_operating_schedule import SiteOperatingSchedule
 
     site = db.query(Site).filter(Site.id == site_id).first()
     if not site:
-        return {"error": "site_not_found"}
+        raise HTTPException(status_code=404, detail="Site non trouve")
 
     # Schedule
     schedule_params = get_site_schedule_params(db, site_id)
@@ -285,8 +289,8 @@ def get_activity_context(db: Session, site_id: int) -> dict:
                         "kwh_m2_avg": arch.kwh_m2_avg,
                         "segment_tags": json.loads(arch.segment_tags) if arch.segment_tags else [],
                     }
-        except Exception:
-            pass
+        except (json.JSONDecodeError, ValueError, AttributeError) as exc:
+            logger.warning("Archetype lookup failed for NAF %s on site %d: %s", naf_code, site_id, exc)
 
     # Active TOU schedule
     tou = get_active_schedule(db, site_id)
@@ -463,7 +467,13 @@ def suggest_schedule_from_naf(db: Session, site_id: int) -> Optional[dict]:
 
 def get_portfolio_behavior_summary(db: Session, org_id: int, days: int = 30) -> dict:
     """Return all org sites ranked by behavior_score, with KPI deltas."""
-    sites = db.query(Site).filter(Site.org_id == org_id, Site.actif == True).all()
+    sites = (
+        db.query(Site)
+        .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
+        .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
+        .filter(EntiteJuridique.organisation_id == org_id, Site.actif == True)
+        .all()
+    )
 
     rows = []
     for site in sites:
@@ -472,7 +482,7 @@ def get_portfolio_behavior_summary(db: Session, org_id: int, days: int = 30) -> 
             profile = get_consumption_profile(db, site.id, days)
             rows.append({
                 "site_id": site.id,
-                "site_name": site.name,
+                "site_name": site.nom,
                 "behavior_score": anomalies.get("behavior_score"),
                 "max_severity": anomalies.get("max_severity"),
                 "offhours_pct": (anomalies.get("kpis") or {}).get("offhours_pct", 0),
@@ -481,12 +491,14 @@ def get_portfolio_behavior_summary(db: Session, org_id: int, days: int = 30) -> 
                 "insights_count": len(anomalies.get("insights") or []),
                 "weekend_active": (anomalies.get("weekend_active") or {}).get("detected", False),
             })
-        except Exception:
+        except (ValueError, KeyError, AttributeError) as exc:
+            logger.warning("Portfolio score failed for site %d: %s", site.id, exc)
             rows.append({
                 "site_id": site.id,
-                "site_name": site.name,
+                "site_name": site.nom,
                 "behavior_score": None,
                 "max_severity": None,
+                "error": str(exc),
                 "offhours_pct": 0,
                 "baseload_kw": 0,
                 "total_kwh": 0,

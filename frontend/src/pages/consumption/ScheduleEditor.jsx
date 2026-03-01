@@ -38,6 +38,11 @@ export default function ScheduleEditor({ schedule, siteId, onSaved }) {
   const [suggesting, setSuggesting] = useState(false);
   const [dirty, setDirty] = useState(false);
 
+  // Validation: openTime must be before closeTime (unless 24/7)
+  const timeError = !is247 && openTime && closeTime && openTime >= closeTime
+    ? 'L\u2019heure d\u2019ouverture doit \u00eatre ant\u00e9rieure \u00e0 la fermeture'
+    : null;
+
   // Sync if parent data changes
   useEffect(() => {
     const p = parseSchedule(schedule);
@@ -177,7 +182,7 @@ export default function ScheduleEditor({ schedule, siteId, onSaved }) {
                   type="time"
                   value={openTime}
                   onChange={(e) => { setOpenTime(e.target.value); setDirty(true); }}
-                  className="border border-gray-200 rounded px-2 py-1 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-300"
+                  className={`border rounded px-2 py-1 text-sm text-gray-700 focus:outline-none focus:ring-1 ${timeError ? 'border-red-300 focus:ring-red-300' : 'border-gray-200 focus:ring-indigo-300'}`}
                 />
               </div>
               <div className="flex items-center gap-2">
@@ -186,10 +191,13 @@ export default function ScheduleEditor({ schedule, siteId, onSaved }) {
                   type="time"
                   value={closeTime}
                   onChange={(e) => { setCloseTime(e.target.value); setDirty(true); }}
-                  className="border border-gray-200 rounded px-2 py-1 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-300"
+                  className={`border rounded px-2 py-1 text-sm text-gray-700 focus:outline-none focus:ring-1 ${timeError ? 'border-red-300 focus:ring-red-300' : 'border-gray-200 focus:ring-indigo-300'}`}
                 />
               </div>
             </div>
+            {timeError && (
+              <p className="text-xs text-red-500 mt-1" data-testid="time-error">{timeError}</p>
+            )}
           </>
         )}
 
@@ -198,7 +206,7 @@ export default function ScheduleEditor({ schedule, siteId, onSaved }) {
           <Button
             size="sm"
             onClick={handleSave}
-            disabled={saving || !dirty}
+            disabled={saving || !dirty || !!timeError}
           >
             {saving
               ? <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
