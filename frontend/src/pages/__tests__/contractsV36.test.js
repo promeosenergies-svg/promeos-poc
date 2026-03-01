@@ -397,8 +397,8 @@ describe('V36: ImpactDecisionPanel — achats d\'energie', () => {
     expect(panelSrc).toContain('Voir les sites sans contrat');
   });
 
-  it('le tooltip mentionne heuristique V1', () => {
-    expect(panelSrc).toContain('heuristique V1');
+  it('le tooltip mentionne calculs V1 (via TOOLTIPS centralisés)', () => {
+    expect(panelSrc).toContain('TOOLTIPS.executive.calculsV1');
   });
 
   it('affiche "Donnees manquantes" quand pas de purchase signals', () => {
