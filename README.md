@@ -29,7 +29,7 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 > | Brique | Etat |
 > |--------|------|
 > | Backend API (~150 endpoints) | Stable |
-> | Frontend React (20+ pages) | Stable |
+> | Frontend React (39+ pages) | Stable |
 > | Moteur conformite (Decret Tertiaire, BACS) | Stable |
 > | RegOps 4 reglementations (Tertiaire, BACS, APER, CEE P6) | Stable |
 > | Knowledge Base (12 items YAML + FTS5) | Stable |
@@ -56,14 +56,15 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 > | UX Overlays fixes (tooltips vides, ScopeSwitcher portal z-index) | Stable -- fix/ux-overlays |
 > | Demo Seed V86 (730j horaire + 30j 15min + meteo 5 sites) | Stable -- V86 |
 > | Demo Seed V87 (BACS assets, Consumption Targets, EMS Views, 60 invoices) | Stable -- V87 |
-> | Suite de tests automatises | **3 596 frontend + 2 400+ backend, 0 regression** |
+> | Quality Gate V88 — P0/P1/P2 (overlays, lint 0, memo, dead code) | Stable -- V88 |
+> | Suite de tests automatises | **3 665 frontend + 2 400+ backend, 0 regression** |
 
 > **Disclaimer**
 >
 > Ce depot est un **proof-of-concept** (POC). Il n'est pas prevu pour la production :
 > pas de rate-limiting, SQLite en mono-fichier, CORS ouvert.
 > Authentification IAM implementee (JWT + scopes hierarchiques + 11 roles metier).
-> Les donnees de demo sont synthetiques (120 sites fictifs, 10 personas IAM).
+> Les donnees de demo sont synthetiques (5 sites HELIOS, 10 personas IAM).
 
 ---
 
@@ -74,7 +75,8 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 - **Frontend React 18 + Tailwind + Vite** avec 22+ pages : Dashboard, Cockpit Executif, Patrimoine (heatmap + portfolio), Detail Site, Plan d'action, RegOps, Conso & Usages, Usages & Horaires (Consumption Context V0 : heatmap 7x24, profil journee, behavior_score, ScheduleEditor inline V84), Tertiaire OPERAT, IAM Admin, Import, KB Explorer, Veille Reglementaire, Facturation (BillIntel deep-links + BillingTimeline + CoverageBar), Actions Console (V69), Performance V2 (5 KPI cards dont THS, expert mode, route registry V70-V79), Achat Energie V2 (4 strategies, "Option Tarif Heures Solaires" structuree avec badges Budget/Risque/Effort/Sans penalite, creneaux ete/hiver, 7 CTAs cross-briques, deep-link assistant V72-V82), Assistant Achat 8 etapes (deep-link step+offer, 6 offres demo, highlight V81).
 - **Demo HELIOS canonique** : Groupe Casino supprime, demo unifiee Groupe HELIOS (3 entites, 5 sites, 7 batiments — bureaux, industrie, hotel, ecole, seed deterministe RNG=42, 60 mois de readings V83).
 - **Demo Seed V86-V87** : 730 jours de lectures horaires + 30 jours 15min + meteo 5 sites (V86). BACS assets/systemes/assessments/inspections, ConsumptionTargets (yearly+monthly 2024-2026), EMS Explorer vues pre-configurees, 60 factures (V87).
-- **3 596 frontend + 2 400+ backend = 6 000+ tests, 0 regression** — pytest backend + vitest frontend, seed HELIOS 5 sites + 60 mois + 10 personas IAM en une commande, demo operationnelle en 2 minutes.
+- **Quality Gate V88** — ESLint zero warnings (`--max-warnings=0`, 211→0), `React.memo` + `useMemo` sur charts lourds (HeatmapChart O(1) Map lookup, PortfolioPanel, ProfileHeatmapTab), shared `ui/Badge` dans SiteDetail/Site360, dead code supprime (Cockpit2MinPage), tooltips consolides (TooltipPortal + InfoTip), z-index normalise (Modal/Drawer z-200), `useActivationData` hook dedup.
+- **3 665 frontend + 2 400+ backend = 6 000+ tests, 0 regression** — pytest backend + vitest frontend, seed HELIOS 5 sites + 60 mois + 10 personas IAM en une commande, demo operationnelle en 2 minutes.
 
 ---
 
@@ -314,7 +316,7 @@ python scripts/kb_smoke.py
                           +-------------------+
                           |   Frontend React  |
                           |  localhost:5173   |
-                          | 22+ pages + Vite  |
+                          | 39+ pages + Vite  |
                           +--------+----------+
                                    |
                             proxy /api/*
@@ -356,7 +358,7 @@ python scripts/kb_smoke.py
 | DB principale | SQLite (promeos.db) |
 | DB Knowledge Base | SQLite + FTS5 (kb.db) |
 | Validation | Pydantic 2.5 |
-| Tests | pytest 7.4 |
+| Tests | pytest 7.4 + vitest 4.0 |
 
 ---
 
@@ -666,7 +668,12 @@ Pour plus de details : [Security Notes](docs/security_notes.md) | [Demo Script](
   - `gen_targets.py` : 195 ConsumptionTarget (5 sites x 3 ans x 13), trajectoire Decret Tertiaire -1.5%/an, distribution saisonniere mensuelle
   - `gen_ems_views.py` : 4 EmsSavedView (panorama annuel, monitoring 30j 15min, comparaison sites, signature 2 ans) + 2 EmsCollection (tous sites, tertiaires)
   - Facturation : 8 contrats (elec + gaz) + 60 factures avec lignes detaillees + insights anomalies (surfacturation 1/5)
-- **3 596 frontend + 2 400+ backend = 6 000+ tests automatises, 0 regression**
+- **Quality Gate V88 — P0 / P1 / P2** :
+  - **P0 Overlays** : TooltipPortal wrapper (clipping fix), z-index standardise z-200 (Modal/Drawer), ScopeSwitcher portal
+  - **P1 Qualite** : ScopeSummary dedup (source unique), tooltips consolides (TooltipPortal + InfoTip), `useActivationData` hook (dedupe fetches activation), ESLint 211→0 warnings (`--max-warnings=0`)
+  - **P2 Perf & Hygiene** : `ui/Badge` partage dans SiteDetail + Site360, dead code supprime (`Cockpit2MinPage` 330 lignes + route), `React.memo` + `useMemo` sur HeatmapChart (Map O(1) vs .find() O(n)), PortfolioPanel (MiniSparkline + RankingTable memo), ProfileHeatmapTab (HeatmapGrid + DailyProfileChart memo), prop stability (setDrillDown direct)
+  - Lazy-load : toutes les routes deja en `React.lazy` + `Suspense`
+- **3 665 frontend + 2 400+ backend = 6 000+ tests automatises, 0 regression**
 - 12 items KB valides (archetypes, regles, recommendations)
 - Smoke test "red button" (14 checks avant mise en pilote)
 

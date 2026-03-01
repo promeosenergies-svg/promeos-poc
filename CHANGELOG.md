@@ -1,6 +1,39 @@
 # CHANGELOG
 
-## [Unreleased] — 2026-02-28
+## [Unreleased] — 2026-03-01
+
+### V88 — Quality Gate (P0/P1/P2) — Overlays, Lint Zero, Perf Memoization
+
+**P0 — Overlays (fix/p0-overlays-vague1):**
+- `Tooltip.jsx` : migration vers `TooltipPortal` wrapper — corrige le clipping par stacking contexts CSS
+- `Modal.jsx` / `Drawer.jsx` : z-index standardise a z-200 (etait z-50/z-[999]/z-[9999])
+- `ScopeSwitcher.jsx` : dropdown via `createPortal(…, document.body)` + `position:fixed z-[9990]`
+
+**P1 — Qualite (fix/vague2-p1-quality):**
+- `ScopeSummary` : suppression du doublon dans `components/` — source unique dans `layout/ScopeSummary.jsx`
+- Tooltips consolides : `TooltipPortal` + `InfoTip` comme composants uniques, anciens `Tooltip`/`InfoTooltip` migres
+- `useActivationData` hook : deduplique les fetches d'activation sur 6+ pages (etait copie-colle)
+- ESLint 211→0 warnings : `--max-warnings=0` dans `package.json`
+  - 170 `no-unused-vars` corriges (imports supprimes, vars prefixes `_`)
+  - 40 `react-hooks/exhaustive-deps` resolus (eslint-disable ou useMemo)
+  - 1 `no-useless-escape` corrige
+
+**P2 — Perf & Hygiene (fix/vague3-p2-perf):**
+- `ui/Badge` partage : remplace les `<span>` inline dans SiteDetail.jsx et Site360.jsx
+- Dead code : `Cockpit2MinPage.jsx` supprime (330 lignes, jamais importe) + route `/cockpit-2min`
+- Performance memoization :
+  - `HeatmapChart.jsx` : `React.memo` + `Map` index (O(1) lookup vs O(n) `.find()` × 168 cellules)
+  - `PortfolioPanel.jsx` : `MiniSparkline` + `RankingTable` en `memo`, sort pipeline `useMemo`
+  - `ProfileHeatmapTab.jsx` : `HeatmapGrid` + `DailyProfileChart` en `memo`
+  - `SignaturePanel.jsx` : prop stability (`setDrillDown` direct au lieu de `(cell) => setDrillDown(cell)`)
+- Lazy-load : toutes les routes deja en `React.lazy` + `Suspense` — aucune action requise
+
+**Tests:**
+- Frontend : 3 665 passes (105 fichiers de test), 0 regression
+- Backend : 2 400+ passes, 0 regression
+- ESLint : 0 erreurs, 0 warnings
+
+---
 
 ### V84 — Consumption Context V0 + ULTIMATE++ ScheduleEditor + UX Overlays
 
