@@ -234,7 +234,7 @@ function TabConformite({ site }) {
                       <Badge status={SEV_BADGE[item.severity] || 'neutral'}>{item.severity}</Badge>
                       <Badge status="ok">Valide</Badge>
                       {item.domain && (
-                        <span className="text-xs font-medium px-2 py-0.5 rounded bg-red-50 text-red-700">{item.domain}</span>
+                        <Badge status="crit">{item.domain}</Badge>
                       )}
                     </div>
                     <h4 className="text-sm font-semibold text-gray-900">{item.title}</h4>
@@ -334,7 +334,7 @@ function TabConformite({ site }) {
             </div>
             <div className="flex flex-wrap gap-2">
               {missing.map((f) => (
-                <span key={f} className="px-2 py-1 bg-amber-50 text-amber-700 rounded text-xs font-medium">{f}</span>
+                <Badge key={f} status="warn">{f}</Badge>
               ))}
             </div>
             {suggestions.length > 0 && (

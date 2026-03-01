@@ -21,6 +21,7 @@ import {
   Rocket,
   ArrowRight,
 } from 'lucide-react';
+import { Badge as UIBadge } from '../ui';
 
 const API = 'http://127.0.0.1:8000';
 
@@ -186,7 +187,7 @@ const SiteDetail = () => {
                 <ShieldX size={18} className="text-red-500 shrink-0" />
                 <div>
                   <span className="text-sm font-medium text-red-800">{v.message}</span>
-                  <span className="ml-2 text-xs text-red-500 bg-red-100 px-1.5 py-0.5 rounded">{v.code}</span>
+                  <UIBadge status="crit" className="ml-2">{v.code}</UIBadge>
                 </div>
               </div>
             ))}
@@ -195,7 +196,7 @@ const SiteDetail = () => {
                 <AlertTriangle size={18} className="text-orange-500 shrink-0" />
                 <div>
                   <span className="text-sm font-medium text-orange-800">{v.message}</span>
-                  <span className="ml-2 text-xs text-orange-500 bg-orange-100 px-1.5 py-0.5 rounded">{v.code}</span>
+                  <UIBadge status="warn" className="ml-2">{v.code}</UIBadge>
                 </div>
               </div>
             ))}
