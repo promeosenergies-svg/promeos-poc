@@ -164,13 +164,13 @@ class TestSeedIdempotent:
         from services.demo_seed import SeedOrchestrator
 
         # First seed
-        _seed(db_session, "casino", "S")
+        _seed(db_session, "helios", "S")
         m1 = _get_manifest(db_session)
 
         # Reset + re-seed (idempotent)
         orch = SeedOrchestrator(db_session)
         orch.reset(mode="hard")
-        _seed(db_session, "casino", "S")
+        _seed(db_session, "helios", "S")
         m2 = _get_manifest(db_session)
 
         assert m2["total_sites"] == m1["total_sites"]

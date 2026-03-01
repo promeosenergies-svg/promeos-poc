@@ -110,7 +110,7 @@ class TestSeedHeliosPack:
 
     def test_helios_s_has_invoices(self, db_session):
         result = _seed(db_session, "helios", "S")
-        assert result["billing"]["invoices_count"] == 20
+        assert result["billing"]["invoices_count"] == 60  # V87: 12 mois x 5 sites
 
     def test_helios_s_has_actions(self, db_session):
         result = _seed(db_session, "helios", "S")

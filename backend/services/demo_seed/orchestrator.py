@@ -120,6 +120,21 @@ class SeedOrchestrator:
         # 4b. Sync site compliance statuses from obligations
         self._sync_site_compliance_statuses(master["sites"])
 
+        # 4c. BACS assets (V87: BacsAsset / BacsCvcSystem / BacsAssessment / BacsInspection)
+        from .gen_bacs import generate_bacs
+        bacs = generate_bacs(self.db, master["sites"], rng)
+        result["bacs"] = bacs
+
+        # 4d. Consumption targets (V87: yearly + monthly 2024-2026)
+        from .gen_targets import generate_targets
+        targets = generate_targets(self.db, master["sites"], rng)
+        result["targets"] = targets
+
+        # 4e. EMS Explorer pre-built views + collections (V87)
+        from .gen_ems_views import generate_ems_views
+        ems_views = generate_ems_views(self.db, master["sites"])
+        result["ems_views"] = ems_views
+
         # 5. Monitoring (hourly data now available for all packs)
         from .gen_monitoring import generate_monitoring
         monitoring = generate_monitoring(
@@ -260,6 +275,9 @@ class SeedOrchestrator:
             PurchaseAssumptionSet, PurchaseScenarioResult,
             EmsWeatherCache, SiteOperatingSchedule,
         )
+        from models.bacs_models import BacsInspection, BacsAssessment, BacsCvcSystem, BacsAsset
+        from models.consumption_target import ConsumptionTarget
+        from models.ems_models import EmsSavedView, EmsCollection
         from models.tertiaire import (
             TertiaireDataQualityIssue, TertiaireProofArtifact,
             TertiaireDeclaration, TertiairePerimeterEvent,
@@ -271,6 +289,15 @@ class SeedOrchestrator:
 
         # FK-safe deletion order (leaves first, roots last)
         delete_order = [
+            # V87: BACS asset tree (inspections/assessments/systems before assets)
+            ("bacs_inspections", BacsInspection),
+            ("bacs_assessments", BacsAssessment),
+            ("bacs_cvc_systems", BacsCvcSystem),
+            ("bacs_assets", BacsAsset),
+            # V87: consumption targets + EMS views (standalone, no site cascade)
+            ("consumption_targets", ConsumptionTarget),
+            ("ems_saved_views", EmsSavedView),
+            ("ems_collections", EmsCollection),
             # Tertiaire V39 (leaves of tertiaire_efa)
             ("tertiaire_quality_issues", TertiaireDataQualityIssue),
             ("tertiaire_proofs", TertiaireProofArtifact),
@@ -373,7 +400,33 @@ class SeedOrchestrator:
                 except Exception:
                     deleted[label] = 0
 
+            # V87: collect bacs_asset IDs for FK-safe deletion
+            demo_bacs_asset_ids = (
+                [r[0] for r in self.db.query(BacsAsset.id).filter(
+                    BacsAsset.site_id.in_(demo_site_ids)).all()]
+                if demo_site_ids else []
+            )
+
             # Delete in FK-safe order using the appropriate FK for each table
+            _del("bacs_inspections", BacsInspection,
+                 BacsInspection.asset_id, demo_bacs_asset_ids)
+            _del("bacs_assessments", BacsAssessment,
+                 BacsAssessment.asset_id, demo_bacs_asset_ids)
+            _del("bacs_cvc_systems", BacsCvcSystem,
+                 BacsCvcSystem.asset_id, demo_bacs_asset_ids)
+            _del("bacs_assets", BacsAsset,
+                 BacsAsset.site_id, demo_site_ids)
+            _del("consumption_targets", ConsumptionTarget,
+                 ConsumptionTarget.site_id, demo_site_ids)
+            # EMS views/collections are always demo-only — delete all
+            try:
+                deleted["ems_saved_views"] = self.db.query(EmsSavedView).delete(
+                    synchronize_session=False)
+                deleted["ems_collections"] = self.db.query(EmsCollection).delete(
+                    synchronize_session=False)
+            except Exception:
+                pass
+
             _del("purchase_scenarios", PurchaseScenarioResult,
                  PurchaseScenarioResult.assumption_set_id, demo_assumption_ids)
             _del("purchase_assumptions", PurchaseAssumptionSet,

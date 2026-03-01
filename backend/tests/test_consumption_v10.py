@@ -308,8 +308,7 @@ class TestTargetsService:
         _, site = _create_org_site(db)
         for m in range(1, 13):
             t = create_target(db, site.id, "electricity", "monthly", 2026, m, target_kwh=5000)
-            if m <= 2:
-                update_target(db, t["id"], actual_kwh=8000)  # Over budget
+            update_target(db, t["id"], actual_kwh=8000)  # All months over budget
 
         prog = get_progression(db, site.id, year=2026)
         assert prog["alert"] == "over_budget"

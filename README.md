@@ -54,6 +54,8 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 > | ScheduleEditor interactif (edition horaires + recalcul anomalies inline) | Stable -- V84 |
 > | Portfolio Behavior Summary (classement sites par score comportemental) | Stable -- V84 |
 > | UX Overlays fixes (tooltips vides, ScopeSwitcher portal z-index) | Stable -- fix/ux-overlays |
+> | Demo Seed V86 (730j horaire + 30j 15min + meteo 5 sites) | Stable -- V86 |
+> | Demo Seed V87 (BACS assets, Consumption Targets, EMS Views, 60 invoices) | Stable -- V87 |
 > | Suite de tests automatises | **3 596 frontend + 2 400+ backend, 0 regression** |
 
 > **Disclaimer**
@@ -71,6 +73,7 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 - **Backend FastAPI** avec ~150 endpoints, 20+ modeles SQLAlchemy, 4 moteurs de regles reglementaires, 5 connecteurs de donnees, 4 watchers de veille, 5 agents IA (stub), module Patrimoine complet (import HELIOS, anomalies, impact reglementaire, cockpit portfolio V60-V63), module Facturation production-grade (org-scoping, PDF EDF/Engie, shadow billing V2 TURPE/CSPE/TICGN, 14 regles d'anomalie, bridge Action Center), timeline & couverture facturation (periods, coverage engine V67), Billing Unified (InvoiceNormalized, deep-links bidirectionnels, seed 36 mois HELIOS V68), demo seed hardened (V71), moteur Achat Energie (4 strategies incluant Tarif Heures Solaires avec 6 blocs horaires, effort score, report_pct, green bonus V74-V75).
 - **Frontend React 18 + Tailwind + Vite** avec 22+ pages : Dashboard, Cockpit Executif, Patrimoine (heatmap + portfolio), Detail Site, Plan d'action, RegOps, Conso & Usages, Usages & Horaires (Consumption Context V0 : heatmap 7x24, profil journee, behavior_score, ScheduleEditor inline V84), Tertiaire OPERAT, IAM Admin, Import, KB Explorer, Veille Reglementaire, Facturation (BillIntel deep-links + BillingTimeline + CoverageBar), Actions Console (V69), Performance V2 (5 KPI cards dont THS, expert mode, route registry V70-V79), Achat Energie V2 (4 strategies, "Option Tarif Heures Solaires" structuree avec badges Budget/Risque/Effort/Sans penalite, creneaux ete/hiver, 7 CTAs cross-briques, deep-link assistant V72-V82), Assistant Achat 8 etapes (deep-link step+offer, 6 offres demo, highlight V81).
 - **Demo HELIOS canonique** : Groupe Casino supprime, demo unifiee Groupe HELIOS (3 entites, 5 sites, 7 batiments — bureaux, industrie, hotel, ecole, seed deterministe RNG=42, 60 mois de readings V83).
+- **Demo Seed V86-V87** : 730 jours de lectures horaires + 30 jours 15min + meteo 5 sites (V86). BACS assets/systemes/assessments/inspections, ConsumptionTargets (yearly+monthly 2024-2026), EMS Explorer vues pre-configurees, 60 factures (V87).
 - **3 596 frontend + 2 400+ backend = 6 000+ tests, 0 regression** — pytest backend + vitest frontend, seed HELIOS 5 sites + 60 mois + 10 personas IAM en une commande, demo operationnelle en 2 minutes.
 
 ---
@@ -145,7 +148,7 @@ PROMEOS POC demontre une reponse technique a ces 4 besoins.
 
 ### API Swagger
 
-- Ouvrir `http://localhost:8000/docs` pour explorer les ~160 endpoints interactivement.
+- Ouvrir `http://localhost:8001/docs` pour explorer les ~160 endpoints interactivement.
 
 ---
 
@@ -192,16 +195,17 @@ copy .env.example .env
 python scripts/init_database.py
 python scripts/seed_data.py
 
-# Lancer le serveur (port 8000)
-python main.py
+# Lancer le serveur (port 8001)
+python -m uvicorn main:app --host 127.0.0.1 --port 8001 --reload
 ```
 
 Le backend est pret quand vous voyez :
+
 ```
-INFO:     Uvicorn running on http://127.0.0.1:8000
+INFO:     Uvicorn running on http://127.0.0.1:8001
 ```
 
-Verifier : `http://localhost:8000/health` doit retourner `{"status":"healthy"}`.
+Verifier : `http://localhost:8001/api/health` doit retourner `{"ok":true}`.
 
 ### Frontend
 
@@ -222,7 +226,7 @@ VITE v5.x.x  ready in XXXms
 Local: http://localhost:5173/
 ```
 
-Le proxy Vite redirige automatiquement `/api/*` vers `http://localhost:8000`.
+Le proxy Vite redirige automatiquement `/api/*` vers `http://localhost:8001`.
 
 ### Variables d'environnement
 
@@ -232,7 +236,7 @@ Le fichier `backend/.env.example` contient toutes les variables :
 |----------|--------|-------------|
 | `DATABASE_URL` | `sqlite:///./data/promeos.db` | Chemin de la DB SQLite |
 | `API_HOST` | `127.0.0.1` | Host du backend |
-| `API_PORT` | `8000` | Port du backend |
+| `API_PORT` | `8001` | Port du backend |
 | `FRONTEND_URL` | `http://localhost:5173` | URL du frontend (CORS) |
 | `SEED_NB_SITES` | `120` | Nombre de sites generes par le seed |
 | `DEBUG` | `True` | Mode debug |
@@ -255,18 +259,19 @@ cd backend
 python scripts/seed_data.py
 ```
 
-Genere :
-- 1 organisation + 1 entite juridique + 3 portefeuilles
-- 120 sites (magasins, bureaux, usines) avec champs RegOps
-- 120 batiments avec puissance CVC realiste
-- ~240 obligations (Decret Tertiaire + BACS)
-- ~600 evidences de conformite
-- ~45 compteurs avec 7 jours de consommation horaire
-- 20 alertes actives
-- ~60 DataPoints (RTE CO2, PVGIS)
-- 4 RegSourceEvents (veille reglementaire)
-- 120 RegAssessments (evaluation RegOps par site)
-- 4 jobs dans l'outbox
+Genere (pack HELIOS) :
+- 1 organisation + 3 entites juridiques + 3 portefeuilles
+- 5 sites (bureaux, entrepot, hotel, ecole) avec champs RegOps
+- 5 batiments avec puissance CVC realiste
+- ~87 480 lectures horaires (730j x 5 sites x 24h)
+- ~10 800 lectures 15min (30j x 5 sites x 96 pts/j)
+- ~300 lectures mensuelles (60 mois x 5 sites)
+- 3 650 releves meteo (730j x 5 sites)
+- 5 BacsAssets + 9 BacsCvcSystems + 5 BacsAssessments + 3 BacsInspections
+- 195 ConsumptionTargets (5 sites x 3 ans x 13 = yearly+12 monthly)
+- 4 EmsSavedViews + 2 EmsCollections pre-configurees
+- 8 contrats energie + 60 factures + lignes + insights anomalies
+- 15 actions, alertes, snapshots monitoring, compliance findings
 
 ### Reset DB
 
@@ -316,7 +321,7 @@ python scripts/kb_smoke.py
                                    |
                           +--------v----------+
                           |   FastAPI Backend  |
-                          |  localhost:8000   |
+                          |  localhost:8001   |
                           |  ~160 endpoints   |
                           +--------+----------+
                                    |
@@ -444,7 +449,7 @@ Champs cles du Site :
 | `GET` | `/api/consumption-context/portfolio/summary` | Classement sites par behavior_score (pires en premier) |
 | `GET` | `/health` | Health check |
 
-Documentation Swagger complete : `http://localhost:8000/docs`
+Documentation Swagger complete : `http://localhost:8001/docs`
 
 ---
 
@@ -650,6 +655,17 @@ Pour plus de details : [Security Notes](docs/security_notes.md) | [Demo Script](
   - `TooltipPortal.jsx` : guard dans `show()` → skip timer si text falsy
   - `InfoTooltip.jsx` : return null apres hooks si text vide
   - `ScopeSwitcher.jsx` : dropdown via `createPortal(…, document.body)` + `position:fixed z-[9990]` → corrige le clipping par `backdrop-blur-md` du header
+- **Demo Seed V86 — Lectures haute resolution** :
+  - 730 jours de lectures horaires (87 480 records) pour les 5 sites HELIOS
+  - 30 jours de lectures 15min (10 800 records) pour monitoring temps reel
+  - Profils realistes par type de batiment (bureau, hotel, ecole, entrepot) avec saisonnalite, week-end, heures creuses
+  - Meteo alignee (3 650 records) : temperature, humidite, radiation solaire par ville
+  - Filtre `_COMPATIBLE_FREQS` : exclusion des lectures MONTHLY dans l'agregation daily/hourly
+- **Demo Seed V87 — Modules BACS, Objectifs, EMS Explorer, Facturation etendue** :
+  - `gen_bacs.py` : 5 BacsAsset + 9 BacsCvcSystem (chauffage/clim) + 5 BacsAssessment + 3 BacsInspection, obligation BACS selon puissance CVC (>290kW, >70kW)
+  - `gen_targets.py` : 195 ConsumptionTarget (5 sites x 3 ans x 13), trajectoire Decret Tertiaire -1.5%/an, distribution saisonniere mensuelle
+  - `gen_ems_views.py` : 4 EmsSavedView (panorama annuel, monitoring 30j 15min, comparaison sites, signature 2 ans) + 2 EmsCollection (tous sites, tertiaires)
+  - Facturation : 8 contrats (elec + gaz) + 60 factures avec lignes detaillees + insights anomalies (surfacturation 1/5)
 - **3 596 frontend + 2 400+ backend = 6 000+ tests automatises, 0 regression**
 - 12 items KB valides (archetypes, regles, recommendations)
 - Smoke test "red button" (14 checks avant mise en pilote)
@@ -709,18 +725,21 @@ cd backend
 pip install -r requirements.txt
 ```
 
-### Port 8000 deja utilise
+### Port 8001 deja utilise
 
 ```bash
 # Trouver le processus
-netstat -ano | findstr :8000
+netstat -ano | findstr :8001
 # Tuer le processus
 taskkill /PID <PID> /F
 ```
 
+> **Note** : Le port 8000 peut etre occupe par des sockets fantomes Windows apres des redemarrages.
+> Le backend utilise le port **8001** par defaut. Le proxy Vite (`frontend/vite.config.js`) est configure en consequence.
+
 ### Le frontend affiche des erreurs API
 
-- Verifier que le backend tourne sur `localhost:8000`.
+- Verifier que le backend tourne sur `localhost:8001`.
 - Le proxy Vite redirige `/api/*` vers le backend (configure dans `frontend/vite.config.js`).
 - CORS est ouvert dans le POC (`allow_origins=["*"]` dans `backend/main.py`).
 
