@@ -1,29 +1,24 @@
 /**
- * PROMEOS Design System — Tooltip
- * CSS-only hover tooltip. No JS positioning needed for a POC.
+ * PROMEOS Design System — Tooltip (backward-compatible wrapper)
+ *
+ * Delegates to TooltipPortal (portal-based, z-[120]) to avoid clipping
+ * by ancestor overflow-hidden / backdrop-blur stacking contexts.
+ *
+ * Accepts both `text` and `content` props for backward compatibility.
+ * If resolved text is empty → renders children only (no tooltip DOM).
  */
-export default function Tooltip({ text, children, position = 'top', className = '' }) {
-  // Guard: no text → render children as-is, no invisible tooltip bubble
-  if (!text) return <span className={`inline-flex ${className}`}>{children}</span>;
+import TooltipPortal from './TooltipPortal';
 
-  const posClass = {
-    top: 'bottom-full left-1/2 -translate-x-1/2 mb-2',
-    bottom: 'top-full left-1/2 -translate-x-1/2 mt-2',
-    left: 'right-full top-1/2 -translate-y-1/2 mr-2',
-    right: 'left-full top-1/2 -translate-y-1/2 ml-2',
-  };
+export default function Tooltip({ text, content, children, position = 'top', className = '' }) {
+  const resolved = (text ?? content ?? '');
+  const trimmed = typeof resolved === 'string' ? resolved.trim() : resolved;
+
+  // Guard: no text → render children as-is, no invisible tooltip bubble
+  if (!trimmed) return <span className={`inline-flex ${className}`}>{children}</span>;
 
   return (
-    <span className={`relative inline-flex group ${className}`}>
+    <TooltipPortal text={trimmed} position={position} className={className}>
       {children}
-      <span
-        className={`absolute ${posClass[position] || posClass.top} z-50
-          px-2 py-1 text-xs text-white bg-gray-900 rounded shadow-lg whitespace-nowrap
-          opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150`}
-        role="tooltip"
-      >
-        {text}
-      </span>
-    </span>
+    </TooltipPortal>
   );
 }
