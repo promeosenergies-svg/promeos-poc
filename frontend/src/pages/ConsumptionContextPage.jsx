@@ -28,8 +28,8 @@ function scoreBadge(score) {
 }
 
 export default function ConsumptionContextPage() {
-  const { activeSite } = useScope();
-  const siteId = activeSite?.id;
+  const { selectedSiteId } = useScope();
+  const siteId = selectedSiteId;
   const [sp, setSp] = useSearchParams();
   const tabParam = sp.get('tab') || 'profile';
 
