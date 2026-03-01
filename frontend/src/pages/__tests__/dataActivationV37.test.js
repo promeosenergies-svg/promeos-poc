@@ -304,8 +304,9 @@ describe('DataActivationPanel — V37 guards', () => {
     expect(src).toContain("activation des donn");
   });
 
-  it('tooltip couverture 5 briques', () => {
-    expect(src).toContain('Couverture des 5 briques');
+  it('affiche couverture dynamique (briques + couverture moyenne)', () => {
+    expect(src).toContain('briques');
+    expect(src).toContain('couverture moyenne');
   });
 
   it('lien vers /activation', () => {
