@@ -42,7 +42,7 @@ import { X, Zap, Flame, Save, RotateCcw, Link, ChevronDown, Trash2, Plus, Layout
 import { TrustBadge } from '../../ui';
 import { computeGranularity, colorForSite, getAvailableGranularities } from './helpers';
 import { MODE_LABELS, UNIT_LABELS, MAX_SITES } from './types';
-import InfoTooltip from './InfoTooltip';
+import { InfoTip } from '../../ui';
 
 const ENERGY_OPTIONS = [
   { value: 'electricity', label: 'Électricité', icon: Zap },
@@ -180,7 +180,7 @@ function ModePills({ mode, setMode, isPortfolioMode, availableModes, showTooltip
         >
           {MODE_LABELS[m]}
           {showTooltips && MODE_TOOLTIPS[m] && (
-            <InfoTooltip text={MODE_TOOLTIPS[m]} />
+            <InfoTip content={MODE_TOOLTIPS[m]} />
           )}
         </button>
       ))}
@@ -202,7 +202,7 @@ function UnitPills({ unit, setUnit, showTooltips = false }) {
         >
           {UNIT_LABELS[u]}
           {showTooltips && UNIT_TOOLTIPS[u] && (
-            <InfoTooltip text={UNIT_TOOLTIPS[u]} />
+            <InfoTip content={UNIT_TOOLTIPS[u]} />
           )}
         </button>
       ))}
@@ -467,7 +467,7 @@ export default function StickyFilterBar({
               <LayoutGrid size={11} />
               Portfolio
             </button>
-            <InfoTooltip text="Portfolio : vue agrégée de tous les sites. Mode Agrégé uniquement." />
+            <InfoTip content="Portfolio : vue agrégée de tous les sites. Mode Agrégé uniquement." />
           </div>
         )}
 
