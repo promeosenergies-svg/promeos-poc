@@ -60,6 +60,11 @@ class SiteOperatingSchedule(Base, TimestampMixin):
         nullable=True,
         comment="Jours feries / exceptions (JSON array of YYYY-MM-DD)",
     )
+    intervals_json = Column(
+        Text,
+        nullable=True,
+        comment='Multi-interval schedule: {"0":[{"start":"08:00","end":"12:00"},...],...}',
+    )
 
     # Relations
     site = relationship("Site", backref="operating_schedule", uselist=False)
