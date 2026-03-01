@@ -154,10 +154,10 @@ def compute_reflex_scenario(
     blocs_detail = []
     total_eur = 0.0
 
-    # Apply report: shift report_pct of HP to solaire_ete_semaine
+    # Apply report: shift report_pct of HP volume to solaire_ete_semaine
     weights = dict(REFLEX_BLOC_WEIGHTS)
     if report_pct > 0:
-        shift = min(report_pct, weights["hp"]) * weights["hp"]
+        shift = min(report_pct * weights["hp"], weights["hp"])
         weights["hp"] -= shift
         weights["solaire_ete_semaine"] += shift
 

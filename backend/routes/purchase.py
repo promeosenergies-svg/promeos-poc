@@ -55,6 +55,28 @@ router = APIRouter(prefix="/api/purchase", tags=["Achat Energie"])
 ALLOWED_ENERGY_TYPES = {"elec"}
 
 
+def _resolve_org_id(db: Session, site: "Site") -> int | None:
+    """Resolve org_id from Site → Portefeuille → EntiteJuridique → Organisation."""
+    if not site or not site.portefeuille_id:
+        return None
+    from models import Portefeuille, EntiteJuridique
+    pf = db.query(Portefeuille).filter(Portefeuille.id == site.portefeuille_id).first()
+    if not pf:
+        return None
+    ej = db.query(EntiteJuridique).filter(EntiteJuridique.id == pf.entite_juridique_id).first()
+    return ej.organisation_id if ej else None
+
+
+def _get_latest_assumption(db: Session, site_id: int):
+    """Get the most recent PurchaseAssumptionSet for a site."""
+    return (
+        db.query(PurchaseAssumptionSet)
+        .filter(PurchaseAssumptionSet.site_id == site_id)
+        .order_by(PurchaseAssumptionSet.created_at.desc())
+        .first()
+    )
+
+
 # ── Pydantic schemas ──
 
 
@@ -97,12 +119,7 @@ def get_assumptions(
 ):
     """Get existing assumptions or defaults."""
     check_site_access(auth, site_id)
-    assumption = (
-        db.query(PurchaseAssumptionSet)
-        .filter(PurchaseAssumptionSet.site_id == site_id)
-        .order_by(PurchaseAssumptionSet.created_at.desc())
-        .first()
-    )
+    assumption = _get_latest_assumption(db, site_id)
     if assumption:
         return {
             "id": assumption.id,
@@ -143,12 +160,7 @@ def put_assumptions(
             detail=f"Energie '{data.energy_type}' non supportee. "
             f"Seule l'electricite (elec) est disponible dans cette version (post-ARENH).",
         )
-    existing = (
-        db.query(PurchaseAssumptionSet)
-        .filter(PurchaseAssumptionSet.site_id == site_id)
-        .order_by(PurchaseAssumptionSet.created_at.desc())
-        .first()
-    )
+    existing = _get_latest_assumption(db, site_id)
     profile = compute_profile_factor(db, site_id)
 
     if existing:
@@ -380,12 +392,7 @@ def compute_portfolio(
         run_id = str(uuid.uuid4())
 
         # Get or create assumptions
-        assumption = (
-            db.query(PurchaseAssumptionSet)
-            .filter(PurchaseAssumptionSet.site_id == sid)
-            .order_by(PurchaseAssumptionSet.created_at.desc())
-            .first()
-        )
+        assumption = _get_latest_assumption(db, sid)
         if not assumption:
             est = estimate_consumption(db, sid)
             pf = compute_profile_factor(db, sid)
@@ -487,12 +494,7 @@ def compute(
     check_site_access(auth, site_id)
 
     # Energy Gate: verify existing assumption is ELEC
-    existing_check = (
-        db.query(PurchaseAssumptionSet)
-        .filter(PurchaseAssumptionSet.site_id == site_id)
-        .order_by(PurchaseAssumptionSet.created_at.desc())
-        .first()
-    )
+    existing_check = _get_latest_assumption(db, site_id)
     if existing_check:
         et = existing_check.energy_type.value if existing_check.energy_type else "elec"
         if et not in ALLOWED_ENERGY_TYPES:
@@ -502,12 +504,7 @@ def compute(
             )
 
     # Get or create assumptions
-    assumption = (
-        db.query(PurchaseAssumptionSet)
-        .filter(PurchaseAssumptionSet.site_id == site_id)
-        .order_by(PurchaseAssumptionSet.created_at.desc())
-        .first()
-    )
+    assumption = _get_latest_assumption(db, site_id)
     if not assumption:
         est = estimate_consumption(db, site_id)
         pf = compute_profile_factor(db, site_id)
@@ -533,8 +530,14 @@ def compute(
         report_pct=report_pct,
     )
 
-    # Get preferences for recommendation
-    pref = db.query(PurchasePreference).first()
+    # Get preferences for recommendation (scoped by org)
+    site_obj = db.query(Site).filter(Site.id == site_id).first()
+    org_id = _resolve_org_id(db, site_obj) if site_obj else None
+    pref = (
+        db.query(PurchasePreference)
+        .filter(PurchasePreference.org_id == org_id)
+        .first()
+    ) if org_id else db.query(PurchasePreference).first()
     risk_tol = pref.risk_tolerance if pref else "medium"
     budget_pri = pref.budget_priority if pref else 0.5
     green_pref = pref.green_preference if pref else False
@@ -608,12 +611,7 @@ def get_portfolio_results(
 
     results_by_site = []
     for sid in site_ids:
-        assumption = (
-            db.query(PurchaseAssumptionSet)
-            .filter(PurchaseAssumptionSet.site_id == sid)
-            .order_by(PurchaseAssumptionSet.created_at.desc())
-            .first()
-        )
+        assumption = _get_latest_assumption(db, sid)
         if not assumption:
             continue
 
@@ -682,12 +680,7 @@ def get_portfolio_results(
 def get_results(site_id: int, db: Session = Depends(get_db), auth: Optional[AuthContext] = Depends(get_optional_auth)):
     """Get latest scenario results for a site."""
     check_site_access(auth, site_id)
-    assumption = (
-        db.query(PurchaseAssumptionSet)
-        .filter(PurchaseAssumptionSet.site_id == site_id)
-        .order_by(PurchaseAssumptionSet.created_at.desc())
-        .first()
-    )
+    assumption = _get_latest_assumption(db, site_id)
     if not assumption:
         return {"scenarios": [], "assumption_set_id": None}
 

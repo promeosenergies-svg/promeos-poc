@@ -4,7 +4,7 @@ PurchaseAssumptionSet, PurchasePreference, PurchaseScenarioResult.
 """
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, Float, Text, Boolean, ForeignKey, DateTime, Enum
+from sqlalchemy import Column, Integer, String, Float, Text, Boolean, ForeignKey, DateTime, Enum, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from .base import Base, TimestampMixin
@@ -86,6 +86,9 @@ class PurchaseScenarioResult(Base, TimestampMixin):
     Un PurchaseAssumptionSet peut avoir N resultats (1 par strategie).
     """
     __tablename__ = "purchase_scenario_results"
+    __table_args__ = (
+        UniqueConstraint("run_id", "strategy", name="uq_run_strategy"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     run_id = Column(

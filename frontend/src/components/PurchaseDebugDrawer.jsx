@@ -36,8 +36,8 @@ export default function PurchaseDebugDrawer({
 }) {
   const [open, setOpen] = useState(false);
 
-  // Only render in dev mode
-  if (!import.meta.env.DEV) return null;
+  // Only render in dev mode — double-check to prevent accidental prod exposure
+  if (!import.meta.env.DEV || import.meta.env.PROD) return null;
 
   if (!open) {
     return (

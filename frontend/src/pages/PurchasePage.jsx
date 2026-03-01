@@ -173,7 +173,7 @@ export default function PurchasePage() {
     const filter = searchParams.get('filter');
     const mapped = filter && FILTER_TO_TAB[filter];
     if (mapped && mapped !== activeTab) setActiveTab(mapped);
-  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [searchParams, activeTab]);
 
   // When user clicks a tab, update URL to keep it in sync
   const handleTabChange = useCallback(
@@ -267,10 +267,10 @@ export default function PurchasePage() {
     }
     if (scopeSiteId) {
       setSelectedSiteId(scopeSiteId);
-    } else if (scopedSites.length > 0 && !selectedSiteId) {
-      setSelectedSiteId(scopedSites[0].id);
+    } else if (scopedSites.length > 0) {
+      setSelectedSiteId((prev) => prev ?? scopedSites[0].id);
     }
-  }, [scopedSites, scopeSiteId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [scopedSites, scopeSiteId, searchParams]);
 
   // Load data when site changes
   const loadSiteData = useCallback(async (siteId) => {
