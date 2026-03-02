@@ -63,7 +63,10 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 > | Data Readiness Gate polish (popover, confiance, trend, snapshots) | Stable -- V90 |
 > | Demo Coherence (donnees deterministes, 32 tests cross-file) | Stable -- V90 |
 > | QA Audit V91 — Golden Contract HELIOS (4 statuts, single-source todos, 38 tests, fix Unicode) | Stable -- V91 |
-> | Suite de tests automatises | **3 975 frontend + 2 400+ backend, 0 regression** |
+> | Conformite UX Upgrade (Guided Mode 7 etapes, NBA hero card, Donnees KPIs, Expert mode) | Stable -- V92 |
+> | V23 Sprint Analyse (auth guards, motor stability, tab extraction, double-fetch, UX refactor) | Stable -- V23 |
+> | V23 Audit (2 passes, 60 issues, check_site_access IDOR fixes, CO2E centralized, a11y) | Stable -- V23 |
+> | Suite de tests automatises | **4 110 frontend + 2 400+ backend, 0 regression** |
 
 > **Disclaimer**
 >

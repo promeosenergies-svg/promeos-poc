@@ -41,9 +41,9 @@ describe('computeHealthState', () => {
     expect(state.level).toBe('AMBER');
   });
 
-  it('returns AMBER when alerts > 0 even if kpis clean', () => {
+  it('returns GREEN when alerts > 0 but no displayable reasons (no yellow card with 0 points)', () => {
     const state = computeHealthState({ kpis: BASE_KPIS, watchlist: [], alertsCount: 3 });
-    expect(state.level).toBe('AMBER');
+    expect(state.level).toBe('GREEN');
   });
 
   it('caps reasons at 3 and adds secondaryCta for overflow', () => {

@@ -82,18 +82,20 @@ export default function TertiaireDashboardPage() {
     return () => { cancelled = true; };
   }, []);
 
-  // V43: Filtered sites
+  // V43: Filtered sites — chips filter the "Sites à traiter" list directly
   const filteredSites = useMemo(() => {
     if (!siteSignals?.sites) return [];
     let sites = siteSignals.sites;
-    if (signalFilter) {
-      sites = sites.filter((s) => s.signal === signalFilter);
-    }
-    if (uncoveredOnly) {
-      sites = sites.filter((s) => !s.is_covered);
-    }
-    if (missingFieldFilter) {
-      sites = sites.filter((s) => s.missing_fields?.includes(missingFieldFilter));
+    if (signalFilter || uncoveredOnly || missingFieldFilter) {
+      if (signalFilter) sites = sites.filter((s) => s.signal === signalFilter);
+      if (uncoveredOnly) sites = sites.filter((s) => !s.is_covered);
+      if (missingFieldFilter) sites = sites.filter((s) => s.missing_fields?.includes(missingFieldFilter));
+    } else {
+      // Default: show only actionable sites (assujetti probable uncovered + incomplete à vérifier)
+      sites = sites.filter((s) =>
+        (s.signal === 'assujetti_probable' && !s.is_covered) ||
+        (s.signal === 'a_verifier' && !s.data_complete)
+      );
     }
     return sites;
   }, [siteSignals, signalFilter, uncoveredOnly, missingFieldFilter]);
@@ -228,9 +230,7 @@ export default function TertiaireDashboardPage() {
 
           {/* Site cards */}
           <div className="space-y-2">
-            {filteredSites
-              .filter((s) => !hasActiveFilters ? (s.signal === 'assujetti_probable' && !s.is_covered) : true)
-              .map((site) => (
+            {filteredSites.map((site) => (
                 <div
                   key={site.site_id}
                   className={`flex items-center justify-between rounded-lg border p-3 ${
@@ -289,47 +289,7 @@ export default function TertiaireDashboardPage() {
                   </div>
                 </div>
               ))}
-            {/* V42 legacy: incomplete data sites (when no filters active) */}
-            {!hasActiveFilters && siteSignals.sites
-              .filter((s) => !s.data_complete && s.signal === 'a_verifier')
-              .slice(0, 3)
-              .map((site) => (
-                <div
-                  key={`incomplete-${site.site_id}`}
-                  className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 p-3"
-                >
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <AlertTriangle size={16} className="text-gray-400 shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-gray-700 truncate">{site.site_nom}</p>
-                      <p className="text-xs text-gray-400">Données incomplètes — qualification impossible</p>
-                      {site.missing_fields && site.missing_fields.length > 0 && (
-                        <p className="text-[10px] text-red-500 mt-0.5">
-                          Données manquantes : {site.missing_fields.map((f) => MISSING_FIELD_LABELS[f] || f).join(', ')}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <button
-                      onClick={() => setWhySite(site)}
-                      className="p-1.5 rounded-md hover:bg-gray-100 transition-colors"
-                      aria-label="Pourquoi ce classement ?"
-                      data-testid={`why-btn-incomplete-${site.site_id}`}
-                    >
-                      <HelpCircle size={16} className="text-gray-400" />
-                    </button>
-                    <Button
-                      size="xs"
-                      variant="secondary"
-                      onClick={() => navigate(site.recommended_cta?.to || '/patrimoine')}
-                    >
-                      Compléter
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            {hasActiveFilters && filteredSites.length === 0 && (
+            {filteredSites.length === 0 && (
               <p className="text-sm text-gray-400 text-center py-4">Aucun site ne correspond aux filtres sélectionnés.</p>
             )}
           </div>

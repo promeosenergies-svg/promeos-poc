@@ -1,4 +1,7 @@
 /**
+ * DEPRECATED (V92) — Replaced by unified ActionDrawerContext (useActionDrawer).
+ * Kept for backward compatibility with tests. No page imports this component directly.
+ *
  * AnomalyActionModal — V65
  * Modale légère (front-only, pas d'API) pour créer ou éditer
  * une action locale associée à une anomalie.

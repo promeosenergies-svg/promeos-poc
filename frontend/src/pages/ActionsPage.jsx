@@ -15,8 +15,8 @@ import { Card, CardBody, Badge, Button, Select, Pagination, EmptyState, Tabs, Tr
 import { Table, Thead, Tbody, Th, Tr, Td, ThCheckbox, TdCheckbox } from '../ui';
 import { useToast } from '../ui/ToastProvider';
 import Modal from '../ui/Modal';
-import CreateActionModal from '../components/CreateActionModal';
 import ActionDetailDrawer from '../components/ActionDetailDrawer';
+import { useActionDrawer } from '../contexts/ActionDrawerContext';
 import ROISummaryBar from '../components/ROISummaryBar';
 import { getActionsList, syncActions, patchAction, exportActionsCSV, downloadAuditPDF } from '../services/api';
 import { useScope } from '../contexts/ScopeContext';
@@ -388,8 +388,7 @@ export default function ActionsPage({ autoCreate = false }) {
   const [filterType, setFilterType] = useState(searchParams.get('source') === 'operat' ? 'operat' : '');
   const [quickView, setQuickView] = useState('');
   const [page, setPage] = useState(1);
-  const [showCreate, setShowCreate] = useState(false);
-  const [createPrefill, setCreatePrefill] = useState(null);
+  const { openActionDrawer } = useActionDrawer();
   const [detailAction, setDetailAction] = useState(null);
   const [selected, setSelected] = useState(new Set());
   const [sortCol, setSortCol] = useState('');
@@ -431,9 +430,9 @@ export default function ActionsPage({ autoCreate = false }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlActionId, actions]);
 
-  // Auto-open create modal when navigating to /actions/new
+  // Auto-open create drawer when navigating to /actions/new
   useEffect(() => {
-    if (autoCreate && !showCreate) {
+    if (autoCreate) {
       const prefill = {};
       const type = searchParams.get('type');
       const siteId = searchParams.get('site_id');
@@ -441,8 +440,7 @@ export default function ActionsPage({ autoCreate = false }) {
       if (type) prefill.type = type;
       if (siteId) prefill.site_id = parseInt(siteId);
       if (titre) prefill.titre = decodeURIComponent(titre);
-      setCreatePrefill(prefill);
-      setShowCreate(true);
+      openActionDrawer({ prefill, siteId: prefill.site_id }, { onSave: handleSaveAction });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoCreate]);
@@ -577,13 +575,14 @@ export default function ActionsPage({ autoCreate = false }) {
     const rows = actions.filter(a => selected.has(a.id));
     const types = [...new Set(rows.map(r => r.type))];
     const sites = [...new Set(rows.map(r => r.site_nom))];
-    setCreatePrefill({
-      titre: rows.length === 1 ? rows[0].titre : `Action groupée (${rows.length} items)`,
-      type: types.length === 1 ? types[0] : 'conformite',
-      site: sites.length === 1 ? sites[0] : sites.slice(0, 3).join(', '),
-      description: rows.map(r => `- ${r.titre}`).join('\n'),
-    });
-    setShowCreate(true);
+    openActionDrawer({
+      prefill: {
+        titre: rows.length === 1 ? rows[0].titre : `Action groupée (${rows.length} items)`,
+        type: types.length === 1 ? types[0] : 'conformite',
+        site: sites.length === 1 ? sites[0] : sites.slice(0, 3).join(', '),
+        description: rows.map(r => `- ${r.titre}`).join('\n'),
+      },
+    }, { onSave: handleSaveAction });
   }
 
   async function exportPlan30j() {
@@ -642,7 +641,7 @@ export default function ActionsPage({ autoCreate = false }) {
     if (filterStatut || filterType || searchQuery.trim()) {
       return <EmptyState icon={ListChecks} title="Aucune action pour ce filtre" text="Essayez de modifier vos filtres ou de réinitialiser la vue." ctaLabel="Réinitialiser" onCta={resetAllFilters} />;
     }
-    return <EmptyState icon={ListChecks} title="Aucune action" text="Synchronisez vos données ou créez votre première action pour commencer." ctaLabel="Créer action" onCta={() => setShowCreate(true)} />;
+    return <EmptyState icon={ListChecks} title="Aucune action" text="Synchronisez vos données ou créez votre première action pour commencer." ctaLabel="Créer action" onCta={() => openActionDrawer({}, { onSave: handleSaveAction })} />;
   }
 
   return (
@@ -663,7 +662,7 @@ export default function ActionsPage({ autoCreate = false }) {
           <Button variant="secondary" size="sm" onClick={exportPlan30j} title="Exporter CSV">
             <Printer size={16} /> Exporter CSV
           </Button>
-          <Button onClick={() => { setCreatePrefill(null); setShowCreate(true); }}><Plus size={16} /> Créer action</Button>
+          <Button onClick={() => openActionDrawer({}, { onSave: handleSaveAction })}><Plus size={16} /> Créer action</Button>
         </>
       }
     >
@@ -939,14 +938,6 @@ export default function ActionsPage({ autoCreate = false }) {
           </button>
         </div>
       )}
-
-      {/* Create Modal */}
-      <CreateActionModal
-        open={showCreate}
-        onClose={() => { setShowCreate(false); setCreatePrefill(null); }}
-        onSave={handleSaveAction}
-        prefill={createPrefill}
-      />
 
       {/* Assign Modal */}
       <Modal open={showAssign} onClose={() => setShowAssign(false)} title="Assigner un responsable">

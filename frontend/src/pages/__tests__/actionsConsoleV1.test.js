@@ -181,8 +181,9 @@ describe('C · ActionsPage required constructs', () => {
     expect(code).toMatch(/ActionDetailDrawer/);
   });
 
-  it('has create modal', () => {
-    expect(code).toMatch(/CreateActionModal/);
+  it('uses useActionDrawer (not direct CreateActionModal)', () => {
+    expect(code).toMatch(/useActionDrawer/);
+    expect(code).not.toMatch(/CreateActionModal/);
   });
 
   it('maps created_at from backend', () => {

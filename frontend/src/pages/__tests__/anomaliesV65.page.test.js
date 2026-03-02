@@ -80,6 +80,14 @@ describe('B. SiteAnomalyPanel.jsx — enriched drawer panel', () => {
   it('imports getPatrimoineAnomalies', () => {
     expect(code).toMatch(/getPatrimoineAnomalies/);
   });
+
+  it('uses useActionDrawer (V92 migration)', () => {
+    expect(code).toMatch(/useActionDrawer/);
+  });
+
+  it('does not import AnomalyActionModal (V92 migration)', () => {
+    expect(code).not.toMatch(/import.*AnomalyActionModal/);
+  });
 });
 
 /* ── C. AnomalyActionModal.jsx ── */
@@ -139,6 +147,14 @@ describe('D. AnomaliesPage.jsx — cross-site action center', () => {
   it('navigates to /patrimoine with state', () => {
     expect(code).toMatch(/navigate.*\/patrimoine/);
     expect(code).toMatch(/openSiteId/);
+  });
+
+  it('uses useActionDrawer (V92 migration)', () => {
+    expect(code).toMatch(/useActionDrawer/);
+  });
+
+  it('does not import AnomalyActionModal (V92 migration)', () => {
+    expect(code).not.toMatch(/import.*AnomalyActionModal/);
   });
 });
 

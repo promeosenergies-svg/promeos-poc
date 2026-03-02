@@ -95,10 +95,9 @@ describe('B · SiteCompliancePage tabs and CTAs', () => {
     expect(code).toContain('data-testid="cta-creer-action-empty"');
   });
 
-  it('opens CreateActionModal with site context', () => {
-    expect(code).toContain('CreateActionModal');
-    expect(code).toContain('siteId={parseInt(siteId)}');
-    expect(code).toContain("sourceType=\"compliance\"");
+  it('uses useActionDrawer with compliance context', () => {
+    expect(code).toContain('useActionDrawer');
+    expect(code).toContain("sourceType: 'compliance'");
   });
 
   it('shows Data Readiness Gate section', () => {
@@ -164,6 +163,13 @@ describe('D · App.jsx route registration', () => {
   it('registers /compliance/sites/:siteId route', () => {
     expect(code).toContain('path="/compliance/sites/:siteId"');
   });
+
+  it('/compliance root redirects to /conformite (V92)', () => {
+    const line = code.split('\n').find(l => l.includes('path="/compliance"'));
+    expect(line).toBeDefined();
+    expect(line).toContain('Navigate');
+    expect(line).toContain('/conformite');
+  });
 });
 
 // ============================================================
@@ -196,17 +202,17 @@ describe('F · Créer action — no blank page', () => {
   const pipeline = readSrc('pages', 'CompliancePipelinePage.jsx');
   const sitePage = readSrc('pages', 'SiteCompliancePage.jsx');
 
-  it('pipeline: Créer action opens CreateActionModal (not navigate to blank)', () => {
-    expect(pipeline).toContain('setShowCreate(true)');
-    expect(pipeline).toContain('CreateActionModal');
+  it('pipeline: Créer action uses openActionDrawer (not navigate to blank)', () => {
+    expect(pipeline).toContain('openActionDrawer');
+    expect(pipeline).not.toContain('CreateActionModal');
     // Must NOT have a navigate('/actions/new') without context
     const rawNavToActionsNew = (pipeline.match(/navigate\(['"`]\/actions\/new/g) || []).length;
     expect(rawNavToActionsNew).toBe(0);
   });
 
-  it('site page: Créer action opens modal with siteId context', () => {
-    expect(sitePage).toContain('setShowCreate(true)');
-    expect(sitePage).toContain('siteId={parseInt(siteId)}');
+  it('site page: Créer action uses openActionDrawer with siteId context', () => {
+    expect(sitePage).toContain('openActionDrawer');
+    expect(sitePage).toContain('siteId: parseInt(siteId)');
   });
 
   it('pipeline: CTA has data-testid for E2E targeting', () => {

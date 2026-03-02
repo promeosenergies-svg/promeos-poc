@@ -20,7 +20,7 @@ import {
 } from '../services/api';
 import { toPatrimoine, toConsoImport, toBillIntel, toCompliancePipeline } from '../services/routes';
 import { useToast } from '../ui/ToastProvider';
-import CreateActionModal from '../components/CreateActionModal';
+import { useActionDrawer } from '../contexts/ActionDrawerContext';
 
 const REG_CONFIG = {
   tertiaire_operat: { label: 'Décret Tertiaire', icon: Building, color: 'bg-blue-600' },
@@ -606,7 +606,7 @@ export default function SiteCompliancePage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('obligations');
-  const [showCreate, setShowCreate] = useState(false);
+  const { openActionDrawer } = useActionDrawer();
 
   useEffect(() => {
     if (!siteId) return;
@@ -632,7 +632,7 @@ export default function SiteCompliancePage() {
     return (
       <div className="max-w-5xl mx-auto px-6 py-8 text-center text-gray-500">
         <p>Site introuvable.</p>
-        <Link to="/compliance/pipeline" className="text-blue-600 hover:underline text-sm">
+        <Link to={toCompliancePipeline()} className="text-blue-600 hover:underline text-sm">
           Retour au pipeline
         </Link>
       </div>
@@ -720,21 +720,12 @@ export default function SiteCompliancePage() {
           siteId={siteId}
           siteName={data.site_nom}
           navigate={navigate}
-          onCreateAction={() => setShowCreate(true)}
+          onCreateAction={() => openActionDrawer({ prefill: { type: 'conformite' }, siteId: parseInt(siteId), sourceType: 'compliance' })}
           toast={toast}
         />
       )}
 
-      {/* Create action modal */}
-      <CreateActionModal
-        open={showCreate}
-        onClose={() => setShowCreate(false)}
-        onSave={() => { setShowCreate(false); toast('Action créée', 'success'); }}
-        defaultType="conformite"
-        siteId={parseInt(siteId)}
-        sourceType="compliance"
-        defaultSite={data.site_nom}
-      />
+      {/* Action creation handled by ActionDrawerContext */}
     </div>
   );
 }

@@ -10,7 +10,8 @@
  *  - MODE_MAP completeness
  */
 import { describe, it, expect } from 'vitest';
-import { normalizeId, computeSummaryFromInsights } from '../ConsumptionDiagPage';
+import { normalizeId } from '../consumption/helpers';
+import { computeSummaryFromInsights } from '../ConsumptionDiagPage';
 import { MODE_MAP, formatDate } from '../consumption/useEmsTimeseries';
 
 // ────────────────────────────────────────────────────────────────────────────

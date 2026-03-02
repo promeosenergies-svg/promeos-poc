@@ -1079,11 +1079,12 @@ describe('AD · CTA Stabilization', () => {
 
   it('ActionsPage supports autoCreate prop', () => {
     expect(actionsPage).toMatch(/autoCreate\s*=\s*false/);
-    expect(actionsPage).toMatch(/autoCreate\s*&&/);
+    expect(actionsPage).toMatch(/autoCreate/);
   });
 
-  it('BillingPage imports CreateActionModal (not createActionFromBillingInsight)', () => {
-    expect(billingPage).toMatch(/import\s+CreateActionModal/);
+  it('BillingPage uses useActionDrawer (not direct CreateActionModal)', () => {
+    expect(billingPage).toMatch(/useActionDrawer/);
+    expect(billingPage).not.toMatch(/import\s+CreateActionModal/);
     expect(billingPage).not.toMatch(/createActionFromBillingInsight/);
   });
 

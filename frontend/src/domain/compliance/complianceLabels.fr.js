@@ -232,3 +232,19 @@ export const REGOPS_SEVERITY_LABELS = {
   MEDIUM:   'Moyenne',
   LOW:      'Faible',
 };
+
+// ─── Mode guidé (UX upgrade) ────────────────────────────────────────────
+
+export const GUIDED_MODE_LABELS = {
+  bandeau_title: 'Parcours de conformité',
+  blocked_label: 'Bloqué',
+  complete_label: 'Terminé',
+  in_progress_label: 'En cours',
+  pending_label: 'À venir',
+};
+
+export const DONNEES_ENHANCED_LABELS = {
+  completude: 'Complétude',
+  confiance: 'Confiance données',
+  couverture_factures: 'Couverture factures',
+};

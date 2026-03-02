@@ -133,10 +133,10 @@ describe('A · SiteCompliancePage V69 — Plan tab cockpit', () => {
     expect(code).toContain("'plan'");
   });
 
-  it('still uses CreateActionModal with siteId context', () => {
-    expect(code).toContain('CreateActionModal');
-    expect(code).toContain('siteId={parseInt(siteId)}');
-    expect(code).toContain('sourceType="compliance"');
+  it('still uses useActionDrawer with siteId + compliance context', () => {
+    expect(code).toContain('useActionDrawer');
+    expect(code).toContain('siteId: parseInt(siteId)');
+    expect(code).toContain("sourceType: 'compliance'");
   });
 
   it('still has data-section="site-compliance"', () => {
@@ -386,7 +386,7 @@ describe('G · V68 backward compatibility preserved', () => {
     expect(code).toContain('PreuvesTab');
   });
 
-  it('still has setShowCreate(true) for modal', () => {
-    expect(code).toContain('setShowCreate(true)');
+  it('still has openActionDrawer for action creation', () => {
+    expect(code).toContain('openActionDrawer');
   });
 });

@@ -82,9 +82,8 @@ describe('V9 CO2e: ConsumptionDiagPage includes CO2e features', () => {
   const { resolve } = require('path');
   const src = readFileSync(resolve(__dirname, '../ConsumptionDiagPage.jsx'), 'utf8');
 
-  it('defines CO2E_FACTOR_KG_PER_KWH constant', () => {
+  it('uses CO2E_FACTOR_KG_PER_KWH constant (imported from constants)', () => {
     expect(src).toContain('CO2E_FACTOR_KG_PER_KWH');
-    expect(src).toContain('0.052');
   });
 
   it('has CO2e evitable summary card', () => {

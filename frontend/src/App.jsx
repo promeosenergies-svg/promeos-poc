@@ -28,7 +28,7 @@ const MonitoringPage = lazy(() => import('./pages/MonitoringPage'));
 const StatusPage = lazy(() => import('./pages/StatusPage'));
 const ImportPage = lazy(() => import('./pages/ImportPage'));
 const SegmentationPage = lazy(() => import('./pages/SegmentationPage'));
-const CompliancePage = lazy(() => import('./pages/CompliancePage'));
+// CompliancePage deprecated — /compliance root redirects to /conformite (V92)
 const ConsumptionDiagPage = lazy(() => import('./pages/ConsumptionDiagPage'));
 const BillIntelPage = lazy(() => import('./pages/BillIntelPage'));
 const BillingPage = lazy(() => import('./pages/BillingPage'));
@@ -116,7 +116,7 @@ function App() {
                   <Route path="/connectors" element={<PageSuspense><ConnectorsPage /></PageSuspense>} />
                   <Route path="/watchers" element={<PageSuspense><WatchersPage /></PageSuspense>} />
                   <Route path="/monitoring" element={<PageSuspense><MonitoringPage /></PageSuspense>} />
-                  <Route path="/compliance" element={<PageSuspense><CompliancePage /></PageSuspense>} />
+                  <Route path="/compliance" element={<Navigate to="/conformite" replace />} />
                   <Route path="/compliance/pipeline" element={<PageSuspense><CompliancePipelinePage /></PageSuspense>} />
                   <Route path="/compliance/sites/:siteId" element={<PageSuspense><SiteCompliancePage /></PageSuspense>} />
                   <Route path="/diagnostic-conso" element={<PageSuspense><ConsumptionDiagPage /></PageSuspense>} />
