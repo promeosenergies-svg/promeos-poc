@@ -1,6 +1,6 @@
 /**
  * PROMEOS — Consommations Layout Page
- * Wrapper with 3 tabs (Explorer | Import & Analyse | Knowledge Base)
+ * Wrapper with tabs (Explorer | Portefeuille | Import & Analyse | Mémobox)
  * and nested sub-routes via <Outlet />.
  */
 import { NavLink, Outlet } from 'react-router-dom';
@@ -11,7 +11,7 @@ const TABS = [
   { to: '/consommations/explorer', label: 'Explorer', icon: BarChart3 },
   { to: '/consommations/portfolio', label: 'Portefeuille', icon: Building2 },
   { to: '/consommations/import', label: 'Import & Analyse', icon: Upload },
-  { to: '/consommations/kb', label: 'Knowledge Base', icon: Database },
+  { to: '/consommations/kb', label: 'Mémobox', icon: Database },
 ];
 
 export default function ConsommationsPage() {

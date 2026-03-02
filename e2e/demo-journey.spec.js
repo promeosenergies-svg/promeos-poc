@@ -1,7 +1,7 @@
 /**
  * PROMEOS — E2E Demo Journey Tests
  * Validates: Cockpit → Patrimoine → Site360 drill-down flow.
- * Requires: backend on :8000, frontend on :5173, demo data seeded.
+ * Requires: backend on :8001, frontend on :5173, demo data seeded.
  */
 import { test, expect } from '@playwright/test';
 

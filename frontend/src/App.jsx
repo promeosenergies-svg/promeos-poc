@@ -17,10 +17,7 @@ const Site360 = lazy(() => import('./pages/Site360'));
 const ActionsPage = lazy(() => import('./pages/ActionsPage'));
 const ConformitePage = lazy(() => import('./pages/ConformitePage'));
 const NotFound = lazy(() => import('./pages/NotFound'));
-const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Cockpit = lazy(() => import('./pages/Cockpit'));
-const SiteDetail = lazy(() => import('./pages/SiteDetail'));
-const ActionPlan = lazy(() => import('./pages/ActionPlan'));
 const RegOps = lazy(() => import('./pages/RegOps'));
 const ConnectorsPage = lazy(() => import('./pages/ConnectorsPage'));
 const WatchersPage = lazy(() => import('./pages/WatchersPage'));
@@ -102,11 +99,11 @@ function App() {
                   <Route path="/conformite/tertiaire/efa/:id" element={<PageSuspense><TertiaireEfaDetailPage /></PageSuspense>} />
                   <Route path="/conformite/tertiaire/anomalies" element={<PageSuspense><TertiaireAnomaliesPage /></PageSuspense>} />
 
-                  {/* Existing pages */}
-                  <Route path="/dashboard-legacy" element={<PageSuspense><Dashboard onUpgradeClick={() => setShowUpgradeWizard(true)} /></PageSuspense>} />
+                  {/* Legacy redirects */}
+                  <Route path="/dashboard-legacy" element={<Navigate to="/" replace />} />
                   <Route path="/cockpit" element={<PageSuspense><Cockpit /></PageSuspense>} />
-                  <Route path="/sites-legacy/:id" element={<PageSuspense><SiteDetail /></PageSuspense>} />
-                  <Route path="/action-plan" element={<PageSuspense><ActionPlan /></PageSuspense>} />
+                  <Route path="/sites-legacy/:id" element={<Navigate to="/patrimoine" replace />} />
+                  <Route path="/action-plan" element={<Navigate to="/anomalies" replace />} />
                   <Route path="/regops/:id" element={<PageSuspense><RegOps /></PageSuspense>} />
                   {/* Consommations: 4-tab layout (Explorer | Portfolio | Import & Analyse | KB) */}
                   <Route path="/consommations" element={<PageSuspense><ConsommationsPage /></PageSuspense>}>

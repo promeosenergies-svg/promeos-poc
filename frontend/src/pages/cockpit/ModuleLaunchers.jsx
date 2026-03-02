@@ -40,13 +40,13 @@ function getModuleConfig(moduleKey, kpis) {
       };
     case 'marche':
       return {
-        route: '/facturation',
+        route: '/billing',
         metric: 'Factures & contrats',
         cta: 'Facturation',
       };
     case 'admin':
       return {
-        route: '/imports',
+        route: '/import',
         metric: 'Connexions & données',
         cta: 'Administration',
       };

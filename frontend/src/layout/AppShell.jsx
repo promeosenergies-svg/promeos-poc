@@ -9,9 +9,11 @@ import { Search, LogOut, ChevronDown, Building2, Command } from 'lucide-react';
 import Sidebar from './Sidebar';
 import Breadcrumb from './Breadcrumb';
 import ScopeSwitcher from './ScopeSwitcher';
+import DataReadinessBadge from '../components/DataReadinessBadge';
 import DevPanel from './DevPanel';
 import CommandPalette from '../ui/CommandPalette';
 import { ToastProvider } from '../ui/ToastProvider';
+import { ActionDrawerProvider } from '../contexts/ActionDrawerContext';
 import { Toggle } from '../ui';
 import { trackRouteChange } from '../services/tracker';
 import { getMetaVersion } from '../services/api';
@@ -184,6 +186,7 @@ export default function AppShell() {
             <div className="relative">
               <ScopeSwitcher />
             </div>
+            <DataReadinessBadge />
           </div>
           <div className="flex items-center gap-3">
             {/* Command Palette trigger */}
@@ -225,7 +228,9 @@ export default function AppShell() {
         {/* Content */}
         <main className="flex-1 overflow-y-auto">
           <ToastProvider>
-            <Outlet />
+            <ActionDrawerProvider>
+              <Outlet />
+            </ActionDrawerProvider>
           </ToastProvider>
         </main>
       </div>

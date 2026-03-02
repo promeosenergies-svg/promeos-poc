@@ -41,7 +41,7 @@ def _count_valid_proofs(action_id: int) -> int:
 
 # ── Closability check ────────────────────────────────────────────────────────
 
-def check_closable(action: ActionItem, closure_justification: str = None) -> dict:
+def check_closable(action: ActionItem, closure_justification: str = None, evidence_count: int = 0) -> dict:
     """
     Evaluate whether an OPERAT action can be closed.
 
@@ -54,10 +54,31 @@ def check_closable(action: ActionItem, closure_justification: str = None) -> dic
         }
     """
     if not is_operat_action(action):
+        # Generic evidence_required gate (non-OPERAT actions)
+        if getattr(action, 'evidence_required', False):
+            justification = closure_justification or action.closure_justification or ""
+            has_justification = len(justification.strip()) >= 10
+            if evidence_count == 0 and not has_justification:
+                return {
+                    "closable": False,
+                    "code": "EVIDENCE_REQUIRED",
+                    "reason": "Preuve requise pour clôturer cette action. Joignez une pièce ou fournissez une justification (≥ 10 caractères).",
+                    "has_valid_proof": False,
+                    "has_justification": False,
+                }
+            if evidence_count == 0 and has_justification and len(justification.strip()) < 10:
+                return {
+                    "closable": False,
+                    "code": "JUSTIFICATION_TOO_SHORT",
+                    "reason": "Justification trop courte (minimum 10 caractères).",
+                    "has_valid_proof": False,
+                    "has_justification": False,
+                }
         return {
             "closable": True,
+            "code": None,
             "reason": None,
-            "has_valid_proof": False,
+            "has_valid_proof": evidence_count > 0,
             "has_justification": False,
         }
 
@@ -65,6 +86,7 @@ def check_closable(action: ActionItem, closure_justification: str = None) -> dic
     if action.status and action.status.value in ("done", "false_positive"):
         return {
             "closable": True,
+            "code": None,
             "reason": None,
             "has_valid_proof": True,
             "has_justification": bool(action.closure_justification),
@@ -80,7 +102,9 @@ def check_closable(action: ActionItem, closure_justification: str = None) -> dic
     closable = has_valid_proof or has_justification
 
     reason = None
+    code = None
     if not closable:
+        code = "EVIDENCE_REQUIRED"
         reason = (
             "Action OPERAT : preuve validée ou justification (≥ 10 caractères) "
             "requise pour clôturer."
@@ -88,6 +112,7 @@ def check_closable(action: ActionItem, closure_justification: str = None) -> dic
 
     return {
         "closable": closable,
+        "code": code,
         "reason": reason,
         "has_valid_proof": has_valid_proof,
         "has_justification": has_justification,

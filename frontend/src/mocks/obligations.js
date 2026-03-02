@@ -1,6 +1,13 @@
 /**
  * Mock data: obligations reglementaires for /conformite page
- * V3: added proof_status, audit trail
+ * V4: aligned with the 5 HELIOS demo sites.
+ *
+ * Sites tertiaires > 1000 m2 : Paris (3500), Lyon (1200), Nice (4000), Marseille (2800) = 4
+ * Site industriel (non-tertiaire) : Toulouse (6000) = exclu du Decret Tertiaire
+ * BACS (puissance CVC > 70 kW) : Paris, Toulouse, Nice = 3
+ * Parkings > 1500 m2 (APER) : Toulouse, Nice = 2
+ * DPE : tous les 5 sites
+ * Audit energetique : organisation entiere = 5 sites
  */
 
 export const mockObligations = [
@@ -14,8 +21,8 @@ export const mockObligations = [
     echeance: '2026-09-30',
     preuve: 'Declaration OPERAT validee + attestation annuelle',
     proof_status: 'missing',
-    sites_concernes: 18,
-    sites_conformes: 6,
+    sites_concernes: 4,
+    sites_conformes: 1,
     statut: 'non_conforme',
     severity: 'critical',
     impact_eur: 45000,
@@ -33,8 +40,8 @@ export const mockObligations = [
     echeance: '2025-01-01',
     preuve: 'Attestation GTB conforme + rapport d\'inspection',
     proof_status: 'in_progress',
-    sites_concernes: 12,
-    sites_conformes: 3,
+    sites_concernes: 3,
+    sites_conformes: 1,
     statut: 'non_conforme',
     severity: 'critical',
     impact_eur: 35000,
@@ -52,7 +59,7 @@ export const mockObligations = [
     echeance: '2028-07-01',
     preuve: 'Permis de construire + contrat d\'installation',
     proof_status: 'missing',
-    sites_concernes: 5,
+    sites_concernes: 2,
     sites_conformes: 0,
     statut: 'a_risque',
     severity: 'high',
@@ -71,8 +78,8 @@ export const mockObligations = [
     echeance: '2026-12-31',
     preuve: 'DPE valide (< 10 ans)',
     proof_status: 'in_progress',
-    sites_concernes: 30,
-    sites_conformes: 22,
+    sites_concernes: 5,
+    sites_conformes: 3,
     statut: 'a_risque',
     severity: 'medium',
     impact_eur: 8000,
@@ -90,8 +97,8 @@ export const mockObligations = [
     echeance: '2026-12-05',
     preuve: 'Rapport d\'audit conforme NF EN 16247 + preuve de depot ADEME',
     proof_status: 'ok',
-    sites_concernes: 42,
-    sites_conformes: 42,
+    sites_concernes: 5,
+    sites_conformes: 5,
     statut: 'conforme',
     severity: 'low',
     impact_eur: 0,

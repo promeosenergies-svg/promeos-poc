@@ -16,13 +16,16 @@
  * V81: + Header dynamique strategies, CTA Tester dans l'Assistant, deep-link assistant.
  * V82: + Composant "Option THS" structure (titre, 2 bullets, badge Sans penalite prominent).
  */
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
-import { PageShell } from '../ui';
+import { PageShell, Badge } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
+import Tooltip from '../ui/Tooltip';
 import { useToast } from '../ui/ToastProvider';
+import useDataReadiness from '../hooks/useDataReadiness';
+import { computeDataConfidence, SOFT_GATE_TOOLTIP_FR } from '../models/dataReadinessModel';
 import ExportNoteDecision from '../components/ExportNoteDecision';
 import ExportPackRFP from '../components/ExportPackRFP';
 import PurchaseErrorBoundary from '../components/PurchaseErrorBoundary';
@@ -158,6 +161,15 @@ export default function PurchasePage() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // Data confidence (Step 3.1)
+  const purchaseKpis = useMemo(() => ({
+    total: scopedSites.length,
+    conformes: 0, nonConformes: 0, aRisque: 0,
+    couvertureDonnees: scopedSites.length > 0 ? Math.round(scopedSites.filter(s => s.conso_kwh_an > 0).length / scopedSites.length * 100) : 0,
+  }), [scopedSites]);
+  const { readinessState: purchaseReadiness } = useDataReadiness(purchaseKpis);
+  const dataConfidence = useMemo(() => computeDataConfidence(purchaseReadiness), [purchaseReadiness]);
 
   // Tab state — initialise from ?tab= or ?filter= deep-link if present
   const VALID_TABS = new Set(TABS.map((t) => t.key));
@@ -417,7 +429,18 @@ export default function PurchasePage() {
       <PageShell
         icon={ShoppingCart}
         title="Achats énergie"
-        subtitle="Simuler & arbitrer vos stratégies d'achat"
+        subtitle={
+          <span className="flex items-center gap-2">
+            Simuler &amp; arbitrer vos stratégies d'achat
+            {dataConfidence && (
+              <Tooltip text={dataConfidence.tooltipFR}>
+                <span className="inline-flex items-center gap-1" data-testid="purchase-confidence">
+                  <Badge status={dataConfidence.badgeStatus}>Confiance : {dataConfidence.label}</Badge>
+                </span>
+              </Tooltip>
+            )}
+          </span>
+        }
       >
         {/* Tab bar */}
         <div className="flex border-b border-gray-200">
@@ -695,14 +718,16 @@ export default function PurchasePage() {
                 </div>
                 <div>
                   {/* V72: CTA unique — plus de double "Sauvegarder" */}
-                  <button
-                    data-testid="cta-comparer-scenarios"
-                    onClick={handleCompute}
-                    disabled={computing || !selectedSiteId}
-                    className="w-full bg-blue-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    {computing ? 'Calcul en cours...' : 'Comparer les scénarios'}
-                  </button>
+                  <Tooltip text={selectedSiteId && assumptions.volume_kwh_an === 0 ? 'Données de consommation requises pour la simulation' : ''}>
+                    <button
+                      data-testid="cta-comparer-scenarios"
+                      onClick={handleCompute}
+                      disabled={computing || !selectedSiteId || assumptions.volume_kwh_an === 0}
+                      className="w-full bg-blue-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {computing ? 'Calcul en cours...' : 'Comparer les scénarios'}
+                    </button>
+                  </Tooltip>
                 </div>
               </div>
             </div>

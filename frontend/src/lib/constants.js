@@ -55,6 +55,17 @@ export const ACTIONS_SCORE = {
   noIssues: 80,
 };
 
+// ── Data Readiness Gate thresholds ───────────────────────────────────────────
+
+export const READINESS_GATE = {
+  /** Consommation: < partialPct% couverture → PARTIEL, 0 → KO */
+  conso: { partialPct: 80 },
+  /** Facturation: < ko mois → KO, < partial mois → PARTIEL */
+  facturation: { ko: 3, partial: 12 },
+  /** OPERAT: > issueThreshold issues ouvertes → PARTIEL */
+  operat: { issueThreshold: 2 },
+};
+
 // ── Anomaly thresholds ───────────────────────────────────────────────────────
 
 export const ANOMALY_THRESHOLDS = {
@@ -103,6 +114,7 @@ export const SEVERITY_RANK = {
   warn:     2,
   medium:   3,
   info:     4,
+  low:      5,
 };
 
 /** API severity → Badge variant mapping. Used by Site360 KB results. */

@@ -7,9 +7,9 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { ChevronDown, Star, Clock } from 'lucide-react';
 import {
-  NAV_MODULES, ROUTE_MODULE_MAP,
+  NAV_MODULES, ROUTE_MODULE_MAP, ALL_NAV_ITEMS,
   QUICK_ACTIONS, SECTION_TINTS, TINT_PALETTE,
-  getSectionsForModule,
+  getSectionsForModule, matchRouteToModule,
 } from './NavRegistry';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -136,12 +136,30 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
     return pins.map((path) => allModuleItems.find((item) => item.to === path)).filter(Boolean);
   }, [pins, allModuleItems]);
 
-  /* ── Recents (only from this module, exclude pins) ── */
+  /* ── Recents (cross-module, exclude pins + items already visible in sections) ── */
   const recentItems = useMemo(() => {
     const recents = getRecents();
+    const visiblePaths = new Set(allModuleItems.map((i) => i.to));
+    const seen = new Set(); // dedup guard
     return recents
-      .filter((path) => !pins.includes(path))
-      .map((path) => allModuleItems.find((item) => item.to === path))
+      .filter((r) => !pins.includes(r.path) && !visiblePaths.has(r.path) && !seen.has(r.path) && (seen.add(r.path), true))
+      .map((r) => {
+        // Try static nav item first
+        const navItem = ALL_NAV_ITEMS.find((item) => item.to === r.path);
+        if (navItem) {
+          return { ...navItem, _recentModule: r.module || navItem.module };
+        }
+        // Dynamic route: build a synthetic item from stored metadata
+        const { moduleId } = matchRouteToModule(r.path);
+        const mod = NAV_MODULES.find((m) => m.key === moduleId);
+        return {
+          to: r.path,
+          label: r.label || r.path,
+          icon: mod?.icon || NAV_MODULES[0].icon,
+          module: moduleId,
+          _recentModule: r.module || moduleId,
+        };
+      })
       .filter(Boolean)
       .slice(0, 3);
   }, [allModuleItems, pins, location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -231,22 +249,35 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
           </div>
         )}
 
-        {/* Recents */}
+        {/* Recents — with cross-module badge */}
         {recentItems.length > 0 && (
           <div className="pb-2 mb-1 border-b border-slate-200/40">
             <p className="px-2.5 pb-0.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-              <Clock size={9} className="text-slate-400" /> Recents
+              <Clock size={9} className="text-slate-400" /> Récents
             </p>
-            {recentItems.map((item) => (
-              <PanelLink
-                key={`recent-${item.to}`}
-                {...item}
-                badge={0}
-                pinned={pins.includes(item.to)}
-                onTogglePin={onTogglePin}
-                tint={tint}
-              />
-            ))}
+            {recentItems.map((item) => {
+              const isCrossModule = item._recentModule && item._recentModule !== activeModule;
+              const crossMod = isCrossModule ? NAV_MODULES.find((m) => m.key === item._recentModule) : null;
+              return (
+                <div key={`recent-${item.to}`} className="relative">
+                  <PanelLink
+                    {...item}
+                    badge={0}
+                    pinned={pins.includes(item.to)}
+                    onTogglePin={onTogglePin}
+                    tint={tint}
+                  />
+                  {crossMod && (
+                    <span
+                      className="absolute right-2 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[9px] font-medium rounded-full bg-slate-100 text-slate-500 pointer-events-none"
+                      title={crossMod.label}
+                    >
+                      {crossMod.label}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
 

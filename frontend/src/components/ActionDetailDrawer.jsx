@@ -25,6 +25,7 @@ import {
   isActionClosable, resolveProofStatus,
   PROOF_STATUS_LABELS, PROOF_STATUS_BADGE,
 } from '../models/actionProofLinkModel';
+import { SOURCE_LABELS_FR, buildSourceDeepLink } from '../models/evidenceRules';
 
 const _STATUS_TO_BE = { backlog: 'open', in_progress: 'in_progress', done: 'done', planned: 'blocked' };
 const STATUS_TO_FE = { open: 'backlog', in_progress: 'in_progress', done: 'done', blocked: 'planned', false_positive: 'done' };
@@ -221,13 +222,17 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
   async function handleStatusChange(newStatus) {
     setCloseError(null);
 
-    // V49: if trying to close an OPERAT action, check closeability first
-    if (newStatus === 'done' && isOperatAction(d)) {
+    // V49 + Étape 4: check closeability for OPERAT and evidence_required actions
+    if (newStatus === 'done' && (isOperatAction(d) || d.evidence_required)) {
       try {
         const closeCheck = await checkActionCloseability(actionId);
         if (!closeCheck.closable && !closureJustification.trim()) {
           setShowCloseForm(true);
-          setCloseError('Preuve validée ou justification requise pour clôturer cette action OPERAT.');
+          setCloseError(
+            isOperatAction(d)
+              ? 'Preuve validée ou justification requise pour clôturer cette action OPERAT.'
+              : 'Preuve requise — joignez une pièce ou fournissez une justification (≥ 10 caractères).'
+          );
           return;
         }
       } catch {
@@ -252,7 +257,9 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
       const ev = await getActionEvents(actionId);
       setEvents(ev);
     } catch (err) {
-      const msg = err?.response?.data?.detail || 'Erreur lors du changement de statut';
+      const detail = err?.response?.data?.detail;
+      // Structured error: { code, message } or plain string
+      const msg = (typeof detail === 'object' && detail?.message) ? detail.message : (detail || 'Erreur lors du changement de statut');
       if (err?.response?.status === 400 && newStatus === 'done') {
         setShowCloseForm(true);
         setCloseError(msg);
@@ -389,7 +396,20 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Source</p>
-                  <p className="text-xs text-gray-600">{d.source_type}:{d.source_id}</p>
+                  <p className="text-sm font-medium text-gray-700">
+                    {SOURCE_LABELS_FR[d.source_type] || SOURCE_LABELS[d.source_type] || d.source_type}
+                  </p>
+                  {(() => {
+                    const deepLink = buildSourceDeepLink(d.source_type, d.source_id);
+                    return deepLink ? (
+                      <button
+                        onClick={() => { navigate(deepLink); onClose(); }}
+                        className="flex items-center gap-1 mt-1 text-[11px] font-medium text-blue-600 hover:text-blue-800 transition"
+                      >
+                        <ExternalLink size={11} /> Revenir à la source
+                      </button>
+                    ) : null;
+                  })()}
                 </div>
               </div>
 
@@ -426,6 +446,17 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Notes</p>
                   <p className="text-sm text-gray-600 whitespace-pre-line">{d.notes}</p>
+                </div>
+              )}
+
+              {/* Étape 4 — Evidence required indicator */}
+              {d.evidence_required && !isOperatAction(d) && (
+                <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 rounded-lg border border-amber-200">
+                  <Paperclip size={14} className="text-amber-600" />
+                  <span className="text-xs font-medium text-amber-700">Preuve requise pour clôturer</span>
+                  <Badge status={evidence.length > 0 ? 'ok' : 'warn'}>
+                    {evidence.length > 0 ? `${evidence.length} pièce${evidence.length > 1 ? 's' : ''}` : 'Aucune pièce'}
+                  </Badge>
                 </div>
               )}
 
@@ -567,16 +598,17 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                   {STATUS_WORKFLOW.map(s => {
                     const isDone = s.value === 'done';
                     const operatBlocked = isDone && isOperatAction(d) && !isActionClosable(d, proofsSummary, evidence.length).closable;
+                    const evidenceBlocked = isDone && !isOperatAction(d) && d.evidence_required && evidence.length === 0;
                     return (
                       <button
                         key={s.value}
                         disabled={d.status === s.value}
                         onClick={() => handleStatusChange(s.value)}
-                        title={operatBlocked ? 'Preuve requise pour clôturer' : undefined}
+                        title={(operatBlocked || evidenceBlocked) ? 'Preuve requise pour clôturer' : undefined}
                         className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${
                           d.status === s.value
                             ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                            : operatBlocked
+                            : (operatBlocked || evidenceBlocked)
                               ? 'bg-amber-50 border border-amber-300 text-amber-700 hover:bg-amber-100'
                               : 'bg-white border border-gray-200 hover:bg-blue-50 hover:border-blue-300 text-gray-700'
                         }`}
@@ -587,8 +619,8 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                   })}
                 </div>
 
-                {/* V49: Guided close form for OPERAT actions */}
-                {showCloseForm && isOperatAction(d) && (
+                {/* V49 + Étape 4: Guided close form for OPERAT + evidence_required actions */}
+                {showCloseForm && (isOperatAction(d) || d.evidence_required) && (
                   <div className="mt-3 space-y-2 p-3 bg-amber-50 border border-amber-200 rounded-lg" data-testid="v49-close-form">
                     {closeError && (
                       <p className="text-xs text-amber-700 font-medium" data-testid="v49-close-error">{closeError}</p>

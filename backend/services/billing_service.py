@@ -734,6 +734,10 @@ def get_billing_summary(db: Session, org_id: Optional[int] = None) -> Dict[str, 
     invoices = q.all()
     total_eur = sum(i.total_eur or 0 for i in invoices)
     total_kwh = sum(i.energy_kwh or 0 for i in invoices)
+    distinct_months = len({
+        (i.period_start.year, i.period_start.month)
+        for i in invoices if i.period_start
+    })
 
     insights = db.query(BillingInsight).all()
     total_loss = sum(i.estimated_loss_eur or 0 for i in insights)
@@ -748,6 +752,7 @@ def get_billing_summary(db: Session, org_id: Optional[int] = None) -> Dict[str, 
         "total_invoices": len(invoices),
         "total_eur": round(total_eur, 2),
         "total_kwh": round(total_kwh, 0),
+        "distinct_months": distinct_months,
         "total_insights": len(insights),
         "total_estimated_loss_eur": round(total_loss, 2),
         "insights_by_type": by_type,

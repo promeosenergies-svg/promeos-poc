@@ -106,7 +106,7 @@ export function checkConsistency(kpis) {
   if (conformeRate === 1 && kpis.couvertureDonnees < COVERAGE_THRESHOLDS.suspicious && kpis.total > 0) {
     issues.push({
       code: 'all_conformes_low_data',
-      label: 'Conformité complète détectée mais peu de données — vérifiez la synchronisation',
+      label: 'Conformité complète détectée mais peu de données — vérifiez les imports',
     });
   }
 
@@ -475,15 +475,82 @@ export function buildDashboardEssentials(sites = [], { isExpert = false } = {}) 
   const topSites = buildTopSites(sites);
   const opportunities = buildOpportunities(kpis, sites, { isExpert });
 
+  const briefing = buildBriefing(kpis, watchlist);
+  const consistency = checkConsistency(kpis);
+
   return {
     kpis,
     watchlist,
-    briefing: buildBriefing(kpis, watchlist),
+    briefing,
     topSites,
     opportunities,
     todayActions: buildTodayActions(kpis, watchlist, opportunities),
     executiveSummary: buildExecutiveSummary(kpis, topSites),
     executiveKpis: buildExecutiveKpis(kpis, sites),
-    consistency: checkConsistency(kpis),
+    consistency,
+    healthState: computeHealthState({ kpis, watchlist, briefing, consistency, alertsCount: 0 }),
   };
+}
+
+// ── computeHealthState ─────────────────────────────────────────────────────
+
+/**
+ * Compute unified health state from dashboard signals.
+ * Pure function — no side effects, fully testable.
+ *
+ * @param {object} signals
+ * @param {object}   signals.kpis         — { nonConformes, aRisque, ... }
+ * @param {object[]} signals.watchlist     — from buildWatchlist()
+ * @param {object[]} signals.briefing      — from buildBriefing()
+ * @param {{ ok, issues }} signals.consistency — from checkConsistency()
+ * @param {number}   signals.alertsCount   — critical + warn alert count
+ * @returns {HealthState}
+ */
+export function computeHealthState({ kpis, watchlist = [], briefing = [], consistency = { ok: true }, alertsCount = 0 }) {
+  const reasons = [];
+
+  // Collect reasons from watchlist (already severity-sorted)
+  for (const w of watchlist) {
+    reasons.push({ id: w.id, label: w.label, severity: w.severity, link: w.path });
+  }
+
+  // Add consistency issues as 'warn'
+  if (!consistency.ok) {
+    for (const issue of consistency.issues || []) {
+      reasons.push({ id: `consistency-${issue.code}`, label: issue.label, severity: 'warn', link: '/consommations/import' });
+    }
+  }
+
+  // Determine level
+  const hasCritical = reasons.some(r => r.severity === 'critical') || kpis.nonConformes > 0;
+  const hasWarn = reasons.some(r => ['high', 'warn', 'medium'].includes(r.severity)) || alertsCount > 0 || kpis.aRisque > 0;
+
+  let level, title, subtitle;
+  if (hasCritical) {
+    level = 'RED';
+    title = 'Actions requises';
+    const critCount = reasons.filter(r => r.severity === 'critical').length;
+    subtitle = `${critCount} point${critCount > 1 ? 's' : ''} critique${critCount > 1 ? 's' : ''} — intervention recommandée`;
+  } else if (hasWarn) {
+    level = 'AMBER';
+    title = "Points d'attention";
+    subtitle = `${reasons.length} point${reasons.length > 1 ? 's' : ''} à surveiller`;
+  } else {
+    level = 'GREEN';
+    title = 'Tout est sous contrôle';
+    subtitle = 'Aucune action urgente — continuez la surveillance';
+  }
+
+  // CTA logic
+  const primaryCta = hasCritical
+    ? { label: 'Voir conformité', to: '/conformite' }
+    : hasWarn
+      ? { label: "Plan d'action", to: '/actions' }
+      : { label: 'Explorer', to: '/consommations/explorer' };
+
+  const secondaryCta = reasons.length > 3
+    ? { label: `Voir les ${reasons.length} points`, to: '/anomalies' }
+    : undefined;
+
+  return { level, title, subtitle, reasons: reasons.slice(0, 3), primaryCta, secondaryCta };
 }

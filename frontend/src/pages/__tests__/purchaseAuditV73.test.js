@@ -173,10 +173,10 @@ describe('G · Empty state consistency + Assistant CTA', () => {
 // H. Breadcrumb label
 // ============================================================
 describe('H · Breadcrumb label for achat-assistant', () => {
-  const code = readSrc('layout', 'Breadcrumb.jsx');
+  const navCode = readSrc('layout', 'NavRegistry.js');
 
-  it('has label for achat-assistant', () => {
-    expect(code).toContain("'achat-assistant': 'Assistant Achat'");
+  it('has label for achat-assistant in NavRegistry (source of truth for Breadcrumb)', () => {
+    expect(navCode).toMatch(/achat-assistant.*Assistant Achat/);
   });
 });
 

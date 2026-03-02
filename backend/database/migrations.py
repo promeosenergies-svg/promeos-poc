@@ -44,6 +44,12 @@ def run_migrations(engine):
     # V2-Conso — Dedup meter_reading + unique constraint
     _dedup_meter_reading(engine)
     _add_unique_meter_reading_index(engine)
+    # Étape 4 — Action Engine: evidence_required column
+    _add_action_evidence_required_column(engine)
+    # Fix delivery_points energy_type enum case (elec→ELEC, gaz→GAZ)
+    _fix_delivery_point_energy_type_case(engine)
+    # Backfill risque_financier_euro from obligations
+    _backfill_site_risque_financier(engine)
 
 
 def _add_soft_delete_columns(engine):
@@ -134,7 +140,7 @@ def _create_delivery_points_table(engine):
                 "code" VARCHAR(14) NOT NULL,
                 "energy_type" VARCHAR(10),
                 "site_id" INTEGER NOT NULL REFERENCES "sites"("id"),
-                "status" VARCHAR(10) NOT NULL DEFAULT 'active',
+                "status" VARCHAR(10) NOT NULL DEFAULT 'ACTIVE',
                 "data_source" VARCHAR(20),
                 "data_source_ref" VARCHAR(200),
                 "imported_at" DATETIME,
@@ -259,14 +265,17 @@ def _backfill_delivery_points(engine):
 
 
 def _guess_energy_type(compteur_type):
-    """Guess DeliveryPoint energy_type from compteur type string."""
+    """Guess DeliveryPoint energy_type from compteur type string.
+
+    Returns enum **name** (ELEC/GAZ) because SQLAlchemy Enum stores names, not values.
+    """
     if not compteur_type:
         return None
     t = compteur_type.lower() if isinstance(compteur_type, str) else str(compteur_type).lower()
     if "gaz" in t:
-        return "gaz"
+        return "GAZ"
     if "elec" in t:
-        return "elec"
+        return "ELEC"
     return None
 
 
@@ -647,3 +656,105 @@ def _add_unique_meter_reading_index(engine):
             logger.info("migration: created unique index %s", idx_name)
         except Exception as e:
             logger.warning("migration: could not create index %s: %s", idx_name, e)
+
+
+# ========================================
+# Étape 4 — Action Engine: evidence_required
+# ========================================
+
+def _add_action_evidence_required_column(engine):
+    """Add evidence_required BOOLEAN column to action_items if missing.
+
+    Defaults to 0 (False). Idempotent — skips if column already exists.
+    """
+    insp = inspect(engine)
+    if not insp.has_table("action_items"):
+        return
+
+    existing_cols = {c["name"] for c in insp.get_columns("action_items")}
+    if "evidence_required" in existing_cols:
+        logger.debug("migration: action_items.evidence_required already exists — skipping")
+        return
+
+    with engine.begin() as conn:
+        conn.execute(text(
+            'ALTER TABLE "action_items" ADD COLUMN "evidence_required" BOOLEAN NOT NULL DEFAULT 0'
+        ))
+        logger.info("migration: added action_items.evidence_required")
+
+
+# ========================================
+# Fix delivery_points energy_type enum case
+# ========================================
+
+def _fix_delivery_point_energy_type_case(engine):
+    """Fix enum values in delivery_points: SQLAlchemy Enum stores names (ELEC/GAZ/ACTIVE),
+    not values (elec/gaz/active).
+
+    The _backfill_delivery_points and _create_delivery_points_table migrations previously
+    wrote lowercase values.  Idempotent — only updates rows with lowercase values.
+    """
+    insp = inspect(engine)
+    if not insp.has_table("delivery_points"):
+        return
+
+    fixes = [
+        ("energy_type", [("elec", "ELEC"), ("gaz", "GAZ")]),
+        ("status", [("active", "ACTIVE"), ("inactive", "INACTIVE")]),
+    ]
+
+    with engine.begin() as conn:
+        fixed = 0
+        for col, mappings in fixes:
+            for old, new in mappings:
+                result = conn.execute(text(
+                    f'UPDATE "delivery_points" SET "{col}" = :new WHERE "{col}" = :old'
+                ), {"old": old, "new": new})
+                fixed += result.rowcount
+
+    if fixed > 0:
+        logger.info("migration: fixed %d delivery_points enum values (lowercase → uppercase)", fixed)
+    else:
+        logger.debug("migration: delivery_points enum values already correct — no changes")
+
+
+# ========================================
+# Backfill risque_financier_euro from obligations
+# ========================================
+
+def _backfill_site_risque_financier(engine):
+    """Compute risque_financier_euro for sites based on their obligations.
+
+    NON_CONFORME → BASE_PENALTY_EURO (7500 €)
+    A_RISQUE     → BASE_PENALTY_EURO * 0.5 (3750 €)
+    Idempotent: only updates sites where current value is 0 but obligations warrant risk.
+    """
+    insp = inspect(engine)
+    if not insp.has_table("sites") or not insp.has_table("obligations"):
+        return
+
+    with engine.begin() as conn:
+        # Get sites with risque_financier_euro = 0 (or NULL) that have non-conforme/a_risque obligations
+        rows = conn.execute(text("""
+            SELECT s.id,
+                   COALESCE(SUM(CASE WHEN o.statut IN ('NON_CONFORME', 'non_conforme') THEN 7500.0 ELSE 0 END), 0)
+                   + COALESCE(SUM(CASE WHEN o.statut IN ('A_RISQUE', 'a_risque') THEN 3750.0 ELSE 0 END), 0)
+                   AS risque
+            FROM sites s
+            LEFT JOIN obligations o ON o.site_id = s.id
+            WHERE COALESCE(s.risque_financier_euro, 0) = 0
+            GROUP BY s.id
+            HAVING risque > 0
+        """)).fetchall()
+
+        updated = 0
+        for row in rows:
+            conn.execute(text(
+                'UPDATE sites SET risque_financier_euro = :risque WHERE id = :sid'
+            ), {"risque": row[1], "sid": row[0]})
+            updated += 1
+
+        if updated > 0:
+            logger.info("migration: backfilled risque_financier_euro for %d sites", updated)
+        else:
+            logger.debug("migration: risque_financier_euro already correct — no changes")

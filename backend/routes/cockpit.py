@@ -51,13 +51,19 @@ def get_cockpit(
     total_sites = q_sites.count()
     sites_actifs = q_sites.filter(Site.actif == True).count()
 
-    # Stats conformite
+    # Stats conformite (compare to enum, not string)
     sites_tertiaire_ko = _sites_for_org(db, effective_org_id).filter(
-        Site.statut_decret_tertiaire == "non_conforme"
+        Site.statut_decret_tertiaire.in_([
+            StatutConformite.NON_CONFORME,
+            StatutConformite.A_RISQUE,
+        ])
     ).count()
 
     sites_bacs_ko = _sites_for_org(db, effective_org_id).filter(
-        Site.statut_bacs == "non_conforme"
+        Site.statut_bacs.in_([
+            StatutConformite.NON_CONFORME,
+            StatutConformite.A_RISQUE,
+        ])
     ).count()
 
     # Risque financier total

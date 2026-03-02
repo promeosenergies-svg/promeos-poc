@@ -1,5 +1,5 @@
 /**
- * anomaliesV65.page.test.js — V65 Anomalies Action Center
+ * anomaliesV65.page.test.js — V65 Anomalies Centre d'actions
  * Source-guard tests (readFileSync + regex) — no DOM, no mocks needed.
  * 7 groups, ~30 tests.
  */
@@ -167,8 +167,8 @@ describe('F. NavRegistry.js — navigation', () => {
     expect(code).toMatch(/\/anomalies.*operations/);
   });
 
-  it('"Action Center" label present in nav items', () => {
-    expect(code).toMatch(/Action Center/);
+  it('"Centre d\'actions" label present in nav items', () => {
+    expect(code).toMatch(/Centre d'actions/);
   });
 });
 

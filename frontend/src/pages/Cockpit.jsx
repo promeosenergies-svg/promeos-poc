@@ -20,8 +20,9 @@ import { KPI_ACCENTS } from '../ui/colorTokens';
 // Cockpit V2 — model + sub-components
 import {
   buildWatchlist, buildTopSites, buildOpportunities, checkConsistency, buildBriefing,
-  buildTodayActions, buildExecutiveSummary, buildExecutiveKpis,
+  buildTodayActions, buildExecutiveSummary, buildExecutiveKpis, computeHealthState,
 } from '../models/dashboardEssentials';
+import HealthSummary from '../components/HealthSummary';
 import EssentialsRow from './cockpit/EssentialsRow';
 import WatchlistCard from './cockpit/WatchlistCard';
 import OpportunitiesCard from './cockpit/OpportunitiesCard';
@@ -95,6 +96,7 @@ const Cockpit = () => {
   const executiveSummary  = useMemo(() => buildExecutiveSummary(kpis, topSites),                      [kpis, topSites]);           // eslint-disable-line react-hooks/exhaustive-deps
   const executiveKpis     = useMemo(() => buildExecutiveKpis(kpis, scopedSites),                      [kpis, scopedSites]);        // eslint-disable-line react-hooks/exhaustive-deps
   const _todayActions     = useMemo(() => buildTodayActions(kpis, watchlist, opportunities),          [kpis, watchlist, opportunities]); // eslint-disable-line react-hooks/exhaustive-deps
+  const healthState       = useMemo(() => computeHealthState({ kpis, watchlist, briefing, consistency, alertsCount: 0 }), [kpis, watchlist, briefing, consistency]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const scopeLabel = portefeuille
     ? `${org?.nom || 'Organisation'} / ${portefeuille.nom}`
@@ -193,6 +195,9 @@ const Cockpit = () => {
     >
       {/* ── Résumé exécutif (Cockpit V2) ── */}
       <ExecutiveSummaryCard bullets={executiveSummary} onNavigate={navigate} />
+
+      {/* ── Health Summary ── */}
+      <HealthSummary healthState={healthState} onNavigate={navigate} />
 
       {/* ── KPIs décideur 4 tuiles (Cockpit V2) ── */}
       <ExecutiveKpiRow kpis={executiveKpis} onNavigate={navigate} onEvidence={setEvidenceOpen} />

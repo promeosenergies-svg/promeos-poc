@@ -21,7 +21,8 @@ import {
 import { useScope } from '../contexts/ScopeContext';
 import { getRiskStatus } from '../lib/constants';
 import { useExpertMode } from '../contexts/ExpertModeContext';
-import { buildWatchlist, buildBriefing, buildOpportunities, buildTodayActions } from '../models/dashboardEssentials';
+import { buildWatchlist, buildBriefing, buildOpportunities, buildTodayActions, computeHealthState } from '../models/dashboardEssentials';
+import HealthSummary from '../components/HealthSummary';
 import BriefingHeroCard from './cockpit/BriefingHeroCard';
 import TodayActionsCard from './cockpit/TodayActionsCard';
 import ModuleLaunchers from './cockpit/ModuleLaunchers';
@@ -151,7 +152,17 @@ export default function CommandCenter() {
   const watchlist    = useMemo(() => buildWatchlist(kpis, scopedSites), [kpis, scopedSites]);        // eslint-disable-line react-hooks/exhaustive-deps
   const briefing     = useMemo(() => buildBriefing(kpis, watchlist), [kpis, watchlist]);             // eslint-disable-line react-hooks/exhaustive-deps
   const opportunities = useMemo(() => buildOpportunities(kpis, scopedSites, { isExpert }), [kpis, scopedSites, isExpert]); // eslint-disable-line react-hooks/exhaustive-deps
-  const todayActions = useMemo(() => buildTodayActions(kpis, watchlist, opportunities), [kpis, watchlist, opportunities]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Merge watchlist signals + real open actions (rawTopActions) + opportunities
+  const todayActions = useMemo(() => {
+    const fromModel = buildTodayActions(kpis, watchlist, opportunities);
+    // Inject real open actions from the action plan as 'high' priority items
+    const seen = new Set(fromModel.map(a => a.id));
+    const fromActions = rawTopActions
+      .filter(a => !seen.has(a.id))
+      .map(a => ({ id: a.id, label: a.titre, severity: a.priorite || 'medium', path: a.route, cta: a.source_label, type: 'action' }));
+    return [...fromModel, ...fromActions].slice(0, 5);
+  }, [kpis, watchlist, opportunities, rawTopActions]); // eslint-disable-line react-hooks/exhaustive-deps
+  const healthState  = useMemo(() => computeHealthState({ kpis, watchlist, briefing, consistency: { ok: true }, alertsCount }), [kpis, watchlist, briefing, alertsCount]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Data coverage (shown in header trust signal)
   const coveragePct = useMemo(() => {
@@ -218,6 +229,9 @@ export default function CommandCenter() {
         </div>
       }
     >
+      {/* ── Health Summary ── */}
+      <HealthSummary healthState={healthState} onNavigate={navigate} />
+
       {/* ── Briefing du jour ── */}
       <BriefingHeroCard briefing={briefing} onNavigate={navigate} />
 

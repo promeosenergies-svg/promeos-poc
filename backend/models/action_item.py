@@ -4,7 +4,7 @@ ActionItem: persisted unified action from all briques.
 ActionSyncBatch: batch record for each sync run.
 """
 from sqlalchemy import (
-    Column, Integer, String, Float, Text, Date, DateTime,
+    Column, Integer, String, Float, Text, Date, DateTime, Boolean,
     ForeignKey, Enum as SAEnum, UniqueConstraint, Index,
 )
 from sqlalchemy.orm import relationship
@@ -100,6 +100,12 @@ class ActionItem(Base, TimestampMixin):
     closure_justification = Column(
         Text, nullable=True,
         comment="Justification de cloture (V49 — requise pour OPERAT si pas de preuve validee)",
+    )
+
+    # Etape 4: Evidence gate
+    evidence_required = Column(
+        Boolean, default=False, nullable=False,
+        comment="Preuve requise pour cloturer l'action",
     )
 
     # Relations

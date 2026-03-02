@@ -26,9 +26,9 @@ export const mockKpis = {
     penalites_eur: Math.round(totalRisque * 0.65),
   },
   action_prioritaire: {
-    texte: 'Declarer vos consommations sur OPERAT pour 12 sites',
+    texte: `Declarer vos consommations sur OPERAT pour ${mockSites.filter(s => s.operat_status && s.operat_status !== 'SUBMITTED').length} sites`,
     priorite: 'critical',
-    nb_sites: 12,
+    nb_sites: mockSites.filter(s => s.operat_status && s.operat_status !== 'SUBMITTED').length,
     reglementation: 'decret_tertiaire',
   },
   anomalies: {
@@ -38,11 +38,11 @@ export const mockKpis = {
 };
 
 export const mockTodos = [
-  { id: 1, texte: 'Declarer OPERAT pour Bureau Paris 3', priorite: 'critical', echeance: '2026-02-15', site: 'Bureau Paris 3' },
-  { id: 2, texte: 'Installer GTB batiment principal Hotel Lyon 8', priorite: 'critical', echeance: '2026-03-01', site: 'Hotel Lyon 8' },
-  { id: 3, texte: 'Verifier compteur Entrepot Bordeaux 12', priorite: 'high', echeance: '2026-02-20', site: 'Entrepot Bordeaux 12' },
-  { id: 4, texte: 'Attestation BACS Clinique Marseille 5', priorite: 'high', echeance: '2026-02-28', site: 'Clinique Marseille 5' },
-  { id: 5, texte: 'Corriger derive conso Magasin Nantes 15', priorite: 'medium', echeance: '2026-03-15', site: 'Magasin Nantes 15' },
+  { id: 1, texte: 'Declarer consommations OPERAT', priorite: 'critical', echeance: '2026-03-15', site: 'Hotel Helios Nice', site_id: 4 },
+  { id: 2, texte: 'Installer GTB batiment principal', priorite: 'critical', echeance: '2026-03-20', site: 'Bureau Regional Lyon', site_id: 2 },
+  { id: 3, texte: 'Corriger non-conformite Decret Tertiaire', priorite: 'critical', echeance: '2026-03-10', site: 'Usine HELIOS Toulouse', site_id: 3 },
+  { id: 4, texte: 'Attestation BACS a obtenir', priorite: 'high', echeance: '2026-03-25', site: 'Ecole Jules Ferry Marseille', site_id: 5 },
+  { id: 5, texte: 'Verifier compteur gaz (derive detectee)', priorite: 'medium', echeance: '2026-04-01', site: 'Siege HELIOS Paris', site_id: 1 },
 ];
 
 export const mockTopAnomalies = mockSites

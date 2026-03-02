@@ -13,7 +13,7 @@
  *   3. Dropdowns drifting from trigger after scroll or viewport resize
  *   4. TooltipPortal z-[9999] — now standardized to z-[120]
  *
- * Requires: backend on :8000, frontend on :5173, demo data seeded.
+ * Requires: backend on :8001, frontend on :5173, demo data seeded.
  */
 import { test, expect } from '@playwright/test';
 import { fileURLToPath } from 'url';

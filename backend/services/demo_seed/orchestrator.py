@@ -485,8 +485,9 @@ class SeedOrchestrator:
         return {"status": "ok", "mode": mode, "deleted": deleted}
 
     def _sync_site_compliance_statuses(self, sites):
-        """Update Site.statut_decret_tertiaire/bacs from Obligation records."""
+        """Update Site.statut_decret_tertiaire/bacs + risque_financier_euro from Obligation records."""
         from models import Obligation, TypeObligation, StatutConformite
+        from services.compliance_engine import BASE_PENALTY_EURO
         for site in sites:
             for type_obl, attr in [
                 (TypeObligation.DECRET_TERTIAIRE, "statut_decret_tertiaire"),
@@ -501,6 +502,15 @@ class SeedOrchestrator:
                     setattr(site, attr, obl.statut)
                 else:
                     setattr(site, attr, None)
+            # Compute risque_financier_euro from all obligations
+            obls = self.db.query(Obligation).filter_by(site_id=site.id).all()
+            risque = 0.0
+            for o in obls:
+                if o.statut == StatutConformite.NON_CONFORME:
+                    risque += BASE_PENALTY_EURO        # confirmed penalty
+                elif o.statut == StatutConformite.A_RISQUE:
+                    risque += BASE_PENALTY_EURO * 0.5  # estimated potential risk
+            site.risque_financier_euro = round(risque, 2)
         self.db.flush()
 
     def _create_superuser(self, org):

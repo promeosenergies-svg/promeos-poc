@@ -7,9 +7,10 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import NavRail from './NavRail';
 import NavPanel from './NavPanel';
-import { resolveModule, ALL_NAV_ITEMS } from './NavRegistry';
+import { resolveModule, matchRouteToModule, ALL_NAV_ITEMS } from './NavRegistry';
 import { getNotificationsSummary, getMonitoringAlerts } from '../services/api';
 import { addRecent } from '../utils/navRecent';
+import { resolveBreadcrumbLabel } from './Breadcrumb';
 
 const PINS_KEY = 'promeos_sidebar_pins';
 const MAX_PINS = 5;
@@ -75,14 +76,21 @@ export default function Sidebar() {
     [alertBadge, monitoringBadge],
   );
 
-  /* ── Track recents on route change ── */
+  /* ── Track recents on route change (V2: with label + module) ── */
   useEffect(() => {
     const path = location.pathname;
-    const isNavItem = ALL_NAV_ITEMS.some((item) =>
-      path === item.to || path.startsWith(item.to + '/')
+    // Match against nav items OR dynamic patterns
+    const navItem = ALL_NAV_ITEMS.find((item) => path === item.to);
+    const isNavRoute = navItem || ALL_NAV_ITEMS.some((item) =>
+      path.startsWith(item.to + '/')
     );
-    if (isNavItem) {
-      addRecent(path);
+    if (isNavRoute || matchRouteToModule(path).pattern) {
+      const { moduleId, moduleLabel } = matchRouteToModule(path);
+      // Build label: use nav item label, or derive from last path segment
+      const parts = path.split('/').filter(Boolean);
+      const label = navItem?.label
+        || resolveBreadcrumbLabel(parts[parts.length - 1], parts[parts.length - 2]);
+      addRecent(path, { label, module: moduleId });
     }
   }, [location.pathname]);
 

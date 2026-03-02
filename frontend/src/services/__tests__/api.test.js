@@ -17,7 +17,7 @@ describe('normalizePathFromAxiosConfig', () => {
   });
 
   it('strips protocol and host from absolute URL', () => {
-    expect(normalizePathFromAxiosConfig({ url: 'http://localhost:8000/api/demo/status-pack' }))
+    expect(normalizePathFromAxiosConfig({ url: 'http://localhost:8001/api/demo/status-pack' }))
       .toBe('/api/demo/status-pack');
   });
 
@@ -27,7 +27,7 @@ describe('normalizePathFromAxiosConfig', () => {
   });
 
   it('strips querystring from absolute URL', () => {
-    expect(normalizePathFromAxiosConfig({ url: 'http://localhost:8000/api/demo/status-pack?x=1' }))
+    expect(normalizePathFromAxiosConfig({ url: 'http://localhost:8001/api/demo/status-pack?x=1' }))
       .toBe('/api/demo/status-pack');
   });
 
@@ -41,7 +41,7 @@ describe('normalizePathFromAxiosConfig', () => {
   });
 
   it('does not prepend baseURL to absolute url', () => {
-    expect(normalizePathFromAxiosConfig({ baseURL: '/api', url: 'http://localhost:8000/demo/status-pack' }))
+    expect(normalizePathFromAxiosConfig({ baseURL: '/api', url: 'http://localhost:8001/demo/status-pack' }))
       .toBe('/demo/status-pack');
   });
 });
@@ -87,11 +87,11 @@ describe('isSilentUrl', () => {
   });
 
   it('matches config: absolute URL', () => {
-    expect(isSilentUrl({ url: 'http://localhost:8000/api/demo/status-pack' })).toBe(true);
+    expect(isSilentUrl({ url: 'http://localhost:8001/api/demo/status-pack' })).toBe(true);
   });
 
   it('matches config: absolute URL with querystring', () => {
-    expect(isSilentUrl({ url: 'http://localhost:8000/api/demo/status-pack?x=1' })).toBe(true);
+    expect(isSilentUrl({ url: 'http://localhost:8001/api/demo/status-pack?x=1' })).toBe(true);
   });
 
   it('does NOT match config: /demo/seed-pack', () => {

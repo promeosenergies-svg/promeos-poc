@@ -10,16 +10,19 @@ import {
   ChevronDown, ChevronUp, ChevronRight, Plus, Upload, Building,
   BookOpen, ExternalLink, Zap, RotateCcw, RefreshCw,
   UserCheck, CheckCircle2, XCircle, X, Eye, Search,
-  ClipboardList, Database, FolderOpen,
+  ClipboardList, Database, FolderOpen, Printer,
 } from 'lucide-react';
 import { Card, CardBody, Badge, Button, EmptyState, TrustBadge, PageShell, Drawer } from '../ui';
 import Tabs from '../ui/Tabs';
 import { useToast } from '../ui/ToastProvider';
-import CreateActionModal from '../components/CreateActionModal';
+import { useActionDrawer } from '../contexts/ActionDrawerContext';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { track } from '../services/tracker';
 import ErrorState from '../ui/ErrorState';
+import { buildWatchlist, computeHealthState } from '../models/dashboardEssentials';
+import HealthSummary from '../components/HealthSummary';
+import DossierPrintView from '../components/DossierPrintView';
 import {
   REG_LABELS, REG_DESCRIPTIONS, STATUT_LABELS, BACKEND_STATUS_MAP,
   WORKFLOW_LABELS, SEVERITY_LABELS, SEVERITY_BADGE_MAP, CONFIDENCE_LABELS,
@@ -87,7 +90,7 @@ function DevApiBadge() {
       <span className={`w-1.5 h-1.5 rounded-full ${isOk ? 'bg-green-500' : 'bg-red-500'}`} />
       {isOk ? 'API : Connectée' : 'API : Hors ligne'}
       {!isOk && (
-        <span className="ml-1 text-[9px] text-red-500">{`${window.location.protocol}//${window.location.hostname}:8000/api/health`}</span>
+        <span className="ml-1 text-[9px] text-red-500">{`${window.location.protocol}//${window.location.hostname}:8001/api/health`}</span>
       )}
     </span>
   );
@@ -510,7 +513,7 @@ export function sitesToObligations(sitesData, _summary) {
   }));
 }
 
-function ObligationCard({ obligation, onCreateAction, onWorkflowAction, onUploadProof, proofFiles, onAuditFinding, bacsV2Summary, onNavigateIntake }) {
+function ObligationCard({ obligation, onCreateAction, onExportDossier, onWorkflowAction, onUploadProof, proofFiles, onAuditFinding, bacsV2Summary, onNavigateIntake }) {
   const [expanded, setExpanded] = useState(false);
   const cfg = STATUT_CONFIG[obligation.statut] || STATUT_CONFIG.a_qualifier;
   const Icon = cfg.icon;
@@ -632,6 +635,11 @@ function ObligationCard({ obligation, onCreateAction, onWorkflowAction, onUpload
             <Button onClick={() => onCreateAction(obligation)} size="sm" variant="secondary">
               <Plus size={14} /> Créer action
             </Button>
+            {onExportDossier && (
+              <Button onClick={() => onExportDossier(obligation)} size="sm" variant="secondary">
+                <Printer size={14} /> Dossier
+              </Button>
+            )}
           </div>
         )}
 
@@ -1070,8 +1078,7 @@ export default function ConformitePage() {
   const { isExpert } = useExpertMode();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [showCreate, setShowCreate] = useState(false);
-  const [prefill, setPrefill] = useState(null);
+  const { openActionDrawer } = useActionDrawer();
   const [proofFiles, setProofFiles] = useState({});
   const [statusFilter, setStatusFilter] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -1085,6 +1092,7 @@ export default function ConformitePage() {
   const [emptyReason, setEmptyReason] = useState(null);
   const [error, setError] = useState(null);
   const [bundle, setBundle] = useState(null);
+  const [dossierSource, setDossierSource] = useState(null);
 
   const loadData = useCallback(() => {
     if (sitesLoading) return; // V18-B: wait for scope to be ready before fetching
@@ -1131,6 +1139,16 @@ export default function ConformitePage() {
     if (!sitesData.length || !summary) return [];
     return sitesToObligations(sitesData, summary);
   }, [sitesData, summary]);
+
+  const complianceHealth = useMemo(() => {
+    if (!bundle || !sitesData.length) return null;
+    const nc = sitesData.filter(s => s.statut_conformite === 'non_conforme').length;
+    const ar = sitesData.filter(s => s.statut_conformite === 'a_risque').length;
+    const total = sitesData.length;
+    const conformes = sitesData.filter(s => s.statut_conformite === 'conforme').length;
+    const simpleKpis = { total, conformes, nonConformes: nc, aRisque: ar, risqueTotal: 0, couvertureDonnees: 100 };
+    return computeHealthState({ kpis: simpleKpis, watchlist: buildWatchlist(simpleKpis, sitesData), briefing: [], consistency: { ok: true }, alertsCount: 0 });
+  }, [bundle, sitesData]);
 
   const score = useMemo(() => {
     if (!summary) return { pct: 0, total: 0, non_conformes: 0, a_risque: 0, conformes: 0, total_impact_eur: 0 };
@@ -1204,34 +1222,42 @@ export default function ConformitePage() {
   };
 
   function handleCreateFromObligation(obligation) {
-    setPrefill({
-      titre: `Mise en conformité ${obligation.regulation}`,
-      type: 'conformite',
-      priorite: obligation.severity === 'critical' ? 'critical' : obligation.severity === 'high' ? 'high' : 'medium',
-      description: obligation.quoi_faire,
-      obligation_code: obligation.code,
-      impact_eur: obligation.impact_eur,
-      site: `${obligation.sites_concernes} sites concernés`,
+    openActionDrawer({
+      prefill: {
+        titre: `Mise en conformité ${obligation.regulation}`,
+        type: 'conformite',
+        priorite: obligation.severity === 'critical' ? 'critical' : obligation.severity === 'high' ? 'high' : 'medium',
+        description: obligation.quoi_faire,
+        obligation_code: obligation.code,
+        impact_eur: obligation.impact_eur,
+        site: `${obligation.sites_concernes} sites concernés`,
+      },
+      sourceType: 'compliance',
+      sourceId: obligation.code,
+      evidenceRequired: obligation.severity === 'critical',
+    }, {
+      onSave: (action) => track('action_create_from_conformite', { titre: action.titre }),
     });
-    setShowCreate(true);
     track('conformite_create_action', { regulation: obligation.code });
   }
 
   function handleCreateFromFinding(finding) {
-    setPrefill({
-      titre: `Mise en conformité ${REG_LABELS[finding.regulation] || finding.regulation} — ${finding.site_nom}`,
-      type: 'conformite',
-      priorite: finding.severity === 'critical' ? 'critical' : finding.severity === 'high' ? 'high' : 'medium',
-      description: finding.evidence || `Non conforme: ${finding.rule_id}`,
-      obligation_code: finding.regulation,
-      site: finding.site_nom,
+    openActionDrawer({
+      prefill: {
+        titre: `Mise en conformité ${REG_LABELS[finding.regulation] || finding.regulation} — ${finding.site_nom}`,
+        type: 'conformite',
+        priorite: finding.severity === 'critical' ? 'critical' : finding.severity === 'high' ? 'high' : 'medium',
+        description: finding.evidence || `Non conforme: ${finding.rule_id}`,
+        obligation_code: finding.regulation,
+        site: finding.site_nom,
+      },
+      sourceType: 'compliance',
+      sourceId: finding.rule_id,
+      evidenceRequired: finding.severity === 'critical',
+    }, {
+      onSave: (action) => track('action_create_from_conformite', { titre: action.titre }),
     });
-    setShowCreate(true);
     track('conformite_create_action_finding', { rule_id: finding.rule_id });
-  }
-
-  function handleSaveAction(action) {
-    track('action_create_from_conformite', { titre: action.titre });
   }
 
   function handleUploadProof(obligationId, file) {
@@ -1323,6 +1349,9 @@ export default function ConformitePage() {
           )}
         </div>
       )}
+
+      {/* Health Summary (compact) */}
+      {complianceHealth && <HealthSummary healthState={complianceHealth} onNavigate={navigate} compact />}
 
       {/* Cockpit Tabs */}
       <Tabs tabs={COCKPIT_TABS} active={activeTab} onChange={(tab) => { setActiveTab(tab); track('conformite_tab', { tab }); }} />
@@ -1430,6 +1459,7 @@ export default function ConformitePage() {
                     key={o.id}
                     obligation={o}
                     onCreateAction={handleCreateFromObligation}
+                    onExportDossier={(obl) => setDossierSource({ sourceType: 'compliance', sourceId: obl.code, label: obl.regulation })}
                     onWorkflowAction={handleWorkflowAction}
                     onUploadProof={handleUploadProof}
                     proofFiles={proofFiles}
@@ -1587,18 +1617,22 @@ export default function ConformitePage() {
         </div>
       )}
 
-      {/* Create Action Modal */}
-      <CreateActionModal
-        open={showCreate}
-        onClose={() => { setShowCreate(false); setPrefill(null); }}
-        onSave={handleSaveAction}
-        prefill={prefill}
-      />
+      {/* Action Drawer — managed by ActionDrawerContext */}
 
       {/* Finding Audit Drawer */}
       <FindingAuditDrawer
         findingId={auditFindingId}
         onClose={() => setAuditFindingId(null)}
+      />
+
+      {/* Dossier print view (Étape 5) */}
+      <DossierPrintView
+        open={!!dossierSource}
+        onClose={() => setDossierSource(null)}
+        sourceType={dossierSource?.sourceType}
+        sourceId={dossierSource?.sourceId}
+        sourceLabel={dossierSource?.label}
+        orgLabel={org?.nom}
       />
     </PageShell>
   );

@@ -107,7 +107,13 @@ export function ScopeProvider({ children }) {
     getSites({ org_id: effectiveOrgId, limit: 2000 })
       .then(data => {
         if (myId !== _fetchId.current) return; // stale response — ignore
-        const list = Array.isArray(data) ? data : (data.sites || data.items || []);
+        const raw = Array.isArray(data) ? data : (data.sites || data.items || []);
+        // Normalize: /api/sites returns statut_decret_tertiaire but frontend uses statut_conformite
+        const list = raw.map(s => ({
+          ...s,
+          statut_conformite: s.statut_conformite ?? s.statut_decret_tertiaire ?? null,
+          risque_eur: s.risque_eur ?? s.risque_financier_euro ?? 0,
+        }));
         setApiSites(list);
         setSitesLoading(false);
       })

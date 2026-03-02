@@ -13,7 +13,10 @@ import {
   Target, Database, ScanLine, ListPlus, AlertTriangle,
 } from 'lucide-react';
 
-/* ── Route → module mapping (for permission checks + auto-select) ── */
+/* ── Route → module mapping (for permission checks + auto-select) ──
+ * Static routes (exact match) + dynamic patterns (:param segments).
+ * Dynamic patterns are matched by matchRouteToModule() with "best match wins".
+ */
 export const ROUTE_MODULE_MAP = {
   '/': 'cockpit',
   '/cockpit': 'cockpit',
@@ -22,12 +25,16 @@ export const ROUTE_MODULE_MAP = {
   '/conformite/tertiaire': 'operations',
   '/conformite/tertiaire/wizard': 'operations',
   '/conformite/tertiaire/anomalies': 'operations',
+  '/conformite/tertiaire/efa/:id': 'operations',
   '/actions': 'operations',
+  '/actions/new': 'operations',
+  '/actions/:actionId': 'operations',
   '/anomalies': 'operations',
   '/consommations': 'analyse',
   '/consommations/explorer': 'analyse',
   '/consommations/import': 'analyse',
   '/consommations/kb': 'analyse',
+  '/consommations/portfolio': 'analyse',
   '/diagnostic-conso': 'analyse',
   '/usages-horaires': 'analyse',
   '/monitoring': 'analyse',
@@ -36,6 +43,7 @@ export const ROUTE_MODULE_MAP = {
   '/achat-energie': 'marche',
   '/achat-assistant': 'marche',
   '/patrimoine': 'admin',
+  '/sites/:id': 'admin',
   '/import': 'admin',
   '/connectors': 'admin',
   '/segmentation': 'admin',
@@ -45,7 +53,87 @@ export const ROUTE_MODULE_MAP = {
   '/admin/roles': 'admin',
   '/admin/assignments': 'admin',
   '/admin/audit': 'admin',
+  '/compliance': 'operations',
+  '/compliance/findings': 'operations',
+  '/compliance/obligations': 'operations',
+  '/compliance/sites/:siteId': 'operations',
+  '/activation': 'admin',
+  '/status': 'admin',
 };
+
+/**
+ * matchRouteToModule(pathname) — "best match wins" route resolver.
+ *
+ * Strategy:
+ * 1. Exact match in ROUTE_MODULE_MAP (fastest path).
+ * 2. Pattern match with dynamic segments (:param). More segments = more specific = higher priority.
+ * 3. Prefix fallback (legacy compat).
+ * 4. Default → 'cockpit'.
+ *
+ * Ignores querystring and hash. Pure function, fully testable.
+ *
+ * @param {string} pathname — e.g. '/sites/42', '/actions/123', '/conformite/tertiaire/efa/7'
+ * @returns {{ moduleId: string, moduleLabel: string, pattern: string|null }}
+ */
+export function matchRouteToModule(pathname) {
+  // Strip querystring/hash
+  const clean = pathname.split('?')[0].split('#')[0];
+
+  // 1. Exact match
+  if (ROUTE_MODULE_MAP[clean]) {
+    return _result(clean, ROUTE_MODULE_MAP[clean]);
+  }
+
+  // 2. Pattern match — score by number of matching segments (more = better)
+  const segments = clean.split('/').filter(Boolean);
+  let bestPattern = null;
+  let bestScore = -1;
+
+  for (const pattern of Object.keys(ROUTE_MODULE_MAP)) {
+    if (!pattern.includes(':')) continue; // skip static routes (already checked)
+    const patternSegs = pattern.split('/').filter(Boolean);
+    if (patternSegs.length !== segments.length) continue;
+
+    let match = true;
+    let score = 0;
+    for (let i = 0; i < patternSegs.length; i++) {
+      if (patternSegs[i].startsWith(':')) {
+        score += 1; // dynamic segment matches anything but scores less
+      } else if (patternSegs[i] === segments[i]) {
+        score += 2; // exact segment match scores more
+      } else {
+        match = false;
+        break;
+      }
+    }
+    if (match && score > bestScore) {
+      bestScore = score;
+      bestPattern = pattern;
+    }
+  }
+
+  if (bestPattern) {
+    return _result(bestPattern, ROUTE_MODULE_MAP[bestPattern]);
+  }
+
+  // 3. Prefix fallback (sorted longest first)
+  const sorted = Object.keys(ROUTE_MODULE_MAP)
+    .filter((r) => !r.includes(':'))
+    .sort((a, b) => b.length - a.length);
+  for (const route of sorted) {
+    if (clean.startsWith(route + '/') || clean === route) {
+      return _result(route, ROUTE_MODULE_MAP[route]);
+    }
+  }
+
+  // 4. Default
+  return _result(null, 'cockpit');
+}
+
+function _result(pattern, moduleId) {
+  const mod = NAV_MODULES.find((m) => m.key === moduleId);
+  return { moduleId, moduleLabel: mod?.label || moduleId, pattern };
+}
 
 /* ── Module definitions (Rail) ── */
 export const NAV_MODULES = [
@@ -185,7 +273,7 @@ export const NAV_SECTIONS = [
       { to: '/conformite', icon: ShieldCheck, label: 'Conformité', keywords: ['compliance', 'reglementation', 'decret'] },
       { to: '/conformite/tertiaire', icon: Building2, label: 'Tertiaire / OPERAT', keywords: ['tertiaire', 'operat', 'efa', 'decret', 'declaration'] },
       { to: '/actions',    icon: ListChecks,  label: "Plan d'actions", keywords: ['actions', 'plan', 'todo'] },
-      { to: '/anomalies',  icon: AlertTriangle, label: 'Action Center', keywords: ['anomalies', 'actions', 'risque', 'priorite'] },
+      { to: '/anomalies',  icon: AlertTriangle, label: "Centre d'actions", keywords: ['anomalies', 'actions', 'centre', 'risque', 'priorite'] },
     ],
   },
   {
@@ -251,18 +339,9 @@ export function getSectionsForModule(moduleKey) {
   return NAV_SECTIONS.filter((s) => s.module === moduleKey);
 }
 
-/** Resolve current module from pathname */
+/** Resolve current module from pathname (delegates to matchRouteToModule) */
 export function resolveModule(pathname) {
-  // Exact match first
-  if (ROUTE_MODULE_MAP[pathname]) return ROUTE_MODULE_MAP[pathname];
-  // Prefix match (e.g. /consommations/explorer → analyse)
-  const sorted = Object.keys(ROUTE_MODULE_MAP).sort((a, b) => b.length - a.length);
-  for (const route of sorted) {
-    if (pathname.startsWith(route + '/') || pathname === route) {
-      return ROUTE_MODULE_MAP[route];
-    }
-  }
-  return 'cockpit';
+  return matchRouteToModule(pathname).moduleId;
 }
 
 // Flat list of all nav items (for CommandPalette search)

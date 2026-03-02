@@ -897,8 +897,8 @@ describe('BillIntelPage — 100% Français (V70)', () => {
     expect(code).toMatch(/SEVERITY_LABELS\[/);
   });
 
-  it('handleActionSaved calls toast on success', () => {
-    const fn = code.match(/function handleActionSaved[\s\S]{0,800}/)?.[0] || '';
+  it('handleOpenCreateAction onSave calls toast on success', () => {
+    const fn = code.match(/function handleOpenCreateAction[\s\S]{0,800}/)?.[0] || '';
     expect(fn).toMatch(/toast\(/);
     expect(fn).toMatch(/Action créée/);
   });
@@ -1021,8 +1021,8 @@ describe('Actions CTA — CreateActionModal + action_id (V71)', () => {
   const page = readSrc('pages', 'BillIntelPage.jsx');
   const backend = readBackend('routes', 'billing.py');
 
-  it('BillIntelPage imports CreateActionModal', () => {
-    expect(page).toMatch(/import\s+CreateActionModal\s+from\s+['"]\.\.\/components\/CreateActionModal['"]/);
+  it('BillIntelPage imports useActionDrawer (Étape 4: migrated from CreateActionModal)', () => {
+    expect(page).toMatch(/useActionDrawer/);
   });
 
   it('BillIntelPage imports ActionDetailDrawer', () => {
@@ -1035,14 +1035,14 @@ describe('Actions CTA — CreateActionModal + action_id (V71)', () => {
     expect(page).toMatch(/new Map\(/);
   });
 
-  it('BillIntelPage has handleOpenCreateAction + handleActionSaved', () => {
+  it('BillIntelPage has handleOpenCreateAction + openActionDrawer', () => {
     expect(page).toMatch(/handleOpenCreateAction/);
-    expect(page).toMatch(/handleActionSaved/);
+    expect(page).toMatch(/openActionDrawer/);
   });
 
-  it('BillIntelPage renders <CreateActionModal> in JSX', () => {
-    expect(page).toMatch(/<CreateActionModal/);
-    expect(page).toMatch(/actionModalInsight/);
+  it('BillIntelPage uses ActionDrawerContext (Étape 4)', () => {
+    expect(page).toMatch(/useActionDrawer/);
+    expect(page).toMatch(/openActionDrawer/);
   });
 
   it('BillIntelPage renders <ActionDetailDrawer> with viewActionId', () => {

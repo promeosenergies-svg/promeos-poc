@@ -9,7 +9,7 @@ import {
   Plus, Download, Printer, ListChecks, RefreshCw,
   AlertTriangle, BadgeEuro, ShieldCheck,
   Users, ArrowUpDown, UserPlus, FileText,
-  Columns3, List, ChevronRight, ChevronDown, Search, CheckCircle, X,
+  Columns3, List, ChevronRight, ChevronDown, Search, CheckCircle, X, CalendarDays, Lock,
 } from 'lucide-react';
 import { Card, CardBody, Badge, Button, Select, Pagination, EmptyState, Tabs, TrustBadge, PageShell } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td, ThCheckbox, TdCheckbox } from '../ui';
@@ -23,6 +23,7 @@ import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { track } from '../services/tracker';
 import { ACTION_STATUS_LABELS, ACTION_TYPE_LABELS } from '../domain/compliance/complianceLabels.fr';
+import { groupActionsByWeek, computeCloseabilityBadge } from '../models/dossierModel';
 
 /* Backend → frontend field mappers */
 const SOURCE_MAP = { compliance: 'conformite', consumption: 'conso', billing: 'facture', purchase: 'maintenance', insight: 'operat' };
@@ -274,6 +275,11 @@ function GroupedTableView({ actions, groupBy, onCardClick, selected, onToggleSel
                       <Td className={`text-sm whitespace-nowrap ${overdue ? 'text-red-600 font-semibold' : ''}`}>
                         {a.due_date}
                         {overdue && <span className="ml-1 text-xs bg-red-50 text-red-600 px-1.5 py-0.5 rounded">En retard</span>}
+                        {(() => { const cb = computeCloseabilityBadge(a); return cb.status === 'crit' ? (
+                          <span className="ml-1 text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full font-semibold inline-flex items-center gap-0.5">
+                            <Lock size={9} /> Bloqué
+                          </span>
+                        ) : null; })()}
                       </Td>
                       <Td className="text-sm">{a.owner || <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-400 rounded">Non assigné</span>}</Td>
                       <Td>
@@ -297,6 +303,72 @@ function GroupedTableView({ actions, groupBy, onCardClick, selected, onToggleSel
             </Table>
           )}
         </Card>
+      ))}
+    </div>
+  );
+}
+
+/* ── Week View (Runbook) ────────────────────────────────────── */
+function WeekView({ actions, onCardClick }) {
+  const groups = useMemo(() => groupActionsByWeek(actions), [actions]);
+
+  const SECTIONS = [
+    { key: 'overdue', label: 'En retard', items: groups.overdue, dot: 'bg-red-500', bg: 'bg-red-50', border: 'border-red-200' },
+    { key: 'today', label: "Aujourd'hui", items: groups.today, dot: 'bg-amber-500', bg: 'bg-amber-50', border: 'border-amber-200' },
+    { key: 'week', label: '7 prochains jours', items: groups.week, dot: 'bg-blue-500', bg: 'bg-blue-50', border: 'border-blue-200' },
+    { key: 'later', label: 'Plus tard / sans échéance', items: groups.later, dot: 'bg-gray-400', bg: 'bg-gray-50', border: 'border-gray-200' },
+  ];
+
+  return (
+    <div className="space-y-4">
+      {SECTIONS.map(({ key, label, items, dot, bg, border }) => (
+        <div key={key}>
+          <div className="flex items-center gap-2 mb-2">
+            <span className={`w-2.5 h-2.5 rounded-full ${dot}`} />
+            <span className="text-sm font-semibold text-gray-700">{label}</span>
+            <span className="text-xs text-gray-400">{items.length}</span>
+          </div>
+          {items.length === 0 ? (
+            <p className="text-xs text-gray-400 py-3 pl-5">Aucune action</p>
+          ) : (
+            <div className="space-y-1.5">
+              {items.map((a) => {
+                const typeBadge = TYPE_BADGE[a.type] || TYPE_BADGE.maintenance;
+                const closeBadge = computeCloseabilityBadge(a);
+                return (
+                  <div
+                    key={a.id}
+                    onClick={() => onCardClick(a)}
+                    className={`flex items-center gap-3 px-4 py-2.5 rounded-lg border cursor-pointer
+                      hover:shadow-sm transition-shadow ${bg} ${border}`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{a.titre}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <Badge status={typeBadge.status}>{typeBadge.label}</Badge>
+                        <Badge status={PRIORITY_BADGE[a.priorite] || 'neutral'}>{PRIORITY_LABEL[a.priorite]}</Badge>
+                        {closeBadge.label && (
+                          <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full
+                            ${closeBadge.status === 'crit' ? 'bg-red-100 text-red-700' : closeBadge.status === 'warn' ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>
+                            {closeBadge.status === 'crit' && <Lock size={10} />}
+                            {closeBadge.label}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-xs text-gray-500">{a.due_date || 'Sans échéance'}</p>
+                      <p className="text-xs text-gray-400">{a.owner || 'Non assigné'}</p>
+                    </div>
+                    {a.impact_eur > 0 && (
+                      <span className="text-sm font-bold text-red-600 shrink-0">{a.impact_eur.toLocaleString()} €</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       ))}
     </div>
   );
@@ -702,6 +774,13 @@ export default function ActionsPage({ autoCreate = false }) {
             >
               <Columns3 size={16} />
             </button>
+            <button
+              onClick={() => setViewMode('week')}
+              className={`p-1.5 rounded-md transition ${viewMode === 'week' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+              title="Vue Semaine (Runbook)"
+            >
+              <CalendarDays size={16} />
+            </button>
           </div>
         </div>
       </div>
@@ -721,7 +800,12 @@ export default function ActionsPage({ autoCreate = false }) {
       )}
 
       {/* Content: table / kanban / grouped */}
-      {total === 0 ? renderEmptyState() : viewMode === 'kanban' ? (
+      {total === 0 ? renderEmptyState() : viewMode === 'week' ? (
+        <WeekView
+          actions={filtered}
+          onCardClick={(a) => { setDetailAction(a); track('row_click', { action_id: a.id }); }}
+        />
+      ) : viewMode === 'kanban' ? (
         <KanbanBoard
           actions={filtered}
           onStatusChange={handleInlineStatusChange}

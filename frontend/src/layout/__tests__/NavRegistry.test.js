@@ -17,6 +17,7 @@ import {
   TINT_PALETTE,
   getSectionsForModule,
   resolveModule,
+  matchRouteToModule,
   getModuleTint,
 } from '../NavRegistry';
 
@@ -422,5 +423,88 @@ describe('getModuleTint', () => {
   it('every module has exactly one unique tint key', () => {
     const tints = NAV_MODULES.map((m) => m.tint);
     expect(new Set(tints).size).toBe(tints.length);
+  });
+});
+
+/* ── Route coverage guard-rails ── */
+describe('Route coverage guard-rails', () => {
+  it('compliance routes resolve to operations', () => {
+    expect(resolveModule('/compliance')).toBe('operations');
+    expect(resolveModule('/compliance/findings')).toBe('operations');
+    expect(resolveModule('/compliance/obligations')).toBe('operations');
+  });
+
+  it('consommations/portfolio resolves to analyse', () => {
+    expect(resolveModule('/consommations/portfolio')).toBe('analyse');
+  });
+
+  it('no English labels in NAV_SECTIONS items', () => {
+    for (const section of NAV_SECTIONS) {
+      for (const item of section.items) {
+        expect(item.label).not.toMatch(/\bCenter\b/i);
+        expect(item.label).not.toMatch(/\bKnowledge Base\b/i);
+      }
+    }
+  });
+
+  it('all nav item routes are in ROUTE_MODULE_MAP', () => {
+    const knownRoutes = Object.keys(ROUTE_MODULE_MAP);
+    for (const item of ALL_NAV_ITEMS) {
+      expect(knownRoutes).toContain(item.to);
+    }
+  });
+
+  it('anomalies label is Centre d\'actions (FR)', () => {
+    const anomalies = ALL_NAV_ITEMS.find((item) => item.to === '/anomalies');
+    expect(anomalies).toBeDefined();
+    expect(anomalies.label).toBe("Centre d'actions");
+  });
+
+  it('dynamic routes resolve correctly (not fallback to cockpit)', () => {
+    expect(resolveModule('/sites/42')).toBe('admin');
+    expect(resolveModule('/actions/123')).toBe('operations');
+    expect(resolveModule('/conformite/tertiaire/efa/5')).toBe('operations');
+    expect(resolveModule('/compliance/sites/99')).toBe('operations');
+  });
+});
+
+/* ── V2 Guard-rails: IDs, labels, FR ── */
+describe('Guard-rails — IDs and labels', () => {
+  it('all nav item routes start with /', () => {
+    for (const item of ALL_NAV_ITEMS) {
+      expect(item.to.startsWith('/')).toBe(true);
+    }
+  });
+
+  it('no duplicate labels within the same section', () => {
+    for (const section of NAV_SECTIONS) {
+      const labels = section.items.map((item) => item.label);
+      const unique = new Set(labels);
+      expect(unique.size).toBe(labels.length);
+    }
+  });
+
+  it('no English words in nav labels (extended blacklist)', () => {
+    const blacklist = ['Dashboard', 'Settings', 'Home', 'Center', 'Knowledge Base',
+      'Overview', 'Reports', 'Search', 'Delete', 'Edit', 'Create', 'Submit'];
+    for (const item of ALL_NAV_ITEMS) {
+      for (const word of blacklist) {
+        expect(item.label.toLowerCase()).not.toContain(word.toLowerCase());
+      }
+    }
+  });
+
+  it('matchRouteToModule returns valid moduleLabel for all static routes', () => {
+    const validLabels = NAV_MODULES.map((m) => m.label);
+    for (const [path] of Object.entries(ROUTE_MODULE_MAP)) {
+      if (path.includes(':')) continue; // skip dynamic patterns
+      const { moduleLabel } = matchRouteToModule(path);
+      expect(validLabels).toContain(moduleLabel);
+    }
+  });
+
+  it('every section key is unique across all sections', () => {
+    const keys = NAV_SECTIONS.map((s) => s.key);
+    expect(new Set(keys).size).toBe(keys.length);
   });
 });

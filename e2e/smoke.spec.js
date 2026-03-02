@@ -1,13 +1,13 @@
 /**
  * PROMEOS — E2E Smoke Tests
  * Validates: API health, login flow, dashboard render.
- * Requires: backend on :8000, frontend on :5173.
+ * Requires: backend on :8001, frontend on :5173.
  */
 import { test, expect } from '@playwright/test';
 
 test.describe('Smoke tests', () => {
   test('API health check returns ok', async ({ request }) => {
-    const res = await request.get('http://127.0.0.1:8000/api/health');
+    const res = await request.get('http://127.0.0.1:8001/api/health');
     expect(res.ok()).toBeTruthy();
     const body = await res.json();
     expect(body).toHaveProperty('status');
@@ -49,7 +49,7 @@ test.describe('Smoke tests', () => {
   });
 
   test('Demo manifest returns consistent site counts', async ({ request }) => {
-    const res = await request.get('http://127.0.0.1:8000/api/demo/manifest');
+    const res = await request.get('http://127.0.0.1:8001/api/demo/manifest');
     if (res.ok()) {
       const manifest = await res.json();
       // Verify structure

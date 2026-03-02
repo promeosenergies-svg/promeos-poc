@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { Badge as UIBadge } from '../ui';
 
-const API = 'http://127.0.0.1:8000';
+const API = 'http://127.0.0.1:8001';
 
 // Badge conformité (shared style)
 const STATUT_CONFIG = {

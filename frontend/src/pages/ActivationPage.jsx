@@ -12,6 +12,9 @@ import { PageShell, Card, CardBody, Button, Progress, EmptyState } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { buildActivationChecklist, ACTIVATION_DIMENSIONS } from '../models/dataActivationModel';
 import useActivationData from '../hooks/useActivationData';
+import useDataReadiness from '../hooks/useDataReadiness';
+import HealthSummary from '../components/HealthSummary';
+import { useActionDrawer } from '../contexts/ActionDrawerContext';
 
 // ── Status icon inline ──────────────────────────────────────────────────────
 function DimStatus({ ok }) {
@@ -52,6 +55,22 @@ export default function ActivationPage() {
   }, [scopedSites]);
 
   const { billingSummary, purchaseSignals, contractSiteIds, loading } = useActivationData(kpis.total);
+  const { readinessState } = useDataReadiness(kpis);
+  const { openActionDrawer } = useActionDrawer();
+
+  function handleCreateFromReadiness(reason) {
+    openActionDrawer({
+      prefill: {
+        titre: reason.label,
+        type: 'conformite',
+        priorite: reason.severity === 'critical' ? 'critical' : 'high',
+        description: reason.label,
+      },
+      sourceType: 'insight',
+      sourceId: `readiness:${reason.id}`,
+      idempotencyKey: `readiness:${reason.id}`,
+    });
+  }
 
   const activation = useMemo(
     () => buildActivationChecklist({
@@ -113,6 +132,11 @@ export default function ActivationPage() {
 
   return (
     <PageShell icon={Database} title="Activation des donn\u00e9es" subtitle={`${activation.activatedCount}/${activation.totalDimensions} briques actives`}>
+      {/* ── Readiness banner ── */}
+      {readinessState && (
+        <HealthSummary healthState={readinessState} onNavigate={navigate} onCreateAction={handleCreateFromReadiness} compact />
+      )}
+
       {/* ── Resume par dimension ── */}
       <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
         {activation.dimensions.map((dim) => (

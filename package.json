@@ -10,7 +10,7 @@
     "install-all": "npm install && cd frontend && npm install && cd ..",
     "setup": "bash scripts/setup.sh",
     "dev": "bash scripts/dev.sh",
-    "dev:full": "concurrently -n BE,FE -c blue,green \"py -3.14 backend/main.py\" \"wait-on http://127.0.0.1:8000/api/health && npm run dev --prefix frontend\"",
+    "dev:full": "concurrently -n BE,FE -c blue,green \"py -3.14 backend/main.py\" \"wait-on http://127.0.0.1:8001/api/health && npm run dev --prefix frontend\"",
     "backend": "cd backend && python main.py",
     "frontend": "npm run dev --prefix frontend",
     "build": "npm run build --prefix frontend",

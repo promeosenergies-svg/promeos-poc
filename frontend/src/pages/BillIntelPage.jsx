@@ -16,23 +16,28 @@ import {
   getSites,
 } from '../services/api';
 import { Card, CardBody, Badge, Button, TrustBadge, PageShell } from '../ui';
+import Tooltip from '../ui/Tooltip';
 import { useToast } from '../ui/ToastProvider';
 import {
-  FileText, AlertTriangle, Upload, Play,
+  FileText, AlertTriangle, Upload, Play, Printer,
   DollarSign, Zap, TrendingUp, RefreshCw, CheckCircle2, CalendarRange,
 } from 'lucide-react';
 import { useExpertMode } from '../contexts/ExpertModeContext';
+import { useScope } from '../contexts/ScopeContext';
 import { track } from '../services/tracker';
 import InsightDrawer from '../components/InsightDrawer';
-import CreateActionModal from '../components/CreateActionModal';
+import { useActionDrawer } from '../contexts/ActionDrawerContext';
 import ActionDetailDrawer from '../components/ActionDetailDrawer';
+import DossierPrintView from '../components/DossierPrintView';
+import HealthSummary from '../components/HealthSummary';
+import { computeBillingHealthState, computeHealthTrend, loadHealthSnapshot, saveHealthSnapshot } from '../models/billingHealthModel';
 
 const SEVERITY_BADGE = {
   critical: 'crit', high: 'warn', medium: 'info', low: 'neutral',
 };
 
 const TYPE_LABELS = {
-  shadow_gap: 'Écart shadow billing',
+  shadow_gap: 'Écart facture / consommation',
   unit_price_high: 'Prix unitaire élevé',
   duplicate_invoice: 'Doublon facture',
   missing_period: 'Période manquante',
@@ -93,6 +98,7 @@ export default function BillIntelPage() {
   const { isExpert } = useExpertMode();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { scope } = useScope();
   const [searchParams] = useSearchParams();
 
   // Deep-link params: ?site_id=X&month=YYYY-MM
@@ -107,7 +113,7 @@ export default function BillIntelPage() {
   const [seeding, setSeeding] = useState(false);
   const [insightFilter, setInsightFilter] = useState('all');
   const [actionMap, setActionMap] = useState(new Map());
-  const [actionModalInsight, setActionModalInsight] = useState(null);
+  const { openActionDrawer } = useActionDrawer();
   const [viewActionId, setViewActionId] = useState(null);
   const [pdfSiteId, setPdfSiteId] = useState('');
   const [invoiceSearch, setInvoiceSearch] = useState('');
@@ -115,22 +121,28 @@ export default function BillIntelPage() {
   const [periodPreset, setPeriodPreset] = useState('all');
   const [drawerInsightId, setDrawerInsightId] = useState(null);
   const [sites, setSites] = useState([]);
+  const [allInsights, setAllInsights] = useState([]); // unfiltered — for health computation
   const csvInputRef = useRef(null);
   const pdfInputRef = useRef(null);
+  const [dossierSource, setDossierSource] = useState(null);
 
   async function fetchData() {
     setLoading(true);
     try {
       const insightParams = { ...(insightFilter !== 'all' && { status: insightFilter }), ...(siteFilter && { site_id: siteFilter }) };
       const invoiceParams = { ...(siteFilter && { site_id: siteFilter }) };
-      const [s, i, inv] = await Promise.all([
+      // Fetch unfiltered insights in parallel for health banner
+      const healthInsightParams = siteFilter ? { site_id: siteFilter } : {};
+      const [s, i, inv, allIns] = await Promise.all([
         getBillingSummary(),
         getBillingInsights(insightParams),
         getBillingInvoices(invoiceParams),
+        getBillingInsights(healthInsightParams).catch(() => ({ insights: [] })),
       ]);
       setSummary(s);
       const insightsData = i.insights || [];
       setInsights(insightsData);
+      setAllInsights(allIns.insights || []);
       // Initialize actionMap from backend action_id
       const newMap = new Map();
       for (const ins of insightsData) {
@@ -185,6 +197,26 @@ export default function BillIntelPage() {
         );
       });
   }, [invoices, periodPreset, monthFilter, invoiceStatusFilter, invoiceSearch]);
+
+  // ── Billing health banner ──
+  const billingHealth = useMemo(() => {
+    if (!summary) return null;
+    return computeBillingHealthState(summary, allInsights);
+  }, [summary, allInsights]);
+
+  const [billingTrend, setBillingTrend] = useState(null);
+  const snapshotScope = useMemo(() => ({
+    orgId: scope?.orgId,
+    scopeType: 'billing',
+    scopeId: scope?.orgId || 'all',
+  }), [scope?.orgId]);
+
+  useEffect(() => {
+    if (!billingHealth) return;
+    const prev = loadHealthSnapshot('billing', snapshotScope);
+    setBillingTrend(computeHealthTrend(billingHealth, prev));
+    saveHealthSnapshot('billing', billingHealth, snapshotScope);
+  }, [billingHealth, snapshotScope]);
 
   async function handleSeedDemo() {
     setSeeding(true);
@@ -261,18 +293,28 @@ export default function BillIntelPage() {
   }
 
   function handleOpenCreateAction(insight) {
-    setActionModalInsight(insight);
-  }
-
-  function handleActionSaved(result) {
-    const insightId = actionModalInsight?.id;
-    const actionId = result?.id;
-    if (insightId) {
-      setActionMap(prev => new Map([...prev, [insightId, actionId || true]]));
-    }
-    setActionModalInsight(null);
-    track('billing_create_action', { insight_id: insightId, action_id: actionId });
-    toast('Action créée — visible dans le Plan d\'actions', 'success');
+    openActionDrawer({
+      prefill: {
+        titre: insight?.message || '',
+        type: 'facture',
+        impact_eur: insight?.estimated_loss_eur || '',
+        description: insight?.message || '',
+      },
+      siteId: insight?.site_id,
+      sourceType: 'billing',
+      sourceId: insight ? String(insight.id) : null,
+      idempotencyKey: insight ? `billing-insight:${insight.id}` : null,
+    }, {
+      onSave: (result) => {
+        const insightId = insight?.id;
+        const actionId = result?.id;
+        if (insightId) {
+          setActionMap(prev => new Map([...prev, [insightId, actionId || true]]));
+        }
+        track('billing_create_action', { insight_id: insightId, action_id: actionId });
+        toast('Action créée — visible dans le Plan d\'actions', 'success');
+      },
+    });
   }
 
   const hasData = summary && summary.total_invoices > 0;
@@ -324,9 +366,11 @@ export default function BillIntelPage() {
             <input ref={pdfInputRef} type="file" accept=".pdf" className="sr-only" onChange={handlePdfImport} />
           </div>
           {hasData && (
-            <Button size="sm" onClick={handleAuditAll} disabled={auditing}>
-              <Play size={14} /> {auditing ? 'Audit...' : 'Auditer tout'}
-            </Button>
+            <Tooltip text={(summary?.distinct_months ?? summary?.total_invoices ?? 0) < 3 ? 'Minimum 3 mois de factures requis' : ''}>
+              <Button size="sm" onClick={handleAuditAll} disabled={auditing || (summary?.distinct_months ?? summary?.total_invoices ?? 0) < 3}>
+                <Play size={14} /> {auditing ? 'Audit...' : 'Auditer tout'}
+              </Button>
+            </Tooltip>
           )}
           {!hasData && (
             <Button onClick={handleSeedDemo} disabled={seeding}>
@@ -352,6 +396,11 @@ export default function BillIntelPage() {
             Réinitialiser filtres
           </button>
         </div>
+      )}
+
+      {/* Billing Health Banner */}
+      {billingHealth && (
+        <HealthSummary healthState={billingHealth} onNavigate={navigate} compact trend={billingTrend} />
       )}
 
       {/* Summary cards */}
@@ -471,6 +520,14 @@ export default function BillIntelPage() {
                     >
                       Comprendre l'écart
                     </button>
+                    <button
+                      onClick={() => setDossierSource({ sourceType: 'billing', sourceId: String(insight.id), label: insight.message })}
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium
+                        text-gray-600 bg-gray-50 hover:bg-gray-100 transition-colors whitespace-nowrap"
+                      title="Exporter le dossier"
+                    >
+                      <Printer size={12} /> Dossier
+                    </button>
                   </CardBody>
                 </Card>
               );
@@ -575,21 +632,7 @@ export default function BillIntelPage() {
         </div>
       )}
 
-      <CreateActionModal
-        open={!!actionModalInsight}
-        onClose={() => setActionModalInsight(null)}
-        onSave={handleActionSaved}
-        prefill={{
-          titre: actionModalInsight?.message || '',
-          type: 'facture',
-          impact_eur: actionModalInsight?.estimated_loss_eur || '',
-          description: actionModalInsight?.message || '',
-        }}
-        siteId={actionModalInsight?.site_id}
-        sourceType="billing"
-        sourceId={actionModalInsight ? String(actionModalInsight.id) : null}
-        idempotencyKey={actionModalInsight ? `billing-insight:${actionModalInsight.id}` : null}
-      />
+      {/* Action Drawer — managed by ActionDrawerContext */}
 
       {viewActionId && (
         <ActionDetailDrawer
@@ -604,6 +647,15 @@ export default function BillIntelPage() {
         open={!!drawerInsightId}
         onClose={() => setDrawerInsightId(null)}
         insightId={drawerInsightId}
+      />
+
+      {/* Dossier print view (Étape 5) */}
+      <DossierPrintView
+        open={!!dossierSource}
+        onClose={() => setDossierSource(null)}
+        sourceType={dossierSource?.sourceType}
+        sourceId={dossierSource?.sourceId}
+        sourceLabel={dossierSource?.label}
       />
     </PageShell>
   );

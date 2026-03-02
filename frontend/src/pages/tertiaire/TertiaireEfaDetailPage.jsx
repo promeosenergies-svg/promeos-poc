@@ -5,16 +5,18 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Building2, AlertTriangle, CheckCircle2, Clock, FileText, Download,
+  Building2, AlertTriangle, CheckCircle2, Clock, FileText, Download, Printer,
   Loader2, ArrowRight, ShieldAlert, Users, Calendar, Zap, Link2, Plus,
 } from 'lucide-react';
 import { PageShell, Card, CardBody, Button, Badge } from '../../ui';
+import Tooltip from '../../ui/Tooltip';
 import {
   getTertiaireEfa, runTertiaireControls, precheckTertiaireDeclaration,
   exportTertiairePack, getTertiaireEfaProofs, createAction,
 } from '../../services/api';
 import { buildOperatActionPayload, buildOperatActionDeepLink } from '../../models/operatActionModel';
 import ProofDepositCTA from './components/ProofDepositCTA';
+import DossierPrintView from '../../components/DossierPrintView';
 
 const SEVERITY_VARIANTS = {
   critical: 'crit',
@@ -41,6 +43,7 @@ export default function TertiaireEfaDetailPage() {
   const [proofsStatus, setProofsStatus] = useState(null);
   const [actionFeedback, setActionFeedback] = useState(null);
   const [creatingActionFor, setCreatingActionFor] = useState(null);
+  const [showDossier, setShowDossier] = useState(false);
 
   const handleCreateAction = async (issue) => {
     setCreatingActionFor(issue.code);
@@ -532,14 +535,19 @@ export default function TertiaireEfaDetailPage() {
                 <Button size="xs" variant="secondary" onClick={handlePrecheck}>
                   <CheckCircle2 size={14} /> Pré-vérifier
                 </Button>
-                <Button
-                  size="xs"
-                  data-testid="btn-export-pack"
-                  onClick={handleExport}
-                  disabled={exporting}
-                >
-                  {exporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-                  Exporter le pack
+                <Tooltip text={totalSurface === 0 ? 'Données EFA incomplètes — renseignez les surfaces' : ''}>
+                  <Button
+                    size="xs"
+                    data-testid="btn-export-pack"
+                    onClick={handleExport}
+                    disabled={exporting || totalSurface === 0}
+                  >
+                    {exporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+                    Exporter le pack
+                  </Button>
+                </Tooltip>
+                <Button size="xs" variant="secondary" onClick={() => setShowDossier(true)} data-testid="btn-dossier-efa">
+                  <Printer size={14} /> Dossier
                 </Button>
               </div>
             </div>
@@ -622,6 +630,16 @@ export default function TertiaireEfaDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Dossier print view (Étape 5) */}
+      <DossierPrintView
+        open={showDossier}
+        onClose={() => setShowDossier(false)}
+        sourceType="insight"
+        sourceId={`operat:${id}:${new Date().getFullYear()}`}
+        sourceLabel={efa?.nom ? `EFA — ${efa.nom}` : `EFA #${id}`}
+        period={String(new Date().getFullYear())}
+      />
     </PageShell>
   );
 }

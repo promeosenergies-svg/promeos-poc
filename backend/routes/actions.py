@@ -50,6 +50,7 @@ class ActionCreate(BaseModel):
     notes: Optional[str] = None
     idempotency_key: Optional[str] = None
     co2e_savings_est_kg: Optional[float] = None
+    evidence_required: Optional[bool] = None
 
 
 class ActionPatch(BaseModel):
@@ -64,6 +65,7 @@ class ActionPatch(BaseModel):
     description: Optional[str] = None
     co2e_savings_est_kg: Optional[float] = None
     closure_justification: Optional[str] = None  # V49
+    evidence_required: Optional[bool] = None
 
 
 class CommentCreate(BaseModel):
@@ -85,6 +87,46 @@ class EvidenceCreate(BaseModel):
 def _resolve_org(request: Request, auth: Optional[AuthContext], db: Session, org_id: Optional[int] = None) -> int:
     """Delegate to centralized resolve_org_id (DEMO_MODE-aware)."""
     return resolve_org_id(request, auth, db, org_id_override=org_id)
+
+
+_SOURCE_LABELS = {
+    "compliance": "Conformité",
+    "consumption": "Consommation",
+    "billing": "Facturation",
+    "purchase": "Achats",
+    "manual": "Manuelle",
+    "insight": "Diagnostic",
+    "lever_engine": "Levier",
+}
+
+
+def _source_label(source_type) -> str:
+    """FR label for a source type."""
+    val = source_type.value if hasattr(source_type, 'value') else str(source_type or "")
+    return _SOURCE_LABELS.get(val, val)
+
+
+def _source_deeplink(source_type, source_id) -> str | None:
+    """Build a relative URL to navigate back to the source object."""
+    val = source_type.value if hasattr(source_type, 'value') else str(source_type or "")
+    sid = source_id or ""
+    if val == "compliance":
+        return "/conformite"
+    if val == "billing":
+        return "/bill-intel"
+    if val == "consumption":
+        return "/consommations"
+    if val == "purchase":
+        return "/performance"
+    if val == "insight":
+        if sid.startswith("readiness:"):
+            return "/activation"
+        if sid.startswith("operat:"):
+            return "/conformite/tertiaire/efa"
+        return "/anomalies"
+    if val == "lever_engine":
+        return "/actions"
+    return None
 
 
 def _serialize_action(a: ActionItem) -> dict:
@@ -124,6 +166,11 @@ def _serialize_action(a: ActionItem) -> dict:
         "co2e_savings_est_kg": a.co2e_savings_est_kg,
         # V49
         "closure_justification": a.closure_justification,
+        # Etape 4: Evidence gate
+        "evidence_required": a.evidence_required,
+        # Étape 4.1: Source tracing
+        "source_label": _source_label(a.source_type),
+        "source_deeplink": _source_deeplink(a.source_type, a.source_id),
         # Timestamps
         "created_at": a.created_at.isoformat() if a.created_at else None,
         "updated_at": a.updated_at.isoformat() if a.updated_at else None,
@@ -251,6 +298,7 @@ def create_action(
         notes=notes,
         idempotency_key=data.idempotency_key,
         co2e_savings_est_kg=data.co2e_savings_est_kg,
+        evidence_required=data.evidence_required or False,
     )
     db.add(item)
     db.commit()
@@ -402,11 +450,15 @@ def patch_action(
         except ValueError:
             raise HTTPException(status_code=400, detail=f"Statut invalide: {data.status}")
         if old_status != data.status:
-            # V49: Enforce close rules for OPERAT actions
-            if new_status == ActionStatus.DONE and is_operat_action(action):
-                result = check_closable(action, data.closure_justification)
+            # V49 + Etape 4: Enforce close rules (OPERAT + evidence_required)
+            if new_status == ActionStatus.DONE:
+                ev_count = db.query(ActionEvidence).filter(ActionEvidence.action_id == action_id).count()
+                result = check_closable(action, data.closure_justification, evidence_count=ev_count)
                 if not result["closable"]:
-                    raise HTTPException(status_code=400, detail=result["reason"])
+                    raise HTTPException(
+                        status_code=400,
+                        detail={"code": result.get("code", "CLOSE_BLOCKED"), "message": result["reason"]},
+                    )
 
             action.status = new_status
             _create_event(db, action.id, "status_change", old_value=old_status, new_value=data.status)
@@ -460,6 +512,9 @@ def patch_action(
 
     if data.co2e_savings_est_kg is not None:
         action.co2e_savings_est_kg = data.co2e_savings_est_kg
+
+    if data.evidence_required is not None:
+        action.evidence_required = data.evidence_required
 
     db.commit()
     db.refresh(action)
@@ -837,8 +892,11 @@ def get_action_closeability(action_id: int, db: Session = Depends(get_db)):
     if not action:
         raise HTTPException(status_code=404, detail="Action non trouvée")
 
-    result = check_closable(action)
+    ev_count = db.query(ActionEvidence).filter(ActionEvidence.action_id == action_id).count()
+    result = check_closable(action, evidence_count=ev_count)
     result["is_operat"] = is_operat_action(action)
+    result["evidence_required"] = getattr(action, 'evidence_required', False)
+    result["evidence_count"] = ev_count
     return result
 
 

@@ -32,7 +32,7 @@ describe('ImportPage: status-pack 404 is silent', () => {
   });
 
   it('isSilentUrl matches absolute URL variant', () => {
-    expect(isSilentUrl({ url: 'http://localhost:8000/api/demo/status-pack?x=1' })).toBe(true);
+    expect(isSilentUrl({ url: 'http://localhost:8001/api/demo/status-pack?x=1' })).toBe(true);
   });
 
   it('seed-pack is NOT silent (user actions should toast)', () => {
@@ -96,7 +96,7 @@ describe('isDemoPath — scope-exempt guard for /demo/* endpoints', () => {
   });
 
   it('absolute URL with /demo/ is detected', () => {
-    expect(isDemoPath('http://localhost:8000/api/demo/seed-pack?pack=helios')).toBe(true);
+    expect(isDemoPath('http://localhost:8001/api/demo/seed-pack?pack=helios')).toBe(true);
   });
 
   it('null/undefined/empty returns false', () => {

@@ -51,8 +51,8 @@ describe('B. BillIntelPage.jsx — PDF upload + action CTA', () => {
     expect(code).toMatch(/importInvoicesPdf/);
   });
 
-  it('imports CreateActionModal (V68: replaced createActionFromBillingInsight)', () => {
-    expect(code).toMatch(/import\s+CreateActionModal/);
+  it('imports useActionDrawer (Étape 4: replaced CreateActionModal)', () => {
+    expect(code).toMatch(/useActionDrawer/);
   });
 
   it('has PDF import handler (handlePdfImport)', () => {
