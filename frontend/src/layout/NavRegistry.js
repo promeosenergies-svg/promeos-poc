@@ -54,6 +54,7 @@ export const ROUTE_MODULE_MAP = {
   '/admin/assignments': 'admin',
   '/admin/audit': 'admin',
   '/compliance': 'operations',
+  '/compliance/pipeline': 'operations',
   '/compliance/findings': 'operations',
   '/compliance/obligations': 'operations',
   '/compliance/sites/:siteId': 'operations',

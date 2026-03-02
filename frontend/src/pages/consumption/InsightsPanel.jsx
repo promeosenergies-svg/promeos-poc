@@ -93,6 +93,10 @@ export function computeInsightKpis(seriesData, days) {
 
 // ── KPI card ─────────────────────────────────────────────────────────────────
 
+const u = (energyType) => energyType === 'gas' ? 'kWh PCS' : 'kWh';
+const uDay = (energyType) => energyType === 'gas' ? 'kWh PCS/j' : 'kWh/j';
+const uMwh = (energyType) => energyType === 'gas' ? 'MWh PCS' : 'MWh';
+
 const KPI_CONFIG = [
   {
     id: 'total_kwh',
@@ -100,7 +104,7 @@ const KPI_CONFIG = [
     icon: Zap,
     iconBg: 'bg-blue-50',
     iconText: 'text-blue-500',
-    format: (v) => v >= 1000 ? `${(v / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} MWh` : `${v.toLocaleString('fr-FR')} kWh`,
+    format: (v, et) => v >= 1000 ? `${(v / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} ${uMwh(et)}` : `${v.toLocaleString('fr-FR')} ${u(et)}`,
     sub: (_kpis) => `sur la période analysée`,
   },
   {
@@ -109,7 +113,7 @@ const KPI_CONFIG = [
     icon: Activity,
     iconBg: 'bg-indigo-50',
     iconText: 'text-indigo-500',
-    format: (v) => `${v.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} kWh/j`,
+    format: (v, et) => `${v.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} ${uDay(et)}`,
     sub: () => `Consommation journalière moyenne`,
   },
   {
@@ -118,7 +122,7 @@ const KPI_CONFIG = [
     icon: TrendingUp,
     iconBg: 'bg-red-50',
     iconText: 'text-red-500',
-    format: (v) => `${v.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} kWh`,
+    format: (v, et) => `${v.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} ${u(et)}`,
     sub: () => `95e centile — pic de consommation`,
   },
   {
@@ -127,7 +131,7 @@ const KPI_CONFIG = [
     icon: TrendingDown,
     iconBg: 'bg-emerald-50',
     iconText: 'text-emerald-500',
-    format: (v) => `${v.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} kWh`,
+    format: (v, et) => `${v.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} ${u(et)}`,
     sub: () => `5e centile — consommation plancher`,
   },
   {
@@ -154,7 +158,7 @@ const KPI_CONFIG = [
   },
 ];
 
-function KpiCard({ config, value, kpis }) {
+function KpiCard({ config, value, kpis, energyType }) {
   const Icon = config.icon;
   return (
     <div className="rounded-xl border border-gray-100 bg-white px-4 py-3 flex items-start gap-3 hover:shadow-sm transition-shadow">
@@ -163,7 +167,7 @@ function KpiCard({ config, value, kpis }) {
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">{config.label}</p>
-        <p className="text-lg font-bold text-gray-900 leading-tight truncate">{config.format(value)}</p>
+        <p className="text-lg font-bold text-gray-900 leading-tight truncate">{config.format(value, energyType)}</p>
         <p className="text-xs text-gray-500 mt-0.5 truncate">{config.sub(kpis)}</p>
       </div>
     </div>
@@ -244,6 +248,7 @@ export default function InsightsPanel({ siteIds = [], energyType = 'electricity'
             config={cfg}
             value={kpis[cfg.id]}
             kpis={kpis}
+            energyType={energyType}
           />
         ))}
       </div>

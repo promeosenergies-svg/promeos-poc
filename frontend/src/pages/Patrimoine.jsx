@@ -20,7 +20,7 @@ import { Table, Thead, Tbody, Th, Tr, Td, ThCheckbox, TdCheckbox } from '../ui';
 import { SkeletonCard, SkeletonTable } from '../ui/Skeleton';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
-import CreateActionModal from '../components/CreateActionModal';
+import { useActionDrawer } from '../contexts/ActionDrawerContext';
 import PatrimoineWizard from '../components/PatrimoineWizard';
 import PatrimoinePortfolioHealthBar from '../components/PatrimoinePortfolioHealthBar';
 import PatrimoineHeatmap from '../components/PatrimoineHeatmap';
@@ -97,8 +97,7 @@ export default function Patrimoine() {
 
   const scrollRef = useRef(null);
   const [selected, setSelected] = useState(new Set());
-  const [showActionModal, setShowActionModal] = useState(false);
-  const [actionSite, setActionSite] = useState('');
+  const { openActionDrawer } = useActionDrawer();
   const [showWizard, setShowWizard] = useState(false);
   const [drawerSite, setDrawerSite] = useState(null);
   const [drawerInitialTab, setDrawerInitialTab] = useState('resume');
@@ -346,11 +345,10 @@ export default function Patrimoine() {
       navigate(`/sites/${site_id}`);
     }
   }, [scopedSites, navigate]);
-  const openActionFromDrawer = useCallback((siteName) => {
+  const openActionFromDrawer = useCallback((siteName, siteId) => {
     setDrawerSite(null);
-    setActionSite(siteName);
-    setShowActionModal(true);
-  }, []);
+    openActionDrawer({ prefill: { site: siteName }, siteId: siteId || null, sourceType: 'patrimoine' });
+  }, [openActionDrawer]);
 
   const _hasFilters = search || filterUsage || filterStatut || filterAnomalies;
   const activeChips = [];
@@ -387,7 +385,7 @@ export default function Patrimoine() {
       subtitle={subtitle}
       actions={
         <>
-          {!isEmptyPatrimoine && <Button variant="secondary" size="sm" onClick={() => setShowActionModal(true)}><Plus size={14} className="mr-1" />Action</Button>}
+          {!isEmptyPatrimoine && <Button variant="secondary" size="sm" onClick={() => openActionDrawer({ sourceType: 'patrimoine' })}><Plus size={14} className="mr-1" />Action</Button>}
           <Button size="sm" onClick={() => setShowWizard(true)}><Upload size={14} className="mr-1" />Importer</Button>
         </>
       }
@@ -526,7 +524,7 @@ export default function Patrimoine() {
                 <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">{fmtEur(selectedStats.risque)} de risque</span>
               )}
               <div className="flex-1" />
-              <Button size="sm" variant="secondary" onClick={() => setShowActionModal(true)} className="!bg-white !text-blue-700 !border-0 hover:!bg-blue-50"><Plus size={13} /> Action</Button>
+              <Button size="sm" variant="secondary" onClick={() => openActionDrawer({ sourceType: 'patrimoine' })} className="!bg-white !text-blue-700 !border-0 hover:!bg-blue-50"><Plus size={13} /> Action</Button>
               <Button size="sm" variant="secondary" onClick={exportCsv} className="!bg-white/20 !text-white !border-0 hover:!bg-white/30"><Download size={13} /> CSV</Button>
               <Button size="sm" variant="secondary" onClick={toggleFavorites} className="!bg-white/20 !text-white !border-0 hover:!bg-white/30"><Star size={13} /></Button>
               <button onClick={() => setSelected(new Set())} className="p-1 rounded hover:bg-white/20"><X size={14} /></button>
@@ -650,7 +648,7 @@ export default function Patrimoine() {
         )}
       </Drawer>
 
-      <CreateActionModal open={showActionModal} onClose={() => { setShowActionModal(false); setActionSite(''); }} onSave={() => {}} defaultSite={actionSite} />
+      {/* Action creation handled by ActionDrawerContext */}
       {showWizard && <PatrimoineWizard onClose={() => setShowWizard(false)} />}
     </PageShell>
   );

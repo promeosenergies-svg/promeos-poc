@@ -1,9 +1,10 @@
 """
 PROMEOS - Routes API pour les Alertes
 """
+import logging
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 from database import get_db
 from models import Alerte
@@ -11,6 +12,9 @@ from routes.schemas import AlerteResponse, AlerteListResponse
 from typing import Optional
 from middleware.auth import get_optional_auth, AuthContext
 from services.iam_scope import check_site_access
+from services.iam_service import log_audit
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/alertes", tags=["Alertes"])
 
@@ -59,17 +63,30 @@ def get_alerte(alerte_id: int, db: Session = Depends(get_db), auth: Optional[Aut
     return alerte
 
 @router.patch("/{alerte_id}/resolve")
-def resolve_alerte(alerte_id: int, db: Session = Depends(get_db)):
+def resolve_alerte(
+    alerte_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
     """
     Marque une alerte comme résolue
     """
     alerte = db.query(Alerte).filter(Alerte.id == alerte_id).first()
-    
+
     if not alerte:
         raise HTTPException(status_code=404, detail="Alerte non trouvée")
-    
+
+    check_site_access(auth, alerte.site_id)
+
+    if alerte.resolue:
+        return {"message": "Alerte déjà résolue"}
+
     alerte.resolue = True
-    alerte.date_resolution = datetime.now()
+    alerte.date_resolution = datetime.utcnow()
+    log_audit(db, auth.user.id if auth else None, "resolve_alert", "alerte", str(alerte_id),
+              ip_address=request.client.host if request.client else None)
+    logger.info("PATCH resolve alert %s (user=%s)", alerte_id, auth.user.id if auth else "anonymous")
     db.commit()
-    
+
     return {"message": "Alerte résolue avec succès"}

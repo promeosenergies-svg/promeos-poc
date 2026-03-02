@@ -16,18 +16,24 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+import logging
+
 from database import get_db
 from middleware.auth import get_optional_auth, AuthContext
 from services.iam_scope import check_site_access
-from models import Organisation, Site, ConsumptionInsight, not_deleted
+from services.iam_service import log_audit
+from models import Site, ConsumptionInsight, not_deleted
 from models.enums import InsightStatus
 from services.consumption_diagnostic import (
     generate_demo_consumption,
-    run_diagnostic,
     run_diagnostic_org,
     get_insights_summary,
 )
-from services.scope_utils import get_scope_org_id, resolve_org_id
+from services.scope_utils import resolve_org_id
+from models.consumption_target import ConsumptionTarget
+from models.tou_schedule import TOUSchedule
+
+logger = logging.getLogger(__name__)
 from services.tunnel_service import compute_tunnel, compute_tunnel_v2
 from services.targets_service import (
     get_targets, create_target, update_target, delete_target, get_progression, get_progression_v2,
@@ -111,7 +117,7 @@ def site_insights(site_id: int, db: Session = Depends(get_db), auth: Optional[Au
 def diagnose(
     request: Request,
     org_id: Optional[int] = Query(None),
-    days: int = Query(30),
+    days: int = Query(30, ge=1, le=365),
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
@@ -125,8 +131,9 @@ def diagnose(
 @router.post("/seed-demo")
 def seed_demo_consumption(
     site_id: Optional[int] = Query(None),
-    days: int = Query(30),
+    days: int = Query(30, ge=1, le=365),
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Generate demo consumption data for a site (or all sites if site_id is None).
     Also seeds TariffCalendar references and gas weather data."""
@@ -136,6 +143,7 @@ def seed_demo_consumption(
     from models.energy_models import EnergyVector
 
     if site_id:
+        check_site_access(auth, site_id)
         result = generate_demo_consumption(db, site_id, days=days)
         return {"status": "ok", "sites": [result]}
 
@@ -325,17 +333,26 @@ def consumption_availability(
 def patch_consumption_insight(
     insight_id: int,
     data: InsightPatch,
+    request: Request,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """PATCH /api/consumption/insights/{insight_id} — workflow update (ack, resolved, false_positive)."""
     ci = db.query(ConsumptionInsight).filter(ConsumptionInsight.id == insight_id).first()
     if not ci:
         raise HTTPException(status_code=404, detail="Insight non trouve")
+    check_site_access(auth, ci.site_id)
+    old_status = ci.insight_status.value if ci.insight_status else None
     if data.insight_status is not None:
         try:
             ci.insight_status = InsightStatus(data.insight_status)
         except ValueError:
             raise HTTPException(status_code=400, detail=f"Statut invalide: {data.insight_status}")
+    log_audit(db, auth.user.id if auth else None, "patch_insight", "consumption_insight", str(insight_id),
+              {"old_status": old_status, "new_status": data.insight_status},
+              ip_address=request.client.host if request.client else None)
+    logger.info("PATCH consumption insight %s: %s -> %s (user=%s)", insight_id, old_status, data.insight_status,
+                auth.user.id if auth else "anonymous")
     db.commit()
     db.refresh(ci)
     return {"status": "updated", "id": ci.id, "insight_status": ci.insight_status.value}
@@ -455,23 +472,40 @@ def create_consumption_target(
 def patch_target(
     target_id: int,
     req: TargetUpdateRequest,
+    request: Request,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Met a jour un objectif existant."""
-    result = update_target(db, target_id, **req.model_dump(exclude_none=True))
-    if not result:
+    target = db.query(ConsumptionTarget).filter(ConsumptionTarget.id == target_id).first()
+    if not target:
         raise HTTPException(status_code=404, detail="Objectif non trouve")
+    check_site_access(auth, target.site_id)
+    result = update_target(db, target_id, **req.model_dump(exclude_none=True))
+    log_audit(db, auth.user.id if auth else None, "patch_target", "consumption_target", str(target_id),
+              req.model_dump(exclude_none=True), ip_address=request.client.host if request.client else None)
+    db.commit()
+    logger.info("PATCH target %s (user=%s)", target_id, auth.user.id if auth else "anonymous")
     return result
 
 
 @router.delete("/targets/{target_id}")
 def remove_target(
     target_id: int,
+    request: Request,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Supprime un objectif."""
-    if not delete_target(db, target_id):
+    target = db.query(ConsumptionTarget).filter(ConsumptionTarget.id == target_id).first()
+    if not target:
         raise HTTPException(status_code=404, detail="Objectif non trouve")
+    check_site_access(auth, target.site_id)
+    delete_target(db, target_id)
+    log_audit(db, auth.user.id if auth else None, "delete_target", "consumption_target", str(target_id),
+              ip_address=request.client.host if request.client else None)
+    db.commit()
+    logger.info("DELETE target %s (user=%s)", target_id, auth.user.id if auth else "anonymous")
     return {"status": "deleted"}
 
 
@@ -602,26 +636,45 @@ def create_tou_schedule(
 def patch_tou_schedule(
     schedule_id: int,
     req: TOUUpdateRequest,
+    request: Request,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Met a jour une grille HP/HC."""
+    sched = db.query(TOUSchedule).filter(TOUSchedule.id == schedule_id).first()
+    if not sched:
+        raise HTTPException(status_code=404, detail="Grille non trouvee")
+    if sched.site_id:
+        check_site_access(auth, sched.site_id)
     data = req.model_dump(exclude_none=True)
     if "windows" in data:
         data["windows"] = [w if isinstance(w, dict) else w.model_dump() for w in data["windows"]]
     result = update_schedule(db, schedule_id, **data)
-    if not result:
-        raise HTTPException(status_code=404, detail="Grille non trouvee")
+    log_audit(db, auth.user.id if auth else None, "patch_tou_schedule", "tou_schedule", str(schedule_id),
+              ip_address=request.client.host if request.client else None)
+    db.commit()
+    logger.info("PATCH tou_schedule %s (user=%s)", schedule_id, auth.user.id if auth else "anonymous")
     return result
 
 
 @router.delete("/tou_schedules/{schedule_id}")
 def remove_tou_schedule(
     schedule_id: int,
+    request: Request,
     db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """Desactive une grille HP/HC."""
-    if not delete_schedule(db, schedule_id):
+    sched = db.query(TOUSchedule).filter(TOUSchedule.id == schedule_id).first()
+    if not sched:
         raise HTTPException(status_code=404, detail="Grille non trouvee")
+    if sched.site_id:
+        check_site_access(auth, sched.site_id)
+    delete_schedule(db, schedule_id)
+    log_audit(db, auth.user.id if auth else None, "delete_tou_schedule", "tou_schedule", str(schedule_id),
+              ip_address=request.client.host if request.client else None)
+    db.commit()
+    logger.info("DELETE tou_schedule %s (user=%s)", schedule_id, auth.user.id if auth else "anonymous")
     return {"status": "deactivated"}
 
 

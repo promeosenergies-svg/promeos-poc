@@ -68,26 +68,46 @@ export function classifyEmptyReason(availability) {
 export function aggregateSeries(seriesBySite, mode) {
   const entries = Object.entries(seriesBySite || {});
   if (!entries.length) return [];
+
+  // Build a date-keyed index for each site (align by date, not by array index)
+  const siteIndexes = entries.map(([siteId, series]) => {
+    const byDate = {};
+    for (const p of series || []) {
+      const key = p.date || p.hour || p.t || '';
+      byDate[key] = p;
+    }
+    return [siteId, byDate];
+  });
+
+  // Collect all dates across all sites, sorted
+  const allDates = [...new Set(entries.flatMap(([, series]) =>
+    (series || []).map(p => p.date || p.hour || p.t || '')
+  ))].sort();
+
   if (mode === 'agrege') {
-    // Sum all sites by index position
-    const base = entries[0][1] || [];
-    return base.map((point, i) => {
-      const sum = entries.reduce((acc, [, series]) => acc + (series[i]?.kwh ?? series[i]?.p50 ?? 0), 0);
-      return { ...point, kwh: sum, p50: sum };
+    return allDates.map(dateKey => {
+      let base = null;
+      let sum = 0;
+      for (const [, byDate] of siteIndexes) {
+        const p = byDate[dateKey];
+        if (p) {
+          if (!base) base = { ...p };
+          sum += p.kwh ?? p.p50 ?? 0;
+        }
+      }
+      return { ...(base || { date: dateKey }), kwh: sum, p50: sum };
     });
   }
+
   // For superpose / empile / separe: attach per-site keys
-  const allKeys = new Set();
-  for (const [, arr] of entries) {
-    for (const p of arr || []) {
-      Object.keys(p).forEach(k => allKeys.add(k));
+  return allDates.map(dateKey => {
+    let base = null;
+    for (const [, byDate] of siteIndexes) {
+      if (byDate[dateKey]) { base = byDate[dateKey]; break; }
     }
-  }
-  const base = entries[0][1] || [];
-  return base.map((point, i) => {
-    const merged = { ...point };
-    for (const [siteId, series] of entries) {
-      const p = series[i] || {};
+    const merged = { ...(base || { date: dateKey }) };
+    for (const [siteId, byDate] of siteIndexes) {
+      const p = byDate[dateKey] || {};
       merged[`kwh_${siteId}`] = p.kwh ?? p.p50 ?? null;
     }
     return merged;

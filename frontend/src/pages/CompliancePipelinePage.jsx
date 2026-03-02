@@ -12,7 +12,7 @@ import {
 import { getPortfolioComplianceSummary } from '../services/api';
 import { toSiteCompliance, toPatrimoine, toConsoImport, toBillIntel } from '../services/routes';
 import { useToast } from '../ui/ToastProvider';
-import CreateActionModal from '../components/CreateActionModal';
+import { useActionDrawer } from '../contexts/ActionDrawerContext';
 
 const GATE_BADGE = {
   BLOCKED: { label: 'Bloqué', color: 'bg-red-100 text-red-700', icon: XCircle },
@@ -43,7 +43,7 @@ export default function CompliancePipelinePage() {
   const { toast } = useToast();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [showCreate, setShowCreate] = useState(false);
+  const { openActionDrawer } = useActionDrawer();
 
   useEffect(() => {
     setLoading(true);
@@ -102,7 +102,7 @@ export default function CompliancePipelinePage() {
           </p>
         </div>
         <button
-          onClick={() => setShowCreate(true)}
+          onClick={() => openActionDrawer({ prefill: { type: 'conformite' }, sourceType: 'compliance' })}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition"
           data-testid="cta-creer-action"
         >
@@ -285,14 +285,7 @@ export default function CompliancePipelinePage() {
         </table>
       </div>
 
-      {/* Create action modal */}
-      <CreateActionModal
-        open={showCreate}
-        onClose={() => setShowCreate(false)}
-        onSave={() => { setShowCreate(false); toast('Action créée', 'success'); }}
-        defaultType="conformite"
-        sourceType="compliance"
-      />
+      {/* Action creation handled by ActionDrawerContext */}
     </div>
   );
 }

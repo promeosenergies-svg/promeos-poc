@@ -7,7 +7,7 @@
  * Backward compatible: data.primary* helpers expose single-site slices for
  * existing TunnelPanel, TargetsPanel, HPHCPanel, GasPanel.
  */
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { MODES, UNITS, DEFAULT_LAYERS } from './types';
 import {
   getConsumptionAvailability,
@@ -50,6 +50,9 @@ export default function useExplorerMotor({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // ── Last-write-wins guard ───────────────────────────────────────────────
+  const requestIdRef = useRef(0);
+
   // ── Layer toggle ────────────────────────────────────────────────────────
   const toggleLayer = useCallback((layerKey) => {
     setLayers(prev => ({ ...prev, [layerKey]: !prev[layerKey] }));
@@ -58,64 +61,73 @@ export default function useExplorerMotor({
   // ── Fetch all data for current siteIds ────────────────────────────────
   const fetchAll = useCallback(async () => {
     if (!siteIds.length) return;
+    const reqId = ++requestIdRef.current;
     setLoading(true);
     setError(null);
 
-    const year = new Date().getFullYear();
+    try {
+      const year = new Date().getFullYear();
 
-    const results = await Promise.allSettled(
-      siteIds.map(async (sid) => {
-        const [avail, tunnel, progression, targets, hphc, gas, weather] =
-          await Promise.allSettled([
-            getConsumptionAvailability(sid, energyType),
-            getConsumptionTunnelV2(sid, days, energyType, 'energy'),
-            getTargetsProgressionV2(sid, energyType, year),
-            getConsumptionTargets(sid, energyType, year),
-            getHPHCBreakdownV2(sid, days),
-            getGasSummary(sid, days),
-            getGasWeatherNormalized(sid, days).catch(() => null),
-          ]);
-        return {
-          siteId: sid,
-          availability: avail.status === 'fulfilled' ? avail.value : null,
-          tunnel: tunnel.status === 'fulfilled' ? tunnel.value : null,
-          progression: progression.status === 'fulfilled' ? progression.value : null,
-          targets: targets.status === 'fulfilled' ? targets.value : [],
-          hphc: hphc.status === 'fulfilled' ? hphc.value : null,
-          gas: gas.status === 'fulfilled' ? gas.value : null,
-          weather: weather.status === 'fulfilled' ? weather.value : null,
-        };
-      })
-    );
+      const results = await Promise.allSettled(
+        siteIds.map(async (sid) => {
+          const [avail, tunnel, progression, targets, hphc, gas, weather] =
+            await Promise.allSettled([
+              getConsumptionAvailability(sid, energyType),
+              getConsumptionTunnelV2(sid, days, energyType, 'energy'),
+              getTargetsProgressionV2(sid, energyType, year),
+              getConsumptionTargets(sid, energyType, year),
+              getHPHCBreakdownV2(sid, days),
+              getGasSummary(sid, days),
+              getGasWeatherNormalized(sid, days).catch(() => null),
+            ]);
+          return {
+            siteId: sid,
+            availability: avail.status === 'fulfilled' ? avail.value : null,
+            tunnel: tunnel.status === 'fulfilled' ? tunnel.value : null,
+            progression: progression.status === 'fulfilled' ? progression.value : null,
+            targets: targets.status === 'fulfilled' ? targets.value : [],
+            hphc: hphc.status === 'fulfilled' ? hphc.value : null,
+            gas: gas.status === 'fulfilled' ? gas.value : null,
+            weather: weather.status === 'fulfilled' ? weather.value : null,
+          };
+        })
+      );
 
-    const newAvail = {};
-    const newTunnel = {};
-    const newTargets = {};
-    const newProgression = {};
-    const newHphc = {};
-    const newGas = {};
-    const newWeather = {};
+      // Last-write-wins: ignore stale results
+      if (reqId !== requestIdRef.current) return;
 
-    for (const r of results) {
-      if (r.status !== 'fulfilled') continue;
-      const { siteId, availability, tunnel, progression, targets, hphc, gas, weather } = r.value;
-      newAvail[siteId] = availability;
-      newTunnel[siteId] = tunnel;
-      newProgression[siteId] = progression;
-      newTargets[siteId] = targets;
-      newHphc[siteId] = hphc;
-      newGas[siteId] = gas;
-      newWeather[siteId] = weather;
+      const newAvail = {};
+      const newTunnel = {};
+      const newTargets = {};
+      const newProgression = {};
+      const newHphc = {};
+      const newGas = {};
+      const newWeather = {};
+
+      for (const r of results) {
+        if (r.status !== 'fulfilled') continue;
+        const { siteId, availability, tunnel, progression, targets, hphc, gas, weather } = r.value;
+        newAvail[siteId] = availability;
+        newTunnel[siteId] = tunnel;
+        newProgression[siteId] = progression;
+        newTargets[siteId] = targets;
+        newHphc[siteId] = hphc;
+        newGas[siteId] = gas;
+        newWeather[siteId] = weather;
+      }
+
+      setAvailabilityBySite(newAvail);
+      setTunnelBySite(newTunnel);
+      setProgressionBySite(newProgression);
+      setTargetsBySite(newTargets);
+      setHphcBySite(newHphc);
+      setGasBySite(newGas);
+      setWeatherBySite(newWeather);
+    } catch (e) {
+      if (reqId === requestIdRef.current) setError(e.message || 'Erreur chargement');
+    } finally {
+      if (reqId === requestIdRef.current) setLoading(false);
     }
-
-    setAvailabilityBySite(newAvail);
-    setTunnelBySite(newTunnel);
-    setProgressionBySite(newProgression);
-    setTargetsBySite(newTargets);
-    setHphcBySite(newHphc);
-    setGasBySite(newGas);
-    setWeatherBySite(newWeather);
-    setLoading(false);
   }, [siteIds, energyType, days]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);

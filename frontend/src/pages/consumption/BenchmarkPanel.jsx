@@ -4,7 +4,7 @@
  * Toggle "Comparer a la courbe moyenne de sites similaires" + 2 selectors + KPI ecart.
  * Confidence tooltip "Comment calcule ?" + KPI source (estime).
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend,
@@ -48,13 +48,14 @@ export default function BenchmarkPanel({ siteId, days, startDate, endDate, serie
   const [refData, setRefData] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // Compute date range
-  const dateFrom = startDate || (() => {
+  // Compute date range — memoized to prevent infinite loop from unstable refs
+  const dateFrom = useMemo(() => {
+    if (startDate) return startDate;
     const d = new Date();
     d.setDate(d.getDate() - (days || 30));
     return d.toISOString().slice(0, 10);
-  })();
-  const dateTo = endDate || new Date().toISOString().slice(0, 10);
+  }, [startDate, days]);
+  const dateTo = useMemo(() => endDate || new Date().toISOString().slice(0, 10), [endDate]);
 
   const load = useCallback(async () => {
     if (!enabled || !siteId) return;
@@ -69,13 +70,12 @@ export default function BenchmarkPanel({ siteId, days, startDate, endDate, serie
     } finally {
       setLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, siteId, dateFrom, dateTo, famille, puissance]);
+  }, [enabled, siteId, dateFrom, dateTo, famille, puissance, toast]);
 
   useEffect(() => { load(); }, [load]);
 
-  // Merge actual + reference into chart data
-  const chartData = (() => {
+  // Merge actual + reference into chart data (memoized)
+  const chartData = useMemo(() => {
     if (!refData?.series) return [];
     const refMap = {};
     for (const pt of refData.series) {
@@ -99,7 +99,7 @@ export default function BenchmarkPanel({ siteId, days, startDate, endDate, serie
       actual: actualMap[d] != null ? Math.round(actualMap[d] * 10) / 10 : null,
       reference: refMap[d] != null ? Math.round(refMap[d] * 10) / 10 : null,
     }));
-  })();
+  }, [refData, seriesData]);
 
   const kpi = refData?.kpi;
   const conf = kpi?.confidence ? CONFIDENCE_MAP[kpi.confidence] : null;

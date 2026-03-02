@@ -54,3 +54,28 @@ export const LAYER_LABELS = {
 
 /** Max sites selectable simultaneously in multi-site mode */
 export const MAX_SITES = 5;
+
+/**
+ * Energy-type-aware unit label.
+ * Gas backend returns kWh PCS — we display "kWh PCS" for clarity.
+ * @param {'kwh'|'kw'|'eur'} unit
+ * @param {'electricity'|'gas'} energyType
+ * @returns {string}
+ */
+export function unitLabel(unit, energyType) {
+  if (energyType === 'gas') {
+    if (unit === 'kwh') return 'kWh PCS';
+    if (unit === 'kw') return 'kW PCS';
+  }
+  return UNIT_LABELS[unit] || unit;
+}
+
+/**
+ * Tabs that are NOT applicable for the given energyType.
+ * @param {string} energyType
+ * @returns {Set<string>}
+ */
+export function nonApplicableTabs(energyType) {
+  if (energyType === 'gas') return new Set(['hphc', 'tunnel', 'targets', 'signature']);
+  return new Set(['gas']);
+}

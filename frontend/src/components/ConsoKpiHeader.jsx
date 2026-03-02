@@ -9,8 +9,7 @@
  */
 import { Zap, Euro, TrendingUp, Leaf, Activity, Moon, HelpCircle } from 'lucide-react';
 import { TrustBadge } from '../ui';
-
-const CO2E_FACTOR = 0.052; // kgCO2e/kWh (ADEME 2024 France electricity mix)
+import { CO2E_FACTOR_KG_PER_KWH } from '../pages/consumption/constants';
 
 const CONFIDENCE_TOOLTIP = {
   high: 'Haute : > 500 releves, donnees homogenes',
@@ -64,7 +63,7 @@ export default function ConsoKpiHeader({ tunnel, hphc, progression, confidence, 
   const eurMwhLabel = eurMwh != null ? `${eurMwh.toLocaleString('fr-FR')} EUR/MWh` : '—';
 
   // --- CO2e ---
-  const co2Kg = totalKwh != null ? Math.round(totalKwh * CO2E_FACTOR) : null;
+  const co2Kg = totalKwh != null ? Math.round(totalKwh * CO2E_FACTOR_KG_PER_KWH) : null;
   const co2Label = co2Kg != null ? `${co2Kg.toLocaleString('fr-FR')} kg` : '—';
 
   // --- Pic kW (P95 from tunnel envelope) ---

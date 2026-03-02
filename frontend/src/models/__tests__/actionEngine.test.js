@@ -202,3 +202,45 @@ describe('Action Engine — source guards', () => {
     expect(code).toContain('evidence_required');
   });
 });
+
+// ── Drawer migration guard — no direct CreateActionModal in pages ──────────
+
+describe('Action Engine — Drawer migration guard', () => {
+  const pagesDir = path.resolve(__dirname, '..', '..', 'pages');
+  const pageFiles = fs.readdirSync(pagesDir)
+    .filter(f => f.endsWith('.jsx') || f.endsWith('.tsx'))
+    .filter(f => !f.startsWith('__'));
+
+  it('no page imports CreateActionModal directly (all use useActionDrawer)', () => {
+    const offenders = [];
+    for (const file of pageFiles) {
+      const code = fs.readFileSync(path.join(pagesDir, file), 'utf-8');
+      if (/import\s+.*CreateActionModal/.test(code)) {
+        offenders.push(file);
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  const migratedPages = [
+    'ActionsPage.jsx',
+    'SiteCompliancePage.jsx',
+    'CompliancePipelinePage.jsx',
+    'MonitoringPage.jsx',
+    'ConsumptionDiagPage.jsx',
+    'BillingPage.jsx',
+    'Patrimoine.jsx',
+    'ConformitePage.jsx',
+    'BillIntelPage.jsx',
+    'ActivationPage.jsx',
+  ];
+
+  for (const page of migratedPages) {
+    it(`${page} uses useActionDrawer`, () => {
+      const filePath = path.join(pagesDir, page);
+      if (!fs.existsSync(filePath)) return; // skip if file removed
+      const code = fs.readFileSync(filePath, 'utf-8');
+      expect(code).toContain('useActionDrawer');
+    });
+  }
+});

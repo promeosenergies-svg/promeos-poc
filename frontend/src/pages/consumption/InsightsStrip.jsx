@@ -8,7 +8,7 @@
  *   insights  {object[]}  array of { id, label, severity, detail }
  *                         severity: 'info' | 'warn' | 'crit'
  */
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Info, AlertTriangle, AlertOctagon, X } from 'lucide-react';
 
@@ -37,8 +37,29 @@ function InsightBadge({ insight, onDismiss }) {
   const [expanded, setExpanded] = useState(false);
   const [coords, setCoords] = useState(null);
   const badgeRef = useRef(null);
+  const popupRef = useRef(null);
   const style = SEVERITY_STYLES[insight.severity] || SEVERITY_STYLES.info;
   const Icon = style.Icon;
+
+  const close = useCallback(() => setExpanded(false), []);
+
+  // ESC to close + click-outside
+  useEffect(() => {
+    if (!expanded) return;
+    const onKey = (e) => { if (e.key === 'Escape') close(); };
+    const onClick = (e) => {
+      if (popupRef.current && !popupRef.current.contains(e.target) &&
+          badgeRef.current && !badgeRef.current.contains(e.target)) {
+        close();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('mousedown', onClick);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('mousedown', onClick);
+    };
+  }, [expanded, close]);
 
   const handleToggle = () => {
     if (!expanded && badgeRef.current) {
@@ -66,6 +87,7 @@ function InsightBadge({ insight, onDismiss }) {
       {/* Detail popup on click — portaled to escape overflow/stacking clipping */}
       {expanded && insight.detail && coords && createPortal(
         <div
+          ref={popupRef}
           className="fixed z-[120] bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-xs text-gray-700 w-64"
           style={{ top: coords.top, left: coords.left }}
         >
@@ -102,12 +124,21 @@ export default function InsightsStrip({ insights = [] }) {
 
   const dismiss = (id) => setDismissed(prev => new Set([...prev, id]));
 
+  const MAX_VISIBLE = 4;
+  const shown = visible.slice(0, MAX_VISIBLE);
+  const overflow = visible.length - MAX_VISIBLE;
+
   return (
     <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
       <span className="text-xs font-semibold text-gray-500 shrink-0">Insights :</span>
-      {visible.map(insight => (
+      {shown.map(insight => (
         <InsightBadge key={insight.id} insight={insight} onDismiss={dismiss} />
       ))}
+      {overflow > 0 && (
+        <span className="text-xs text-gray-400 font-medium shrink-0 px-2 py-1 bg-gray-100 rounded-full">
+          +{overflow}
+        </span>
+      )}
     </div>
   );
 }

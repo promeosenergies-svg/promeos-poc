@@ -39,6 +39,37 @@ describe('aggregateSeries', () => {
     const result = aggregateSeries({ s1: siteA }, 'agrege');
     expect(result[0].kwh).toBe(100);
   });
+
+  it('agrege: aligns by date with mismatched data lengths', () => {
+    const short = [{ date: 'd1', kwh: 50 }]; // missing d2
+    const result = aggregateSeries({ s1: siteA, s2: short }, 'agrege');
+    expect(result).toHaveLength(2);
+    expect(result[0].kwh).toBe(150); // 100 + 50
+    expect(result[1].kwh).toBe(200); // 200 + 0 (s2 missing d2)
+  });
+
+  it('agrege: handles non-overlapping dates', () => {
+    const onlyD3 = [{ date: 'd3', kwh: 99 }];
+    const result = aggregateSeries({ s1: siteA, s2: onlyD3 }, 'agrege');
+    expect(result).toHaveLength(3); // d1, d2, d3
+    expect(result.find(r => r.date === 'd1').kwh).toBe(100);
+    expect(result.find(r => r.date === 'd3').kwh).toBe(99);
+  });
+
+  it('superpose: aligns by date with gaps', () => {
+    const short = [{ date: 'd2', kwh: 77 }]; // only d2
+    const result = aggregateSeries({ s1: siteA, s2: short }, 'superpose');
+    expect(result).toHaveLength(2);
+    expect(result.find(r => r.date === 'd1').kwh_s2).toBeNull();
+    expect(result.find(r => r.date === 'd2').kwh_s2).toBe(77);
+  });
+
+  it('agrege: uses p50 fallback when kwh missing', () => {
+    const p50Data = [{ date: 'd1', p50: 30 }, { date: 'd2', p50: 40 }];
+    const result = aggregateSeries({ s1: siteA, s2: p50Data }, 'agrege');
+    expect(result[0].kwh).toBe(130); // 100 + 30
+    expect(result[1].kwh).toBe(240); // 200 + 40
+  });
 });
 
 // ── convertUnit ────────────────────────────────────────────────────────────

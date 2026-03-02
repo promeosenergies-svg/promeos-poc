@@ -270,7 +270,7 @@ describe('Source guards — Étape 5 integration', () => {
     expect(src).toContain("'week'");
   });
 
-  it('ConformitePage has DossierPrintView', async () => {
+  it('ConformitePage has DossierPrintView (V92: tab wiring via setDossierSource)', async () => {
     const fs = await import('fs');
     const src = fs.readFileSync(
       'c:/Users/amine/promeos-poc/promeos-poc/frontend/src/pages/ConformitePage.jsx',
@@ -278,7 +278,13 @@ describe('Source guards — Étape 5 integration', () => {
     );
     expect(src).toContain('DossierPrintView');
     expect(src).toContain('dossierSource');
-    expect(src).toContain('onExportDossier');
+    expect(src).toContain('setDossierSource');
+    // onExportDossier now lives in ObligationsTab (V92 split)
+    const tabSrc = fs.readFileSync(
+      'c:/Users/amine/promeos-poc/promeos-poc/frontend/src/pages/conformite-tabs/ObligationsTab.jsx',
+      'utf-8',
+    );
+    expect(tabSrc).toContain('onExportDossier');
   });
 
   it('BillIntelPage has DossierPrintView', async () => {

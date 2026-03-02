@@ -20,20 +20,17 @@ import { useScope } from '../contexts/ScopeContext';
 import { normalizeId } from './consumption/helpers';
 import { Card, CardBody, Badge, Button, PageShell, Drawer, Tooltip, Tabs, SkeletonCard } from '../ui';
 import { useToast } from '../ui/ToastProvider';
-import { useExpertMode } from '../contexts/ExpertModeContext';
 import { track } from '../services/tracker';
-import CreateActionModal from '../components/CreateActionModal';
+import { useActionDrawer } from '../contexts/ActionDrawerContext';
 import { fmtEur, fmtKwh, fmtDateFR } from '../utils/format';
 import { deepLinkWithContext } from '../services/deepLink';
 import { toConsoExplorer } from '../services/routes';
 import { SEVERITY_TINT } from '../ui/colorTokens';
+import { CO2E_FACTOR_KG_PER_KWH } from './consumption/constants';
 import {
   Zap, Info,
   ExternalLink, UserCheck, CheckCircle2, XCircle, BarChart3,
 } from 'lucide-react';
-
-// Default emission factor (France electricity mix, ADEME 2024)
-const CO2E_FACTOR_KG_PER_KWH = 0.052;
 
 // ---- Constants ----
 
@@ -74,9 +71,6 @@ const DRAWER_TABS = [
 export function recalcLosses(kWh, customPrice, defaultPrice = 0.15) {
   return Math.round((kWh || 0) * (customPrice ?? defaultPrice));
 }
-
-// normalizeId is defined in helpers.js and re-exported here for backward compat
-export { normalizeId } from './consumption/helpers';
 
 export function computeSummaryFromInsights(insights) {
   if (!insights?.length) return { total_insights: 0, sites_with_insights: 0, total_loss_kwh: 0, total_loss_eur: 0, by_type: {} };
@@ -442,17 +436,19 @@ function EvidenceDrawer({ insight, open, onClose, onStatusChange, onCreateAction
   return (
     <Drawer open={open} onClose={onClose} title={`${insight.site_nom} — ${TYPE_LABELS[insight.type] || insight.type}`} wide>
       <div className="space-y-4">
-        {/* Header badges */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <SeverityBadge severity={insight.severity} />
-          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusCfg.color}`}>{statusCfg.label}</span>
-          {insight.estimated_loss_kwh > 0 && (
-            <span className="text-xs text-orange-600 font-medium">
-              {Math.round(insight.estimated_loss_kwh).toLocaleString('fr-FR')} kWh exces
+        {/* Consolidated summary banner */}
+        <div className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
+          <div className="flex items-center gap-2">
+            <SeverityBadge severity={insight.severity} />
+            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusCfg.color}`}>{statusCfg.label}</span>
+          </div>
+          {(insight.estimated_loss_kwh > 0 || insight.estimated_loss_eur > 0) && (
+            <span className="text-xs text-gray-600">
+              {insight.estimated_loss_kwh > 0 && `${Math.round(insight.estimated_loss_kwh).toLocaleString('fr-FR')} kWh`}
+              {insight.estimated_loss_kwh > 0 && insight.estimated_loss_eur > 0 && ' · '}
+              {insight.estimated_loss_eur > 0 && fmtEur(Math.round(insight.estimated_loss_eur))}
+              {' · '}{Math.round(insight.estimated_loss_kwh * CO2E_FACTOR_KG_PER_KWH).toLocaleString('fr-FR')} kgCO₂e
             </span>
-          )}
-          {insight.estimated_loss_eur > 0 && (
-            <span className="text-xs text-red-600 font-medium">{fmtEur(Math.round(insight.estimated_loss_eur))}</span>
           )}
         </div>
 
@@ -600,7 +596,6 @@ function EvidenceTab({ insight }) {
 
 export default function ConsumptionDiagPage() {
   const navigate = useNavigate();
-  const { isExpert: _isExpert } = useExpertMode();
   const { toast } = useToast();
   const { org, selectedSiteId, scopeLabel, sitesCount } = useScope();
   const [summary, setSummary] = useState(null);
@@ -613,14 +608,13 @@ export default function ConsumptionDiagPage() {
   // Evidence Drawer
   const [drawerInsight, setDrawerInsight] = useState(null);
 
-  // Create Action Modal
-  const [showActionModal, setShowActionModal] = useState(false);
-  const [actionPrefill, setActionPrefill] = useState(null);
+  // Create Action — via unified drawer
+  const { openActionDrawer } = useActionDrawer();
 
   // Editable price
   const [customPrice, setCustomPrice] = useState(null);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const data = await getConsumptionInsights(org?.id ?? null);
@@ -630,10 +624,9 @@ export default function ConsumptionDiagPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [org?.id, toast]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
 
   const handleSeedDemo = async () => {
     setSeeding(true);
@@ -692,23 +685,26 @@ export default function ConsumptionDiagPage() {
 
   // Create action
   const handleCreateAction = useCallback((insight) => {
-    setActionPrefill({
-      titre: `${TYPE_LABELS[insight.type] || insight.type} — ${insight.site_nom}`,
-      type: 'conso',
-      site: insight.site_nom,
-      impact_eur: Math.round(insight.estimated_loss_eur || 0),
-      priorite: insight.severity === 'critical' ? 'critical' : insight.severity === 'high' ? 'high' : 'medium',
-      description: insight.message + (insight.recommended_actions?.length
-        ? '\n\nActions recommandees :\n' + insight.recommended_actions.map(a => `- ${a.title}`).join('\n')
-        : ''),
-      _siteId: insight.site_id || null,
-      _sourceType: 'consumption',
-      _sourceId: `insight-${insight.id}`,
-      _idempotencyKey: `diag-insight-${insight.id}`,
-    });
-    setShowActionModal(true);
+    openActionDrawer({
+      prefill: {
+        titre: `${TYPE_LABELS[insight.type] || insight.type} — ${insight.site_nom}`,
+        type: 'conso',
+        site: insight.site_nom,
+        impact_eur: Math.round(insight.estimated_loss_eur || 0),
+        priorite: insight.severity === 'critical' ? 'critical' : insight.severity === 'high' ? 'high' : 'medium',
+        description: insight.message + (insight.recommended_actions?.length
+          ? '\n\nActions recommandees :\n' + insight.recommended_actions.map(a => `- ${a.title}`).join('\n')
+          : ''),
+      },
+      siteId: insight.site_id || null,
+      sourceType: 'consumption',
+      sourceId: `insight-${insight.id}`,
+      idempotencyKey: `diag-insight-${insight.id}`,
+    }, { onSave: (action) => {
+      track('action_create_from_diagnostic', { titre: action?.titre });
+    }});
     track('insight_create_action', { type: insight.type, id: insight.id });
-  }, []);
+  }, [openActionDrawer]);
 
   // Open in Explorer
   const handleOpenExplorer = useCallback((insight) => {
@@ -726,13 +722,6 @@ export default function ConsumptionDiagPage() {
     track('insight_view_invoice', { type: insight.type, id: insight.id, site_id: insight.site_id });
   }, [navigate]);
 
-  // Save action
-  const handleSaveAction = useCallback((action) => {
-    track('action_create_from_diagnostic', { titre: action.titre });
-    toast('Action creee avec succes', 'success');
-  }, [toast]);
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const insights = useMemo(() => summary?.insights || [], [summary]);
 
   // V15-B: scope-aware filtering
@@ -820,6 +809,28 @@ export default function ConsumptionDiagPage() {
         </Card>
       ) : (
         <>
+          {/* À retenir — top 3 key insights */}
+          <div className="bg-white border border-blue-100 rounded-xl p-4 mb-4">
+            <h4 className="text-sm font-semibold text-gray-800 mb-3">À retenir</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="bg-gray-50 rounded-lg p-3 text-center">
+                <div className="text-xs text-gray-500">Insights</div>
+                <div className="text-lg font-bold text-blue-700">{displayedSummary.total_insights || 0}</div>
+                <div className="text-[11px] text-gray-400">{displayedSummary.sites_with_insights || 0} site{(displayedSummary.sites_with_insights || 0) > 1 ? 's' : ''}</div>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3 text-center">
+                <div className="text-xs text-gray-500">Pertes estimées</div>
+                <div className="text-lg font-bold text-red-600">{fmtEur(Math.round(displayedSummary.total_loss_eur || 0))}</div>
+                <div className="text-[11px] text-gray-400">{fmtKwh(Math.round(displayedSummary.total_loss_kwh || 0))}</div>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3 text-center">
+                <div className="text-xs text-gray-500">CO₂e évitable</div>
+                <div className="text-lg font-bold text-emerald-600">{Math.round((displayedSummary.total_loss_kwh || 0) * CO2E_FACTOR_KG_PER_KWH).toLocaleString('fr-FR')} kg</div>
+                <div className="text-[11px] text-gray-400">Impact carbone</div>
+              </div>
+            </div>
+          </div>
+
           <DiagHeader
             insights={filteredInsights}
             summary={displayedSummary}
@@ -827,8 +838,14 @@ export default function ConsumptionDiagPage() {
             onPriceChange={setCustomPrice}
           />
 
-          <SummaryCards summary={displayedSummary} customPrice={customPrice} />
-          <ByTypeBreakdown byType={displayedSummary.by_type} />
+          {/* Full KPI breakdown — collapsible */}
+          <details className="group mb-4">
+            <summary className="cursor-pointer text-sm font-medium text-gray-600 hover:text-gray-900 flex items-center gap-1 py-2 select-none">
+              <span className="transition-transform group-open:rotate-90">▸</span> Détails par indicateur
+            </summary>
+            <SummaryCards summary={displayedSummary} customPrice={customPrice} />
+            <ByTypeBreakdown byType={displayedSummary.by_type} />
+          </details>
 
           {/* Filters */}
           <div className="flex items-center gap-3">
@@ -885,16 +902,7 @@ export default function ConsumptionDiagPage() {
         onViewInvoice={handleViewInvoice}
       />
 
-      {/* Create Action Modal */}
-      <CreateActionModal
-        open={showActionModal}
-        onClose={() => { setShowActionModal(false); setActionPrefill(null); }}
-        onSave={handleSaveAction}
-        prefill={actionPrefill}
-        siteId={actionPrefill?._siteId}
-        sourceType={actionPrefill?._sourceType || 'consumption'}
-        sourceId={actionPrefill?._sourceId}
-      />
+      {/* Action creation handled by ActionDrawerContext */}
     </PageShell>
   );
 }

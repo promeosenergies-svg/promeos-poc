@@ -531,7 +531,7 @@ export function computeHealthState({ kpis, watchlist = [], briefing = [], consis
     title = 'Actions requises';
     const critCount = reasons.filter(r => r.severity === 'critical').length;
     subtitle = `${critCount} point${critCount > 1 ? 's' : ''} critique${critCount > 1 ? 's' : ''} — intervention recommandée`;
-  } else if (hasWarn) {
+  } else if (hasWarn && reasons.length > 0) {
     level = 'AMBER';
     title = "Points d'attention";
     subtitle = `${reasons.length} point${reasons.length > 1 ? 's' : ''} à surveiller`;

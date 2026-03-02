@@ -120,8 +120,9 @@ describe('Dashboard shows "Sites à traiter" (V42)', () => {
     expect(dash).toContain('wizard?site_id=');
   });
 
-  it('shows incomplete data sites', () => {
-    expect(dash).toContain('Données incomplètes');
+  it('default filter includes a_verifier incomplete sites', () => {
+    expect(dash).toContain('a_verifier');
+    expect(dash).toContain('data_complete');
   });
 });
 

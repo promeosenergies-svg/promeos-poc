@@ -4,7 +4,6 @@ import { Upload, BarChart3, AlertTriangle, Lightbulb, Database, RefreshCw, Check
 import { PageShell, Tooltip } from '../ui';
 import { toConsoExplorer } from '../services/routes';
 import { useToast } from '../ui/ToastProvider';
-import { useExpertMode } from '../contexts/ExpertModeContext';
 import { useScope } from '../contexts/ScopeContext';
 import {
   getMeters, createMeter, uploadConsumptionData,
@@ -15,10 +14,9 @@ import {
 
 // ---- Import Wizard (7 steps) ----
 export function ImportWizard() {
-  const { toast: _toast } = useToast();
   const { orgSites } = useScope();
   const [step, setStep] = useState(1);
-  const sites = orgSites;
+  const sites = orgSites || [];
   const [selectedSite, setSelectedSite] = useState(null);
   const [meterName, setMeterName] = useState('Compteur Principal');
   const [file, setFile] = useState(null);
@@ -406,78 +404,103 @@ function AnalysisResultView({ result, siteId, dateFrom, dateTo }) {
         )}
       </div>
 
-      {/* C) Actionable KPI cards with seuils + tooltips + context */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[
-          {
-            label: 'kWh total',
-            value: result.features?.kwh_total?.toLocaleString('fr-FR') || '0',
-            interp: null,
-            formula: KPI_FORMULAS.kwh_total,
-            action: null,
-          },
-          {
-            label: 'Talon nuit',
-            value: `${(baseNuit * 100).toFixed(1)}%`,
-            interp: interpBase,
-            formula: KPI_FORMULAS.base_nuit,
-            action: interpBase.label !== 'OK' ? { label: 'Creer alerte talon', icon: Bell, to: '/notifications' } : null,
-          },
-          {
-            label: 'Ratio weekend',
-            value: `${(weekendRatio * 100).toFixed(1)}%`,
-            interp: interpWE,
-            formula: KPI_FORMULAS.weekend,
-            action: interpWE.label !== 'Normal' ? { label: 'Comparer a semaine type', icon: CalendarRange, to: `/consommations/explorer${siteId ? '?site_id=' + siteId : ''}` } : null,
-          },
-          {
-            label: 'Facteur de charge',
-            value: `${(loadFactor * 100).toFixed(1)}%`,
-            interp: interpLF,
-            formula: KPI_FORMULAS.load_factor,
-            action: interpLF.label === 'Saturation' ? { label: 'Voir pics de puissance', icon: Activity, to: `/consommations/explorer${siteId ? '?site_id=' + siteId : ''}` } : null,
-          },
-        ].map((kpi, i) => (
-          <div key={i} className="bg-white border rounded-lg p-3 text-center">
-            <div className="flex items-center justify-center gap-1 text-xs text-gray-500">
-              {kpi.label}
-              <Tooltip text={kpi.formula} position="top">
-                <HelpCircle size={12} className="text-gray-400 cursor-help" />
-              </Tooltip>
-            </div>
-            <div className="text-lg font-bold mt-0.5">{kpi.value}</div>
-            {kpi.interp && (
-              <Tooltip text={kpi.interp.tip} position="bottom">
-                <span className={`inline-block mt-1.5 px-2 py-0.5 rounded-full text-xs font-medium cursor-help ${kpi.interp.color}`}>
-                  {kpi.interp.label}
-                </span>
-              </Tooltip>
-            )}
-            {kpi.action && (
-              <button
-                onClick={() => navigate(kpi.action.to)}
-                className="flex items-center gap-1 mx-auto mt-2 text-[11px] text-blue-600 hover:text-blue-800 font-medium transition"
-              >
-                <kpi.action.icon size={11} />
-                {kpi.action.label}
-              </button>
-            )}
-          </div>
-        ))}
-      </div>
-      {/* kWh context line */}
-      {result.features?.kwh_total > 0 && (
-        <p className="text-xs text-gray-400 -mt-3 text-right">
-          Periode : {result.features?.days_count || '—'} jours
-          {result.features?.meters_count ? ` · ${result.features.meters_count} compteur${result.features.meters_count > 1 ? 's' : ''}` : ''}
-        </p>
-      )}
-
-      {/* Anomalies */}
-      <div>
-        <h4 className="font-semibold text-red-700 flex items-center gap-2 mb-3">
-          <AlertTriangle size={18} /> Anomalies détectées ({result.anomalies?.length || 0})
+      {/* À retenir — top 3 key takeaways */}
+      <div className="bg-white border border-blue-100 rounded-xl p-4">
+        <h4 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+          <Lightbulb size={16} className="text-blue-500" /> À retenir
         </h4>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="bg-gray-50 rounded-lg p-3 text-center">
+            <div className="text-xs text-gray-500">Consommation</div>
+            <div className="text-lg font-bold text-gray-900">{result.features?.kwh_total?.toLocaleString('fr-FR') || '0'} kWh</div>
+            <div className="text-[11px] text-gray-400">{result.features?.days_count || '—'} jours · {result.features?.meters_count || 1} compteur{(result.features?.meters_count || 1) > 1 ? 's' : ''}</div>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-3 text-center">
+            <div className="text-xs text-gray-500">Anomalies</div>
+            <div className={`text-lg font-bold ${(result.anomalies?.length || 0) > 0 ? 'text-red-600' : 'text-green-600'}`}>
+              {result.anomalies?.length || 0}
+            </div>
+            <div className="text-[11px] text-gray-400">{(result.anomalies?.length || 0) === 0 ? 'Site dans les normes' : 'Points à traiter'}</div>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-3 text-center">
+            <div className="text-xs text-gray-500">Recommandations</div>
+            <div className="text-lg font-bold text-blue-600">{result.recommendations?.length || 0}</div>
+            <div className="text-[11px] text-gray-400">{(result.recommendations?.length || 0) === 0 ? 'Rien à signaler' : 'Actions possibles'}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* KPI details — collapsible */}
+      <details className="group">
+        <summary className="cursor-pointer text-sm font-medium text-gray-600 hover:text-gray-900 flex items-center gap-1 py-2 select-none">
+          <span className="transition-transform group-open:rotate-90">▸</span> Indicateurs détaillés
+        </summary>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
+          {[
+            {
+              label: 'kWh total',
+              value: result.features?.kwh_total?.toLocaleString('fr-FR') || '0',
+              interp: null,
+              formula: KPI_FORMULAS.kwh_total,
+              action: null,
+            },
+            {
+              label: 'Talon nuit',
+              value: `${(baseNuit * 100).toFixed(1)}%`,
+              interp: interpBase,
+              formula: KPI_FORMULAS.base_nuit,
+              action: interpBase.label !== 'OK' ? { label: 'Creer alerte talon', icon: Bell, to: '/notifications' } : null,
+            },
+            {
+              label: 'Ratio weekend',
+              value: `${(weekendRatio * 100).toFixed(1)}%`,
+              interp: interpWE,
+              formula: KPI_FORMULAS.weekend,
+              action: interpWE.label !== 'Normal' ? { label: 'Comparer a semaine type', icon: CalendarRange, to: `/consommations/explorer${siteId ? '?site_id=' + siteId : ''}` } : null,
+            },
+            {
+              label: 'Facteur de charge',
+              value: `${(loadFactor * 100).toFixed(1)}%`,
+              interp: interpLF,
+              formula: KPI_FORMULAS.load_factor,
+              action: interpLF.label === 'Saturation' ? { label: 'Voir pics de puissance', icon: Activity, to: `/consommations/explorer${siteId ? '?site_id=' + siteId : ''}` } : null,
+            },
+          ].map((kpi, i) => (
+            <div key={i} className="bg-white border rounded-lg p-3 text-center">
+              <div className="flex items-center justify-center gap-1 text-xs text-gray-500">
+                {kpi.label}
+                <Tooltip text={kpi.formula} position="top">
+                  <HelpCircle size={12} className="text-gray-400 cursor-help" />
+                </Tooltip>
+              </div>
+              <div className="text-lg font-bold mt-0.5">{kpi.value}</div>
+              {kpi.interp && (
+                <Tooltip text={kpi.interp.tip} position="bottom">
+                  <span className={`inline-block mt-1.5 px-2 py-0.5 rounded-full text-xs font-medium cursor-help ${kpi.interp.color}`}>
+                    {kpi.interp.label}
+                  </span>
+                </Tooltip>
+              )}
+              {kpi.action && (
+                <button
+                  onClick={() => navigate(kpi.action.to)}
+                  className="flex items-center gap-1 mx-auto mt-2 text-[11px] text-blue-600 hover:text-blue-800 font-medium transition"
+                >
+                  <kpi.action.icon size={11} />
+                  {kpi.action.label}
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      </details>
+
+      {/* Anomalies — collapsible */}
+      <details className="group" open={result.anomalies?.length > 0}>
+        <summary className="cursor-pointer font-semibold text-red-700 flex items-center gap-2 py-2 select-none">
+          <span className="transition-transform group-open:rotate-90">▸</span>
+          <AlertTriangle size={18} /> Anomalies détectées ({result.anomalies?.length || 0})
+        </summary>
         {result.anomalies?.length > 0 ? (
           <div className="space-y-2">
             {result.anomalies.map((a, i) => (
@@ -528,13 +551,14 @@ function AnalysisResultView({ result, siteId, dateFrom, dateTo }) {
             </div>
           </div>
         )}
-      </div>
+      </details>
 
-      {/* Recommendations */}
-      <div>
-        <h4 className="font-semibold text-green-700 flex items-center gap-2 mb-3">
+      {/* Recommendations — collapsible */}
+      <details className="group" open={result.recommendations?.length > 0}>
+        <summary className="cursor-pointer font-semibold text-green-700 flex items-center gap-2 py-2 select-none">
+          <span className="transition-transform group-open:rotate-90">▸</span>
           <Lightbulb size={18} /> Recommandations KB ({result.recommendations?.length || 0})
-        </h4>
+        </summary>
         {result.recommendations?.length > 0 ? (
           <div className="space-y-2">
             {result.recommendations.map((r, i) => (
@@ -582,7 +606,7 @@ function AnalysisResultView({ result, siteId, dateFrom, dateTo }) {
             </div>
           </div>
         )}
-      </div>
+      </details>
 
       {/* B) CTA bar: primary Explorer + secondary Nouvelle analyse */}
       <div className="flex items-center gap-3">
@@ -894,7 +918,6 @@ export function KBAdminPanel() {
 // ---- Main Page (standalone fallback — normally rendered via ConsommationsPage tabs) ----
 export default function ConsommationsUsages() {
   const [tab, setTab] = useState('import');
-  const { isExpert: _isExpert } = useExpertMode();
 
   return (
     <PageShell

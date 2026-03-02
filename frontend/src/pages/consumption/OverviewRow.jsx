@@ -10,7 +10,8 @@
  *   unit  'kwh' | 'kw' | 'eur'
  */
 
-const CO2E_FACTOR = 0.0571; // kg CO2e per kWh (France mix réseau)
+import { CO2E_FACTOR_KG_PER_KWH } from './constants';
+
 const EUR_FACTOR  = 0.18;   // €/kWh estimate
 
 function fmt(value, decimals = 0) {
@@ -36,7 +37,7 @@ export default function OverviewRow({ data, unit }) {
   const peakKw   = data.peak_kw   ?? null;
   const talonKw  = data.talon_kw  ?? null;
   const offHours = data.off_hours_pct ?? null;
-  const co2e     = totalKwh != null ? totalKwh * CO2E_FACTOR : null;
+  const co2e     = totalKwh != null ? totalKwh * CO2E_FACTOR_KG_PER_KWH : null;
   const eur      = totalKwh != null ? totalKwh * EUR_FACTOR   : null;
 
   const kpis = [

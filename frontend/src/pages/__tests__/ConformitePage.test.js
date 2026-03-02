@@ -368,14 +368,14 @@ describe('FR demo-ready — forbidden strings in key pages', () => {
     expect(src).not.toMatch(/Re-evaluer/);
   });
 
-  it('ConformitePage uses "Recommandations" not "Actions à mener"', () => {
-    const src = readPage('ConformitePage.jsx');
+  it('ExecutionTab uses "Recommandations" not "Actions à mener" (V92 split)', () => {
+    const src = readPage('conformite-tabs/ExecutionTab.jsx');
     expect(src).not.toMatch(/Actions à mener/);
     expect(src).toMatch(/Recommandations/);
   });
 
-  it('ConformitePage rule_id fallback never shows raw code to non-expert', () => {
-    const src = readPage('ConformitePage.jsx');
+  it('ObligationsTab rule_id fallback never shows raw code to non-expert (V92 split)', () => {
+    const src = readPage('conformite-tabs/ObligationsTab.jsx');
     // The fallback in findings list should NOT be f.rule_id alone
     expect(src).not.toMatch(/\?\.\s*title_fr\s*\|\|\s*f\.rule_id\s*\}/);
   });

@@ -17,12 +17,7 @@ import {
 import { PageShell, EmptyState, Tooltip } from '../ui';
 import { useScope } from '../contexts/ScopeContext';
 import { getPatrimoineAnomalies, getBillingAnomaliesScoped } from '../services/api';
-import {
-  getAnomalyAction,
-  ACTION_STATUS_LABEL,
-  ACTION_STATUS_COLOR,
-} from '../services/anomalyActions';
-import AnomalyActionModal from '../components/AnomalyActionModal';
+import { useActionDrawer } from '../contexts/ActionDrawerContext';
 
 /* ── Constantes ── */
 
@@ -54,6 +49,7 @@ function fmtEur(n) {
 export default function AnomaliesPage() {
   const navigate = useNavigate();
   const { scopedSites, scope, sitesLoading } = useScope();
+  const { openActionDrawer } = useActionDrawer();
 
   const [anomalies, setAnomalies] = useState([]);  // flat [{...anomaly, site_id, site_nom}]
   const [loading,   setLoading]   = useState(false);
@@ -65,10 +61,6 @@ export default function AnomaliesPage() {
   const [filterSev,  setFilterSev]  = useState('');
   const [filterSite, setFilterSite] = useState('');
   const [search,     setSearch]     = useState('');
-
-  // Modale action
-  const [actionModal, setActionModal] = useState(null); // { code, title, siteId }
-  const [actionTick,  setActionTick]  = useState(0);
 
   /* ── Fetch anomalies ── */
   useEffect(() => {
@@ -299,11 +291,6 @@ export default function AnomaliesPage() {
         ) : (
           <div className="space-y-1.5">
             {filtered.map((anom, idx) => {
-              // actionTick forces re-read after modal save
-              void actionTick;
-              const currentAction = getAnomalyAction(scope.orgId, anom.site_id, anom.code);
-              const statusLabel   = currentAction ? ACTION_STATUS_LABEL[currentAction.status] : null;
-              const statusColor   = currentAction ? ACTION_STATUS_COLOR[currentAction.status]  : null;
               const impactFmt     = fmtEur(anom.business_impact?.estimated_risk_eur);
 
               return (
@@ -337,11 +324,6 @@ export default function AnomaliesPage() {
                           <Euro size={9} /> {impactFmt}
                         </span>
                       )}
-                      {statusLabel && (
-                        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${statusColor}`}>
-                          {statusLabel}
-                        </span>
-                      )}
                     </div>
                   </div>
 
@@ -356,10 +338,16 @@ export default function AnomaliesPage() {
                         Ouvrir site <ChevronRight size={11} />
                       </button>
                     </Tooltip>
-                    <Tooltip text="Créer ou modifier l'action locale">
+                    <Tooltip text="Créer une action pour cette anomalie">
                       <button
                         type="button"
-                        onClick={() => setActionModal({ code: anom.code, title: anom.title_fr, siteId: anom.site_id })}
+                        onClick={() => openActionDrawer({
+                          prefill: { titre: anom.title_fr, type: 'anomalie' },
+                          siteId: anom.site_id,
+                          sourceType: 'anomaly',
+                          sourceId: anom.code,
+                          idempotencyKey: `anomaly:${anom.site_id}:${anom.code}`,
+                        })}
                         className="text-[11px] font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded px-2 py-1 hover:bg-gray-200 transition"
                       >
                         Créer action
@@ -379,20 +367,7 @@ export default function AnomaliesPage() {
 
       </div>
 
-      {/* Modale action */}
-      {actionModal && (
-        <AnomalyActionModal
-          open={!!actionModal}
-          onClose={() => {
-            setActionModal(null);
-            setActionTick(t => t + 1);
-          }}
-          orgId={scope.orgId}
-          siteId={actionModal.siteId}
-          anomalyCode={actionModal.code}
-          anomalyTitle={actionModal.title}
-        />
-      )}
+      {/* Action Drawer — managed by ActionDrawerContext */}
     </PageShell>
   );
 }

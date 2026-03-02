@@ -14,7 +14,7 @@ import {
   importInvoicesCsv,
   importInvoicesPdf,
 } from '../services/api';
-import CreateActionModal from '../components/CreateActionModal';
+import { useActionDrawer } from '../contexts/ActionDrawerContext';
 import { Card, CardBody, Button, Badge, EmptyState } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
 import CoverageBar from '../components/CoverageBar';
@@ -61,7 +61,7 @@ export default function BillingPage() {
   const [error, setError] = useState(null);
 
   const [actionMap, setActionMap] = useState(new Map());
-  const [actionModalContext, setActionModalContext] = useState(null);
+  const { openActionDrawer } = useActionDrawer();
 
   // Filtres avancés
   const [statusFilter, setStatusFilter] = useState('all');
@@ -197,25 +197,19 @@ export default function BillingPage() {
 
   const handleCreateAction = (actionKey, period) => {
     if (actionMap.has(actionKey)) return;
-    setActionModalContext({
-      key: actionKey,
+    openActionDrawer({
       prefill: {
         titre: `Période manquante : ${period.month_key}${period.missing_reason ? ' — ' + period.missing_reason : ''}`,
         type: 'facture',
         description: `Période manquante : ${period.month_key}`,
       },
       siteId: siteFilter ? parseInt(siteFilter) : null,
-    });
+      sourceType: 'billing',
+      sourceId: actionKey,
+    }, { onSave: (result) => {
+      setActionMap(prev => new Map([...prev, [actionKey, result?.id || true]]));
+    }});
   };
-
-  function handleActionSaved(result) {
-    const key = actionModalContext?.key;
-    if (key) {
-      setActionMap(prev => new Map([...prev, [key, result?.id || true]]));
-    }
-    setActionModalContext(null);
-    toast('Action créée', 'success');
-  }
 
   const hasMore = periodsOffset < periodsTotal;
 
@@ -579,15 +573,7 @@ export default function BillingPage() {
       <input ref={csvInputRef} type="file" accept=".csv" className="sr-only" onChange={handleContextualCsvImport} />
       <input ref={pdfInputRef} type="file" accept=".pdf" className="sr-only" onChange={handleContextualPdfImport} />
 
-      <CreateActionModal
-        open={!!actionModalContext}
-        onClose={() => setActionModalContext(null)}
-        onSave={handleActionSaved}
-        prefill={actionModalContext?.prefill}
-        siteId={actionModalContext?.siteId}
-        sourceType="billing"
-        sourceId={actionModalContext?.key}
-      />
+      {/* Action creation handled by ActionDrawerContext */}
     </div>
   );
 }

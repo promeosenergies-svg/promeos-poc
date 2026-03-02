@@ -27,9 +27,8 @@ import { SkeletonCard } from '../ui';
 import { useToast } from '../ui/ToastProvider';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
-import { mockSites } from '../mocks/sites';
 import { track } from '../services/tracker';
-import CreateActionModal from '../components/CreateActionModal';
+import { useActionDrawer } from '../contexts/ActionDrawerContext';
 import { fmtDateFR } from '../utils/format';
 import { toConsoExplorer, toConsoDiag, toActionsList, toPatrimoine, toPurchase } from '../services/routes';
 import {
@@ -1116,7 +1115,7 @@ function InsightDrawer({ alert, open, onClose, onAck, onResolve, onCreateAction,
 // --- Main component ---
 
 export default function MonitoringPage() {
-  const { scope, setSite, sitesLoading } = useScope();
+  const { scope, setSite, sitesLoading, orgSites } = useScope();
   const { isExpert } = useExpertMode();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -1147,8 +1146,7 @@ export default function MonitoringPage() {
   const [drawerAlert, setDrawerAlert] = useState(null);
   const [showOffHoursDrawer, setShowOffHoursDrawer] = useState(false);
   const [showConfidenceDrawer, setShowConfidenceDrawer] = useState(false);
-  const [showActionModal, setShowActionModal] = useState(false);
-  const [actionPrefill, setActionPrefill] = useState(null);
+  const { openActionDrawer } = useActionDrawer();
   const [siteActions, setSiteActions] = useState([]);
 
   // --- Data loading ---
@@ -1271,20 +1269,19 @@ export default function MonitoringPage() {
   };
 
   const handleCreateAction = (alert) => {
-    setActionPrefill({
-      titre: `${ALERT_TYPE_LABELS[alert.alert_type] || alert.alert_type} — Site ${siteId}`,
-      type: 'conso',
-      impact_eur: alert.estimated_impact_eur || '',
-      description: alert.explanation || '',
-    });
-    setShowActionModal(true);
-  };
-
-  const handleSaveAction = async () => {
-    toast('Action créée avec succès', 'success');
-    setShowActionModal(false);
-    track('monitoring_action_created', { site_id: siteId });
-    await loadSiteActions();
+    openActionDrawer({
+      prefill: {
+        titre: `${ALERT_TYPE_LABELS[alert.alert_type] || alert.alert_type} — Site ${siteId}`,
+        type: 'conso',
+        impact_eur: alert.estimated_impact_eur || '',
+        description: alert.explanation || '',
+      },
+      siteId: siteId ? Number(siteId) : null,
+      sourceType: 'insight',
+    }, { onSave: async () => {
+      track('monitoring_action_created', { site_id: siteId });
+      await loadSiteActions();
+    }});
   };
 
   const handleSuggestSchedule = async () => {
@@ -1385,7 +1382,7 @@ export default function MonitoringPage() {
 
   const openCount = alerts.filter((a) => a.status === 'open').length;
 
-  const allOrgSites = mockSites;
+  const allOrgSites = orgSites;
 
   // Confidence
   const climateConf = useMemo(() => computeConfidence({
@@ -1568,8 +1565,11 @@ export default function MonitoringPage() {
             <QuickActionsBar
               onOpenExplorer={() => handleOpenExplorer(null)}
               onCreateAction={() => {
-                setActionPrefill({ titre: `Action — Site ${siteId}`, type: 'conso' });
-                setShowActionModal(true);
+                openActionDrawer({
+                  prefill: { titre: `Action — Site ${siteId}`, type: 'conso' },
+                  siteId: siteId ? Number(siteId) : null,
+                  sourceType: 'insight',
+                }, { onSave: async () => { track('monitoring_action_created', { site_id: siteId }); await loadSiteActions(); }});
               }}
               compareEnabled={!!kpis?.period}
               compareMode={compareMode}
@@ -1621,8 +1621,11 @@ export default function MonitoringPage() {
               onCreateAction={(a) => {
                 if (a) handleCreateAction(a);
                 else {
-                  setActionPrefill({ titre: `Action — Site ${siteId}`, type: 'conso' });
-                  setShowActionModal(true);
+                  openActionDrawer({
+                    prefill: { titre: `Action — Site ${siteId}`, type: 'conso' },
+                    siteId: siteId ? Number(siteId) : null,
+                    sourceType: 'insight',
+                  }, { onSave: async () => { track('monitoring_action_created', { site_id: siteId }); await loadSiteActions(); }});
                 }
               }}
               onInsight={(a) => openInsightDrawer(a)}
@@ -2149,8 +2152,11 @@ export default function MonitoringPage() {
         siteId={siteId}
         onCreateAction={(prefill) => {
           setShowOffHoursDrawer(false);
-          setActionPrefill(prefill);
-          setShowActionModal(true);
+          openActionDrawer({
+            prefill,
+            siteId: siteId ? Number(siteId) : null,
+            sourceType: 'insight',
+          }, { onSave: async () => { track('monitoring_action_created', { site_id: siteId }); await loadSiteActions(); }});
         }}
       />
 
@@ -2165,16 +2171,7 @@ export default function MonitoringPage() {
         onOpenExplorer={handleOpenExplorer}
       />
 
-      {/* CreateActionModal */}
-      <CreateActionModal
-        open={showActionModal}
-        onClose={() => setShowActionModal(false)}
-        onSave={handleSaveAction}
-        prefill={actionPrefill}
-        siteId={siteId ? Number(siteId) : null}
-        sourceType={actionPrefill?.sourceType || 'insight'}
-        sourceId={actionPrefill?.sourceId || null}
-      />
+      {/* Action creation handled by ActionDrawerContext */}
     </PageShell>
   );
 }

@@ -10,12 +10,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AlertTriangle, ShieldCheck, AlertCircle, Info, Euro, RefreshCw } from 'lucide-react';
 import { getPatrimoineAnomalies } from '../services/api';
-import {
-  getAnomalyAction,
-  ACTION_STATUS_LABEL,
-  ACTION_STATUS_COLOR,
-} from '../services/anomalyActions';
-import AnomalyActionModal from './AnomalyActionModal';
+import { useActionDrawer } from '../contexts/ActionDrawerContext';
 
 /* ── Constantes locales ── */
 
@@ -71,12 +66,11 @@ function fmtEurRisk(eur) {
  * @param {{ siteId: number, orgId: number|null }} props
  */
 export default function SiteAnomalyPanel({ siteId, orgId }) {
+  const { openActionDrawer } = useActionDrawer();
   const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState(null);
   const [activeFilter, setActiveFilter] = useState('all');
-  const [actionModal, setActionModal]   = useState(null); // { code, title }
-  const [actionTick, setActionTick]     = useState(0);   // force re-render after save
 
   const fetchAnomalies = useCallback(() => {
     if (!siteId) return;
@@ -197,12 +191,6 @@ export default function SiteAnomalyPanel({ siteId, orgId }) {
             const fwCfg     = framework ? FRAMEWORK_CHIP[framework] : null;
             const impact    = anom.business_impact?.estimated_risk_eur;
             const impactFmt = fmtEurRisk(impact);
-            const action    = getAnomalyAction(orgId, siteId, anom.code); // eslint-disable-line no-unused-vars
-            // actionTick forces re-read after modal save
-            void actionTick;
-            const currentAction = getAnomalyAction(orgId, siteId, anom.code);
-            const statusLabel   = currentAction ? ACTION_STATUS_LABEL[currentAction.status] : null;
-            const statusColor   = currentAction ? ACTION_STATUS_COLOR[currentAction.status] : null;
 
             return (
               <div key={`${anom.code}-${idx}`} className={`rounded-lg border p-2.5 ${cfg.bg} ${cfg.border}`}>
@@ -241,21 +229,22 @@ export default function SiteAnomalyPanel({ siteId, orgId }) {
                       {anom.priority_score != null && (
                         <span className="text-[9px] text-gray-400">score {anom.priority_score}</span>
                       )}
-                      {statusLabel && (
-                        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${statusColor}`}>
-                          {statusLabel}
-                        </span>
-                      )}
                     </div>
 
                     {/* CTA Créer action */}
                     <div className="mt-1.5">
                       <button
                         type="button"
-                        onClick={() => setActionModal({ code: anom.code, title: anom.title_fr })}
+                        onClick={() => openActionDrawer({
+                          prefill: { titre: anom.title_fr, type: 'anomalie' },
+                          siteId,
+                          sourceType: 'anomaly',
+                          sourceId: anom.code,
+                          idempotencyKey: `anomaly:${siteId}:${anom.code}`,
+                        })}
                         className="text-[11px] font-semibold text-blue-600 hover:text-blue-800 hover:underline transition"
                       >
-                        {currentAction ? 'Modifier l\'action' : 'Créer action'}
+                        Créer action
                       </button>
                     </div>
 
@@ -267,21 +256,7 @@ export default function SiteAnomalyPanel({ siteId, orgId }) {
         )}
       </div>
 
-      {/* Modale action */}
-      {actionModal && (
-        <AnomalyActionModal
-          open={!!actionModal}
-          onClose={() => {
-            setActionModal(null);
-            setActionTick(t => t + 1); // rafraîchir statuts
-          }}
-          orgId={orgId}
-          siteId={siteId}
-          anomalyCode={actionModal.code}
-          anomalyTitle={actionModal.title}
-        />
-      )}
-
+      {/* Action Drawer — managed by ActionDrawerContext */}
     </div>
   );
 }
