@@ -93,7 +93,7 @@ export default function DataActivationPanel({ kpis }) {
                 variant="secondary"
                 className="shrink-0 text-xs"
                 onClick={() => navigate(activation.nextAction.ctaPath)}
-                aria-label={`Compl\u00e9ter : ${activation.nextAction.label}`}
+                aria-label={`Compléter : ${activation.nextAction.label}`}
               >
                 Compléter <ArrowRight size={12} />
               </Button>
@@ -102,7 +102,7 @@ export default function DataActivationPanel({ kpis }) {
           <button
             onClick={() => navigate('/activation')}
             className="mt-2 text-[11px] text-blue-500 hover:underline"
-            aria-label="Voir le d\u00e9tail de l'activation des donn\u00e9es"
+            aria-label="Voir le détail de l'activation des données"
           >
             Voir le détail →
           </button>

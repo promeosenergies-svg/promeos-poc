@@ -27,7 +27,7 @@ function DimStatus({ ok }) {
 const FILTER_TABS = [
   { key: 'all', label: 'Tous' },
   { key: 'patrimoine', label: 'Patrimoine' },
-  { key: 'conformite', label: 'Conformit\u00e9' },
+  { key: 'conformite', label: 'Conformité' },
   { key: 'consommation', label: 'Consommation' },
   { key: 'facturation', label: 'Facturation' },
   { key: 'achat', label: 'Contrats' },
@@ -120,7 +120,7 @@ export default function ActivationPage() {
 
   if (loading) {
     return (
-      <PageShell icon={Database} title="Activation des donn\u00e9es">
+      <PageShell icon={Database} title="Activation des données">
         <Card>
           <CardBody className="flex items-center justify-center gap-2 py-12 text-gray-400">
             <span className="text-sm">Chargement…</span>
@@ -131,7 +131,7 @@ export default function ActivationPage() {
   }
 
   return (
-    <PageShell icon={Database} title="Activation des donn\u00e9es" subtitle={`${activation.activatedCount}/${activation.totalDimensions} briques actives`}>
+    <PageShell icon={Database} title="Activation des données" subtitle={`${activation.activatedCount}/${activation.totalDimensions} briques actives`}>
       {/* ── Readiness banner ── */}
       {readinessState && (
         <HealthSummary healthState={readinessState} onNavigate={navigate} onCreateAction={handleCreateFromReadiness} compact />
@@ -215,7 +215,7 @@ export default function ActivationPage() {
           <div className="py-12">
             <EmptyState
               icon={Search}
-              title="Aucun site trouv\u00e9"
+              title="Aucun site trouvé"
               text={siteSearch ? 'Essayez un autre terme.' : 'Aucun site ne correspond au filtre.'}
               ctaLabel={siteSearch ? 'Effacer' : undefined}
               onCta={siteSearch ? () => setSiteSearch('') : undefined}

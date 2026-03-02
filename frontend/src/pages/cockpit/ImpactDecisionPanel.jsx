@@ -197,7 +197,7 @@ export default function ImpactDecisionPanel({ kpis }) {
             <button
               onClick={() => navigate(toPurchase({ filter: 'renewal' }))}
               className="text-left p-2 rounded-md hover:bg-gray-50 transition-colors"
-              aria-label="Voir les contrats \u00e0 renouveler"
+              aria-label="Voir les contrats à renouveler"
             >
               <p className="text-lg font-bold text-gray-900">{purchaseSignals.expiringSoonCount}</p>
               <p className="text-[10px] text-gray-500">Contrats {'\u2264'} 90j</p>
@@ -241,7 +241,7 @@ export default function ImpactDecisionPanel({ kpis }) {
               </div>
               <span className="text-xs text-gray-400">
                 {[
-                  levers.leversByType.conformite > 0 && `${levers.leversByType.conformite} conformit\u00e9`,
+                  levers.leversByType.conformite > 0 && `${levers.leversByType.conformite} conformité`,
                   levers.leversByType.facturation > 0 && `${levers.leversByType.facturation} facturation`,
                   levers.leversByType.optimisation > 0 && `${levers.leversByType.optimisation} optimisation`,
                   levers.leversByType.achat > 0 && `${levers.leversByType.achat} achat`,
@@ -281,7 +281,7 @@ export default function ImpactDecisionPanel({ kpis }) {
                         <button
                           className="text-[10px] text-amber-600 underline shrink-0"
                           onClick={(e) => { e.stopPropagation(); navigate(buildProofLink(lever)); }}
-                          aria-label={`D\u00e9poser preuve pour : ${lever.label}`}
+                          aria-label={`Déposer preuve pour : ${lever.label}`}
                         >
                           Déposer
                         </button>
@@ -293,7 +293,7 @@ export default function ImpactDecisionPanel({ kpis }) {
                     variant="secondary"
                     className="shrink-0 text-xs"
                     onClick={() => navigate(buildLeverDeepLink(lever))}
-                    aria-label={`Cr\u00e9er une action pour : ${lever.label}`}
+                    aria-label={`Créer une action pour : ${lever.label}`}
                   >
                     Créer une action <ArrowRight size={12} />
                   </Button>

@@ -168,10 +168,10 @@ export default function ScheduleEditor({ schedule, siteId, onSaved }) {
         setIntervals(newIntervals);
         setIs247(s.is_24_7 ?? false);
         setDirty(true);
-        toast(`Suggestion NAF appliqu\u00e9e (${sug.type_site || 'arch\u00e9type'})`, 'info');
+        toast(`Suggestion NAF appliquée (${sug.type_site || 'archétype'})`, 'info');
       }
     } catch {
-      toast('Impossible de r\u00e9cup\u00e9rer la suggestion NAF', 'error');
+      toast('Impossible de récupérer la suggestion NAF', 'error');
     } finally {
       setSuggesting(false);
     }
@@ -197,7 +197,7 @@ export default function ScheduleEditor({ schedule, siteId, onSaved }) {
       }
       await putSiteSchedule(siteId, payload);
       await refreshConsumptionDiagnose(siteId, 30);
-      toast('Horaires sauvegard\u00e9s \u2014 diagnostic recalcul\u00e9', 'success');
+      toast('Horaires sauvegardés — diagnostic recalculé', 'success');
       setDirty(false);
       onSaved?.();
     } catch (err) {
@@ -218,18 +218,18 @@ export default function ScheduleEditor({ schedule, siteId, onSaved }) {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-indigo-500" />
-            <h3 className="text-sm font-semibold text-gray-700">Horaires d&apos;activit\u00e9</h3>
+            <h3 className="text-sm font-semibold text-gray-700">Horaires d&apos;activité</h3>
             {schedule?.source && (
               <Badge variant="neutral">{schedule.source}</Badge>
             )}
-            {dirty && <Badge variant="warn">modifi\u00e9</Badge>}
+            {dirty && <Badge variant="warn">modifié</Badge>}
           </div>
           <div className="flex gap-2">
             <Button
               size="sm" variant="outline"
               onClick={handleSuggest}
               disabled={suggesting}
-              title="Appliquer les horaires par d\u00e9faut du code NAF"
+              title="Appliquer les horaires par défaut du code NAF"
             >
               <Wand2 className={`w-3 h-3 mr-1 ${suggesting ? 'animate-spin' : ''}`} />
               Suggestion NAF

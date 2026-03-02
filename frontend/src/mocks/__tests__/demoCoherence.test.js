@@ -41,6 +41,7 @@ describe('mockSites — invariants', () => {
     expect(statuts).toContain('conforme');
     expect(statuts).toContain('non_conforme');
     expect(statuts).toContain('en_cours');
+    expect(statuts).toContain('a_risque');
   });
 
   it('portefeuille_id covers 3 portfolios', () => {
@@ -247,5 +248,68 @@ describe('Cross-file consistency', () => {
     for (const o of mockObligations) {
       expect(o.description).not.toMatch(/^[A-Z][a-z]+ the |Must |Should /);
     }
+  });
+
+  it('mockKpis.conformite.a_risque > 0 (code path exercised)', () => {
+    expect(mockKpis.conformite.a_risque).toBeGreaterThan(0);
+  });
+});
+
+// ── Single source of truth ─────────────────────────────────────────────
+
+describe('Single source of truth — all mocks derive from sites.js', () => {
+  it('kpis.js imports from ./sites', async () => {
+    const fs = await import('fs');
+    const src = fs.readFileSync(
+      'c:/Users/amine/promeos-poc/promeos-poc/frontend/src/mocks/kpis.js',
+      'utf-8',
+    );
+    expect(src).toContain("from './sites'");
+  });
+
+  it('actions.js imports from ./sites', async () => {
+    const fs = await import('fs');
+    const src = fs.readFileSync(
+      'c:/Users/amine/promeos-poc/promeos-poc/frontend/src/mocks/actions.js',
+      'utf-8',
+    );
+    expect(src).toContain("from './sites'");
+  });
+
+  it('no Math.random in any mock file', async () => {
+    const fs = await import('fs');
+    const files = ['sites.js', 'kpis.js', 'actions.js', 'obligations.js'];
+    for (const f of files) {
+      const src = fs.readFileSync(
+        `c:/Users/amine/promeos-poc/promeos-poc/frontend/src/mocks/${f}`,
+        'utf-8',
+      );
+      expect(src).not.toContain('Math.random');
+    }
+  });
+
+  it('no Date.now() in any mock file', async () => {
+    const fs = await import('fs');
+    const files = ['sites.js', 'kpis.js', 'actions.js', 'obligations.js'];
+    for (const f of files) {
+      const src = fs.readFileSync(
+        `c:/Users/amine/promeos-poc/promeos-poc/frontend/src/mocks/${f}`,
+        'utf-8',
+      );
+      expect(src).not.toContain('Date.now()');
+    }
+  });
+
+  it('mockTodos derive site names from mockSites (no hardcoded names)', async () => {
+    const fs = await import('fs');
+    const src = fs.readFileSync(
+      'c:/Users/amine/promeos-poc/promeos-poc/frontend/src/mocks/kpis.js',
+      'utf-8',
+    );
+    // Todos should use SITE[id].nom pattern, not hardcoded strings
+    expect(src).toMatch(/SITE\[\d+\]\.nom/);
+    // Should NOT contain hardcoded site names in todo definitions
+    const todoSection = src.slice(src.indexOf('mockTodos'));
+    expect(todoSection).not.toMatch(/site:\s*'(Siege|Bureau|Usine|Hotel|Ecole)/);
   });
 });

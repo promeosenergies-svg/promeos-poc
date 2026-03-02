@@ -62,7 +62,8 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 > | Dossier & Runbook (export HTML, week view, closeability badges) | Stable -- V90 |
 > | Data Readiness Gate polish (popover, confiance, trend, snapshots) | Stable -- V90 |
 > | Demo Coherence (donnees deterministes, 32 tests cross-file) | Stable -- V90 |
-> | Suite de tests automatises | **3 969 frontend + 2 400+ backend, 0 regression** |
+> | QA Audit V91 — Golden Contract HELIOS (4 statuts, single-source todos, 38 tests, fix Unicode) | Stable -- V91 |
+> | Suite de tests automatises | **3 975 frontend + 2 400+ backend, 0 regression** |
 
 > **Disclaimer**
 >
@@ -88,7 +89,8 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 - **Demo Coherence V90** : donnees 100% deterministes (zero `Math.random`), mockTodos/Actions/Obligations alignes sur les 5 sites HELIOS reels, Toulouse `non_conforme` (couverture complete des 4 statuts), 32 tests de coherence cross-fichiers (`demoCoherence.test.js`).
 - **Evidence Rules V90** : `evidenceRules.js` (computeEvidenceRequirement, buildSourceDeepLink, SOURCE_LABELS_FR), close errors structures, idempotency UX. 33 tests.
 - **Billing Health V90** : `billingHealthModel.js` (buildBillingWatchlist, computeBillingHealthState, health trend snapshots). 15 tests.
-- **3 969 frontend + 2 400+ backend = 6 369+ tests, 0 regression** — pytest backend + vitest frontend, seed HELIOS 5 sites + 60 mois + 10 personas IAM en une commande, demo operationnelle en 2 minutes.
+- **QA Audit V91 — Golden Contract HELIOS** : Nice passe `a_risque` (4 statuts exerces : conforme/non_conforme/en_cours/a_risque), mockTodos derives via `SITE[id].nom` (zero noms hardcodes), fix Unicode `\u00e9` → `é` sur 6 fichiers (ActivationPage, ImpactDecisionPanel, ScheduleEditor, etc.), 6 tests single-source-of-truth (import `./sites`, no Math.random, no Date.now, todos derived). 38 tests demoCoherence pass.
+- **3 975 frontend + 2 400+ backend = 6 375+ tests, 0 regression** — pytest backend + vitest frontend, seed HELIOS 5 sites + 60 mois + 10 personas IAM en une commande, demo operationnelle en 2 minutes.
 
 ---
 
@@ -727,7 +729,13 @@ Pour plus de details : [Security Notes](docs/security_notes.md) | [Demo Script](
   - mockActions : 15 actions fixes couvrant 5 sites × 4 types × 4 statuts × 4 priorites
   - Toulouse `non_conforme` : couverture complete des 4 statuts conformite
   - 32 tests cross-fichiers (`demoCoherence.test.js`) : sites, KPIs, todos, actions, obligations, FR labels
-- **3 969 frontend + 2 400+ backend = 6 369+ tests automatises, 0 regression**
+- **QA Audit V91 — Golden Contract HELIOS** :
+  - Nice (id:4) : `en_cours` → `a_risque` — les 4 statuts conformite exerces (conforme, non_conforme, en_cours, a_risque)
+  - mockTodos : noms hardcodes → derives via `SITE[id].nom` depuis sites.js
+  - Fix Unicode : `\u00e9`/`\u00e0` → caracteres UTF-8 reels sur 6 fichiers (ActivationPage, DataActivationPanel, ImpactDecisionPanel, ScheduleEditor, StickyFilterBar, scheduleValidation)
+  - +6 tests single-source-of-truth : import `./sites`, no Math.random, no Date.now, todos derived, a_risque > 0
+  - 38 tests demoCoherence pass (32 + 6 nouveaux)
+- **3 975 frontend + 2 400+ backend = 6 375+ tests automatises, 0 regression**
 - 12 items KB valides (archetypes, regles, recommendations)
 - Smoke test "red button" (14 checks avant mise en pilote)
 

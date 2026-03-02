@@ -37,12 +37,14 @@ export const mockKpis = {
   },
 };
 
+const SITE = Object.fromEntries(mockSites.map(s => [s.id, s]));
+
 export const mockTodos = [
-  { id: 1, texte: 'Declarer consommations OPERAT', priorite: 'critical', echeance: '2026-03-15', site: 'Hotel Helios Nice', site_id: 4 },
-  { id: 2, texte: 'Installer GTB batiment principal', priorite: 'critical', echeance: '2026-03-20', site: 'Bureau Regional Lyon', site_id: 2 },
-  { id: 3, texte: 'Corriger non-conformite Decret Tertiaire', priorite: 'critical', echeance: '2026-03-10', site: 'Usine HELIOS Toulouse', site_id: 3 },
-  { id: 4, texte: 'Attestation BACS a obtenir', priorite: 'high', echeance: '2026-03-25', site: 'Ecole Jules Ferry Marseille', site_id: 5 },
-  { id: 5, texte: 'Verifier compteur gaz (derive detectee)', priorite: 'medium', echeance: '2026-04-01', site: 'Siege HELIOS Paris', site_id: 1 },
+  { id: 1, texte: 'Declarer consommations OPERAT', priorite: 'critical', echeance: '2026-03-15', site: SITE[4].nom, site_id: 4 },
+  { id: 2, texte: 'Installer GTB batiment principal', priorite: 'critical', echeance: '2026-03-20', site: SITE[2].nom, site_id: 2 },
+  { id: 3, texte: 'Corriger non-conformite Decret Tertiaire', priorite: 'critical', echeance: '2026-03-10', site: SITE[3].nom, site_id: 3 },
+  { id: 4, texte: 'Attestation BACS a obtenir', priorite: 'high', echeance: '2026-03-25', site: SITE[5].nom, site_id: 5 },
+  { id: 5, texte: 'Verifier compteur gaz (derive detectee)', priorite: 'medium', echeance: '2026-04-01', site: SITE[1].nom, site_id: 1 },
 ];
 
 export const mockTopAnomalies = mockSites

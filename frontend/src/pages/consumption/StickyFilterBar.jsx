@@ -413,7 +413,7 @@ export default function StickyFilterBar({
             ) : (
               /* Placeholder: loading or no sites yet */
               <span className="text-xs text-gray-400 italic px-1 py-1">
-                {sitesLoading ? 'Chargement\u2026' : 'S\u00e9lectionner des sites\u2026'}
+                {sitesLoading ? 'Chargement…' : 'Sélectionner des sites…'}
               </span>
             )}
 

@@ -33,7 +33,7 @@ export function validateDay(slots) {
     const sMin = parseHHMM(start);
     const eMin = parseHHMM(end);
     if (sMin === null) {
-      errors.push(`Plage ${i + 1}: format invalide pour le d\u00e9but`);
+      errors.push(`Plage ${i + 1}: format invalide pour le début`);
       continue;
     }
     if (eMin === null) {
@@ -41,7 +41,7 @@ export function validateDay(slots) {
       continue;
     }
     if (sMin >= eMin) {
-      errors.push(`Plage ${i + 1}: d\u00e9but (${start}) \u2265 fin (${end})`);
+      errors.push(`Plage ${i + 1}: début (${start}) ≥ fin (${end})`);
       continue;
     }
     parsed.push({ sMin, eMin, idx: i, start, end });
