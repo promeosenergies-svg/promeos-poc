@@ -58,7 +58,11 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 > | Demo Seed V87 (BACS assets, Consumption Targets, EMS Views, 60 invoices) | Stable -- V87 |
 > | Quality Gate V88 — P0/P1/P2 (overlays, lint 0, memo, dead code) | Stable -- V88 |
 > | Evidence Drawer V0 — "Pourquoi ce chiffre ?" (Cockpit + Explorer) | Stable -- V89 |
-> | Suite de tests automatises | **3 699 frontend + 2 400+ backend, 0 regression** |
+> | Action Engine universel + Evidence (drawer, close gate, evidence_required) | Stable -- V90 |
+> | Dossier & Runbook (export HTML, week view, closeability badges) | Stable -- V90 |
+> | Data Readiness Gate polish (popover, confiance, trend, snapshots) | Stable -- V90 |
+> | Demo Coherence (donnees deterministes, 32 tests cross-file) | Stable -- V90 |
+> | Suite de tests automatises | **3 969 frontend + 2 400+ backend, 0 regression** |
 
 > **Disclaimer**
 >
@@ -78,7 +82,13 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 - **Demo Seed V86-V87** : 730 jours de lectures horaires + 30 jours 15min + meteo 5 sites (V86). BACS assets/systemes/assessments/inspections, ConsumptionTargets (yearly+monthly 2024-2026), EMS Explorer vues pre-configurees, 60 factures (V87).
 - **Quality Gate V88** — ESLint zero warnings (`--max-warnings=0`, 211→0), `React.memo` + `useMemo` sur charts lourds (HeatmapChart O(1) Map lookup, PortfolioPanel, ProfileHeatmapTab), shared `ui/Badge` dans SiteDetail/Site360, dead code supprime (Cockpit2MinPage), tooltips consolides (TooltipPortal + InfoTip), z-index normalise (Modal/Drawer z-200), `useActivationData` hook dedup.
 - **Evidence Drawer V0 (V89)** — "Pourquoi ce chiffre ?" : modele Evidence (CONFIDENCE_CFG, SOURCE_KIND, buildEvidence), EvidenceDrawer generique (Drawer z-200, 5 sections : Sources/Methode/Hypotheses/Liens/Dernier calcul), 4 fixtures factory (conformite, risque, kWh, CO2e). Integration Cockpit (Conformite + Risque KPIs) et Explorer (kWh total + CO2e). 32 source-guard tests, 0 regression.
-- **3 699 frontend + 2 400+ backend = 6 100+ tests, 0 regression** — pytest backend + vitest frontend, seed HELIOS 5 sites + 60 mois + 10 personas IAM en une commande, demo operationnelle en 2 minutes.
+- **Action Engine universel V90** : `CreateActionDrawer.jsx` (drawer centralisé, evidence_required toggle, auto-deadline), `ActionDrawerContext.jsx` (`openActionDrawer()` depuis n'importe où), `HealthSummary.jsx` (CTA "+ Action" sur readiness reasons), close gate generique `evidence_required` backend. 13 tests.
+- **Dossier & Runbook V90** : `dossierModel.js` (buildDossier, groupActionsByWeek, computeCloseabilityBadge), `DossierPrintView.jsx` (export HTML imprimable depuis 3 sources : OPERAT EFA, Conformite obligation, Billing anomalie), WeekView dans ActionsPage (4 buckets temporels + badges closeabilite). 23 tests.
+- **Data Readiness Gate polish V90** : DataReadinessBadge popover premium (niveau + 3 raisons + CTA + trend), `computeDataConfidence` (Elevee/Moyenne/Faible) dans PurchasePage, snapshots scopes (org/pf/site) avec retention 14j, `computeReadinessTrend` (delta dimensions OK). 21 tests.
+- **Demo Coherence V90** : donnees 100% deterministes (zero `Math.random`), mockTodos/Actions/Obligations alignes sur les 5 sites HELIOS reels, Toulouse `non_conforme` (couverture complete des 4 statuts), 32 tests de coherence cross-fichiers (`demoCoherence.test.js`).
+- **Evidence Rules V90** : `evidenceRules.js` (computeEvidenceRequirement, buildSourceDeepLink, SOURCE_LABELS_FR), close errors structures, idempotency UX. 33 tests.
+- **Billing Health V90** : `billingHealthModel.js` (buildBillingWatchlist, computeBillingHealthState, health trend snapshots). 15 tests.
+- **3 969 frontend + 2 400+ backend = 6 369+ tests, 0 regression** — pytest backend + vitest frontend, seed HELIOS 5 sites + 60 mois + 10 personas IAM en une commande, demo operationnelle en 2 minutes.
 
 ---
 
@@ -477,7 +487,7 @@ Documentation Swagger complete : `http://localhost:8001/docs`
 | `/bill-intel` | Bill Intelligence | Import CSV/PDF, shadow billing 12 regles, anomalies, "Creer action" CTA |
 | `/billing` | Timeline Facturation | Vue mensuelle couverture (covered/partial/missing), CoverageBar, filtres, pagination |
 | `/monitoring` | Performance Electrique V2 | 5 KPI cards (dont THS adoption/gain/risque), plan d'action, expert mode, cross-brique Achats |
-| `/actions` | Actions Console | Gestion centralisee, filtres multi-criteres, batch operations, detail drawer |
+| `/actions` | Actions Console | Gestion centralisee, filtres, batch, detail drawer, **WeekView** (4 buckets + closeability badges) |
 | `/achat-energie` | Achat Energie V2 | 4 strategies (Fixe/Indexe/Spot/THS), cockpit scenariel, "Option THS" structuree, 7 CTAs cross-briques |
 | `/achat-assistant` | Assistant Achat | Wizard 8 etapes, 6 offres demo (dont HEURES_SOLAIRES), deep-link step+offer+site_id |
 | `/usages-horaires` | Usages & Horaires | Heatmap 7x24, profil journee (24 pts), talon/peak, ScheduleEditor inline, behavior_score 0-100, anomalies off-hours + weekend |
@@ -683,7 +693,41 @@ Pour plus de details : [Security Notes](docs/security_notes.md) | [Demo Script](
   - Integration Explorer : `ConsoKpiHeader` HelpCircle button (kWh total + CO2e), `ConsumptionExplorerPage` GenericEvidenceDrawer
   - 32 source-guard tests (6 describe blocks), barrel export `ui/index.js`
   - 2 tests pre-existants corriges (source-guard contractsV36 + dataActivationV37) → 100% green
-- **3 699 frontend + 2 400+ backend = 6 100+ tests automatises, 0 regression**
+- **Action Engine universel + Evidence (V90)** :
+  - `CreateActionDrawer.jsx` : drawer centralise (remplace modal), evidence_required toggle, auto-deadline (critical→+7j, high→+14j)
+  - `ActionDrawerContext.jsx` : context global `openActionDrawer(payload, {onSave})` appelable depuis ConformitePage, BillIntelPage, ActivationPage
+  - `HealthSummary.jsx` : CTA "+ Action" sur chaque readiness reason → prefill drawer automatique
+  - Backend : colonne `evidence_required` sur `ActionItem`, close gate generique dans `action_close_rules.py`
+  - `ActionDetailDrawer.jsx` : indicateur "Preuve requise" + blocage cloture si evidence manquante
+  - 13 tests action engine (prefill, auto-deadline, evidence toggle, idempotency keys, FR labels)
+- **Dossier & Runbook (V90)** :
+  - `dossierModel.js` : `buildDossier(source, actions, evidenceMap)` → structure { header, actions, evidence, missing, stats }
+  - `groupActionsByWeek(actions)` → { overdue, today, week, later }
+  - `computeCloseabilityBadge(action)` → Cloturee/Bloque/En retard/neutre
+  - `DossierPrintView.jsx` : drawer HTML imprimable via `window.print()`, depuis 3 sources (OPERAT EFA, Conformite obligation, Billing anomalie)
+  - Boutons "Dossier" sur ConformitePage, BillIntelPage, TertiaireEfaDetailPage
+  - ActionsPage WeekView : 4 buckets temporels (Aujourd'hui, 7j, Plus tard, En retard) + badges closeabilite
+  - 23 tests dossier/runbook (buildDossier, groupActionsByWeek, closeability, section labels, source tracing, FR invariant)
+- **Data Readiness Gate polish (V90)** :
+  - `DataReadinessBadge.jsx` : popover premium (titre colore par niveau, max 3 raisons avec navigation, CTA "Corriger maintenant", indicateur trend)
+  - `computeDataConfidence(readinessState)` → Elevee/Moyenne/Faible dans PurchasePage subtitle
+  - Snapshots scopes localStorage (`promeos.readiness.org-{id}.{scope}`) avec retention 14j + purge auto
+  - `computeReadinessTrend(current, previous)` → delta +N dimensions OK / -N points
+  - `SOFT_GATE_TOOLTIP_FR`, `LEVEL_BADGE_LABEL` (OK/Partiel/Incomplet), reasons cap 3
+  - 21 tests data readiness gate (popover content, confidence, wording FR, trend, snapshots, source guards)
+- **Evidence Rules & Source Tracing (V90)** :
+  - `evidenceRules.js` : `computeEvidenceRequirement()`, `buildSourceDeepLink()`, `SOURCE_LABELS_FR`, `EVIDENCE_RULES`
+  - `billingHealthModel.js` : `buildBillingWatchlist()`, `computeBillingHealthState()`, health trend snapshots
+  - 33 + 15 tests evidence rules + billing health
+- **Demo Coherence (V90)** :
+  - Donnees 100% deterministes : zero `Math.random()` dans mockActions
+  - mockTodos : 5 sites fantomes → 5 vrais sites HELIOS avec `site_id`
+  - mockKpis : "12 sites" hardcode → calcul dynamique depuis mockSites
+  - mockObligations : `sites_concernes` alignes sur 5 sites (DT→4, BACS→3, APER→2, DPE→5, Audit→5)
+  - mockActions : 15 actions fixes couvrant 5 sites × 4 types × 4 statuts × 4 priorites
+  - Toulouse `non_conforme` : couverture complete des 4 statuts conformite
+  - 32 tests cross-fichiers (`demoCoherence.test.js`) : sites, KPIs, todos, actions, obligations, FR labels
+- **3 969 frontend + 2 400+ backend = 6 369+ tests automatises, 0 regression**
 - 12 items KB valides (archetypes, regles, recommendations)
 - Smoke test "red button" (14 checks avant mise en pilote)
 
