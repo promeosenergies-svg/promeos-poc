@@ -761,7 +761,7 @@ export default function PurchasePage() {
                       <div className="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
                         <div className="text-xs text-gray-500 uppercase font-medium">Budget annuel</div>
                         <div className="text-2xl font-bold text-gray-900 mt-1">
-                          {cheapest ? `${Math.round(cheapest.total_annual_eur).toLocaleString()} — ${Math.round(mostExpensive.total_annual_eur).toLocaleString()}` : '—'} EUR
+                          {cheapest && mostExpensive ? `${Math.round(cheapest.total_annual_eur).toLocaleString()} — ${Math.round(mostExpensive.total_annual_eur).toLocaleString()}` : '—'} EUR
                         </div>
                         <div className="text-xs text-gray-400 mt-1">Fourchette des {scenarios.length} stratégies</div>
                       </div>
@@ -933,7 +933,7 @@ export default function PurchasePage() {
                                     {s.blocs.map((b) => (
                                       <div key={b.bloc} className="flex justify-between">
                                         <span className="text-gray-700">{b.bloc.replace(/_/g, ' ')}</span>
-                                        <span className="font-mono text-gray-600">{b.weight_pct}% — {b.price_eur_kwh.toFixed(4)} EUR/kWh</span>
+                                        <span className="font-mono text-gray-600">{b.weight_pct}% — {b.price_eur_kwh?.toFixed(4) ?? '—'} EUR/kWh</span>
                                       </div>
                                     ))}
                                   </div>
@@ -1003,7 +1003,7 @@ export default function PurchasePage() {
                                   site_id: selectedSiteId,
                                   title: `Tarif Heures Solaires — ${Math.round(s.total_annual_eur).toLocaleString()} EUR/an`,
                                   scenario_label: 'Tarif Heures Solaires',
-                                  impact_eur: s.savings_vs_current_pct > 0 ? Math.round(s.total_annual_eur * s.savings_vs_current_pct / 100) : undefined,
+                                  impact_eur: s.savings_vs_current_pct > 0 && s.total_annual_eur ? Math.round(s.total_annual_eur * s.savings_vs_current_pct / 100) : undefined,
                                 }))}
                                 className="flex items-center gap-1 text-xs text-green-600 hover:text-green-800 underline"
                               >
@@ -1052,7 +1052,7 @@ export default function PurchasePage() {
                               site_id: selectedSiteId,
                               title: `Achat énergie — ${meta.label} (${Math.round(s.total_annual_eur).toLocaleString()} EUR/an)`,
                               scenario_label: meta.label,
-                              impact_eur: s.savings_vs_current_pct > 0 ? Math.round(s.total_annual_eur * s.savings_vs_current_pct / 100) : undefined,
+                              impact_eur: s.savings_vs_current_pct > 0 && s.total_annual_eur ? Math.round(s.total_annual_eur * s.savings_vs_current_pct / 100) : undefined,
                             }))}
                             className="w-full mt-2 bg-white border border-green-300 text-green-700 py-2 rounded-lg text-sm font-medium hover:bg-green-50 transition flex items-center justify-center gap-2"
                           >
@@ -1218,7 +1218,7 @@ export default function PurchasePage() {
                   });
                   const topGains = [...enriched].sort((a, b) => b.gain - a.gain).slice(0, 3);
                   const topRisk = [...enriched].filter((s) => s.reflex).sort((a, b) => (b.reflex?.risk_score || 0) - (a.reflex?.risk_score || 0)).slice(0, 3);
-                  const easiest = [...enriched].filter((s) => s.reflex?.effort_score != null).sort((a, b) => (a.reflex.effort_score || 0) - (b.reflex.effort_score || 0)).slice(0, 3);
+                  const easiest = [...enriched].filter((s) => s.reflex?.effort_score != null).sort((a, b) => (a.reflex?.effort_score || 0) - (b.reflex?.effort_score || 0)).slice(0, 3);
                   const campaignSites = enriched.filter((s) => s.gain > 0);
                   const campaignGainTotal = campaignSites.reduce((sum, s) => sum + Math.round(s.baseline * s.gain / 100), 0);
                   return (
@@ -1293,8 +1293,8 @@ export default function PurchasePage() {
                                 </td>
                                 <td className="px-4 py-3 text-right">
                                   {site.reflex?.effort_score != null ? (
-                                    <span className={site.reflex.effort_score <= 30 ? 'text-green-600' : site.reflex.effort_score <= 60 ? 'text-yellow-600' : 'text-red-600'}>
-                                      {site.reflex.effort_score}/100
+                                    <span className={site.reflex?.effort_score <= 30 ? 'text-green-600' : site.reflex?.effort_score <= 60 ? 'text-yellow-600' : 'text-red-600'}>
+                                      {site.reflex?.effort_score}/100
                                     </span>
                                   ) : '—'}
                                 </td>

@@ -204,13 +204,13 @@ export default function PurchaseAssistantPage() {
     return () => {
       cancelled = true;
     };
-  }, [scope.orgId]);
+  }, [scope?.orgId]);
 
   // V81: Deep-link — jump to step + highlight offer on mount
   useEffect(() => {
     if (!deepLinkStep) return;
     const stepIndex = STEPS.findIndex((s) => s.key === deepLinkStep);
-    if (stepIndex > 0) setStep(stepIndex);
+    if (stepIndex >= 0) setStep(stepIndex);
   }, [deepLinkStep]);
 
   // Demo sites — prefer API data, fall back to local demo
@@ -274,21 +274,7 @@ export default function PurchaseAssistantPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, wizard, isDemo, selectedSitesData, offers]);
 
-  const goNext = useCallback(() => {
-    if (step < STEPS.length - 1 && canAdvance) {
-      // Auto-compute when reaching results step
-      if (step === 4) {
-        handleCompute();
-      }
-      setStep((s) => s + 1);
-    }
-  }, [step, canAdvance, handleCompute]);
-
-  const goBack = useCallback(() => {
-    if (step > 0) setStep((s) => s - 1);
-  }, [step]);
-
-  // ── Computation ──────────────────────────────────────────────────
+  // ── Computation (must be declared before goNext which references it) ──
 
   const handleCompute = useCallback(() => {
     setComputing(true);
@@ -360,6 +346,20 @@ export default function PurchaseAssistantPage() {
     setComputing(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [offers, wizard, selectedSitesData, isDemo, toast]);
+
+  const goNext = useCallback(() => {
+    if (step < STEPS.length - 1 && canAdvance) {
+      // Auto-compute when reaching results step
+      if (step === 4) {
+        handleCompute();
+      }
+      setStep((s) => s + 1);
+    }
+  }, [step, canAdvance, handleCompute]);
+
+  const goBack = useCallback(() => {
+    if (step > 0) setStep((s) => s - 1);
+  }, [step]);
 
   // ── Render Step Content ──────────────────────────────────────────
 
@@ -561,7 +561,7 @@ function StepPortfolio({ wizard, setWizard, isDemo, setIsDemo, demoSites }) {
                           {site.city} — {site.usage}
                         </div>
                         <div className="text-xs text-gray-400 mt-1">
-                          {(site.consumption.annualKwh / 1000).toFixed(0)} MWh/an —{' '}
+                          {((site.consumption?.annualKwh || 0) / 1000).toFixed(0)} MWh/an —{' '}
                           {site.surfaceM2.toLocaleString()} m2
                         </div>
                       </button>
@@ -603,7 +603,7 @@ function StepConsumption({ wizard, setWizard, sitesData, isDemo }) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <KpiCard
           label="Volume annuel"
-          value={`${(sitesData.annualKwh / 1000).toFixed(0)} MWh`}
+          value={`${((sitesData.annualKwh || 0) / 1000).toFixed(0)} MWh`}
           sublabel={isDemo ? 'Source: demo' : 'Source: patrimoine'}
           icon={<BarChart3 size={18} />}
         />
@@ -1238,17 +1238,17 @@ function StepResults({ engineOutput, scoredOffers, recommendation, computing, on
         />
         <KpiCard
           label="Meilleur P50"
-          value={`${Math.min(...scoredOffers.map((s) => s.corridor.p50)).toFixed(1)} EUR/MWh`}
+          value={scoredOffers.length > 0 ? `${Math.min(...scoredOffers.map((s) => s.corridor?.p50 ?? Infinity)).toFixed(1)} EUR/MWh` : '—'}
           icon={<TrendingUp size={18} />}
         />
         <KpiCard
           label="Horizon"
-          value={`${engineOutput.params.horizonMonths} mois`}
+          value={`${engineOutput?.params?.horizonMonths ?? '—'} mois`}
           icon={<Clock size={18} />}
         />
         <KpiCard
           label="Iterations MC"
-          value={engineOutput.params.mcIterations}
+          value={engineOutput?.params?.mcIterations ?? '—'}
           icon={<BarChart3 size={18} />}
         />
       </div>
@@ -1287,22 +1287,22 @@ function StepResults({ engineOutput, scoredOffers, recommendation, computing, on
                       {STRUCTURE_LABELS[s.structure]}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-right tabular-nums">{s.corridor.p10.toFixed(1)}</td>
+                  <td className="px-4 py-3 text-right tabular-nums">{s.corridor?.p10?.toFixed(1) ?? '—'}</td>
                   <td className="px-4 py-3 text-right tabular-nums font-semibold">
-                    {s.corridor.p50.toFixed(1)}
+                    {s.corridor?.p50?.toFixed(1) ?? '—'}
                   </td>
-                  <td className="px-4 py-3 text-right tabular-nums">{s.corridor.p90.toFixed(1)}</td>
+                  <td className="px-4 py-3 text-right tabular-nums">{s.corridor?.p90?.toFixed(1) ?? '—'}</td>
                   <td className="px-4 py-3 text-right tabular-nums">
-                    {Math.round(s.corridor.tcoP50).toLocaleString()}
-                  </td>
-                  <td className="px-4 py-3 text-right tabular-nums">
-                    {Math.round(s.annualCostP50).toLocaleString()}
+                    {s.corridor?.tcoP50 != null ? Math.round(s.corridor.tcoP50).toLocaleString() : '—'}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums">
-                    {Math.round(s.volatility).toLocaleString()}
+                    {s.annualCostP50 != null ? Math.round(s.annualCostP50).toLocaleString() : '—'}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums">
-                    {Math.round(s.cvar90).toLocaleString()}
+                    {s.volatility != null ? Math.round(s.volatility).toLocaleString() : '—'}
+                  </td>
+                  <td className="px-4 py-3 text-right tabular-nums">
+                    {s.cvar90 != null ? Math.round(s.cvar90).toLocaleString() : '—'}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums">
                     {s.probExceedBudget != null ? `${(s.probExceedBudget * 100).toFixed(0)}%` : '—'}
