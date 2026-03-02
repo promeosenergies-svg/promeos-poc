@@ -202,6 +202,8 @@ def get_preferences(
     """Get purchase preferences."""
     if auth:
         org_id = auth.org_id
+    elif not org_id:
+        raise HTTPException(status_code=401, detail="Authentication required")
     q = db.query(PurchasePreference)
     if org_id is not None:
         q = q.filter(PurchasePreference.org_id == org_id)
@@ -233,6 +235,8 @@ def put_preferences(
     """Create or update purchase preferences."""
     if auth:
         org_id = auth.org_id
+    elif not org_id:
+        raise HTTPException(status_code=401, detail="Authentication required")
     q = db.query(PurchasePreference)
     if org_id is not None:
         q = q.filter(PurchasePreference.org_id == org_id)
@@ -276,10 +280,9 @@ def get_renewals(
     """List contracts expiring within notice window (30/60/90 days)."""
     if auth:
         org_id = auth.org_id
-    if org_id:
-        site_ids = get_org_site_ids(db, org_id)
-    else:
-        site_ids = [s.id for s in db.query(Site.id).filter(Site.actif == True).all()]
+    if not org_id:
+        raise HTTPException(status_code=401, detail="Authentication required or org_id param needed")
+    site_ids = get_org_site_ids(db, org_id)
 
     if not site_ids:
         return {"total": 0, "renewals": []}
@@ -352,6 +355,8 @@ def get_actions(
     """Get computed purchase actions (ephemeral, not persisted)."""
     if auth:
         org_id = auth.org_id
+    if not org_id:
+        raise HTTPException(status_code=401, detail="Authentication required or org_id param needed")
     return compute_purchase_actions(db, org_id=org_id)
 
 
@@ -368,6 +373,8 @@ def compute_portfolio(
     """Compute scenarios for all sites in an org (scope=org)."""
     if auth:
         org_id = auth.org_id
+    elif not org_id:
+        raise HTTPException(status_code=401, detail="Authentication required")
     if scope != "org":
         raise HTTPException(400, "Use POST /api/purchase/compute/{site_id} for single site")
 
@@ -390,7 +397,6 @@ def compute_portfolio(
             PurchasePreference.org_id == org_id,
         )
         .first()
-        or db.query(PurchasePreference).first()
     )
     risk_tol = pref.risk_tolerance if pref else "medium"
     budget_pri = pref.budget_priority if pref else 0.5
@@ -555,7 +561,7 @@ def compute(
             db.query(PurchasePreference)
             .filter(PurchasePreference.org_id == org_id)
             .first()
-        ) if org_id else db.query(PurchasePreference).first()
+        ) if org_id else None
         risk_tol = pref.risk_tolerance if pref else "medium"
         budget_pri = pref.budget_priority if pref else 0.5
         green_pref = pref.green_preference if pref else False
@@ -629,6 +635,8 @@ def get_portfolio_results(
     """Aggregated portfolio view: total cost, weighted risk, total savings."""
     if auth:
         org_id = auth.org_id
+    elif not org_id:
+        raise HTTPException(status_code=401, detail="Authentication required")
     site_ids = get_org_site_ids(db, org_id)
     if not site_ids:
         return {"org_id": org_id, "portfolio": None, "sites": []}
@@ -834,6 +842,12 @@ def accept_result(
     result = db.query(PurchaseScenarioResult).filter(PurchaseScenarioResult.id == result_id).first()
     if not result:
         raise HTTPException(status_code=404, detail="Result not found")
+    # IDOR guard: verify the result belongs to a site the user can access
+    assumption = db.query(PurchaseAssumptionSet).filter(
+        PurchaseAssumptionSet.id == result.assumption_set_id
+    ).first()
+    if assumption:
+        check_site_access(auth, assumption.site_id)
     result.reco_status = PurchaseRecoStatus.ACCEPTED
     db.commit()
     return {"id": result.id, "reco_status": "accepted"}

@@ -76,7 +76,7 @@ export function scoreBudgetRisk({ offerResult, offer, budgetEur, anomalies = [] 
   }
 
   // Budget exceedance
-  if (budgetEur && offerResult.probExceedBudget > 0.2) {
+  if (budgetEur != null && offerResult.probExceedBudget > 0.2) {
     score -= 15;
     reasons.push(`Probabilite de depasser le budget: ${(offerResult.probExceedBudget * 100).toFixed(0)}%`);
     evs.push(evidence('BR06', 'probExceedBudget', offerResult.probExceedBudget));

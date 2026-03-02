@@ -213,11 +213,14 @@ def _issue_to_dict(i: TertiaireDataQualityIssue) -> dict:
 @router.get("/efa")
 def list_efas(
     org_id: Optional[int] = Query(None),
+    site_id: Optional[int] = Query(None, description="Filtrer par site"),
     statut: Optional[str] = Query(None),
     db: Session = Depends(get_db),
 ):
     query = db.query(TertiaireEfa).filter(TertiaireEfa.deleted_at.is_(None))
-    if org_id:
+    if site_id:
+        query = query.filter(TertiaireEfa.site_id == site_id)
+    elif org_id:
         query = query.filter(TertiaireEfa.org_id == org_id)
     if statut:
         query = query.filter(TertiaireEfa.statut == statut)
@@ -540,8 +543,12 @@ def update_issue_status(issue_id: int, body: IssueStatusUpdate, db: Session = De
 # ── Dashboard ────────────────────────────────────────────────────────────────
 
 @router.get("/dashboard")
-def dashboard(org_id: Optional[int] = Query(None), db: Session = Depends(get_db)):
-    return get_tertiaire_dashboard(db, org_id)
+def dashboard(
+    org_id: Optional[int] = Query(None),
+    site_id: Optional[int] = Query(None, description="Filtrer par site"),
+    db: Session = Depends(get_db),
+):
+    return get_tertiaire_dashboard(db, org_id, site_id=site_id)
 
 
 # ── Site Signals V42 ─────────────────────────────────────────────────────────
@@ -549,10 +556,11 @@ def dashboard(org_id: Optional[int] = Query(None), db: Session = Depends(get_db)
 @router.get("/site-signals", response_model=SiteSignalsResponse)
 def site_signals(
     org_id: Optional[int] = Query(None, description="ID organisation (optionnel, filtre les sites)"),
+    site_id: Optional[int] = Query(None, description="Filtrer par site"),
     db: Session = Depends(get_db),
 ):
     """V42: Qualification des sites patrimoine vis-à-vis du Décret tertiaire."""
-    return compute_site_signals(db, org_id)
+    return compute_site_signals(db, org_id, site_id=site_id)
 
 
 # ── Catalog (patrimoine buildings for wizard) ────────────────────────────────

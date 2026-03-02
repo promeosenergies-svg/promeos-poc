@@ -6,48 +6,53 @@
 import { useRef } from 'react';
 import { Printer, X } from 'lucide-react';
 
-const STRATEGY_LABELS = { fixe: 'Prix Fixe', indexe: 'Indexe', spot: 'Spot' };
+const STRATEGY_LABELS = { fixe: 'Prix Fixe', indexe: 'Indexe', spot: 'Spot', reflex_solar: 'Tarif Heures Solaires' };
 
 export default function ExportPackRFP({ portfolio, sites, orgName, onClose }) {
   const printRef = useRef();
 
   const handlePrint = () => {
     const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html><head><title>Pack RFP — ${orgName || 'Portfolio'}</title>
-      <style>
-        @page { size: A4; margin: 18mm 15mm; }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
-        body { font-size: 10pt; color: #1a1a1a; line-height: 1.4; }
-        .page-break { page-break-after: always; }
-        .header { border-bottom: 3px solid #2563eb; padding-bottom: 10px; margin-bottom: 14px; }
-        .header h1 { font-size: 16pt; color: #1e3a5f; }
-        .header .sub { font-size: 9pt; color: #6b7280; margin-top: 2px; }
-        .section { margin-bottom: 14px; }
-        .section-title { font-size: 11pt; font-weight: 700; color: #1e3a5f; border-bottom: 1px solid #e5e7eb; padding-bottom: 3px; margin-bottom: 8px; }
-        .kpi-strip { display: flex; gap: 12px; margin-bottom: 14px; }
-        .kpi { flex: 1; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px; text-align: center; }
-        .kpi-val { font-size: 18pt; font-weight: 800; }
-        .kpi-lbl { font-size: 7pt; color: #6b7280; text-transform: uppercase; margin-top: 2px; }
-        table { width: 100%; border-collapse: collapse; font-size: 9pt; margin-bottom: 12px; }
-        th { background: #f3f4f6; text-align: left; padding: 5px 8px; font-weight: 600; color: #374151; border-bottom: 2px solid #d1d5db; }
-        td { padding: 5px 8px; border-bottom: 1px solid #e5e7eb; }
-        .reco td { background: #eff6ff; font-weight: 600; }
-        .risk-badge { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 8pt; font-weight: 600; }
-        .risk-low { background: #dcfce7; color: #166534; }
-        .risk-med { background: #fef3c7; color: #92400e; }
-        .risk-high { background: #fee2e2; color: #991b1b; }
-        .footer { margin-top: 20px; padding-top: 10px; border-top: 1px solid #d1d5db; font-size: 7pt; color: #9ca3af; text-align: center; }
-        .page-num { text-align: right; font-size: 8pt; color: #9ca3af; margin-bottom: 8px; }
-        .summary-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 12px; margin-bottom: 14px; }
-        .summary-box p { font-size: 10pt; color: #1e40af; }
-      </style>
-      </head><body>${printRef.current.innerHTML}
-      </body></html>
-    `);
-    printWindow.document.close();
-    setTimeout(() => { printWindow.print(); printWindow.close(); }, 300);
+    if (!printWindow) {
+      alert('Veuillez autoriser les popups pour imprimer.');
+      return;
+    }
+    // Clone DOM content safely instead of injecting raw innerHTML
+    const styles = `
+      @page { size: A4; margin: 18mm 15mm; }
+      * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+      body { font-size: 10pt; color: #1a1a1a; line-height: 1.4; }
+      .page-break { page-break-after: always; }
+      .header { border-bottom: 3px solid #2563eb; padding-bottom: 10px; margin-bottom: 14px; }
+      .header h1 { font-size: 16pt; color: #1e3a5f; }
+      .header .sub { font-size: 9pt; color: #6b7280; margin-top: 2px; }
+      .section { margin-bottom: 14px; }
+      .section-title { font-size: 11pt; font-weight: 700; color: #1e3a5f; border-bottom: 1px solid #e5e7eb; padding-bottom: 3px; margin-bottom: 8px; }
+      .kpi-strip { display: flex; gap: 12px; margin-bottom: 14px; }
+      .kpi { flex: 1; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px; text-align: center; }
+      .kpi-val { font-size: 18pt; font-weight: 800; }
+      .kpi-lbl { font-size: 7pt; color: #6b7280; text-transform: uppercase; margin-top: 2px; }
+      table { width: 100%; border-collapse: collapse; font-size: 9pt; margin-bottom: 12px; }
+      th { background: #f3f4f6; text-align: left; padding: 5px 8px; font-weight: 600; color: #374151; border-bottom: 2px solid #d1d5db; }
+      td { padding: 5px 8px; border-bottom: 1px solid #e5e7eb; }
+      .reco td { background: #eff6ff; font-weight: 600; }
+      .risk-badge { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 8pt; font-weight: 600; }
+      .risk-low { background: #dcfce7; color: #166534; }
+      .risk-med { background: #fef3c7; color: #92400e; }
+      .risk-high { background: #fee2e2; color: #991b1b; }
+      .footer { margin-top: 20px; padding-top: 10px; border-top: 1px solid #d1d5db; font-size: 7pt; color: #9ca3af; text-align: center; }
+      .page-num { text-align: right; font-size: 8pt; color: #9ca3af; margin-bottom: 8px; }
+      .summary-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 12px; margin-bottom: 14px; }
+      .summary-box p { font-size: 10pt; color: #1e40af; }
+    `;
+    const doc = printWindow.document;
+    doc.open();
+    doc.write('<!DOCTYPE html><html><head><title>Pack RFP</title><style>' + styles + '</style></head><body></body></html>');
+    doc.close();
+    const cloned = doc.importNode(printRef.current, true);
+    doc.body.appendChild(cloned);
+    printWindow.onload = () => { printWindow.print(); printWindow.close(); };
+    if (doc.readyState === 'complete') { printWindow.print(); printWindow.close(); }
   };
 
   if (!portfolio) return null;
@@ -72,7 +77,7 @@ export default function ExportPackRFP({ portfolio, sites, orgName, onClose }) {
               className="flex items-center gap-1.5 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition">
               <Printer size={14} /> Imprimer / PDF
             </button>
-            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition">
+            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition" aria-label="Fermer">
               <X size={18} />
             </button>
           </div>
@@ -98,7 +103,7 @@ export default function ExportPackRFP({ portfolio, sites, orgName, onClose }) {
                 <div className="kpi-lbl">Volume total annuel</div>
               </div>
               <div className="kpi">
-                <div className="kpi-val" style={{ color: '#2563eb' }}>{Math.round(portfolio.total_annual_cost_eur).toLocaleString()}</div>
+                <div className="kpi-val" style={{ color: '#2563eb' }}>{Math.round(portfolio.total_annual_cost_eur || 0).toLocaleString()}</div>
                 <div className="kpi-lbl">Cout annuel (EUR)</div>
               </div>
               <div className="kpi">

@@ -30,7 +30,7 @@ from services.billing_service import (
     shadow_billing_simple,
     BILLING_RULES,
 )
-from middleware.auth import get_optional_auth, AuthContext
+from middleware.auth import get_optional_auth, require_admin, AuthContext
 from services.scope_utils import resolve_org_id
 
 router = APIRouter(prefix="/api/billing", tags=["Bill Intelligence V2"])
@@ -1283,7 +1283,10 @@ def get_missing_periods(
 # ========================================
 
 @router.post("/seed-demo")
-def seed_demo(db: Session = Depends(get_db)):
+def seed_demo(
+    db: Session = Depends(get_db),
+    _admin: None = Depends(require_admin()),
+):
     """Seed 2 contracts + 5 invoices (3 good + 2 anomalous) for demo."""
     from services.billing_seed import seed_billing_demo
     result = seed_billing_demo(db)

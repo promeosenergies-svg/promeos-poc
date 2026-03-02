@@ -570,10 +570,12 @@ Il ne constitue pas une soumission officielle sur la plateforme OPERAT.
 
 # ── Dashboard KPIs ───────────────────────────────────────────────────────────
 
-def get_tertiaire_dashboard(db: Session, org_id: int = None) -> dict:
+def get_tertiaire_dashboard(db: Session, org_id: int = None, site_id: int = None) -> dict:
     """KPIs agrégés pour le dashboard tertiaire."""
     query = db.query(TertiaireEfa).filter(TertiaireEfa.deleted_at.is_(None))
-    if org_id:
+    if site_id:
+        query = query.filter(TertiaireEfa.site_id == site_id)
+    elif org_id:
         query = query.filter(TertiaireEfa.org_id == org_id)
 
     efas = query.all()
@@ -744,7 +746,7 @@ def _build_site_explanation(site, bats, surface_tertiaire, data_complete, is_cov
     }
 
 
-def compute_site_signals(db: Session, org_id: int = None) -> dict:
+def compute_site_signals(db: Session, org_id: int = None, site_id: int = None) -> dict:
     """Qualifie chaque site du patrimoine vis-à-vis du Décret tertiaire.
 
     Heuristique V1 (V42) + Explainability V43:
@@ -754,10 +756,13 @@ def compute_site_signals(db: Session, org_id: int = None) -> dict:
 
     Un site "couvert" = a déjà au moins une EFA active/draft liée via building_id.
     """
-    sites = db.query(Site).filter(
+    site_query = db.query(Site).filter(
         Site.actif.is_(True),
         Site.deleted_at.is_(None),
-    ).order_by(Site.nom).all()
+    )
+    if site_id:
+        site_query = site_query.filter(Site.id == site_id)
+    sites = site_query.order_by(Site.nom).all()
 
     # Collect all EFA building associations to determine coverage
     covered_site_ids = set()

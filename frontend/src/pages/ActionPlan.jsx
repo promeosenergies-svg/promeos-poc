@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useScope } from '../contexts/ScopeContext';
 import {
   Navigation, ShieldCheck, ShieldAlert, ShieldX,
   Euro, ChevronRight,
@@ -23,21 +24,22 @@ const TYPE_LABELS = {
 
 const ActionPlan = () => {
   const navigate = useNavigate();
+  const { selectedSiteId } = useScope();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [portefeuilles, setPortefeuilles] = useState([]);
   const [selectedPtf, setSelectedPtf] = useState('');
 
-  const fetchPlan = (ptfId) => {
+  const fetchPlan = useCallback((ptfId) => {
     setLoading(true);
-    const url = ptfId
-      ? `${API}/api/guidance/action-plan?portefeuille_id=${ptfId}&limit=100`
-      : `${API}/api/guidance/action-plan?limit=100`;
-    fetch(url)
+    const params = new URLSearchParams({ limit: '100' });
+    if (selectedSiteId) params.set('site_id', selectedSiteId);
+    else if (ptfId) params.set('portefeuille_id', ptfId);
+    fetch(`${API}/api/guidance/action-plan?${params}`)
       .then(r => r.json())
       .then(json => { setData(json); setLoading(false); })
       .catch(() => setLoading(false));
-  };
+  }, [selectedSiteId]);
 
   useEffect(() => {
     fetchPlan(selectedPtf);
@@ -45,8 +47,7 @@ const ActionPlan = () => {
       .then(r => r.json())
       .then(json => setPortefeuilles(json.portefeuilles || []))
       .catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [selectedPtf, selectedSiteId, fetchPlan]);
 
   const handleFilterChange = (ptfId) => {
     setSelectedPtf(ptfId);

@@ -151,7 +151,7 @@ function mapBackendSiteToDomain(backendSite) {
     energyType: isElec ? EnergyType.ELEC : EnergyType.GAZ,
     consumption: {
       annualKwh,
-      monthlyKwh: seasonality.map(c => Math.round(annualKwh * c / 12)),
+      monthlyKwh: (() => { const sum = seasonality.reduce((a, b) => a + b, 0); return seasonality.map(c => Math.round(annualKwh * c / sum)); })(),
       granularity: 'monthly',
       profileFactor: 1,
       seasonality,

@@ -6,11 +6,15 @@ V1.1: get_reference_price (contract > site_tariff > fallback),
       cross-link R9 -> diagnostic-conso,
       insight workflow defaults.
 """
+import inspect
 import json
+import logging
 from datetime import date, datetime, timedelta
 from typing import List, Dict, Any, Optional, Tuple
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+
+logger = logging.getLogger(__name__)
 
 from models import (
     Site, EnergyContract, EnergyInvoice, EnergyInvoiceLine, BillingInsight,
@@ -590,6 +594,12 @@ BILLING_RULES = [
     ("R14", "Taxes / CSPE mismatch",   _rule_taxes_mismatch),
 ]
 
+# Pre-compute which rules accept a `db` parameter (avoids inspect per invocation)
+_RULES_ACCEPT_DB = frozenset(
+    rule_id for rule_id, _, rule_fn in BILLING_RULES
+    if "db" in inspect.signature(rule_fn).parameters
+)
+
 
 def run_anomaly_engine(
     invoice: EnergyInvoice,
@@ -601,9 +611,7 @@ def run_anomaly_engine(
     anomalies = []
     for rule_id, rule_name, rule_fn in BILLING_RULES:
         try:
-            import inspect
-            params = inspect.signature(rule_fn).parameters
-            if "db" in params:
+            if rule_id in _RULES_ACCEPT_DB:
                 result = rule_fn(invoice, contract, lines, db=db)
             else:
                 result = rule_fn(invoice, contract, lines)
@@ -614,8 +622,8 @@ def run_anomaly_engine(
                     result["metrics"]["rule_id"] = rule_id
                     result["metrics"]["rule_name"] = rule_name
                 anomalies.append(result)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Billing rule %s failed for invoice %s: %s", rule_id, getattr(invoice, 'id', '?'), e)
     return anomalies
 
 

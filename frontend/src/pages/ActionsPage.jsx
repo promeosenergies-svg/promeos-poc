@@ -376,7 +376,7 @@ function WeekView({ actions, onCardClick }) {
 
 /* ── Main Component ──────────────────────────────────────────── */
 export default function ActionsPage({ autoCreate = false }) {
-  const { scopedSites } = useScope();
+  const { scopedSites, selectedSiteId } = useScope();
   const { isExpert } = useExpertMode();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
@@ -410,14 +410,15 @@ export default function ActionsPage({ autoCreate = false }) {
   const fetchActions = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await getActionsList();
+      const params = selectedSiteId ? { site_id: selectedSiteId } : {};
+      const data = await getActionsList(params);
       setActions(data.map(mapBackendAction));
     } catch {
       /* fallback: keep current state */
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedSiteId]);
 
   useEffect(() => { fetchActions(); }, [fetchActions]);
 

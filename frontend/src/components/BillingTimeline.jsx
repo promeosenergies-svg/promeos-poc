@@ -39,8 +39,9 @@ const STATUS_CONFIG = {
 };
 
 function formatMonthKey(monthKey) {
+  if (!monthKey) return '—';
   const [y, m] = monthKey.split('-');
-  const d = new Date(parseInt(y), parseInt(m) - 1, 1);
+  const d = new Date(parseInt(y, 10), parseInt(m, 10) - 1, 1);
   return d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
 }
 

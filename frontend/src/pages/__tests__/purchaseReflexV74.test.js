@@ -35,8 +35,8 @@ describe('A · STRATEGY_META reflex_solar', () => {
     expect(code).toContain('icon: Sun');
   });
 
-  it("reflex_solar color is 'amber'", () => {
-    expect(code).toContain("color: 'amber'");
+  it("reflex_solar uses amber Tailwind classes", () => {
+    expect(code).toContain("bgClass: 'bg-amber-50'");
   });
 
   it('reflex_solar has a desc string', () => {

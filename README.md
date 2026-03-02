@@ -66,6 +66,9 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 > | Conformite UX Upgrade (Guided Mode 7 etapes, NBA hero card, Donnees KPIs, Expert mode) | Stable -- V92 |
 > | V23 Sprint Analyse (auth guards, motor stability, tab extraction, double-fetch, UX refactor) | Stable -- V23 |
 > | V23 Audit (2 passes, 60 issues, check_site_access IDOR fixes, CO2E centralized, a11y) | Stable -- V23 |
+> | Audit Marche complet (195 issues, Number("") fix, stale closures, file size validation, parseInt radix) | Stable -- V93 |
+> | Site Scope Filter global (ActionPlan, ActionsPage, Notifications, OPERAT Dashboard, API site_id) | Stable -- V93 |
+> | Performance FR labels (10 snake_case ALERT_TYPE_LABELS, WASTE_TYPES fix, null guards) | Stable -- V93 |
 > | Suite de tests automatises | **4 110 frontend + 2 400+ backend, 0 regression** |
 
 > **Disclaimer**

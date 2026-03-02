@@ -5,8 +5,9 @@
  * V42: section "Sites à traiter" (assujetti_probable + incomplètes)
  * V43: Drawer "Pourquoi ?", filtres par signal, raisons explicables
  */
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useScope } from '../../contexts/ScopeContext';
 import {
   Building2, AlertTriangle, FileText, Plus,
   Loader2, ArrowRight, ShieldAlert, MapPin, HelpCircle, X,
@@ -51,6 +52,7 @@ const MISSING_FIELD_LABELS = {
 
 export default function TertiaireDashboardPage() {
   const navigate = useNavigate();
+  const { selectedSiteId } = useScope();
   const [dashboard, setDashboard] = useState(null);
   const [efas, setEfas] = useState([]);
   const [siteSignals, setSiteSignals] = useState(null);
@@ -64,13 +66,14 @@ export default function TertiaireDashboardPage() {
   const [uncoveredOnly, setUncoveredOnly] = useState(false);
   const [missingFieldFilter, setMissingFieldFilter] = useState(null);
 
-  useEffect(() => {
+  const fetchData = useCallback(() => {
     let cancelled = false;
     setLoading(true);
+    const params = selectedSiteId ? { site_id: selectedSiteId } : {};
     Promise.all([
-      getTertiaireDashboard().catch(() => null),
-      getTertiaireEfas().catch(() => ({ efas: [] })),
-      getTertiaireSiteSignals().catch(() => null),
+      getTertiaireDashboard(params).catch(() => null),
+      getTertiaireEfas(params).catch(() => ({ efas: [] })),
+      getTertiaireSiteSignals(params).catch(() => null),
     ]).then(([dash, efaData, signals]) => {
       if (!cancelled) {
         setDashboard(dash);
@@ -80,7 +83,12 @@ export default function TertiaireDashboardPage() {
       }
     });
     return () => { cancelled = true; };
-  }, []);
+  }, [selectedSiteId]);
+
+  useEffect(() => {
+    const cleanup = fetchData();
+    return cleanup;
+  }, [fetchData]);
 
   // V43: Filtered sites — chips filter the "Sites à traiter" list directly
   const filteredSites = useMemo(() => {

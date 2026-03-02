@@ -184,7 +184,11 @@ export default function BillIntelPage() {
     return invoices
       .filter(inv => {
         if (periodPreset === 'specific') return !monthFilter || (inv.period_start || '').startsWith(monthFilter);
-        if (cutoff) return new Date(inv.period_start || inv.issue_date || '9999') >= cutoff;
+        if (cutoff) {
+          const dateStr = inv.period_start || inv.issue_date;
+          if (!dateStr) return true;
+          return new Date(dateStr) >= cutoff;
+        }
         return true;
       })
       .filter(inv => !invoiceStatusFilter || inv.status === invoiceStatusFilter)
@@ -244,8 +248,9 @@ export default function BillIntelPage() {
   }
 
   async function handleCsvImport(e) {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 50 * 1024 * 1024) { toast('Fichier trop volumineux (max 50 Mo)', 'error'); return; }
     if (isExpert) console.log('[BillIntelPage] CSV file selected:', file.name, file.size, 'bytes');
     try {
       if (isExpert) console.log('[BillIntelPage] CSV import request → POST /billing/import-csv');
@@ -275,8 +280,9 @@ export default function BillIntelPage() {
   }
 
   async function handlePdfImport(e) {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file || !pdfSiteId) return;
+    if (file.size > 20 * 1024 * 1024) { toast('Fichier trop volumineux (max 20 Mo)', 'error'); return; }
     if (isExpert) console.log('[BillIntelPage] PDF file selected:', file.name, file.size, 'bytes, site_id:', pdfSiteId);
     try {
       if (isExpert) console.log('[BillIntelPage] PDF import request → POST /billing/import-pdf, site_id:', pdfSiteId);

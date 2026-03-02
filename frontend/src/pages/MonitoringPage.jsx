@@ -77,6 +77,17 @@ const ALERT_TYPE_LABELS = {
   DOUBLONS_DST: 'Doublons DST',
   VALEURS_NEGATIVES: 'Valeurs négatives',
   SENSIBILITE_CLIMATIQUE: 'Sensibilité climatique',
+  // snake_case variants from monitoring engine
+  off_hours_consumption: 'Consommation hors horaires',
+  high_night_base: 'Base nuit élevée',
+  power_risk: 'Risque puissance souscrite',
+  weekend_anomaly: 'Anomalie week-end',
+  high_base_load: 'Talon élevé',
+  peak_anomaly: 'Pic anormal',
+  profile_break: 'Rupture de profil',
+  flat_curve: 'Courbe plate',
+  missing_data: 'Données manquantes',
+  climate_sensitivity: 'Sensibilité climatique',
 };
 
 const KPI_THRESHOLDS = {
@@ -381,8 +392,9 @@ function ExecutiveSummary({ alerts, kpiData, _climate, _qualityScore, qualityCon
   const isLowConf = qualityConf?.level === 'low';
 
   // Top waste: off-hours or high base load
+  const WASTE_TYPES = ['HORS_HORAIRES', 'BASE_NUIT_ELEVEE', 'WEEKEND_ANORMAL', 'off_hours_consumption', 'high_night_base', 'weekend_anomaly'];
   const wasteAlerts = alerts.filter((a) =>
-    ['HORS_HORAIRES', 'BASE_NUIT_ELEVEE', 'WEEKEND_ANORMAL'].includes(a.alert_type) && a.status !== 'resolved'
+    WASTE_TYPES.includes(a.alert_type) && a.status !== 'resolved'
   );
   const totalWasteEur = wasteAlerts.reduce((s, a) => s + (a.estimated_impact_eur || 0), 0);
   const totalWasteKwh = wasteAlerts.reduce((s, a) => s + (a.estimated_impact_kwh || 0), 0);
@@ -438,10 +450,10 @@ function ExecutiveSummary({ alerts, kpiData, _climate, _qualityScore, qualityCon
       value: emissions?.annualized_co2e_tonnes != null
         ? `${fmtNum(emissions.annualized_co2e_tonnes)} t/an`
         : 'Non disponible',
-      sub: emissions?.off_hours_co2e_kg > 0
+      sub: (emissions?.off_hours_co2e_kg || 0) > 0
         ? `dont ${fmtNum(emissions.off_hours_co2e_kg, 0)} kg évitables (hors horaires)`
         : (emissions?.factor?.source_label || 'Facteur non configuré'),
-      ctas: emissions?.off_hours_co2e_kg > 0
+      ctas: (emissions?.off_hours_co2e_kg || 0) > 0
         ? [{ label: 'Créer action', action: () => onCreateAction({ alert_type: 'CO2E_REDUCTION', estimated_impact_eur: 0 }) }]
         : [],
     },
@@ -1034,7 +1046,7 @@ function InsightDrawer({ alert, open, onClose, onAck, onResolve, onCreateAction,
         {tab === 'methode' && (
           <div className="space-y-3">
             <DrawerSection title="Méthode de détection">
-              <DrawerRow label="Type">{alert.alert_type}</DrawerRow>
+              <DrawerRow label="Type">{typeLabel}</DrawerRow>
               <DrawerRow label="Sévérité">{SEVERITY_LABEL_FR[alert.severity] || alert.severity}</DrawerRow>
               <DrawerRow label="Moteur">Moteur Monitoring v1.0</DrawerRow>
             </DrawerSection>
@@ -1362,7 +1374,7 @@ export default function MonitoringPage() {
     if (!weekdayProfile || !Array.isArray(weekdayProfile)) return null;
     return weekdayProfile.map((kw, hour) => ({
       hour: `${hour}h`,
-      kw: Number(kw.toFixed(1)),
+      kw: kw != null ? Number(kw.toFixed(1)) : 0,
     }));
   }, [weekdayProfile]);
 

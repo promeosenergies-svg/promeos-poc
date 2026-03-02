@@ -1331,14 +1331,12 @@ export const getTertiaireIssues = (params = {}) =>
 export const updateTertiaireIssue = (issueId, body) =>
   api.patch(`${TERT_BASE}/issues/${issueId}`, body).then((r) => r.data);
 
-export const getTertiaireDashboard = (orgId = null) =>
-  api.get(`${TERT_BASE}/dashboard`, { params: orgId ? { org_id: orgId } : {} }).then((r) => r.data);
+export const getTertiaireDashboard = (params = {}) =>
+  api.get(`${TERT_BASE}/dashboard`, { params }).then((r) => r.data);
 
 // V42: Site signals for auto-qualification
-export const getTertiaireSiteSignals = (orgId = null) =>
-  api
-    .get(`${TERT_BASE}/site-signals`, { params: orgId ? { org_id: orgId } : {} })
-    .then((r) => r.data);
+export const getTertiaireSiteSignals = (params = {}) =>
+  api.get(`${TERT_BASE}/site-signals`, { params }).then((r) => r.data);
 
 // V41: Patrimoine building catalog for wizard
 export const getTertiaireCatalog = (orgId = 1) =>

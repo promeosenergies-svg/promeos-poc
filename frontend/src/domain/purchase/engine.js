@@ -139,8 +139,11 @@ export function fillBreakdownDefaults(breakdown, energyType) {
 export function runEngine(params) {
   const { offers, annualKwh, energyType, horizonMonths, scenarioPreset, mcIterations, mcSeed, budgetEur } = params;
 
-  // Memoization check
-  const paramsHash = hashParams({ annualKwh, energyType, horizonMonths, scenarioPreset, mcIterations, mcSeed, budgetEur, offerIds: offers.map(o => o.id) });
+  // Memoization check — include offer structure+pricing to catch edits
+  const paramsHash = hashParams({
+    annualKwh, energyType, horizonMonths, scenarioPreset, mcIterations, mcSeed, budgetEur,
+    offers: offers.map(o => ({ id: o.id, structure: o.structure, pricing: o.pricing })),
+  });
   if (paramsHash === _lastParamsHash && _lastResults) {
     return _lastResults;
   }

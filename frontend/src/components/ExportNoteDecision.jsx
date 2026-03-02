@@ -5,51 +5,56 @@
  * Print via window.print() with @media print styles.
  */
 import { useRef } from 'react';
-import { Printer, X, Shield, TrendingDown, Zap } from 'lucide-react';
+import { Printer, X } from 'lucide-react';
 
-const _STRATEGY_ICONS = { fixe: Shield, indexe: TrendingDown, spot: Zap };
-const STRATEGY_LABELS = { fixe: 'Prix Fixe', indexe: 'Indexe Marche', spot: 'Spot Temps Reel' };
+const STRATEGY_LABELS = { fixe: 'Prix Fixe', indexe: 'Indexe Marche', spot: 'Spot Temps Reel', reflex_solar: 'Tarif Heures Solaires' };
 
 export default function ExportNoteDecision({ data, onClose }) {
   const printRef = useRef();
 
   const handlePrint = () => {
     const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html><head><title>Note de Decision — ${data.site_nom || 'Site'}</title>
-      <style>
-        @page { size: A4; margin: 20mm 15mm; }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
-        body { font-size: 11pt; color: #1a1a1a; line-height: 1.5; }
-        .header { border-bottom: 3px solid #2563eb; padding-bottom: 12px; margin-bottom: 16px; }
-        .header h1 { font-size: 18pt; color: #1e3a5f; }
-        .header .sub { font-size: 10pt; color: #6b7280; margin-top: 4px; }
-        .meta { display: flex; gap: 24px; margin-bottom: 16px; font-size: 10pt; color: #374151; }
-        .meta-item { }
-        .meta-label { font-weight: 600; color: #6b7280; text-transform: uppercase; font-size: 8pt; }
-        .section { margin-bottom: 16px; }
-        .section-title { font-size: 12pt; font-weight: 700; color: #1e3a5f; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px; margin-bottom: 8px; }
-        table { width: 100%; border-collapse: collapse; font-size: 10pt; }
-        th { background: #f3f4f6; text-align: left; padding: 6px 10px; font-weight: 600; color: #374151; border-bottom: 2px solid #d1d5db; }
-        td { padding: 6px 10px; border-bottom: 1px solid #e5e7eb; }
-        .reco { background: #eff6ff; }
-        .reco td { font-weight: 600; }
-        .highlight { font-size: 24pt; font-weight: 800; color: #2563eb; }
-        .risk-bar { display: inline-block; width: 60px; height: 8px; background: #e5e7eb; border-radius: 4px; vertical-align: middle; }
-        .risk-fill { height: 100%; border-radius: 4px; }
-        .footer { margin-top: 24px; padding-top: 12px; border-top: 1px solid #d1d5db; font-size: 8pt; color: #9ca3af; text-align: center; }
-        .kpi-grid { display: flex; gap: 16px; margin-bottom: 16px; }
-        .kpi-box { flex: 1; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; text-align: center; }
-        .kpi-value { font-size: 16pt; font-weight: 800; }
-        .kpi-label { font-size: 8pt; color: #6b7280; text-transform: uppercase; margin-top: 2px; }
-        .reasoning { background: #eff6ff; border-left: 3px solid #2563eb; padding: 10px 14px; font-size: 10pt; color: #1e40af; margin-bottom: 16px; }
-      </style>
-      </head><body>${printRef.current.innerHTML}
-      </body></html>
-    `);
-    printWindow.document.close();
-    setTimeout(() => { printWindow.print(); printWindow.close(); }, 300);
+    if (!printWindow) {
+      alert('Veuillez autoriser les popups pour imprimer.');
+      return;
+    }
+    // Clone DOM content safely instead of injecting raw innerHTML
+    const styles = `
+      @page { size: A4; margin: 20mm 15mm; }
+      * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+      body { font-size: 11pt; color: #1a1a1a; line-height: 1.5; }
+      .header { border-bottom: 3px solid #2563eb; padding-bottom: 12px; margin-bottom: 16px; }
+      .header h1 { font-size: 18pt; color: #1e3a5f; }
+      .header .sub { font-size: 10pt; color: #6b7280; margin-top: 4px; }
+      .meta { display: flex; gap: 24px; margin-bottom: 16px; font-size: 10pt; color: #374151; }
+      .meta-item { }
+      .meta-label { font-weight: 600; color: #6b7280; text-transform: uppercase; font-size: 8pt; }
+      .section { margin-bottom: 16px; }
+      .section-title { font-size: 12pt; font-weight: 700; color: #1e3a5f; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px; margin-bottom: 8px; }
+      table { width: 100%; border-collapse: collapse; font-size: 10pt; }
+      th { background: #f3f4f6; text-align: left; padding: 6px 10px; font-weight: 600; color: #374151; border-bottom: 2px solid #d1d5db; }
+      td { padding: 6px 10px; border-bottom: 1px solid #e5e7eb; }
+      .reco { background: #eff6ff; }
+      .reco td { font-weight: 600; }
+      .highlight { font-size: 24pt; font-weight: 800; color: #2563eb; }
+      .risk-bar { display: inline-block; width: 60px; height: 8px; background: #e5e7eb; border-radius: 4px; vertical-align: middle; }
+      .risk-fill { height: 100%; border-radius: 4px; }
+      .footer { margin-top: 24px; padding-top: 12px; border-top: 1px solid #d1d5db; font-size: 8pt; color: #9ca3af; text-align: center; }
+      .kpi-grid { display: flex; gap: 16px; margin-bottom: 16px; }
+      .kpi-box { flex: 1; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; text-align: center; }
+      .kpi-value { font-size: 16pt; font-weight: 800; }
+      .kpi-label { font-size: 8pt; color: #6b7280; text-transform: uppercase; margin-top: 2px; }
+      .reasoning { background: #eff6ff; border-left: 3px solid #2563eb; padding: 10px 14px; font-size: 10pt; color: #1e40af; margin-bottom: 16px; }
+    `;
+    const doc = printWindow.document;
+    doc.open();
+    doc.write('<!DOCTYPE html><html><head><title>Note de Decision</title><style>' + styles + '</style></head><body></body></html>');
+    doc.close();
+    const cloned = doc.importNode(printRef.current, true);
+    doc.body.appendChild(cloned);
+    printWindow.onload = () => { printWindow.print(); printWindow.close(); };
+    // Fallback if onload already fired
+    if (doc.readyState === 'complete') { printWindow.print(); printWindow.close(); }
   };
 
   if (!data) return null;
@@ -69,7 +74,7 @@ export default function ExportNoteDecision({ data, onClose }) {
               className="flex items-center gap-1.5 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition">
               <Printer size={14} /> Imprimer / PDF
             </button>
-            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition">
+            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition" aria-label="Fermer">
               <X size={18} />
             </button>
           </div>
@@ -103,7 +108,7 @@ export default function ExportNoteDecision({ data, onClose }) {
                     <div className="kpi-label">EUR/kWh</div>
                   </div>
                   <div className="kpi-box">
-                    <div className="kpi-value" style={{ color: '#16a34a' }}>{Math.round(reco.total_annual_eur).toLocaleString()}</div>
+                    <div className="kpi-value" style={{ color: '#16a34a' }}>{Math.round(reco.total_annual_eur || 0).toLocaleString()}</div>
                     <div className="kpi-label">EUR/an</div>
                   </div>
                   <div className="kpi-box">

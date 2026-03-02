@@ -191,10 +191,10 @@ export function recommend({ offerResults, offers, persona, budgetEur, consumptio
   if (best.result.volatility > 0) {
     tradeoffs.push(`Volatilite residuelle: ${best.result.volatility.toFixed(0)} EUR`);
   }
-  if (best.scores.contractRisk.level !== 'GREEN') {
+  if (best.scores.contractRisk.level !== 'GREEN' && best.scores.contractRisk.reasons?.length > 0) {
     tradeoffs.push('Risque contractuel a negocier: ' + best.scores.contractRisk.reasons[0]);
   }
-  if (best.scores.dataReadiness.level !== 'GREEN') {
+  if (best.scores.dataReadiness.level !== 'GREEN' && best.scores.dataReadiness.reasons?.length > 0) {
     tradeoffs.push('Donnees incompletes: ' + best.scores.dataReadiness.reasons[0]);
   }
 

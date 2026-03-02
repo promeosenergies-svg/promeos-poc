@@ -102,6 +102,8 @@ export default function AnomaliesPage() {
         for (const b of billingResult.data.anomalies) {
           flat.push({
             ...b,
+            site_id: b.site_id ?? null,
+            site_nom: b.site_nom || b.site_name || 'Facturation',
             regulatory_impact: { framework: 'FACTURATION' },
             _isBilling: true,
           });

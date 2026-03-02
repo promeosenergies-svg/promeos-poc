@@ -169,8 +169,12 @@ function saveAuditLog(log) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(log));
   } catch {
     // localStorage full — keep last 100 records
-    const trimmed = log.slice(-100);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
+    try {
+      const trimmed = log.slice(-100);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
+    } catch {
+      // localStorage completely unavailable (private browsing, sandbox)
+    }
   }
 }
 

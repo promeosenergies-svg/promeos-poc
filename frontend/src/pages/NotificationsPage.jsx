@@ -4,6 +4,7 @@
  */
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useScope } from '../contexts/ScopeContext';
 import {
   getNotificationsList,
   syncNotifications,
@@ -44,6 +45,7 @@ const TRIAGE_TABS = [
 
 export default function NotificationsPage() {
   const navigate = useNavigate();
+  const { selectedSiteId } = useScope();
   const { isExpert } = useExpertMode();
   const { toast } = useToast();
   const [events, setEvents] = useState([]);
@@ -64,8 +66,9 @@ export default function NotificationsPage() {
     setLoading(true);
     setError(null);
     try {
+      const params = selectedSiteId ? { site_id: selectedSiteId } : {};
       const [evts, sum] = await Promise.all([
-        getNotificationsList({}),
+        getNotificationsList(params),
         getNotificationsSummary(),
       ]);
       setEvents(evts);
@@ -76,7 +79,7 @@ export default function NotificationsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedSiteId]);
 
   useEffect(() => { load(); }, [load]);
 

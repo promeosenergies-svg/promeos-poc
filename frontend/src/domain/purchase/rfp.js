@@ -42,8 +42,6 @@ export function generateDecisionNote({
   const profile = PERSONA_PROFILES[persona] || PERSONA_PROFILES[Persona.DAF];
   const bestOffer = offers.find(o => o.id === recommendation.bestOfferId);
   const bestResult = offerResults.find(r => r.offerId === recommendation.bestOfferId);
-  const _bestScored = scoredOffers?.find(s => s.offerId === recommendation.bestOfferId);
-
   return {
     title: `Note de Decision — Achat Energie ${energyType}`,
     version: BRIQUE3_VERSION,
@@ -268,7 +266,7 @@ function formatPricingDetails(offer) {
   const p = offer.pricing;
   switch (offer.structure) {
     case OfferStructure.FIXE:
-      return { type: 'Fixe', fixedPrice: p.fixedPriceEurPerMwh + ' EUR/MWh' };
+      return { type: 'Fixe', fixedPrice: (p.fixedPriceEurPerMwh ?? 'N/A') + ' EUR/MWh' };
     case OfferStructure.INDEXE:
       return {
         type: 'Indexe',
@@ -280,12 +278,13 @@ function formatPricingDetails(offer) {
     case OfferStructure.SPOT:
       return { type: 'Spot', index: 'Marche spot' };
     case OfferStructure.HYBRIDE:
+    case OfferStructure.HEURES_SOLAIRES:
       return {
-        type: 'Hybride',
-        fixedShare: (p.fixedSharePct * 100).toFixed(0) + '%',
-        fixedPrice: p.fixedPriceEurPerMwh + ' EUR/MWh',
-        indexedShare: (p.indexedSharePct * 100).toFixed(0) + '%',
-        spotShare: (p.spotSharePct * 100).toFixed(0) + '%',
+        type: offer.structure === OfferStructure.HEURES_SOLAIRES ? 'Tarif Heures Solaires' : 'Hybride',
+        fixedShare: ((p.fixedSharePct || 0) * 100).toFixed(0) + '%',
+        fixedPrice: (p.fixedPriceEurPerMwh ?? 'N/A') + ' EUR/MWh',
+        indexedShare: ((p.indexedSharePct || 0) * 100).toFixed(0) + '%',
+        spotShare: ((p.spotSharePct || 0) * 100).toFixed(0) + '%',
         cap: p.capEurPerMwh != null ? p.capEurPerMwh + ' EUR/MWh' : 'Sans',
       };
     default:

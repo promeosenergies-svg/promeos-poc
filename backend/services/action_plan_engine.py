@@ -37,13 +37,16 @@ _ACTION_LABELS = {
 def compute_action_plan(
     db: Session,
     portefeuille_id: Optional[int] = None,
+    site_id: Optional[int] = None,
 ) -> dict:
     """
-    Build prioritized action plan across all sites (or filtered by portfolio).
+    Build prioritized action plan across all sites (or filtered by portfolio/site).
     Uses bulk queries (no N+1).
     """
     site_query = not_deleted(db.query(Site), Site).filter(Site.actif == True)
-    if portefeuille_id:
+    if site_id:
+        site_query = site_query.filter(Site.id == site_id)
+    elif portefeuille_id:
         site_query = site_query.filter(Site.portefeuille_id == portefeuille_id)
     sites = site_query.all()
     site_ids = [s.id for s in sites]

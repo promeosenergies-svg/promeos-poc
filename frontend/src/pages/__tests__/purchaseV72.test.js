@@ -156,8 +156,9 @@ describe('D · Autosave', () => {
     expect(code).toContain('putPurchasePreferences(preferences)');
   });
 
-  it('autosave triggered via useEffect', () => {
-    expect(code).toContain('useEffect(() => { autosave(); }, [autosave])');
+  it('autosave triggered via useEffect with cleanup', () => {
+    expect(code).toContain('autosave();');
+    expect(code).toContain('clearTimeout(autosaveTimer.current)');
   });
 });
 

@@ -190,7 +190,7 @@ export default function PurchaseAssistantPage() {
   // Fetch assistant data from API on mount / org change
   useEffect(() => {
     let cancelled = false;
-    getPurchaseAssistantData(scope.orgId)
+    getPurchaseAssistantData(scope?.orgId ?? null)
       .then((data) => {
         if (!cancelled) {
           setApiAssistantData(data);
@@ -282,8 +282,7 @@ export default function PurchaseAssistantPage() {
       }
       setStep((s) => s + 1);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, canAdvance]);
+  }, [step, canAdvance, handleCompute]);
 
   const goBack = useCallback(() => {
     if (step > 0) setStep((s) => s - 1);

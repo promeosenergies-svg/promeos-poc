@@ -203,7 +203,7 @@ export default function BillingPage() {
         type: 'facture',
         description: `Période manquante : ${period.month_key}`,
       },
-      siteId: siteFilter ? parseInt(siteFilter) : null,
+      siteId: siteFilter ? parseInt(siteFilter, 10) : null,
       sourceType: 'billing',
       sourceId: actionKey,
     }, { onSave: (result) => {

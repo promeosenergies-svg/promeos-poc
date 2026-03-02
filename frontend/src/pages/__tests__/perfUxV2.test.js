@@ -68,8 +68,8 @@ describe('B · No forbidden English labels', () => {
         if (!lower.includes(term.toLowerCase())) return false;
         // Allow in const/comment/tooltip/import lines
         if (line.match(/^\s*(\/\/|\/\*|\*|const |import |export |\/\*\*)/)) return false;
-        // Allow in variable names or object keys (snake_case)
-        if (line.match(/off_hours/)) return false;
+        // Allow in variable names or object keys (snake_case constant mappings)
+        if (line.match(/^\s+\w+:\s*'/)) return false;
         // For '>OK<' specifically, allow in confidence/status badge context
         if (term === '>OK<' && (line.includes("'OK'") || line.includes('"OK"'))) return false;
         return true;

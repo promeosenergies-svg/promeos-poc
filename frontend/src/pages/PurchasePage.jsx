@@ -25,7 +25,7 @@ import { SkeletonCard } from '../ui/Skeleton';
 import Tooltip from '../ui/Tooltip';
 import { useToast } from '../ui/ToastProvider';
 import useDataReadiness from '../hooks/useDataReadiness';
-import { computeDataConfidence, SOFT_GATE_TOOLTIP_FR } from '../models/dataReadinessModel';
+import { computeDataConfidence } from '../models/dataReadinessModel';
 import ExportNoteDecision from '../components/ExportNoteDecision';
 import ExportPackRFP from '../components/ExportPackRFP';
 import PurchaseErrorBoundary from '../components/PurchaseErrorBoundary';
@@ -89,25 +89,29 @@ const STRATEGY_META = {
   fixe: {
     label: 'Prix Fixe',
     icon: Shield,
-    color: 'blue',
+    bgClass: 'bg-blue-50',
+    textClass: 'text-blue-600',
     desc: 'Prix garanti sur toute la duree du contrat',
   },
   indexe: {
     label: 'Indexe',
     icon: TrendingDown,
-    color: 'green',
+    bgClass: 'bg-green-50',
+    textClass: 'text-green-600',
     desc: 'Prix suit un indice marche avec plafond',
   },
   spot: {
     label: 'Spot',
     icon: Zap,
-    color: 'orange',
+    bgClass: 'bg-orange-50',
+    textClass: 'text-orange-600',
     desc: 'Prix marche temps reel, economies max',
   },
   reflex_solar: {
     label: 'Tarif Heures Solaires',
     icon: Sun,
-    color: 'amber',
+    bgClass: 'bg-amber-50',
+    textClass: 'text-amber-600',
     desc: "Payez moins quand le soleil brille — sans surcoût si vous ne changez rien.",
     dynamic: true,
   },
@@ -126,7 +130,7 @@ const URGENCY_STYLES = {
   gray: 'bg-gray-100 text-gray-600 border-gray-200',
 };
 
-function round2(n) { return Math.round(n * 10) / 10; }
+function round1(n) { return Math.round(n * 10) / 10; }
 
 function riskLevel(score) {
   if (score <= 30) return 'low';
@@ -146,6 +150,8 @@ const FILTER_TO_TAB = {
   renewal: 'echeances',
   missing: 'portefeuille',
 };
+
+const VALID_TABS = new Set(TABS.map((t) => t.key));
 
 /** Hypothèses clés derrière chaque stratégie (affichées dans "Pourquoi ?"). */
 const STRATEGY_WHY = {
@@ -172,7 +178,6 @@ export default function PurchasePage() {
   const dataConfidence = useMemo(() => computeDataConfidence(purchaseReadiness), [purchaseReadiness]);
 
   // Tab state — initialise from ?tab= or ?filter= deep-link if present
-  const VALID_TABS = new Set(TABS.map((t) => t.key));
   const [activeTab, setActiveTab] = useState(() => {
     const tab = searchParams.get('tab');
     if (tab && VALID_TABS.has(tab)) return tab;
@@ -364,7 +369,10 @@ export default function PurchasePage() {
     }, 1500);
   }, [selectedSiteId, assumptions, preferences]);
 
-  useEffect(() => { autosave(); }, [autosave]);
+  useEffect(() => {
+    autosave();
+    return () => { if (autosaveTimer.current) clearTimeout(autosaveTimer.current); };
+  }, [autosave]);
 
   // V72: when toggling to estimation, sync volume from estimate
   useEffect(() => {
@@ -494,7 +502,7 @@ export default function PurchasePage() {
                       data-testid="site-selector-open"
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
                       value={selectedSiteId || ''}
-                      onChange={(e) => setSelectedSiteId(Number(e.target.value))}
+                      onChange={(e) => setSelectedSiteId(e.target.value ? Number(e.target.value) : null)}
                     >
                       <option value="">Choisir un site...</option>
                       {scopedSites.map((s) => (
@@ -797,8 +805,8 @@ export default function PurchasePage() {
                       >
                         <div className="flex items-center justify-between mb-4">
                           <div className="flex items-center gap-2">
-                            <div className={`p-2 rounded-lg bg-${meta.color}-50`}>
-                              <Icon size={20} className={`text-${meta.color}-600`} />
+                            <div className={`p-2 rounded-lg ${meta.bgClass}`}>
+                              <Icon size={20} className={meta.textClass} />
                             </div>
                             <div>
                               <h4 className="font-semibold text-gray-900 flex items-center gap-1.5">
@@ -943,7 +951,7 @@ export default function PurchasePage() {
                                 const fixeScenario = scenarios.find((sc) => sc.strategy === 'fixe');
                                 if (!fixeScenario || !s.total_annual_eur) return null;
                                 const deltaEur = Math.round(fixeScenario.total_annual_eur - s.total_annual_eur);
-                                const deltaPct = fixeScenario.total_annual_eur > 0 ? round2((deltaEur / fixeScenario.total_annual_eur) * 100) : 0;
+                                const deltaPct = fixeScenario.total_annual_eur > 0 ? round1((deltaEur / fixeScenario.total_annual_eur) * 100) : 0;
                                 return (
                                   <div data-testid="reflex-delta-vs-fixe" className="text-xs bg-green-50 rounded p-2 flex items-center gap-1.5">
                                     <TrendingDown size={12} className="text-green-600" />
@@ -1205,7 +1213,7 @@ export default function PurchasePage() {
                     const fixe = site.scenarios?.find((s) => s.strategy === 'fixe');
                     const baseline = fixe?.total_annual_eur || reco?.total_annual_eur || 0;
                     const reflexCost = reflex?.total_annual_eur || 0;
-                    const gain = baseline > 0 ? round2((1 - reflexCost / baseline) * 100) : 0;
+                    const gain = baseline > 0 ? round1((1 - reflexCost / baseline) * 100) : 0;
                     return { ...site, reco, reflex, baseline, reflexCost, gain };
                   });
                   const topGains = [...enriched].sort((a, b) => b.gain - a.gain).slice(0, 3);
@@ -1218,18 +1226,18 @@ export default function PurchasePage() {
                       {/* V75: Top-lists */}
                       <div data-testid="reflex-top-lists" className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {[
-                          { items: topGains, bg: 'green', icon: <Award size={14} />, title: 'Meilleurs gains Tarif Heures Solaires',
+                          { items: topGains, cardClass: 'bg-green-50 border-green-200', titleClass: 'text-green-800', icon: <Award size={14} />, title: 'Meilleurs gains Tarif Heures Solaires',
                             metric: (s) => <span className="font-medium text-green-700">-{s.gain}%</span>,
                             actionTitle: (s) => `Tarif Heures Solaires — gain ${s.gain}%` },
-                          { items: topRisk, bg: 'red', icon: <Flame size={14} />, title: 'Risque pointe',
+                          { items: topRisk, cardClass: 'bg-red-50 border-red-200', titleClass: 'text-red-800', icon: <Flame size={14} />, title: 'Risque pointe',
                             metric: (s) => <span className="font-medium text-red-700">{s.reflex?.risk_score}/100</span>,
                             actionTitle: (s) => `Risque pointe — ${s.reflex?.risk_score}/100` },
-                          { items: easiest, bg: 'blue', icon: <ArrowUpDown size={14} />, title: 'Faciles à basculer',
+                          { items: easiest, cardClass: 'bg-blue-50 border-blue-200', titleClass: 'text-blue-800', icon: <ArrowUpDown size={14} />, title: 'Faciles à basculer',
                             metric: (s) => <span className="font-medium text-blue-700">Effort {s.reflex?.effort_score}/100</span>,
                             actionTitle: (s) => `Bascule Tarif Heures Solaires — effort ${s.reflex?.effort_score}/100` },
-                        ].map(({ items, bg, icon, title, metric, actionTitle }) => (
-                          <div key={title} className={`bg-${bg}-50 rounded-lg p-4 border border-${bg}-200`}>
-                            <h4 className={`text-xs font-bold text-${bg}-800 uppercase flex items-center gap-1.5 mb-2`}>
+                        ].map(({ items, cardClass, titleClass, icon, title, metric, actionTitle }) => (
+                          <div key={title} className={`${cardClass} rounded-lg p-4 border`}>
+                            <h4 className={`text-xs font-bold ${titleClass} uppercase flex items-center gap-1.5 mb-2`}>
                               {icon} {title}
                             </h4>
                             {items.map((s) => (
@@ -1449,7 +1457,7 @@ export default function PurchasePage() {
               <select
                 className="w-full max-w-sm border border-gray-300 rounded-lg px-3 py-2 text-sm"
                 value={selectedSiteId || ''}
-                onChange={(e) => setSelectedSiteId(Number(e.target.value))}
+                onChange={(e) => setSelectedSiteId(e.target.value ? Number(e.target.value) : null)}
               >
                 <option value="">Choisir un site...</option>
                 {scopedSites.map((s) => (

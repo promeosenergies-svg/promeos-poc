@@ -43,7 +43,7 @@ export function computeOfferMonthlyPrices(offer, spotTrajectory) {
 
     switch (structure) {
       case OfferStructure.FIXE:
-        prices[m] = pricing.fixedPriceEurPerMwh;
+        prices[m] = pricing.fixedPriceEurPerMwh ?? 0;
         break;
 
       case OfferStructure.INDEXE: {
@@ -58,8 +58,9 @@ export function computeOfferMonthlyPrices(offer, spotTrajectory) {
         prices[m] = spot;
         break;
 
-      case OfferStructure.HYBRIDE: {
-        const fixedPart = (pricing.fixedSharePct || 0) * pricing.fixedPriceEurPerMwh;
+      case OfferStructure.HYBRIDE:
+      case OfferStructure.HEURES_SOLAIRES: {
+        const fixedPart = (pricing.fixedSharePct || 0) * (pricing.fixedPriceEurPerMwh ?? 0);
         let indexedPrice = spot + (pricing.spreadEurPerMwh || 0);
         if (pricing.capEurPerMwh != null) indexedPrice = Math.min(indexedPrice, pricing.capEurPerMwh);
         const indexedPart = (pricing.indexedSharePct || 0) * indexedPrice;
@@ -111,9 +112,10 @@ export function monteCarloOffer({ offer, monthlyKwh, horizonMonths, preset, iter
   });
 
   // Extend monthlyKwh to horizon (repeat annual cycle)
+  const avgKwh = monthlyKwh.reduce((a, b) => a + b, 0) / 12;
   const extendedKwh = new Array(horizonMonths);
   for (let m = 0; m < horizonMonths; m++) {
-    extendedKwh[m] = monthlyKwh[m % 12] || (monthlyKwh.reduce((a, b) => a + b, 0) / 12);
+    extendedKwh[m] = monthlyKwh[m % 12] ?? avgKwh;
   }
 
   // Compute TCO distribution

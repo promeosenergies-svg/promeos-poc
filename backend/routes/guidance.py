@@ -16,13 +16,14 @@ router = APIRouter(prefix="/api/guidance", tags=["Guidance"])
 @router.get("/action-plan")
 def get_action_plan(
     portefeuille_id: Optional[int] = Query(None, description="Filtrer par portefeuille"),
+    site_id: Optional[int] = Query(None, description="Filtrer par site"),
     limit: int = Query(50, le=500, description="Nombre max d'actions"),
     db: Session = Depends(get_db),
 ):
     """
     Plan d'action priorise cross-portfolio ("Waze" for compliance).
     """
-    result = compute_action_plan(db, portefeuille_id=portefeuille_id)
+    result = compute_action_plan(db, portefeuille_id=portefeuille_id, site_id=site_id)
     result["actions"] = result["actions"][:limit]
     return result
 
