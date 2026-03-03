@@ -268,6 +268,8 @@ def _detect_from_heuristics(
         "retail": Typologie.COMMERCE_RETAIL,
         "bureau": Typologie.TERTIAIRE_PRIVE,
         "tertiaire": Typologie.TERTIAIRE_PRIVE,
+        "mixte": Typologie.TERTIAIRE_PRIVE,
+        "multi_sites": Typologie.TERTIAIRE_PRIVE,
     }
     key = type_client.lower().strip()
     return _CLIENT_MAP.get(key)

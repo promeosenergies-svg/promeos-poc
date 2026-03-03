@@ -90,18 +90,8 @@ def compute_contract_radar(
         .all()
     )
 
-    # Filter: expired OR end_date within horizon
-    filtered = []
-    for ct in contracts:
-        if ct.end_date is None:
-            # No end date = open-ended, include as active
-            filtered.append(ct)
-        elif ct.end_date < today:
-            # Expired
-            filtered.append(ct)
-        elif ct.end_date <= horizon_date:
-            # Within horizon
-            filtered.append(ct)
+    # Include ALL contracts (no filtering) — horizon controls urgency only
+    filtered = contracts
 
     # Cache reconciliation per site (avoid N+1)
     recon_cache = {}

@@ -176,6 +176,9 @@ class SeedOrchestrator:
         # 10. Superuser
         self._create_superuser(master["org"])
 
+        # 11. Segmentation profile (V101: seeded for demo coherence)
+        self._seed_segmentation(master["org"])
+
         # Enable demo mode and register current org in DemoState (single source of truth)
         from services.demo_state import DemoState
         DemoState.enable()
@@ -549,6 +552,35 @@ class SeedOrchestrator:
                     risque += BASE_PENALTY_EURO * 0.5  # estimated potential risk
             site.risque_financier_euro = round(risque, 2)
         self.db.flush()
+
+    def _seed_segmentation(self, org):
+        """Seed a coherent segmentation profile for the demo org."""
+        try:
+            from models.segmentation import SegmentationProfile
+            from services.segmentation_service import detect_typologie, TYPO_LABELS
+            import json
+
+            # Delete any stale profile
+            self.db.query(SegmentationProfile).filter(
+                SegmentationProfile.organisation_id == org.id
+            ).delete(synchronize_session=False)
+
+            detection = detect_typologie(self.db, org.id)
+            typo = detection["typologie"]
+
+            profile = SegmentationProfile(
+                organisation_id=org.id,
+                typologie=typo.value,
+                segment_label=TYPO_LABELS.get(typo, typo.value),
+                naf_code=detection.get("naf_code"),
+                confidence_score=detection["confidence_score"],
+                derived_from=detection.get("derived_from", "mix"),
+                reasons_json=json.dumps(detection["reasons"], ensure_ascii=False),
+            )
+            self.db.add(profile)
+            self.db.flush()
+        except Exception:
+            pass
 
     def _create_superuser(self, org):
         """Create demo admin user."""
