@@ -19,6 +19,7 @@ import {
   getSegmentationProfile,
 } from '../services/api';
 import { track } from '../services/tracker';
+import { useScope } from '../contexts/ScopeContext';
 import SegmentationQuestionnaireModal from '../components/SegmentationQuestionnaireModal';
 
 /* ── Urgency mapping ── */
@@ -329,6 +330,7 @@ function SegmentationBadge({ profile }) {
 
 /* ── Main Page ── */
 export default function ContractRadarPage() {
+  const { selectedSiteId } = useScope();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [horizon, setHorizon] = useState(90);
@@ -338,12 +340,14 @@ export default function ContractRadarPage() {
 
   useEffect(() => {
     setLoading(true);
-    getContractRadar({ days: horizon })
+    const params = { days: horizon };
+    if (selectedSiteId) params.site_id = selectedSiteId;
+    getContractRadar(params)
       .then(setData)
       .catch(() => setData(null))
       .finally(() => setLoading(false));
-    track('v99_radar_view', { horizon });
-  }, [horizon]);
+    track('v99_radar_view', { horizon, site_id: selectedSiteId });
+  }, [horizon, selectedSiteId]);
 
   // V100: load segmentation profile once
   useEffect(() => {

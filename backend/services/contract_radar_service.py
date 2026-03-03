@@ -60,20 +60,23 @@ def compute_contract_radar(
     db: Session,
     org_id: int,
     portfolio_id: Optional[int] = None,
+    site_id: Optional[int] = None,
     horizon_days: int = 90,
 ) -> dict:
     """Build portfolio-level renewal radar."""
     today = date.today()
     horizon_date = today + timedelta(days=horizon_days)
 
-    # Query all sites for the org (optionally filtered by portfolio)
+    # Query all sites for the org (optionally filtered by portfolio or site)
     q = (
         db.query(Site)
         .join(Portefeuille, Site.portefeuille_id == Portefeuille.id)
         .join(EntiteJuridique, Portefeuille.entite_juridique_id == EntiteJuridique.id)
         .filter(EntiteJuridique.organisation_id == org_id)
     )
-    if portfolio_id:
+    if site_id:
+        q = q.filter(Site.id == site_id)
+    elif portfolio_id:
         q = q.filter(Site.portefeuille_id == portfolio_id)
     sites = q.all()
 

@@ -30,6 +30,7 @@ class ScenarioActionCreate(BaseModel):
 def get_contract_radar(
     request: Request,
     portfolio_id: Optional[int] = Query(None),
+    site_id: Optional[int] = Query(None),
     days: int = Query(90, ge=30, le=365),
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
@@ -37,7 +38,7 @@ def get_contract_radar(
     """Portfolio-level renewal radar for DAF/Direction Achats."""
     from services.contract_radar_service import compute_contract_radar
     org_id = _get_org_id(request, auth, db)
-    return compute_contract_radar(db, org_id, portfolio_id=portfolio_id, horizon_days=days)
+    return compute_contract_radar(db, org_id, portfolio_id=portfolio_id, site_id=site_id, horizon_days=days)
 
 
 @router.get("/{contract_id}/purchase-scenarios")
