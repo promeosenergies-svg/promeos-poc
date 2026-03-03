@@ -1424,4 +1424,11 @@ export const getPortfolioReconciliation = (params = {}) => api.get('/patrimoine/
 // V96: Contracts (if not already exported above)
 export const getPatrimoineContracts = (params = {}) => api.get('/patrimoine/contracts', { params }).then(r => r.data);
 
+// V97: Resolution Engine
+export const applyReconciliationFix = (siteId, data) => api.post(`/patrimoine/sites/${siteId}/reconciliation/fix`, data).then(r => r.data);
+export const getReconciliationHistory = (siteId) => api.get(`/patrimoine/sites/${siteId}/reconciliation/history`).then(r => r.data);
+export const getReconciliationEvidence = (siteId) => api.get(`/patrimoine/sites/${siteId}/reconciliation/evidence`).then(r => r.data);
+export const getReconciliationEvidenceCsv = (siteId) => api.get(`/patrimoine/sites/${siteId}/reconciliation/evidence/csv`, { responseType: 'blob' }).then(r => r.data);
+export const getPortfolioReconciliationCsv = (params = {}) => api.get('/patrimoine/portfolio/reconciliation/evidence/csv', { params, responseType: 'blob' }).then(r => r.data);
+
 export default api;

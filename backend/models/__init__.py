@@ -126,6 +126,9 @@ from .tertiaire import (
 # V96: Payment Rules
 from .payment_rule import PaymentRule
 
+# V97: Reconciliation Fix Log
+from .reconciliation_fix_log import ReconciliationFixLog
+
 # V69: CEE Pipeline + M&V
 from .cee_models import WorkPackage, CeeDossier, CeeDossierEvidence
 
@@ -207,4 +210,6 @@ __all__ = [
     "WorkPackageSize", "CeeDossierStep", "CeeStatus", "MVAlertType",
     # V96: Payment Rules + Contract enums
     "PaymentRule", "PaymentRuleLevel", "ContractIndexation", "ContractStatus", "ReconciliationStatus",
+    # V97: Reconciliation Fix Log
+    "ReconciliationFixLog",
 ]

@@ -44,6 +44,7 @@ export const ROUTE_MODULE_MAP = {
   '/achat-assistant': 'marche',
   '/patrimoine': 'admin',
   '/payment-rules': 'admin',
+  '/portfolio-reconciliation': 'admin',
   '/sites/:id': 'admin',
   '/import': 'admin',
   '/connectors': 'admin',
@@ -313,6 +314,7 @@ export const NAV_SECTIONS = [
     items: [
       { to: '/patrimoine',      icon: Building2,  label: 'Patrimoine', keywords: ['sites', 'batiments', 'immobilier'] },
       { to: '/payment-rules',  icon: BadgeEuro,  label: 'Paiement & Refacturation', keywords: ['paiement', 'payeur', 'facture', 'refacturation', 'cost center'] },
+      { to: '/portfolio-reconciliation', icon: ShieldCheck, label: 'Réconciliation', keywords: ['reconciliation', 'triage', 'resolution', 'evidence'] },
       { to: '/import',         icon: Import,     label: 'Imports', keywords: ['import', 'csv', 'upload'], hidden: true },
       { to: '/connectors',    icon: Link2,     label: 'Connexions', keywords: ['connecteurs', 'api', 'sync'] },
       { to: '/kb',            icon: BookOpen,  label: 'Mémobox', keywords: ['kb', 'knowledge', 'base', 'memobox', 'documents', 'preuves'] },

@@ -53,6 +53,7 @@ const AnomaliesPage = lazy(() => import('./pages/AnomaliesPage'));
 const CompliancePipelinePage = lazy(() => import('./pages/CompliancePipelinePage'));
 const SiteCompliancePage = lazy(() => import('./pages/SiteCompliancePage'));
 const PaymentRulesPage = lazy(() => import('./pages/PaymentRulesPage'));
+const PortfolioReconciliationPage = lazy(() => import('./pages/PortfolioReconciliationPage'));
 
 function PageSuspense({ children }) {
   return (
@@ -134,6 +135,7 @@ function App() {
                   <Route path="/activation" element={<PageSuspense><ActivationPage /></PageSuspense>} />
                   <Route path="/status" element={<PageSuspense><StatusPage /></PageSuspense>} />
                   <Route path="/payment-rules" element={<PageSuspense><PaymentRulesPage /></PageSuspense>} />
+                  <Route path="/portfolio-reconciliation" element={<PageSuspense><PortfolioReconciliationPage /></PageSuspense>} />
 
                   {/* IAM pages */}
                   <Route path="/admin/users" element={<PageSuspense><AdminUsersPage /></PageSuspense>} />

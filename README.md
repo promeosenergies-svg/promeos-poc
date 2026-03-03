@@ -28,8 +28,8 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 >
 > | Brique | Etat |
 > |--------|------|
-> | Backend API (~160 endpoints) | Stable |
-> | Frontend React (40+ pages) | Stable |
+> | Backend API (~165 endpoints) | Stable |
+> | Frontend React (42+ pages) | Stable |
 > | Moteur conformite (Decret Tertiaire, BACS) | Stable |
 > | RegOps 4 reglementations (Tertiaire, BACS, APER, CEE P6) | Stable |
 > | Knowledge Base (12 items YAML + FTS5) | Stable |
@@ -71,7 +71,8 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 > | Performance FR labels (10 snake_case ALERT_TYPE_LABELS, WASTE_TYPES fix, null guards) | Stable -- V93 |
 > | V95 Patrimoine World-Class Closure (real API anomalies, import legacy+hidden, backend hardening) | Stable -- V95 |
 > | V96 Patrimoine Unique Monde — Matrice Facture/Payeur/CC, Reconciliation 3 voies, Contrats achats-ready | Stable -- V96 |
-> | Suite de tests automatises | **4 157 frontend + 2 400+ backend, 0 regression** |
+> | V97 Resolution Engine — 1-click fix, audit trail, Portfolio Reconciliation triage, Evidence Pack CSV | Stable -- V97 |
+> | Suite de tests automatises | **4 208 frontend + 2 400+ backend, 0 regression** |
 
 > **Disclaimer**
 >
@@ -476,8 +477,13 @@ Champs cles du Site :
 | `POST` | `/api/patrimoine/payment-rules` | Creer/upsert regle paiement a tout niveau |
 | `POST` | `/api/patrimoine/payment-rules/apply-bulk` | Appliquer regle a N sites atomiquement |
 | `GET` | `/api/patrimoine/sites/{id}/payment-info` | Resolve regle effective (contrat>site>portefeuille) |
-| `GET` | `/api/patrimoine/sites/{id}/reconciliation` | Reconciliation 3 voies : 6 checks, score, statut |
+| `GET` | `/api/patrimoine/sites/{id}/reconciliation` | Reconciliation 3 voies : 6 checks, score, statut, fix_actions |
+| `POST` | `/api/patrimoine/sites/{id}/reconciliation/fix` | V97: Appliquer un fix 1-click sur un check |
+| `GET` | `/api/patrimoine/sites/{id}/reconciliation/history` | V97: Journal audit trail des corrections |
+| `GET` | `/api/patrimoine/sites/{id}/reconciliation/evidence` | V97: Evidence pack JSON complet |
+| `GET` | `/api/patrimoine/sites/{id}/reconciliation/evidence/csv` | V97: Evidence pack export CSV |
 | `GET` | `/api/patrimoine/portfolio/reconciliation` | Reconciliation aggregee portfolio (ok/warn/fail par site) |
+| `GET` | `/api/patrimoine/portfolio/reconciliation/evidence/csv` | V97: Export portfolio reconciliation CSV |
 | `GET` | `/health` | Health check |
 
 Documentation Swagger complete : `http://localhost:8001/docs`
@@ -509,6 +515,7 @@ Documentation Swagger complete : `http://localhost:8001/docs`
 | `/achat-assistant` | Assistant Achat | Wizard 8 etapes, 6 offres demo (dont HEURES_SOLAIRES), deep-link step+offer+site_id |
 | `/usages-horaires` | Usages & Horaires | Heatmap 7x24, profil journee (24 pts), talon/peak, ScheduleEditor inline, behavior_score 0-100, anomalies off-hours + weekend |
 | `/payment-rules` | Paiement & Refacturation | Matrice facture/payeur/centre de couts, exceptions site/contrat (V96) |
+| `/portfolio-reconciliation` | Reconciliation Portefeuille | Triage reconciliation, filtres statut, export CSV, CTA resoudre (V97) |
 | `/admin/users` | Admin Utilisateurs | Gestion users/roles/scopes, journal d'audit |
 | `/login` | Authentification | Login JWT, switch org, impersonation |
 

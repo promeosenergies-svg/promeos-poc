@@ -151,6 +151,12 @@ class PaymentRuleBulkApplyRequest(BaseModel):
     cost_center: Optional[str] = None
 
 
+# V97: Resolution Engine schemas
+class ReconciliationFixRequest(BaseModel):
+    action: str
+    params: Optional[Dict[str, Any]] = None
+
+
 # ========================================
 # Multi-org scope helpers
 # ========================================
@@ -2268,3 +2274,147 @@ def get_portfolio_reconciliation(
     if portefeuille_id:
         _check_portfolio_belongs_to_org(db, portefeuille_id, org_id)
     return reconcile_portfolio(db, org_id, portefeuille_id)
+
+
+# ========================================
+# V97: Resolution Engine endpoints
+# ========================================
+
+@router.post("/sites/{site_id}/reconciliation/fix")
+def apply_reconciliation_fix(
+    site_id: int,
+    request: Request,
+    body: ReconciliationFixRequest,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """V97: Apply a 1-click fix for a reconciliation check."""
+    from services.reconciliation_service import (
+        fix_create_delivery_point, fix_extend_contract,
+        fix_adjust_contract_dates, fix_align_energy_type,
+        fix_create_payment_rule,
+    )
+    org_id = _get_org_id(request, auth, db)
+    _load_site_with_org_check(db, site_id, org_id)
+
+    params = body.params or {}
+    applied_by = auth.user_email if auth and hasattr(auth, 'user_email') else None
+
+    FIXERS = {
+        "create_delivery_point": fix_create_delivery_point,
+        "extend_contract": fix_extend_contract,
+        "adjust_contract_dates": fix_adjust_contract_dates,
+        "align_energy_type": fix_align_energy_type,
+        "create_payment_rule": fix_create_payment_rule,
+    }
+
+    fixer = FIXERS.get(body.action)
+    if not fixer:
+        raise HTTPException(status_code=400, detail=f"Action inconnue: {body.action}")
+
+    db.begin_nested()
+    result = fixer(db, site_id, **params, applied_by=applied_by)
+    db.commit()
+
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
+
+    return {"ok": True, "action": body.action, "result": result}
+
+
+@router.get("/sites/{site_id}/reconciliation/history")
+def get_reconciliation_fix_history(
+    site_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """V97: Get audit trail for reconciliation fixes on a site."""
+    from services.reconciliation_service import get_fix_logs
+    org_id = _get_org_id(request, auth, db)
+    _load_site_with_org_check(db, site_id, org_id)
+    return {"site_id": site_id, "logs": get_fix_logs(db, site_id)}
+
+
+@router.get("/sites/{site_id}/reconciliation/evidence")
+def get_reconciliation_evidence(
+    site_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """V97 Phase 4: Get evidence pack (JSON) for a site's reconciliation."""
+    from services.reconciliation_service import get_evidence_pack
+    org_id = _get_org_id(request, auth, db)
+    _load_site_with_org_check(db, site_id, org_id)
+    return get_evidence_pack(db, site_id)
+
+
+@router.get("/sites/{site_id}/reconciliation/evidence/csv")
+def get_reconciliation_evidence_csv(
+    site_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """V97 Phase 4: Export evidence pack as CSV."""
+    from services.reconciliation_service import get_evidence_pack
+    org_id = _get_org_id(request, auth, db)
+    _load_site_with_org_check(db, site_id, org_id)
+    pack = get_evidence_pack(db, site_id)
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["check_id", "label_fr", "status", "reason_fr", "suggestion_fr"])
+    for check in pack["reconciliation"]["checks"]:
+        writer.writerow([
+            check["id"], check["label_fr"], check["status"],
+            check["reason_fr"], check.get("suggestion_fr", ""),
+        ])
+    writer.writerow([])
+    writer.writerow(["fix_id", "check_id", "action", "status_before", "status_after", "applied_by", "applied_at"])
+    for log in pack["fix_history"]:
+        writer.writerow([
+            log["id"], log["check_id"], log["action"],
+            log["status_before"], log["status_after"],
+            log.get("applied_by", ""), log.get("applied_at", ""),
+        ])
+
+    content = output.getvalue()
+    return StreamingResponse(
+        io.BytesIO(content.encode("utf-8")),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=evidence_site_{site_id}.csv"},
+    )
+
+
+@router.get("/portfolio/reconciliation/evidence/csv")
+def get_portfolio_evidence_csv(
+    request: Request,
+    portefeuille_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """V97 Phase 4: Export portfolio reconciliation summary as CSV."""
+    from services.reconciliation_service import reconcile_portfolio
+    org_id = _get_org_id(request, auth, db)
+    if portefeuille_id:
+        _check_portfolio_belongs_to_org(db, portefeuille_id, org_id)
+    data = reconcile_portfolio(db, org_id, portefeuille_id)
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["site_id", "nom", "status", "score"])
+    for s in data["sites"]:
+        writer.writerow([s["site_id"], s["nom"], s["status"], s["score"]])
+    writer.writerow([])
+    writer.writerow(["stat", "value"])
+    for k, v in data["stats"].items():
+        writer.writerow([k, v])
+
+    content = output.getvalue()
+    return StreamingResponse(
+        io.BytesIO(content.encode("utf-8")),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=portfolio_reconciliation.csv"},
+    )

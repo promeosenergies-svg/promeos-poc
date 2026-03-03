@@ -53,6 +53,8 @@ def run_migrations(engine):
     # V96 — Patrimoine Unique Monde
     _create_payment_rules_table(engine)
     _add_contract_v96_columns(engine)
+    # V97 — Resolution Engine
+    _create_reconciliation_fix_logs_table(engine)
 
 
 def _add_soft_delete_columns(engine):
@@ -836,3 +838,41 @@ def _add_contract_v96_columns(engine):
         logger.info("migration: V96 — added %d column(s) to energy_contracts", added)
     else:
         logger.debug("migration: V96 energy_contracts columns already present — no changes")
+
+
+# ========================================
+# V97 — Resolution Engine
+# ========================================
+
+def _create_reconciliation_fix_logs_table(engine):
+    """V97: Create reconciliation_fix_logs table for audit trail. Idempotent."""
+    insp = inspect(engine)
+    if insp.has_table("reconciliation_fix_logs"):
+        logger.debug("migration: reconciliation_fix_logs table already exists — skipping")
+        return
+
+    with engine.begin() as conn:
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS "reconciliation_fix_logs" (
+                "id" INTEGER PRIMARY KEY,
+                "site_id" INTEGER NOT NULL REFERENCES "sites"("id"),
+                "check_id" VARCHAR(50) NOT NULL,
+                "action" VARCHAR(100) NOT NULL,
+                "status_before" VARCHAR(20) NOT NULL,
+                "status_after" VARCHAR(20) NOT NULL,
+                "detail_json" TEXT,
+                "applied_by" VARCHAR(200),
+                "applied_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                "updated_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
+        conn.execute(text(
+            'CREATE INDEX IF NOT EXISTS "ix_recon_fix_logs_site_id" '
+            'ON "reconciliation_fix_logs" ("site_id")'
+        ))
+        conn.execute(text(
+            'CREATE INDEX IF NOT EXISTS "ix_recon_fix_logs_check_id" '
+            'ON "reconciliation_fix_logs" ("check_id")'
+        ))
+    logger.info("migration: created reconciliation_fix_logs table with indexes")

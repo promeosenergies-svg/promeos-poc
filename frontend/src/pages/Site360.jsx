@@ -8,13 +8,16 @@ import {
   ArrowLeft, ShieldCheck, Zap, BadgeEuro, AlertTriangle,
   MapPin, Ruler,
   BookOpen, ChevronDown, ChevronUp, Clock, ExternalLink, ClipboardCheck,
-  CheckCircle, XCircle,
+  CheckCircle, XCircle, Download, History, Wrench,
 } from 'lucide-react';
 import { Card, CardBody, Badge, Button, Tabs, EmptyState, TrustBadge } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
 import { useScope } from '../contexts/ScopeContext';
-import { applyKB, getPatrimoineAnomalies, getSitePaymentInfo, getReconciliation } from '../services/api';
+import {
+  applyKB, getPatrimoineAnomalies, getSitePaymentInfo, getReconciliation,
+  applyReconciliationFix, getReconciliationHistory, getReconciliationEvidenceCsv,
+} from '../services/api';
 import { getStatusBadgeProps, SEV_BADGE } from '../lib/constants';
 import IntakeWizard from '../components/IntakeWizard';
 import BacsWizard from '../components/BacsWizard';
@@ -197,21 +200,68 @@ const RECON_STATUS_BADGE = { ok: 'success', warn: 'warning', fail: 'error' };
 function TabReconciliation({ site }) {
   const [recon, setRecon] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [fixingAction, setFixingAction] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [history, setHistory] = useState(null);
+  const [showHistory, setShowHistory] = useState(false);
 
-  useEffect(() => {
-    let stale = false;
+  const loadRecon = () => {
+    setLoading(true);
     getReconciliation(site.id)
-      .then((data) => { if (!stale) setRecon(data); })
+      .then((data) => setRecon(data))
       .catch(() => {})
-      .finally(() => { if (!stale) setLoading(false); });
-    return () => { stale = true; };
-  }, [site.id]);
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { loadRecon(); }, [site.id]);
+
+  const handleFix = async (checkId, action) => {
+    setFixingAction(action.action);
+    try {
+      await applyReconciliationFix(site.id, { action: action.action, params: action.params || {} });
+      setToast({ type: 'success', message: `Correction appliquée : ${action.label_fr}` });
+      loadRecon();
+    } catch (e) {
+      setToast({ type: 'error', message: e?.response?.data?.detail || 'Erreur lors de la correction' });
+    } finally {
+      setFixingAction(null);
+      setTimeout(() => setToast(null), 4000);
+    }
+  };
+
+  const handleDownloadCsv = async () => {
+    try {
+      const blob = await getReconciliationEvidenceCsv(site.id);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `evidence_site_${site.id}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch { /* ignore */ }
+  };
+
+  const loadHistory = async () => {
+    if (history) { setShowHistory(!showHistory); return; }
+    try {
+      const data = await getReconciliationHistory(site.id);
+      setHistory(data.logs || []);
+      setShowHistory(true);
+    } catch { setHistory([]); setShowHistory(true); }
+  };
 
   if (loading) return <div className="pt-6"><SkeletonCard /></div>;
   if (!recon) return <EmptyState title="Erreur" text="Impossible de charger la réconciliation." />;
 
   return (
     <div className="space-y-4 pt-6">
+      {/* Toast */}
+      {toast && (
+        <div className={`px-4 py-2 rounded-lg text-sm font-medium ${toast.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+          {toast.message}
+        </div>
+      )}
+
       {/* Header */}
       <Card>
         <CardBody>
@@ -230,10 +280,18 @@ function TabReconciliation({ site }) {
             <span className="text-sm font-bold text-gray-700">{recon.score}%</span>
           </div>
           <p className="text-sm text-gray-600 mt-2">{recon.summary_fr}</p>
+          <div className="flex gap-2 mt-3">
+            <Button size="sm" variant="outline" onClick={handleDownloadCsv}>
+              <Download size={14} className="mr-1" /> Evidence CSV
+            </Button>
+            <Button size="sm" variant="outline" onClick={loadHistory}>
+              <History size={14} className="mr-1" /> Journal
+            </Button>
+          </div>
         </CardBody>
       </Card>
 
-      {/* Checks list */}
+      {/* Checks list with fix_actions */}
       <Card>
         <div className="px-5 py-3 border-b border-gray-100">
           <h3 className="font-semibold text-gray-800">Vérifications</h3>
@@ -251,12 +309,56 @@ function TabReconciliation({ site }) {
                   {check.suggestion_fr && (
                     <p className="text-xs text-amber-600 mt-1">{check.suggestion_fr}</p>
                   )}
+                  {check.fix_actions && check.fix_actions.length > 0 && (
+                    <div className="flex gap-2 mt-2">
+                      {check.fix_actions.map((fa) => (
+                        <Button
+                          key={fa.action}
+                          size="sm"
+                          variant="outline"
+                          disabled={fixingAction === fa.action}
+                          onClick={() => handleFix(check.id, fa)}
+                        >
+                          <Wrench size={12} className="mr-1" />
+                          {fixingAction === fa.action ? 'En cours...' : fa.label_fr}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
       </Card>
+
+      {/* Fix history journal */}
+      {showHistory && (
+        <Card>
+          <div className="px-5 py-3 border-b border-gray-100">
+            <h3 className="font-semibold text-gray-800">Journal des corrections</h3>
+          </div>
+          {(!history || history.length === 0) ? (
+            <div className="px-5 py-4 text-sm text-gray-500">Aucune correction appliquée</div>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {history.map((log) => (
+                <div key={log.id} className="px-5 py-3 flex items-center gap-3 text-sm">
+                  <Wrench size={14} className="text-blue-500 shrink-0" />
+                  <div className="flex-1">
+                    <span className="font-medium">{log.action}</span>
+                    <span className="text-gray-400 mx-2">—</span>
+                    <Badge status={RECON_STATUS_BADGE[log.status_before] || 'info'}>{log.status_before}</Badge>
+                    <span className="mx-1">→</span>
+                    <Badge status={RECON_STATUS_BADGE[log.status_after] || 'info'}>{log.status_after}</Badge>
+                  </div>
+                  <span className="text-xs text-gray-400">{log.applied_at ? new Date(log.applied_at).toLocaleString('fr-FR') : ''}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      )}
     </div>
   );
 }
