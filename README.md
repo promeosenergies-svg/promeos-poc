@@ -28,8 +28,8 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 >
 > | Brique | Etat |
 > |--------|------|
-> | Backend API (~150 endpoints) | Stable |
-> | Frontend React (39+ pages) | Stable |
+> | Backend API (~160 endpoints) | Stable |
+> | Frontend React (40+ pages) | Stable |
 > | Moteur conformite (Decret Tertiaire, BACS) | Stable |
 > | RegOps 4 reglementations (Tertiaire, BACS, APER, CEE P6) | Stable |
 > | Knowledge Base (12 items YAML + FTS5) | Stable |
@@ -69,7 +69,9 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 > | Audit Marche complet (195 issues, Number("") fix, stale closures, file size validation, parseInt radix) | Stable -- V93 |
 > | Site Scope Filter global (ActionPlan, ActionsPage, Notifications, OPERAT Dashboard, API site_id) | Stable -- V93 |
 > | Performance FR labels (10 snake_case ALERT_TYPE_LABELS, WASTE_TYPES fix, null guards) | Stable -- V93 |
-> | Suite de tests automatises | **4 110 frontend + 2 400+ backend, 0 regression** |
+> | V95 Patrimoine World-Class Closure (real API anomalies, import legacy+hidden, backend hardening) | Stable -- V95 |
+> | V96 Patrimoine Unique Monde — Matrice Facture/Payeur/CC, Reconciliation 3 voies, Contrats achats-ready | Stable -- V96 |
+> | Suite de tests automatises | **4 157 frontend + 2 400+ backend, 0 regression** |
 
 > **Disclaimer**
 >
@@ -425,7 +427,7 @@ Champs cles du Site :
 <a id="api-quick-view"></a>
 ## API Quick View
 
-~150 endpoints au total. Selection des plus importants :
+~160 endpoints au total. Selection des plus importants :
 
 | Methode | Endpoint | Description |
 |---------|----------|-------------|
@@ -469,6 +471,13 @@ Champs cles du Site :
 | `GET` | `/api/consumption-context/site/{id}/anomalies` | behavior_score 0-100, insights, weekend_active |
 | `POST` | `/api/consumption-context/site/{id}/diagnose` | Refresh diagnostic + recalcul score |
 | `GET` | `/api/consumption-context/portfolio/summary` | Classement sites par behavior_score (pires en premier) |
+| `GET` | `/api/patrimoine/contracts` | Liste contrats energie org-scopes (V96: indexation, statut, granularite) |
+| `GET` | `/api/patrimoine/payment-rules` | Liste regles paiement (portefeuille/site/contrat) |
+| `POST` | `/api/patrimoine/payment-rules` | Creer/upsert regle paiement a tout niveau |
+| `POST` | `/api/patrimoine/payment-rules/apply-bulk` | Appliquer regle a N sites atomiquement |
+| `GET` | `/api/patrimoine/sites/{id}/payment-info` | Resolve regle effective (contrat>site>portefeuille) |
+| `GET` | `/api/patrimoine/sites/{id}/reconciliation` | Reconciliation 3 voies : 6 checks, score, statut |
+| `GET` | `/api/patrimoine/portfolio/reconciliation` | Reconciliation aggregee portfolio (ok/warn/fail par site) |
 | `GET` | `/health` | Health check |
 
 Documentation Swagger complete : `http://localhost:8001/docs`
@@ -499,6 +508,7 @@ Documentation Swagger complete : `http://localhost:8001/docs`
 | `/achat-energie` | Achat Energie V2 | 4 strategies (Fixe/Indexe/Spot/THS), cockpit scenariel, "Option THS" structuree, 7 CTAs cross-briques |
 | `/achat-assistant` | Assistant Achat | Wizard 8 etapes, 6 offres demo (dont HEURES_SOLAIRES), deep-link step+offer+site_id |
 | `/usages-horaires` | Usages & Horaires | Heatmap 7x24, profil journee (24 pts), talon/peak, ScheduleEditor inline, behavior_score 0-100, anomalies off-hours + weekend |
+| `/payment-rules` | Paiement & Refacturation | Matrice facture/payeur/centre de couts, exceptions site/contrat (V96) |
 | `/admin/users` | Admin Utilisateurs | Gestion users/roles/scopes, journal d'audit |
 | `/login` | Authentification | Login JWT, switch org, impersonation |
 

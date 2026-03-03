@@ -1407,4 +1407,21 @@ export const getMetaVersion = () =>
     .then((r) => r.data)
     .catch(() => null);
 
+// ========================================
+// V96: Payment Rules
+// ========================================
+export const getPaymentRules = (params = {}) => api.get('/patrimoine/payment-rules', { params }).then(r => r.data);
+export const createPaymentRule = (data) => api.post('/patrimoine/payment-rules', data).then(r => r.data);
+export const updatePaymentRule = (id, data) => api.put(`/patrimoine/payment-rules/${id}`, data).then(r => r.data);
+export const deletePaymentRule = (id) => api.delete(`/patrimoine/payment-rules/${id}`).then(r => r.data);
+export const applyPaymentRulesBulk = (data) => api.post('/patrimoine/payment-rules/apply-bulk', data).then(r => r.data);
+export const getSitePaymentInfo = (siteId) => api.get(`/patrimoine/sites/${siteId}/payment-info`).then(r => r.data);
+
+// V96: Reconciliation
+export const getReconciliation = (siteId) => api.get(`/patrimoine/sites/${siteId}/reconciliation`).then(r => r.data);
+export const getPortfolioReconciliation = (params = {}) => api.get('/patrimoine/portfolio/reconciliation', { params }).then(r => r.data);
+
+// V96: Contracts (if not already exported above)
+export const getPatrimoineContracts = (params = {}) => api.get('/patrimoine/contracts', { params }).then(r => r.data);
+
 export default api;

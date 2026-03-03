@@ -10,7 +10,7 @@ import {
   LayoutDashboard, Building2, ShieldCheck, FileText,
   Zap, ListChecks, Activity, Import, Users, Receipt, CalendarRange,
   BookOpen, ShoppingCart, Search, Link2, Eye, Bell, Lock,
-  Target, Database, ScanLine, ListPlus, AlertTriangle,
+  Target, Database, ScanLine, ListPlus, AlertTriangle, BadgeEuro,
 } from 'lucide-react';
 
 /* ── Route → module mapping (for permission checks + auto-select) ──
@@ -43,6 +43,7 @@ export const ROUTE_MODULE_MAP = {
   '/achat-energie': 'marche',
   '/achat-assistant': 'marche',
   '/patrimoine': 'admin',
+  '/payment-rules': 'admin',
   '/sites/:id': 'admin',
   '/import': 'admin',
   '/connectors': 'admin',
@@ -245,7 +246,7 @@ export const MODULE_TINTS = Object.fromEntries(
 /* ── Quick Actions (sidebar + CommandPalette) ── */
 export const QUICK_ACTIONS = [
   { key: 'scan',   label: 'Scanner',        icon: ScanLine, to: '/conformite',      keywords: ['scan', 'evaluer'] },
-  { key: 'import', label: 'Importer',       icon: Import,   to: '/import',           keywords: ['csv', 'upload'] },
+  { key: 'import', label: 'Importer',       icon: Import,   to: '/patrimoine',       keywords: ['csv', 'upload'] },
   { key: 'action', label: 'Creer action',   icon: ListPlus, to: '/actions',          keywords: ['action', 'plan'] },
   { key: 'diag',   label: 'Lancer analyse', icon: Search,   to: '/diagnostic-conso', keywords: ['diagnostic', 'anomalies'] },
 ];
@@ -310,8 +311,9 @@ export const NAV_SECTIONS = [
     expertOnly: true,
     order: 5,
     items: [
-      { to: '/patrimoine',    icon: Building2, label: 'Patrimoine', keywords: ['sites', 'batiments', 'immobilier'] },
-      { to: '/import',        icon: Import,    label: 'Imports', keywords: ['import', 'csv', 'upload'] },
+      { to: '/patrimoine',      icon: Building2,  label: 'Patrimoine', keywords: ['sites', 'batiments', 'immobilier'] },
+      { to: '/payment-rules',  icon: BadgeEuro,  label: 'Paiement & Refacturation', keywords: ['paiement', 'payeur', 'facture', 'refacturation', 'cost center'] },
+      { to: '/import',         icon: Import,     label: 'Imports', keywords: ['import', 'csv', 'upload'], hidden: true },
       { to: '/connectors',    icon: Link2,     label: 'Connexions', keywords: ['connecteurs', 'api', 'sync'] },
       { to: '/kb',            icon: BookOpen,  label: 'Mémobox', keywords: ['kb', 'knowledge', 'base', 'memobox', 'documents', 'preuves'] },
       { to: '/segmentation',  icon: Users,     label: 'Segmentation', keywords: ['segment', 'profil'] },

@@ -50,6 +50,9 @@ def run_migrations(engine):
     _fix_delivery_point_energy_type_case(engine)
     # Backfill risque_financier_euro from obligations
     _backfill_site_risque_financier(engine)
+    # V96 — Patrimoine Unique Monde
+    _create_payment_rules_table(engine)
+    _add_contract_v96_columns(engine)
 
 
 def _add_soft_delete_columns(engine):
@@ -758,3 +761,78 @@ def _backfill_site_risque_financier(engine):
             logger.info("migration: backfilled risque_financier_euro for %d sites", updated)
         else:
             logger.debug("migration: risque_financier_euro already correct — no changes")
+
+
+# ========================================
+# V96 — Patrimoine Unique Monde
+# ========================================
+
+def _create_payment_rules_table(engine):
+    """V96: Create payment_rules table if it does not exist. Idempotent."""
+    insp = inspect(engine)
+    if insp.has_table("payment_rules"):
+        logger.debug("migration: payment_rules table already exists — skipping")
+        return
+
+    with engine.begin() as conn:
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS "payment_rules" (
+                "id" INTEGER PRIMARY KEY,
+                "level" VARCHAR(20) NOT NULL,
+                "portefeuille_id" INTEGER REFERENCES "portefeuilles"("id"),
+                "site_id" INTEGER REFERENCES "sites"("id"),
+                "contract_id" INTEGER REFERENCES "energy_contracts"("id"),
+                "invoice_entity_id" INTEGER NOT NULL REFERENCES "entites_juridiques"("id"),
+                "payer_entity_id" INTEGER REFERENCES "entites_juridiques"("id"),
+                "cost_center" VARCHAR(100),
+                "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                "updated_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE("level", "portefeuille_id", "site_id", "contract_id")
+            )
+        """))
+        conn.execute(text(
+            'CREATE INDEX IF NOT EXISTS "ix_payment_rules_portefeuille_id" '
+            'ON "payment_rules" ("portefeuille_id")'
+        ))
+        conn.execute(text(
+            'CREATE INDEX IF NOT EXISTS "ix_payment_rules_site_id" '
+            'ON "payment_rules" ("site_id")'
+        ))
+        conn.execute(text(
+            'CREATE INDEX IF NOT EXISTS "ix_payment_rules_contract_id" '
+            'ON "payment_rules" ("contract_id")'
+        ))
+    logger.info("migration: created payment_rules table with indexes")
+
+
+def _add_contract_v96_columns(engine):
+    """V96: Add offer_indexation, price_granularity, renewal_alert_days, contract_status
+    to energy_contracts. Idempotent — skips existing columns."""
+    insp = inspect(engine)
+    if not insp.has_table("energy_contracts"):
+        return
+
+    existing_cols = {c["name"] for c in insp.get_columns("energy_contracts")}
+
+    v96_columns = [
+        ("offer_indexation", "VARCHAR(20)"),
+        ("price_granularity", "VARCHAR(50)"),
+        ("renewal_alert_days", "INTEGER"),
+        ("contract_status", "VARCHAR(20)"),
+    ]
+
+    added = 0
+    with engine.begin() as conn:
+        for col_name, col_type in v96_columns:
+            if col_name in existing_cols:
+                continue
+            conn.execute(text(
+                f'ALTER TABLE "energy_contracts" ADD COLUMN "{col_name}" {col_type}'
+            ))
+            added += 1
+            logger.info("migration: added energy_contracts.%s (%s)", col_name, col_type)
+
+    if added > 0:
+        logger.info("migration: V96 — added %d column(s) to energy_contracts", added)
+    else:
+        logger.debug("migration: V96 energy_contracts columns already present — no changes")

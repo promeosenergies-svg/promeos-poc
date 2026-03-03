@@ -24,6 +24,7 @@ from .enums import (
     EfaStatut, EfaRole, DeclarationStatus, PerimeterEventType,
     DataQualityIssueSeverity, DataQualityIssueStatus,
     WorkPackageSize, CeeDossierStep, CeeStatus, MVAlertType,
+    PaymentRuleLevel, ContractIndexation, ContractStatus, ReconciliationStatus,
 )
 
 # Hierarchie organisation
@@ -122,6 +123,9 @@ from .tertiaire import (
     TertiaireDeclaration, TertiaireProofArtifact, TertiaireDataQualityIssue,
 )
 
+# V96: Payment Rules
+from .payment_rule import PaymentRule
+
 # V69: CEE Pipeline + M&V
 from .cee_models import WorkPackage, CeeDossier, CeeDossierEvidence
 
@@ -201,4 +205,6 @@ __all__ = [
     # V69: CEE Pipeline + M&V
     "WorkPackage", "CeeDossier", "CeeDossierEvidence",
     "WorkPackageSize", "CeeDossierStep", "CeeStatus", "MVAlertType",
+    # V96: Payment Rules + Contract enums
+    "PaymentRule", "PaymentRuleLevel", "ContractIndexation", "ContractStatus", "ReconciliationStatus",
 ]

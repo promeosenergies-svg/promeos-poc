@@ -9,7 +9,7 @@ from sqlalchemy import Column, Integer, String, Float, Text, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 
 from .base import Base, TimestampMixin
-from .enums import BillingEnergyType, InvoiceLineType, BillingInvoiceStatus, InsightStatus
+from .enums import BillingEnergyType, InvoiceLineType, BillingInvoiceStatus, InsightStatus, ContractIndexation, ContractStatus
 
 
 class EnergyContract(Base, TimestampMixin):
@@ -50,6 +50,23 @@ class EnergyContract(Base, TimestampMixin):
     auto_renew = Column(
         Boolean, nullable=False, default=False,
         comment="Reconduction tacite",
+    )
+    # V96 — Contrats achats-ready
+    offer_indexation = Column(
+        Enum(ContractIndexation), nullable=True,
+        comment="Type d'indexation (fixe/indexe/spot/hybride)",
+    )
+    price_granularity = Column(
+        String(50), nullable=True,
+        comment="Granularite prix: annuel/trimestriel/mensuel/horaire",
+    )
+    renewal_alert_days = Column(
+        Integer, nullable=True,
+        comment="Jours avant echeance pour alerte renouvellement",
+    )
+    contract_status = Column(
+        Enum(ContractStatus), nullable=True,
+        comment="Statut lifecycle (active/expiring/expired)",
     )
 
     # Relations

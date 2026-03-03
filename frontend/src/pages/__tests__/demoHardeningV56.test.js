@@ -71,8 +71,8 @@ describe('Site360 toLocaleString null-safety (V56)', () => {
     expect(src).toContain('(site.surface_m2 || 0).toLocaleString()');
   });
 
-  it('guards perte_eur.toLocaleString with || 0', () => {
-    expect(src).toContain('(a.perte_eur || 0).toLocaleString()');
+  it('guards estimated_risk_eur.toLocaleString with || 0', () => {
+    expect(src).toContain('(a.business_impact?.estimated_risk_eur || 0).toLocaleString()');
   });
 
   it('guards conso_kwh_an division with || 0', () => {

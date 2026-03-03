@@ -52,6 +52,7 @@ const ConsumptionContextPage = lazy(() => import('./pages/ConsumptionContextPage
 const AnomaliesPage = lazy(() => import('./pages/AnomaliesPage'));
 const CompliancePipelinePage = lazy(() => import('./pages/CompliancePipelinePage'));
 const SiteCompliancePage = lazy(() => import('./pages/SiteCompliancePage'));
+const PaymentRulesPage = lazy(() => import('./pages/PaymentRulesPage'));
 
 function PageSuspense({ children }) {
   return (
@@ -132,6 +133,7 @@ function App() {
                   <Route path="/explorer" element={<Navigate to="/consommations/explorer" replace />} />
                   <Route path="/activation" element={<PageSuspense><ActivationPage /></PageSuspense>} />
                   <Route path="/status" element={<PageSuspense><StatusPage /></PageSuspense>} />
+                  <Route path="/payment-rules" element={<PageSuspense><PaymentRulesPage /></PageSuspense>} />
 
                   {/* IAM pages */}
                   <Route path="/admin/users" element={<PageSuspense><AdminUsersPage /></PageSuspense>} />

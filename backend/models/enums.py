@@ -536,3 +536,34 @@ class MVAlertType(str, enum.Enum):
     BASELINE_DRIFT = "baseline_drift"
     DEADLINE_APPROACHING = "deadline_approaching"
     DATA_MISSING = "data_missing"
+
+
+# ── V96: Patrimoine Unique Monde ──────────────────────────────────────────
+
+class PaymentRuleLevel(str, enum.Enum):
+    """Niveau d'application d'une regle de paiement."""
+    PORTEFEUILLE = "portefeuille"
+    SITE = "site"
+    CONTRAT = "contrat"
+
+
+class ContractIndexation(str, enum.Enum):
+    """Type d'indexation d'un contrat energie."""
+    FIXE = "fixe"
+    INDEXE = "indexe"
+    SPOT = "spot"
+    HYBRIDE = "hybride"
+
+
+class ContractStatus(str, enum.Enum):
+    """Statut lifecycle d'un contrat energie."""
+    ACTIVE = "active"
+    EXPIRING = "expiring"
+    EXPIRED = "expired"
+
+
+class ReconciliationStatus(str, enum.Enum):
+    """Statut de reconciliation 3 voies."""
+    OK = "ok"
+    WARN = "warn"
+    FAIL = "fail"

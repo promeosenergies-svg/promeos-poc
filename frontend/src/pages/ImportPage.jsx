@@ -237,6 +237,17 @@ function ImportPage() {
         </a>
       }
     >
+      {/* Legacy banner */}
+      <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-2">
+        <AlertTriangle size={16} className="text-amber-600 shrink-0" />
+        <span className="text-sm text-amber-800">
+          Page legacy — utilisez le{' '}
+          <button onClick={() => navigate('/patrimoine')} className="underline font-medium">
+            Wizard Patrimoine
+          </button>{' '}
+          pour importer vos sites.
+        </span>
+      </div>
       {/* Demo Packs */}
       <Card className="border-indigo-200 bg-indigo-50/30">
         <CardBody>

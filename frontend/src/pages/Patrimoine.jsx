@@ -26,7 +26,7 @@ import PatrimoinePortfolioHealthBar from '../components/PatrimoinePortfolioHealt
 import PatrimoineHeatmap from '../components/PatrimoineHeatmap';
 import PatrimoineRiskDistributionBar from '../components/PatrimoineRiskDistributionBar';
 import SiteAnomalyPanel from '../components/SiteAnomalyPanel';
-import { getPatrimoineAnomalies } from '../services/api';
+import { getPatrimoineAnomalies, getPortfolioReconciliation } from '../services/api';
 import { track } from '../services/tracker';
 import { fmtEur, fmtEurFull, fmtArea, fmtAreaCompact, fmtKwh, fmtDateFR, pl } from '../utils/format';
 import { RISK_THRESHOLDS, ANOMALY_THRESHOLDS, getStatusBadgeProps } from '../lib/constants';
@@ -111,6 +111,18 @@ export default function Patrimoine() {
   const [favorites, setFavorites] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem('promeos_fav_sites') || '[]')); } catch { return new Set(); }
   });
+
+  // V96 — Reconciliation badge per site
+  const [reconMap, setReconMap] = useState({});
+  useEffect(() => {
+    getPortfolioReconciliation()
+      .then((data) => {
+        const m = {};
+        (data.sites || []).forEach(s => { m[s.site_id] = s; });
+        setReconMap(m);
+      })
+      .catch(() => {});
+  }, []);
 
   // URL param helper — merges params, removes empty values
   const setParams = useCallback((patch) => {
@@ -269,7 +281,7 @@ export default function Patrimoine() {
   const paddingBottom = virtualItems.length > 0
     ? virtualizer.getTotalSize() - virtualItems[virtualItems.length - 1].end
     : 0;
-  const colCount = isExpert ? 10 : 9;
+  const colCount = isExpert ? 11 : 10;
 
   const selectedStats = useMemo(() => {
     if (selected.size === 0) return null;
@@ -559,6 +571,7 @@ export default function Patrimoine() {
                       <Th sortable sorted={sortCol === 'surface_m2' ? sortDir : ''} onSort={() => handleSort('surface_m2')} className="text-right">Surface</Th>
                       {isExpert && <Th sortable sorted={sortCol === 'conso_kwh_an' ? sortDir : ''} onSort={() => handleSort('conso_kwh_an')} className="text-right">Conso</Th>}
                       <Th sortable sorted={sortCol === 'anomalies_count' ? sortDir : ''} onSort={() => handleSort('anomalies_count')} className="text-right">Anomalies</Th>
+                      <Th className="text-center">Réconc.</Th>
                       <Th className="w-8" />
                     </tr>
                   </Thead>
@@ -606,6 +619,18 @@ export default function Patrimoine() {
                                   }`}>{site.anomalies_count}</span>
                                 </Tooltip>
                               : <span className="text-gray-300 text-xs">0</span>}
+                          </Td>
+                          <Td className="text-center">
+                            {(() => {
+                              const rc = reconMap[site.id];
+                              if (!rc) return <span className="text-gray-300">—</span>;
+                              const dot = rc.status === 'ok' ? 'bg-green-500' : rc.status === 'warn' ? 'bg-amber-400' : 'bg-red-500';
+                              return (
+                                <Tooltip text={`Réconciliation: ${rc.score}%`}>
+                                  <span className={`inline-block w-2.5 h-2.5 rounded-full ${dot}`} />
+                                </Tooltip>
+                              );
+                            })()}
                           </Td>
                           <Td>
                             <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition">

@@ -111,10 +111,13 @@ describe('D. Site360.jsx — Factures tab wired up', () => {
   });
 
   it('factures tab renders SiteBillingMini (not TabStub)', () => {
+    // V96: factures tab is now a block with SiteContractsSummary + SiteBillingMini
+    const factureBlock = code.match(/activeTab\s*===\s*'factures'[\s\S]*?SiteBillingMini/);
+    expect(factureBlock).not.toBeNull();
+    // Ensure it's not a TabStub
     const factureLine = code.split('\n').find(l => l.includes("factures") && l.includes('activeTab'));
     expect(factureLine).toBeDefined();
     expect(factureLine).not.toMatch(/TabStub/);
-    expect(factureLine).toMatch(/SiteBillingMini/);
   });
 });
 

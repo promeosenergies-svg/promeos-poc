@@ -25,6 +25,7 @@ from models import (
     Compteur, TypeSite, TypeCompteur, EnergyVector,
     EnergyContract, BillingEnergyType,
     StatutConformite,
+    PaymentRule, PaymentRuleLevel, ContractIndexation, ContractStatus,
 )
 from services.patrimoine_service import (
     create_staging_batch, import_csv_to_staging, import_invoices_to_staging,
@@ -110,6 +111,11 @@ class ContractCreateRequest(BaseModel):
     fixed_fee_eur_per_month: Optional[float] = None
     notice_period_days: int = 90
     auto_renew: bool = False
+    # V96
+    offer_indexation: Optional[str] = None
+    price_granularity: Optional[str] = None
+    renewal_alert_days: Optional[int] = None
+    contract_status: Optional[str] = None
 
 
 class ContractUpdateRequest(BaseModel):
@@ -120,6 +126,29 @@ class ContractUpdateRequest(BaseModel):
     fixed_fee_eur_per_month: Optional[float] = None
     notice_period_days: Optional[int] = None
     auto_renew: Optional[bool] = None
+    # V96
+    offer_indexation: Optional[str] = None
+    price_granularity: Optional[str] = None
+    renewal_alert_days: Optional[int] = None
+    contract_status: Optional[str] = None
+
+
+# V96: Payment Rules schemas
+class PaymentRuleCreateRequest(BaseModel):
+    level: str  # portefeuille | site | contrat
+    portefeuille_id: Optional[int] = None
+    site_id: Optional[int] = None
+    contract_id: Optional[int] = None
+    invoice_entity_id: int
+    payer_entity_id: Optional[int] = None
+    cost_center: Optional[str] = None
+
+
+class PaymentRuleBulkApplyRequest(BaseModel):
+    site_ids: List[int]
+    invoice_entity_id: int
+    payer_entity_id: Optional[int] = None
+    cost_center: Optional[str] = None
 
 
 # ========================================
@@ -1346,6 +1375,11 @@ def _serialize_contract(ct: EnergyContract) -> dict:
         "fixed_fee_eur_per_month": ct.fixed_fee_eur_per_month,
         "notice_period_days": ct.notice_period_days,
         "auto_renew": ct.auto_renew,
+        # V96
+        "offer_indexation": ct.offer_indexation.value if ct.offer_indexation else None,
+        "price_granularity": ct.price_granularity,
+        "renewal_alert_days": ct.renewal_alert_days,
+        "contract_status": ct.contract_status.value if ct.contract_status else None,
         "created_at": ct.created_at.isoformat() if ct.created_at else None,
     }
 
@@ -1845,6 +1879,20 @@ def create_contract(request: Request, body: ContractCreateRequest, db: Session =
     except ValueError:
         raise HTTPException(status_code=400, detail=f"Type energie invalide: {body.energy_type}")
 
+    # V96 — parse optional enums
+    offer_idx = None
+    if body.offer_indexation:
+        try:
+            offer_idx = ContractIndexation(body.offer_indexation)
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Indexation invalide: {body.offer_indexation}")
+    ct_status = None
+    if body.contract_status:
+        try:
+            ct_status = ContractStatus(body.contract_status)
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Statut contrat invalide: {body.contract_status}")
+
     ct = EnergyContract(
         site_id=body.site_id,
         energy_type=et,
@@ -1855,6 +1903,10 @@ def create_contract(request: Request, body: ContractCreateRequest, db: Session =
         fixed_fee_eur_per_month=body.fixed_fee_eur_per_month,
         notice_period_days=body.notice_period_days,
         auto_renew=body.auto_renew,
+        offer_indexation=offer_idx,
+        price_granularity=body.price_granularity,
+        renewal_alert_days=body.renewal_alert_days,
+        contract_status=ct_status,
     )
     db.add(ct)
     db.commit()
@@ -1870,10 +1922,20 @@ def update_contract(contract_id: int, request: Request, body: ContractUpdateRequ
 
     updates = body.model_dump(exclude_unset=True)
 
-    # Apply field values (parse dates)
+    # Apply field values (parse dates + V96 enums)
     for field, value in updates.items():
         if field in ("start_date", "end_date") and value is not None:
             value = date.fromisoformat(value)
+        elif field == "offer_indexation" and value is not None:
+            try:
+                value = ContractIndexation(value)
+            except ValueError:
+                raise HTTPException(status_code=400, detail=f"Indexation invalide: {value}")
+        elif field == "contract_status" and value is not None:
+            try:
+                value = ContractStatus(value)
+            except ValueError:
+                raise HTTPException(status_code=400, detail=f"Statut contrat invalide: {value}")
         setattr(ct, field, value)
 
     # If dates changed, check for overlap with other contracts
@@ -1903,3 +1965,306 @@ def delete_contract(contract_id: int, request: Request, db: Session = Depends(ge
     db.delete(ct)
     db.commit()
     return {"detail": f"Contrat {contract_id} supprime"}
+
+
+# ========================================
+# V96: Payment Rules CRUD
+# ========================================
+
+def _serialize_payment_rule(pr: PaymentRule) -> dict:
+    return {
+        "id": pr.id,
+        "level": pr.level.value if pr.level else None,
+        "portefeuille_id": pr.portefeuille_id,
+        "site_id": pr.site_id,
+        "contract_id": pr.contract_id,
+        "invoice_entity_id": pr.invoice_entity_id,
+        "payer_entity_id": pr.payer_entity_id,
+        "cost_center": pr.cost_center,
+        "created_at": pr.created_at.isoformat() if pr.created_at else None,
+    }
+
+
+def _resolve_payment_rule(db: Session, site_id: int, contract_id: int = None) -> Optional[PaymentRule]:
+    """Cascade resolution: contrat > site > portefeuille > None."""
+    # 1. Contract-level
+    if contract_id:
+        pr = db.query(PaymentRule).filter(
+            PaymentRule.level == PaymentRuleLevel.CONTRAT,
+            PaymentRule.contract_id == contract_id,
+        ).first()
+        if pr:
+            return pr
+
+    # 2. Site-level
+    pr = db.query(PaymentRule).filter(
+        PaymentRule.level == PaymentRuleLevel.SITE,
+        PaymentRule.site_id == site_id,
+    ).first()
+    if pr:
+        return pr
+
+    # 3. Portefeuille-level
+    site = db.query(Site).filter(Site.id == site_id).first()
+    if site and site.portefeuille_id:
+        pr = db.query(PaymentRule).filter(
+            PaymentRule.level == PaymentRuleLevel.PORTEFEUILLE,
+            PaymentRule.portefeuille_id == site.portefeuille_id,
+        ).first()
+        if pr:
+            return pr
+
+    return None
+
+
+@router.get("/payment-rules")
+def list_payment_rules(
+    request: Request,
+    level: Optional[str] = None,
+    portefeuille_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """List payment rules — scoped to org."""
+    org_id = _get_org_id(request, auth, db)
+    q = (
+        db.query(PaymentRule)
+        .join(EntiteJuridique, PaymentRule.invoice_entity_id == EntiteJuridique.id)
+        .filter(EntiteJuridique.organisation_id == org_id)
+    )
+    if level:
+        try:
+            q = q.filter(PaymentRule.level == PaymentRuleLevel(level))
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Niveau invalide: {level}")
+    if portefeuille_id is not None:
+        q = q.filter(PaymentRule.portefeuille_id == portefeuille_id)
+    rules = q.all()
+    return {"rules": [_serialize_payment_rule(pr) for pr in rules]}
+
+
+@router.post("/payment-rules")
+def create_payment_rule(
+    request: Request,
+    body: PaymentRuleCreateRequest,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Create or upsert a payment rule at any level."""
+    org_id = _get_org_id(request, auth, db)
+
+    try:
+        lvl = PaymentRuleLevel(body.level)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Niveau invalide: {body.level}")
+
+    # Validate entity belongs to org
+    ej = db.query(EntiteJuridique).filter(
+        EntiteJuridique.id == body.invoice_entity_id,
+        EntiteJuridique.organisation_id == org_id,
+    ).first()
+    if not ej:
+        raise HTTPException(status_code=404, detail="Entite juridique facturee non trouvee")
+
+    if body.payer_entity_id:
+        pej = db.query(EntiteJuridique).filter(
+            EntiteJuridique.id == body.payer_entity_id,
+            EntiteJuridique.organisation_id == org_id,
+        ).first()
+        if not pej:
+            raise HTTPException(status_code=404, detail="Entite juridique payeuse non trouvee")
+
+    # Validate scope target
+    if lvl == PaymentRuleLevel.PORTEFEUILLE and body.portefeuille_id:
+        _check_portfolio_belongs_to_org(db, body.portefeuille_id, org_id)
+    elif lvl == PaymentRuleLevel.SITE and body.site_id:
+        _load_site_with_org_check(db, body.site_id, org_id)
+    elif lvl == PaymentRuleLevel.CONTRAT and body.contract_id:
+        _load_contract_with_org_check(db, body.contract_id, org_id)
+
+    # Upsert: check for existing rule at same scope
+    existing = db.query(PaymentRule).filter(
+        PaymentRule.level == lvl,
+        PaymentRule.portefeuille_id == body.portefeuille_id,
+        PaymentRule.site_id == body.site_id,
+        PaymentRule.contract_id == body.contract_id,
+    ).first()
+
+    if existing:
+        existing.invoice_entity_id = body.invoice_entity_id
+        existing.payer_entity_id = body.payer_entity_id
+        existing.cost_center = body.cost_center
+        db.commit()
+        return _serialize_payment_rule(existing)
+
+    pr = PaymentRule(
+        level=lvl,
+        portefeuille_id=body.portefeuille_id,
+        site_id=body.site_id,
+        contract_id=body.contract_id,
+        invoice_entity_id=body.invoice_entity_id,
+        payer_entity_id=body.payer_entity_id,
+        cost_center=body.cost_center,
+    )
+    db.add(pr)
+    db.commit()
+    db.refresh(pr)
+    return _serialize_payment_rule(pr)
+
+
+@router.put("/payment-rules/{rule_id}")
+def update_payment_rule(
+    rule_id: int,
+    request: Request,
+    body: PaymentRuleCreateRequest,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Update an existing payment rule."""
+    org_id = _get_org_id(request, auth, db)
+    pr = db.query(PaymentRule).filter(PaymentRule.id == rule_id).first()
+    if not pr:
+        raise HTTPException(status_code=404, detail=f"Regle {rule_id} non trouvee")
+
+    # Check org ownership via invoice entity
+    ej = db.query(EntiteJuridique).filter(
+        EntiteJuridique.id == pr.invoice_entity_id,
+        EntiteJuridique.organisation_id == org_id,
+    ).first()
+    if not ej:
+        raise HTTPException(status_code=404, detail=f"Regle {rule_id} non trouvee")
+
+    pr.invoice_entity_id = body.invoice_entity_id
+    pr.payer_entity_id = body.payer_entity_id
+    pr.cost_center = body.cost_center
+    db.commit()
+    return _serialize_payment_rule(pr)
+
+
+@router.delete("/payment-rules/{rule_id}")
+def delete_payment_rule(
+    rule_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Delete a payment rule."""
+    org_id = _get_org_id(request, auth, db)
+    pr = db.query(PaymentRule).filter(PaymentRule.id == rule_id).first()
+    if not pr:
+        raise HTTPException(status_code=404, detail=f"Regle {rule_id} non trouvee")
+
+    ej = db.query(EntiteJuridique).filter(
+        EntiteJuridique.id == pr.invoice_entity_id,
+        EntiteJuridique.organisation_id == org_id,
+    ).first()
+    if not ej:
+        raise HTTPException(status_code=404, detail=f"Regle {rule_id} non trouvee")
+
+    db.delete(pr)
+    db.commit()
+    return {"detail": f"Regle {rule_id} supprimee"}
+
+
+@router.post("/payment-rules/apply-bulk")
+def apply_payment_rules_bulk(
+    request: Request,
+    body: PaymentRuleBulkApplyRequest,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Apply payment rule to N sites atomically."""
+    org_id = _get_org_id(request, auth, db)
+
+    ej = db.query(EntiteJuridique).filter(
+        EntiteJuridique.id == body.invoice_entity_id,
+        EntiteJuridique.organisation_id == org_id,
+    ).first()
+    if not ej:
+        raise HTTPException(status_code=404, detail="Entite juridique non trouvee")
+
+    db.begin_nested()  # SAVEPOINT
+    created = 0
+    for sid in body.site_ids:
+        _load_site_with_org_check(db, sid, org_id)
+        existing = db.query(PaymentRule).filter(
+            PaymentRule.level == PaymentRuleLevel.SITE,
+            PaymentRule.site_id == sid,
+        ).first()
+        if existing:
+            existing.invoice_entity_id = body.invoice_entity_id
+            existing.payer_entity_id = body.payer_entity_id
+            existing.cost_center = body.cost_center
+        else:
+            db.add(PaymentRule(
+                level=PaymentRuleLevel.SITE,
+                site_id=sid,
+                invoice_entity_id=body.invoice_entity_id,
+                payer_entity_id=body.payer_entity_id,
+                cost_center=body.cost_center,
+            ))
+            created += 1
+
+    db.commit()
+    return {"applied": len(body.site_ids), "created": created}
+
+
+@router.get("/sites/{site_id}/payment-info")
+def get_site_payment_info(
+    site_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Resolve effective payment rule for a site (contrat > site > portefeuille)."""
+    org_id = _get_org_id(request, auth, db)
+    _load_site_with_org_check(db, site_id, org_id)
+
+    pr = _resolve_payment_rule(db, site_id)
+    if not pr:
+        return {"resolved": False, "rule": None, "source_level": None}
+
+    # Load entity names
+    inv_ej = db.query(EntiteJuridique).get(pr.invoice_entity_id)
+    pay_ej = db.query(EntiteJuridique).get(pr.payer_entity_id) if pr.payer_entity_id else None
+
+    return {
+        "resolved": True,
+        "source_level": pr.level.value if pr.level else None,
+        "rule": _serialize_payment_rule(pr),
+        "invoice_entity_name": inv_ej.nom if inv_ej else None,
+        "payer_entity_name": pay_ej.nom if pay_ej else None,
+    }
+
+
+# ========================================
+# V96: Reconciliation endpoints
+# ========================================
+
+@router.get("/sites/{site_id}/reconciliation")
+def get_site_reconciliation(
+    site_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """3-way reconciliation for a single site."""
+    from services.reconciliation_service import reconcile_site
+    org_id = _get_org_id(request, auth, db)
+    _load_site_with_org_check(db, site_id, org_id)
+    return reconcile_site(db, site_id)
+
+
+@router.get("/portfolio/reconciliation")
+def get_portfolio_reconciliation(
+    request: Request,
+    portefeuille_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """Aggregate reconciliation across all sites in scope."""
+    from services.reconciliation_service import reconcile_portfolio
+    org_id = _get_org_id(request, auth, db)
+    if portefeuille_id:
+        _check_portfolio_belongs_to_org(db, portefeuille_id, org_id)
+    return reconcile_portfolio(db, org_id, portefeuille_id)

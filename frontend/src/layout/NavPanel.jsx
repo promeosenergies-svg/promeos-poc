@@ -120,7 +120,7 @@ export default function NavPanel({ activeModule, pins, onTogglePin, badges }) {
       .filter((s) => !s.expertOnly || isExpert)
       .map((s) => ({
         ...s,
-        items: filterItems(s.items.filter((item) => !item.expertOnly || isExpert)),
+        items: filterItems(s.items.filter((item) => (!item.expertOnly || isExpert) && !item.hidden)),
       }))
       .filter((s) => s.items.length > 0);
   }, [activeModule, isExpert, filterItems]);

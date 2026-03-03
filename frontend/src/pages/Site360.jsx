@@ -8,16 +8,18 @@ import {
   ArrowLeft, ShieldCheck, Zap, BadgeEuro, AlertTriangle,
   MapPin, Ruler,
   BookOpen, ChevronDown, ChevronUp, Clock, ExternalLink, ClipboardCheck,
+  CheckCircle, XCircle,
 } from 'lucide-react';
 import { Card, CardBody, Badge, Button, Tabs, EmptyState, TrustBadge } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
 import { SkeletonCard } from '../ui/Skeleton';
 import { useScope } from '../contexts/ScopeContext';
-import { applyKB } from '../services/api';
+import { applyKB, getPatrimoineAnomalies, getSitePaymentInfo, getReconciliation } from '../services/api';
 import { getStatusBadgeProps, SEV_BADGE } from '../lib/constants';
 import IntakeWizard from '../components/IntakeWizard';
 import BacsWizard from '../components/BacsWizard';
 import SiteBillingMini from '../components/SiteBillingMini';
+import SiteContractsSummary from '../components/SiteContractsSummary';
 
 const _sb = (k) => { const { variant, label } = getStatusBadgeProps(k); return { status: variant, label }; };
 const STATUT_BADGE = {
@@ -31,6 +33,7 @@ const TABS = [
   { id: 'resume', label: 'Résumé' },
   { id: 'conso', label: 'Consommation' },
   { id: 'factures', label: 'Factures' },
+  { id: 'reconciliation', label: 'Réconciliation' },
   { id: 'conformite', label: 'Conformité' },
   { id: 'actions', label: 'Actions' },
 ];
@@ -48,11 +51,18 @@ function MiniKpi({ icon: Icon, label, value, color }) {
 }
 
 function TabResume({ site }) {
-  const mockAnomalies = [
-    { id: 1, type: 'hors_horaires', severity: 'critical', message: `58% consommation hors horaires`, perte_eur: Math.round((site.risque_eur || 0) * 0.4) },
-    { id: 2, type: 'base_load', severity: 'high', message: 'Talon élevé : 45% de la médiane', perte_eur: Math.round((site.risque_eur || 0) * 0.2) },
-    { id: 3, type: 'derive', severity: 'medium', message: 'Dérive +8% sur 30 jours', perte_eur: Math.round((site.risque_eur || 0) * 0.1) },
-  ];
+  const [anomalies, setAnomalies] = useState([]);
+  const [anomLoading, setAnomLoading] = useState(true);
+
+  useEffect(() => {
+    let stale = false;
+    setAnomLoading(true);
+    getPatrimoineAnomalies(site.id)
+      .then((data) => { if (!stale) setAnomalies(data.anomalies || []); })
+      .catch(() => { if (!stale) setAnomalies([]); })
+      .finally(() => { if (!stale) setAnomLoading(false); });
+    return () => { stale = true; };
+  }, [site.id]);
 
   return (
     <div className="grid grid-cols-2 gap-6 pt-6">
@@ -84,6 +94,9 @@ function TabResume({ site }) {
           </CardBody>
         </Card>
 
+        {/* V96: Payment info */}
+        <PaymentInfoCard siteId={site.id} />
+
         {/* Reco principale */}
         <Card className="border-l-4 border-l-blue-500">
           <CardBody>
@@ -106,7 +119,9 @@ function TabResume({ site }) {
         <div className="px-5 py-3 border-b border-gray-100">
           <h3 className="font-semibold text-gray-800">Anomalies détectées</h3>
         </div>
-        {site.anomalies_count === 0 ? (
+        {anomLoading ? (
+          <div className="p-4"><SkeletonCard /></div>
+        ) : anomalies.length === 0 ? (
           <EmptyState title="Aucune anomalie" text="Ce site ne présente aucune anomalie détectée." />
         ) : (
           <Table>
@@ -114,17 +129,133 @@ function TabResume({ site }) {
               <tr><Th>Type</Th><Th>Sévérité</Th><Th>Message</Th><Th className="text-right">Perte</Th></tr>
             </Thead>
             <Tbody>
-              {mockAnomalies.map((a) => (
-                <Tr key={a.id}>
-                  <Td><span className="text-xs px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded">{a.type}</span></Td>
+              {anomalies.map((a, idx) => (
+                <Tr key={a.id || idx}>
+                  <Td><span className="text-xs px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded">{a.anomaly_type}</span></Td>
                   <Td><Badge status={SEV_BADGE[a.severity] || 'info'}>{a.severity}</Badge></Td>
-                  <Td className="text-sm">{a.message}</Td>
-                  <Td className="text-right text-red-600 font-medium">{(a.perte_eur || 0).toLocaleString()} €</Td>
+                  <Td className="text-sm">{a.title_fr}</Td>
+                  <Td className="text-right text-red-600 font-medium">{(a.business_impact?.estimated_risk_eur || 0).toLocaleString()} €</Td>
                 </Tr>
               ))}
             </Tbody>
           </Table>
         )}
+      </Card>
+    </div>
+  );
+}
+
+function PaymentInfoCard({ siteId }) {
+  const [info, setInfo] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let stale = false;
+    getSitePaymentInfo(siteId)
+      .then((data) => { if (!stale) setInfo(data); })
+      .catch(() => {})
+      .finally(() => { if (!stale) setLoading(false); });
+    return () => { stale = true; };
+  }, [siteId]);
+
+  if (loading) return <SkeletonCard />;
+
+  if (!info?.resolved) {
+    return (
+      <Card className="border-l-4 border-l-gray-300">
+        <CardBody>
+          <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Paiement & Refacturation</p>
+          <p className="text-sm text-gray-500">Aucune règle de paiement configurée</p>
+          <Button size="sm" variant="outline" className="mt-2" onClick={() => window.location.href = '/payment-rules'}>Configurer</Button>
+        </CardBody>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="border-l-4 border-l-emerald-500">
+      <CardBody>
+        <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Paiement & Refacturation</p>
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <div><span className="text-gray-500">Facturé :</span> <span className="font-medium">{info.invoice_entity_name || '—'}</span></div>
+          <div><span className="text-gray-500">Payeur :</span> <span className="font-medium">{info.payer_entity_name || '(même)'}</span></div>
+          <div><span className="text-gray-500">Centre de coût :</span> <span className="font-medium">{info.rule?.cost_center || '—'}</span></div>
+          <div><span className="text-gray-500">Source :</span> <Badge status="info">{info.source_level}</Badge></div>
+        </div>
+      </CardBody>
+    </Card>
+  );
+}
+
+const RECON_STATUS_ICON = {
+  ok: { icon: CheckCircle, color: 'text-green-600' },
+  warn: { icon: AlertTriangle, color: 'text-amber-500' },
+  fail: { icon: XCircle, color: 'text-red-600' },
+};
+const RECON_STATUS_BADGE = { ok: 'success', warn: 'warning', fail: 'error' };
+
+function TabReconciliation({ site }) {
+  const [recon, setRecon] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let stale = false;
+    getReconciliation(site.id)
+      .then((data) => { if (!stale) setRecon(data); })
+      .catch(() => {})
+      .finally(() => { if (!stale) setLoading(false); });
+    return () => { stale = true; };
+  }, [site.id]);
+
+  if (loading) return <div className="pt-6"><SkeletonCard /></div>;
+  if (!recon) return <EmptyState title="Erreur" text="Impossible de charger la réconciliation." />;
+
+  return (
+    <div className="space-y-4 pt-6">
+      {/* Header */}
+      <Card>
+        <CardBody>
+          <div className="flex items-center gap-4">
+            <Badge status={RECON_STATUS_BADGE[recon.status] || 'info'} className="text-base px-3 py-1">
+              {recon.status === 'ok' ? 'OK' : recon.status === 'warn' ? 'Attention' : 'Incomplet'}
+            </Badge>
+            <div className="flex-1">
+              <div className="w-full bg-gray-200 rounded-full h-3">
+                <div
+                  className={`h-3 rounded-full ${recon.score >= 80 ? 'bg-green-500' : recon.score >= 50 ? 'bg-amber-400' : 'bg-red-500'}`}
+                  style={{ width: `${recon.score}%` }}
+                />
+              </div>
+            </div>
+            <span className="text-sm font-bold text-gray-700">{recon.score}%</span>
+          </div>
+          <p className="text-sm text-gray-600 mt-2">{recon.summary_fr}</p>
+        </CardBody>
+      </Card>
+
+      {/* Checks list */}
+      <Card>
+        <div className="px-5 py-3 border-b border-gray-100">
+          <h3 className="font-semibold text-gray-800">Vérifications</h3>
+        </div>
+        <div className="divide-y divide-gray-100">
+          {(recon.checks || []).map((check) => {
+            const cfg = RECON_STATUS_ICON[check.status] || RECON_STATUS_ICON.warn;
+            const Icon = cfg.icon;
+            return (
+              <div key={check.id} className="px-5 py-3 flex items-start gap-3">
+                <Icon size={18} className={cfg.color + ' mt-0.5 shrink-0'} />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-800">{check.label_fr}</p>
+                  <p className="text-xs text-gray-500">{check.reason_fr}</p>
+                  {check.suggestion_fr && (
+                    <p className="text-xs text-amber-600 mt-1">{check.suggestion_fr}</p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </Card>
     </div>
   );
@@ -440,17 +571,25 @@ export default function Site360() {
       {/* Tab content */}
       {activeTab === 'resume' && <TabResume site={site} />}
       {activeTab === 'conso' && <TabStub title="Consommation" text="Courbes de charge, historique et benchmark à venir." />}
-      {activeTab === 'factures' && <SiteBillingMini siteId={site.id} />}
       {activeTab === 'factures' && (
-        <div className="flex justify-end mt-2">
-          <button
-            className="text-xs text-amber-600 hover:underline"
-            onClick={() => navigate(`/billing?site_id=${site.id}`)}
-          >
-            Voir timeline complète
-          </button>
+        <div className="space-y-4 pt-6">
+          <SiteContractsSummary siteId={site.id} />
+          <SiteBillingMini siteId={site.id} />
+          <div className="flex justify-end mt-2 gap-2">
+            <Button variant="outline" size="sm"
+              onClick={() => navigate(`/achat-assistant?site_id=${site.id}`)}>
+              Créer scénario d&apos;achat
+            </Button>
+            <button
+              className="text-xs text-amber-600 hover:underline"
+              onClick={() => navigate(`/billing?site_id=${site.id}`)}
+            >
+              Voir timeline complète
+            </button>
+          </div>
         </div>
       )}
+      {activeTab === 'reconciliation' && <TabReconciliation site={site} />}
       {activeTab === 'conformite' && <TabConformite site={site} />}
       {activeTab === 'actions' && <TabStub title="Actions" text="Plan d'action et suivi des recommandations à venir." />}
 
