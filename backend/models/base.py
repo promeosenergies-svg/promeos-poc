@@ -4,7 +4,7 @@ Configuration de base pour tous les modeles de donnees
 """
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, DateTime, String
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Base commune pour tous les modeles
 Base = declarative_base()
@@ -63,7 +63,7 @@ class SoftDeleteMixin:
 
     def soft_delete(self, by=None, reason=None):
         """Marque l'objet comme supprime."""
-        self.deleted_at = datetime.utcnow()
+        self.deleted_at = datetime.now(timezone.utc)
         self.deleted_by = by
         self.delete_reason = reason
 

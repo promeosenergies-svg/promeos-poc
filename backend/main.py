@@ -57,10 +57,15 @@ app = FastAPI(
 # Request context middleware (request_id + timing) — must be added before CORS
 app.add_middleware(RequestContextMiddleware)
 
-# Configuration CORS
+# Configuration CORS — restrict origins in production
+_CORS_ORIGINS = os.environ.get(
+    "PROMEOS_CORS_ORIGINS",
+    "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173",
+).split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

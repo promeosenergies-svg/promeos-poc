@@ -7,7 +7,7 @@ import {
   Filter,
 } from 'lucide-react';
 
-const API = 'http://127.0.0.1:8001';
+const API = '';
 
 const STATUT_BADGE = {
   non_conforme: { label: 'Non conforme', bg: 'bg-red-100', text: 'text-red-800' },
@@ -38,7 +38,7 @@ const ActionPlan = () => {
     fetch(`${API}/api/guidance/action-plan?${params}`)
       .then(r => r.json())
       .then(json => { setData(json); setLoading(false); })
-      .catch(() => setLoading(false));
+      .catch(e => { console.error('[ActionPlan] fetch error:', e); setLoading(false); });
   }, [selectedSiteId]);
 
   useEffect(() => {
@@ -46,7 +46,7 @@ const ActionPlan = () => {
     fetch(`${API}/api/portefeuilles`)
       .then(r => r.json())
       .then(json => setPortefeuilles(json.portefeuilles || []))
-      .catch(() => {});
+      .catch(e => console.error('[ActionPlan] portefeuilles error:', e));
   }, [selectedPtf, selectedSiteId, fetchPlan]);
 
   const handleFilterChange = (ptfId) => {

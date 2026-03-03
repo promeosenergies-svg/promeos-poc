@@ -165,7 +165,7 @@ function PaymentInfoCard({ siteId }) {
     let stale = false;
     getSitePaymentInfo(siteId)
       .then((data) => { if (!stale) setInfo(data); })
-      .catch(() => {})
+      .catch(e => console.error('[Site360] payment info error:', e))
       .finally(() => { if (!stale) setLoading(false); });
     return () => { stale = true; };
   }, [siteId]);
@@ -213,7 +213,7 @@ function EvidenceSummaryModal({ site, onClose }) {
   useEffect(() => {
     getReconciliationEvidenceSummary(site.id)
       .then(setSummary)
-      .catch(() => {})
+      .catch(e => console.error('[Site360] evidence summary error:', e))
       .finally(() => setLoading(false));
   }, [site.id]);
 
@@ -310,7 +310,7 @@ function TabReconciliation({ site }) {
     setLoading(true);
     getReconciliation(site.id)
       .then((data) => setRecon(data))
-      .catch(() => {})
+      .catch(e => console.error('[Site360] reconciliation error:', e))
       .finally(() => setLoading(false));
   };
 

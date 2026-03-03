@@ -5,7 +5,7 @@ Endpoints: create, sync, list, summary, detail, patch, batches, export CSV.
 import csv
 import hashlib
 import io
-from datetime import date as dt_date, datetime
+from datetime import date as dt_date, datetime, timezone
 from datetime import timedelta
 from typing import List, Optional
 
@@ -255,7 +255,7 @@ def create_action(
     # Collision detection: similar title + same site within 24h
     warning = None
     similar_id = None
-    cutoff = datetime.utcnow() - timedelta(hours=24)
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
     similar = (
         db.query(ActionItem)
         .filter(
@@ -270,7 +270,7 @@ def create_action(
         similar_id = similar.id
 
     # Generate source_key for uniqueness
-    source_id = data.source_id or f"manual_{int(datetime.utcnow().timestamp())}"
+    source_id = data.source_id or f"manual_{int(datetime.now(timezone.utc).timestamp())}"
     source_key = hashlib.sha256(
         f"{data.title}:{source_id}".encode()
     ).hexdigest()[:16]
@@ -464,7 +464,7 @@ def patch_action(
             _create_event(db, action.id, "status_change", old_value=old_status, new_value=data.status)
             # Set closed_at when action is marked done
             if new_status == ActionStatus.DONE and action.closed_at is None:
-                action.closed_at = datetime.utcnow()
+                action.closed_at = datetime.now(timezone.utc)
 
     if data.owner is not None:
         old_owner = action.owner

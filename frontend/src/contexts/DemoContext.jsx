@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 
 const DemoContext = createContext();
 
-const API = 'http://127.0.0.1:8001';
+const API = '';
 
 export function DemoProvider({ children }) {
   const [demoEnabled, setDemoEnabled] = useState(true);

@@ -38,7 +38,7 @@ export default function SitePicker({ sites, selectedIds, onChange, maxSelection 
 
   // Load collections on mount
   useEffect(() => {
-    getEmsCollections().then(setCollections).catch(() => {});
+    getEmsCollections().then(setCollections).catch(e => console.error('[SitePicker] collections error:', e));
   }, []);
 
   // Close on outside click — check both trigger area and portaled dropdown

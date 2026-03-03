@@ -2,9 +2,10 @@
 PROMEOS - IAM Service (Auth, JWT, Permissions, Scopes)
 Sprint 11: IAM ULTIMATE
 """
+import logging
 import os
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import bcrypt
@@ -17,6 +18,8 @@ from models import (
     UserRole, ScopeLevel,
 )
 
+_logger = logging.getLogger("promeos.iam")
+
 # ========================================
 # Config
 # ========================================
@@ -24,6 +27,12 @@ from models import (
 JWT_SECRET = os.environ.get("PROMEOS_JWT_SECRET", "dev-secret-change-me-in-prod")
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRE_MINUTES = 30
+
+if JWT_SECRET == "dev-secret-change-me-in-prod":
+    _logger.warning(
+        "PROMEOS_JWT_SECRET is using the default dev value. "
+        "Set PROMEOS_JWT_SECRET env var for production."
+    )
 
 # Sentinel for "all modules"
 ALL = "__ALL__"
@@ -101,13 +110,13 @@ def verify_password(plain: str, hashed: str) -> bool:
 # ========================================
 
 def create_access_token(user_id: int, org_id: int, role: str, expires_delta: Optional[timedelta] = None) -> str:
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=JWT_EXPIRE_MINUTES))
+    expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=JWT_EXPIRE_MINUTES))
     payload = {
         "sub": str(user_id),
         "org_id": org_id,
         "role": role,
         "exp": expire,
-        "iat": datetime.utcnow(),
+        "iat": datetime.now(timezone.utc),
     }
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
@@ -164,12 +173,13 @@ def get_scoped_site_ids(db: Session, user_org_role: UserOrgRole) -> list[int]:
     if not scopes:
         return []
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
+    now_naive = now.replace(tzinfo=None)
     site_ids = set()
 
     for scope in scopes:
-        # Check expiration
-        if scope.expires_at and scope.expires_at < now:
+        # Check expiration (handle both naive and aware datetimes from DB)
+        if scope.expires_at and scope.expires_at < now_naive:
             continue
 
         if scope.scope_level == ScopeLevel.ORG:
@@ -224,7 +234,8 @@ def can(
     if not uors:
         return {"allowed": False, "reason": "No role assigned", "matched_assignments": []}
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
+    now_naive = now.replace(tzinfo=None)
     matched = []
 
     for uor in uors:
@@ -247,7 +258,7 @@ def can(
         ).all()
 
         for scope in scopes:
-            if scope.expires_at and scope.expires_at < now:
+            if scope.expires_at and scope.expires_at < now_naive:
                 continue
 
             # Resolve the requested scope_type/scope_id against user's scopes
@@ -336,7 +347,7 @@ def get_accessible_entity_ids(db: Session, user_org_role: UserOrgRole) -> list[i
     if not scopes:
         return []
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     entity_ids = set()
 
     for scope in scopes:

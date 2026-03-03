@@ -3,7 +3,7 @@ PROMEOS — V99 Contract Renewal Radar Routes
 Grand public endpoints for DAF/Direction Achats.
 """
 import hashlib
-from datetime import date, timedelta, datetime
+from datetime import date, timedelta, datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -153,6 +153,6 @@ def get_scenario_summary(
         "site_name": site.nom if site else f"Site {ct.site_id}",
         "supplier_name": ct.supplier_name,
         "end_date": ct.end_date.isoformat() if ct.end_date else None,
-        "generated_at": datetime.utcnow().isoformat(),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
         "scenarios": scenarios["scenarios"],
     }

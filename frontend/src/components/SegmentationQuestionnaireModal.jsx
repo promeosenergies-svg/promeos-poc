@@ -22,6 +22,7 @@ export default function SegmentationQuestionnaireModal({ onClose, onComplete }) 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  const [submitError, setSubmitError] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -52,12 +53,14 @@ export default function SegmentationQuestionnaireModal({ onClose, onComplete }) 
 
   const handleSubmit = async () => {
     setSubmitting(true);
+    setSubmitError(false);
     try {
       const result = await submitSegmentationAnswers(answers);
       if (onComplete) onComplete(result);
       onClose();
-    } catch {
-      // silently fail — user can retry
+    } catch (err) {
+      console.error('[SegmentationModal] Erreur soumission:', err);
+      setSubmitError(true);
     } finally {
       setSubmitting(false);
     }
@@ -134,6 +137,9 @@ export default function SegmentationQuestionnaireModal({ onClose, onComplete }) 
                 </div>
               ))}
             </>
+          )}
+          {submitError && (
+            <p className="text-xs text-red-600 mt-2">Erreur lors de l'envoi. Reessayez.</p>
           )}
         </div>
 

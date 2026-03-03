@@ -162,7 +162,7 @@ export default function BillIntelPage() {
   useEffect(() => {
     getSites({ limit: 200 })
       .then(data => setSites(Array.isArray(data?.sites) ? data.sites : []))
-      .catch(() => {});
+      .catch(e => console.error('[BillIntelPage] sites error:', e));
   }, []);
 
   useEffect(() => {

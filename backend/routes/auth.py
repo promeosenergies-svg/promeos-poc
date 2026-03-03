@@ -5,7 +5,7 @@ POST /api/auth/login, /refresh, /logout, /switch-org
 GET  /api/auth/me
 PUT  /api/auth/password
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -99,7 +99,7 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No org assigned")
 
     # Update last_login
-    user.last_login = datetime.utcnow()
+    user.last_login = datetime.now(timezone.utc)
     log_audit(db, user.id, "login")
     db.commit()
 
@@ -197,6 +197,9 @@ def change_password(
 
     if not verify_password(req.current_password, user.hashed_password):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password incorrect")
+
+    if len(req.new_password) < 8:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Password must be at least 8 characters")
 
     user.hashed_password = hash_password(req.new_password)
     log_audit(db, user.id, "password_change")

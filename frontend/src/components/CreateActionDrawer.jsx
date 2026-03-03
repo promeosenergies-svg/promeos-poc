@@ -153,16 +153,11 @@ export default function CreateActionDrawer({
         track('action_create', { type: form.type, source: sourceType, backend: true });
         onSave?.(result);
       }
-    } catch {
-      // Fallback: emit local action for graceful degradation
-      const action = {
-        ...form,
-        id: Date.now(),
-        impact_eur: Number(form.impact_eur) || 0,
-        created_at: new Date().toISOString(),
-      };
-      track('action_create', { type: form.type, source: sourceType, backend: false });
-      onSave?.(action);
+    } catch (err) {
+      console.error('[CreateActionDrawer] API error:', err);
+      track('action_create_error', { type: form.type, source: sourceType });
+      setSaving(false);
+      return; // Stay open so user can retry
     } finally {
       setSaving(false);
     }

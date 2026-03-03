@@ -3,10 +3,13 @@ PROMEOS - Configuration de la base de données
 Supports SQLite (default, dev) and PostgreSQL (production).
 Reads DATABASE_URL from environment (.env or system env var).
 """
+import logging
 import os
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
+_logger = logging.getLogger("promeos.db")
 
 load_dotenv()  # Load .env file if present
 
@@ -22,7 +25,7 @@ if _is_sqlite:
     db_path = DATABASE_URL.replace("sqlite:///", "")
     os.makedirs(os.path.dirname(os.path.abspath(db_path)), exist_ok=True)
 
-print(f"[DB] Base de donnees PROMEOS : {DATABASE_URL.split('://')[0]}://...")
+_logger.info("Base de donnees PROMEOS : %s://...", DATABASE_URL.split("://")[0])
 
 # Engine configuration — database-specific
 _engine_kwargs = {

@@ -7,13 +7,15 @@ import os
 import shutil
 from datetime import datetime
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from database import get_db, engine
 from models import Base
 
 logger = logging.getLogger(__name__)
+
+DEMO_MODE = os.environ.get("PROMEOS_DEMO_MODE", "false").lower() == "true"
 
 router = APIRouter(prefix="/api/dev", tags=["Dev Tools"])
 
@@ -27,16 +29,22 @@ def reset_db(db: Session = Depends(get_db)):
     2. Drop all tables + recreate schema from models.
     3. Run demo seed.
     Returns status + backup path.
+    Only available in DEMO_MODE.
     """
+    if not DEMO_MODE:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="reset_db is only available in DEMO_MODE",
+        )
+
     db_path = engine.url.database
     backup_path = None
 
-    # 1. Backup
+    # 1. Backup (close session first to release file lock)
     if db_path and os.path.exists(db_path):
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
         backup_path = f"{db_path}.bak_{ts}"
         try:
-            db.close()
             shutil.copy2(db_path, backup_path)
             logger.info("DB backup: %s", backup_path)
         except Exception as exc:
