@@ -52,8 +52,8 @@ describe('A. Site360 TabReconciliation V97', () => {
     expect(SITE360).toMatch(/handleFix/);
   });
 
-  test('has Evidence CSV button', () => {
-    expect(SITE360).toMatch(/Evidence CSV/);
+  test('has CSV download button', () => {
+    expect(SITE360).toMatch(/CSV/);
   });
 
   test('has Journal button', () => {

@@ -1,8 +1,9 @@
 """
-PROMEOS — V96+V97 Reconciliation 3 voies + Resolution Engine
+PROMEOS — V96+V97+V98 Reconciliation 3 voies + Resolution Engine + Guidance Layer
 Compteur (PRM/PCE) ↔ Contrat actif ↔ Factures.
 Computed on-read, not persisted.
 V97: fix_actions[] per check + fixer functions + audit trail.
+V98: Translation dictionary + next_best_action + evidence summary.
 """
 import json
 from datetime import date, datetime, timedelta
@@ -17,6 +18,88 @@ from models import (
     PaymentRuleLevel,
 )
 from models.billing_models import EnergyInvoice
+
+
+# ========================================
+# V98: Translation dictionary (business language)
+# ========================================
+
+CHECK_TRANSLATION = {
+    "has_delivery_points": {
+        "title_simple": "Compteurs rattachés",
+        "why_it_matters": "Sans compteur (PRM/PCE), impossible de suivre votre consommation ni vérifier vos factures.",
+        "impact_label": "Conso",
+    },
+    "has_active_contract": {
+        "title_simple": "Contrat en cours",
+        "why_it_matters": "Sans contrat actif, votre site n'est pas couvert — risque de surfacturation ou de coupure.",
+        "impact_label": "Achats",
+    },
+    "has_recent_invoices": {
+        "title_simple": "Factures à jour",
+        "why_it_matters": "Des factures manquantes empêchent le contrôle budgétaire et la détection d'anomalies.",
+        "impact_label": "Facture",
+    },
+    "period_coherence": {
+        "title_simple": "Dates cohérentes",
+        "why_it_matters": "Des décalages contrat/factures peuvent masquer des erreurs de facturation.",
+        "impact_label": "Facture",
+    },
+    "energy_type_match": {
+        "title_simple": "Type énergie aligné",
+        "why_it_matters": "Un décalage élec/gaz entre compteurs et contrats fausse vos analyses.",
+        "impact_label": "Conso",
+    },
+    "has_payment_rule": {
+        "title_simple": "Circuit de paiement",
+        "why_it_matters": "Sans règle de paiement, les factures ne sont pas imputées au bon centre de coût.",
+        "impact_label": "Facture",
+    },
+}
+
+ACTION_TRANSLATION = {
+    "create_delivery_point": {
+        "label_simple": "Rattacher un compteur",
+        "confirmation": "Un point de livraison va être créé pour ce site.",
+    },
+    "extend_contract": {
+        "label_simple": "Prolonger le contrat",
+        "confirmation": "La date de fin du contrat sera étendue de 12 mois.",
+    },
+    "create_contract": {
+        "label_simple": "Créer un contrat",
+        "confirmation": "Un nouveau contrat énergie sera associé à ce site.",
+    },
+    "adjust_contract_dates": {
+        "label_simple": "Recaler les dates",
+        "confirmation": "Les dates du contrat seront ajustées pour couvrir vos factures.",
+    },
+    "align_energy_type": {
+        "label_simple": "Corriger le type énergie",
+        "confirmation": "Le type énergie des contrats sera aligné avec vos compteurs.",
+    },
+    "create_payment_rule": {
+        "label_simple": "Configurer le paiement",
+        "confirmation": "Une règle de paiement sera créée pour ce site.",
+    },
+    "navigate_import": {
+        "label_simple": "Importer des factures",
+        "confirmation": "Vous allez être redirigé vers l'import de factures.",
+    },
+}
+
+# Priority order: fail checks first, then warn, by this impact ranking
+_CHECK_PRIORITY = [
+    "has_active_contract",      # Achats — most critical
+    "has_delivery_points",      # Conso — foundational
+    "has_recent_invoices",      # Facture — budget control
+    "has_payment_rule",         # Facture — cost allocation
+    "period_coherence",         # Facture — alignment
+    "energy_type_match",        # Conso — accuracy
+]
+
+# Score gain approximation: each check = 1/6 = ~17 points
+_SCORE_GAIN_PER_CHECK = 17
 
 
 def reconcile_site(db: Session, site_id: int) -> dict:
@@ -239,6 +322,17 @@ def reconcile_site(db: Session, site_id: int) -> dict:
             ],
         })
 
+    # Enrich checks with V98 translation
+    for check in checks:
+        tr = CHECK_TRANSLATION.get(check["id"], {})
+        check["title_simple"] = tr.get("title_simple", check["label_fr"])
+        check["why_it_matters"] = tr.get("why_it_matters", "")
+        check["impact_label"] = tr.get("impact_label", "")
+        for fa in check.get("fix_actions", []):
+            atr = ACTION_TRANSLATION.get(fa["action"], {})
+            fa["label_simple"] = atr.get("label_simple", fa.get("label_fr", ""))
+            fa["confirmation"] = atr.get("confirmation", "")
+
     # Compute score & status
     ok_count = sum(1 for c in checks if c["status"] == "ok")
     score = int(100 * ok_count / len(checks)) if checks else 0
@@ -252,12 +346,113 @@ def reconcile_site(db: Session, site_id: int) -> dict:
         "fail": "Réconciliation incomplète — données manquantes",
     }
 
+    # V98: Compute next_best_action
+    nba = _compute_next_best_action(checks, score)
+
     return {
         "site_id": site_id,
         "status": status,
         "score": score,
         "checks": checks,
         "summary_fr": summary_map[status],
+        "next_best_action": nba,
+    }
+
+
+def _compute_next_best_action(checks: list, current_score: int) -> dict | None:
+    """V98: Pick the most impactful fixable check as NBA."""
+    # Collect non-ok checks that have fix_actions, ordered by priority
+    candidates = []
+    for check in checks:
+        if check["status"] == "ok":
+            continue
+        if not check.get("fix_actions"):
+            continue
+        # Priority: fail > warn, then by _CHECK_PRIORITY order
+        severity_rank = 0 if check["status"] == "fail" else 1
+        try:
+            priority_rank = _CHECK_PRIORITY.index(check["id"])
+        except ValueError:
+            priority_rank = 99
+        candidates.append((severity_rank, priority_rank, check))
+
+    if not candidates:
+        return None
+
+    candidates.sort(key=lambda x: (x[0], x[1]))
+    _, _, best_check = candidates[0]
+    best_action = best_check["fix_actions"][0]
+
+    return {
+        "check_id": best_check["id"],
+        "label": best_check.get("title_simple", best_check["label_fr"]),
+        "reason": best_check.get("why_it_matters", best_check.get("reason_fr", "")),
+        "action": best_action["action"],
+        "action_label": best_action.get("label_simple", best_action.get("label_fr", "")),
+        "confirmation": best_action.get("confirmation", ""),
+        "expected_score_gain": _SCORE_GAIN_PER_CHECK,
+        "endpoint": "reconciliation/fix",
+        "payload": {"action": best_action["action"], "params": best_action.get("params", {})},
+    }
+
+
+def get_evidence_summary(db: Session, site_id: int) -> dict:
+    """V98 Phase D: Generate 1-page evidence summary."""
+    recon = reconcile_site(db, site_id)
+    logs = get_fix_logs(db, site_id)
+
+    site = db.query(Site).filter(Site.id == site_id).first()
+    site_name = site.nom if site else f"Site {site_id}"
+
+    # Top 3 checks (prioritize non-ok)
+    non_ok = [c for c in recon["checks"] if c["status"] != "ok"]
+    ok_checks = [c for c in recon["checks"] if c["status"] == "ok"]
+    key_checks = (non_ok + ok_checks)[:3]
+
+    # 3 most recent applied fixes
+    recent_fixes = logs[:3]
+
+    # 3 remaining actions (from non-ok checks with fix_actions)
+    remaining = []
+    for c in recon["checks"]:
+        if c["status"] != "ok" and c.get("fix_actions"):
+            for fa in c["fix_actions"]:
+                remaining.append({
+                    "check_id": c["id"],
+                    "action": fa["action"],
+                    "label": fa.get("label_simple", fa.get("label_fr", "")),
+                })
+            if len(remaining) >= 3:
+                break
+    remaining = remaining[:3]
+
+    return {
+        "site_id": site_id,
+        "site_name": site_name,
+        "generated_at": datetime.utcnow().isoformat(),
+        "score": recon["score"],
+        "status": recon["status"],
+        "summary_fr": recon["summary_fr"],
+        "key_checks": [
+            {
+                "id": c["id"],
+                "title": c.get("title_simple", c["label_fr"]),
+                "status": c["status"],
+                "reason": c["reason_fr"],
+                "impact": c.get("impact_label", ""),
+            }
+            for c in key_checks
+        ],
+        "recent_fixes": [
+            {
+                "action": f["action"],
+                "check_id": f["check_id"],
+                "applied_at": f.get("applied_at", ""),
+            }
+            for f in recent_fixes
+        ],
+        "remaining_actions": remaining,
+        "next_best_action": recon.get("next_best_action"),
     }
 
 

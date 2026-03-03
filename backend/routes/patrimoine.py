@@ -2350,6 +2350,20 @@ def get_reconciliation_evidence(
     return get_evidence_pack(db, site_id)
 
 
+@router.get("/sites/{site_id}/reconciliation/evidence/summary")
+def get_reconciliation_evidence_summary(
+    site_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    auth: Optional[AuthContext] = Depends(get_optional_auth),
+):
+    """V98: Get 1-page evidence summary for a site's reconciliation."""
+    from services.reconciliation_service import get_evidence_summary
+    org_id = _get_org_id(request, auth, db)
+    _load_site_with_org_check(db, site_id, org_id)
+    return get_evidence_summary(db, site_id)
+
+
 @router.get("/sites/{site_id}/reconciliation/evidence/csv")
 def get_reconciliation_evidence_csv(
     site_id: int,

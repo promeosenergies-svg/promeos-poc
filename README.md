@@ -72,7 +72,8 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 > | V95 Patrimoine World-Class Closure (real API anomalies, import legacy+hidden, backend hardening) | Stable -- V95 |
 > | V96 Patrimoine Unique Monde — Matrice Facture/Payeur/CC, Reconciliation 3 voies, Contrats achats-ready | Stable -- V96 |
 > | V97 Resolution Engine — 1-click fix, audit trail, Portfolio Reconciliation triage, Evidence Pack CSV | Stable -- V97 |
-> | Suite de tests automatises | **4 208 frontend + 2 400+ backend, 0 regression** |
+> | V98 Grand Public Guidance Layer — Simple/Expert mode, FR translations, Next Best Action, Evidence 1-page | Stable -- V98 |
+> | Suite de tests automatises | **4 257 frontend + 2 400+ backend, 0 regression** |
 
 > **Disclaimer**
 >
@@ -484,6 +485,7 @@ Champs cles du Site :
 | `GET` | `/api/patrimoine/sites/{id}/reconciliation/evidence/csv` | V97: Evidence pack export CSV |
 | `GET` | `/api/patrimoine/portfolio/reconciliation` | Reconciliation aggregee portfolio (ok/warn/fail par site) |
 | `GET` | `/api/patrimoine/portfolio/reconciliation/evidence/csv` | V97: Export portfolio reconciliation CSV |
+| `GET` | `/api/patrimoine/sites/{id}/reconciliation/evidence/summary` | V98: Evidence 1-page summary (score, key checks, NBA) |
 | `GET` | `/health` | Health check |
 
 Documentation Swagger complete : `http://localhost:8001/docs`

@@ -8,7 +8,7 @@ import {
   ArrowLeft, ShieldCheck, Zap, BadgeEuro, AlertTriangle,
   MapPin, Ruler,
   BookOpen, ChevronDown, ChevronUp, Clock, ExternalLink, ClipboardCheck,
-  CheckCircle, XCircle, Download, History, Wrench,
+  CheckCircle, XCircle, Download, History, Wrench, Eye, FileText, Sparkles, X,
 } from 'lucide-react';
 import { Card, CardBody, Badge, Button, Tabs, EmptyState, TrustBadge } from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td } from '../ui';
@@ -17,6 +17,7 @@ import { useScope } from '../contexts/ScopeContext';
 import {
   applyKB, getPatrimoineAnomalies, getSitePaymentInfo, getReconciliation,
   applyReconciliationFix, getReconciliationHistory, getReconciliationEvidenceCsv,
+  getReconciliationEvidenceSummary,
 } from '../services/api';
 import { getStatusBadgeProps, SEV_BADGE } from '../lib/constants';
 import IntakeWizard from '../components/IntakeWizard';
@@ -197,6 +198,95 @@ const RECON_STATUS_ICON = {
 };
 const RECON_STATUS_BADGE = { ok: 'success', warn: 'warning', fail: 'error' };
 
+function EvidenceSummaryModal({ site, onClose }) {
+  const [summary, setSummary] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getReconciliationEvidenceSummary(site.id)
+      .then(setSummary)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [site.id]);
+
+  const STATUS_LABEL = { ok: 'Conforme', warn: 'Attention', fail: 'À corriger' };
+  const STATUS_COLOR = { ok: 'text-green-700 bg-green-50', warn: 'text-amber-700 bg-amber-50', fail: 'text-red-700 bg-red-50' };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-6 py-4 border-b">
+          <h2 className="font-bold text-gray-900">Résumé 1 page — {site.nom}</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+        </div>
+        {loading ? (
+          <div className="p-6"><SkeletonCard /></div>
+        ) : !summary ? (
+          <div className="p-6 text-sm text-gray-500">Impossible de charger le résumé.</div>
+        ) : (
+          <div className="p-6 space-y-5 text-sm print:text-xs" id="evidence-summary-print">
+            <div className="flex items-center gap-4">
+              <div className={`px-3 py-1 rounded-full font-bold ${STATUS_COLOR[summary.status] || ''}`}>
+                {STATUS_LABEL[summary.status] || summary.status}
+              </div>
+              <div className="flex-1">
+                <div className="w-full bg-gray-200 rounded-full h-3">
+                  <div className={`h-3 rounded-full ${summary.score >= 80 ? 'bg-green-500' : summary.score >= 50 ? 'bg-amber-400' : 'bg-red-500'}`} style={{ width: `${summary.score}%` }} />
+                </div>
+              </div>
+              <span className="font-bold text-gray-700">{summary.score}%</span>
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-gray-800 mb-2">Points clés</h3>
+              {summary.key_checks.map((c) => (
+                <div key={c.id} className="flex items-center gap-2 py-1">
+                  {c.status === 'ok' ? <CheckCircle size={14} className="text-green-600" /> : c.status === 'fail' ? <XCircle size={14} className="text-red-600" /> : <AlertTriangle size={14} className="text-amber-500" />}
+                  <span className="font-medium">{c.title}</span>
+                  {c.impact && <Badge status="info">{c.impact}</Badge>}
+                </div>
+              ))}
+            </div>
+
+            {summary.recent_fixes.length > 0 && (
+              <div>
+                <h3 className="font-semibold text-gray-800 mb-2">Corrections récentes</h3>
+                {summary.recent_fixes.map((f, i) => (
+                  <div key={i} className="flex items-center gap-2 py-1 text-gray-600">
+                    <Wrench size={12} className="text-blue-500" />
+                    <span>{f.action}</span>
+                    {f.applied_at && <span className="text-xs text-gray-400 ml-auto">{new Date(f.applied_at).toLocaleDateString('fr-FR')}</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {summary.remaining_actions.length > 0 && (
+              <div>
+                <h3 className="font-semibold text-gray-800 mb-2">Actions restantes</h3>
+                {summary.remaining_actions.map((a, i) => (
+                  <div key={i} className="flex items-center gap-2 py-1 text-gray-600">
+                    <AlertTriangle size={12} className="text-amber-500" />
+                    <span>{a.label}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="pt-2 border-t text-xs text-gray-400">
+              Généré le {new Date(summary.generated_at).toLocaleString('fr-FR')}
+            </div>
+          </div>
+        )}
+        <div className="px-6 py-3 border-t flex justify-end gap-2">
+          <Button size="sm" variant="outline" onClick={() => window.print()}>Imprimer</Button>
+          <Button size="sm" onClick={onClose}>Fermer</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TabReconciliation({ site }) {
   const [recon, setRecon] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -204,6 +294,9 @@ function TabReconciliation({ site }) {
   const [toast, setToast] = useState(null);
   const [history, setHistory] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
+  const [mode, setMode] = useState('simple');
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [scoreGain, setScoreGain] = useState(null);
 
   const loadRecon = () => {
     setLoading(true);
@@ -217,16 +310,27 @@ function TabReconciliation({ site }) {
 
   const handleFix = async (checkId, action) => {
     setFixingAction(action.action);
+    const prevScore = recon?.score || 0;
     try {
       await applyReconciliationFix(site.id, { action: action.action, params: action.params || {} });
-      setToast({ type: 'success', message: `Correction appliquée : ${action.label_fr}` });
-      loadRecon();
+      setToast({ type: 'success', message: `Correction appliquée : ${action.label_simple || action.label_fr}` });
+      const fresh = await getReconciliation(site.id);
+      setRecon(fresh);
+      const gain = fresh.score - prevScore;
+      if (gain > 0) setScoreGain(gain);
+      setTimeout(() => setScoreGain(null), 4000);
     } catch (e) {
       setToast({ type: 'error', message: e?.response?.data?.detail || 'Erreur lors de la correction' });
     } finally {
       setFixingAction(null);
       setTimeout(() => setToast(null), 4000);
     }
+  };
+
+  const handleNbaFix = async () => {
+    const nba = recon?.next_best_action;
+    if (!nba) return;
+    await handleFix(nba.check_id, { action: nba.action, params: nba.payload?.params || {}, label_simple: nba.action_label, label_fr: nba.action_label });
   };
 
   const handleDownloadCsv = async () => {
@@ -253,112 +357,251 @@ function TabReconciliation({ site }) {
   if (loading) return <div className="pt-6"><SkeletonCard /></div>;
   if (!recon) return <EmptyState title="Erreur" text="Impossible de charger la réconciliation." />;
 
+  const nonOkChecks = (recon.checks || []).filter((c) => c.status !== 'ok');
+  const nba = recon.next_best_action;
+
   return (
     <div className="space-y-4 pt-6">
       {/* Toast */}
       {toast && (
         <div className={`px-4 py-2 rounded-lg text-sm font-medium ${toast.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
           {toast.message}
+          {scoreGain > 0 && <span className="ml-2 font-bold text-green-700">Score +{scoreGain}</span>}
         </div>
       )}
 
-      {/* Header */}
-      <Card>
-        <CardBody>
-          <div className="flex items-center gap-4">
-            <Badge status={RECON_STATUS_BADGE[recon.status] || 'info'} className="text-base px-3 py-1">
-              {recon.status === 'ok' ? 'OK' : recon.status === 'warn' ? 'Attention' : 'Incomplet'}
-            </Badge>
-            <div className="flex-1">
-              <div className="w-full bg-gray-200 rounded-full h-3">
-                <div
-                  className={`h-3 rounded-full ${recon.score >= 80 ? 'bg-green-500' : recon.score >= 50 ? 'bg-amber-400' : 'bg-red-500'}`}
-                  style={{ width: `${recon.score}%` }}
-                />
-              </div>
-            </div>
-            <span className="text-sm font-bold text-gray-700">{recon.score}%</span>
-          </div>
-          <p className="text-sm text-gray-600 mt-2">{recon.summary_fr}</p>
-          <div className="flex gap-2 mt-3">
-            <Button size="sm" variant="outline" onClick={handleDownloadCsv}>
-              <Download size={14} className="mr-1" /> Evidence CSV
-            </Button>
-            <Button size="sm" variant="outline" onClick={loadHistory}>
-              <History size={14} className="mr-1" /> Journal
-            </Button>
-          </div>
-        </CardBody>
-      </Card>
-
-      {/* Checks list with fix_actions */}
-      <Card>
-        <div className="px-5 py-3 border-b border-gray-100">
-          <h3 className="font-semibold text-gray-800">Vérifications</h3>
+      {/* Mode switch */}
+      <div className="flex items-center justify-between">
+        <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
+          <button
+            onClick={() => setMode('simple')}
+            className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${mode === 'simple' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+          >
+            Simple
+          </button>
+          <button
+            onClick={() => setMode('expert')}
+            className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${mode === 'expert' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+          >
+            Expert
+          </button>
         </div>
-        <div className="divide-y divide-gray-100">
-          {(recon.checks || []).map((check) => {
-            const cfg = RECON_STATUS_ICON[check.status] || RECON_STATUS_ICON.warn;
-            const Icon = cfg.icon;
-            return (
-              <div key={check.id} className="px-5 py-3 flex items-start gap-3">
-                <Icon size={18} className={cfg.color + ' mt-0.5 shrink-0'} />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-800">{check.label_fr}</p>
-                  <p className="text-xs text-gray-500">{check.reason_fr}</p>
-                  {check.suggestion_fr && (
-                    <p className="text-xs text-amber-600 mt-1">{check.suggestion_fr}</p>
-                  )}
-                  {check.fix_actions && check.fix_actions.length > 0 && (
-                    <div className="flex gap-2 mt-2">
-                      {check.fix_actions.map((fa) => (
-                        <Button
-                          key={fa.action}
-                          size="sm"
-                          variant="outline"
-                          disabled={fixingAction === fa.action}
-                          onClick={() => handleFix(check.id, fa)}
-                        >
-                          <Wrench size={12} className="mr-1" />
-                          {fixingAction === fa.action ? 'En cours...' : fa.label_fr}
-                        </Button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </Card>
-
-      {/* Fix history journal */}
-      {showHistory && (
-        <Card>
-          <div className="px-5 py-3 border-b border-gray-100">
-            <h3 className="font-semibold text-gray-800">Journal des corrections</h3>
-          </div>
-          {(!history || history.length === 0) ? (
-            <div className="px-5 py-4 text-sm text-gray-500">Aucune correction appliquée</div>
-          ) : (
-            <div className="divide-y divide-gray-100">
-              {history.map((log) => (
-                <div key={log.id} className="px-5 py-3 flex items-center gap-3 text-sm">
-                  <Wrench size={14} className="text-blue-500 shrink-0" />
-                  <div className="flex-1">
-                    <span className="font-medium">{log.action}</span>
-                    <span className="text-gray-400 mx-2">—</span>
-                    <Badge status={RECON_STATUS_BADGE[log.status_before] || 'info'}>{log.status_before}</Badge>
-                    <span className="mx-1">→</span>
-                    <Badge status={RECON_STATUS_BADGE[log.status_after] || 'info'}>{log.status_after}</Badge>
-                  </div>
-                  <span className="text-xs text-gray-400">{log.applied_at ? new Date(log.applied_at).toLocaleString('fr-FR') : ''}</span>
-                </div>
-              ))}
-            </div>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={() => setShowSummaryModal(true)}>
+            <FileText size={14} className="mr-1" /> Résumé 1 page
+          </Button>
+          {mode === 'expert' && (
+            <>
+              <Button size="sm" variant="outline" onClick={handleDownloadCsv}>
+                <Download size={14} className="mr-1" /> CSV
+              </Button>
+              <Button size="sm" variant="outline" onClick={loadHistory}>
+                <History size={14} className="mr-1" /> Journal
+              </Button>
+            </>
           )}
-        </Card>
+        </div>
+      </div>
+
+      {/* ═══ SIMPLE MODE ═══ */}
+      {mode === 'simple' && (
+        <>
+          {/* Bloc 1: État du site */}
+          <Card>
+            <CardBody>
+              <p className="text-xs text-gray-500 uppercase font-semibold mb-2">État du site</p>
+              <div className="flex items-center gap-4">
+                <div className={`text-3xl font-bold ${recon.score >= 80 ? 'text-green-600' : recon.score >= 50 ? 'text-amber-500' : 'text-red-600'}`}>
+                  {recon.score}%
+                </div>
+                <div className="flex-1">
+                  <div className="w-full bg-gray-200 rounded-full h-4">
+                    <div
+                      className={`h-4 rounded-full transition-all ${recon.score >= 80 ? 'bg-green-500' : recon.score >= 50 ? 'bg-amber-400' : 'bg-red-500'}`}
+                      style={{ width: `${recon.score}%` }}
+                    />
+                  </div>
+                </div>
+                <Badge status={RECON_STATUS_BADGE[recon.status] || 'info'} className="text-sm px-3 py-1">
+                  {recon.status === 'ok' ? 'Conforme' : recon.status === 'warn' ? 'Attention' : 'À corriger'}
+                </Badge>
+              </div>
+            </CardBody>
+          </Card>
+
+          {/* Bloc 2: Ce qui bloque (max 3 items) */}
+          {nonOkChecks.length > 0 && (
+            <Card>
+              <div className="px-5 py-3 border-b border-gray-100">
+                <h3 className="font-semibold text-gray-800">Ce qui bloque</h3>
+              </div>
+              <div className="divide-y divide-gray-100">
+                {nonOkChecks.slice(0, 3).map((check) => {
+                  const cfg = RECON_STATUS_ICON[check.status] || RECON_STATUS_ICON.warn;
+                  const Icon = cfg.icon;
+                  return (
+                    <div key={check.id} className="px-5 py-4">
+                      <div className="flex items-start gap-3">
+                        <Icon size={20} className={cfg.color + ' mt-0.5 shrink-0'} />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-semibold text-gray-900">{check.title_simple || check.label_fr}</p>
+                            {check.impact_label && <span className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded">{check.impact_label}</span>}
+                          </div>
+                          <p className="text-sm text-gray-600 mt-1">{check.why_it_matters || check.reason_fr}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
+          )}
+
+          {/* Bloc 3: NBA — Prochaine action recommandée */}
+          {nba && (
+            <Card className="border-l-4 border-l-blue-500">
+              <CardBody>
+                <div className="flex items-start gap-3">
+                  <Sparkles size={20} className="text-blue-500 mt-0.5 shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-xs text-blue-600 uppercase font-semibold">Prochaine action recommandée</p>
+                    <p className="text-sm font-semibold text-gray-900 mt-1">{nba.action_label}</p>
+                    <p className="text-sm text-gray-600 mt-1">{nba.reason}</p>
+                    <p className="text-xs text-green-600 mt-1 font-medium">Score attendu : +{nba.expected_score_gain} points</p>
+                    <Button
+                      size="sm"
+                      className="mt-3"
+                      disabled={fixingAction === nba.action}
+                      onClick={handleNbaFix}
+                    >
+                      <Wrench size={14} className="mr-1" />
+                      {fixingAction === nba.action ? 'En cours...' : 'Appliquer'}
+                    </Button>
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+          )}
+
+          {recon.status === 'ok' && (
+            <Card className="border-l-4 border-l-green-500">
+              <CardBody>
+                <div className="flex items-center gap-3">
+                  <CheckCircle size={24} className="text-green-600" />
+                  <div>
+                    <p className="font-semibold text-green-800">Tout est en ordre</p>
+                    <p className="text-sm text-gray-600">Votre site est entièrement réconcilié. Aucune action requise.</p>
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+          )}
+
+          {/* Link to expert mode */}
+          <button onClick={() => setMode('expert')} className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+            <Eye size={12} /> Voir détails (mode expert)
+          </button>
+        </>
       )}
+
+      {/* ═══ EXPERT MODE ═══ */}
+      {mode === 'expert' && (
+        <>
+          {/* Header */}
+          <Card>
+            <CardBody>
+              <div className="flex items-center gap-4">
+                <Badge status={RECON_STATUS_BADGE[recon.status] || 'info'} className="text-base px-3 py-1">
+                  {recon.status === 'ok' ? 'OK' : recon.status === 'warn' ? 'Attention' : 'Incomplet'}
+                </Badge>
+                <div className="flex-1">
+                  <div className="w-full bg-gray-200 rounded-full h-3">
+                    <div
+                      className={`h-3 rounded-full ${recon.score >= 80 ? 'bg-green-500' : recon.score >= 50 ? 'bg-amber-400' : 'bg-red-500'}`}
+                      style={{ width: `${recon.score}%` }}
+                    />
+                  </div>
+                </div>
+                <span className="text-sm font-bold text-gray-700">{recon.score}%</span>
+              </div>
+              <p className="text-sm text-gray-600 mt-2">{recon.summary_fr}</p>
+            </CardBody>
+          </Card>
+
+          {/* Full checks list with fix_actions */}
+          <Card>
+            <div className="px-5 py-3 border-b border-gray-100">
+              <h3 className="font-semibold text-gray-800">Vérifications</h3>
+            </div>
+            <div className="divide-y divide-gray-100">
+              {(recon.checks || []).map((check) => {
+                const cfg = RECON_STATUS_ICON[check.status] || RECON_STATUS_ICON.warn;
+                const Icon = cfg.icon;
+                return (
+                  <div key={check.id} className="px-5 py-3 flex items-start gap-3">
+                    <Icon size={18} className={cfg.color + ' mt-0.5 shrink-0'} />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-800">{check.label_fr}</p>
+                      <p className="text-xs text-gray-500">{check.reason_fr}</p>
+                      {check.suggestion_fr && (
+                        <p className="text-xs text-amber-600 mt-1">{check.suggestion_fr}</p>
+                      )}
+                      {check.fix_actions && check.fix_actions.length > 0 && (
+                        <div className="flex gap-2 mt-2">
+                          {check.fix_actions.map((fa) => (
+                            <Button
+                              key={fa.action}
+                              size="sm"
+                              variant="outline"
+                              disabled={fixingAction === fa.action}
+                              onClick={() => handleFix(check.id, fa)}
+                            >
+                              <Wrench size={12} className="mr-1" />
+                              {fixingAction === fa.action ? 'En cours...' : fa.label_fr}
+                            </Button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+
+          {/* Fix history journal */}
+          {showHistory && (
+            <Card>
+              <div className="px-5 py-3 border-b border-gray-100">
+                <h3 className="font-semibold text-gray-800">Journal des corrections</h3>
+              </div>
+              {(!history || history.length === 0) ? (
+                <div className="px-5 py-4 text-sm text-gray-500">Aucune correction appliquée</div>
+              ) : (
+                <div className="divide-y divide-gray-100">
+                  {history.map((log) => (
+                    <div key={log.id} className="px-5 py-3 flex items-center gap-3 text-sm">
+                      <Wrench size={14} className="text-blue-500 shrink-0" />
+                      <div className="flex-1">
+                        <span className="font-medium">{log.action}</span>
+                        <span className="text-gray-400 mx-2">—</span>
+                        <Badge status={RECON_STATUS_BADGE[log.status_before] || 'info'}>{log.status_before}</Badge>
+                        <span className="mx-1">→</span>
+                        <Badge status={RECON_STATUS_BADGE[log.status_after] || 'info'}>{log.status_after}</Badge>
+                      </div>
+                      <span className="text-xs text-gray-400">{log.applied_at ? new Date(log.applied_at).toLocaleString('fr-FR') : ''}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+          )}
+        </>
+      )}
+
+      {/* Evidence Summary Modal */}
+      {showSummaryModal && <EvidenceSummaryModal site={site} onClose={() => setShowSummaryModal(false)} />}
     </div>
   );
 }

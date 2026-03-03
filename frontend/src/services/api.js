@@ -1431,4 +1431,7 @@ export const getReconciliationEvidence = (siteId) => api.get(`/patrimoine/sites/
 export const getReconciliationEvidenceCsv = (siteId) => api.get(`/patrimoine/sites/${siteId}/reconciliation/evidence/csv`, { responseType: 'blob' }).then(r => r.data);
 export const getPortfolioReconciliationCsv = (params = {}) => api.get('/patrimoine/portfolio/reconciliation/evidence/csv', { params, responseType: 'blob' }).then(r => r.data);
 
+// V98: Guidance Layer
+export const getReconciliationEvidenceSummary = (siteId) => api.get(`/patrimoine/sites/${siteId}/reconciliation/evidence/summary`).then(r => r.data);
+
 export default api;
