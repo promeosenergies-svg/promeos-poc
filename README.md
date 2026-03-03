@@ -73,6 +73,9 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 > | V96 Patrimoine Unique Monde — Matrice Facture/Payeur/CC, Reconciliation 3 voies, Contrats achats-ready | Stable -- V96 |
 > | V97 Resolution Engine — 1-click fix, audit trail, Portfolio Reconciliation triage, Evidence Pack CSV | Stable -- V97 |
 > | V98 Grand Public Guidance Layer — Simple/Expert mode, FR translations, Next Best Action, Evidence 1-page | Stable -- V98 |
+> | Contract Radar V99 — Tableau de bord renouvellements contrats, scoring risque, timeline echéances | Stable -- V99 |
+> | Offer Pricing V100 — Moteur pricing offres fournisseurs, comparaison grilles, reconciliation factures | Stable -- V100 |
+> | Segmentation V101 — Next Best Step moteur d'action, action creation depuis recommandations, onboarding pilote | Stable -- V101 |
 > | Suite de tests automatises | **4 257 frontend + 2 400+ backend, 0 regression** |
 
 > **Disclaimer**
@@ -100,6 +103,9 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 - **Evidence Rules V90** : `evidenceRules.js` (computeEvidenceRequirement, buildSourceDeepLink, SOURCE_LABELS_FR), close errors structures, idempotency UX. 33 tests.
 - **Billing Health V90** : `billingHealthModel.js` (buildBillingWatchlist, computeBillingHealthState, health trend snapshots). 15 tests.
 - **QA Audit V91 — Golden Contract HELIOS** : Nice passe `a_risque` (4 statuts exerces : conforme/non_conforme/en_cours/a_risque), mockTodos derives via `SITE[id].nom` (zero noms hardcodes), fix Unicode `\u00e9` → `é` sur 6 fichiers (ActivationPage, ImpactDecisionPanel, ScheduleEditor, etc.), 6 tests single-source-of-truth (import `./sites`, no Math.random, no Date.now, todos derived). 38 tests demoCoherence pass.
+- **Contract Radar V99** : tableau de bord renouvellements contrats (scoring risque, timeline echeances, 4 statuts contrat, alertes expiration 90j), endpoint `/api/contracts-radar/dashboard`, 12 tests.
+- **Offer Pricing V100** : moteur pricing offres fournisseurs (comparaison grilles tarifaires, simulation gain/perte, reconciliation factures/offres), endpoint `/api/offer-pricing/*`, 8 tests.
+- **Segmentation V101** : Next Best Step moteur d'action deterministe (cascade priorite : confidence < 50 → questions, contrats expirants → renouvellement, reconciliation fail → debloquer), creation actions depuis recommandations (idempotent, SHA-256), 3 endpoints (`/api/segmentation/next-step`, `/actions/from-recommendation`, `/actions/from-next-step`), SegmentationWidget V101 (Next Step card + top 2 recs + CTA modal/route), onboarding pilote (PatrimoineWizard → recomputeSegmentation, ContractRadarPage nudge banner). 17 tests V101 + 8 bug fixes V100.
 - **3 975 frontend + 2 400+ backend = 6 375+ tests, 0 regression** — pytest backend + vitest frontend, seed HELIOS 5 sites + 60 mois + 10 personas IAM en une commande, demo operationnelle en 2 minutes.
 
 ---
@@ -197,23 +203,23 @@ PROMEOS POC demontre une reponse technique a ces 4 besoins.
 
 ```bash
 # Depuis la racine du projet
-cd backend
 
-# Creer le virtualenv (une seule fois)
-python -m venv venv
+# Creer le virtualenv a la racine (une seule fois)
+python -m venv .venv
 
 # Activer le virtualenv
 # Windows PowerShell :
-.\venv\Scripts\Activate.ps1
+.\.venv\Scripts\Activate.ps1
 # Windows CMD :
-venv\Scripts\activate.bat
+.venv\Scripts\activate.bat
 # Linux/macOS :
-source venv/bin/activate
+source .venv/bin/activate
 
 # Installer les dependances
-pip install -r requirements.txt
+pip install -r backend/requirements.txt
 
 # Copier la config (une seule fois)
+cd backend
 copy .env.example .env
 # Linux/macOS : cp .env.example .env
 
