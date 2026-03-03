@@ -15,6 +15,7 @@ import {
   stagingImport, stagingSummary, stagingRows,
   stagingValidate, stagingFix, stagingAutofix,
   stagingActivate, loadPatrimoineDemo,
+  recomputeSegmentation,
 } from '../services/api';
 import { useScope } from '../contexts/ScopeContext';
 
@@ -189,6 +190,7 @@ const PatrimoineWizard = ({ onClose }) => {
   const handleClose = () => {
     if (activationResult || demoResult) {
       refreshSites();
+      recomputeSegmentation().catch(() => {});
       onClose();
     } else {
       onClose();

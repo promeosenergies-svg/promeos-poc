@@ -1,6 +1,7 @@
 """
 PROMEOS - Service de segmentation B2B
 Detection automatique de la typologie client + questionnaire d'affinage.
+V100: portfolio_id, derived_from, segment_label, missing_questions, recommendations.
 """
 import json
 from typing import Optional, List
@@ -8,7 +9,7 @@ from typing import Optional, List
 from sqlalchemy.orm import Session
 
 from models import (
-    Organisation, Site, Compteur, SegmentationProfile,
+    Organisation, Site, Compteur, SegmentationProfile, SegmentationAnswer,
     TypeSite,
 )
 from models.enums import Typologie
@@ -31,6 +32,24 @@ _TYPSITE_TO_TYPO = {
     TypeSite.HOTEL: Typologie.HOTELLERIE_RESTAURATION,
     TypeSite.SANTE: Typologie.SANTE_MEDICO_SOCIAL,
     TypeSite.ENSEIGNEMENT: Typologie.ENSEIGNEMENT,
+}
+
+# ========================================
+# Label humain des typologies
+# ========================================
+
+TYPO_LABELS = {
+    Typologie.TERTIAIRE_PRIVE: "Tertiaire Prive",
+    Typologie.TERTIAIRE_PUBLIC: "Tertiaire Public",
+    Typologie.INDUSTRIE: "Industrie",
+    Typologie.COMMERCE_RETAIL: "Commerce / Retail",
+    Typologie.COPROPRIETE_SYNDIC: "Copropriete / Syndic",
+    Typologie.BAILLEUR_SOCIAL: "Bailleur Social",
+    Typologie.COLLECTIVITE: "Collectivite",
+    Typologie.HOTELLERIE_RESTAURATION: "Hotellerie / Restauration",
+    Typologie.SANTE_MEDICO_SOCIAL: "Sante / Medico-social",
+    Typologie.ENSEIGNEMENT: "Enseignement",
+    Typologie.MIXTE: "Mixte (multi-activites)",
 }
 
 
@@ -127,6 +146,57 @@ QUESTIONS_V1 = [
 
 
 # ========================================
+# Recommendations par typologie
+# ========================================
+
+_RECOMMENDATIONS = {
+    Typologie.TERTIAIRE_PRIVE: [
+        {"key": "operat", "label": "Declarer sur OPERAT", "description": "Le decret tertiaire impose une declaration annuelle sur la plateforme OPERAT.", "priority": "high"},
+        {"key": "bacs", "label": "Verifier conformite BACS", "description": "Vos batiments > 290 kW doivent disposer d'un systeme d'automatisation.", "priority": "high"},
+        {"key": "cee", "label": "Valoriser les CEE", "description": "Identifiez les travaux eligibles aux Certificats d'Economie d'Energie.", "priority": "medium"},
+    ],
+    Typologie.INDUSTRIE: [
+        {"key": "iso50001", "label": "Audit energetique / ISO 50001", "description": "Obligation d'audit tous les 4 ans pour les grandes entreprises.", "priority": "high"},
+        {"key": "cee", "label": "Valoriser les CEE industriels", "description": "Fiches CEE specifiques industrie (variateurs, recuperation chaleur).", "priority": "high"},
+        {"key": "flex", "label": "Evaluer la flexibilite", "description": "Monetisez votre capacite d'effacement via les mecanismes de marche.", "priority": "medium"},
+    ],
+    Typologie.COPROPRIETE_SYNDIC: [
+        {"key": "dpe_collectif", "label": "DPE collectif", "description": "Obligatoire pour les coproprietes > 50 lots (depuis 2024).", "priority": "high"},
+        {"key": "ptz_copro", "label": "Eco-PTZ copropriete", "description": "Financement a taux zero pour travaux de renovation energetique.", "priority": "medium"},
+        {"key": "maprimereno", "label": "MaPrimeRenov Copropriete", "description": "Aide collective pour la renovation globale.", "priority": "medium"},
+    ],
+    Typologie.COLLECTIVITE: [
+        {"key": "operat", "label": "Declarer sur OPERAT", "description": "Batiments publics > 1000 m2 soumis au decret tertiaire.", "priority": "high"},
+        {"key": "schema_directeur", "label": "Schema directeur energie", "description": "Planifier la transition energetique du patrimoine public.", "priority": "high"},
+        {"key": "intracting", "label": "Intracting energetique", "description": "Reinvestir les economies d'energie dans de nouveaux travaux.", "priority": "medium"},
+    ],
+    Typologie.SANTE_MEDICO_SOCIAL: [
+        {"key": "operat", "label": "Declarer sur OPERAT", "description": "Etablissements de sante soumis au decret tertiaire.", "priority": "high"},
+        {"key": "bacs", "label": "BACS et GTB", "description": "Automatisation critique pour le confort et les economies.", "priority": "high"},
+        {"key": "continu", "label": "Optimiser le 24h/24", "description": "Pilotage specifique pour les batiments a occupation continue.", "priority": "medium"},
+    ],
+}
+
+# Default recommendations for typologies without specific ones
+_DEFAULT_RECOMMENDATIONS = [
+    {"key": "audit", "label": "Realiser un audit energetique", "description": "Identifiez les principaux postes de consommation et les gisements d'economies.", "priority": "high"},
+    {"key": "suivi", "label": "Mettre en place un suivi mensuel", "description": "Suivez vos consommations pour detecter les derives.", "priority": "medium"},
+    {"key": "contrats", "label": "Optimiser vos contrats", "description": "Verifiez la coherence de vos puissances souscrites et tarifs.", "priority": "medium"},
+]
+
+
+def get_recommendations(typologie_str: str) -> list:
+    """Return recommendations for a given typologie key."""
+    if not typologie_str:
+        return _DEFAULT_RECOMMENDATIONS
+    try:
+        typo = Typologie(typologie_str)
+    except (ValueError, KeyError):
+        return _DEFAULT_RECOMMENDATIONS
+    return _RECOMMENDATIONS.get(typo, _DEFAULT_RECOMMENDATIONS)
+
+
+# ========================================
 # Detection automatique de la typologie
 # ========================================
 
@@ -140,15 +210,6 @@ def _detect_from_naf(naf_code: Optional[str]) -> Optional[Typologie]:
 
 def _detect_from_sites(db: Session, org_id: int) -> Optional[Typologie]:
     """Detecte la typologie a partir des types de sites du patrimoine."""
-    sites = db.query(Site).join(
-        Site.portefeuille
-    ).filter(
-        Site.portefeuille.has(
-            entite_juridique=db.query(Organisation).get(org_id).entites_juridiques[0] if db.query(Organisation).get(org_id) else None
-        )
-    ).all() if False else []  # Simplified: query sites via org
-
-    # Simplified approach: get all sites for the org
     from models import Portefeuille, EntiteJuridique
     sites = (
         db.query(Site)
@@ -229,6 +290,7 @@ def detect_typologie(
             "confidence_score": float (0-100),
             "reasons": [str, ...],
             "naf_code": str | None,
+            "derived_from": str,  # V100
         }
     """
     org = db.query(Organisation).filter(Organisation.id == org_id).first()
@@ -238,6 +300,7 @@ def detect_typologie(
             "confidence_score": 0.0,
             "reasons": ["Organisation introuvable"],
             "naf_code": None,
+            "derived_from": "mix",
         }
 
     reasons = []
@@ -275,10 +338,12 @@ def detect_typologie(
             "confidence_score": 20.0,
             "reasons": ["Aucune donnee — defaut tertiaire prive"],
             "naf_code": naf_code,
+            "derived_from": "mix",
         }
 
     # Score de confiance
     typologies = [c[1] for c in candidates]
+    sources = [c[0] for c in candidates]
     unique = set(typologies)
 
     if len(unique) == 1:
@@ -290,11 +355,22 @@ def detect_typologie(
         final = typologies[0]
         score = 30 + (len(candidates) - len(unique)) * 10
 
+    # V100: derived_from — dominant source
+    if len(sources) == 1:
+        derived = {"heuristic": "patrimoine", "naf": "naf", "sites": "patrimoine"}.get(sources[0], "mix")
+    elif "naf" in sources and "sites" not in sources:
+        derived = "naf"
+    elif "sites" in sources and "naf" not in sources:
+        derived = "patrimoine"
+    else:
+        derived = "mix"
+
     return {
         "typologie": final,
         "confidence_score": round(score, 1),
         "reasons": reasons,
         "naf_code": naf_code,
+        "derived_from": derived,
     }
 
 
@@ -312,13 +388,25 @@ def _score_boost_from_answers(answers: dict) -> float:
 
 
 # ========================================
+# Missing questions helper
+# ========================================
+
+def get_missing_questions(profile: SegmentationProfile) -> list:
+    """Return list of question IDs not yet answered."""
+    existing = json.loads(profile.answers_json) if profile.answers_json else {}
+    all_ids = [q["id"] for q in QUESTIONS_V1]
+    return [qid for qid in all_ids if qid not in existing or not existing[qid]]
+
+
+# ========================================
 # CRUD operations
 # ========================================
 
 def get_or_create_profile(db: Session, org_id: int) -> SegmentationProfile:
     """Recupere ou cree le profil de segmentation pour une org."""
     profile = db.query(SegmentationProfile).filter(
-        SegmentationProfile.organisation_id == org_id
+        SegmentationProfile.organisation_id == org_id,
+        SegmentationProfile.portfolio_id.is_(None),
     ).first()
 
     if profile:
@@ -326,12 +414,15 @@ def get_or_create_profile(db: Session, org_id: int) -> SegmentationProfile:
 
     # Detection auto
     detection = detect_typologie(db, org_id)
+    typo = detection["typologie"]
 
     profile = SegmentationProfile(
         organisation_id=org_id,
-        typologie=detection["typologie"].value,
+        typologie=typo.value,
+        segment_label=TYPO_LABELS.get(typo, typo.value),
         naf_code=detection["naf_code"],
         confidence_score=detection["confidence_score"],
+        derived_from=detection["derived_from"],
         reasons_json=json.dumps(detection["reasons"], ensure_ascii=False),
     )
     db.add(profile)
@@ -351,10 +442,44 @@ def update_profile_with_answers(
     existing.update(answers)
     profile.answers_json = json.dumps(existing, ensure_ascii=False)
 
+    # V100: Sync SegmentationAnswer rows
+    for qid, val in answers.items():
+        if not val:
+            continue
+        sa = db.query(SegmentationAnswer).filter(
+            SegmentationAnswer.profile_id == profile.id,
+            SegmentationAnswer.question_id == qid,
+        ).first()
+        if sa:
+            sa.answer_value = val
+        else:
+            db.add(SegmentationAnswer(
+                profile_id=profile.id,
+                organisation_id=org_id,
+                portfolio_id=profile.portfolio_id,
+                question_id=qid,
+                answer_value=val,
+            ))
+
     # Recalculate confidence with boost
     detection = detect_typologie(db, org_id)
     boost = _score_boost_from_answers(existing)
     profile.confidence_score = min(detection["confidence_score"] + boost, 100.0)
+
+    # Update derived_from when questionnaire answers exist
+    nb_answers = sum(1 for v in existing.values() if v and v != "ne_sait_pas")
+    if nb_answers > 0:
+        if detection["derived_from"] == "questionnaire":
+            profile.derived_from = "questionnaire"
+        else:
+            profile.derived_from = "mix"
+
+    # Update segment_label
+    try:
+        typo = Typologie(profile.typologie)
+        profile.segment_label = TYPO_LABELS.get(typo, profile.typologie)
+    except (ValueError, KeyError):
+        pass
 
     # Update reasons
     reasons = detection["reasons"]
@@ -366,6 +491,144 @@ def update_profile_with_answers(
     return profile
 
 
+def recompute_profile(db: Session, org_id: int) -> SegmentationProfile:
+    """V100: Force re-detection from patrimoine data (post-import)."""
+    profile = get_or_create_profile(db, org_id)
+
+    detection = detect_typologie(db, org_id)
+    typo = detection["typologie"]
+
+    # Preserve existing answers boost
+    existing = json.loads(profile.answers_json) if profile.answers_json else {}
+    boost = _score_boost_from_answers(existing)
+
+    profile.typologie = typo.value
+    profile.segment_label = TYPO_LABELS.get(typo, typo.value)
+    profile.naf_code = detection["naf_code"]
+    profile.confidence_score = min(detection["confidence_score"] + boost, 100.0)
+    profile.derived_from = detection["derived_from"]
+
+    reasons = detection["reasons"]
+    if boost > 0:
+        reasons.append(f"Questionnaire: {len(existing)} reponses (+{boost}pts)")
+    profile.reasons_json = json.dumps(reasons, ensure_ascii=False)
+
+    db.commit()
+    db.refresh(profile)
+    return profile
+
+
 def get_questions(org_id: int = None) -> list:
     """Retourne la liste des questions V1."""
     return QUESTIONS_V1
+
+
+# ========================================
+# V101: Next Best Step
+# ========================================
+
+def compute_next_best_step(db: Session, org_id: int, portfolio_id: Optional[int] = None) -> dict:
+    """
+    V101: 1 prochaine action recommandee, deterministe.
+    Cascade de priorite:
+      1. confidence < 50 → "Repondez a quelques questions pour affiner votre profil"
+      2. contrats expirants (90j) → "Preparer le renouvellement"
+      3. reconciliation fail → "Debloquer vos donnees"
+      4. defaut → top recommendation
+    """
+    profile = get_or_create_profile(db, org_id)
+    missing = get_missing_questions(profile)
+
+    # 1. Confidence < 50 and questions remaining → answer questions
+    if profile.confidence_score < 50 and len(missing) > 0:
+        return {
+            "key": "answer_questions",
+            "title": f"{min(len(missing), 3)} questions pour affiner votre profil",
+            "why": f"Votre profil est a {int(profile.confidence_score)}% de confiance. Repondre ameliore vos recommandations.",
+            "impact_label": "Profil",
+            "score_gain_hint": "+10 pts confiance",
+            "cta": {
+                "type": "modal",
+                "label": "Repondre maintenant",
+                "route": None,
+                "payload": {"questions_remaining": len(missing)},
+            },
+        }
+
+    # 2. Expiring contracts → renouvellement
+    try:
+        from services.contract_radar_service import compute_contract_radar
+        radar = compute_contract_radar(db, org_id, portfolio_id, horizon_days=90)
+        expiring = radar.get("stats", {}).get("expiring", 0)
+        expired = radar.get("stats", {}).get("expired", 0)
+        if expiring > 0 or expired > 0:
+            total = expiring + expired
+            return {
+                "key": "contract_renewal",
+                "title": f"Preparer le renouvellement de {total} contrat{'s' if total > 1 else ''}",
+                "why": f"{expired} expire{'s' if expired > 1 else ''}, {expiring} a echeance sous 90 jours.",
+                "impact_label": "Finance",
+                "score_gain_hint": "Eviter les reconductions tacites",
+                "cta": {
+                    "type": "route",
+                    "label": "Voir les contrats",
+                    "route": "/renouvellements",
+                    "payload": None,
+                },
+            }
+    except Exception:
+        pass
+
+    # 3. Reconciliation failures → patrimoine
+    try:
+        from services.reconciliation_service import reconcile_portfolio
+        recon = reconcile_portfolio(db, org_id, portfolio_id)
+        fail_count = recon.get("stats", {}).get("fail", 0)
+        if fail_count > 0:
+            return {
+                "key": "fix_reconciliation",
+                "title": f"Debloquer {fail_count} site{'s' if fail_count > 1 else ''} en erreur",
+                "why": "Des sites ont des donnees manquantes ou incoherentes.",
+                "impact_label": "Donnees",
+                "score_gain_hint": f"+{fail_count * 5} pts reconciliation",
+                "cta": {
+                    "type": "route",
+                    "label": "Voir le patrimoine",
+                    "route": "/patrimoine",
+                    "payload": None,
+                },
+            }
+    except Exception:
+        pass
+
+    # 4. Default → top recommendation
+    recs = get_recommendations(profile.typologie)
+    if recs:
+        top = recs[0]
+        return {
+            "key": top["key"],
+            "title": top["label"],
+            "why": top.get("description", "Action recommandee pour votre profil."),
+            "impact_label": "Energie",
+            "score_gain_hint": "Optimisation",
+            "cta": {
+                "type": "route",
+                "label": "En savoir plus",
+                "route": "/segmentation",
+                "payload": None,
+            },
+        }
+
+    return {
+        "key": "explore",
+        "title": "Explorer vos donnees",
+        "why": "Consultez votre patrimoine pour identifier des opportunites.",
+        "impact_label": "General",
+        "score_gain_hint": None,
+        "cta": {
+            "type": "route",
+            "label": "Voir le patrimoine",
+            "route": "/patrimoine",
+            "payload": None,
+        },
+    }

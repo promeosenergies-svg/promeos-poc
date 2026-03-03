@@ -24,6 +24,8 @@ import IntakeWizard from '../components/IntakeWizard';
 import BacsWizard from '../components/BacsWizard';
 import SiteBillingMini from '../components/SiteBillingMini';
 import SiteContractsSummary from '../components/SiteContractsSummary';
+import SegmentationWidget from '../components/SegmentationWidget';
+import SegmentationQuestionnaireModal from '../components/SegmentationQuestionnaireModal';
 
 const _sb = (k) => { const { variant, label } = getStatusBadgeProps(k); return { status: variant, label }; };
 const STATUT_BADGE = {
@@ -54,7 +56,7 @@ function MiniKpi({ icon: Icon, label, value, color }) {
   );
 }
 
-function TabResume({ site }) {
+function TabResume({ site, onSegmentationClick }) {
   const [anomalies, setAnomalies] = useState([]);
   const [anomLoading, setAnomLoading] = useState(true);
 
@@ -118,33 +120,39 @@ function TabResume({ site }) {
         </Card>
       </div>
 
-      {/* Right: anomalies list */}
-      <Card>
-        <div className="px-5 py-3 border-b border-gray-100">
-          <h3 className="font-semibold text-gray-800">Anomalies détectées</h3>
-        </div>
-        {anomLoading ? (
-          <div className="p-4"><SkeletonCard /></div>
-        ) : anomalies.length === 0 ? (
-          <EmptyState title="Aucune anomalie" text="Ce site ne présente aucune anomalie détectée." />
-        ) : (
-          <Table>
-            <Thead>
-              <tr><Th>Type</Th><Th>Sévérité</Th><Th>Message</Th><Th className="text-right">Perte</Th></tr>
-            </Thead>
-            <Tbody>
-              {anomalies.map((a, idx) => (
-                <Tr key={a.id || idx}>
-                  <Td><span className="text-xs px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded">{a.anomaly_type}</span></Td>
-                  <Td><Badge status={SEV_BADGE[a.severity] || 'info'}>{a.severity}</Badge></Td>
-                  <Td className="text-sm">{a.title_fr}</Td>
-                  <Td className="text-right text-red-600 font-medium">{(a.business_impact?.estimated_risk_eur || 0).toLocaleString()} €</Td>
-                </Tr>
-              ))}
-            </Tbody>
-          </Table>
-        )}
-      </Card>
+      {/* Right column */}
+      <div className="space-y-4">
+        {/* Anomalies list */}
+        <Card>
+          <div className="px-5 py-3 border-b border-gray-100">
+            <h3 className="font-semibold text-gray-800">Anomalies détectées</h3>
+          </div>
+          {anomLoading ? (
+            <div className="p-4"><SkeletonCard /></div>
+          ) : anomalies.length === 0 ? (
+            <EmptyState title="Aucune anomalie" text="Ce site ne présente aucune anomalie détectée." />
+          ) : (
+            <Table>
+              <Thead>
+                <tr><Th>Type</Th><Th>Sévérité</Th><Th>Message</Th><Th className="text-right">Perte</Th></tr>
+              </Thead>
+              <Tbody>
+                {anomalies.map((a, idx) => (
+                  <Tr key={a.id || idx}>
+                    <Td><span className="text-xs px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded">{a.anomaly_type}</span></Td>
+                    <Td><Badge status={SEV_BADGE[a.severity] || 'info'}>{a.severity}</Badge></Td>
+                    <Td className="text-sm">{a.title_fr}</Td>
+                    <Td className="text-right text-red-600 font-medium">{(a.business_impact?.estimated_risk_eur || 0).toLocaleString()} €</Td>
+                  </Tr>
+                ))}
+              </Tbody>
+            </Table>
+          )}
+        </Card>
+
+        {/* V100: Segmentation profile & recommendations */}
+        <SegmentationWidget onSegmentationClick={onSegmentationClick} />
+      </div>
     </div>
   );
 }
@@ -832,6 +840,7 @@ export default function Site360() {
   const [activeTab, setActiveTab] = useState('resume');
   const [showIntake, setShowIntake] = useState(false);
   const [showBacs, setShowBacs] = useState(false);
+  const [showSegModal, setShowSegModal] = useState(false);
 
   const site = scopedSites.find(s => String(s.id) === String(id));
 
@@ -914,7 +923,7 @@ export default function Site360() {
       <Tabs tabs={TABS} active={activeTab} onChange={setActiveTab} />
 
       {/* Tab content */}
-      {activeTab === 'resume' && <TabResume site={site} />}
+      {activeTab === 'resume' && <TabResume site={site} onSegmentationClick={() => setShowSegModal(true)} />}
       {activeTab === 'conso' && <TabStub title="Consommation" text="Courbes de charge, historique et benchmark à venir." />}
       {activeTab === 'factures' && (
         <div className="space-y-4 pt-6">
@@ -946,6 +955,11 @@ export default function Site360() {
       {/* Smart Intake Wizard modal */}
       {showIntake && (
         <IntakeWizard siteId={site.id} onClose={() => setShowIntake(false)} />
+      )}
+
+      {/* Segmentation Questionnaire modal */}
+      {showSegModal && (
+        <SegmentationQuestionnaireModal onClose={() => setShowSegModal(false)} />
       )}
     </div>
   );

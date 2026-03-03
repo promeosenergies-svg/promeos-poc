@@ -108,9 +108,14 @@ export default function SegmentationPage() {
                 </Badge>
               )}
             </div>
-            <p className="text-xl font-bold text-gray-900 mb-3">
-              {TYPO_LABELS[profile.typologie] || profile.typologie}
+            <p className="text-xl font-bold text-gray-900 mb-1">
+              {profile.segment_label || TYPO_LABELS[profile.typologie] || profile.typologie}
             </p>
+            {profile.derived_from && (
+              <p className="text-xs text-gray-500 mb-3">
+                Source : {profile.derived_from === 'naf' ? 'Code NAF' : profile.derived_from === 'questionnaire' ? 'Questionnaire' : profile.derived_from === 'patrimoine' ? 'Patrimoine' : 'Detection mixte'}
+              </p>
+            )}
             <div className="mb-2">
               <div className="flex items-center justify-between text-sm mb-1">
                 <span className="text-gray-600">Confiance</span>

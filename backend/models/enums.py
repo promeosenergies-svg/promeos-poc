@@ -256,6 +256,7 @@ class ActionSourceType(str, enum.Enum):
     PURCHASE = "purchase"
     INSIGHT = "insight"       # from monitoring insight/alert
     MANUAL = "manual"         # manually created by user
+    SEGMENTATION = "segmentation"  # V101: from segmentation recommendations
 
 
 class ActionStatus(str, enum.Enum):

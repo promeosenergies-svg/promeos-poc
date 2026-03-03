@@ -580,6 +580,15 @@ export const getSegmentationQuestions = () =>
 export const submitSegmentationAnswers = (answers) =>
   api.post('/segmentation/answers', { answers }).then((r) => r.data);
 export const getSegmentationProfile = () => api.get('/segmentation/profile').then((r) => r.data);
+export const recomputeSegmentation = () => api.post('/segmentation/recompute').then((r) => r.data);
+
+// V101: Next Best Step + Action Creation
+export const getSegmentationNextStep = (portfolioId) =>
+  api.get('/segmentation/next-step', { params: { portfolio_id: portfolioId } }).then((r) => r.data);
+export const createActionFromRecommendation = (recommendationKey, portfolioId) =>
+  api.post('/segmentation/actions/from-recommendation', { recommendation_key: recommendationKey, portfolio_id: portfolioId }).then((r) => r.data);
+export const createActionFromNextStep = (portfolioId) =>
+  api.post('/segmentation/actions/from-next-step', { portfolio_id: portfolioId }).then((r) => r.data);
 
 // ========================================
 // COMPLIANCE (Rules-based)
@@ -1433,5 +1442,16 @@ export const getPortfolioReconciliationCsv = (params = {}) => api.get('/patrimoi
 
 // V98: Guidance Layer
 export const getReconciliationEvidenceSummary = (siteId) => api.get(`/patrimoine/sites/${siteId}/reconciliation/evidence/summary`).then(r => r.data);
+
+// V99: Contract Renewal Radar
+export const getContractRadar = (params = {}) => api.get('/contracts/radar', { params, skipSiteHeader: true }).then(r => r.data);
+export const getContractPurchaseScenarios = (contractId) => api.get(`/contracts/${contractId}/purchase-scenarios`).then(r => r.data);
+export const createActionsFromScenario = (contractId, scenario) => api.post(`/contracts/${contractId}/actions/from-scenario`, { scenario }).then(r => r.data);
+export const getContractScenarioSummary = (contractId) => api.get(`/contracts/${contractId}/scenario-summary`).then(r => r.data);
+
+// V100: Offer Pricing V1 + Reconciliation
+export const quoteOffer = (params) => api.post('/purchase/quote-offer', params).then(r => r.data);
+export const quoteMultiStrategy = (params) => api.post('/purchase/quote-multi', params).then(r => r.data);
+export const reconcileOfferVsInvoice = (params) => api.post('/purchase/reconcile', params).then(r => r.data);
 
 export default api;
