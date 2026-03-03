@@ -4,7 +4,7 @@ Computes quantile-based envelopes (P10-P25-P50-P75-P90) per time slot
 and calculates the percentage of readings "outside" the normal band.
 """
 import math
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Any, Optional, Tuple
 from collections import defaultdict
 from sqlalchemy.orm import Session
@@ -63,7 +63,7 @@ def compute_tunnel(
             "confidence_score": float,  # 0-100
         }
     """
-    end_date = datetime.utcnow()
+    end_date = datetime.now(timezone.utc).replace(tzinfo=None)
     start_date = end_date - timedelta(days=days)
 
     # Find meters for this site and energy type
@@ -198,7 +198,7 @@ def compute_tunnel_v2(
 
     Returns same structure as V1 plus: mode, unit, reference_band_method, sample_size.
     """
-    end_date = datetime.utcnow()
+    end_date = datetime.now(timezone.utc).replace(tzinfo=None)
     start_date = end_date - timedelta(days=days)
 
     meters = db.query(Meter).filter(

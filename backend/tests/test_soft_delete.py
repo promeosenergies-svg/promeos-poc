@@ -7,7 +7,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -88,7 +88,7 @@ class TestSoftDeleteSetsFields:
         assert site.deleted_at is None
         assert site.is_deleted is False
 
-        before = datetime.utcnow()
+        before = datetime.now(timezone.utc)
         site.soft_delete(by="admin@promeos.fr", reason="Doublon")
         db_session.flush()
 

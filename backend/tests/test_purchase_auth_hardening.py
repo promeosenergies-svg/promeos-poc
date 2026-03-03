@@ -7,7 +7,7 @@ Covers:
   3) POST /seed-wow-happy requires admin + DEMO_SEED_ENABLED
   4) POST /seed-wow-dirty requires admin + DEMO_SEED_ENABLED
   5) Seed endpoints return 403 when DEMO_SEED_ENABLED=false
-  6) datetime.utcnow() removed from purchase-related modules
+  6) datetime.now(timezone.utc) removed from purchase-related modules
 """
 import sys
 import os
@@ -207,11 +207,11 @@ class TestSeedEndpointGuards:
 
 
 # ========================================
-# datetime.utcnow() removal verification
+# datetime.now(timezone.utc) removal verification
 # ========================================
 
 class TestDatetimeCompat:
-    """datetime.utcnow() must be replaced with datetime.now(timezone.utc) in purchase modules."""
+    """datetime.now(timezone.utc) must be replaced with datetime.now(timezone.utc) in purchase modules."""
 
     def test_purchase_route_no_utcnow(self):
         import routes.purchase as mod

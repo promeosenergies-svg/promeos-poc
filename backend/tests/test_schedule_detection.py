@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import json
 import math
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -86,7 +86,7 @@ def _generate_office_load(db, meter, days=60, step_min=15):
     """
     baseload = 5.0
     activity = 15.0
-    now = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    now = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     start = now - timedelta(days=days)
 
     readings = []

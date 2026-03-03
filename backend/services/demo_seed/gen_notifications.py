@@ -3,7 +3,7 @@ PROMEOS — Demo Seed: Notification Events Generator (V83)
 Creates realistic demo NotificationEvent entries spread across 4 source types.
 """
 import json
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 
 _TEMPLATES = [
@@ -162,7 +162,7 @@ def generate_notifications(db, org, sites: list, rng=None) -> dict:
         NotificationSeverity, NotificationStatus, NotificationSourceType,
     )
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     created = 0
 
     for tmpl in _TEMPLATES:

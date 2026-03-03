@@ -4,7 +4,7 @@ Estimation de production photovoltaique.
 """
 import urllib.request
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from .base import Connector
 from models import DataPoint, SourceType, Site
 
@@ -65,7 +65,7 @@ class PVGISConnector(Connector):
                             source_name=self.name,
                             quality_score=0.8,
                             coverage_ratio=1.0,
-                            retrieved_at=datetime.utcnow(),
+                            retrieved_at=datetime.now(timezone.utc),
                             source_ref=url
                         )
                         db.add(dp)

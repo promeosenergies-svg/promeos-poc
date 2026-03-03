@@ -4,7 +4,7 @@ Build alerts from 5 briques and sync them idempotently.
 """
 import hashlib
 import json
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import List, Optional
 
 from sqlalchemy.orm import Session
@@ -380,7 +380,7 @@ def sync_notifications(db: Session, org_id: int, triggered_by: str = "api") -> d
     batch = NotificationBatch(
         org_id=org_id,
         triggered_by=triggered_by,
-        started_at=datetime.utcnow(),
+        started_at=datetime.now(timezone.utc),
         created_count=0,
         updated_count=0,
         skipped_count=0,
@@ -456,7 +456,7 @@ def sync_notifications(db: Session, org_id: int, triggered_by: str = "api") -> d
         else:
             batch.skipped_count += 1
 
-    batch.finished_at = datetime.utcnow()
+    batch.finished_at = datetime.now(timezone.utc)
     if warnings:
         batch.warnings_json = json.dumps(warnings)
 

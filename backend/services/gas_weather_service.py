@@ -5,7 +5,7 @@ Uses mock DJU (deterministic seasonal formula) for POC scope.
 """
 import math
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Any, Optional
 from collections import defaultdict
 from sqlalchemy.orm import Session
@@ -69,7 +69,7 @@ def compute_weather_normalized(
         alerts: [{ type, severity, message }]
         confidence: str
     """
-    end_date = datetime.utcnow()
+    end_date = datetime.now(timezone.utc).replace(tzinfo=None)
     start_date = end_date - timedelta(days=days)
 
     meters = db.query(Meter).filter(

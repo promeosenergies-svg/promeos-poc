@@ -6,7 +6,7 @@ import json
 import logging
 import os
 import uuid
-from datetime import date
+from datetime import date, timezone
 from typing import List, Optional
 
 import yaml
@@ -402,7 +402,7 @@ def evaluate_organisation(db: Session, org_id: int) -> dict:
     batch = ComplianceRunBatch(
         org_id=org_id,
         triggered_by="api",
-        started_at=datetime.utcnow(),
+        started_at=datetime.now(timezone.utc),
     )
     db.add(batch)
     db.flush()
@@ -428,7 +428,7 @@ def evaluate_organisation(db: Session, org_id: int) -> dict:
         unknown_count += sum(1 for f in findings if f.status == "UNKNOWN")
 
     # Update batch with results
-    batch.completed_at = datetime.utcnow()
+    batch.completed_at = datetime.now(timezone.utc)
     batch.sites_count = len(site_ids)
     batch.findings_count = total_findings
     batch.nok_count = nok_count

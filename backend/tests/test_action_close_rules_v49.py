@@ -117,7 +117,9 @@ class TestPatchCloseRules:
         aid = self._create_operat_action("blocked")
         resp = self.client.patch(f"/api/actions/{aid}", json={"status": "done"})
         assert resp.status_code == 400
-        assert "preuve" in resp.json()["detail"].lower() or "justification" in resp.json()["detail"].lower()
+        detail = resp.json()["detail"]
+        detail_str = str(detail).lower() if detail else ""
+        assert "preuve" in detail_str or "justification" in detail_str
 
     def test_operat_close_allowed_with_justification(self):
         """OPERAT action → done with justification >= 10 chars → HTTP 200."""

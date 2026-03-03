@@ -330,7 +330,7 @@ def compute_site_anomalies(site_id: int, db: Session) -> Dict[str, Any]:
             "anomalies": [],
             "completude_score": 0,
             "nb_anomalies": 0,
-            "computed_at": __import__("datetime").datetime.utcnow().isoformat() + "Z",
+            "computed_at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat() + "Z",
         }
 
     # Batch queries — zéro N+1
@@ -396,11 +396,11 @@ def compute_site_anomalies(site_id: int, db: Session) -> Dict[str, Any]:
     _order = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3}
     anomalies.sort(key=lambda a: _order.get(a["severity"], 99))
 
-    from datetime import datetime
+    from datetime import datetime, timezone
     return {
         "site_id": site_id,
         "anomalies": anomalies,
         "completude_score": score,
         "nb_anomalies": len(anomalies),
-        "computed_at": datetime.utcnow().isoformat() + "Z",
+        "computed_at": datetime.now(timezone.utc).isoformat() + "Z",
     }

@@ -16,7 +16,7 @@ import json
 import logging
 import math
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from sqlalchemy.orm import Session
@@ -83,7 +83,7 @@ def _fetch_readings(db: Session, site_id: int, days: int):
     if not meters:
         return [], 60  # no meters
 
-    cutoff = datetime.utcnow() - timedelta(days=days)
+    cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)
     meter_ids = [m.id for m in meters]
     readings = (
         db.query(MeterReading)

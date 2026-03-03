@@ -14,7 +14,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
-from datetime import date
+from datetime import date, timezone
 from sqlalchemy import create_engine, event, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -166,7 +166,7 @@ class TestUniqueOrgSiren:
         from datetime import datetime
         org = _make_org(db, siren="222222222")
         db.commit()
-        org.deleted_at = datetime.utcnow()
+        org.deleted_at = datetime.now(timezone.utc)
         db.commit()
 
         _make_org(db, siren="222222222", nom="New Org")
@@ -206,7 +206,7 @@ class TestUniquePortefeuilleNamePerEntite:
         ej = _make_ej(db, org.id)
         pf = _make_portefeuille(db, ej.id, nom="Recyclé")
         db.commit()
-        pf.deleted_at = datetime.utcnow()
+        pf.deleted_at = datetime.now(timezone.utc)
         db.commit()
         _make_portefeuille(db, ej.id, nom="Recyclé")
         db.commit()  # Should not raise
@@ -253,7 +253,7 @@ class TestUniqueSiteSiretPerPortefeuille:
         org, ej, pf, _ = _scaffold(db)
         s = _make_site(db, pf.id, nom="Old", siret="99988877766655")
         db.commit()
-        s.deleted_at = datetime.utcnow()
+        s.deleted_at = datetime.now(timezone.utc)
         db.commit()
         _make_site(db, pf.id, nom="New", siret="99988877766655")
         db.commit()  # Should not raise
@@ -286,7 +286,7 @@ class TestUniqueDeliveryPointCode:
 
         dp = _make_dp(db, site.id, code="99999999999999")
         db.commit()
-        dp.deleted_at = datetime.utcnow()
+        dp.deleted_at = datetime.now(timezone.utc)
         db.commit()
 
         _make_dp(db, site.id, code="99999999999999")
@@ -327,7 +327,7 @@ class TestUniqueBatimentNamePerSite:
         _, _, _, site = _scaffold(db)
         b = _make_batiment(db, site.id, nom="Hall Recyclé")
         db.commit()
-        b.deleted_at = datetime.utcnow()
+        b.deleted_at = datetime.now(timezone.utc)
         db.commit()
         _make_batiment(db, site.id, nom="Hall Recyclé")
         db.commit()  # Should not raise
@@ -536,7 +536,7 @@ class TestDeliveryPointDeleteCascadesCompteur:
         cpt = _make_compteur(db, site.id, dp_id=dp.id, numero_serie="CPT-SOFT")
         db.commit()
 
-        dp.deleted_at = datetime.utcnow()
+        dp.deleted_at = datetime.now(timezone.utc)
         db.commit()
 
         db.expire_all()

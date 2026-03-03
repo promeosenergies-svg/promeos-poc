@@ -6,7 +6,7 @@ CRUD Sites/Compteurs/Contrats + QA scoring.
 import csv
 import io
 import json
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, Query
 from fastapi.responses import StreamingResponse
@@ -1706,7 +1706,7 @@ def get_portfolio_summary(
 
     # Scope vide → tout à 0
     if not all_sites:
-        computed_at_empty = datetime.utcnow().isoformat() + "Z"
+        computed_at_empty = datetime.now(timezone.utc).isoformat() + "Z"
         # Trend V62 : scope vide → on ne met pas en cache (pas de data utile)
         empty_resp = {
             "scope": {"org_id": org_id, "portefeuille_id": portefeuille_id, "site_id": site_id},
@@ -1800,7 +1800,7 @@ def get_portfolio_summary(
         for fw, v in sorted(framework_totals.items(), key=lambda x: x[1]["risk_eur"], reverse=True)
     ]
 
-    computed_at = datetime.utcnow().isoformat() + "Z"
+    computed_at = datetime.now(timezone.utc).isoformat() + "Z"
     total_risk_rounded = round(total_risk, 0)
 
     # V62 — Trend réel via snapshot in-memory par org_id

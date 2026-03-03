@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
 import pytest
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta, date, timezone
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -97,7 +97,7 @@ def _create_meter(db, site, energy_vector=EnergyVector.ELECTRICITY, meter_id="PR
 
 def _seed_readings(db, meter, days=30, interval_hours=1, base_kwh=10.0, pattern="office"):
     """Helper: seed hourly readings with office pattern."""
-    now = datetime.utcnow().replace(minute=0, second=0, microsecond=0)
+    now = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
     readings = []
     for d in range(days):
         day_start = now - timedelta(days=days - d)

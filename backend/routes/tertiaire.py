@@ -2,7 +2,7 @@
 PROMEOS V39 — Routes Tertiaire / OPERAT
 Namespace: /api/tertiaire
 """
-from datetime import date
+from datetime import date, timezone
 from typing import Optional, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -394,7 +394,7 @@ def delete_efa(efa_id: int, db: Session = Depends(get_db)):
         raise HTTPException(404, "EFA introuvable")
 
     from datetime import datetime
-    efa.deleted_at = datetime.utcnow()
+    efa.deleted_at = datetime.now(timezone.utc)
     db.commit()
     return {"status": "deleted", "efa_id": efa_id}
 

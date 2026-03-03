@@ -11,7 +11,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -94,7 +94,7 @@ def _add_meter_readings(db, site, days=7, hourly_kwh=10.0):
     )
     db.add(meter)
     db.flush()
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     start = now - timedelta(days=days)
     t = start
     while t < now:

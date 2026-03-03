@@ -3,7 +3,7 @@ PROMEOS - TOU Service (HP/HC Schedule Management)
 CRUD + versioned TOU schedules + HP/HC ratio calculation.
 """
 import json
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 from typing import List, Dict, Any, Optional, Tuple
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
@@ -197,7 +197,7 @@ def compute_hp_hc_ratio(
     price_hc = active.get("price_hc_eur_kwh") or 0.13
 
     # Fetch readings
-    end_date = datetime.utcnow()
+    end_date = datetime.now(timezone.utc).replace(tzinfo=None)
     start_date = end_date - timedelta(days=days)
 
     meters_query = db.query(Meter).filter(
@@ -334,7 +334,7 @@ def compute_hphc_breakdown_v2(
             price_hp, price_hc = 0.18, 0.13
 
     # Fetch readings
-    end_date = datetime.utcnow()
+    end_date = datetime.now(timezone.utc).replace(tzinfo=None)
     start_date = end_date - timedelta(days=days)
 
     meters = db.query(Meter).filter(

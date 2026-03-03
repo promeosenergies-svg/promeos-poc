@@ -2,7 +2,7 @@
 PROMEOS Jobs - Worker pour traiter les jobs de l'outbox
 """
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from models import JobOutbox, JobType, JobStatus
 from database import SessionLocal
@@ -24,7 +24,7 @@ def enqueue_job(db: Session, job_type: JobType, payload: dict, priority: int = 0
         payload_json=json.dumps(payload),
         priority=priority,
         status=JobStatus.PENDING,
-        created_at=datetime.utcnow()
+        created_at=datetime.now(timezone.utc)
     )
     db.add(job)
     db.commit()
@@ -60,7 +60,7 @@ def process_one(db: Session) -> bool:
 
     # Mark RUNNING
     job.status = JobStatus.RUNNING
-    job.started_at = datetime.utcnow()
+    job.started_at = datetime.now(timezone.utc)
     db.commit()
 
     try:
@@ -78,14 +78,14 @@ def process_one(db: Session) -> bool:
 
         # Mark DONE
         job.status = JobStatus.DONE
-        job.finished_at = datetime.utcnow()
+        job.finished_at = datetime.now(timezone.utc)
         db.commit()
         return True
 
     except Exception as e:
         # Mark FAILED
         job.status = JobStatus.FAILED
-        job.finished_at = datetime.utcnow()
+        job.finished_at = datetime.now(timezone.utc)
         job.error = str(e)
         db.commit()
         print(f"Job {job.id} failed: {e}")

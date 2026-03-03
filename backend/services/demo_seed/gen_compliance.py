@@ -5,7 +5,7 @@ obligations, and evidence records.
 """
 import json
 import random
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
 from models import (
     ComplianceRunBatch, ComplianceFinding, Obligation, Evidence,
@@ -22,7 +22,7 @@ def generate_compliance(db, org, sites: list, rng: random.Random) -> dict:
     # Compliance run batch
     batch = ComplianceRunBatch(
         org_id=org.id, triggered_by="demo_seed",
-        started_at=datetime.utcnow(), completed_at=datetime.utcnow(),
+        started_at=datetime.now(timezone.utc), completed_at=datetime.now(timezone.utc),
         sites_count=len(sites), findings_count=0, nok_count=0, unknown_count=0,
     )
     db.add(batch)

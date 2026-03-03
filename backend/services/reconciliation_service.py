@@ -6,7 +6,7 @@ V97: fix_actions[] per check + fixer functions + audit trail.
 V98: Translation dictionary + next_best_action + evidence summary.
 """
 import json
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
 from sqlalchemy.orm import Session
@@ -429,7 +429,7 @@ def get_evidence_summary(db: Session, site_id: int) -> dict:
     return {
         "site_id": site_id,
         "site_name": site_name,
-        "generated_at": datetime.utcnow().isoformat(),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
         "score": recon["score"],
         "status": recon["status"],
         "summary_fr": recon["summary_fr"],
@@ -670,7 +670,7 @@ def get_evidence_pack(db: Session, site_id: int) -> dict:
     return {
         "site_id": site_id,
         "site_name": site_name,
-        "generated_at": datetime.utcnow().isoformat(),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
         "reconciliation": recon,
         "fix_history": logs,
         "summary": {

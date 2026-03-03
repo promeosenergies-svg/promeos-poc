@@ -16,7 +16,7 @@ Generates 12 Tier-1 alerts from KPIs, power risk, and data quality.
 11. DOUBLONS_DST           - Duplicate timestamps or DST issues
 12. VALEURS_NEGATIVES      - Negative consumption values
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 
 
@@ -114,7 +114,7 @@ class AlertEngine:
             list of alert dicts ready for persistence
         """
         alerts = []
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         # 1. BASE_NUIT_ELEVEE
         night_ratio = kpis.get("night_ratio", 0)
@@ -337,7 +337,7 @@ class AlertEngine:
     ) -> List[Dict[str, Any]]:
         """Evaluate climate-specific alerts from ClimateEngine output."""
         alerts = []
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         slope = abs(climate.get("slope_kw_per_c") or 0)
         r2 = climate.get("r_squared") or 0

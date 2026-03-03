@@ -5,7 +5,7 @@ Coordonne les 4 moteurs de regles + scoring + cache.
 import yaml
 import os
 from pathlib import Path
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from collections import defaultdict
 from sqlalchemy.orm import Session
 
@@ -204,7 +204,7 @@ def persist_assessment(db: Session, summary: SiteSummary):
     missing_data_json = json.dumps(summary.missing_data)
 
     if existing:
-        existing.computed_at = datetime.utcnow()
+        existing.computed_at = datetime.now(timezone.utc)
         existing.global_status = RegStatus[summary.global_status]
         existing.compliance_score = summary.compliance_score
         existing.next_deadline = summary.next_deadline
@@ -218,7 +218,7 @@ def persist_assessment(db: Session, summary: SiteSummary):
         assessment = RegAssessment(
             object_type="site",
             object_id=summary.site_id,
-            computed_at=datetime.utcnow(),
+            computed_at=datetime.now(timezone.utc),
             global_status=RegStatus[summary.global_status],
             compliance_score=summary.compliance_score,
             next_deadline=summary.next_deadline,

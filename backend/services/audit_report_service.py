@@ -3,7 +3,7 @@ PROMEOS — Audit Report Service (Sprint 10.1)
 Builds structured audit data from all briques, renders a multi-page B2B PDF.
 """
 import io
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from typing import Optional
 
 from sqlalchemy.orm import Session
@@ -66,7 +66,7 @@ def build_audit_report_data(db: Session, org_id: Optional[int] = None) -> dict:
     )
 
     return {
-        "generated_at": datetime.utcnow().isoformat(),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
         "organisation": {
             "nom": org.nom,
             "type_client": org.type_client,

@@ -228,8 +228,8 @@ export default function PatrimoinePortfolioHealthBar({ onSiteClick, orgId = null
           defaultSiteName: res.default_site_name,
         });
       }
-      // Force page reload to refresh all components with new data
-      window.location.reload();
+      // Navigate to same page to refresh all components with new data
+      navigate(0);
     } catch {
       setError('Echec du chargement HELIOS. Essayez via la page Import.');
       setSeeding(false);

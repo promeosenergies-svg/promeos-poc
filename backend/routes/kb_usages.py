@@ -12,7 +12,7 @@ from models import (
 from services.kb_service import KBService
 from pathlib import Path
 from typing import Optional, List
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 router = APIRouter(prefix="/api/kb", tags=["Knowledge Base"])
@@ -33,8 +33,7 @@ class ArchetypeResponse(BaseModel):
     confidence: str
     source_section: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class AnomalyRuleResponse(BaseModel):
@@ -47,8 +46,7 @@ class AnomalyRuleResponse(BaseModel):
     confidence: str
     source_section: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RecommendationResponse(BaseModel):
@@ -64,8 +62,7 @@ class RecommendationResponse(BaseModel):
     confidence: str
     source_section: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ProvenanceResponse(BaseModel):

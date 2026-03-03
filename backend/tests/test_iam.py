@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -363,7 +363,7 @@ class TestLastOwnerProtection:
 class TestPrestataire:
     def test_access_before_expiry(self, db_session):
         org, ej1, ej2, pf1, pf2, sites = _create_org_hierarchy(db_session)
-        expires = datetime.utcnow() + timedelta(days=30)
+        expires = datetime.now(timezone.utc) + timedelta(days=30)
         user, uor = _create_user_with_role(
             db_session, org, "presta@test.com",
             UserRole.PRESTATAIRE, ScopeLevel.SITE, sites[0].id, expires_at=expires,
@@ -375,7 +375,7 @@ class TestPrestataire:
 
     def test_access_denied_after_expiry(self, db_session):
         org, ej1, ej2, pf1, pf2, sites = _create_org_hierarchy(db_session)
-        expired = datetime.utcnow() - timedelta(days=1)
+        expired = datetime.now(timezone.utc) - timedelta(days=1)
         user, uor = _create_user_with_role(
             db_session, org, "expired@test.com",
             UserRole.PRESTATAIRE, ScopeLevel.SITE, sites[0].id, expires_at=expired,

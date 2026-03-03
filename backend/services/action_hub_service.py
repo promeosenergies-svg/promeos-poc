@@ -4,7 +4,7 @@ Synchronise les actions des 4 briques vers ActionItem (persiste, idempotent).
 """
 import hashlib
 import json
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from typing import List, Optional
 
 from sqlalchemy.orm import Session
@@ -260,7 +260,7 @@ def sync_actions(db: Session, org_id: int, triggered_by: str = "api") -> dict:
     batch = ActionSyncBatch(
         org_id=org_id,
         triggered_by=triggered_by,
-        started_at=datetime.utcnow(),
+        started_at=datetime.now(timezone.utc),
         created_count=0,
         updated_count=0,
         skipped_count=0,
@@ -373,7 +373,7 @@ def sync_actions(db: Session, org_id: int, triggered_by: str = "api") -> dict:
             item.notes = item.notes.strip()
             batch.closed_count += 1
 
-    batch.finished_at = datetime.utcnow()
+    batch.finished_at = datetime.now(timezone.utc)
     if warnings:
         batch.warnings_json = json.dumps(warnings)
 

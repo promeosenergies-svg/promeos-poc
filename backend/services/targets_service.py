@@ -2,7 +2,7 @@
 PROMEOS - Targets Service (Objectifs & Budgets)
 CRUD + progression tracking + forecast for consumption targets.
 """
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from typing import List, Dict, Any, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -140,9 +140,9 @@ def get_progression(
         }
     """
     if year is None:
-        year = datetime.utcnow().year
+        year = datetime.now(timezone.utc).year
 
-    current_month = datetime.utcnow().month
+    current_month = datetime.now(timezone.utc).month
 
     # Get all monthly targets for the year
     targets = (
@@ -247,9 +247,9 @@ def get_progression_v2(
     base = get_progression(db, site_id, energy_type=energy_type, year=year)
 
     if year is None:
-        year = datetime.utcnow().year
+        year = datetime.now(timezone.utc).year
 
-    current_month = datetime.utcnow().month
+    current_month = datetime.now(timezone.utc).month
 
     # Compute run-rate: annualized from YTD actual
     ytd_actual = base.get("ytd_actual_kwh", 0)

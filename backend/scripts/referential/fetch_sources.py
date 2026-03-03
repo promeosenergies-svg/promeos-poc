@@ -9,7 +9,7 @@ import sys
 import time
 import urllib.error
 import urllib.request
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -117,7 +117,7 @@ def fetch_source(source: dict, today: str, dry_run: bool = False) -> dict:
     metadata = {
         "source_id": source_id,
         "url": url,
-        "fetched_at_utc": datetime.utcnow().isoformat() + "Z",
+        "fetched_at_utc": datetime.now(timezone.utc).isoformat() + "Z",
         "http_status": http_status,
         "content_type": content_type,
         "sha256_raw": sha256_raw,

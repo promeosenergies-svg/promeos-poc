@@ -174,7 +174,10 @@ function App() {
 
               {/* Upgrade Wizard Modal */}
               {showUpgradeWizard && (
-                <UpgradeWizard onClose={() => setShowUpgradeWizard(false)} />
+                <UpgradeWizard onClose={(completed) => {
+                  setShowUpgradeWizard(false);
+                  if (completed) window.location.href = '/patrimoine';
+                }} />
               )}
             </Router>
           </ErrorBoundary>

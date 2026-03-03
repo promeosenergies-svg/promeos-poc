@@ -211,11 +211,7 @@ const UpgradeWizard = ({ onClose }) => {
   };
 
   const handleClose = () => {
-    if (result) {
-      window.location.reload();
-    } else {
-      onClose();
-    }
+    onClose(!!result);
   };
 
   const canProceed = () => {

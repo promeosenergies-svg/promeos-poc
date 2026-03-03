@@ -11,7 +11,7 @@ GET /api/consumption/hp_hc — ratio HP/HC
 GET /api/consumption/gas/summary — resume gaz
 """
 from typing import Optional, List
-from datetime import date
+from datetime import date, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
@@ -191,7 +191,7 @@ def seed_demo_consumption(
 
     # --- Seed seasonal gas readings for gas meters ---
     gas_seeded = 0
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     for site in sites:
         gas_meters = db.query(Meter).filter(
             Meter.site_id == site.id, Meter.is_active == True,
@@ -731,7 +731,7 @@ def gas_summary(
     from datetime import datetime, timedelta
     from collections import defaultdict
 
-    end_date = datetime.utcnow()
+    end_date = datetime.now(timezone.utc)
     start_date = end_date - timedelta(days=days)
 
     meters = db.query(Meter).filter(

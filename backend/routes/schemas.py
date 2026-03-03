@@ -1,7 +1,7 @@
 """
 PROMEOS - Schémas Pydantic pour validation des données API
 """
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 from typing import Optional, List
 from datetime import datetime, date
 from models import (
@@ -46,8 +46,7 @@ class SiteResponse(SiteBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class SiteStats(BaseModel):
     """Statistiques d'un site"""
@@ -71,8 +70,7 @@ class CompteurResponse(CompteurBase):
     site_id: int
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # ========================================
 # SCHÉMAS CONSOMMATION
@@ -85,8 +83,7 @@ class ConsommationResponse(BaseModel):
     valeur: float
     cout_euro: Optional[float] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # ========================================
 # SCHÉMAS ALERTE
@@ -104,8 +101,7 @@ class AlerteResponse(AlerteBase):
     resolue: bool
     date_resolution: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # ========================================
 # SCHÉMAS DE RÉPONSE LISTE
@@ -133,8 +129,7 @@ class BatimentResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # ========================================
 # SCHÉMAS OBLIGATION
@@ -151,8 +146,7 @@ class ObligationResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # ========================================
 # SCHÉMAS EVIDENCE
@@ -168,8 +162,7 @@ class EvidenceResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # ========================================
 # SCHÉMA COMPLIANCE DÉTAILLÉ

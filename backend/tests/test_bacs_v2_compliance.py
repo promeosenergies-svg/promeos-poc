@@ -5,7 +5,7 @@ Pattern: TestClient + in-memory SQLite + StaticPool (same as test_compliance_bun
 import sys
 import os
 import json
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -78,7 +78,7 @@ def _seed_bacs_sites(db_session):
         units_json=json.dumps([{"label": "PAC1", "kw": 350}]),
     ))
     db_session.add(BacsAssessment(
-        id=1, asset_id=1, assessed_at=datetime.utcnow(),
+        id=1, asset_id=1, assessed_at=datetime.now(timezone.utc),
         threshold_applied=290, is_obligated=True,
         deadline_date=date(2025, 1, 1),
         trigger_reason=BacsTriggerReason.THRESHOLD_290,
@@ -97,7 +97,7 @@ def _seed_bacs_sites(db_session):
         units_json=json.dumps([{"label": "Clim1", "kw": 80}, {"label": "Clim2", "kw": 70}]),
     ))
     db_session.add(BacsAssessment(
-        id=2, asset_id=2, assessed_at=datetime.utcnow(),
+        id=2, asset_id=2, assessed_at=datetime.now(timezone.utc),
         threshold_applied=70, is_obligated=True,
         deadline_date=date(2030, 1, 1),
         trigger_reason=BacsTriggerReason.THRESHOLD_70,

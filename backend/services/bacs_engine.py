@@ -4,7 +4,7 @@ Moteur complet: Putile, calendrier reglementaire, TRI exemption, inspections.
 """
 import json
 import os
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
 import yaml
@@ -380,7 +380,7 @@ def evaluate_bacs(db: Session, site_id: int, tri_context: Optional[dict] = None)
 
     assessment = BacsAssessment(
         asset_id=asset.id,
-        assessed_at=datetime.utcnow(),
+        assessed_at=datetime.now(timezone.utc),
         threshold_applied=obligation["threshold"],
         is_obligated=obligation["is_obligated"],
         deadline_date=obligation["deadline"],

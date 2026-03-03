@@ -13,7 +13,7 @@ from models import (
     ImportStatus, FrequencyType, AnomalySeverity, RecommendationStatus
 )
 from typing import Optional, List
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime, timezone
 import csv
 import io
@@ -44,8 +44,7 @@ class MeterResponse(BaseModel):
     subscribed_power_kva: Optional[float] = None
     readings_count: Optional[int] = 0
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ImportJobResponse(BaseModel):
@@ -62,8 +61,7 @@ class ImportJobResponse(BaseModel):
     error_message: Optional[str] = None
     created_at: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class AnalysisSummary(BaseModel):

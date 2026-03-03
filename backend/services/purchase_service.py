@@ -39,7 +39,7 @@ def estimate_consumption(db: Session, site_id: int) -> dict:
     Estimate annual consumption for a site.
     Priority: MeterReading > EnergyInvoice > default fallback.
     """
-    twelve_months_ago = datetime.now(timezone.utc) - timedelta(days=365)
+    twelve_months_ago = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=365)
 
     # Priority 1: MeterReading (sum last 12 months)
     meter_sum = (

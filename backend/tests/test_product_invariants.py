@@ -107,11 +107,11 @@ class TestInv1TotalSites:
 
     def test_soft_deleted_excluded(self, db):
         """Soft-deleted sites must NOT be counted."""
-        from datetime import datetime
+        from datetime import datetime, timezone
         org, ej, pf = _make_org(db)
         s1 = _make_site(db, pf, nom="Active")
         s2 = _make_site(db, pf, nom="Deleted")
-        s2.deleted_at = datetime.utcnow()
+        s2.deleted_at = datetime.now(timezone.utc)
         db.commit()
 
         q = (
@@ -242,8 +242,8 @@ class TestInv5OrgScoping:
         s1 = _make_site(db, pf1, nom="S1")
         s2 = _make_site(db, pf2, nom="S2")
         from datetime import datetime
-        db.add(Alerte(site_id=s1.id, titre="Alert org1", description="Detail", resolue=False, severite=SeveriteAlerte.WARNING, timestamp=datetime.utcnow()))
-        db.add(Alerte(site_id=s2.id, titre="Alert org2", description="Detail", resolue=False, severite=SeveriteAlerte.CRITICAL, timestamp=datetime.utcnow()))
+        db.add(Alerte(site_id=s1.id, titre="Alert org1", description="Detail", resolue=False, severite=SeveriteAlerte.WARNING, timestamp=datetime.now(timezone.utc)))
+        db.add(Alerte(site_id=s2.id, titre="Alert org2", description="Detail", resolue=False, severite=SeveriteAlerte.CRITICAL, timestamp=datetime.now(timezone.utc)))
         db.commit()
 
         # Cockpit query: alertes for org1 only

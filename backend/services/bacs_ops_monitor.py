@@ -3,7 +3,7 @@ PROMEOS - BACS Ops Monitor
 Operational KPIs, consumption linkage, and monitoring panel for BACS.
 """
 import json
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
 from sqlalchemy.orm import Session
@@ -69,7 +69,7 @@ def compute_bacs_ops_kpis(db: Session, site_id: int, period_days: int = 30) -> d
     try:
         meter = db.query(Meter).filter(Meter.site_id == site_id).first()
         if meter:
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc).replace(tzinfo=None)
             current_start = now - timedelta(days=period_days)
             prev_start = now - timedelta(days=period_days * 2)
 
@@ -128,7 +128,7 @@ def get_monthly_consumption(db: Session, site_id: int, months: int = 12) -> list
         if not meter:
             return []
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
         start = now - timedelta(days=months * 30)
 
         readings = (
@@ -157,7 +157,7 @@ def get_hourly_heatmap(db: Session, site_id: int, days: int = 7) -> list[list[fl
         if not meter:
             return []
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
         start = now - timedelta(days=days * 4)  # 4 weeks of data
 
         readings = (

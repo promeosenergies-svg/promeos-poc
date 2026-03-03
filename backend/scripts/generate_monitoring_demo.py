@@ -17,7 +17,7 @@ import sys
 import os
 import math
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 # Add backend to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
@@ -64,7 +64,7 @@ def _generate_site1(db):
         db.query(MeterReading).filter_by(meter_id=meter.id).delete()
         db.commit()
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     start = now - timedelta(days=90)
     readings = []
     random.seed(42)
@@ -145,7 +145,7 @@ def _generate_site2(db):
         db.query(MeterReading).filter_by(meter_id=meter.id).delete()
         db.commit()
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     start = now - timedelta(days=90)
     readings = []
     random.seed(123)

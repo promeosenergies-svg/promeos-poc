@@ -5,7 +5,7 @@ import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -43,7 +43,7 @@ def seeded_db(db):
     db.flush()
 
     # Generate 100 hourly readings over ~4 days
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     for i in range(100):
         db.add(MeterReading(
             meter_id=meter.id,

@@ -7,7 +7,7 @@ import os
 import sys
 import tempfile
 import zipfile
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -56,7 +56,7 @@ class TestKBDocFromExportPack:
             "content_hash": fake_hash,
             "nb_sections": 2,
             "nb_chunks": 0,
-            "updated_at": datetime.utcnow().isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat(),
             "meta": {"efa_id": 1, "year": 2025, "simulation": True, "generated_type": "operat_export"},
             "status": "review",
         }

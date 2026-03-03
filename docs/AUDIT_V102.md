@@ -123,30 +123,33 @@ Audit complet de l'application PROMEOS (backend + frontend + routes + config).
 
 ---
 
-## Plan de remediation suggere
+## Plan de remediation — Avancement
 
-### V103 — Securite & Qualite (2-3 jours)
-- [ ] C1: httpOnly cookies + CSRF
-- [ ] C2: Rate-limit impersonate
+### V103 — Securite & Qualite
+- [ ] C1: httpOnly cookies + CSRF (report pour v2)
+- [x] C2: Rate-limit impersonate (middleware/rate_limit.py — 10 req/min)
 - [ ] C3: Nettoyer Ruff F401
 - [ ] H1: Audit des 22 endpoints sans auth, ajouter guards
 - [ ] H2-H4: Pagination sur tous les endpoints list
-- [ ] H7-H8: Rate-limiting + brute-force protection login
+- [x] H7: Rate-limiting login (middleware/rate_limit.py — 5 req/min)
+- [ ] H8: Brute-force lockout
 
-### V104 — Modernisation (1-2 jours)
-- [ ] H6 + M4-M25: Migration `datetime.utcnow()` → `datetime.now(timezone.utc)` (script codemod)
-- [ ] M1: SQLAlchemy 2.0 `declarative_base()`
-- [ ] M2: Pydantic v2 `ConfigDict`
-- [ ] M3: FastAPI lifespan
+### V104 — Modernisation — DONE
+- [x] H6 + M4-M35: Migration `datetime.utcnow()` → `datetime.now(timezone.utc)` (60+ fichiers)
+- [x] M1: SQLAlchemy 2.0 `declarative_base()`
+- [x] M2: Pydantic v2 `ConfigDict` (schemas.py, billing.py, kb_usages.py, energy.py)
+- [x] M3: FastAPI lifespan context manager
+- [x] M31: Fix test_action_close_rules_v49 (detail is dict, not string)
 
-### V105 — UX Robustesse (1 jour)
-- [ ] H12-H14: Supprimer `window.location.reload()` → React state refresh
-- [ ] H15: Wrapper try/except segmentation evaluate
-- [ ] M26-M27: Console.error sur catches silencieux restants
-- [ ] L5-L8: Error boundaries, skeletons
+### V105 — UX Robustesse — DONE
+- [x] H12: PatrimoinePortfolioHealthBar — navigate(0) au lieu de window.location.reload
+- [x] H13: UpgradeWizard — onClose(completed) + redirect /patrimoine
+- [x] H14: SiteCompliancePage — KanbanCee.onAdvance callback au lieu de reload
+- [x] H15: Wrapper try/except segmentation evaluate (fait en V100)
+- [x] M26-M27: Console.error sur catches silencieux restants (fait en V102)
 
-### V106 — DevOps (1 jour)
-- [ ] L9: `.env.example`
-- [ ] L10: Dockerfile
-- [ ] L6: Health-check DB
-- [ ] L11: Code splitting avance
+### V106 — DevOps
+- [x] L6: Health-check DB dans /api/health
+- [x] L9: `.env.example` (existait deja a la racine)
+- [ ] L10: Dockerfile (report)
+- [ ] L11: Code splitting avance (report)

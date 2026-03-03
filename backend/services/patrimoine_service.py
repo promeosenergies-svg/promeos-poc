@@ -6,7 +6,7 @@ import io
 import csv
 import json
 import hashlib
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy.orm import Session
@@ -839,7 +839,7 @@ def activate_batch(db: Session, batch_id: int, portefeuille_id: int, user_id: in
         }
 
     # Create activation log (STARTED) — persisted outside savepoint
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     log = ActivationLog(
         batch_id=batch_id,
         started_at=now,
@@ -858,7 +858,7 @@ def activate_batch(db: Session, batch_id: int, portefeuille_id: int, user_id: in
             result = _do_activate(db, batch, batch_id, portefeuille_id, now)
             # Status updates inside savepoint — atomic with entity creation
             log.status = ActivationLogStatus.SUCCESS
-            log.completed_at = datetime.utcnow()
+            log.completed_at = datetime.now(timezone.utc)
             log.sites_created = result["sites_created"]
             log.compteurs_created = result["compteurs_created"]
 
@@ -874,7 +874,7 @@ def activate_batch(db: Session, batch_id: int, portefeuille_id: int, user_id: in
         db.expire(batch)
         db.expire(log)
         log.status = ActivationLogStatus.FAILED
-        log.completed_at = datetime.utcnow()
+        log.completed_at = datetime.now(timezone.utc)
         log.error_message = str(e)[:2000]
         log.sites_created = 0
         log.compteurs_created = 0

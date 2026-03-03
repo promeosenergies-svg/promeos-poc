@@ -4,7 +4,7 @@ Pipeline: Features -> Retrieve archetypes -> Apply anomaly rules -> Generate rec
 Every result has full KB provenance (kb_rule_id, source_section, explanation)
 """
 import math
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Any
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -87,7 +87,7 @@ class AnalyticsEngine:
                 "kb_recommendation_id": r["kb_recommendation_id"],
                 "triggered_by": r["triggered_by"],
             } for r in recommendations],
-            "analysis_timestamp": datetime.utcnow().isoformat(),
+            "analysis_timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
     def _extract_features(self, meter: Meter) -> Optional[Dict[str, Any]]:
@@ -450,7 +450,7 @@ class AnalyticsEngine:
         # Delete old profiles for this meter
         self.db.query(UsageProfile).filter_by(meter_id=meter.id).delete()
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         days = features.get("date_range_days", 365)
 
         profile = UsageProfile(
@@ -494,7 +494,7 @@ class AnalyticsEngine:
                 description=a["explanation"],
                 severity=severity_map.get(a["severity"], AnomalySeverity.MEDIUM),
                 confidence=a["confidence"],
-                detected_at=datetime.utcnow(),
+                detected_at=datetime.now(timezone.utc),
                 measured_value=a["measured_value"],
                 threshold_value=a["threshold_value"],
                 deviation_pct=a["deviation_pct"],

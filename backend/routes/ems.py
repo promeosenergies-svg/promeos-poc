@@ -4,7 +4,7 @@ Timeseries, weather, energy signature, saved views, collections, demo data.
 """
 from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 
 from sqlalchemy.orm import Session
@@ -643,7 +643,7 @@ def generate_ems_demo(
         3: "profile_rupture",   # Bureau with schedule change mid-year
     }
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     start_date = datetime(now.year - 1, now.month, now.day)
     total_readings = 0
     site_reports = []

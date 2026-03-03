@@ -3,7 +3,7 @@ PROMEOS Referentiel — Service layer for Bill Intelligence integration.
 Provides source traceability for tariff/tax calculations.
 """
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -66,7 +66,7 @@ def build_calc_trace(calc_id: str, tags: list[str], amount: float,
 
     return {
         "calc_id": calc_id,
-        "calculated_at": datetime.utcnow().isoformat() + "Z",
+        "calculated_at": datetime.now(timezone.utc).isoformat() + "Z",
         "amount": amount,
         "tags_queried": tags,
         "sources_used": [s["ref"] for s in sources],

@@ -6,7 +6,7 @@ Usage:
     orchestrator = MonitoringOrchestrator(db)
     result = orchestrator.run(site_id=1, meter_id=1)
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, Optional, List
 from sqlalchemy.orm import Session
 
@@ -85,7 +85,7 @@ class MonitoringOrchestrator:
         """Run pipeline for a single meter."""
         from models import MeterReading, MonitoringSnapshot, MonitoringAlert, AlertStatus, AlertSeverity
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
         period_start = now - timedelta(days=days)
         period_end = now
 

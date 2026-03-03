@@ -347,7 +347,7 @@ def get_accessible_entity_ids(db: Session, user_org_role: UserOrgRole) -> list[i
     if not scopes:
         return []
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     entity_ids = set()
 
     for scope in scopes:

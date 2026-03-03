@@ -5,7 +5,7 @@ Scans snapshots directory, builds sources_manifest.json + optional SQLite index.
 import json
 import os
 import sqlite3
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -22,7 +22,7 @@ def build_manifest(window_start: Optional[str] = None, window_end: Optional[str]
     - in_window_24m flag
     """
     manifest = {
-        "generated_at": datetime.utcnow().isoformat() + "Z",
+        "generated_at": datetime.now(timezone.utc).isoformat() + "Z",
         "window": {"start": window_start, "end": window_end},
         "sources": {},
         "stats": {

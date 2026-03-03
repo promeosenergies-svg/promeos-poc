@@ -3,7 +3,7 @@ PROMEOS - Smart Intake Service (DIAMANT)
 Session CRUD, submit answers, apply to models, compute diff, demo autofill.
 """
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy.orm import Session
@@ -85,7 +85,7 @@ def create_session(
         score_before=score_before,
         questions_count=len(questions),
         answers_count=0,
-        started_at=datetime.utcnow(),
+        started_at=datetime.now(timezone.utc),
     )
     db.add(session)
     db.flush()
@@ -224,7 +224,7 @@ def apply_answers(db: Session, session_id: int) -> dict:
         return {"fields_applied": 0, "score_before": session.score_before, "score_after": session.score_before}
 
     fields_applied = 0
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     for answer in answers:
         value = json.loads(answer.value_json)
@@ -344,7 +344,7 @@ def complete_session(db: Session, session_id: int) -> IntakeSession:
         raise ValueError(f"IntakeSession {session_id} not found")
 
     session.status = IntakeSessionStatus.COMPLETED
-    session.completed_at = datetime.utcnow()
+    session.completed_at = datetime.now(timezone.utc)
     db.flush()
 
     _log_audit(db, session.user_id, "intake_complete", "intake_session", str(session_id), {

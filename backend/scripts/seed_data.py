@@ -7,7 +7,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 
 from models import (
@@ -873,7 +873,7 @@ def seed_iam_demo(db: Session, org: Organisation):
         elif scope_type == "entite" and scope_ref:
             assign_scope(db, uor.id, ScopeLevel.ENTITE, scope_ref.id)
         elif scope_type == "site" and scope_ref:
-            expires_at = (datetime.utcnow() + timedelta(days=expires_days)) if expires_days else None
+            expires_at = (datetime.now(timezone.utc) + timedelta(days=expires_days)) if expires_days else None
             assign_scope(db, uor.id, ScopeLevel.SITE, scope_ref.id, expires_at=expires_at)
             # Karim gets a second site scope
             if email == "karim@atlas.demo" and second_site and second_site.id != scope_ref.id:

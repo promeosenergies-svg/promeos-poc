@@ -5,7 +5,7 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from sqlalchemy import create_engine
@@ -58,7 +58,7 @@ def _create_site_with_meter(db):
 
 def _inject_office_readings(db, meter, days=90):
     """Inject office-pattern readings: high 8-18 weekdays, low nights/weekends."""
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     for d in range(days):
         ts_base = now - timedelta(days=days - d)
         dow = ts_base.weekday()
@@ -80,7 +80,7 @@ def _inject_office_readings(db, meter, days=90):
 
 def _inject_flat_readings(db, meter, days=90):
     """Inject flat curve (24/7 constant)."""
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     for d in range(days):
         ts_base = now - timedelta(days=days - d)
         for h in range(24):
@@ -118,7 +118,7 @@ class TestScheduleSuggest:
         """Fewer than 168 readings -> error."""
         site, meter = _create_site_with_meter(db)
         # Only inject 100 readings (less than 168)
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         for i in range(100):
             ts = now - timedelta(hours=100 - i)
             db.add(MeterReading(

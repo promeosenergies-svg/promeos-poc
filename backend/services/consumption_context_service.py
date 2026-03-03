@@ -12,7 +12,7 @@ Reutilise 100% des services existants:
 import json
 import logging
 import math
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Tuple
 
 from sqlalchemy.orm import Session
@@ -142,7 +142,7 @@ def get_consumption_profile(db: Session, site_id: int, days: int = 30) -> dict:
 
     readings = []
     if meters:
-        cutoff = datetime.utcnow() - timedelta(days=days)
+        cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)
         meter_ids = [m.id for m in meters]
         readings = (
             db.query(MeterReading)
@@ -382,7 +382,7 @@ def get_anomalies_and_score(db: Session, site_id: int, days: int = 30) -> dict:
     weekend_ratio = 0.0
 
     if meters:
-        cutoff = datetime.utcnow() - timedelta(days=days)
+        cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)
         meter_ids = [m.id for m in meters]
         readings = (
             db.query(MeterReading)

@@ -4,7 +4,7 @@ PROMEOS - Routes API Monitoring (Electric Consumption Mastery)
 """
 import math
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -403,7 +403,7 @@ def acknowledge_alert(
         raise HTTPException(status_code=400, detail=f"Alert is {alert.status.value}, can only ack OPEN alerts")
 
     alert.status = AlertStatus.ACKNOWLEDGED
-    alert.acknowledged_at = datetime.utcnow()
+    alert.acknowledged_at = datetime.now(timezone.utc)
     alert.acknowledged_by = request.acknowledged_by
     db.commit()
 
@@ -427,7 +427,7 @@ def resolve_alert(
         raise HTTPException(status_code=400, detail="Alert is already resolved")
 
     alert.status = AlertStatus.RESOLVED
-    alert.resolved_at = datetime.utcnow()
+    alert.resolved_at = datetime.now(timezone.utc)
     alert.resolved_by = request.resolved_by
     alert.resolution_note = request.resolution_note
     db.commit()
@@ -533,7 +533,7 @@ def generate_monitoring_demo(request: MonitoringDemoRequest, db: Session = Depen
     sched.is_24_7 = profile.get("is_24_7", False)
     db.commit()
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     start = now - timedelta(days=request.days)
 
     # Pre-generate weather data so consumption can be correlated

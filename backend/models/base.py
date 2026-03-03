@@ -2,7 +2,7 @@
 PROMEOS - Base SQLAlchemy
 Configuration de base pour tous les modeles de donnees
 """
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy import Column, Integer, DateTime, String
 from datetime import datetime, timezone
 
@@ -21,14 +21,14 @@ class TimestampMixin:
     """
     created_at = Column(
         DateTime,
-        default=datetime.utcnow,
+        default=lambda: datetime.now(timezone.utc),
         nullable=False,
         comment="Date de creation"
     )
     updated_at = Column(
         DateTime,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
         nullable=False,
         comment="Date de derniere modification"
     )

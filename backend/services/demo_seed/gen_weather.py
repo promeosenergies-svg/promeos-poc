@@ -5,7 +5,7 @@ Supports arbitrary lookback period (default 90 days, helios 730 days).
 """
 import math
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from models import EmsWeatherCache
 
@@ -17,7 +17,7 @@ def _insert_weather_ignore(db, records: list):
     dialect = db.bind.dialect.name if db.bind else "unknown"
     if dialect == "sqlite":
         from sqlalchemy import text
-        now_iso = datetime.utcnow().isoformat()
+        now_iso = datetime.now(timezone.utc).isoformat()
         stmt = text(
             "INSERT OR IGNORE INTO ems_weather_cache "
             "(site_id, date, temp_avg_c, temp_min_c, temp_max_c, source, created_at, updated_at) "
@@ -47,7 +47,7 @@ def generate_weather(db, sites: list, days: int, rng: random.Random) -> dict:
     Returns:
         temp_lookup: {site_id: {"YYYY-MM-DD": temp_avg_c}}
     """
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     start = now - timedelta(days=days)
     temp_lookup = {}
 

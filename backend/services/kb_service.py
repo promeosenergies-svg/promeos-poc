@@ -7,7 +7,7 @@ import hashlib
 import json
 from pathlib import Path
 from typing import Dict, List, Optional, Any
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
 
@@ -57,7 +57,7 @@ class KBService:
             existing.version = kb_version.version
             existing.source_sha256 = kb_version.source_sha256
             existing.date = kb_version.date
-            existing.updated_at = datetime.utcnow()
+            existing.updated_at = datetime.now(timezone.utc)
             kb_version = existing
         else:
             self.db.add(kb_version)
@@ -109,7 +109,7 @@ class KBService:
                 if existing:
                     for key, value in archetype_data.items():
                         setattr(existing, key, value)
-                    existing.updated_at = datetime.utcnow()
+                    existing.updated_at = datetime.now(timezone.utc)
                     archetype = existing
                 else:
                     archetype = KBArchetype(**archetype_data)
@@ -168,7 +168,7 @@ class KBService:
                 if existing:
                     for key, value in rule_data.items():
                         setattr(existing, key, value)
-                    existing.updated_at = datetime.utcnow()
+                    existing.updated_at = datetime.now(timezone.utc)
                 else:
                     rule = KBAnomalyRule(**rule_data)
                     self.db.add(rule)
@@ -234,7 +234,7 @@ class KBService:
                 if existing:
                     for key, value in reco_data.items():
                         setattr(existing, key, value)
-                    existing.updated_at = datetime.utcnow()
+                    existing.updated_at = datetime.now(timezone.utc)
                 else:
                     reco = KBRecommendation(**reco_data)
                     self.db.add(reco)

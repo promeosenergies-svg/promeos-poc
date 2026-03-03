@@ -220,7 +220,7 @@ function PreuvesTab({ data }) {
 }
 
 /* ── V69: Kanban CEE ────────────────── */
-function KanbanCee({ dossier, toast }) {
+function KanbanCee({ dossier, toast, onAdvance }) {
   const currentIdx = CEE_STEPS.indexOf(dossier.current_step);
   const [advancing, setAdvancing] = useState(false);
 
@@ -229,7 +229,7 @@ function KanbanCee({ dossier, toast }) {
     try {
       await advanceCeeStep(dossier.id, stepVal);
       toast('Dossier CEE avancé', 'success');
-      window.location.reload();
+      if (onAdvance) onAdvance();
     } catch {
       toast('Erreur lors de l\'avancement', 'error');
     } finally {
@@ -520,7 +520,7 @@ function PlanTab({ siteId, siteName: _siteName, navigate, onCreateAction, toast 
 
                 {/* CEE Dossier or CTA */}
                 {wp.dossier ? (
-                  <KanbanCee dossier={wp.dossier} toast={toast} />
+                  <KanbanCee dossier={wp.dossier} toast={toast} onAdvance={reload} />
                 ) : wp.cee_status !== 'non' ? (
                   <button
                     onClick={() => handleCreateDossier(wp.id)}

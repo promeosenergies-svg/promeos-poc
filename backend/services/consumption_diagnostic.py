@@ -16,7 +16,7 @@ V1.1 changes:
 import json
 import math
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
 from sqlalchemy.orm import Session
@@ -233,7 +233,7 @@ def generate_demo_consumption(
     # Delete existing readings for this meter
     db.query(MeterReading).filter(MeterReading.meter_id == meter.id).delete()
 
-    now = datetime.utcnow().replace(minute=0, second=0, microsecond=0)
+    now = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
     start = now - timedelta(days=days)
 
     surface = site.surface_m2 or 1000
@@ -350,7 +350,7 @@ def generate_demo_gas_consumption(
     # Delete existing gas readings for this meter
     db.query(MeterReading).filter(MeterReading.meter_id == meter.id).delete()
 
-    now = datetime.utcnow().replace(hour=12, minute=0, second=0, microsecond=0)
+    now = datetime.now(timezone.utc).replace(hour=12, minute=0, second=0, microsecond=0)
     start = now - timedelta(days=days)
 
     surface = site.surface_m2 or 1000
@@ -408,7 +408,7 @@ def generate_demo_gas_consumption(
 
 def _get_readings(db: Session, meter_id: int, days: int = 30) -> List[MeterReading]:
     """Get last N days of hourly readings for a meter."""
-    cutoff = datetime.utcnow() - timedelta(days=days)
+    cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)
     return (
         db.query(MeterReading)
         .filter(MeterReading.meter_id == meter_id, MeterReading.timestamp >= cutoff)

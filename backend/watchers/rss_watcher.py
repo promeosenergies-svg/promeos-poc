@@ -6,7 +6,7 @@ import re
 import unicodedata
 import urllib.request
 import xml.etree.ElementTree as ET
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 from sqlalchemy.orm import Session
 from models import RegSourceEvent, WatcherEventStatus
@@ -89,7 +89,7 @@ class RSSWatcher(Watcher):
                     snippet=snippet,
                     tags=self.tags_default,
                     published_at=published_at,
-                    retrieved_at=datetime.utcnow(),
+                    retrieved_at=datetime.now(timezone.utc),
                     reviewed=False,
                     status=WatcherEventStatus.NEW,
                     dedup_key=dedup_key,

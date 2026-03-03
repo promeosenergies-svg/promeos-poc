@@ -8,7 +8,7 @@ PUT  /api/auth/password
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -20,6 +20,7 @@ from services.iam_service import (
     log_audit,
 )
 from middleware.auth import oauth2_scheme, get_current_user_role, require_permission, DEMO_MODE
+from middleware.rate_limit import check_rate_limit
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
 
@@ -84,8 +85,9 @@ def _build_login_response(db: Session, user: User, uor: UserOrgRole) -> dict:
 # ========================================
 
 @router.post("/login")
-def login(req: LoginRequest, db: Session = Depends(get_db)):
+def login(request: Request, req: LoginRequest, db: Session = Depends(get_db)):
     """Authenticate with email + password → JWT."""
+    check_rate_limit(request, key_prefix="login", max_requests=5, window_seconds=60)
     user = db.query(User).filter(User.email == req.email).first()
     if not user or not verify_password(req.password, user.hashed_password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
@@ -249,6 +251,7 @@ class ImpersonateRequest(BaseModel):
 
 @router.post("/impersonate")
 def impersonate(
+    request: Request,
     req: ImpersonateRequest,
     token: Optional[str] = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
@@ -256,6 +259,7 @@ def impersonate(
     """Impersonate another user (DEMO_MODE only or admin).
     Returns a new JWT as if logged in as that user.
     """
+    check_rate_limit(request, key_prefix="impersonate", max_requests=10, window_seconds=60)
     if not DEMO_MODE:
         # Must be admin
         if not token:

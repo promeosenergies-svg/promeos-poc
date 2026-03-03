@@ -2,6 +2,7 @@
 PROMEOS - Point d'entrée principal de l'API
 """
 import os
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -47,11 +48,11 @@ from app.kb.router import router as kb_router
 # Import Bill Intelligence router
 from app.bill_intelligence.router import router as bill_router
 
-# Créer l'application FastAPI
+# Créer l'application FastAPI (lifespan assigned after startup funcs are defined)
 app = FastAPI(
     title="PROMEOS API",
     description="API de gestion énergétique multi-sites - 120 sites",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 # Request context middleware (request_id + timing) — must be added before CORS
@@ -126,19 +127,14 @@ if _missing:
     import logging
     logging.getLogger("promeos").error(f"[STARTUP] CRITICAL: billing routes missing from app: {_missing}. Restart uvicorn.")
 else:
-    print(f"[STARTUP] Billing V67 routes OK ({len(_REQUIRED_BILLING_PATHS)} verified)")
+    import logging
+    logging.getLogger("promeos").info(f"[STARTUP] Billing V67 routes OK ({len(_REQUIRED_BILLING_PATHS)} verified)")
 
 
-@app.on_event("startup")
-async def restore_or_seed_helios():
-    """
-    Au démarrage : si DEMO_MODE=true, restaurer DemoState depuis la DB
-    (org is_demo=True existante) ou seeder HELIOS fresh si aucune org demo.
-    Idempotent — ne re-seed pas si une org demo existe déjà en DB.
-    """
+async def _startup_restore_or_seed_helios():
+    """Restore DemoState or seed HELIOS if DEMO_MODE=true."""
     if os.environ.get("PROMEOS_DEMO_MODE", "false").lower() != "true":
         return
-    # Never run during pytest — test fixtures manage their own DB isolation
     if os.environ.get("PYTEST_CURRENT_TEST"):
         return
 
@@ -146,7 +142,7 @@ async def restore_or_seed_helios():
     from services.demo_state import DemoState
 
     if DemoState.get_demo_org_id():
-        return  # DemoState déjà rempli (ex: test ou rechargement uvicorn)
+        return
 
     db = SessionLocal()
     try:
@@ -157,7 +153,6 @@ async def restore_or_seed_helios():
             .first())
 
         if demo_org:
-            # Re-register après restart — pas de re-seed
             pf_ids = [row.id for row in (
                 db.query(Portefeuille.id)
                 .join(EntiteJuridique,
@@ -180,31 +175,20 @@ async def restore_or_seed_helios():
                 default_site_name=first_site.nom if first_site else None,
             )
         else:
-            # Fresh seed — premier démarrage, DB vide
             from services.demo_seed import SeedOrchestrator
             import logging
-            logging.getLogger("promeos.startup").info(
-                "[startup] Seeding HELIOS demo data..."
-            )
+            logging.getLogger("promeos.startup").info("[startup] Seeding HELIOS demo data...")
             orch = SeedOrchestrator(db)
             orch.seed(pack="helios", size="S", rng_seed=42)
     except Exception as exc:
         import logging
-        logging.getLogger("promeos.startup").warning(
-            f"[startup] HELIOS init failed (non-bloquant): {exc}"
-        )
+        logging.getLogger("promeos.startup").warning(f"[startup] HELIOS init failed (non-bloquant): {exc}")
     finally:
         db.close()
 
 
-@app.on_event("startup")
-async def seed_hourly_if_missing():
-    """Auto-seed hourly consumption data if only monthly data exists.
-
-    Required for diagnostics (hors_horaires, base_load, pointe, derive, data_gap)
-    which all need hourly readings (min 48+ readings threshold).
-    Idempotent — skips if hourly data already present.
-    """
+async def _startup_seed_hourly_if_missing():
+    """Auto-seed hourly data if only monthly exists (for diagnostics)."""
     if os.environ.get("PYTEST_CURRENT_TEST"):
         return
 
@@ -218,9 +202,8 @@ async def seed_hourly_if_missing():
             text("SELECT COUNT(*) FROM meter_reading WHERE frequency = 'HOURLY'")
         ).scalar()
         if hourly_count and hourly_count > 0:
-            return  # Hourly data already exists
+            return
 
-        # Get demo sites (max 5)
         from models import Site
         sites = db.query(Site).filter(Site.actif == True).limit(5).all()
         if not sites:
@@ -241,12 +224,19 @@ async def seed_hourly_if_missing():
                 f"[startup] Auto-seeded hourly consumption for {seeded} sites (90 days each)"
             )
     except Exception as exc:
-        import logging as _log
-        _log.getLogger("promeos.startup").warning(
-            f"[startup] Hourly seed failed (non-bloquant): {exc}"
-        )
+        logging.getLogger("promeos.startup").warning(f"[startup] Hourly seed failed (non-bloquant): {exc}")
     finally:
         db.close()
+
+
+# Lifespan context manager (replaces deprecated @app.on_event("startup"))
+@asynccontextmanager
+async def _lifespan(app):
+    await _startup_restore_or_seed_helios()
+    await _startup_seed_hourly_if_missing()
+    yield
+
+app.router.lifespan_context = _lifespan
 
 
 # Route racine
@@ -264,6 +254,9 @@ def root():
 @app.get("/api/health")
 def api_health():
     import subprocess, datetime
+    from sqlalchemy import text
+    from database import SessionLocal
+
     git_sha = "unknown"
     try:
         git_sha = subprocess.check_output(
@@ -273,10 +266,21 @@ def api_health():
         ).decode().strip()
     except Exception:
         pass
+
+    db_ok = False
+    try:
+        db = SessionLocal()
+        db.execute(text("SELECT 1"))
+        db.close()
+        db_ok = True
+    except Exception:
+        pass
+
     return {
-        "ok": True,
+        "ok": db_ok,
         "version": "1.0.0",
         "git_sha": git_sha,
+        "db": "ok" if db_ok else "error",
         "time": datetime.datetime.now(datetime.UTC).isoformat(),
         "engine_versions": {
             "compliance": "1.0",

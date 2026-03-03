@@ -11,7 +11,7 @@ V86 — rich intraday patterns:
 """
 import math
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from models import MeterReading, FrequencyType
 
@@ -124,7 +124,7 @@ def generate_readings(db, meters: list, site_profiles: dict,
     Returns:
         total number of readings created
     """
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     start = now - timedelta(days=days)
     total = 0
 
@@ -254,7 +254,7 @@ def generate_monthly_readings(db, meters: list, site_profiles: dict,
     Returns:
         total number of readings created
     """
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     total = 0
 
     for meter in meters:
@@ -327,7 +327,7 @@ def generate_15min_readings(db, meters: list, site_profiles: dict,
     Returns:
         total number of readings created
     """
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     start = now - timedelta(days=days)
     total = 0
 
@@ -431,7 +431,7 @@ def _bulk_insert_ignore(db, readings: list):
                 "freq": r.frequency.name if hasattr(r.frequency, "name") else str(r.frequency),
                 "kwh": r.value_kwh,
                 "est": 1 if r.is_estimated else 0,
-                "cat": r.created_at.isoformat() if r.created_at else datetime.utcnow().isoformat(),
+                "cat": r.created_at.isoformat() if r.created_at else datetime.now(timezone.utc).isoformat(),
             }
             for r in readings
         ]

@@ -4,7 +4,7 @@ Creates monitoring snapshots, alerts, and consumption insights.
 Uses the real monitoring orchestrator engine for consistency.
 """
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from models import (
     MonitoringSnapshot, MonitoringAlert, ConsumptionInsight,
@@ -27,7 +27,7 @@ def generate_monitoring(db, sites: list, meters: list,
     power_engine = PowerEngine()
     quality_engine = DataQualityEngine()
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     period_start = now - timedelta(days=90)
 
     snapshots_count = 0

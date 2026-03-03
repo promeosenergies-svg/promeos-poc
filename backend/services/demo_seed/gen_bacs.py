@@ -4,7 +4,7 @@ Creates BacsAsset, BacsCvcSystem, BacsAssessment, BacsInspection per site.
 """
 import json
 import random
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
 from models.bacs_models import BacsAsset, BacsCvcSystem, BacsAssessment, BacsInspection
 from models.enums import CvcSystemType, CvcArchitecture, BacsTriggerReason, InspectionStatus
@@ -97,7 +97,7 @@ def generate_bacs(db, sites: list, rng: random.Random) -> dict:
 
         db.add(BacsAssessment(
             asset_id=asset.id,
-            assessed_at=datetime.utcnow(),
+            assessed_at=datetime.now(timezone.utc),
             threshold_applied=threshold,
             is_obligated=is_obligated,
             deadline_date=deadline,

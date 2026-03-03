@@ -4,7 +4,7 @@ Suggests operating schedule from actual consumption data (MeterReading).
 Algorithm: build 7x24 avg power matrix, detect active hours from talon.
 """
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from sqlalchemy.orm import Session
@@ -43,7 +43,7 @@ def suggest_schedule_from_consumption(
         }
 
     # Fetch hourly readings
-    cutoff = datetime.utcnow() - timedelta(days=days)
+    cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)
     readings = (
         db.query(MeterReading)
         .filter(

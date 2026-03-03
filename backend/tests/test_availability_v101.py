@@ -5,7 +5,7 @@ import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -61,7 +61,7 @@ def _create_meter(db, site, ev=EnergyVector.ELECTRICITY, mid="PRM-001"):
 
 
 def _seed_readings(db, meter, count=100):
-    now = datetime.utcnow().replace(minute=0, second=0, microsecond=0)
+    now = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
     readings = []
     for i in range(count):
         ts = now - timedelta(hours=count - i)

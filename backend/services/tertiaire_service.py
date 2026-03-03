@@ -7,7 +7,7 @@ import json
 import logging
 import os
 import zipfile
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 from sqlalchemy.orm import Session
@@ -415,7 +415,7 @@ def generate_operat_pack(db: Session, efa_id: int, year: int) -> dict:
         "efa_id": efa_id,
         "efa_nom": efa.nom,
         "year": year,
-        "generated_at": datetime.utcnow().isoformat(),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
         "surface_totale_m2": total_surface,
         "usages": usages,
         "nb_batiments": len(buildings),
@@ -444,7 +444,7 @@ Il ne constitue pas une soumission officielle sur la plateforme OPERAT.
 <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Nombre de bâtiments</strong></td><td style="padding: 8px; border: 1px solid #ddd;">{len(buildings)}</td></tr>
 <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Responsables</strong></td><td style="padding: 8px; border: 1px solid #ddd;">{len(resps)}</td></tr>
 </table>
-<p style="margin-top: 24px; color: #666;">Généré le {datetime.utcnow().strftime('%d/%m/%Y à %H:%M')} par PROMEOS</p>
+<p style="margin-top: 24px; color: #666;">Généré le {datetime.now(timezone.utc).strftime('%d/%m/%Y à %H:%M')} par PROMEOS</p>
 </body></html>"""
 
     # Write files
@@ -504,7 +504,7 @@ Il ne constitue pas une soumission officielle sur la plateforme OPERAT.
                 "content_hash": sha256,
                 "nb_sections": 2,
                 "nb_chunks": 0,
-                "updated_at": datetime.utcnow().isoformat(),
+                "updated_at": datetime.now(timezone.utc).isoformat(),
                 "meta": {
                     "efa_id": efa_id,
                     "efa_nom": efa.nom,

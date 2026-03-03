@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -94,7 +94,7 @@ def _create_meter_readings(db_session, site_id, days=30, base_kwh=20, peak_kwh=8
     db_session.add(meter)
     db_session.flush()
 
-    now = datetime.utcnow().replace(minute=0, second=0, microsecond=0)
+    now = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
     start = now - timedelta(days=days)
     readings = []
     ts = start
@@ -406,7 +406,7 @@ class TestRobustStats:
         from models.energy_models import MeterReading
 
         # Create 30 days of flat consumption + 1 extreme day
-        now = datetime.utcnow().replace(minute=0, second=0, microsecond=0)
+        now = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
         readings = []
         for day in range(30):
             for hour in range(24):

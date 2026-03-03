@@ -4,7 +4,7 @@ test_patrimoine_snapshot_v58.py -- Tests V58 : Snapshot canonique Patrimoine
 Couverture : surface SoT D1, soft-delete filtering, scoping org, endpoints HTTP.
 """
 import pytest
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -111,7 +111,7 @@ class TestSnapshotService:
         org, pf = _make_org(db, "OrgDelBat")
         site, _, _, _ = _make_full_site(db, pf, surface=5000.0)
         bat_del = Batiment(site_id=site.id, nom="Bat Del", surface_m2=9999.0)
-        bat_del.deleted_at = datetime.utcnow()
+        bat_del.deleted_at = datetime.now(timezone.utc)
         db.add(bat_del)
         db.commit()
         snap = get_site_snapshot(site.id, org.id, db)

@@ -4,7 +4,7 @@ Donnees du mix electrique francais (intensite CO2, prix).
 """
 import urllib.request
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from .base import Connector
 from models import DataPoint, SourceType
 
@@ -57,7 +57,7 @@ class RTEEco2MixConnector(Connector):
                             source_name=self.name,
                             quality_score=1.0,
                             coverage_ratio=1.0,
-                            retrieved_at=datetime.utcnow(),
+                            retrieved_at=datetime.now(timezone.utc),
                             source_ref=url
                         )
                         db.add(dp)

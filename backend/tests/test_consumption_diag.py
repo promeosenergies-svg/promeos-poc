@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -97,7 +97,7 @@ def _inject_readings(db_session, meter, days=30, pattern="bureau", anomaly=True)
     Pattern 'bureau': high during 8-19 weekdays, low otherwise.
     If anomaly=True, injects elevated night consumption on days 5-8.
     """
-    now = datetime.utcnow().replace(minute=0, second=0, microsecond=0)
+    now = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
     start = now - timedelta(days=days)
     ts = start
     readings = []
@@ -307,7 +307,7 @@ class TestDetectors:
         org, site = _create_org_site(db_session)
         meter = _create_meter(db_session, site.id)
         # Only 10 readings
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         for i in range(10):
             db_session.add(MeterReading(
                 meter_id=meter.id,

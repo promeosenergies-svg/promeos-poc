@@ -2,7 +2,7 @@
 PROMEOS Routes - Watchers endpoints
 Pipeline: NEW -> REVIEWED -> APPLIED | DISMISSED
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from typing import Optional
@@ -130,7 +130,7 @@ def review_event(
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     if body and body.decision:
         decision = body.decision

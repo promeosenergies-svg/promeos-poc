@@ -12,7 +12,7 @@ from datetime import date, datetime
 from typing import Optional, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, UploadFile, File
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -82,8 +82,7 @@ class ContractResponse(BaseModel):
     price_ref_eur_per_kwh: Optional[float] = None
     auto_renew: Optional[bool] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class InvoiceResponse(BaseModel):
@@ -97,8 +96,7 @@ class InvoiceResponse(BaseModel):
     status: Optional[str] = None
     source: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class BillingInsightResponse(BaseModel):
@@ -113,8 +111,7 @@ class BillingInsightResponse(BaseModel):
     owner: Optional[str] = None
     notes: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class BillingSummaryResponse(BaseModel):

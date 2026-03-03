@@ -9,7 +9,7 @@ Décision D1 — surface SoT :
                    else site.surface_m2
                    else None
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
 
 from sqlalchemy.orm import Session
@@ -153,5 +153,5 @@ def get_site_snapshot(site_id: int, org_id: int, db: Session) -> Optional[Dict[s
         "nb_contracts": len(contracts),
         "contracts": contracts_data,
         # Metadata
-        "computed_at": datetime.utcnow().isoformat() + "Z",
+        "computed_at": datetime.now(timezone.utc).isoformat() + "Z",
     }

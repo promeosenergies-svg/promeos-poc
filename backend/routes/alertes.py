@@ -2,7 +2,7 @@
 PROMEOS - Routes API pour les Alertes
 """
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
@@ -83,7 +83,7 @@ def resolve_alerte(
         return {"message": "Alerte déjà résolue"}
 
     alerte.resolue = True
-    alerte.date_resolution = datetime.utcnow()
+    alerte.date_resolution = datetime.now(timezone.utc)
     log_audit(db, auth.user.id if auth else None, "resolve_alert", "alerte", str(alerte_id),
               ip_address=request.client.host if request.client else None)
     logger.info("PATCH resolve alert %s (user=%s)", alerte_id, auth.user.id if auth else "anonymous")
