@@ -26,6 +26,8 @@ import PatrimoinePortfolioHealthBar from '../components/PatrimoinePortfolioHealt
 import PatrimoineHeatmap from '../components/PatrimoineHeatmap';
 import PatrimoineRiskDistributionBar from '../components/PatrimoineRiskDistributionBar';
 import SiteAnomalyPanel from '../components/SiteAnomalyPanel';
+import SegmentationWidget from '../components/SegmentationWidget';
+import SegmentationQuestionnaireModal from '../components/SegmentationQuestionnaireModal';
 import { getPatrimoineAnomalies, getPortfolioReconciliation } from '../services/api';
 import { track } from '../services/tracker';
 import { fmtEur, fmtEurFull, fmtArea, fmtAreaCompact, fmtKwh, fmtDateFR, pl } from '../utils/format';
@@ -99,6 +101,7 @@ export default function Patrimoine() {
   const [selected, setSelected] = useState(new Set());
   const { openActionDrawer } = useActionDrawer();
   const [showWizard, setShowWizard] = useState(false);
+  const [showSegModal, setShowSegModal] = useState(false);
   const [drawerSite, setDrawerSite] = useState(null);
   const [drawerInitialTab, setDrawerInitialTab] = useState('resume');
 
@@ -465,6 +468,13 @@ export default function Patrimoine() {
             />
           </div>
 
+          {/* ── V100 — Segmentation Card (profil energie) ── */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="col-span-1">
+              <SegmentationWidget compact onSegmentationClick={() => setShowSegModal(true)} />
+            </div>
+          </div>
+
           {/* ── Toolbar ── */}
           <div className="flex items-center gap-2 flex-wrap">
             {/* Search */}
@@ -675,6 +685,7 @@ export default function Patrimoine() {
 
       {/* Action creation handled by ActionDrawerContext */}
       {showWizard && <PatrimoineWizard onClose={() => setShowWizard(false)} />}
+      {showSegModal && <SegmentationQuestionnaireModal onClose={() => setShowSegModal(false)} />}
     </PageShell>
   );
 }

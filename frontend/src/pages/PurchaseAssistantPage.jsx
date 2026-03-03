@@ -525,7 +525,7 @@ function StepPortfolio({ wizard, setWizard, isDemo, setIsDemo, demoSites }) {
             />
             Mode demo
           </label>
-          {isDemo && (
+          {demoSites.length > 0 && (
             <button onClick={selectAll} className="text-xs text-blue-600 hover:underline">
               Tout selectionner
             </button>
@@ -570,6 +570,40 @@ function StepPortfolio({ wizard, setWizard, isDemo, setIsDemo, demoSites }) {
               </div>
             </div>
           ))}
+        </div>
+      ) : demoSites.length > 0 ? (
+        <div className="space-y-3">
+          <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-2 text-sm text-green-700">
+            {demoSites.length} site(s) charge(s) depuis votre patrimoine.
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {demoSites.map((site) => {
+              const selected = wizard.selectedSiteIds.includes(site.id);
+              return (
+                <button
+                  key={site.id}
+                  onClick={() => toggleSite(site.id)}
+                  className={`text-left p-3 rounded-lg border-2 transition
+                  ${selected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-sm text-gray-900">{site.name}</span>
+                    <Badge variant={site.energyType === 'ELEC' ? 'blue' : 'orange'}>
+                      {site.energyType === 'ELEC' ? <Zap size={12} /> : <Flame size={12} />}
+                      {site.energyType}
+                    </Badge>
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {site.city} — {site.usage}
+                  </div>
+                  <div className="text-xs text-gray-400 mt-1">
+                    {((site.consumption?.annualKwh || 0) / 1000).toFixed(0)} MWh/an —{' '}
+                    {(site.surfaceM2 || 0).toLocaleString()} m2
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
       ) : (
         <Card>

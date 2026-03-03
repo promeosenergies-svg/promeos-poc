@@ -55,6 +55,8 @@ def run_migrations(engine):
     _add_contract_v96_columns(engine)
     # V97 — Resolution Engine
     _create_reconciliation_fix_logs_table(engine)
+    # V100 — Segmentation enrichment
+    _migrate_segmentation_v100(engine)
 
 
 def _add_soft_delete_columns(engine):
@@ -876,3 +878,89 @@ def _create_reconciliation_fix_logs_table(engine):
             'ON "reconciliation_fix_logs" ("check_id")'
         ))
     logger.info("migration: created reconciliation_fix_logs table with indexes")
+
+
+# ========================================
+# V100 — Segmentation enrichment
+# ========================================
+
+def _migrate_segmentation_v100(engine):
+    """V100: Add missing columns to segmentation_profiles + create segmentation_answers table.
+
+    Idempotent — skips existing columns/tables.
+    """
+    insp = inspect(engine)
+
+    # 1. Create segmentation_profiles table if it doesn't exist at all
+    if not insp.has_table("segmentation_profiles"):
+        with engine.begin() as conn:
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS "segmentation_profiles" (
+                    "id" INTEGER PRIMARY KEY,
+                    "organisation_id" INTEGER NOT NULL REFERENCES "organisations"("id"),
+                    "portfolio_id" INTEGER REFERENCES "portefeuilles"("id"),
+                    "typologie" VARCHAR(50) NOT NULL,
+                    "segment_label" VARCHAR(100),
+                    "naf_code" VARCHAR(10),
+                    "confidence_score" REAL NOT NULL DEFAULT 0.0,
+                    "derived_from" VARCHAR(30) DEFAULT 'mix',
+                    "answers_json" TEXT,
+                    "reasons_json" TEXT,
+                    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    "updated_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )
+            """))
+            conn.execute(text(
+                'CREATE INDEX IF NOT EXISTS "ix_segmentation_profiles_org_id" '
+                'ON "segmentation_profiles" ("organisation_id")'
+            ))
+            conn.execute(text(
+                'CREATE INDEX IF NOT EXISTS "ix_segmentation_profiles_portfolio_id" '
+                'ON "segmentation_profiles" ("portfolio_id")'
+            ))
+        logger.info("migration: V100 — created segmentation_profiles table")
+    else:
+        # Add V100 columns if missing
+        existing_cols = {c["name"] for c in insp.get_columns("segmentation_profiles")}
+        v100_columns = [
+            ("portfolio_id", "INTEGER REFERENCES \"portefeuilles\"(\"id\")"),
+            ("segment_label", "VARCHAR(100)"),
+            ("derived_from", "VARCHAR(30) DEFAULT 'mix'"),
+        ]
+        added = 0
+        with engine.begin() as conn:
+            for col_name, col_type in v100_columns:
+                if col_name in existing_cols:
+                    continue
+                conn.execute(text(
+                    f'ALTER TABLE "segmentation_profiles" ADD COLUMN "{col_name}" {col_type}'
+                ))
+                added += 1
+                logger.info("migration: V100 — added segmentation_profiles.%s", col_name)
+        if added > 0:
+            logger.info("migration: V100 — added %d column(s) to segmentation_profiles", added)
+
+    # 2. Create segmentation_answers table if it doesn't exist
+    if not insp.has_table("segmentation_answers"):
+        with engine.begin() as conn:
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS "segmentation_answers" (
+                    "id" INTEGER PRIMARY KEY,
+                    "profile_id" INTEGER NOT NULL REFERENCES "segmentation_profiles"("id"),
+                    "organisation_id" INTEGER NOT NULL REFERENCES "organisations"("id"),
+                    "portfolio_id" INTEGER REFERENCES "portefeuilles"("id"),
+                    "question_id" VARCHAR(50) NOT NULL,
+                    "answer_value" VARCHAR(100) NOT NULL,
+                    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    "updated_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )
+            """))
+            conn.execute(text(
+                'CREATE INDEX IF NOT EXISTS "ix_segmentation_answers_profile_id" '
+                'ON "segmentation_answers" ("profile_id")'
+            ))
+            conn.execute(text(
+                'CREATE INDEX IF NOT EXISTS "ix_segmentation_answers_org_id" '
+                'ON "segmentation_answers" ("organisation_id")'
+            ))
+        logger.info("migration: V100 — created segmentation_answers table")

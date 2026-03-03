@@ -20,10 +20,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  AlertTriangle, Euro, ChevronRight, RefreshCw, Upload,
+  AlertTriangle, Euro, ChevronRight, RefreshCw, Upload, Loader2,
   ShieldCheck, TrendingUp, TrendingDown, Minus,
 } from 'lucide-react';
-import { getPatrimoinePortfolioSummary } from '../services/api';
+import { getPatrimoinePortfolioSummary, seedDemoPack, clearApiCache } from '../services/api';
+import { useScope } from '../contexts/ScopeContext';
 
 /* ── Constantes ──────────────────────────────────────────────────────────── */
 
@@ -139,9 +140,11 @@ function HealthBar({ sites_health, sites_count }) {
  */
 export default function PatrimoinePortfolioHealthBar({ onSiteClick, orgId = null }) {
   const navigate = useNavigate();
+  const { applyDemoScope } = useScope();
   const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState(null);
+  const [seeding, setSeeding] = useState(false);
 
   const fetchSummary = () => {
     // [DIAG V63] Vérifie que orgId et X-Org-Id sont cohérents au moment du fetch.
@@ -211,6 +214,28 @@ export default function PatrimoinePortfolioHealthBar({ onSiteClick, orgId = null
 
   if (!data) return null;
 
+  // Direct seed HELIOS — called when button clicked
+  const handleSeedHelios = async () => {
+    setSeeding(true);
+    try {
+      const res = await seedDemoPack('helios', 'S', true);
+      clearApiCache();
+      if (res.org_id) {
+        applyDemoScope({
+          orgId: res.org_id,
+          orgNom: res.org_nom,
+          defaultSiteId: res.default_site_id,
+          defaultSiteName: res.default_site_name,
+        });
+      }
+      // Force page reload to refresh all components with new data
+      window.location.reload();
+    } catch {
+      setError('Echec du chargement HELIOS. Essayez via la page Import.');
+      setSeeding(false);
+    }
+  };
+
   // Cas critique : aucune org / aucun site après reset
   if (data.sites_count === 0) {
     return (
@@ -223,10 +248,15 @@ export default function PatrimoinePortfolioHealthBar({ onSiteClick, orgId = null
           </span>
         </div>
         <button
-          onClick={() => navigate('/import')}
-          className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 bg-blue-50 border border-blue-100 rounded-lg px-3 py-1.5 hover:bg-blue-100 transition"
+          onClick={handleSeedHelios}
+          disabled={seeding}
+          className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 bg-blue-50 border border-blue-100 rounded-lg px-3 py-1.5 hover:bg-blue-100 transition disabled:opacity-50"
         >
-          <Upload size={12} /> Charger HELIOS
+          {seeding ? (
+            <><Loader2 size={12} className="animate-spin" /> Chargement...</>
+          ) : (
+            <><Upload size={12} /> Charger HELIOS</>
+          )}
         </button>
       </div>
     );

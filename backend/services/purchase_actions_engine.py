@@ -157,9 +157,10 @@ def compute_purchase_actions(db: Session, org_id: Optional[int] = None) -> dict:
                 "severity": "blue",
             })
 
-        # Accumulate gain potentiel in same loop (no second pass needed)
-        if r.savings_vs_current_pct and r.savings_vs_current_pct > 0:
-            gain_potentiel += abs(r.savings_vs_current_pct) / 100 * r.total_annual_eur
+        # Accumulate gain potentiel: savings relative to current cost
+        if r.savings_vs_current_pct and r.savings_vs_current_pct > 0 and r.savings_vs_current_pct < 100:
+            current_cost = r.total_annual_eur / (1 - r.savings_vs_current_pct / 100)
+            gain_potentiel += current_cost * r.savings_vs_current_pct / 100
 
     # Sort by priority DESC
     actions.sort(key=lambda a: -a["priority"])

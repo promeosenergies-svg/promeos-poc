@@ -38,6 +38,7 @@ from routes import (
     tertiaire_router,
     portfolio_router,
     consumption_context_router,
+    contracts_radar_router,
 )
 
 # Import KB router
@@ -106,6 +107,7 @@ app.include_router(dev_tools_router)  # Dev Tools (reset_db)
 app.include_router(tertiaire_router)  # Tertiaire / OPERAT V39 (EFA, controls, precheck, export)
 app.include_router(portfolio_router)  # Portfolio Consumption (multi-site B2B view)
 app.include_router(consumption_context_router)  # Consumption Context V0 (usages & horaires)
+app.include_router(contracts_radar_router)  # V99 Contract Renewal Radar + Purchase Scenarios
 
 # Run safe schema migrations (idempotent, no drop)
 from database import engine as _engine, run_migrations as _run_migrations

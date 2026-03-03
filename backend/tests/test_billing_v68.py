@@ -251,7 +251,7 @@ class TestShadowBillingV2:
         assert res["expected_fourniture_ht"] == round(9000 * 0.18, 2)
         assert res["expected_reseau_ht"] == round(9000 * TURPE_EUR_KWH_ELEC, 2)
         assert res["expected_taxes_ht"] == round(9000 * CSPE_EUR_KWH_ELEC, 2)
-        assert res["method"] == "shadow_v2_simplified"
+        assert res["method"] == "shadow_v2_catalog"
 
     def test_shadow_v2_gaz_components(self):
         """ATRD + ATRT + TICGN calculés correctement pour gaz."""

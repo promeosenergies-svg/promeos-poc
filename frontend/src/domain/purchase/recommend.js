@@ -157,11 +157,11 @@ export function recommend({ offerResults, offers, persona, budgetEur, consumptio
   const rationaleBullets = [];
 
   // Price
-  const bestPrice = best.result.corridor.p50;
-  rationaleBullets.push(`Prix moyen P50: ${bestPrice.toFixed(1)} EUR/MWh — meilleur compromis ${profile.label}`);
+  const bestPrice = best.result.corridor?.p50 ?? 0;
+  rationaleBullets.push(`Prix moyen P50: ${isFinite(bestPrice) ? bestPrice.toFixed(1) : '—'} EUR/MWh — meilleur compromis ${profile.label}`);
 
   // Corridor width
-  const corridorWidth = best.result.corridor.p90 - best.result.corridor.p10;
+  const corridorWidth = (best.result.corridor?.p90 ?? 0) - (best.result.corridor?.p10 ?? 0);
   if (corridorWidth < 30) {
     rationaleBullets.push(`Corridor serre (P10-P90: ${corridorWidth.toFixed(0)} EUR/MWh) = bonne visibilite budgetaire`);
   }
@@ -203,7 +203,7 @@ export function recommend({ offerResults, offers, persona, budgetEur, consumptio
   for (const other of scoredOffers.slice(1)) {
     const diff = best.weightedScore - other.weightedScore;
     const reasons = [];
-    if (other.result.corridor.p50 > best.result.corridor.p50 * 1.05) {
+    if ((other.result.corridor?.p50 ?? 0) > (best.result.corridor?.p50 ?? 0) * 1.05) {
       reasons.push('Prix P50 plus eleve');
     }
     if (other.scores.budgetRisk.score0to100 < best.scores.budgetRisk.score0to100 - 10) {

@@ -9,6 +9,7 @@ from datetime import date, datetime, timedelta
 from models import (
     EnergyContract, EnergyInvoice, EnergyInvoiceLine, BillingInsight,
     BillingEnergyType, InvoiceLineType, BillingInvoiceStatus, InsightStatus,
+    ContractIndexation,
 )
 
 
@@ -29,14 +30,27 @@ def generate_billing(db, org, sites: list, invoices_count: int,
 
     if pack_def and "contracts_spec" in pack_def:
         # ── Explicit contracts (helios) ──────────────────────────────
+        _DYNAMIC_ENDS = {
+            "EXPIRING_SOON": 60,
+            "EXPIRING_30": 30,
+            "EXPIRING_90": 90,
+            "EXPIRING_180": 180,
+        }
+        _INDEXATION_MAP = {
+            "fixe": ContractIndexation.FIXE,
+            "indexe": ContractIndexation.INDEXE,
+            "spot": ContractIndexation.SPOT,
+            "hybride": ContractIndexation.HYBRIDE,
+        }
         for c_spec in pack_def["contracts_spec"]:
             site = sites[c_spec["site_idx"]]
             end_str = c_spec["end"]
-            if end_str == "EXPIRING_SOON":
-                end_date_val = date.today() + timedelta(days=60)
+            if end_str in _DYNAMIC_ENDS:
+                end_date_val = date.today() + timedelta(days=_DYNAMIC_ENDS[end_str])
             else:
                 end_date_val = date.fromisoformat(end_str)
 
+            strategy = c_spec.get("strategy", "fixe")
             contract = EnergyContract(
                 site_id=site.id,
                 energy_type=_ENERGY_TYPE_MAP.get(c_spec["type"], BillingEnergyType.ELEC),
@@ -47,7 +61,8 @@ def generate_billing(db, org, sites: list, invoices_count: int,
                 fixed_fee_eur_per_month=c_spec.get("fee", 50),
                 notice_period_days=90,
                 auto_renew=c_spec.get("auto_renew", False),
-                metadata_json=json.dumps({"strategy": c_spec.get("strategy", "fixe")}),
+                offer_indexation=_INDEXATION_MAP.get(strategy),
+                metadata_json=json.dumps({"strategy": strategy}),
             )
             db.add(contract)
             db.flush()

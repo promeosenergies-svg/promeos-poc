@@ -54,6 +54,7 @@ const CompliancePipelinePage = lazy(() => import('./pages/CompliancePipelinePage
 const SiteCompliancePage = lazy(() => import('./pages/SiteCompliancePage'));
 const PaymentRulesPage = lazy(() => import('./pages/PaymentRulesPage'));
 const PortfolioReconciliationPage = lazy(() => import('./pages/PortfolioReconciliationPage'));
+const ContractRadarPage = lazy(() => import('./pages/ContractRadarPage'));
 
 function PageSuspense({ children }) {
   return (
@@ -136,6 +137,7 @@ function App() {
                   <Route path="/status" element={<PageSuspense><StatusPage /></PageSuspense>} />
                   <Route path="/payment-rules" element={<PageSuspense><PaymentRulesPage /></PageSuspense>} />
                   <Route path="/portfolio-reconciliation" element={<PageSuspense><PortfolioReconciliationPage /></PageSuspense>} />
+                  <Route path="/renouvellements" element={<PageSuspense><ContractRadarPage /></PageSuspense>} />
 
                   {/* IAM pages */}
                   <Route path="/admin/users" element={<PageSuspense><AdminUsersPage /></PageSuspense>} />

@@ -334,7 +334,7 @@ def _rule_lines_sum_mismatch(invoice: EnergyInvoice, contract: Optional[EnergyCo
     if lines_sum == 0:
         return None
     diff = abs(invoice.total_eur - lines_sum)
-    pct = diff / invoice.total_eur * 100 if invoice.total_eur else 0
+    pct = diff / abs(invoice.total_eur) * 100 if invoice.total_eur else 0
     if pct > 2:
         return {
             "type": "lines_sum_mismatch",
@@ -453,7 +453,7 @@ def _rule_ttc_coherence(invoice: EnergyInvoice, contract: Optional[EnergyContrac
     if expected == 0:
         return None
     delta = abs(expected - invoice.total_eur)
-    if delta / max(invoice.total_eur, 1) > 0.02:
+    if delta / max(abs(invoice.total_eur), 1) > 0.02 and delta > 5.0:
         return {
             "type": "ttc_mismatch",
             "severity": "high",

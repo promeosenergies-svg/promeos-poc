@@ -185,28 +185,35 @@ PACKS = {
         ],
         # Billing: explicit contracts per site
         "contracts_spec": [
+            # S0 Siege Paris — elec fixe long, gaz indexe 90j
             {"site_idx": 0, "type": "elec", "supplier": "EDF", "strategy": "fixe",
              "start": "2024-01-01", "end": "2026-12-31", "price": 0.1450, "fee": 180,
              "auto_renew": True},
             {"site_idx": 0, "type": "gaz", "supplier": "Engie", "strategy": "indexe",
-             "start": "2023-06-01", "end": "2026-05-31", "price": 0.0850, "fee": 60,
+             "start": "2023-06-01", "end": "EXPIRING_90", "price": 0.0850, "fee": 60,
              "auto_renew": False},
-            # S2 elec — expires in ~60 days (dynamic end date set by gen_billing)
+            # S1 Bureau Lyon — elec fixe 60j urgent, gaz spot 30j critique
             {"site_idx": 1, "type": "elec", "supplier": "TotalEnergies", "strategy": "fixe",
              "start": "2024-07-01", "end": "EXPIRING_SOON", "price": 0.1680, "fee": 45,
              "auto_renew": False},
-            {"site_idx": 2, "type": "elec", "supplier": "Vattenfall", "strategy": "indexe",
-             "start": "2024-01-01", "end": "2027-12-31", "price": 0.1320, "fee": 120,
-             "auto_renew": True},
-            {"site_idx": 2, "type": "gaz", "supplier": "Eni", "strategy": "spot",
-             "start": "2024-01-01", "end": "2026-12-31", "price": 0.0780, "fee": 50,
+            {"site_idx": 1, "type": "gaz", "supplier": "Eni", "strategy": "spot",
+             "start": "2024-03-01", "end": "EXPIRING_30", "price": 0.0720, "fee": 35,
              "auto_renew": False},
+            # S2 Usine Toulouse — elec indexe 180j, gaz hybride 90j
+            {"site_idx": 2, "type": "elec", "supplier": "Vattenfall", "strategy": "indexe",
+             "start": "2024-01-01", "end": "EXPIRING_180", "price": 0.1320, "fee": 120,
+             "auto_renew": True},
+            {"site_idx": 2, "type": "gaz", "supplier": "Eni", "strategy": "hybride",
+             "start": "2024-01-01", "end": "EXPIRING_90", "price": 0.0780, "fee": 50,
+             "auto_renew": False},
+            # S3 Hotel Nice — elec fixe 180j, gaz indexe 1an
             {"site_idx": 3, "type": "elec", "supplier": "EDF", "strategy": "fixe",
-             "start": "2024-01-01", "end": "2026-06-30", "price": 0.1550, "fee": 95,
+             "start": "2024-01-01", "end": "EXPIRING_180", "price": 0.1550, "fee": 95,
              "auto_renew": True},
             {"site_idx": 3, "type": "gaz", "supplier": "Engie", "strategy": "indexe",
              "start": "2024-01-01", "end": "2026-12-31", "price": 0.0900, "fee": 40,
              "auto_renew": False},
+            # S4 Ecole Marseille — elec fixe long
             {"site_idx": 4, "type": "elec", "supplier": "Engie", "strategy": "fixe",
              "start": "2024-09-01", "end": "2027-08-31", "price": 0.1380, "fee": 55,
              "auto_renew": True},

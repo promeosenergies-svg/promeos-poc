@@ -189,8 +189,8 @@ describe('billing_shadow_v2.py — V68 shadow engine', () => {
     expect(code).toMatch(/delta_reseau/);
   });
 
-  it('method is shadow_v2_simplified', () => {
-    expect(code).toMatch(/shadow_v2_simplified/);
+  it('method is shadow_v2_catalog', () => {
+    expect(code).toMatch(/shadow_v2_catalog/);
   });
 });
 

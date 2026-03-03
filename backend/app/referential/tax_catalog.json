@@ -1,0 +1,150 @@
+{
+  "version": "2025-03-01",
+  "description": "PROMEOS — Catalogue taux réglementaires énergie France B2B (V1)",
+  "entries": [
+    {
+      "code": "TVA_NORMALE",
+      "label": "TVA taux normal",
+      "rate": 0.20,
+      "unit": "PCT",
+      "assiette": "component_ht",
+      "tva_rate": null,
+      "valid_from": "2014-01-01",
+      "valid_to": null,
+      "source": "CGI art. 278",
+      "fallback": 0.20
+    },
+    {
+      "code": "TVA_REDUITE",
+      "label": "TVA taux réduit (abonnement, CTA, TURPE fixe)",
+      "rate": 0.055,
+      "unit": "PCT",
+      "assiette": "component_ht",
+      "tva_rate": null,
+      "valid_from": "2014-01-01",
+      "valid_to": null,
+      "source": "CGI art. 278-0 bis",
+      "fallback": 0.055
+    },
+    {
+      "code": "TURPE_ENERGIE_C5_BT",
+      "label": "TURPE 7 soutirage énergie C5 BT ≤36kVA",
+      "rate": 0.0453,
+      "unit": "EUR/kWh",
+      "assiette": "energy_kwh",
+      "tva_rate": 0.20,
+      "valid_from": "2025-02-01",
+      "valid_to": null,
+      "source": "CRE délibération TURPE 7 HTA-BT 2025",
+      "fallback": 0.0453
+    },
+    {
+      "code": "TURPE_GESTION_C5_BT",
+      "label": "TURPE 7 composante gestion C5 BT",
+      "rate": 18.48,
+      "unit": "EUR/month",
+      "assiette": "fixed_month",
+      "tva_rate": 0.055,
+      "valid_from": "2025-02-01",
+      "valid_to": null,
+      "source": "CRE délibération TURPE 7 HTA-BT 2025",
+      "fallback": 18.48
+    },
+    {
+      "code": "ACCISE_ELEC",
+      "label": "Accise sur l'électricité (ex-CSPE/TIEE)",
+      "rate": 0.02250,
+      "unit": "EUR/kWh",
+      "assiette": "energy_kwh",
+      "tva_rate": 0.20,
+      "valid_from": "2025-01-01",
+      "valid_to": null,
+      "source": "Loi de finances 2025 art. 92 (TIEE)",
+      "fallback": 0.02250
+    },
+    {
+      "code": "ACCISE_GAZ",
+      "label": "Accise sur le gaz naturel (ex-TICGN)",
+      "rate": 0.01637,
+      "unit": "EUR/kWh",
+      "assiette": "energy_kwh",
+      "tva_rate": 0.20,
+      "valid_from": "2025-01-01",
+      "valid_to": null,
+      "source": "Loi de finances 2025 (TICGN)",
+      "fallback": 0.01637
+    },
+    {
+      "code": "ATRD_GAZ",
+      "label": "ATRD distribution gaz (GRDF moyen)",
+      "rate": 0.025,
+      "unit": "EUR/kWh",
+      "assiette": "energy_kwh",
+      "tva_rate": 0.20,
+      "valid_from": "2025-07-01",
+      "valid_to": null,
+      "source": "CRE ATRD7 GRDF 2025",
+      "fallback": 0.025
+    },
+    {
+      "code": "ATRT_GAZ",
+      "label": "ATRT transport gaz (GRTgaz moyen)",
+      "rate": 0.012,
+      "unit": "EUR/kWh",
+      "assiette": "energy_kwh",
+      "tva_rate": 0.20,
+      "valid_from": "2025-01-01",
+      "valid_to": null,
+      "source": "CRE ATRT8 2025",
+      "fallback": 0.012
+    },
+    {
+      "code": "CTA_ELEC",
+      "label": "Contribution Tarifaire d'Acheminement (élec)",
+      "rate": 27.04,
+      "unit": "PCT",
+      "assiette": "turpe_fixe_ht",
+      "tva_rate": 0.055,
+      "valid_from": "2025-01-01",
+      "valid_to": null,
+      "source": "Arrêté CTA 2025",
+      "fallback": 27.04
+    },
+    {
+      "code": "CTA_GAZ",
+      "label": "Contribution Tarifaire d'Acheminement (gaz)",
+      "rate": 20.80,
+      "unit": "PCT",
+      "assiette": "atrd_fixe_ht",
+      "tva_rate": 0.055,
+      "valid_from": "2025-01-01",
+      "valid_to": null,
+      "source": "Arrêté CTA 2025",
+      "fallback": 20.80
+    },
+    {
+      "code": "DEFAULT_PRICE_ELEC",
+      "label": "Prix référence électricité par défaut (fallback shadow)",
+      "rate": 0.18,
+      "unit": "EUR/kWh",
+      "assiette": "energy_kwh",
+      "tva_rate": 0.20,
+      "valid_from": "2024-01-01",
+      "valid_to": null,
+      "source": "PROMEOS POC fallback",
+      "fallback": 0.18
+    },
+    {
+      "code": "DEFAULT_PRICE_GAZ",
+      "label": "Prix référence gaz par défaut (fallback shadow)",
+      "rate": 0.09,
+      "unit": "EUR/kWh",
+      "assiette": "energy_kwh",
+      "tva_rate": 0.20,
+      "valid_from": "2024-01-01",
+      "valid_to": null,
+      "source": "PROMEOS POC fallback",
+      "fallback": 0.09
+    }
+  ]
+}

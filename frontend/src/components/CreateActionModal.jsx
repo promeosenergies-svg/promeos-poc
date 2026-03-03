@@ -2,11 +2,12 @@
  * PROMEOS - Create Action Modal
  * Shared modal for creating actions from Dashboard, Patrimoine, Site360, Conformite.
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button, Input, Select } from '../ui';
 import Modal from '../ui/Modal';
 import { track } from '../services/tracker';
 import { createAction } from '../services/api';
+import { useScope } from '../contexts/ScopeContext';
 
 const TYPE_OPTIONS = [
   { value: 'conformite', label: 'Conformité' },
@@ -30,10 +31,25 @@ const STATUT_OPTIONS = [
 
 export default function CreateActionModal({ open, onClose, onSave, defaultSite = '', defaultType = 'conformite', prefill = null, siteId = null, sourceType = 'manual', sourceId = null, idempotencyKey = null }) {
   const [saving, setSaving] = useState(false);
+  const { orgSites, selectedSiteId: scopeSiteId } = useScope();
+
+  const siteOptions = useMemo(() => {
+    const opts = (orgSites || []).map(s => ({ value: String(s.id), label: s.nom }));
+    if (!opts.length) return [{ value: '', label: 'Aucun site' }];
+    return [{ value: '', label: 'Sélectionner un site…' }, ...opts];
+  }, [orgSites]);
+
+  const resolvedDefaultSite = useMemo(() => {
+    if (defaultSite) return defaultSite;
+    if (scopeSiteId) return String(scopeSiteId);
+    if (orgSites?.length) return String(orgSites[0].id);
+    return '';
+  }, [defaultSite, scopeSiteId, orgSites]);
+
   const defaults = {
     titre: '',
     type: defaultType,
-    site: defaultSite,
+    site: resolvedDefaultSite,
     impact_eur: '',
     effort: '',
     priorite: 'high',
@@ -48,7 +64,7 @@ export default function CreateActionModal({ open, onClose, onSave, defaultSite =
   useEffect(() => {
     if (open) {
       setForm({
-        titre: '', type: defaultType, site: defaultSite, impact_eur: '', effort: '',
+        titre: '', type: defaultType, site: resolvedDefaultSite, impact_eur: '', effort: '',
         priorite: 'high', statut: 'backlog', owner: '', due_date: '', description: '',
         ...(prefill || {}),
       });
@@ -73,7 +89,7 @@ export default function CreateActionModal({ open, onClose, onSave, defaultSite =
         title: form.titre.trim(),
         source_type: sourceType || 'manual',
         source_id: sourceId || undefined,
-        site_id: siteId || undefined,
+        site_id: siteId || (form.site ? Number(form.site) : undefined),
         severity: form.priorite || undefined,
         estimated_gain_eur: impactEur || undefined,
         due_date: form.due_date || undefined,
@@ -99,7 +115,7 @@ export default function CreateActionModal({ open, onClose, onSave, defaultSite =
     } finally {
       setSaving(false);
     }
-    setForm({ titre: '', type: defaultType, site: defaultSite, impact_eur: '', effort: '', priorite: 'high', statut: 'backlog', owner: '', due_date: '', description: '' });
+    setForm({ titre: '', type: defaultType, site: resolvedDefaultSite, impact_eur: '', effort: '', priorite: 'high', statut: 'backlog', owner: '', due_date: '', description: '' });
     onClose();
   }
 
@@ -118,7 +134,7 @@ export default function CreateActionModal({ open, onClose, onSave, defaultSite =
           <Select label="Priorité" options={PRIORITE_OPTIONS} value={form.priorite} onChange={(e) => handleChange('priorite', e.target.value)} />
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <Input label="Site concerné" placeholder="Bureau Paris 3" value={form.site} onChange={(e) => handleChange('site', e.target.value)} />
+          <Select label="Site concerné" options={siteOptions} value={form.site} onChange={(e) => handleChange('site', e.target.value)} />
           <Select label="Statut" options={STATUT_OPTIONS} value={form.statut} onChange={(e) => handleChange('statut', e.target.value)} />
         </div>
         <div className="grid grid-cols-3 gap-4">

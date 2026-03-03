@@ -54,7 +54,7 @@ from .site_operating_schedule import SiteOperatingSchedule
 from .site_tariff_profile import SiteTariffProfile
 
 # Segmentation
-from .segmentation import SegmentationProfile
+from .segmentation import SegmentationProfile, SegmentationAnswer
 
 # RegOps / Lifecycle
 from .datapoint import DataPoint
@@ -147,7 +147,7 @@ __all__ = [
     "Compteur", "Consommation", "Alerte",
     "Obligation", "Evidence", "ComplianceRunBatch", "ComplianceFinding", "ConsumptionInsight",
     "SiteOperatingSchedule", "SiteTariffProfile",
-    "SegmentationProfile",
+    "SegmentationProfile", "SegmentationAnswer",
     "DataPoint", "RegAssessment", "JobOutbox", "AiInsight", "RegSourceEvent",
     # KB models
     "KBVersion", "KBArchetype", "KBMappingCode", "KBAnomalyRule", "KBRecommendation", "KBTaxonomy",

@@ -10,6 +10,7 @@ import { Button, Input, Select } from '../ui';
 import { track } from '../services/tracker';
 import { createAction } from '../services/api';
 import { computeEvidenceRequirement } from '../models/evidenceRules';
+import { useScope } from '../contexts/ScopeContext';
 
 const TYPE_OPTIONS = [
   { value: 'conformite', label: 'Conformité' },
@@ -49,11 +50,24 @@ export default function CreateActionDrawer({
   idempotencyKey = null, evidenceRequired: defaultEvReq = false,
 }) {
   const [saving, setSaving] = useState(false);
+  const { orgSites, selectedSiteId: scopeSiteId } = useScope();
+
+  const siteOptions = useMemo(() => {
+    const opts = (orgSites || []).map(s => ({ value: String(s.id), label: s.nom }));
+    if (!opts.length) return [{ value: '', label: 'Aucun site' }];
+    return [{ value: '', label: 'Sélectionner un site…' }, ...opts];
+  }, [orgSites]);
+
+  const defaultSiteValue = useMemo(() => {
+    if (scopeSiteId) return String(scopeSiteId);
+    if (orgSites?.length) return String(orgSites[0].id);
+    return '';
+  }, [scopeSiteId, orgSites]);
 
   const buildDefaults = () => ({
     titre: '',
     type: 'conformite',
-    site: '',
+    site: defaultSiteValue,
     impact_eur: '',
     effort: '',
     priorite: 'high',
@@ -118,7 +132,7 @@ export default function CreateActionDrawer({
         title: form.titre.trim(),
         source_type: sourceType || 'manual',
         source_id: sourceId || undefined,
-        site_id: siteId || undefined,
+        site_id: siteId || (form.site ? Number(form.site) : undefined),
         severity: form.priorite || undefined,
         estimated_gain_eur: impactEur || undefined,
         due_date: form.due_date || undefined,
@@ -185,7 +199,7 @@ export default function CreateActionDrawer({
           <Select label="Priorité" options={PRIORITE_OPTIONS} value={form.priorite} onChange={(e) => handleChange('priorite', e.target.value)} />
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <Input label="Site concerné" placeholder="Bureau Paris 3" value={form.site} onChange={(e) => handleChange('site', e.target.value)} />
+          <Select label="Site concerné" options={siteOptions} value={form.site} onChange={(e) => handleChange('site', e.target.value)} />
           <Select label="Statut" options={STATUT_OPTIONS} value={form.statut} onChange={(e) => handleChange('statut', e.target.value)} />
         </div>
         <div className="grid grid-cols-3 gap-4">

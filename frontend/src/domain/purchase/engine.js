@@ -5,9 +5,12 @@
  * Coordinates scenario generation, pricing, risk, and corridor computation.
  * Memoized: only recomputes when params change.
  */
-import { OfferStructure, BREAKDOWN_DEFAULTS_ELEC, BREAKDOWN_DEFAULTS_GAZ, EnergyType } from './types.js';
+import { OfferStructure, BREAKDOWN_DEFAULTS_ELEC, BREAKDOWN_DEFAULTS_GAZ, EnergyType, USE_BACKEND_PRICING } from './types.js';
 import { distributeMonthly } from './assumptions.js';
 import { monteCarloOffer, computeWorstMonth, probExceedBudget, cvar90, volatilityProxy } from './risk.js';
+
+// V100: Backend pricing mode flag — re-exported for consumers
+export { USE_BACKEND_PRICING } from './types.js';
 
 // ── Memoization ────────────────────────────────────────────────────
 
@@ -63,9 +66,10 @@ export function validateBreakdown(breakdown) {
   const knownComponents = new Set(breakdown.filter(b => b.status === 'KNOWN').map(b => b.component));
   const allComponents = Object.keys(BREAKDOWN_DEFAULTS_ELEC);
   const missing = allComponents.filter(c => !knownComponents.has(c));
+  const threshold = Math.max(allComponents.length - 1, 1);
 
   return {
-    complete: knownComponents.size >= 7,
+    complete: knownComponents.size >= threshold,
     knownCount: knownComponents.size,
     totalComponents: allComponents.length,
     missingComponents: missing,
@@ -189,8 +193,9 @@ export function runEngine(params) {
 
     // TCO per MWh at P50
     const totalKwh = annualKwh * (horizonMonths / 12);
-    const tcoEurPerMwh = totalKwh > 0 ? (corridor.tcoP50 / totalKwh) * 1000 : 0;
-    const annualCostP50 = horizonMonths > 0 ? corridor.tcoP50 / (horizonMonths / 12) : 0;
+    const p50 = isFinite(corridor.tcoP50) ? corridor.tcoP50 : 0;
+    const tcoEurPerMwh = totalKwh > 0 ? (p50 / totalKwh) * 1000 : 0;
+    const annualCostP50 = horizonMonths > 0 ? p50 / (horizonMonths / 12) : 0;
 
     // Breakdown validation
     const breakdownValidation = validateBreakdown(offer.breakdown || []);

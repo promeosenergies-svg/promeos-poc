@@ -273,11 +273,14 @@ class SeedOrchestrator:
             ActionItem, ActionSyncBatch, ComplianceFinding, ComplianceRunBatch,
             ConsumptionInsight, Obligation, Evidence,
             PurchaseAssumptionSet, PurchaseScenarioResult,
-            EmsWeatherCache, SiteOperatingSchedule,
+            EmsWeatherCache, SiteOperatingSchedule, Alerte,
         )
         from models.bacs_models import BacsInspection, BacsAssessment, BacsCvcSystem, BacsAsset
         from models.consumption_target import ConsumptionTarget
         from models.ems_models import EmsSavedView, EmsCollection
+        from models.segmentation import SegmentationProfile, SegmentationAnswer
+        from models.notification import NotificationEvent, NotificationBatch, NotificationPreference
+        from models.iam import User, UserOrgRole, UserScope
         from models.tertiaire import (
             TertiaireDataQualityIssue, TertiaireProofArtifact,
             TertiaireDeclaration, TertiairePerimeterEvent,
@@ -326,6 +329,17 @@ class SeedOrchestrator:
             ("evidences", Evidence),
             ("obligations", Obligation),
             ("operating_schedules", SiteOperatingSchedule),
+            ("segmentation_answers", SegmentationAnswer),
+            ("segmentation_profiles", SegmentationProfile),
+            # Notifications (org_id FK)
+            ("notification_events", NotificationEvent),
+            ("notification_batches", NotificationBatch),
+            ("notification_preferences", NotificationPreference),
+            # IAM (user_scope → user_org_role → users)
+            ("user_scopes", UserScope),
+            ("user_org_roles", UserOrgRole),
+            ("users", User),
+            ("alertes", Alerte),
             ("meters", Meter),
             ("compteurs", Compteur),
             ("batiments", Batiment),
@@ -460,6 +474,29 @@ class SeedOrchestrator:
             _del("obligations", Obligation, Obligation.site_id, demo_site_ids)
             _del("operating_schedules", SiteOperatingSchedule,
                  SiteOperatingSchedule.site_id, demo_site_ids)
+            # V100: Segmentation (answers → profiles, both keyed by org_id)
+            _del("segmentation_answers", SegmentationAnswer,
+                 SegmentationAnswer.organisation_id, demo_org_ids)
+            _del("segmentation_profiles", SegmentationProfile,
+                 SegmentationProfile.organisation_id, demo_org_ids)
+            # Notifications (org_id FK)
+            _del("notification_events", NotificationEvent,
+                 NotificationEvent.org_id, demo_org_ids)
+            _del("notification_batches", NotificationBatch,
+                 NotificationBatch.org_id, demo_org_ids)
+            _del("notification_preferences", NotificationPreference,
+                 NotificationPreference.org_id, demo_org_ids)
+            # IAM: collect user_org_role IDs for FK-safe deletion
+            demo_uor_ids = (
+                [r[0] for r in self.db.query(UserOrgRole.id).filter(
+                    UserOrgRole.org_id.in_(demo_org_ids)).all()]
+                if demo_org_ids else []
+            )
+            _del("user_scopes", UserScope,
+                 UserScope.user_org_role_id, demo_uor_ids)
+            _del("user_org_roles", UserOrgRole,
+                 UserOrgRole.org_id, demo_org_ids)
+            _del("alertes", Alerte, Alerte.site_id, demo_site_ids)
             _del("meters", Meter, Meter.site_id, demo_site_ids)
             _del("compteurs", Compteur, Compteur.site_id, demo_site_ids)
             _del("batiments", Batiment, Batiment.site_id, demo_site_ids)

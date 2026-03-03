@@ -73,6 +73,12 @@ export const BREAKDOWN_LABELS = {
   ABONNEMENT: 'Abonnement / fixe',
 };
 
+// V100: Feature flag — when true, frontend uses backend offer_pricing_v1 (authoritative).
+// When false, falls back to local Monte Carlo engine (experimental).
+export const USE_BACKEND_PRICING = true;
+
+// @deprecated V100 — These percentage splits are replaced by backend catalog-backed breakdown.
+// Kept for Monte Carlo experimental mode fallback only.
 export const BREAKDOWN_DEFAULTS_ELEC = {
   FOURNITURE: 0.35,
   ACHEMINEMENT: 0.28,
@@ -84,6 +90,7 @@ export const BREAKDOWN_DEFAULTS_ELEC = {
   ABONNEMENT: 0.02,
 };
 
+// @deprecated V100 — Same as ELEC, replaced by backend catalog-backed breakdown.
 export const BREAKDOWN_DEFAULTS_GAZ = {
   FOURNITURE: 0.40,
   ACHEMINEMENT: 0.20,

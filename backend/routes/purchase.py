@@ -12,7 +12,7 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -85,14 +85,14 @@ def _get_latest_assumption(db: Session, site_id: int):
 
 class AssumptionSetIn(BaseModel):
     energy_type: str = "elec"
-    volume_kwh_an: float = 0
-    horizon_months: int = 24
+    volume_kwh_an: float = Field(0, ge=0, description="Annual kWh consumption (non-negative)")
+    horizon_months: int = Field(24, ge=1, le=120)
     assumptions_json: Optional[str] = None
 
 
 class PreferenceIn(BaseModel):
-    risk_tolerance: str = "medium"
-    budget_priority: float = 0.5
+    risk_tolerance: str = Field("medium", pattern="^(low|medium|high)$")
+    budget_priority: float = Field(0.5, ge=0.0, le=1.0, description="0=safety, 1=savings")
     green_preference: bool = False
 
 
@@ -1027,3 +1027,126 @@ def seed_wow_dirty_endpoint(
     from services.purchase_seed_wow import seed_wow_dirty
 
     return seed_wow_dirty(db)
+
+
+# ══════════════════════════════════════
+# V2 Endpoints — Offer Pricing & Reconciliation (Sprint V2)
+# ══════════════════════════════════════
+
+class QuoteOfferRequest(BaseModel):
+    strategy: str = "fixe"
+    energy_type: str = "elec"
+    consumption_kwh: float = 0.0
+    period_start: Optional[str] = None
+    period_end: Optional[str] = None
+    price_ref_eur_per_kwh: Optional[float] = None
+    price_ref_eur_per_mwh: Optional[float] = None
+    fixed_fee_eur_per_month: float = 0.0
+    segment: str = "C5"
+
+
+class ReconcileRequest(BaseModel):
+    invoice_id: int
+    strategy: str = "fixe"
+    price_ref_eur_per_kwh: Optional[float] = None
+    fixed_fee_eur_per_month: float = 0.0
+
+
+class MultiQuoteRequest(BaseModel):
+    energy_type: str = "elec"
+    consumption_kwh: float = 0.0
+    period_start: Optional[str] = None
+    period_end: Optional[str] = None
+    price_ref_eur_per_kwh: Optional[float] = None
+    fixed_fee_eur_per_month: float = 0.0
+
+
+@router.post("/quote-offer")
+def quote_offer_endpoint(
+    body: QuoteOfferRequest,
+    auth: AuthContext = Depends(get_optional_auth),
+):
+    """Compute a deterministic offer quote with structured breakdown."""
+    from services.offer_pricing_v1 import compute_offer_quote
+    from datetime import date as date_type
+
+    period_start = None
+    period_end = None
+    if body.period_start:
+        try:
+            period_start = date_type.fromisoformat(body.period_start)
+        except ValueError:
+            raise HTTPException(400, "Invalid period_start format (YYYY-MM-DD)")
+    if body.period_end:
+        try:
+            period_end = date_type.fromisoformat(body.period_end)
+        except ValueError:
+            raise HTTPException(400, "Invalid period_end format (YYYY-MM-DD)")
+
+    result = compute_offer_quote(
+        strategy=body.strategy,
+        energy_type=body.energy_type,
+        consumption_kwh=body.consumption_kwh,
+        period_start=period_start,
+        period_end=period_end,
+        price_ref_eur_per_kwh=body.price_ref_eur_per_kwh,
+        price_ref_eur_per_mwh=body.price_ref_eur_per_mwh,
+        fixed_fee_eur_per_month=body.fixed_fee_eur_per_month,
+        segment=body.segment,
+        invoice_date=period_start,
+    )
+    return result
+
+
+@router.post("/quote-multi")
+def quote_multi_endpoint(
+    body: MultiQuoteRequest,
+    auth: AuthContext = Depends(get_optional_auth),
+):
+    """Compute quotes for all strategies (FIXE/INDEXE/SPOT) in one call."""
+    from services.offer_pricing_v1 import compute_multi_strategy_quotes
+    from datetime import date as date_type
+
+    period_start = None
+    period_end = None
+    if body.period_start:
+        try:
+            period_start = date_type.fromisoformat(body.period_start)
+        except ValueError:
+            raise HTTPException(400, "Invalid period_start format (YYYY-MM-DD)")
+    if body.period_end:
+        try:
+            period_end = date_type.fromisoformat(body.period_end)
+        except ValueError:
+            raise HTTPException(400, "Invalid period_end format (YYYY-MM-DD)")
+
+    return compute_multi_strategy_quotes(
+        energy_type=body.energy_type,
+        consumption_kwh=body.consumption_kwh,
+        period_start=period_start,
+        period_end=period_end,
+        price_ref_eur_per_kwh=body.price_ref_eur_per_kwh,
+        fixed_fee_eur_per_month=body.fixed_fee_eur_per_month,
+        invoice_date=period_start,
+    )
+
+
+@router.post("/reconcile")
+def reconcile_endpoint(
+    body: ReconcileRequest,
+    db: Session = Depends(get_db),
+    auth: AuthContext = Depends(get_optional_auth),
+):
+    """Reconcile an offer quote against an invoice's shadow billing."""
+    from services.offer_invoice_reconcile_v1 import reconcile_offer_vs_invoice
+
+    result = reconcile_offer_vs_invoice(
+        db=db,
+        invoice_id=body.invoice_id,
+        strategy=body.strategy,
+        price_ref_eur_per_kwh=body.price_ref_eur_per_kwh,
+        fixed_fee_eur_per_month=body.fixed_fee_eur_per_month,
+    )
+    if "error" in result:
+        raise HTTPException(404, result["error"])
+    return result

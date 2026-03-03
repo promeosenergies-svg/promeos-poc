@@ -55,6 +55,7 @@ export const ROUTE_MODULE_MAP = {
   '/admin/roles': 'admin',
   '/admin/assignments': 'admin',
   '/admin/audit': 'admin',
+  '/renouvellements': 'marche',
   '/compliance': 'operations',
   '/compliance/pipeline': 'operations',
   '/compliance/findings': 'operations',
@@ -301,6 +302,7 @@ export const NAV_SECTIONS = [
     items: [
       { to: '/bill-intel',      icon: Receipt,       label: 'Factures & anomalies', keywords: ['factures', 'billing', 'invoices', 'anomalies'] },
       { to: '/billing',         icon: CalendarRange,  label: 'Timeline & couverture', keywords: ['timeline', 'couverture', 'mois', 'manquant', 'periodes'], indent: true },
+      { to: '/renouvellements', icon: CalendarRange, label: 'Renouvellements', keywords: ['renouvellements', 'contrats', 'echeances', 'radar', 'achats'] },
       { to: '/achat-energie',   icon: ShoppingCart,  label: 'Achats énergie', keywords: ['achat', 'purchase', 'scenarios', 'strategie'] },
       { to: '/achat-assistant', icon: Target,        label: 'Assistant Achat', keywords: ['assistant', 'wizard', 'rfp', 'arenh', 'corridor'] },
     ],

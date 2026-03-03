@@ -18,7 +18,8 @@ import { generateMonteCarloTrajectories } from './scenarioLibrary.js';
  */
 function percentile(sorted, p) {
   if (sorted.length === 0) return 0;
-  const idx = p * (sorted.length - 1);
+  if (sorted.length === 1) return sorted[0];
+  const idx = Math.max(0, Math.min(p * (sorted.length - 1), sorted.length - 1));
   const lo = Math.floor(idx);
   const hi = Math.ceil(idx);
   if (lo === hi) return sorted[lo];
@@ -87,7 +88,10 @@ export function computeTco(monthlyPrices, monthlyKwh) {
   let total = 0;
   const n = Math.min(monthlyPrices.length, monthlyKwh.length);
   for (let m = 0; m < n; m++) {
-    total += (monthlyPrices[m] / 1000) * monthlyKwh[m]; // €/MWh * kWh / 1000
+    const price = monthlyPrices[m] || 0;
+    const kwh = monthlyKwh[m] || 0;
+    if (!isFinite(price) || !isFinite(kwh)) continue;
+    total += (price / 1000) * kwh; // €/MWh * kWh / 1000
   }
   return total;
 }
@@ -203,8 +207,9 @@ export function probExceedBudget(tcoDistribution, budgetEur) {
  * @returns {number}
  */
 export function cvar90(distribution) {
-  if (distribution.length === 0) return 0;
-  const sorted = [...distribution].sort((a, b) => a - b);
+  const valid = distribution.filter(v => isFinite(v));
+  if (valid.length === 0) return 0;
+  const sorted = [...valid].sort((a, b) => a - b);
   const cutoff = Math.ceil(sorted.length * 0.9);
   const tail = sorted.slice(cutoff);
   if (tail.length === 0) return sorted[sorted.length - 1];
@@ -217,8 +222,10 @@ export function cvar90(distribution) {
  * @returns {number}
  */
 export function volatilityProxy(distribution) {
-  if (distribution.length < 2) return 0;
-  const mean = distribution.reduce((a, b) => a + b, 0) / distribution.length;
-  const variance = distribution.reduce((sum, v) => sum + (v - mean) ** 2, 0) / (distribution.length - 1);
-  return Math.sqrt(variance);
+  const valid = distribution.filter(v => isFinite(v));
+  if (valid.length < 2) return 0;
+  const mean = valid.reduce((a, b) => a + b, 0) / valid.length;
+  const variance = valid.reduce((sum, v) => sum + (v - mean) ** 2, 0) / (valid.length - 1);
+  const result = Math.sqrt(variance);
+  return isFinite(result) ? result : 0;
 }

@@ -55,9 +55,9 @@ export function scoreBudgetRisk({ offerResult, offer, budgetEur, anomalies = [] 
   }
 
   // Volatility
-  const vol = offerResult.volatility;
-  const tcoP50 = offerResult.corridor.tcoP50;
-  const relVol = tcoP50 > 0 ? vol / tcoP50 : 0;
+  const vol = offerResult.volatility || 0;
+  const tcoP50 = offerResult.corridor?.tcoP50 || 0;
+  const relVol = (tcoP50 > 0 && isFinite(vol)) ? vol / tcoP50 : 0;
   if (relVol > 0.20) {
     score -= 15;
     reasons.push(`Volatilite elevee (${(relVol * 100).toFixed(0)}% du TCO)`);
@@ -76,7 +76,7 @@ export function scoreBudgetRisk({ offerResult, offer, budgetEur, anomalies = [] 
   }
 
   // Budget exceedance
-  if (budgetEur != null && offerResult.probExceedBudget > 0.2) {
+  if (budgetEur != null && offerResult.probExceedBudget != null && offerResult.probExceedBudget > 0.2) {
     score -= 15;
     reasons.push(`Probabilite de depasser le budget: ${(offerResult.probExceedBudget * 100).toFixed(0)}%`);
     evs.push(evidence('BR06', 'probExceedBudget', offerResult.probExceedBudget));

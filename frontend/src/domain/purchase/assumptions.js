@@ -6,6 +6,8 @@ import { ScenarioPreset, EnergyType, Persona, SEASONALITY_ELEC, SEASONALITY_GAZ 
 
 // ── Default Market Assumptions ─────────────────────────────────────
 
+// @deprecated V100 — These market assumptions are used by Monte Carlo (experimental mode only).
+// V1 authoritative pricing uses backend offer_pricing_v1 with catalog-backed rates.
 export const DEFAULT_MARKET = {
   baseSpotEurPerMwh: 85,       // Base spot price (€/MWh)
   fixedPremiumPct: 0.12,       // Fixed = spot + 12%

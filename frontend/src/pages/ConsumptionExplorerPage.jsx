@@ -4,7 +4,7 @@
  * Motor: useExplorerMotor (data engine) + useExplorerURL (URL state sync)
  * Panels: Tunnel (P10-P90), Objectifs/Budgets, HP/HC, Gaz (beta)
  */
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Activity, Target, Clock, Flame, BarChart3,
   AlertTriangle, X, Zap, Database, Wifi, Info,
@@ -302,13 +302,27 @@ export default function ConsumptionExplorerPage() {
     }
   }, [primaryAvailability]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Track previous selectedSiteId to detect explicit scope changes ────────
+  const prevSelectedSiteIdRef = useRef(selectedSiteId);
+
   // ── Validate + reset siteIds on org change or initial site load ─────────
   // Fires when: (a) org changes → orgSiteIdsKey changes → stale IDs detected
   //             (b) sites load from empty → auto-select fires
-  //             (c) selectedSiteId changes → re-validates
+  //             (c) selectedSiteId changes → force-sync to new selection
   useEffect(() => {
     if (!orgSites.length) return; // Sites not yet loaded — wait
     const orgSiteIdsSet = new Set(orgSites.map(s => s.id));
+
+    // Detect explicit scope switch: user changed site in scope switcher
+    const scopeChanged = selectedSiteId !== prevSelectedSiteIdRef.current;
+    prevSelectedSiteIdRef.current = selectedSiteId;
+
+    if (scopeChanged && selectedSiteId && orgSiteIdsSet.has(Number(selectedSiteId))) {
+      // User explicitly switched scope → force-sync to the new site
+      setSiteIds([Number(selectedSiteId)]);
+      return;
+    }
+
     setSiteIds(prev => {
       // Keep IDs that exist in the current org
       const valid = prev.filter(id => orgSiteIdsSet.has(Number(id)));

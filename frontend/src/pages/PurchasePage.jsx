@@ -1375,11 +1375,21 @@ export default function PurchasePage() {
         )}
 
         {/* ══ TAB: Echeances (V1.1) ══ */}
-        {activeTab === 'echeances' && (
+        {activeTab === 'echeances' && (() => {
+          const filteredRenewals = scopeSiteId
+            ? renewals.filter(r => String(r.site_id) === String(scopeSiteId))
+            : renewals;
+          return (
           <div className="space-y-4">
+            {scopeSiteId && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 text-sm text-blue-700">
+                Filtre actif : site selectionne dans le bandeau ({scopedSites.find(s => String(s.id) === String(scopeSiteId))?.nom || scopeSiteId}).
+                {filteredRenewals.length === 0 && renewals.length > 0 && ' Aucune echeance pour ce site.'}
+              </div>
+            )}
             {renewalsLoading ? (
               <div className="text-center py-12 text-gray-400">Chargement...</div>
-            ) : renewals.length === 0 ? (
+            ) : filteredRenewals.length === 0 ? (
               <div className="text-center py-12 text-gray-400">
                 Aucun contrat avec echeance a venir
               </div>
@@ -1399,7 +1409,7 @@ export default function PurchasePage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {renewals.map((r) => (
+                    {filteredRenewals.map((r) => (
                       <tr key={r.contract_id} className="hover:bg-gray-50">
                         <td className="px-4 py-3">
                           <span
@@ -1447,7 +1457,8 @@ export default function PurchasePage() {
               </div>
             )}
           </div>
-        )}
+          );
+        })()}
 
         {/* ══ TAB: Historique (V1.1) ══ */}
         {activeTab === 'historique' && (
@@ -1489,8 +1500,8 @@ export default function PurchasePage() {
                             : 'Date inconnue'}
                         </div>
                         <div className="text-xs text-gray-500 mt-0.5">
-                          {run.run_id ? `Run: ${run.run_id.substring(0, 8)}...` : 'Run legacy'}
-                          {run.inputs_hash && ` | Hash: ${run.inputs_hash.substring(0, 8)}...`}
+                          Simulation #{idx + 1}
+                          {run.summary?.recommended_strategy && ` — ${run.summary.recommended_strategy}`}
                         </div>
                       </div>
                       <div className="text-right">
