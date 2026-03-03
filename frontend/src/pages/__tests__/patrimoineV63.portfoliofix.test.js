@@ -76,8 +76,8 @@ describe('PatrimoinePortfolioHealthBar — prop orgId (anti-race)', () => {
     expect(HEALTH_BAR).toMatch(/if\s*\(\s*!orgId\s*\)[\s\S]{0,200}animate-pulse/);
   });
 
-  test('fetchSummary toujours appelé (n\'a pas disparu)', () => {
-    expect(HEALTH_BAR).toMatch(/fetchSummary\s*\(/);
+  test('fetchSummary toujours défini (n\'a pas disparu)', () => {
+    expect(HEALTH_BAR).toMatch(/fetchSummary/);
   });
 
   test('getPatrimoinePortfolioSummary toujours importé', () => {

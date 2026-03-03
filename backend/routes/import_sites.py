@@ -67,8 +67,17 @@ async def import_sites_csv(
     if not portefeuille:
         raise HTTPException(status_code=400, detail="Aucun portefeuille pour cette organisation.")
 
+    # File size limit (50 MB)
     content = await file.read()
-    text = content.decode("utf-8-sig")
+    if len(content) > 50 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="Fichier trop volumineux (max 50 Mo)")
+    if len(content) == 0:
+        raise HTTPException(status_code=400, detail="Fichier vide")
+
+    try:
+        text = content.decode("utf-8-sig")
+    except (UnicodeDecodeError, ValueError):
+        raise HTTPException(status_code=400, detail="Encodage invalide — le fichier doit être en UTF-8")
 
     first_line = text.split("\n")[0]
     delimiter = ";" if ";" in first_line else ","

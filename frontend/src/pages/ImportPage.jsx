@@ -89,16 +89,30 @@ function ImportPage() {
     setResult(null);
     setError(null);
 
+    if (f.size > 50 * 1024 * 1024) {
+      setError('Fichier trop volumineux (max 50 Mo)');
+      toast('Fichier trop volumineux (max 50 Mo)', 'error');
+      return;
+    }
     const reader = new FileReader();
     reader.onload = (ev) => {
       const text = ev.target.result;
       const lines = text.split('\n').filter(l => l.trim());
+      if (lines.length === 0) {
+        setError('Fichier vide ou illisible');
+        toast('Fichier vide ou illisible', 'error');
+        return;
+      }
       const delimiter = lines[0].includes(';') ? ';' : ',';
       const headers = lines[0].split(delimiter).map(h => h.trim());
       const rows = lines.slice(1, 6).map(line =>
         line.split(delimiter).map(c => c.trim())
       );
       setPreview({ headers, rows, total: lines.length - 1 });
+    };
+    reader.onerror = () => {
+      setError('Erreur de lecture du fichier');
+      toast('Erreur de lecture du fichier', 'error');
     };
     reader.readAsText(f);
   };
@@ -219,7 +233,7 @@ function ImportPage() {
           className="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition"
         >
           <Download size={14} />
-          Template CSV
+          Modèle CSV
         </a>
       }
     >

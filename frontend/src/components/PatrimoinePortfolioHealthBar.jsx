@@ -176,8 +176,15 @@ export default function PatrimoinePortfolioHealthBar({ onSiteClick, orgId = null
   // Dépend de orgId : ne fetch que quand l'org est résolu, et refetch si elle change.
   useEffect(() => {
     if (!orgId) return;
-    fetchSummary();
-  }, [orgId]); // eslint-disable-line react-hooks/exhaustive-deps
+    let stale = false;
+    setLoading(true);
+    setError(null);
+    getPatrimoinePortfolioSummary()
+      .then((result) => { if (!stale) setData(result); })
+      .catch(() => { if (!stale) setError('Impossible de charger le résumé portfolio.'); })
+      .finally(() => { if (!stale) setLoading(false); });
+    return () => { stale = true; };
+  }, [orgId]);
 
   /* ── États ── */
 

@@ -504,10 +504,10 @@ export default function Patrimoine() {
           {activeChips.length > 0 && (
             <div className="flex items-center gap-1.5 flex-wrap">
               <span className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">Filtres :</span>
-              {activeChips.map((c, i) => (
-                <span key={i} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">
+              {activeChips.map((c) => (
+                <span key={c.label} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">
                   {c.label}
-                  <button onClick={c.clear} className="hover:text-blue-900"><X size={10} /></button>
+                  <button onClick={c.clear} className="hover:text-blue-900" aria-label={`Retirer filtre ${c.label}`}><X size={10} /></button>
                 </span>
               ))}
               <button onClick={resetFilters} className="text-[10px] text-gray-400 hover:text-gray-600 underline ml-1">Réinitialiser</button>
@@ -527,7 +527,7 @@ export default function Patrimoine() {
               <Button size="sm" variant="secondary" onClick={() => openActionDrawer({ sourceType: 'patrimoine' })} className="!bg-white !text-blue-700 !border-0 hover:!bg-blue-50"><Plus size={13} /> Action</Button>
               <Button size="sm" variant="secondary" onClick={exportCsv} className="!bg-white/20 !text-white !border-0 hover:!bg-white/30"><Download size={13} /> CSV</Button>
               <Button size="sm" variant="secondary" onClick={toggleFavorites} className="!bg-white/20 !text-white !border-0 hover:!bg-white/30"><Star size={13} /></Button>
-              <button onClick={() => setSelected(new Set())} className="p-1 rounded hover:bg-white/20"><X size={14} /></button>
+              <button onClick={() => setSelected(new Set())} className="p-1 rounded hover:bg-white/20" aria-label="Désélectionner tout"><X size={14} /></button>
             </div>
           )}
 

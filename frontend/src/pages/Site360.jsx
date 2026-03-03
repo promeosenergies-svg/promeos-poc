@@ -49,9 +49,9 @@ function MiniKpi({ icon: Icon, label, value, color }) {
 
 function TabResume({ site }) {
   const mockAnomalies = [
-    { id: 1, type: 'hors_horaires', severity: 'critical', message: `58% consommation hors horaires`, perte_eur: Math.round(site.risque_eur * 0.4) },
-    { id: 2, type: 'base_load', severity: 'high', message: 'Talon élevé : 45% de la médiane', perte_eur: Math.round(site.risque_eur * 0.2) },
-    { id: 3, type: 'derive', severity: 'medium', message: 'Dérive +8% sur 30 jours', perte_eur: Math.round(site.risque_eur * 0.1) },
+    { id: 1, type: 'hors_horaires', severity: 'critical', message: `58% consommation hors horaires`, perte_eur: Math.round((site.risque_eur || 0) * 0.4) },
+    { id: 2, type: 'base_load', severity: 'high', message: 'Talon élevé : 45% de la médiane', perte_eur: Math.round((site.risque_eur || 0) * 0.2) },
+    { id: 3, type: 'derive', severity: 'medium', message: 'Dérive +8% sur 30 jours', perte_eur: Math.round((site.risque_eur || 0) * 0.1) },
   ];
 
   return (
