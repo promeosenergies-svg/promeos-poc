@@ -101,8 +101,11 @@ export default function AnomaliesPage() {
         });
 
         // Merge billing anomalies — normalize to patrimoine format
+        // Filter by scopedSites so the scope bar selection is respected
+        const scopedIds = new Set(sitesToFetch.map((s) => String(s.id)));
         if (billingResult.ok && billingResult.data?.anomalies?.length) {
           for (const b of billingResult.data.anomalies) {
+            if (b.site_id && !scopedIds.has(String(b.site_id))) continue;
             flat.push({
               ...b,
               site_id: b.site_id ?? null,
@@ -122,14 +125,6 @@ export default function AnomaliesPage() {
         setLoading(false);
       });
   }, [scopedSites]);
-
-  /* ── KPIs ── */
-  const kpis = useMemo(() => {
-    const total = anomalies.length;
-    const critiques = anomalies.filter((a) => a.severity === 'CRITICAL').length;
-    const risque = anomalies.reduce((s, a) => s + (a.business_impact?.estimated_risk_eur ?? 0), 0);
-    return { total, critiques, risque };
-  }, [anomalies]);
 
   /* ── Filtrage + tri ── */
   const filtered = useMemo(() => {
@@ -152,6 +147,14 @@ export default function AnomaliesPage() {
     });
     return r;
   }, [anomalies, filterFw, filterSev, filterSite, search]);
+
+  /* ── KPIs (reflètent les filtres actifs) ── */
+  const kpis = useMemo(() => {
+    const total = filtered.length;
+    const critiques = filtered.filter((a) => a.severity === 'CRITICAL').length;
+    const risque = filtered.reduce((s, a) => s + (a.business_impact?.estimated_risk_eur ?? 0), 0);
+    return { total, critiques, risque };
+  }, [filtered]);
 
   /* ── Helpers ── */
   const hasFilters = filterFw || filterSev || filterSite || search;
@@ -191,7 +194,7 @@ export default function AnomaliesPage() {
         <EmptyState
           icon={Building2}
           title="Aucun site dans le scope"
-          text="Importez votre patrimoine ou chargez les données de démonstration HELIOS pour voir les anomalies."
+          text="Importez votre patrimoine ou chargez les données de démonstration HELIOS pour voir les anomalies. Pourquoi c'est important : le centre d'actions centralise toutes les alertes et recommandations issues de l'analyse de vos données."
           ctaLabel="Importer mon patrimoine"
           onCta={() => navigate('/import')}
           actions={

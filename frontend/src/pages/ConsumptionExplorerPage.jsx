@@ -141,7 +141,10 @@ function SmartEmptyState({
         <Icon size={32} className="text-gray-400" />
       </div>
       <h3 className="text-lg font-semibold text-gray-700 mb-1">{config.title}</h3>
-      <p className="text-sm text-gray-500 mb-6 max-w-md">{text}</p>
+      <p className="text-sm text-gray-500 mb-4 max-w-md">{text}</p>
+      <p className="text-xs text-gray-400 mb-6 max-w-md italic">
+        Pourquoi c&apos;est important : une bonne couverture de données permet de détecter les dérives, optimiser les coûts et fiabiliser les prévisions.
+      </p>
       <div className="flex items-center gap-3">
         {config.ctaLabel && config.ctaPath && (
           <Button onClick={() => onNavigate(config.ctaPath)}>{config.ctaLabel}</Button>

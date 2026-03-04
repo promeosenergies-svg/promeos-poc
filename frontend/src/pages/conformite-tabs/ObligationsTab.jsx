@@ -785,10 +785,12 @@ export default function ObligationsTab({
             text={
               emptyReason
                 ? emptyReason === 'ALL_COMPLIANT'
-                  ? 'Toutes les obligations sont respectées.'
-                  : 'Lancez une évaluation pour détecter les obligations.'
+                  ? 'Toutes les obligations sont respectées. Continuez à scanner régulièrement pour maintenir votre conformité.'
+                  : "Lancez une évaluation pour détecter les obligations. Pourquoi c'est important : les non-conformités non détectées exposent l'organisation à des sanctions et pénalités financières."
                 : 'Aucun résultat pour cette recherche.'
             }
+            ctaLabel={emptyReason && emptyReason !== 'ALL_COMPLIANT' ? 'Scanner la conformité' : undefined}
+            onCta={emptyReason && emptyReason !== 'ALL_COMPLIANT' ? () => navigate('/conformite') : undefined}
           />
         ) : (
           sortedObligations.map((obligation) => (

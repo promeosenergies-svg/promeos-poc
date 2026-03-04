@@ -15,7 +15,7 @@ import {
   importInvoicesPdf,
   getSites,
 } from '../services/api';
-import { Card, CardBody, Badge, Button, TrustBadge, PageShell } from '../ui';
+import { Card, CardBody, Badge, Button, TrustBadge, PageShell, EmptyState } from '../ui';
 import Tooltip from '../ui/Tooltip';
 import { useToast } from '../ui/ToastProvider';
 import {
@@ -567,23 +567,23 @@ export default function BillIntelPage() {
 
       {/* No data state */}
       {!loading && !hasData && (
-        <Card>
-          <CardBody className="text-center py-12">
-            <FileText size={40} className="text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">Aucune facture importée</h3>
-            <p className="text-sm text-gray-500 mb-6">
-              Importez des factures CSV ou générez des données démo pour commencer.
-            </p>
-            <div className="flex items-center justify-center gap-3">
-              <Button onClick={handleSeedDemo} disabled={seeding}>
-                <Zap size={14} /> {seeding ? 'Génération...' : 'Générer démo (5 factures)'}
+        <EmptyState
+          icon={FileText}
+          title="Aucune facture importée"
+          text="Importez des factures pour détecter les anomalies de facturation (surfacturation, doublons, dérives). Pourquoi c'est important : chaque anomalie non détectée est un surcoût invisible."
+          ctaLabel="Importer des factures"
+          onCta={() => navigate('/consommations/import')}
+          actions={
+            <div className="flex items-center gap-3">
+              <Button onClick={handleSeedDemo} disabled={seeding} variant="secondary">
+                <Zap size={14} /> {seeding ? 'Génération...' : 'Générer démo'}
               </Button>
               <Button type="button" variant="secondary" onClick={handleCsvClick}>
                 <Upload size={14} /> Importer CSV
               </Button>
             </div>
-          </CardBody>
-        </Card>
+          }
+        />
       )}
 
       {/* Insights with workflow filter */}
