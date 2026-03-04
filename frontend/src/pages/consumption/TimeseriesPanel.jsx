@@ -389,8 +389,9 @@ export default function TimeseriesPanel({
     ? Math.min(100, Math.round((availability.readings_count / 500) * 100))
     : null;
 
-  // For multi-series overlay, ExplorerChart uses `superpose` mode with site keys
-  const chartMode = seriesData.length > 1 && mode === 'superpose' ? 'superpose' : 'agrege';
+  // For multi-series, pass empile/separe/superpose through; single-site always agrege
+  const MULTI_SITE_MODES = ['superpose', 'empile', 'separe'];
+  const chartMode = seriesData.length > 1 && MULTI_SITE_MODES.includes(mode) ? mode : 'agrege';
   const chartSiteIds = overlayValueKeys.length
     ? overlayValueKeys.map((k) => parseInt(k.replace('site_', ''), 10))
     : siteIds.slice(0, 1);
