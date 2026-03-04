@@ -342,7 +342,7 @@ export default function CommandCenter() {
               : 'Chargement...'
           }
           status={alertsCount > 5 ? 'crit' : alertsCount > 0 ? 'warn' : 'ok'}
-          onClick={() => navigate('/notifications')}
+          onClick={() => navigate('/anomalies')}
         />
       </div>
 
