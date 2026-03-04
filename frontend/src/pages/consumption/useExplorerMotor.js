@@ -187,7 +187,10 @@ export default function useExplorerMotor({
     activeSiteIds,
     // Primary site (single-site backward compat)
     primarySiteId,
-    primaryAvailability: availabilityBySite[primarySiteId] || null,
+    primaryAvailability: useMemo(
+      () => availabilityBySite[primarySiteId] || null,
+      [availabilityBySite, primarySiteId], // eslint-disable-line react-hooks/exhaustive-deps
+    ),
     primaryTunnel: tunnelBySite[primarySiteId] || null,
     primaryProgression: progressionBySite[primarySiteId] || null,
     primaryTargets: targetsBySite[primarySiteId] || [],
