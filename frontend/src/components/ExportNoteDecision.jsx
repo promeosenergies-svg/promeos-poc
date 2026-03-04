@@ -50,6 +50,7 @@ export default function ExportNoteDecision({ data, onClose }) {
     doc.open();
     doc.write('<!DOCTYPE html><html><head><title>Note de Decision</title><style>' + styles + '</style></head><body></body></html>');
     doc.close();
+    if (!printRef.current) return;
     const cloned = doc.importNode(printRef.current, true);
     doc.body.appendChild(cloned);
     printWindow.onload = () => { printWindow.print(); printWindow.close(); };

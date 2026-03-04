@@ -160,6 +160,7 @@ export function ScopeProvider({ children }) {
   const clearScope = useCallback(() => {
     const next = { orgId: null, portefeuilleId: null, siteId: null };
     setScope(next);
+    setApiSites([]); // clear stale site data
     localStorage.removeItem(STORAGE_KEY);
     // Also clear demo orgs on full reset
     setDemoOrgs([]);
@@ -191,10 +192,11 @@ export function ScopeProvider({ children }) {
     void defaultSiteId; void defaultSiteName; // reserved for future use
   }, []);
 
-  // Auto-sync: on mount, if no org is selected, check backend for a seeded demo
+  // Auto-sync: if no org is selected, check backend for a seeded demo
   const _autoSynced = useRef(false);
   useEffect(() => {
-    if (scope.orgId || _autoSynced.current) return;
+    if (scope.orgId) return; // already have an org
+    if (_autoSynced.current) return;
     _autoSynced.current = true;
     getDemoPackStatus()
       .then(status => {
@@ -203,7 +205,14 @@ export function ScopeProvider({ children }) {
         }
       })
       .catch(() => {}); // Silent — no demo loaded on backend
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [scope.orgId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Reset _autoSynced when scope is fully cleared (e.g. logout)
+  useEffect(() => {
+    if (!scope.orgId && !isAuth) {
+      _autoSynced.current = false;
+    }
+  }, [scope.orgId, isAuth]);
 
   // When authenticated, use auth orgs; otherwise mock + dynamically registered demo orgs
   const orgsData = useMemo(() => {

@@ -3,7 +3,7 @@
  * ToastProvider renders a fixed container. useToast() hook provides toast(message, type).
  * Auto-dismiss after 4 seconds.
  */
-import { createContext, useContext, useState, useCallback, useRef } from 'react';
+import { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import { CheckCircle, AlertTriangle, Info, XCircle, X } from 'lucide-react';
 
 const ToastContext = createContext(null);
@@ -33,6 +33,17 @@ export function ToastProvider({ children }) {
     clearTimeout(timers.current[id]);
     delete timers.current[id];
     setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  // Periodic cleanup of recentMessages to prevent unbounded growth
+  useEffect(() => {
+    const cleanup = setInterval(() => {
+      const now = Date.now();
+      for (const [k, ts] of recentMessages.current) {
+        if (now - ts > 10000) recentMessages.current.delete(k);
+      }
+    }, 30000);
+    return () => clearInterval(cleanup);
   }, []);
 
   const toast = useCallback((message, type = 'info') => {

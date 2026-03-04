@@ -3,7 +3,7 @@
  * Résumé exécutif + KPIs décideur + Briefing + Risques + Opportunités.
  * EssentialsRow + données relégués en bas.
  */
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   FileText, ArrowRight, Search, ShieldCheck, TrendingDown, AlertTriangle,
@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
+import { getNotificationsSummary } from '../services/api';
 import useRenderTiming from '../hooks/useRenderTiming';
 import { toActionsList } from '../services/routes';
 import { Button, Card, CardBody, PageShell, Progress, Modal, Pagination, StatusDot, Tabs, EmptyState, ScopeSummary, EvidenceDrawer } from '../ui';
@@ -58,7 +59,18 @@ const Cockpit = () => {
   const [sitePage, setSitePage] = useState(1);
   const [activePtf, setActivePtf] = useState('all');
   const [evidenceOpen, setEvidenceOpen] = useState(null); // KPI id or null
+  const [alertsCount, setAlertsCount] = useState(0);
   const sitePageSize = 20;
+
+  // Fetch real alert count from notifications summary (same source as CommandCenter)
+  useEffect(() => {
+    getNotificationsSummary(org?.id, scopedSites.length === 1 ? scopedSites[0]?.id : null)
+      .then((data) => {
+        const count = (data?.by_severity?.critical || 0) + (data?.by_severity?.warn || 0);
+        setAlertsCount(count);
+      })
+      .catch(() => setAlertsCount(0));
+  }, [org, scopedSites]);
 
   const kpis = useMemo(() => {
     const sites = scopedSites;
@@ -89,14 +101,14 @@ const Cockpit = () => {
 
   // Cockpit V2 — derived model data (no extra API calls)
   const watchlist         = useMemo(() => buildWatchlist(kpis, scopedSites),                          [kpis, scopedSites]);         // eslint-disable-line react-hooks/exhaustive-deps
-  const briefing          = useMemo(() => buildBriefing(kpis, watchlist),                             [kpis, watchlist]);           // eslint-disable-line react-hooks/exhaustive-deps
+  const briefing          = useMemo(() => buildBriefing(kpis, watchlist, alertsCount),               [kpis, watchlist, alertsCount]); // eslint-disable-line react-hooks/exhaustive-deps
   const consistency       = useMemo(() => checkConsistency(kpis),                                     [kpis]);                     // eslint-disable-line react-hooks/exhaustive-deps
   const opportunities     = useMemo(() => buildOpportunities(kpis, scopedSites, { isExpert }),        [kpis, scopedSites, isExpert]); // eslint-disable-line react-hooks/exhaustive-deps
   const topSites          = useMemo(() => buildTopSites(scopedSites),                                 [scopedSites]);              // eslint-disable-line react-hooks/exhaustive-deps
   const executiveSummary  = useMemo(() => buildExecutiveSummary(kpis, topSites),                      [kpis, topSites]);           // eslint-disable-line react-hooks/exhaustive-deps
   const executiveKpis     = useMemo(() => buildExecutiveKpis(kpis, scopedSites),                      [kpis, scopedSites]);        // eslint-disable-line react-hooks/exhaustive-deps
   const _todayActions     = useMemo(() => buildTodayActions(kpis, watchlist, opportunities),          [kpis, watchlist, opportunities]); // eslint-disable-line react-hooks/exhaustive-deps
-  const healthState       = useMemo(() => computeHealthState({ kpis, watchlist, briefing, consistency, alertsCount: 0 }), [kpis, watchlist, briefing, consistency]); // eslint-disable-line react-hooks/exhaustive-deps
+  const healthState       = useMemo(() => computeHealthState({ kpis, watchlist, briefing, consistency, alertsCount }), [kpis, watchlist, briefing, consistency, alertsCount]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const scopeLabel = portefeuille
     ? `${org?.nom || 'Organisation'} / ${portefeuille.nom}`

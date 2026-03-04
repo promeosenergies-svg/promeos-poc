@@ -103,7 +103,11 @@ export default function InsightDrawer({ open, onClose, insightId }) {
         </div>
       ) : !detail ? (
         <div className="text-center py-8">
-          <p className="text-sm text-gray-500">Détail non disponible.</p>
+          <p className="text-sm text-gray-500">
+            {error
+              ? `Impossible de charger le détail (${error.status || 'réseau'}). Veuillez réessayer ou contacter le support.`
+              : 'Détail non disponible.'}
+          </p>
           {isExpert && error && (
             <div className="mt-4 bg-red-50 rounded-lg p-3 text-left">
               <p className="text-xs font-semibold text-red-600">Debug</p>

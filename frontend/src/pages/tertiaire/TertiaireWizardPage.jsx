@@ -141,7 +141,6 @@ export default function TertiaireWizardPage() {
 
       navigate(`/conformite/tertiaire/efa/${efa.id}`, { state: { justCreated: true } });
     } catch (err) {
-      console.error('Erreur création EFA:', err);
       const detail = err?.response?.data?.detail || err?.message || 'Erreur inconnue';
       setSubmitError(`Impossible de créer l'EFA : ${detail}`);
       setSaving(false);

@@ -10,7 +10,7 @@ from services.compliance_engine import compute_action_recommandee, _ACTION_TEMPL
 from middleware.auth import get_optional_auth, AuthContext
 from services.iam_scope import check_site_access, apply_scope_filter
 from services.scope_utils import resolve_org_id
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional
 from sqlalchemy import func
 from datetime import datetime, timedelta
@@ -19,13 +19,13 @@ router = APIRouter(prefix="/api/sites", tags=["Sites"])
 
 
 class SiteCreateRequest(BaseModel):
-    nom: str
-    type: Optional[str] = None
-    naf_code: Optional[str] = None
-    adresse: Optional[str] = None
-    code_postal: Optional[str] = None
-    ville: Optional[str] = None
-    surface_m2: Optional[float] = None
+    nom: str = Field(..., min_length=1, max_length=300)
+    type: Optional[str] = Field(None, max_length=50)
+    naf_code: Optional[str] = Field(None, max_length=10)
+    adresse: Optional[str] = Field(None, max_length=500)
+    code_postal: Optional[str] = Field(None, max_length=10)
+    ville: Optional[str] = Field(None, max_length=200)
+    surface_m2: Optional[float] = Field(None, ge=0, le=1e7)
 
 
 @router.post("")
@@ -115,6 +115,7 @@ def get_sites(
     if type:
         query = query.filter(Site.type == type)
 
+    limit = min(limit, 500)  # cap pagination
     total = query.count()
     sites = query.offset(skip).limit(limit).all()
 
@@ -142,7 +143,7 @@ def get_site_stats(site_id: int, db: Session = Depends(get_db), auth: Optional[A
     Statistiques d'un site
     """
     check_site_access(auth, site_id)
-    site = db.query(Site).filter(Site.id == site_id).first()
+    site = not_deleted(db.query(Site), Site).filter(Site.id == site_id).first()
 
     if not site:
         raise HTTPException(status_code=404, detail="Site non trouvé")

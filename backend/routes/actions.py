@@ -11,7 +11,7 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -35,49 +35,49 @@ router = APIRouter(prefix="/api/actions", tags=["Actions"])
 
 class ActionCreate(BaseModel):
     """Schema for direct action creation from UI."""
-    org_id: Optional[int] = None
-    site_id: Optional[int] = None
-    campaign_sites: Optional[List[int]] = None
+    org_id: Optional[int] = Field(None, ge=1)
+    site_id: Optional[int] = Field(None, ge=1)
+    campaign_sites: Optional[List[int]] = Field(None, max_length=50)
     source_type: str = "manual"
-    source_id: Optional[str] = None
-    title: str
-    rationale: Optional[str] = None
-    priority: Optional[int] = None
+    source_id: Optional[str] = Field(None, max_length=200)
+    title: str = Field(..., min_length=1, max_length=500)
+    rationale: Optional[str] = Field(None, max_length=2000)
+    priority: Optional[int] = Field(None, ge=1, le=5)
     severity: Optional[str] = None
-    estimated_gain_eur: Optional[float] = None
+    estimated_gain_eur: Optional[float] = Field(None, ge=0, le=1e9)
     due_date: Optional[str] = None
-    owner: Optional[str] = None
-    notes: Optional[str] = None
-    idempotency_key: Optional[str] = None
-    co2e_savings_est_kg: Optional[float] = None
+    owner: Optional[str] = Field(None, max_length=200)
+    notes: Optional[str] = Field(None, max_length=5000)
+    idempotency_key: Optional[str] = Field(None, max_length=100)
+    co2e_savings_est_kg: Optional[float] = Field(None, ge=0, le=1e9)
     evidence_required: Optional[bool] = None
 
 
 class ActionPatch(BaseModel):
     status: Optional[str] = None
-    owner: Optional[str] = None
-    notes: Optional[str] = None
+    owner: Optional[str] = Field(None, max_length=200)
+    notes: Optional[str] = Field(None, max_length=5000)
     due_date: Optional[str] = None
-    priority: Optional[int] = None
-    realized_gain_eur: Optional[float] = None
+    priority: Optional[int] = Field(None, ge=1, le=5)
+    realized_gain_eur: Optional[float] = Field(None, ge=0, le=1e9)
     realized_at: Optional[str] = None
-    category: Optional[str] = None
-    description: Optional[str] = None
-    co2e_savings_est_kg: Optional[float] = None
-    closure_justification: Optional[str] = None  # V49
+    category: Optional[str] = Field(None, max_length=100)
+    description: Optional[str] = Field(None, max_length=2000)
+    co2e_savings_est_kg: Optional[float] = Field(None, ge=0, le=1e9)
+    closure_justification: Optional[str] = Field(None, max_length=2000)  # V49
     evidence_required: Optional[bool] = None
 
 
 class CommentCreate(BaseModel):
-    author: str
-    body: str
+    author: str = Field(..., min_length=1, max_length=200)
+    body: str = Field(..., min_length=1, max_length=5000)
 
 
 class EvidenceCreate(BaseModel):
-    label: str
-    file_url: Optional[str] = None
-    mime_type: Optional[str] = None
-    uploaded_by: Optional[str] = None
+    label: str = Field(..., min_length=1, max_length=300)
+    file_url: Optional[str] = Field(None, max_length=1000)
+    mime_type: Optional[str] = Field(None, max_length=100)
+    uploaded_by: Optional[str] = Field(None, max_length=200)
 
 
 # ========================================
@@ -375,7 +375,7 @@ def list_actions(
     if site_id is not None:
         q = q.filter(ActionItem.site_id == site_id)
 
-    actions = q.order_by(ActionItem.priority.asc()).all()
+    actions = q.order_by(ActionItem.priority.asc()).limit(500).all()
     return [_serialize_action(a) for a in actions]
 
 

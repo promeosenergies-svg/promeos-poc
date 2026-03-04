@@ -16,6 +16,7 @@ import threading
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -107,9 +108,9 @@ def seed_demo_pack(
         )
 
         if result.get("error"):
-            raise HTTPException(
+            return JSONResponse(
                 status_code=400,
-                detail={
+                content={
                     "message": result["error"],
                     "available_packs": result.get("available", []),
                     "hint": "Si le pack existe dans packs.py mais n'est pas trouve, "

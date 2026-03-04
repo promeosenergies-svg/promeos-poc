@@ -96,20 +96,17 @@ def list_users(
     # In demo mode (_admin is None), show all users
     if _admin is None:
         users = db.query(User).all()
-        result = []
-        for u in users:
-            uor = db.query(UserOrgRole).filter(UserOrgRole.user_id == u.id).first()
-            result.append(_serialize_user(db, u, uor))
-        return result
+        user_ids = [u.id for u in users]
+        uors = db.query(UserOrgRole).filter(UserOrgRole.user_id.in_(user_ids)).all() if user_ids else []
+        uor_map = {uor.user_id: uor for uor in uors}
+        return [_serialize_user(db, u, uor_map.get(u.id)) for u in users]
 
     org_id = int(_admin.get("org_id", 0))
     uors = db.query(UserOrgRole).filter(UserOrgRole.org_id == org_id).all()
-    result = []
-    for uor in uors:
-        user = db.query(User).filter(User.id == uor.user_id).first()
-        if user:
-            result.append(_serialize_user(db, user, uor))
-    return result
+    user_ids = [uor.user_id for uor in uors]
+    users = db.query(User).filter(User.id.in_(user_ids)).all() if user_ids else []
+    user_map = {u.id: u for u in users}
+    return [_serialize_user(db, user_map[uor.user_id], uor) for uor in uors if uor.user_id in user_map]
 
 
 @router.post("/users")

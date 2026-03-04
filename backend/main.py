@@ -216,8 +216,8 @@ async def _startup_seed_hourly_if_missing():
                 result = generate_demo_consumption(db, site.id, days=90)
                 if result and not result.get("error"):
                     seeded += 1
-            except Exception:
-                pass
+            except Exception as exc:
+                logging.getLogger("promeos.startup").debug(f"[startup] Site {site.id} seed failed: {exc}")
 
         if seeded > 0:
             logging.getLogger("promeos.startup").info(
@@ -253,9 +253,11 @@ def root():
 # Health check
 @app.get("/api/health")
 def api_health():
-    import subprocess, datetime
+    import logging, subprocess, datetime
     from sqlalchemy import text
     from database import SessionLocal
+
+    _logger = logging.getLogger("promeos.health")
 
     git_sha = "unknown"
     try:
@@ -265,7 +267,7 @@ def api_health():
             stderr=subprocess.DEVNULL,
         ).decode().strip()
     except Exception:
-        pass
+        _logger.debug("Could not resolve git SHA", exc_info=True)
 
     db_ok = False
     try:
@@ -274,7 +276,7 @@ def api_health():
         db.close()
         db_ok = True
     except Exception:
-        pass
+        _logger.error("Health check DB connectivity failed", exc_info=True)
 
     return {
         "ok": db_ok,

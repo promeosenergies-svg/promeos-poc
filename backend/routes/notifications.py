@@ -6,7 +6,7 @@ import json
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -33,8 +33,8 @@ class NotifPatch(BaseModel):
 
 class PreferencePatch(BaseModel):
     enable_badges: Optional[bool] = None
-    snooze_days: Optional[int] = None
-    thresholds_json: Optional[str] = None
+    snooze_days: Optional[int] = Field(None, ge=0, le=365)
+    thresholds_json: Optional[str] = Field(None, max_length=2000)
 
 
 # ========================================
@@ -120,7 +120,7 @@ def list_notifs(
     events = q.order_by(
         NotificationEvent.severity.desc(),
         NotificationEvent.created_at.desc(),
-    ).all()
+    ).limit(500).all()
 
     return [_serialize_event(e) for e in events]
 

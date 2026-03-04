@@ -22,6 +22,9 @@ from services.iam_service import (
 from middleware.auth import oauth2_scheme, get_current_user_role, require_permission, DEMO_MODE
 from middleware.rate_limit import check_rate_limit
 
+import logging
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
 
 
@@ -278,7 +281,7 @@ def impersonate(
 
     uor = db.query(UserOrgRole).filter(UserOrgRole.user_id == target.id).first()
     if not uor:
-        raise HTTPException(status_code=400, detail="User has no org role")
+        raise HTTPException(status_code=403, detail="User has no org role")
 
     # Log impersonation
     caller_id = None
@@ -288,6 +291,11 @@ def impersonate(
             caller_id = int(p.get("sub", 0))
         except Exception:
             pass
+    if DEMO_MODE:
+        logger.warning(
+            "[SECURITY] Impersonation in DEMO_MODE: caller_id=%s -> target=%s (%s)",
+            caller_id, target.id, req.email,
+        )
     log_audit(db, caller_id, "impersonate", "user", str(target.id), {"target_email": req.email})
     db.commit()
 

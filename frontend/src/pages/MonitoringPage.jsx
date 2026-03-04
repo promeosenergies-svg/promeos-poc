@@ -931,6 +931,17 @@ function OffHoursDrawer({ open, onClose, offHoursRatio, offHoursKwh, schedule, e
   );
 }
 
+function _filterOutliers(points) {
+  if (points.length < 5) return points;
+  const vals = points.map(p => p.kwh).sort((a, b) => a - b);
+  const q1 = vals[Math.floor(vals.length * 0.25)];
+  const q3 = vals[Math.floor(vals.length * 0.75)];
+  const iqr = q3 - q1;
+  const upper = q3 + 3 * iqr;
+  const lower = q1 - 3 * iqr;
+  return points.filter(p => p.kwh >= lower && p.kwh <= upper);
+}
+
 function ClimateScatter({ climate }) {
   if (!climate || !climate.scatter || climate.scatter.length === 0) {
     const reason = climate?.reason;
@@ -944,6 +955,9 @@ function ClimateScatter({ climate }) {
     );
   }
 
+  const filtered = _filterOutliers(climate.scatter);
+  const removed = climate.scatter.length - filtered.length;
+
   return (
     <div>
       <ResponsiveContainer width="100%" height={250}>
@@ -952,7 +966,7 @@ function ClimateScatter({ climate }) {
           <XAxis dataKey="T" name="Température (°C)" unit=" °C" tick={{ fontSize: 11 }} type="number" />
           <YAxis dataKey="kwh" name="Conso. journalière" unit=" kWh/j" tick={{ fontSize: 11 }} type="number" />
           <RTooltip cursor={{ strokeDasharray: '3 3' }} />
-          <Scatter data={climate.scatter} fill="#0072B2" fillOpacity={0.55} r={3} name="Jours" />
+          <Scatter data={filtered} fill="#0072B2" fillOpacity={0.55} r={3} name="Jours" />
           {climate.fit_line && climate.fit_line.length > 0 && (
             <Scatter data={climate.fit_line} fill="none" line={{ stroke: '#E69F00', strokeWidth: 2.5 }} shape={() => null} name="Régression" />
           )}
@@ -963,6 +977,7 @@ function ClimateScatter({ climate }) {
         {climate.balance_point_c != null && <span>Tb: {climate.balance_point_c.toFixed(1)} °C</span>}
         {climate.r_squared != null && <span>R²: {climate.r_squared.toFixed(2)}</span>}
         {climate.label && <span>{CLIMATE_LABEL_FR[climate.label] || climate.label}</span>}
+        {removed > 0 && <span className="text-orange-400">{removed} outlier{removed > 1 ? 's' : ''} masqué{removed > 1 ? 's' : ''}</span>}
       </div>
     </div>
   );

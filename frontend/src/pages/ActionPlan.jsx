@@ -7,8 +7,6 @@ import {
   Filter,
 } from 'lucide-react';
 
-const API = '';
-
 const STATUT_BADGE = {
   non_conforme: { label: 'Non conforme', bg: 'bg-red-100', text: 'text-red-800' },
   a_risque: { label: 'À risque', bg: 'bg-orange-100', text: 'text-orange-800' },
@@ -35,18 +33,18 @@ const ActionPlan = () => {
     const params = new URLSearchParams({ limit: '100' });
     if (selectedSiteId) params.set('site_id', selectedSiteId);
     else if (ptfId) params.set('portefeuille_id', ptfId);
-    fetch(`${API}/api/guidance/action-plan?${params}`)
-      .then(r => r.json())
+    fetch(`/api/guidance/action-plan?${params}`)
+      .then(r => { if (!r.ok) throw new Error(r.statusText); return r.json(); })
       .then(json => { setData(json); setLoading(false); })
-      .catch(e => { console.error('[ActionPlan] fetch error:', e); setLoading(false); });
+      .catch(() => { setData(null); setLoading(false); });
   }, [selectedSiteId]);
 
   useEffect(() => {
     fetchPlan(selectedPtf);
-    fetch(`${API}/api/portefeuilles`)
-      .then(r => r.json())
+    fetch(`/api/portefeuilles`)
+      .then(r => { if (!r.ok) throw new Error(r.statusText); return r.json(); })
       .then(json => setPortefeuilles(json.portefeuilles || []))
-      .catch(e => console.error('[ActionPlan] portefeuilles error:', e));
+      .catch(() => {});
   }, [selectedPtf, selectedSiteId, fetchPlan]);
 
   const handleFilterChange = (ptfId) => {

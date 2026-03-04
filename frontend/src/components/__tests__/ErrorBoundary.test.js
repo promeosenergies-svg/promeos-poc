@@ -31,6 +31,6 @@ describe('ErrorBoundary source guards', () => {
 
   it('has a Retour a l\'accueil button that navigates home', () => {
     expect(src).toContain("Retour a l'accueil");
-    expect(src).toContain("window.location.href = '/'");
+    expect(src).toContain("window.location.assign('/')");
   });
 });

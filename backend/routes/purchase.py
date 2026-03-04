@@ -70,14 +70,21 @@ def _resolve_org_id(db: Session, site: "Site") -> int | None:
     return ej.organisation_id if ej else None
 
 
-def _get_latest_assumption(db: Session, site_id: int):
-    """Get the most recent PurchaseAssumptionSet for a site."""
-    return (
+def _get_latest_assumption(db: Session, site_id: int) -> Optional["PurchaseAssumptionSet"]:
+    """Get the most recent PurchaseAssumptionSet for a site.
+
+    Returns None if no assumption set exists for this site —
+    callers MUST handle the None case before accessing attributes.
+    """
+    result = (
         db.query(PurchaseAssumptionSet)
         .filter(PurchaseAssumptionSet.site_id == site_id)
         .order_by(PurchaseAssumptionSet.created_at.desc())
         .first()
     )
+    if result is None:
+        logger.debug("No PurchaseAssumptionSet found for site_id=%d", site_id)
+    return result
 
 
 # ── Pydantic schemas ──

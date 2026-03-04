@@ -126,15 +126,23 @@ def get_portefeuilles(
 
     portefeuilles = q.all()
 
+    # Single query for all site counts (fixes N+1)
+    ptf_ids = [p.id for p in portefeuilles]
+    count_rows = (
+        not_deleted(db.query(Site.portefeuille_id, func.count(Site.id)), Site)
+        .filter(Site.portefeuille_id.in_(ptf_ids))
+        .group_by(Site.portefeuille_id)
+        .all()
+    ) if ptf_ids else []
+    count_map = {pid: cnt for pid, cnt in count_rows}
+
     result = []
     for p in portefeuilles:
-        nb_sites = not_deleted(db.query(Site), Site).filter(Site.portefeuille_id == p.id).count()
-
         result.append({
             "id": p.id,
             "nom": p.nom,
             "description": p.description,
-            "nb_sites": nb_sites
+            "nb_sites": count_map.get(p.id, 0)
         })
 
     return {

@@ -2,7 +2,7 @@
  * PROMEOS - Site 360 (/sites/:siteId)
  * Header + badges + 3 mini KPIs + tabs (Resume, Conso, Factures, Conformite, Actions)
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft, ShieldCheck, Zap, BadgeEuro, AlertTriangle,
@@ -158,6 +158,7 @@ function TabResume({ site, onSegmentationClick }) {
 }
 
 function PaymentInfoCard({ siteId }) {
+  const navPay = useNavigate();
   const [info, setInfo] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -165,7 +166,7 @@ function PaymentInfoCard({ siteId }) {
     let stale = false;
     getSitePaymentInfo(siteId)
       .then((data) => { if (!stale) setInfo(data); })
-      .catch(e => console.error('[Site360] payment info error:', e))
+      .catch(e => void // silenced: payment info error:', e))
       .finally(() => { if (!stale) setLoading(false); });
     return () => { stale = true; };
   }, [siteId]);
@@ -178,7 +179,7 @@ function PaymentInfoCard({ siteId }) {
         <CardBody>
           <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Paiement & Refacturation</p>
           <p className="text-sm text-gray-500">Aucune règle de paiement configurée</p>
-          <Button size="sm" variant="outline" className="mt-2" onClick={() => window.location.href = '/payment-rules'}>Configurer</Button>
+          <Button size="sm" variant="outline" className="mt-2" onClick={() => navPay('/payment-rules')}>Configurer</Button>
         </CardBody>
       </Card>
     );
@@ -213,7 +214,7 @@ function EvidenceSummaryModal({ site, onClose }) {
   useEffect(() => {
     getReconciliationEvidenceSummary(site.id)
       .then(setSummary)
-      .catch(e => console.error('[Site360] evidence summary error:', e))
+      .catch(e => void // silenced: evidence summary error:', e))
       .finally(() => setLoading(false));
   }, [site.id]);
 
@@ -310,7 +311,7 @@ function TabReconciliation({ site }) {
     setLoading(true);
     getReconciliation(site.id)
       .then((data) => setRecon(data))
-      .catch(e => console.error('[Site360] reconciliation error:', e))
+      .catch(e => void // silenced: reconciliation error:', e))
       .finally(() => setLoading(false));
   };
 
@@ -837,7 +838,15 @@ export default function Site360() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { scopedSites, sitesLoading } = useScope();
-  const [activeTab, setActiveTab] = useState('resume');
+  // Persist active tab in URL hash so it survives navigation
+  const [activeTab, setActiveTab] = useState(() => {
+    const hash = window.location.hash.replace('#', '');
+    return hash || 'resume';
+  });
+  const handleSetTab = useCallback((tab) => {
+    setActiveTab(tab);
+    window.history.replaceState(null, '', `#${tab}`);
+  }, []);
   const [showIntake, setShowIntake] = useState(false);
   const [showBacs, setShowBacs] = useState(false);
   const [showSegModal, setShowSegModal] = useState(false);
@@ -920,7 +929,7 @@ export default function Site360() {
       </div>
 
       {/* Tabs */}
-      <Tabs tabs={TABS} active={activeTab} onChange={setActiveTab} />
+      <Tabs tabs={TABS} active={activeTab} onChange={handleSetTab} />
 
       {/* Tab content */}
       {activeTab === 'resume' && <TabResume site={site} onSegmentationClick={() => setShowSegModal(true)} />}

@@ -12,7 +12,7 @@ from datetime import date, datetime
 from typing import Optional, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, UploadFile, File
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -41,25 +41,25 @@ router = APIRouter(prefix="/api/billing", tags=["Bill Intelligence V2"])
 # ========================================
 
 class ContractCreate(BaseModel):
-    site_id: int
-    energy_type: str  # elec / gaz
-    supplier_name: str
+    site_id: int = Field(..., ge=1)
+    energy_type: str = Field(..., max_length=20)  # elec / gaz
+    supplier_name: str = Field(..., min_length=1, max_length=200)
     start_date: Optional[str] = None
     end_date: Optional[str] = None
-    price_ref_eur_per_kwh: Optional[float] = None
-    fixed_fee_eur_per_month: Optional[float] = None
+    price_ref_eur_per_kwh: Optional[float] = Field(None, ge=0, le=10)
+    fixed_fee_eur_per_month: Optional[float] = Field(None, ge=0, le=1e6)
 
 
 class InvoiceCreate(BaseModel):
-    site_id: int
-    contract_id: Optional[int] = None
-    invoice_number: str
+    site_id: int = Field(..., ge=1)
+    contract_id: Optional[int] = Field(None, ge=1)
+    invoice_number: str = Field(..., min_length=1, max_length=100)
     period_start: Optional[str] = None
     period_end: Optional[str] = None
     issue_date: Optional[str] = None
-    total_eur: Optional[float] = None
-    energy_kwh: Optional[float] = None
-    lines: Optional[List[dict]] = None
+    total_eur: Optional[float] = Field(None, ge=0, le=1e8)
+    energy_kwh: Optional[float] = Field(None, ge=0, le=1e9)
+    lines: Optional[List[dict]] = Field(None, max_length=100)
 
 
 class InsightPatch(BaseModel):
@@ -281,10 +281,16 @@ def import_invoices_csv(
     """
     effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
 
-    if not file.filename.endswith(".csv"):
+    fname = (file.filename or "").lower()
+    if not fname.endswith(".csv"):
         raise HTTPException(status_code=400, detail="Le fichier doit etre un CSV")
+    if file.content_type and file.content_type not in ("text/csv", "text/plain", "application/vnd.ms-excel", "application/octet-stream"):
+        raise HTTPException(status_code=400, detail="Type MIME invalide — CSV attendu")
 
-    content = file.file.read().decode("utf-8-sig")
+    raw = file.file.read()
+    if len(raw) > 50 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="Fichier trop volumineux (max 50 Mo)")
+    content = raw.decode("utf-8-sig")
 
     # --- Idempotency check (content hash) ---
     content_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
@@ -967,7 +973,13 @@ async def import_invoice_pdf(
     effective_org_id = resolve_org_id(request, auth, db, org_id_override=org_id)
     _check_site_belongs_to_org(db, site_id, effective_org_id)
 
+    fname = (file.filename or "").lower()
+    if not fname.endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Le fichier doit etre un PDF")
+
     content = await file.read()
+    if len(content) > 20 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="PDF trop volumineux (max 20 Mo)")
     invoice_domain = parse_pdf_bytes(content, file.filename or "upload.pdf")
 
     confidence = getattr(invoice_domain, "parsing_confidence", 0) or 0

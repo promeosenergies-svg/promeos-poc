@@ -62,13 +62,19 @@ export default function Sidebar() {
   const [alertBadge, setAlertBadge] = useState(0);
   const [monitoringBadge, setMonitoringBadge] = useState(0);
 
+  // Fetch badges on mount + auto-refresh every 2 minutes
   useEffect(() => {
-    getNotificationsSummary()
-      .then((s) => setAlertBadge(s.new_critical + s.new_warn))
-      .catch(() => {});
-    getMonitoringAlerts(null, 'open', 200)
-      .then((alerts) => setMonitoringBadge(Array.isArray(alerts) ? alerts.length : 0))
-      .catch(() => {});
+    const fetchBadges = () => {
+      getNotificationsSummary()
+        .then((s) => setAlertBadge(s.new_critical + s.new_warn))
+        .catch(() => {});
+      getMonitoringAlerts(null, 'open', 200)
+        .then((alerts) => setMonitoringBadge(Array.isArray(alerts) ? alerts.length : 0))
+        .catch(() => {});
+    };
+    fetchBadges();
+    const interval = setInterval(fetchBadges, 2 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
 
   const badges = useMemo(

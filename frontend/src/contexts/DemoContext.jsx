@@ -2,14 +2,12 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 
 const DemoContext = createContext();
 
-const API = '';
-
 export function DemoProvider({ children }) {
   const [demoEnabled, setDemoEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`${API}/api/demo/status`)
+    fetch('/api/demo/status')
       .then(r => r.json())
       .then(data => {
         setDemoEnabled(data.demo_enabled);
@@ -18,19 +16,24 @@ export function DemoProvider({ children }) {
       .catch(() => setLoading(false));
   }, []);
 
+  const [toggling, setToggling] = useState(false);
+
   const toggleDemo = useCallback(async () => {
+    setToggling(true);
     const endpoint = demoEnabled ? '/api/demo/disable' : '/api/demo/enable';
     try {
-      const resp = await fetch(`${API}${endpoint}`, { method: 'POST' });
+      const resp = await fetch(endpoint, { method: 'POST' });
       const data = await resp.json();
       setDemoEnabled(data.demo_enabled);
-    } catch (err) {
-      console.error('Erreur toggle demo:', err);
+    } catch {
+      // toggle failed — user sees stale state
+    } finally {
+      setToggling(false);
     }
   }, [demoEnabled]);
 
   return (
-    <DemoContext.Provider value={{ demoEnabled, toggleDemo, loading }}>
+    <DemoContext.Provider value={{ demoEnabled, toggleDemo, loading, toggling }}>
       {children}
     </DemoContext.Provider>
   );

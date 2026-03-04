@@ -9,6 +9,7 @@ V1.1: get_reference_price (contract > site_tariff > fallback),
 import inspect
 import json
 import logging
+import os
 from datetime import date, datetime, timedelta
 from typing import List, Dict, Any, Optional, Tuple
 from sqlalchemy.orm import Session
@@ -29,8 +30,8 @@ from models.enums import ActionSourceType, ActionStatus
 # Price reference resolution (V1.1)
 # ========================================
 
-DEFAULT_PRICE_ELEC = 0.18
-DEFAULT_PRICE_GAZ = 0.09
+DEFAULT_PRICE_ELEC = float(os.environ.get("PROMEOS_DEFAULT_PRICE_ELEC", "0.18"))
+DEFAULT_PRICE_GAZ = float(os.environ.get("PROMEOS_DEFAULT_PRICE_GAZ", "0.09"))
 
 
 def get_reference_price(
@@ -183,8 +184,9 @@ def _rule_shadow_gap(invoice: EnergyInvoice, contract: Optional[EnergyContract],
                 from services.billing_shadow_v2 import shadow_billing_v2
                 v2 = shadow_billing_v2(invoice, lines, contract)
                 metrics.update(v2)
-            except Exception:
-                pass
+            except Exception as exc:
+                import logging
+                logging.getLogger("promeos.billing").debug(f"shadow_billing_v2 failed: {exc}")
         return {
             "type": "shadow_gap",
             "severity": "high" if abs(shadow["delta_pct"]) > 20 else "medium",

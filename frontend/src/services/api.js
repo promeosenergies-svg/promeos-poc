@@ -274,7 +274,7 @@ api.interceptors.response.use(
     if (!isSilent && error.response?.status === 401 && !cfg.url?.includes('/auth/')) {
       localStorage.removeItem('promeos_token');
       if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
+        window.location.assign('/login');
       }
     }
     // Mark error as silent so downstream handlers can skip toasting

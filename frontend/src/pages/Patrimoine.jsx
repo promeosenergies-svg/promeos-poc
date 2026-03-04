@@ -124,7 +124,7 @@ export default function Patrimoine() {
         (data.sites || []).forEach(s => { m[s.site_id] = s; });
         setReconMap(m);
       })
-      .catch(e => console.error('[Patrimoine] reconciliation error:', e));
+      .catch(() => {});
   }, []);
 
   // URL param helper — merges params, removes empty values

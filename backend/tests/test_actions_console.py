@@ -131,11 +131,11 @@ class TestActionValidation:
         })
         assert r.status_code == 400
 
-    def test_create_invalid_priority_400(self, client):
+    def test_create_invalid_priority_422(self, client):
         r = client.post("/api/actions", json={
             "title": "Test", "priority": 99,
         })
-        assert r.status_code == 400
+        assert r.status_code == 422  # Pydantic Field(ge=1, le=5) constraint
 
     def test_create_invalid_date_400(self, client):
         r = client.post("/api/actions", json={

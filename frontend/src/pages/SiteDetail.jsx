@@ -23,8 +23,6 @@ import {
 } from 'lucide-react';
 import { Badge as UIBadge } from '../ui';
 
-const API = '';
-
 // Badge conformité (shared style)
 const STATUT_CONFIG = {
   conforme: { label: 'Conforme', bg: 'bg-green-100', text: 'text-green-800', icon: ShieldCheck },
@@ -88,11 +86,11 @@ const SiteDetail = () => {
     setLoading(true);
     setError(null);
     Promise.all([
-      fetch(`${API}/api/sites/${id}/compliance`).then(r => {
+      fetch(`/api/sites/${id}/compliance`).then(r => {
         if (!r.ok) throw new Error(`Site ${id} non trouvé`);
         return r.json();
       }),
-      fetch(`${API}/api/sites/${id}/guardrails`).then(r => r.json()).catch(() => null),
+      fetch(`/api/sites/${id}/guardrails`).then(r => r.json()).catch(() => null),
     ])
       .then(([complianceData, guardrailsData]) => {
         setData(complianceData);

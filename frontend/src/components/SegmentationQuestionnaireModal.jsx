@@ -42,7 +42,6 @@ export default function SegmentationQuestionnaireModal({ onClose, onComplete }) 
       // Show up to 4 questions: priority first, then fill with others
       setQuestions([...priority, ...others].slice(0, 4));
     }).catch((err) => {
-      console.error('[SegmentationModal] Erreur chargement:', err);
       setLoadError(true);
     }).finally(() => setLoading(false));
   }, []);
@@ -59,7 +58,6 @@ export default function SegmentationQuestionnaireModal({ onClose, onComplete }) 
       if (onComplete) onComplete(result);
       onClose();
     } catch (err) {
-      console.error('[SegmentationModal] Erreur soumission:', err);
       setSubmitError(true);
     } finally {
       setSubmitting(false);

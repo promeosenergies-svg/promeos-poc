@@ -20,6 +20,11 @@ function saveRecent(ids) {
 
 export default function SitePicker({ sites, selectedIds, onChange, maxSelection = 8 }) {
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 200);
+    return () => clearTimeout(t);
+  }, [search]);
   const [open, setOpen] = useState(false);
   const [collections, setCollections] = useState([]);
   const [_showCollections, setShowCollections] = useState(false);
@@ -38,7 +43,7 @@ export default function SitePicker({ sites, selectedIds, onChange, maxSelection 
 
   // Load collections on mount
   useEffect(() => {
-    getEmsCollections().then(setCollections).catch(e => console.error('[SitePicker] collections error:', e));
+    getEmsCollections().then(setCollections).catch(() => {});
   }, []);
 
   // Close on outside click — check both trigger area and portaled dropdown
@@ -65,14 +70,14 @@ export default function SitePicker({ sites, selectedIds, onChange, maxSelection 
   }, [selectedIds]);
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return sites;
-    const q = search.toLowerCase();
+    if (!debouncedSearch.trim()) return sites;
+    const q = debouncedSearch.toLowerCase();
     return sites.filter(s =>
       s.nom.toLowerCase().includes(q) ||
       (s.ville || '').toLowerCase().includes(q) ||
       (s.usage || '').toLowerCase().includes(q)
     );
-  }, [sites, search]);
+  }, [sites, debouncedSearch]);
 
   const selectedSites = useMemo(() =>
     sites.filter(s => selectedIds.includes(s.id)),

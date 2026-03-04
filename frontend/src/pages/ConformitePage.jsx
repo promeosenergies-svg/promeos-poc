@@ -26,7 +26,7 @@ import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { track } from '../services/tracker';
 import ErrorState from '../ui/ErrorState';
-import { buildWatchlist, computeHealthState } from '../models/dashboardEssentials';
+import { buildWatchlist, buildBriefing, computeHealthState } from '../models/dashboardEssentials';
 import HealthSummary from '../components/HealthSummary';
 import DossierPrintView from '../components/DossierPrintView';
 import {
@@ -436,7 +436,9 @@ export default function ConformitePage() {
     const total = sitesData.length;
     const conformes = sitesData.filter(s => s.statut_conformite === 'conforme').length;
     const simpleKpis = { total, conformes, nonConformes: nc, aRisque: ar, risqueTotal: 0, couvertureDonnees: 100 };
-    return computeHealthState({ kpis: simpleKpis, watchlist: buildWatchlist(simpleKpis, sitesData), briefing: [], consistency: { ok: true }, alertsCount: 0 });
+    const wl = buildWatchlist(simpleKpis, sitesData);
+    const br = buildBriefing(simpleKpis, wl);
+    return computeHealthState({ kpis: simpleKpis, watchlist: wl, briefing: br, consistency: { ok: true }, alertsCount: 0 });
   }, [bundle, sitesData]);
 
   const score = useMemo(() => {

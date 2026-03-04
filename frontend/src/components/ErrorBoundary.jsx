@@ -45,7 +45,7 @@ export default class ErrorBoundary extends Component {
               Reessayer
             </button>
             <button
-              onClick={() => { this.setState({ hasError: false, error: null }); window.location.href = '/'; }}
+              onClick={() => { this.setState({ hasError: false, error: null }); window.location.assign('/'); }}
               className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300 transition"
             >
               Retour a l'accueil

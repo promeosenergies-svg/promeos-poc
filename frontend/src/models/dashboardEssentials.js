@@ -227,13 +227,14 @@ export function buildOpportunities(kpis, _sites = [], { isExpert = false } = {})
  * Derive up to 3 priority briefing items for the "Briefing du jour" hero card.
  * Items are ordered by severity: critical → high → warn.
  *
- * @param {object} kpis        — from computeKpis(sites)
- * @param {object[]} watchlist — from buildWatchlist()
+ * @param {object} kpis          — from computeKpis(sites)
+ * @param {object[]} watchlist   — from buildWatchlist()
+ * @param {number}   alertsCount — nombre d'alertes actives (depuis API)
  * @returns {BriefingItem[]}   max 3 items
  *
  * BriefingItem: { id, label, severity, path }
  */
-export function buildBriefing(kpis, _watchlist = []) {
+export function buildBriefing(kpis, _watchlist = [], alertsCount = 0) {
   const bullets = [];
 
   // 1. Non-conformes → critical
@@ -258,7 +259,17 @@ export function buildBriefing(kpis, _watchlist = []) {
     });
   }
 
-  // 3. Low data coverage → warn (only when meaningful)
+  // 3. Alertes actives → high
+  if (alertsCount > 0) {
+    bullets.push({
+      id: 'alertes_actives',
+      label: `${alertsCount} alerte${alertsCount > 1 ? 's' : ''} active${alertsCount > 1 ? 's' : ''}`,
+      severity: alertsCount > 5 ? 'high' : 'warn',
+      path: '/notifications',
+    });
+  }
+
+  // 4. Low data coverage → warn (only when meaningful)
   if (kpis.couvertureDonnees < COVERAGE_THRESHOLDS.opportunity && kpis.total > 0) {
     const missing = kpis.total - Math.round(kpis.couvertureDonnees * kpis.total / 100);
     bullets.push({

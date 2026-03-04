@@ -192,6 +192,7 @@ export default function AppShell() {
             {/* Command Palette trigger */}
             <button
               onClick={() => setPaletteOpen(true)}
+              aria-label="Ouvrir la recherche (Ctrl+K)"
               className="flex items-center gap-2 px-3 py-2 bg-white/60 border border-slate-200/80 rounded-lg text-sm text-slate-400
                 hover:bg-white hover:text-slate-600 hover:border-slate-300 transition-all duration-150 shadow-sm"
             >

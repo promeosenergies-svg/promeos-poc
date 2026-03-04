@@ -176,7 +176,7 @@ function App() {
               {showUpgradeWizard && (
                 <UpgradeWizard onClose={(completed) => {
                   setShowUpgradeWizard(false);
-                  if (completed) window.location.href = '/patrimoine';
+                  if (completed) window.location.assign('/patrimoine');
                 }} />
               )}
             </Router>

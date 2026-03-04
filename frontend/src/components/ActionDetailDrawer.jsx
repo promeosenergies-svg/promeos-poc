@@ -583,7 +583,7 @@ export default function ActionDetailDrawer({ action, open, onClose, onUpdate }) 
                       <div className="text-xs text-amber-700 bg-amber-50 rounded-lg p-2" data-testid="operat-closability-warning">
                         <p className="font-medium mb-1">Clôture bloquée :</p>
                         <ul className="list-disc list-inside space-y-0.5">
-                          {closability.raisons.map((r, i) => <li key={i}>{r}</li>)}
+                          {(closability.raisons || []).map((r, i) => <li key={`raison-${i}`}>{r}</li>)}
                         </ul>
                       </div>
                     )}

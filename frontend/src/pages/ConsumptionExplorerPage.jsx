@@ -5,6 +5,7 @@
  * Panels: Tunnel (P10-P90), Objectifs/Budgets, HP/HC, Gaz (beta)
  */
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Activity, Target, Clock, Flame, BarChart3,
   AlertTriangle, X, Zap, Database, Wifi, Info,
@@ -183,6 +184,7 @@ function AvailabilitySkeleton() {
 // ========================================
 
 export default function ConsumptionExplorerPage() {
+  const navigate = useNavigate();
   const { selectedSiteId, orgSites, sitesLoading, scopeLabel } = useScope();
   const { toast } = useToast();
 
@@ -405,7 +407,7 @@ export default function ConsumptionExplorerPage() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Navigation helpers ─────────────────────────────────────────────────
-  const handleNavigate = useCallback((path) => { window.location.href = path; }, []);
+  const handleNavigate = useCallback((path) => { navigate(path); }, [navigate]);
   const handleSwitchEnergy = useCallback((type) => {
     setEnergyType(type);
     if (type === 'gas') switchTab('gas');

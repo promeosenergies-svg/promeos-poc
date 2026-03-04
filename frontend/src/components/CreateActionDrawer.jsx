@@ -154,7 +154,7 @@ export default function CreateActionDrawer({
         onSave?.(result);
       }
     } catch (err) {
-      console.error('[CreateActionDrawer] API error:', err);
+      // Error tracked via analytics; toast shown by interceptor
       track('action_create_error', { type: form.type, source: sourceType });
       setSaving(false);
       return; // Stay open so user can retry

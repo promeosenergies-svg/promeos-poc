@@ -12,7 +12,7 @@ export default function ROISummaryBar() {
   const [roi, setRoi] = useState(null);
 
   useEffect(() => {
-    getROISummary().then(setRoi).catch(e => console.error('[ROISummaryBar] load error:', e));
+    getROISummary().then(setRoi).catch(() => {});
   }, []);
 
   if (!roi || (roi.total_estimated_eur === 0 && roi.total_realized_eur === 0)) return null;

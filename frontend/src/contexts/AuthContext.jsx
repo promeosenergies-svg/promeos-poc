@@ -2,7 +2,7 @@
  * PROMEOS - Auth Context
  * Manages user authentication state, JWT tokens, and permissions.
  */
-import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import api from '../services/api';
 
 const TOKEN_KEY = 'promeos_token';
@@ -45,6 +45,8 @@ export function AuthProvider({ children }) {
     setOrgs([]);
     setPermissions(null);
     setScopes([]);
+    // Navigate to login after clearing state
+    window.location.assign('/login');
   }, []);
 
   const switchOrg = useCallback(async (orgId) => {
@@ -95,12 +97,16 @@ export function AuthProvider({ children }) {
       .finally(() => setLoading(false));
   }, [_applyLoginResponse]);
 
+  // Stable ref for refreshToken to avoid stale closures in setInterval
+  const refreshRef = useRef(refreshToken);
+  useEffect(() => { refreshRef.current = refreshToken; }, [refreshToken]);
+
   // Auto-refresh token every 20 minutes
   useEffect(() => {
     if (!isAuthenticated) return;
-    const interval = setInterval(refreshToken, 20 * 60 * 1000);
+    const interval = setInterval(() => refreshRef.current(), 20 * 60 * 1000);
     return () => clearInterval(interval);
-  }, [isAuthenticated, refreshToken]);
+  }, [isAuthenticated]);
 
   const value = {
     user, org, role, orgs, permissions, scopes,

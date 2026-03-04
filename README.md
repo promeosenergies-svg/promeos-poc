@@ -82,7 +82,8 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 > | V109 EMS Explorer Realism (granularite hourly 200j, rawDate meteo fix, SignaturePanel days prop, HPHC stale fix) | Stable -- V109 |
 > | V110 Targets + UX Audit (gen_targets ADEME+actuals+gaz, MeteoPanel orange temp, db.commit CRUD, N+1 fix, 20 UX polishes) | Stable -- V110 |
 > | V111 E2E Audit (frequency filter, double-count fix, scope filter, colorblind a11y, health banner, 841 backend + 4330 frontend tests) | Stable -- V111 |
-> | Suite de tests automatises | **4 330 frontend + 841 backend, 0 regression** |
+> | V112 Deep Audit (pagination caps, Pydantic Field constraints, upload validation, stale closure fix, SPA navigation, badge auto-refresh, toast leak fix, tab persistence, debounced search) | Stable -- V112 |
+> | Suite de tests automatises | **4 330 frontend + 2 795 backend, 0 regression** |
 
 > **Disclaimer**
 >

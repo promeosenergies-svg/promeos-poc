@@ -152,7 +152,7 @@ export default function CommandCenter() {
 
   // Briefing from scope data (pure model — no extra API call)
   const watchlist    = useMemo(() => buildWatchlist(kpis, scopedSites), [kpis, scopedSites]);        // eslint-disable-line react-hooks/exhaustive-deps
-  const briefing     = useMemo(() => buildBriefing(kpis, watchlist), [kpis, watchlist]);             // eslint-disable-line react-hooks/exhaustive-deps
+  const briefing     = useMemo(() => buildBriefing(kpis, watchlist, alertsCount), [kpis, watchlist, alertsCount]); // eslint-disable-line react-hooks/exhaustive-deps
   const opportunities = useMemo(() => buildOpportunities(kpis, scopedSites, { isExpert }), [kpis, scopedSites, isExpert]); // eslint-disable-line react-hooks/exhaustive-deps
   // Merge watchlist signals + real open actions (rawTopActions) + opportunities
   const todayActions = useMemo(() => {
