@@ -221,7 +221,7 @@ export default function ExecutionTab({
         variant="secondary"
         size="sm"
         onClick={() => {
-          navigate('/plan-actions');
+          navigate('/anomalies?tab=actions');
           track('conformite_goto_plan_actions');
         }}
       >

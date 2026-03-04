@@ -110,6 +110,7 @@ export function toAction(actionId) {
  */
 export function toActionsList(opts = {}) {
   const p = new URLSearchParams();
+  p.set('tab', 'actions');
   if (opts.site_id) p.set('site_id', String(opts.site_id));
   if (opts.source) p.set('source', opts.source);
   if (opts.status) p.set('status', opts.status);
@@ -117,7 +118,7 @@ export function toActionsList(opts = {}) {
   if (opts.date_from) p.set('date_from', opts.date_from);
   if (opts.date_to) p.set('date_to', opts.date_to);
   const qs = p.toString();
-  return `/actions${qs ? '?' + qs : ''}`;
+  return `/anomalies${qs ? '?' + qs : ''}`;
 }
 
 /**

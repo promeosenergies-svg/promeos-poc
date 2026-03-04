@@ -483,8 +483,8 @@ function App() {
                     />
 
                     {/* URL aliases (redirect to canonical routes) */}
-                    <Route path="/plan-action" element={<Navigate to="/actions" replace />} />
-                    <Route path="/plan-actions" element={<Navigate to="/actions" replace />} />
+                    <Route path="/plan-action" element={<Navigate to="/anomalies?tab=actions" replace />} />
+                    <Route path="/plan-actions" element={<Navigate to="/anomalies?tab=actions" replace />} />
                     <Route path="/factures" element={<Navigate to="/bill-intel" replace />} />
                     <Route path="/facturation" element={<Navigate to="/billing" replace />} />
                     <Route

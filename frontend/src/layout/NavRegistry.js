@@ -348,7 +348,7 @@ export const QUICK_ACTIONS = [
     key: 'copilot',
     label: 'Actions Copilot',
     icon: Sparkles,
-    to: '/actions?source=copilot',
+    to: '/anomalies?tab=actions&source=copilot',
     keywords: ['copilot', 'ia', 'intelligence', 'recommandations'],
   },
   {
@@ -364,6 +364,48 @@ export const QUICK_ACTIONS = [
     icon: Rocket,
     to: '/onboarding',
     keywords: ['onboarding', 'demarrage', 'setup', 'configuration'],
+  },
+  {
+    key: 'operat',
+    label: 'Export OPERAT',
+    icon: Building2,
+    to: '/conformite/tertiaire',
+    keywords: ['operat', 'export', 'tertiaire', 'décret'],
+  },
+  {
+    key: 'preuves',
+    label: 'Preuves manquantes',
+    icon: FileText,
+    to: '/conformite?tab=preuves',
+    keywords: ['preuves', 'manquantes', 'justificatifs', 'upload'],
+  },
+  {
+    key: 'factures',
+    label: 'Anomalies facture',
+    icon: Receipt,
+    to: '/bill-intel',
+    keywords: ['facture', 'anomalie', 'surfacturation', 'billing'],
+  },
+  {
+    key: 'corriger',
+    label: 'Corriger données',
+    icon: Database,
+    to: '/conformite?tab=donnees',
+    keywords: ['corriger', 'données', 'manquantes', 'qualité'],
+  },
+  {
+    key: 'audit',
+    label: "Journal d'audit",
+    icon: FileText,
+    to: '/admin/audit',
+    keywords: ['audit', 'log', 'historique', 'journal'],
+  },
+  {
+    key: 'creer-action',
+    label: 'Créer une action',
+    icon: Target,
+    to: '/actions/new',
+    keywords: ['créer', 'action', 'nouvelle', 'tâche'],
   },
 ];
 

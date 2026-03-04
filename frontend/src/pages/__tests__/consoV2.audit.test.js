@@ -1238,8 +1238,8 @@ describe('BK · Route registry helpers', () => {
     expect(routes.toAction(42)).toBe('/actions/42');
   });
 
-  it('toActionsList({ site_id: 5 }) returns /actions?site_id=5', () => {
-    expect(routes.toActionsList({ site_id: 5 })).toBe('/actions?site_id=5');
+  it('toActionsList({ site_id: 5 }) returns /anomalies?tab=actions&site_id=5', () => {
+    expect(routes.toActionsList({ site_id: 5 })).toBe('/anomalies?tab=actions&site_id=5');
   });
 
   it('toConsoImport() returns /consommations/import', () => {

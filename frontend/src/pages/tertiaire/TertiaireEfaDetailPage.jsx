@@ -571,7 +571,7 @@ export default function TertiaireEfaDetailPage() {
                 <Button
                   size="xs"
                   variant="secondary"
-                  onClick={() => navigate(`/actions?source=operat&efa_id=${efa.id}`)}
+                  onClick={() => navigate(`/anomalies?tab=actions&source=operat&efa_id=${efa.id}`)}
                   data-testid="btn-view-action-plan"
                 >
                   <ArrowRight size={12} /> Voir dans le plan d&apos;actions

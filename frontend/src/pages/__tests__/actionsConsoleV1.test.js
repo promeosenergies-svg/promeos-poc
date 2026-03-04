@@ -72,7 +72,7 @@ describe('A · Route Registry helpers', () => {
 
   it('toActionsList() returns /actions without params', async () => {
     routes = await import('../../services/routes.js');
-    expect(routes.toActionsList()).toBe('/actions');
+    expect(routes.toActionsList()).toBe('/anomalies?tab=actions');
   });
 
   it('toActionsList() includes status param', async () => {
