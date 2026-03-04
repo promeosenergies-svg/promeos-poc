@@ -6,8 +6,8 @@
  *     data_status badge, coverage_pct par site, filtre "Sans donnees",
  *     deep-links avec date_from/date_to, CTA "Importer" inline.
  */
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Zap,
   Euro,
@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { Card, CardBody, SkeletonCard, KpiCard } from '../ui';
 import { useToast } from '../ui';
+import InfoTip from '../ui/InfoTip';
 import { useScope } from '../contexts/ScopeContext';
 import { getPortfolioSummary, getPortfolioSites } from '../services/api';
 import {
@@ -155,7 +156,13 @@ export default function ConsumptionPortfolioPage() {
   const navigate = useNavigate();
   const { addToast } = useToast();
   const { selectedSiteId, resetScope, scopeLabel } = useScope();
-  const [dates] = useState(defaultDateRange);
+  const [searchParams] = useSearchParams();
+  const dates = useMemo(() => {
+    const f = searchParams.get('from');
+    const t = searchParams.get('to');
+    if (f && t) return { from: f, to: t };
+    return defaultDateRange();
+  }, [searchParams]);
 
   // Summary KPIs
   const [summary, setSummary] = useState(null);
@@ -173,6 +180,11 @@ export default function ConsumptionPortfolioPage() {
   const [noDataFilter, setNoDataFilter] = useState(false);
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 25;
+  const sitesTableRef = useRef(null);
+
+  function scrollToTable() {
+    sitesTableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 
   const _hasActiveFilters =
     !!search || !!confidenceFilter || anomalyFilter || !!actionsFilter || noDataFilter;
@@ -345,26 +357,26 @@ export default function ConsumptionPortfolioPage() {
         </div>
       ) : summary ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <KpiCard icon={Zap} label="kWh total" value={fmtNum(Math.round(tot?.kwh_total), 'kWh')} />
+          <KpiCard icon={Zap} label={<>kWh total <InfoTip content="Somme des kWh électricité relevés sur tous les sites pour la période sélectionnée." /></>} value={fmtNum(Math.round(tot?.kwh_total), 'kWh')} />
           <KpiCard
             icon={Euro}
-            label="Cout estime"
+            label={<>Cout estime <InfoTip content="Estimation basée sur le prix de référence de chaque site (contrat > profil tarifaire > défaut 0,18 EUR/kWh)." /></>}
             value={fmtNum(Math.round(tot?.eur_total), 'EUR')}
-            sub={tot?.eur_source === 'estime' ? 'Estimation a 0,18 EUR/kWh' : 'Facture'}
+            sub={tot?.eur_source === 'estime' ? 'Estimation a 0,18 EUR/kWh' : 'Prix mixtes (contrats + défaut)'}
           />
           <KpiCard
             icon={Leaf}
-            label="Emissions CO2"
+            label={<>Emissions CO2 <InfoTip content="Facteur d'émission ADEME 2024 : 0,052 kgCO2e/kWh pour l'électricité en France." /></>}
             value={fmtNum(Math.round(tot?.co2_total), 'kg')}
             sub="Facteur ADEME 2024"
           />
           <KpiCard
             icon={ShieldCheck}
-            label="Couverture donnees"
+            label={<>Couverture donnees <InfoTip content="Nombre de sites avec au moins un relevé sur la période. Confiance = densité de données vs attendu." /></>}
             value={`${cov?.sites_with_data || 0} / ${cov?.sites_total || 0} sites`}
             sub={
               confLevel
-                ? `Confiance ${confLevel === 'high' ? 'haute' : confLevel === 'medium' ? 'moyenne' : 'basse'}`
+                ? <>{`Confiance ${confLevel === 'high' ? 'haute' : confLevel === 'medium' ? 'moyenne' : 'basse'}`} <InfoTip content="Haute = ≥ 80% des relevés attendus. Moyenne = 30-80%. Basse = < 30%." size={10} /></>
                 : undefined
             }
           />
@@ -388,7 +400,7 @@ export default function ConsumptionPortfolioPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Top impact EUR */}
-            <Card>
+            <Card className="cursor-pointer hover:ring-2 hover:ring-blue-200 transition" onClick={() => { setSort('impact_desc'); scrollToTable(); }}>
               <CardBody>
                 <div className="flex items-center gap-2 mb-3">
                   <DollarSign size={16} className="text-rose-500" />
@@ -413,7 +425,7 @@ export default function ConsumptionPortfolioPage() {
             </Card>
 
             {/* Top derive */}
-            <Card>
+            <Card className="cursor-pointer hover:ring-2 hover:ring-blue-200 transition" onClick={() => { setAnomalyFilter(true); setSort('diagnostics'); scrollToTable(); }}>
               <CardBody>
                 <div className="flex items-center gap-2 mb-3">
                   <AlertTriangle size={16} className="text-amber-500" />
@@ -438,7 +450,7 @@ export default function ConsumptionPortfolioPage() {
             </Card>
 
             {/* Top base nocturne */}
-            <Card>
+            <Card className="cursor-pointer hover:ring-2 hover:ring-blue-200 transition" onClick={() => { setSort('base_night'); scrollToTable(); }}>
               <CardBody>
                 <div className="flex items-center gap-2 mb-3">
                   <Moon size={16} className="text-indigo-500" />
@@ -463,7 +475,7 @@ export default function ConsumptionPortfolioPage() {
             </Card>
 
             {/* Top pics */}
-            <Card>
+            <Card className="cursor-pointer hover:ring-2 hover:ring-blue-200 transition" onClick={() => { setSort('peak'); scrollToTable(); }}>
               <CardBody>
                 <div className="flex items-center gap-2 mb-3">
                   <Activity size={16} className="text-red-500" />
@@ -491,7 +503,7 @@ export default function ConsumptionPortfolioPage() {
       )}
 
       {/* ═══ SITES TABLE ═══ */}
-      <div>
+      <div ref={sitesTableRef}>
         <h2 className="text-sm font-semibold text-gray-700 mb-3">Tous les sites</h2>
 
         {/* Filters bar */}
@@ -576,7 +588,7 @@ export default function ConsumptionPortfolioPage() {
             <option value="kwh_desc">kWh decroissant</option>
             <option value="kwh_asc">kWh croissant</option>
             <option value="name">Nom A-Z</option>
-            <option value="peak">Pic kW</option>
+            <option value="peak">P95 kW</option>
             <option value="base_night">Base nocturne</option>
             <option value="diagnostics">Diagnostics</option>
             <option value="coverage">Couverture donnees</option>
@@ -684,11 +696,8 @@ export default function ConsumptionPortfolioPage() {
                 <thead>
                   <tr className="border-b border-gray-200 text-left">
                     <th className="py-2 px-3 text-xs font-semibold text-gray-500">Site</th>
-                    <th
-                      className="py-2 px-3 text-xs font-semibold text-gray-500 text-center"
-                      title="Couverture = % de releves horaires disponibles sur la periode"
-                    >
-                      Couverture
+                    <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-center">
+                      Couverture <InfoTip content="% de relevés reçus vs attendus selon la fréquence du compteur." size={10} />
                     </th>
                     <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-right">
                       Impact EUR
@@ -700,10 +709,10 @@ export default function ConsumptionPortfolioPage() {
                       EUR
                     </th>
                     <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-right">
-                      Pic kW
+                      P95 kW <InfoTip content="95e percentile des relevés kWh (proxy puissance). Utile pour détecter les dépassements de puissance souscrite." size={10} />
                     </th>
                     <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-right">
-                      Base nuit
+                      Base nuit <InfoTip content="Ratio conso nocturne (22h-6h) / conso diurne (6h-22h) × 100. Un % élevé signale un talon (chauffage, serveurs)." size={10} />
                     </th>
                     <th className="py-2 px-3 text-xs font-semibold text-gray-500 text-center">
                       Diag.
