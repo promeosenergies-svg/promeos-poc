@@ -173,7 +173,7 @@ def logout(token: Optional[str] = Depends(oauth2_scheme), db: Session = Depends(
             log_audit(db, user_id, "logout")
             db.commit()
         except Exception:
-            pass
+            db.rollback()
     return {"status": "ok"}
 
 

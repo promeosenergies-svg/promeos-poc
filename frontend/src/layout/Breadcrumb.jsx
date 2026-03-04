@@ -97,7 +97,7 @@ export default function Breadcrumb() {
         <span key={c.to} className="flex items-center gap-1">
           {i > 0 && <ChevronRight size={14} className="text-gray-300" />}
           {i < crumbs.length - 1 ? (
-            <Link to={c.to} className="hover:text-gray-700 transition">{c.label}</Link>
+            <Link to={c.to} className="hover:text-blue-600 hover:underline underline-offset-2 transition">{c.label}</Link>
           ) : (
             <span className="text-gray-800 font-medium">{c.label}</span>
           )}

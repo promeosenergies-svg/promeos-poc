@@ -61,7 +61,7 @@ export function Td({ children, className = '', pin }) {
   const pinCls = pin || (pinFirst && pin !== false)
     ? 'sticky left-0 z-[1] bg-white group-hover:bg-gray-50'
     : '';
-  return <td className={`px-4 ${py} text-gray-700 ${pinCls} ${className}`}>{children}</td>;
+  return <td className={`px-4 ${py} text-gray-700 max-w-[240px] truncate ${pinCls} ${className}`}>{children}</td>;
 }
 
 export function ThCheckbox({ checked, onChange }) {

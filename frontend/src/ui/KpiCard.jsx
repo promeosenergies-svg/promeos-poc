@@ -56,7 +56,7 @@ export default function KpiCard({
           )}
           <div className="flex-1 min-w-0">
             <p className="text-xs text-gray-500 font-medium uppercase tracking-wider truncate">{resolvedTitle}</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1 truncate">{value ?? '-'}</p>
+            <p className="text-2xl font-bold text-gray-900 mt-1 truncate tabular-nums">{value ?? '-'}</p>
             {resolvedSub && <p className="text-sm text-gray-500 mt-0.5 line-clamp-2">{resolvedSub}</p>}
           </div>
           {badge && <Badge status={badgeStatus}>{badge}</Badge>}

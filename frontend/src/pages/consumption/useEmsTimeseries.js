@@ -76,6 +76,7 @@ function seriesToChartData(series, granularity) {
     // Single aggregate series
     return series[0].data.map(p => ({
       date: formatDate(p.t, granularity),
+      rawDate: p.t,  // ISO timestamp for MeteoPanel weather matching
       value: p.v ?? null,
     }));
   }
@@ -85,7 +86,7 @@ function seriesToChartData(series, granularity) {
   for (const s of series) {
     for (const p of s.data) {
       const dateKey = formatDate(p.t, granularity);
-      if (!byTs[dateKey]) byTs[dateKey] = { date: dateKey };
+      if (!byTs[dateKey]) byTs[dateKey] = { date: dateKey, rawDate: p.t };
       byTs[dateKey][s.key] = p.v ?? null;
       // Also store as 'value' for first series (backward compat)
       if (series.indexOf(s) === 0) byTs[dateKey].value = p.v ?? null;

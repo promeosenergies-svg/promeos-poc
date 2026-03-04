@@ -202,17 +202,17 @@ def ems_benchmark(site_id: int = Query(...), db: Session = Depends(get_db)):
         .all()
     ]
 
-    # Collect peer KPIs from latest snapshots
-    peer_kpis_list = []
-    for pid in peer_site_ids:
-        snap = (
-            db.query(MonitoringSnapshot)
-            .filter(MonitoringSnapshot.site_id == pid)
-            .order_by(MonitoringSnapshot.id.desc())
-            .first()
-        )
-        if snap and snap.kpis_json:
-            peer_kpis_list.append(snap.kpis_json)
+    # Collect peer KPIs from latest snapshots (batch query, not N+1)
+    from sqlalchemy import func
+    latest_snap_ids = (
+        db.query(func.max(MonitoringSnapshot.id))
+        .filter(MonitoringSnapshot.site_id.in_(peer_site_ids))
+        .group_by(MonitoringSnapshot.site_id)
+        .all()
+    )
+    snap_ids = [r[0] for r in latest_snap_ids if r[0]]
+    peer_snaps = db.query(MonitoringSnapshot).filter(MonitoringSnapshot.id.in_(snap_ids)).all() if snap_ids else []
+    peer_kpis_list = [s.kpis_json for s in peer_snaps if s.kpis_json]
 
     if len(peer_kpis_list) < 3:
         return {"site_id": site_id, "insufficient": True, "peer_count": len(peer_kpis_list), "benchmarks": {}, "source": "demo"}
@@ -267,6 +267,8 @@ def get_timeseries(
     )
 
     parsed_site_ids = [int(x) for x in site_ids.split(",") if x.strip()]
+    if len(parsed_site_ids) > 100:
+        raise HTTPException(status_code=400, detail="Maximum 100 site IDs allowed")
     parsed_meter_ids = [int(x) for x in meter_ids.split(",") if x.strip()] if meter_ids else None
     dt_from = datetime.fromisoformat(date_from)
     dt_to = datetime.fromisoformat(date_to)
@@ -470,6 +472,7 @@ def create_view(
     view = EmsSavedView(name=name, config_json=config_json, user_id=user_id)
     db.add(view)
     db.flush()
+    db.commit()
     return {"id": view.id, "name": view.name}
 
 
@@ -498,6 +501,7 @@ def update_view(
     if config_json is not None:
         view.config_json = config_json
     db.flush()
+    db.commit()
     return {"id": view.id, "name": view.name}
 
 
@@ -509,6 +513,7 @@ def delete_view(view_id: int, db: Session = Depends(get_db)):
         raise HTTPException(404, "View not found")
     db.delete(view)
     db.flush()
+    db.commit()
     return {"deleted": True}
 
 
@@ -543,6 +548,7 @@ def create_collection(
     )
     db.add(col)
     db.flush()
+    db.commit()
     return {"id": col.id, "name": col.name, "site_ids": parsed_ids}
 
 
@@ -565,6 +571,7 @@ def update_collection(
     if is_favorite is not None:
         col.is_favorite = 1 if is_favorite else 0
     db.flush()
+    db.commit()
     return {"id": col.id, "name": col.name}
 
 
@@ -576,6 +583,7 @@ def delete_collection(col_id: int, db: Session = Depends(get_db)):
         raise HTTPException(404, "Collection not found")
     db.delete(col)
     db.flush()
+    db.commit()
     return {"deleted": True}
 
 

@@ -79,11 +79,11 @@ export function aggregateToHeatmap(seriesData) {
   return cells;
 }
 
-export default function SignaturePanel({ siteIds = [], energyType = 'electricity' }) {
+export default function SignaturePanel({ siteIds = [], energyType = 'electricity', days = 90 }) {
   const { status, seriesData, meta } = useEmsTimeseries({
     siteIds,
     energyType,
-    days: 90,
+    days,
     granularityOverride: 'hourly',
   });
 
@@ -161,7 +161,7 @@ export default function SignaturePanel({ siteIds = [], energyType = 'electricity
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h3 className="text-sm font-semibold text-gray-800">Signature de consommation</h3>
-          <p className="text-xs text-gray-500">Moyenne kWh par creneau horaire (90 derniers jours)</p>
+          <p className="text-xs text-gray-500">Moyenne kWh par creneau horaire ({days} derniers jours)</p>
         </div>
         <div className="flex items-center gap-2">
           {/* P1-2: Day filter pills — FR labels */}
@@ -213,7 +213,7 @@ export default function SignaturePanel({ siteIds = [], energyType = 'electricity
               </AreaChart>
             </ResponsiveContainer>
             <p className="text-[10px] text-gray-400 mt-1">
-              {drillDownData.length} points sur 90 jours pour {drillDown.dayLabel} a {drillDown.hour}h
+              {drillDownData.length} points sur {days} jours pour {drillDown.dayLabel} a {drillDown.hour}h
             </p>
 
             {/* P1.1: Cross-brique CTAs */}

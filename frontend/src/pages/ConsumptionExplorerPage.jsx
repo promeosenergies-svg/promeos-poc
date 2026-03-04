@@ -659,7 +659,7 @@ export default function ConsumptionExplorerPage() {
                 )}
                 {/* Signature + Météo: use own data fetch, no Motor dependency */}
                 {activeTab === 'signature' && (
-                  <SignaturePanel siteIds={siteIds} energyType={energyType} />
+                  <SignaturePanel siteIds={siteIds} energyType={energyType} days={days} />
                 )}
                 {activeTab === 'meteo' && (
                   <MeteoPanel siteIds={siteIds} energyType={energyType} days={days} />

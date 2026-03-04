@@ -8,22 +8,24 @@ export default function Pagination({ page, pageSize, total, onChange }) {
   return (
     <div className="flex items-center justify-between px-4 py-3 text-sm">
       <span className="text-gray-500">
-        {total > 0 ? `${from}-${to} sur ${total}` : 'Aucun resultat'}
+        {total > 0 ? `${from}\u2013${to} sur ${total}` : 'Aucun resultat'}
       </span>
       <div className="flex items-center gap-1">
         <button
           onClick={() => onChange(page - 1)}
           disabled={page <= 1}
-          className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30 disabled:pointer-events-none
+          aria-label="Page precedente"
+          className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed
             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
         >
           <ChevronLeft size={16} />
         </button>
-        <span className="px-3 text-gray-700 font-medium">{page} / {totalPages}</span>
+        <span className="px-3 text-gray-700 font-medium tabular-nums">{page} / {totalPages}</span>
         <button
           onClick={() => onChange(page + 1)}
           disabled={page >= totalPages}
-          className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30 disabled:pointer-events-none
+          aria-label="Page suivante"
+          className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed
             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
         >
           <ChevronRight size={16} />

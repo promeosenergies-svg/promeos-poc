@@ -51,13 +51,20 @@ _COMPATIBLE_FREQS = {
 # Public API
 # -------------------------------------------------------------------
 def suggest_granularity(date_from: datetime, date_to: datetime) -> str:
-    """Auto-suggest granularity based on date range span."""
+    """Auto-suggest granularity based on date range span.
+
+    Thresholds chosen so estimated points stay under GRANULARITY_MAX_POINTS:
+      15min  → ≤3 days    (3×96   = 288 pts)
+      hourly → ≤90 days   (90×24  = 2160 pts)
+      daily  → ≤4000 days (4000 pts < 5000 cap)
+      monthly→ >4000 days
+    """
     span_days = (date_to - date_from).days
     if span_days <= 3:
         return "15min"
-    elif span_days <= 14:
+    elif span_days <= 90:
         return "hourly"
-    elif span_days <= 120:
+    elif span_days <= 4000:
         return "daily"
     else:
         return "monthly"
@@ -213,7 +220,7 @@ _GRANULARITY_ORDER = ["15min", "30min", "hourly", "daily", "monthly"]
 
 
 def _available_granularities(sampling_minutes: int, span_days: int) -> List[str]:
-    """Return granularities that are (a) >= data frequency and (b) <= period / 2 points."""
+    """Return granularities that are (a) >= data frequency and (b) stay under GRANULARITY_MAX_POINTS."""
     result = []
     for g in _GRANULARITY_ORDER:
         g_minutes = _SAMPLING_MINUTES[g]
@@ -225,6 +232,9 @@ def _available_granularities(sampling_minutes: int, span_days: int) -> List[str]
             continue
         # Fine guard: sub-hourly requires at most 14 days to stay under cap
         if g in ("15min", "30min") and span_days > 14:
+            continue
+        # Fine guard: hourly capped at 200 days (200×24 = 4800 < 5000)
+        if g == "hourly" and span_days > 200:
             continue
         result.append(g)
     return result

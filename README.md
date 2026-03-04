@@ -79,6 +79,8 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 > | V103-V106 Remediation (datetime TZ, rate limiting, Pydantic v2, DB health, lifespan) | Stable -- V106 |
 > | V107 Demo World-Class Realism (meteo AR(1) par ville, conso ADEME, gaz DJU, 15-min 365j, anomalies diversifiees, usages) | Stable -- V107 |
 > | V108 Demo Completeness (30 snapshots monitoring, 20 notifications, TOU HP/HC, PaymentRule, ReconciliationFixLog, 65 tests) | Stable -- V108 |
+> | V109 EMS Explorer Realism (granularite hourly 200j, rawDate meteo fix, SignaturePanel days prop, HPHC stale fix) | Stable -- V109 |
+> | V110 Targets + UX Audit (gen_targets ADEME+actuals+gaz, MeteoPanel orange temp, db.commit CRUD, N+1 fix, 20 UX polishes) | Stable -- V110 |
 > | Suite de tests automatises | **4 257 frontend + 2 400+ backend, 0 regression** |
 
 > **Disclaimer**

@@ -144,7 +144,7 @@ class SeedOrchestrator:
 
         # 4d. Consumption targets (V87: yearly + monthly 2024-2026)
         from .gen_targets import generate_targets
-        targets = generate_targets(self.db, master["sites"], rng)
+        targets = generate_targets(self.db, master["sites"], rng, site_meta=site_meta)
         result["targets"] = targets
 
         # 4e. EMS Explorer pre-built views + collections (V87)

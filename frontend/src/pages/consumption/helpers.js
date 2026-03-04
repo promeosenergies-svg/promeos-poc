@@ -184,7 +184,7 @@ export function getAvailableGranularities(days, samplingMinutes = null) {
   const all = [
     { key: 'auto',    label: 'Auto' },
     { key: '30min',   label: '30 min', maxDays: 14 },
-    { key: 'hourly',  label: '1 h',    maxDays: 60 },
+    { key: 'hourly',  label: '1 h',    maxDays: 200 },
     { key: 'daily',   label: '1 j',    minDays: 7 },
     { key: 'monthly', label: 'Mois',   minDays: 30 },
   ];

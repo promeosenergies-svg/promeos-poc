@@ -129,13 +129,14 @@ export default function MeteoPanel({ siteIds = [], energyType = 'electricity', d
   const enrichedData = useMemo(() => {
     return chartData.map((p) => {
       let temp = null;
-      if (p.date) {
-        // Try UTC weather first (date key = YYYY-MM-DD)
-        const dayKey = typeof p.date === 'string' ? p.date.slice(0, 10) : null;
+      // Use rawDate (ISO "YYYY-MM-DD HH:MM:SS") for matching against utcWeather keys
+      const raw = p.rawDate || p.date;
+      if (raw) {
+        const dayKey = typeof raw === 'string' ? raw.replace('T', ' ').slice(0, 10) : null;
         if (utcWeather && dayKey && utcWeather[dayKey] != null) {
           temp = utcWeather[dayKey];
         } else {
-          temp = Math.round(generateSyntheticTemp(p.date) * 10) / 10;
+          temp = Math.round(generateSyntheticTemp(raw) * 10) / 10;
         }
       }
       return { ...p, temp };
@@ -211,9 +212,9 @@ export default function MeteoPanel({ siteIds = [], energyType = 'electricity', d
               type="checkbox"
               checked={showTemp}
               onChange={(e) => setShowTemp(e.target.checked)}
-              className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              className="w-3.5 h-3.5 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
             />
-            <Thermometer size={13} className="text-blue-500" />
+            <Thermometer size={13} className="text-orange-600" />
             <span className="text-xs text-gray-600">Afficher la temperature</span>
           </label>
           <span className="text-xs text-gray-300">|</span>
@@ -254,11 +255,11 @@ export default function MeteoPanel({ siteIds = [], energyType = 'electricity', d
             <YAxis
               yAxisId="temp"
               orientation="right"
-              tick={{ fontSize: 11, fill: '#60a5fa' }}
+              tick={{ fontSize: 11, fill: '#ea580c' }}
               tickLine={false}
               axisLine={false}
               width={40}
-              label={{ value: '°C', angle: 90, position: 'insideRight', fontSize: 10, fill: '#60a5fa' }}
+              label={{ value: '°C', angle: 90, position: 'insideRight', fontSize: 10, fill: '#ea580c' }}
             />
           )}
           <Tooltip content={<MeteoTooltip />} />
@@ -285,9 +286,9 @@ export default function MeteoPanel({ siteIds = [], energyType = 'electricity', d
               type="monotone"
               dataKey="temp"
               name="Temperature"
-              stroke="#60a5fa"
-              strokeWidth={1.5}
-              strokeDasharray="4 2"
+              stroke="#ea580c"
+              strokeWidth={2}
+              strokeDasharray="6 3"
               dot={false}
               activeDot={{ r: 3 }}
             />

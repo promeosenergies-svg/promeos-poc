@@ -16,6 +16,13 @@ export default function HPHCPanel({ siteId, days, toast, initialBreakdown }) {
   const [schedule, setSchedule] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // Re-sync when motor provides updated breakdown (e.g., days changed)
+  useEffect(() => {
+    if (initialBreakdown) {
+      setBreakdown(initialBreakdown);
+    }
+  }, [initialBreakdown]);
+
   const load = useCallback(async () => {
     if (!siteId) return;
     setLoading(true);

@@ -86,7 +86,7 @@ function UserMenu() {
         </div>
         <div className="text-left hidden sm:block">
           <p className="text-sm font-medium text-gray-700 leading-tight">{user.prenom} {user.nom}</p>
-          <p className="text-[11px] text-gray-400 leading-tight">{ROLE_LABELS[role] || role}</p>
+          <p className="text-[11px] text-gray-500 leading-tight">{ROLE_LABELS[role] || role}</p>
         </div>
         <ChevronDown size={14} className="text-gray-400" />
       </button>

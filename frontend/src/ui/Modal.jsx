@@ -42,7 +42,7 @@ export default function Modal({ open, onClose, title, children, wide }) {
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center" role="dialog" aria-modal="true" aria-label={title}>
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/25 backdrop-blur-[2px]" onClick={onClose} />
       <div
         ref={ref}
         tabIndex={-1}
