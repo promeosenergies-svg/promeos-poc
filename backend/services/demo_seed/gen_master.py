@@ -11,6 +11,8 @@ from models import (
     TypeSite, TypeCompteur, EnergyVector, ParkingType, OperatStatus,
 )
 from models.energy_models import EnergyVector as EnergyVectorModel
+from models.usage import Usage
+from models.enums import TypeUsage
 
 from .packs import _VILLES, _RUES
 
@@ -36,6 +38,49 @@ _PROFILE_SCHEDULES = {
     "warehouse": {"open_days": "0,1,2,3,4", "open_time": "06:00", "close_time": "20:00", "is_24_7": False},
     "school":    {"open_days": "0,1,2,3,4", "open_time": "07:30", "close_time": "18:00", "is_24_7": False},
     "hospital":  {"open_days": "0,1,2,3,4,5,6", "open_time": "00:00", "close_time": "23:59", "is_24_7": True},
+}
+
+# V107: Usage breakdown per building type (profile → {TypeUsage: description})
+_USAGE_BREAKDOWN = {
+    "office": [
+        (TypeUsage.CVC, "Climatisation et chauffage bureaux"),
+        (TypeUsage.ECLAIRAGE, "Eclairage interieur et exterieur"),
+        (TypeUsage.IT, "Serveurs, postes de travail, reseau"),
+        (TypeUsage.AUTRES, "Ascenseurs, sanitaires, divers"),
+    ],
+    "warehouse": [
+        (TypeUsage.CVC, "Ventilation et chauffage entrepot"),
+        (TypeUsage.ECLAIRAGE, "Eclairage industriel"),
+        (TypeUsage.IT, "Systemes de gestion logistique"),
+        (TypeUsage.PROCESS, "Equipements de manutention, chariots"),
+        (TypeUsage.AUTRES, "Securite, portes automatiques"),
+    ],
+    "hotel": [
+        (TypeUsage.CVC, "Climatisation chambres et communs"),
+        (TypeUsage.ECLAIRAGE, "Eclairage chambres, hall, exterieur"),
+        (TypeUsage.IT, "Gestion hoteliere, Wi-Fi, TV"),
+        (TypeUsage.PROCESS, "Cuisine, buanderie, spa"),
+        (TypeUsage.AUTRES, "Ascenseurs, piscine, divers"),
+    ],
+    "school": [
+        (TypeUsage.CVC, "Chauffage et ventilation salles de classe"),
+        (TypeUsage.ECLAIRAGE, "Eclairage salles, couloirs, gymnase"),
+        (TypeUsage.IT, "Salles informatiques, videoprojection"),
+        (TypeUsage.AUTRES, "Cantine, sanitaires, alarmes"),
+    ],
+    "hospital": [
+        (TypeUsage.CVC, "Climatisation et traitement air medical"),
+        (TypeUsage.ECLAIRAGE, "Eclairage blocs, chambres, couloirs"),
+        (TypeUsage.IT, "Imagerie, systemes d'information"),
+        (TypeUsage.PROCESS, "Equipements medicaux, sterilisation"),
+        (TypeUsage.AUTRES, "Ascenseurs, buanderie, cuisine"),
+    ],
+    "retail": [
+        (TypeUsage.CVC, "Climatisation surface de vente"),
+        (TypeUsage.ECLAIRAGE, "Eclairage vitrine et interieur"),
+        (TypeUsage.IT, "Caisses, systeme de gestion"),
+        (TypeUsage.AUTRES, "Enseignes, securite, reserves"),
+    ],
 }
 
 
@@ -110,6 +155,9 @@ def generate_master(db, pack: dict, size: str, rng: random.Random) -> dict:
                 siret=f"{pack['entites'][0]['siren']}{10000 + site_counter:05d}",
             )
             site._cvc_kw = spec.get("cvc_kw", 100)
+            site._city = spec.get("ville", "")  # V107: per-city weather
+            site._surface_m2 = spec["surface_m2"]  # V107: surface-normalized conso
+            site._type_site = spec.get("type_site", "bureau")  # V107: benchmarks
             db.add(site)
             db.flush()
 
@@ -136,6 +184,17 @@ def generate_master(db, pack: dict, size: str, rng: random.Random) -> dict:
                 bat_ids.append(bat.id)
             buildings_map[site.id] = bat_ids
 
+            # V107: Usage records per batiment
+            profile_key = spec.get("profile", "office")
+            usage_defs = _USAGE_BREAKDOWN.get(profile_key, _USAGE_BREAKDOWN["office"])
+            for bat_id in bat_ids:
+                for usage_type, usage_desc in usage_defs:
+                    db.add(Usage(
+                        batiment_id=bat_id,
+                        type=usage_type,
+                        description=usage_desc,
+                    ))
+
             # Meter (electricity)
             meter_id_str = f"DEMO-HELI-{site.id:04d}"
             meter = Meter(
@@ -161,12 +220,26 @@ def generate_master(db, pack: dict, size: str, rng: random.Random) -> dict:
                 data_source="demo",
             ))
 
-            # Gas compteur if needed
+            # Gas compteur + Meter if needed (V107: gas readings require a Meter)
             if spec.get("gas"):
+                gas_meter_id_str = f"DEMO-GAS-{site.id:04d}"
+                gas_meter = Meter(
+                    meter_id=gas_meter_id_str,
+                    name=f"Compteur Gaz {site.nom}",
+                    site_id=site.id,
+                    energy_vector=EnergyVectorModel.GAS,
+                    subscribed_power_kva=0,  # N/A for gas
+                    tariff_type="T3",
+                    is_active=True,
+                )
+                db.add(gas_meter)
+                db.flush()
+                all_meters.append(gas_meter)
+
                 db.add(Compteur(
                     site_id=site.id, type=TypeCompteur.GAZ,
                     numero_serie=f"DEMO-G-{site.id:04d}",
-                    meter_id=f"GRD{100000000 + site.id}",
+                    meter_id=gas_meter_id_str,
                     energy_vector=EnergyVector.GAS, actif=True,
                     data_source="demo",
                 ))
@@ -235,8 +308,11 @@ def generate_master(db, pack: dict, size: str, rng: random.Random) -> dict:
                     data_source="demo",
                     siret=f"{pack['entites'][0]['siren']}{rng.randint(10000, 99999)}",
                 )
-                # Store cvc_power_kw as attribute (for Batiment)
+                # Store transient attributes for generators
                 site._cvc_kw = cvc_kw
+                site._city = ville  # V107: per-city weather
+                site._surface_m2 = surface  # V107: surface-normalized conso
+                site._type_site = site_type_str  # V107: benchmarks
                 db.add(site)
                 db.flush()
 
@@ -252,6 +328,16 @@ def generate_master(db, pack: dict, size: str, rng: random.Random) -> dict:
                     cvc_power_kw=cvc_kw,
                 )
                 db.add(bat)
+                db.flush()
+
+                # V107: Usage records per batiment
+                usage_defs = _USAGE_BREAKDOWN.get(profile_name, _USAGE_BREAKDOWN["office"])
+                for usage_type, usage_desc in usage_defs:
+                    db.add(Usage(
+                        batiment_id=bat.id,
+                        type=usage_type,
+                        description=usage_desc,
+                    ))
 
                 # OPERAT status for assujetti sites
                 if site.tertiaire_area_m2 and site.tertiaire_area_m2 >= 1000:

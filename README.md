@@ -76,6 +76,9 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 > | Contract Radar V99 — Tableau de bord renouvellements contrats, scoring risque, timeline echéances | Stable -- V99 |
 > | Offer Pricing V100 — Moteur pricing offres fournisseurs, comparaison grilles, reconciliation factures | Stable -- V100 |
 > | Segmentation V101 — Next Best Step moteur d'action, action creation depuis recommandations, onboarding pilote | Stable -- V101 |
+> | V103-V106 Remediation (datetime TZ, rate limiting, Pydantic v2, DB health, lifespan) | Stable -- V106 |
+> | V107 Demo World-Class Realism (meteo AR(1) par ville, conso ADEME, gaz DJU, 15-min 365j, anomalies diversifiees, usages) | Stable -- V107 |
+> | V108 Demo Completeness (30 snapshots monitoring, 20 notifications, TOU HP/HC, PaymentRule, ReconciliationFixLog, 65 tests) | Stable -- V108 |
 > | Suite de tests automatises | **4 257 frontend + 2 400+ backend, 0 regression** |
 
 > **Disclaimer**
@@ -94,6 +97,7 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 - **Frontend React 18 + Tailwind + Vite** avec 22+ pages : Dashboard, Cockpit Executif, Patrimoine (heatmap + portfolio), Detail Site, Plan d'action, RegOps, Conso & Usages, Usages & Horaires (Consumption Context V0 : heatmap 7x24, profil journee, behavior_score, ScheduleEditor inline V84), Tertiaire OPERAT, IAM Admin, Import, KB Explorer, Veille Reglementaire, Facturation (BillIntel deep-links + BillingTimeline + CoverageBar), Actions Console (V69), Performance V2 (5 KPI cards dont THS, expert mode, route registry V70-V79), Achat Energie V2 (4 strategies, "Option Tarif Heures Solaires" structuree avec badges Budget/Risque/Effort/Sans penalite, creneaux ete/hiver, 7 CTAs cross-briques, deep-link assistant V72-V82), Assistant Achat 8 etapes (deep-link step+offer, 6 offres demo, highlight V81).
 - **Demo HELIOS canonique** : Groupe Casino supprime, demo unifiee Groupe HELIOS (3 entites, 5 sites, 7 batiments — bureaux, industrie, hotel, ecole, seed deterministe RNG=42, 60 mois de readings V83).
 - **Demo Seed V86-V87** : 730 jours de lectures horaires + 30 jours 15min + meteo 5 sites (V86). BACS assets/systemes/assessments/inspections, ConsumptionTargets (yearly+monthly 2024-2026), EMS Explorer vues pre-configurees, 60 factures (V87).
+- **Demo World-Class V107-V108** : Meteo realiste par ville (normales Meteo-France, AR(1) phi=0.7, 12 villes), consommation calibree ADEME (170 kWh/m2 bureau, 280 hotel, 120 entrepot, 110 ecole), gaz correle DJU, 365 jours 15-min avec cycling CVC, anomalies diversifiees (5 types par site), 30 usages, 30 snapshots monitoring mensuels, 20 notifications multi-sources, 5 grilles TOU HP/HC, 8 regles de paiement, 4 traces reconciliation. **65 tests, seed 41s.**
 - **Quality Gate V88** — ESLint zero warnings (`--max-warnings=0`, 211→0), `React.memo` + `useMemo` sur charts lourds (HeatmapChart O(1) Map lookup, PortfolioPanel, ProfileHeatmapTab), shared `ui/Badge` dans SiteDetail/Site360, dead code supprime (Cockpit2MinPage), tooltips consolides (TooltipPortal + InfoTip), z-index normalise (Modal/Drawer z-200), `useActivationData` hook dedup.
 - **Evidence Drawer V0 (V89)** — "Pourquoi ce chiffre ?" : modele Evidence (CONFIDENCE_CFG, SOURCE_KIND, buildEvidence), EvidenceDrawer generique (Drawer z-200, 5 sections : Sources/Methode/Hypotheses/Liens/Dernier calcul), 4 fixtures factory (conformite, risque, kWh, CO2e). Integration Cockpit (Conformite + Risque KPIs) et Explorer (kWh total + CO2e). 32 source-guard tests, 0 regression.
 - **Action Engine universel V90** : `CreateActionDrawer.jsx` (drawer centralisé, evidence_required toggle, auto-deadline), `ActionDrawerContext.jsx` (`openActionDrawer()` depuis n'importe où), `HealthSummary.jsx` (CTA "+ Action" sur readiness reasons), close gate generique `evidence_required` backend. 13 tests.
@@ -293,17 +297,25 @@ python scripts/seed_data.py
 
 Genere (pack HELIOS) :
 - 1 organisation + 3 entites juridiques + 3 portefeuilles
-- 5 sites (bureaux, entrepot, hotel, ecole) avec champs RegOps
-- 5 batiments avec puissance CVC realiste
-- ~87 480 lectures horaires (730j x 5 sites x 24h)
-- ~10 800 lectures 15min (30j x 5 sites x 96 pts/j)
+- 5 sites (bureaux Paris 3500m2, bureau Lyon 1200m2, entrepot Toulouse 6000m2, hotel Nice 4000m2, ecole Marseille 2800m2)
+- 7 batiments avec puissance CVC realiste
+- 8 compteurs (5 elec + 3 gaz)
+- ~87 500 lectures horaires elec (730j x 5 sites x 24h) calibrees ADEME
+- ~131 400 lectures 15min (365j x 5 sites x 72 slots) avec cycling CVC
+- ~2 190 lectures gaz journalieres (730j x 3 sites) correlees DJU
 - ~300 lectures mensuelles (60 mois x 5 sites)
-- 3 650 releves meteo (730j x 5 sites)
+- 3 650 releves meteo realistes (730j x 5 villes, normales Meteo-France, AR(1))
+- 30 usages par batiment (CVC, eclairage, IT, process, autres)
+- Anomalies diversifiees (CVC drift, eclairage oublie, pic canicule, panne, transition saison)
+- 30 snapshots monitoring (6 mensuels x 5 sites) + 21 alertes + 91 insights
+- 20 notifications (4 sources : billing, consumption, compliance, action_hub)
+- 5 grilles TOU HP/HC (EDF standard TURPE)
+- 8 regles de paiement (portefeuille + site) + 4 traces reconciliation
 - 5 BacsAssets + 9 BacsCvcSystems + 5 BacsAssessments + 3 BacsInspections
 - 195 ConsumptionTargets (5 sites x 3 ans x 13 = yearly+12 monthly)
 - 4 EmsSavedViews + 2 EmsCollections pre-configurees
 - 8 contrats energie + 60 factures + lignes + insights anomalies
-- 15 actions, alertes, snapshots monitoring, compliance findings
+- 15 actions (compliance, consumption, billing)
 
 ### Reset DB
 

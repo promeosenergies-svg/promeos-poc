@@ -56,9 +56,9 @@ class TestSeedHeliosPack:
 
     def test_helios_s_creates_meters(self, db_session):
         result = _seed(db_session, "helios", "S")
-        # 5 sites → 1 elec meter each = 5 meters (gas meters added via contracts, not master)
-        assert result["meters_count"] == 5
-        assert db_session.query(Meter).count() == 5
+        # 5 sites: 5 elec meters + 3 gas meters (Paris, Toulouse, Nice have gas=True)
+        assert result["meters_count"] == 8
+        assert db_session.query(Meter).count() == 8
 
     def test_helios_s_creates_monthly_readings(self, db_session):
         result = _seed(db_session, "helios", "S")
@@ -81,13 +81,13 @@ class TestSeedHeliosPack:
 
     def test_helios_s_creates_15min_readings(self, db_session):
         result = _seed(db_session, "helios", "S")
-        # 30 days × 96 slots × 5 meters = 14 400 attempted;
-        # :00 slots collide with hourly readings → ~10 800 net inserted (72h × 5)
-        assert result["min15_readings_count"] > 10_000
+        # V107: 365 days × 72 unique slots × 5 meters ≈ 131,400
+        # (:00 slots collide with hourly readings → 72 unique per day)
+        assert result["min15_readings_count"] > 100_000
         min15 = db_session.query(MeterReading).filter_by(
             frequency=FrequencyType.MIN_15
         ).count()
-        assert min15 > 10_000
+        assert min15 > 100_000
 
     def test_helios_s_creates_weather(self, db_session):
         result = _seed(db_session, "helios", "S")
@@ -185,7 +185,7 @@ class TestSeedStatus:
         status = orch.status()
         assert status["organisations"] == 1
         assert status["sites"] == 5
-        assert status["meters"] == 5
+        assert status["meters"] == 8  # 5 elec + 3 gas
         assert status["readings"] > 0
 
     def test_status_empty_db(self, db_session):

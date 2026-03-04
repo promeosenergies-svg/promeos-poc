@@ -60,6 +60,15 @@ class SeedOrchestrator:
         result["default_site_id"] = master["sites"][0].id if master["sites"] else None
         result["default_site_name"] = master["sites"][0].nom if master["sites"] else None
 
+        # V107: build site_meta for surface-normalized consumption
+        site_meta = {}
+        for s in master["sites"]:
+            site_meta[s.id] = {
+                "surface_m2": getattr(s, '_surface_m2', s.surface_m2 or 0),
+                "type_site": getattr(s, '_type_site', 'bureau'),
+                "city": getattr(s, '_city', s.ville or ''),
+            }
+
         # 2-3. Weather + Readings
         readings_freq = pack_def.get("readings_frequency", "hourly")
         # V85: pack can specify extended hourly window (helios → 730 days = 2 years)
@@ -72,30 +81,38 @@ class SeedOrchestrator:
             readings_months = pack_def.get("readings_months", 36)
             readings_count = generate_monthly_readings(
                 self.db, master["meters"], master["site_profiles"],
-                readings_months, rng
+                readings_months, rng, site_meta=site_meta
             )
             result["readings_count"] = readings_count
             result["readings_frequency"] = "monthly"
 
-            # V85: weather for the full hourly window
+            # V107: weather for the full hourly window (per-city realistic)
             from .gen_weather import generate_weather
             temp_lookup = generate_weather(self.db, master["sites"], hourly_days, rng)
             result["weather_days"] = hourly_days
 
-            # V85: hourly readings over extended window (730 days for helios)
+            # Hourly elec readings over extended window (730 days for helios)
             from .gen_readings import generate_readings
             hourly_count = generate_readings(
                 self.db, master["meters"], master["site_profiles"],
-                temp_lookup, hourly_days, rng
+                temp_lookup, hourly_days, rng, site_meta=site_meta
             )
             result["hourly_readings_count"] = hourly_count
 
-            # V85: 15-min readings for recent monitoring window (30 days)
+            # V107: Daily gas readings correlated to DJU
+            from .gen_readings import generate_gas_readings
+            gas_count = generate_gas_readings(
+                self.db, master["meters"], master["site_profiles"],
+                temp_lookup, hourly_days, rng, site_meta=site_meta
+            )
+            result["gas_readings_count"] = gas_count
+
+            # V107: 15-min readings (365 days with CVC cycling)
             from .gen_readings import generate_15min_readings
-            min15_days = pack_def.get("min15_days", 30)
+            min15_days = pack_def.get("min15_days", 365)
             min15_count = generate_15min_readings(
                 self.db, master["meters"], master["site_profiles"],
-                temp_lookup, min15_days, rng
+                temp_lookup, min15_days, rng, site_meta=site_meta
             )
             result["min15_readings_count"] = min15_count
         else:
@@ -107,7 +124,7 @@ class SeedOrchestrator:
             from .gen_readings import generate_readings
             readings_count = generate_readings(
                 self.db, master["meters"], master["site_profiles"],
-                temp_lookup, days, rng
+                temp_lookup, days, rng, site_meta=site_meta
             )
             result["readings_count"] = readings_count
             result["readings_frequency"] = "hourly"
@@ -173,7 +190,26 @@ class SeedOrchestrator:
         )
         result["tertiaire"] = tertiaire
 
-        # 10. Superuser
+        # 10. TOU Schedules (HP/HC tariff windows per site)
+        from .gen_tou import generate_tou
+        tou = generate_tou(self.db, master["sites"], rng)
+        result["tou"] = tou
+
+        # 11. Notifications (20+ events spread over 60 days)
+        from .gen_notifications import generate_notifications
+        notifications = generate_notifications(
+            self.db, master["org"], master["sites"], rng
+        )
+        result["notifications"] = notifications
+
+        # 12. Payment rules & reconciliation audit trail
+        from .gen_payment_rules import generate_payment_rules
+        payment = generate_payment_rules(
+            self.db, master["org"], master["sites"], rng
+        )
+        result["payment_rules"] = payment
+
+        # 13. Superuser
         self._create_superuser(master["org"])
 
         # 11. Segmentation profile (V101: seeded for demo coherence)
@@ -278,11 +314,15 @@ class SeedOrchestrator:
             PurchaseAssumptionSet, PurchaseScenarioResult,
             EmsWeatherCache, SiteOperatingSchedule, Alerte,
         )
+        from models.usage import Usage
         from models.bacs_models import BacsInspection, BacsAssessment, BacsCvcSystem, BacsAsset
         from models.consumption_target import ConsumptionTarget
         from models.ems_models import EmsSavedView, EmsCollection
         from models.segmentation import SegmentationProfile, SegmentationAnswer
         from models.notification import NotificationEvent, NotificationBatch, NotificationPreference
+        from models.tou_schedule import TOUSchedule
+        from models.payment_rule import PaymentRule
+        from models.reconciliation_fix_log import ReconciliationFixLog
         from models.iam import User, UserOrgRole, UserScope
         from models.tertiaire import (
             TertiaireDataQualityIssue, TertiaireProofArtifact,
@@ -313,6 +353,10 @@ class SeedOrchestrator:
             ("tertiaire_buildings", TertiaireEfaBuilding),
             ("tertiaire_links", TertiaireEfaLink),
             ("tertiaire_efas", TertiaireEfa),
+            # Payment & Reconciliation (V108)
+            ("reconciliation_fix_logs", ReconciliationFixLog),
+            ("payment_rules", PaymentRule),
+            ("tou_schedules", TOUSchedule),
             # Purchase
             ("purchase_scenarios", PurchaseScenarioResult),
             ("purchase_assumptions", PurchaseAssumptionSet),
@@ -343,6 +387,7 @@ class SeedOrchestrator:
             ("user_org_roles", UserOrgRole),
             ("users", User),
             ("alertes", Alerte),
+            ("usages", Usage),  # V107: FK to batiments, must delete before
             ("meters", Meter),
             ("compteurs", Compteur),
             ("batiments", Batiment),
@@ -403,6 +448,11 @@ class SeedOrchestrator:
                     EntiteJuridique.organisation_id.in_(demo_org_ids)).all()]
                 if demo_org_ids else []
             )
+            demo_pf_ids = (
+                [r[0] for r in self.db.query(Portefeuille.id).filter(
+                    Portefeuille.entite_juridique_id.in_(demo_ej_ids)).all()]
+                if demo_ej_ids else []
+            )
 
             def _del(label, model, fk_col, id_list):
                 """Delete rows where fk_col IN id_list."""
@@ -444,6 +494,16 @@ class SeedOrchestrator:
             except Exception:
                 pass
 
+            # V108: Payment & Reconciliation
+            _del("reconciliation_fix_logs", ReconciliationFixLog,
+                 ReconciliationFixLog.site_id, demo_site_ids)
+            # PaymentRule: site-level + portefeuille-level
+            _del("payment_rules_site", PaymentRule,
+                 PaymentRule.site_id, demo_site_ids)
+            _del("payment_rules_pf", PaymentRule,
+                 PaymentRule.portefeuille_id, demo_pf_ids)
+            _del("tou_schedules", TOUSchedule,
+                 TOUSchedule.site_id, demo_site_ids)
             _del("purchase_scenarios", PurchaseScenarioResult,
                  PurchaseScenarioResult.assumption_set_id, demo_assumption_ids)
             _del("purchase_assumptions", PurchaseAssumptionSet,
@@ -500,6 +560,13 @@ class SeedOrchestrator:
             _del("user_org_roles", UserOrgRole,
                  UserOrgRole.org_id, demo_org_ids)
             _del("alertes", Alerte, Alerte.site_id, demo_site_ids)
+            # V107: Usage records (FK to batiment)
+            demo_bat_ids = (
+                [r[0] for r in self.db.query(Batiment.id).filter(
+                    Batiment.site_id.in_(demo_site_ids)).all()]
+                if demo_site_ids else []
+            )
+            _del("usages", Usage, Usage.batiment_id, demo_bat_ids)
             _del("meters", Meter, Meter.site_id, demo_site_ids)
             _del("compteurs", Compteur, Compteur.site_id, demo_site_ids)
             _del("batiments", Batiment, Batiment.site_id, demo_site_ids)
