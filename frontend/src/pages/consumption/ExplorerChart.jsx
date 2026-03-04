@@ -94,7 +94,7 @@ function SepareGrid({ siteIds, data, xKey, valueKey, unit, height, children }) {
     <div className={`grid gap-3`} style={{ gridTemplateColumns: `repeat(${colCount}, 1fr)` }}>
       {siteIds.map((sid, idx) => {
         const color = colorForSite(sid, idx);
-        const siteData = data.map((p) => ({ ...p, kwh: p[`kwh_${sid}`] ?? p.kwh ?? null }));
+        const siteData = data.map((p) => ({ ...p, kwh: p[`site_${sid}`] ?? p.value ?? null }));
         return (
           <div key={sid}>
             <ResponsiveContainer width="100%" height={Math.round(height * 0.6)}>
@@ -115,7 +115,7 @@ function SepareGrid({ siteIds, data, xKey, valueKey, unit, height, children }) {
                 />
                 <Area
                   type="monotone"
-                  dataKey={valueKey}
+                  dataKey="kwh"
                   stroke={color}
                   fill={color}
                   fillOpacity={0.2}
@@ -160,7 +160,7 @@ export default function ExplorerChart({
   const hasAnySiteData =
     mode === 'superpose' || mode === 'empile'
       ? siteIds.some((sid) =>
-          stableData.some((p) => p[`kwh_${sid}`] != null && !isNaN(p[`kwh_${sid}`]))
+          stableData.some((p) => p[`site_${sid}`] != null && !isNaN(p[`site_${sid}`]))
         )
       : false;
 
@@ -236,7 +236,7 @@ export default function ExplorerChart({
                 <Line
                   key={sid}
                   type="monotone"
-                  dataKey={`kwh_${sid}`}
+                  dataKey={`site_${sid}`}
                   stroke={color}
                   dot={false}
                   strokeWidth={2}
@@ -252,7 +252,7 @@ export default function ExplorerChart({
                 <Area
                   key={sid}
                   type="monotone"
-                  dataKey={`kwh_${sid}`}
+                  dataKey={`site_${sid}`}
                   stackId="stack"
                   stroke={color}
                   fill={color}
