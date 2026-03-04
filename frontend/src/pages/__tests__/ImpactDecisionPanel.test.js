@@ -12,13 +12,9 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
-import {
-  computeImpactKpis,
-  computeRecommendation,
-} from '../../models/impactDecisionModel';
+import { computeImpactKpis, computeRecommendation } from '../../models/impactDecisionModel';
 
-const readSrc = (relPath) =>
-  readFileSync(resolve(__dirname, '..', '..', relPath), 'utf8');
+const readSrc = (relPath) => readFileSync(resolve(__dirname, '..', '..', relPath), 'utf8');
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -82,7 +78,7 @@ describe('computeImpactKpis', () => {
     expect(impact.surcoutFacture).toBe(0);
   });
 
-  it('arrondit l\'opportunité à l\'entier', () => {
+  it("arrondit l'opportunité à l'entier", () => {
     const impact = computeImpactKpis(makeKpis(), { total_eur: 123456 });
     expect(impact.opportuniteOptim).toBe(1235); // Math.round(123456 * 0.01)
   });
@@ -128,7 +124,10 @@ describe('computeRecommendation', () => {
 
   it('retourne no_data quand tout est à 0', () => {
     const impact = { risqueConformite: 0, surcoutFacture: 0, opportuniteOptim: 0 };
-    const reco = computeRecommendation(impact, makeKpis({ nonConformes: 0, aRisque: 0, risqueTotal: 0 }));
+    const reco = computeRecommendation(
+      impact,
+      makeKpis({ nonConformes: 0, aRisque: 0, risqueTotal: 0 })
+    );
 
     expect(reco.key).toBe('no_data');
     expect(reco.ctaPath).toBe('/patrimoine');
@@ -146,7 +145,9 @@ describe('GUARD: Impact panel uses scoped data only', () => {
 
   it('panel reçoit kpis en prop (pas de fetch direct de sites)', () => {
     // Le composant prend kpis en prop — il ne fait pas de useScope() direct pour les sites
-    expect(panelSrc).toMatch(/export\s+default\s+function\s+ImpactDecisionPanel\(\s*\{\s*kpis\s*\}/);
+    expect(panelSrc).toMatch(
+      /export\s+default\s+function\s+ImpactDecisionPanel\(\s*\{\s*kpis\s*\}/
+    );
   });
 
   it('panel appelle uniquement getBillingSummary (API scopée via X-Org-Id interceptor)', () => {
@@ -157,7 +158,7 @@ describe('GUARD: Impact panel uses scoped data only', () => {
     expect(panelSrc).not.toContain('axios.get(');
   });
 
-  it('le modèle pur n\'importe pas React ni de service API', () => {
+  it("le modèle pur n'importe pas React ni de service API", () => {
     expect(modelSrc).not.toContain("from 'react'");
     expect(modelSrc).not.toContain('import.*api');
     expect(modelSrc).not.toContain('fetch(');
@@ -176,15 +177,15 @@ describe('GUARD: Drill-down KPI navigation', () => {
   });
 
   it('navigue vers /patrimoine?filter=risque pour le KPI risque', () => {
-    expect(panelSrc).toContain("/patrimoine?filter=risque");
+    expect(panelSrc).toContain('/patrimoine?filter=risque');
   });
 
-  it('navigue vers /factures?filter=anomalies pour le KPI surcoût', () => {
-    expect(panelSrc).toContain("/factures?filter=anomalies");
+  it('navigue vers /bill-intel?filter=anomalies pour le KPI surcoût', () => {
+    expect(panelSrc).toContain('/bill-intel?filter=anomalies');
   });
 
   it('navigue vers /consommations?filter=energivores pour le KPI optimisation', () => {
-    expect(panelSrc).toContain("/consommations?filter=energivores");
+    expect(panelSrc).toContain('/consommations?filter=energivores');
   });
 
   it('chaque KPI tile reçoit un onClick', () => {
@@ -192,7 +193,7 @@ describe('GUARD: Drill-down KPI navigation', () => {
     expect(onClickCount).toBe(3);
   });
 
-  it('chaque KPI tile a un aria-label pour l\'accessibilité', () => {
+  it("chaque KPI tile a un aria-label pour l'accessibilité", () => {
     const ariaCount = (panelSrc.match(/ariaLabel="/g) || []).length;
     expect(ariaCount).toBeGreaterThanOrEqual(3);
   });
@@ -206,7 +207,7 @@ describe('GUARD: Drill-down KPI navigation', () => {
     expect(panelSrc).toContain("const Tag = onClick ? 'button' : 'div'");
   });
 
-  it('la logique V30 (computeImpactKpis, computeRecommendation) n\'est pas modifiée', () => {
+  it("la logique V30 (computeImpactKpis, computeRecommendation) n'est pas modifiée", () => {
     const modelSrc = readSrc('models/impactDecisionModel.js');
     // Le modèle exporte toujours les 2 fonctions pures
     expect(modelSrc).toContain('export function computeImpactKpis');
@@ -233,7 +234,9 @@ describe('V32: KPI dominant', () => {
   });
 
   it('risque est dominant quand risqueConformite >= les deux autres', () => {
-    expect(panelSrc).toMatch(/risqueConformite >= surcoutFacture.*risqueConformite >= opportuniteOptim.*return 'risque'/s);
+    expect(panelSrc).toMatch(
+      /risqueConformite >= surcoutFacture.*risqueConformite >= opportuniteOptim.*return 'risque'/s
+    );
   });
 
   it('surcout est dominant quand surcoutFacture >= opportuniteOptim', () => {
@@ -304,7 +307,7 @@ describe('V32: Compteurs contextuels', () => {
     expect(panelSrc).toContain('subLabel={subLabels.optimisation}');
   });
 
-  it('le subLabel s\'affiche uniquement quand available && subLabel', () => {
+  it("le subLabel s'affiche uniquement quand available && subLabel", () => {
     expect(panelSrc).toContain('available && subLabel');
   });
 
@@ -402,7 +405,7 @@ describe('V34: Lever CTA deep-link', () => {
     expect(panelSrc).toContain('lever.label');
   });
 
-  it('affiche l\'impact estime en euros si disponible', () => {
+  it("affiche l'impact estime en euros si disponible", () => {
     expect(panelSrc).toContain('lever.impactEur');
     expect(panelSrc).toContain("toLocaleString('fr-FR')");
   });

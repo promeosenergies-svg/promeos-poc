@@ -7,7 +7,7 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { describe, it, expect } from 'vitest';
 
-const root = resolve(__dirname, '../../../');  // → frontend/
+const root = resolve(__dirname, '../../../'); // → frontend/
 
 const readSrc = (...parts) => readFileSync(resolve(root, 'src', ...parts), 'utf-8');
 const readBackend = (...parts) => readFileSync(resolve(root, '..', 'backend', ...parts), 'utf-8');
@@ -345,7 +345,9 @@ describe('BillIntelPage.jsx — P1 invoice filter bar', () => {
   });
 
   it('has a text input for invoice search', () => {
-    expect(code).toMatch(/invoiceSearch[\s\S]{0,200}placeholder|placeholder[\s\S]{0,200}invoiceSearch/);
+    expect(code).toMatch(
+      /invoiceSearch[\s\S]{0,200}placeholder|placeholder[\s\S]{0,200}invoiceSearch/
+    );
   });
 
   it('has status filter chips rendered via map (array.map + invoiceStatusFilter)', () => {
@@ -370,7 +372,9 @@ describe('BillIntelPage.jsx — PDF import site select (ÉTAPE 3)', () => {
   });
 
   it('renders a <select> for pdfSiteId (no more number input for pdf)', () => {
-    expect(code).not.toMatch(/type=["']number["'][\s\S]{0,100}pdfSiteId|pdfSiteId[\s\S]{0,100}type=["']number["']/);
+    expect(code).not.toMatch(
+      /type=["']number["'][\s\S]{0,100}pdfSiteId|pdfSiteId[\s\S]{0,100}type=["']number["']/
+    );
     expect(code).toMatch(/pdfSiteId[\s\S]{0,300}select|select[\s\S]{0,300}pdfSiteId/);
   });
 
@@ -395,7 +399,9 @@ describe('BillIntelPage.jsx — period filter presets (ÉTAPE 4)', () => {
 
   it('filteredInvoices uses useMemo with periodPreset dependency', () => {
     expect(code).toMatch(/filteredInvoices\s*=\s*useMemo/);
-    expect(code).toMatch(/periodPreset[\s\S]{0,200}monthFilter|monthFilter[\s\S]{0,200}periodPreset/);
+    expect(code).toMatch(
+      /periodPreset[\s\S]{0,200}monthFilter|monthFilter[\s\S]{0,200}periodPreset/
+    );
   });
 
   it('has period select UI with Toutes périodes option', () => {
@@ -443,7 +449,9 @@ describe('BillIntelPage.jsx — P0 imports UX', () => {
   const code = readSrc('pages', 'BillIntelPage.jsx');
 
   it('CSV button has disabled prop gated on pdfSiteId', () => {
-    expect(code).toMatch(/Importer CSV[\s\S]{0,300}disabled=\{!pdfSiteId\}|disabled=\{!pdfSiteId\}[\s\S]{0,300}Importer CSV/);
+    expect(code).toMatch(
+      /Importer CSV[\s\S]{0,300}disabled=\{!pdfSiteId\}|disabled=\{!pdfSiteId\}[\s\S]{0,300}Importer CSV/
+    );
   });
 
   it('CSV button uses ref-based file picker (csvInputRef)', () => {
@@ -479,7 +487,9 @@ describe('BillIntelPage.jsx — P0 imports UX', () => {
   });
 
   it('PDF button label has tooltip when no site', () => {
-    expect(code).toMatch(/Importer PDF[\s\S]{0,500}S.lectionnez un site|S.lectionnez un site[\s\S]{0,500}Importer PDF/);
+    expect(code).toMatch(
+      /Importer PDF[\s\S]{0,500}S.lectionnez un site|S.lectionnez un site[\s\S]{0,500}Importer PDF/
+    );
   });
 
   it('Expert logs on CSV button click', () => {
@@ -601,11 +611,15 @@ describe('BillIntelPage.jsx — ref-based file picker', () => {
   });
 
   it('CSV button uses type="button" and onClick={handleCsvClick}', () => {
-    expect(code).toMatch(/handleCsvClick[\s\S]{0,300}Importer CSV|Importer CSV[\s\S]{0,300}handleCsvClick/);
+    expect(code).toMatch(
+      /handleCsvClick[\s\S]{0,300}Importer CSV|Importer CSV[\s\S]{0,300}handleCsvClick/
+    );
   });
 
   it('PDF button uses type="button" and onClick={handlePdfClick}', () => {
-    expect(code).toMatch(/handlePdfClick[\s\S]{0,300}Importer PDF|Importer PDF[\s\S]{0,300}handlePdfClick/);
+    expect(code).toMatch(
+      /handlePdfClick[\s\S]{0,300}Importer PDF|Importer PDF[\s\S]{0,300}handlePdfClick/
+    );
   });
 
   it('hidden input refs have correct accept attributes', () => {
@@ -614,7 +628,6 @@ describe('BillIntelPage.jsx — ref-based file picker', () => {
   });
 });
 
-
 // ============================================================
 // T. BillingPage — Scope Unifié (V70)
 // ============================================================
@@ -622,11 +635,15 @@ describe('BillingPage — Scope Unifié (V70)', () => {
   const code = readSrc('pages', 'BillingPage.jsx');
 
   it('imports useScope from ScopeContext', () => {
-    expect(code).toMatch(/import\s*\{[^}]*useScope[^}]*\}\s*from\s*['"]\.\.\/contexts\/ScopeContext['"]/);
+    expect(code).toMatch(
+      /import\s*\{[^}]*useScope[^}]*\}\s*from\s*['"]\.\.\/contexts\/ScopeContext['"]/
+    );
   });
 
   it('imports useToast from ToastProvider', () => {
-    expect(code).toMatch(/import\s*\{[^}]*useToast[^}]*\}\s*from\s*['"]\.\.\/ui\/ToastProvider['"]/);
+    expect(code).toMatch(
+      /import\s*\{[^}]*useToast[^}]*\}\s*from\s*['"]\.\.\/ui\/ToastProvider['"]/
+    );
   });
 
   it('destructures selectedSiteId from useScope', () => {
@@ -661,7 +678,6 @@ describe('BillingPage — Scope Unifié (V70)', () => {
     expect(code).not.toMatch(/import\s*\{[^}]*getSites[^}]*\}/);
   });
 });
-
 
 // ============================================================
 // U. BillingPage — Filtres Timeline (V70)
@@ -720,7 +736,6 @@ describe('BillingPage — Filtres Timeline (V70)', () => {
   });
 });
 
-
 // ============================================================
 // V. BillingPage — Import Contextuel (V70)
 // ============================================================
@@ -728,11 +743,15 @@ describe('BillingPage — Import Contextuel (V70)', () => {
   const code = readSrc('pages', 'BillingPage.jsx');
 
   it('imports importInvoicesCsv from api', () => {
-    expect(code).toMatch(/import\s*\{[^}]*importInvoicesCsv[^}]*\}\s*from\s*['"]\.\.\/services\/api['"]/);
+    expect(code).toMatch(
+      /import\s*\{[^}]*importInvoicesCsv[^}]*\}\s*from\s*['"]\.\.\/services\/api['"]/
+    );
   });
 
   it('imports importInvoicesPdf from api', () => {
-    expect(code).toMatch(/import\s*\{[^}]*importInvoicesPdf[^}]*\}\s*from\s*['"]\.\.\/services\/api['"]/);
+    expect(code).toMatch(
+      /import\s*\{[^}]*importInvoicesPdf[^}]*\}\s*from\s*['"]\.\.\/services\/api['"]/
+    );
   });
 
   it('creates csvInputRef with useRef', () => {
@@ -771,7 +790,6 @@ describe('BillingPage — Import Contextuel (V70)', () => {
   });
 });
 
-
 // ============================================================
 // W. BillingTimeline — CTA Voir avec deepLink (V70)
 // ============================================================
@@ -779,7 +797,9 @@ describe('BillingTimeline — CTA Voir + deepLink (V70)', () => {
   const code = readSrc('components', 'BillingTimeline.jsx');
 
   it('imports deepLinkWithContext from services/deepLink', () => {
-    expect(code).toMatch(/import\s*\{[^}]*deepLinkWithContext[^}]*\}\s*from\s*['"]\.\.\/services\/deepLink['"]/);
+    expect(code).toMatch(
+      /import\s*\{[^}]*deepLinkWithContext[^}]*\}\s*from\s*['"]\.\.\/services\/deepLink['"]/
+    );
   });
 
   it('uses deepLinkWithContext in handleView', () => {
@@ -808,7 +828,6 @@ describe('BillingTimeline — CTA Voir + deepLink (V70)', () => {
   });
 });
 
-
 // ============================================================
 // X. deepLink helper — deepLinkWithContext (V70)
 // ============================================================
@@ -833,7 +852,6 @@ describe('deepLink.js — deepLinkWithContext (V70)', () => {
   });
 });
 
-
 // ============================================================
 // Y. NavRegistry — Timeline sous Facturation (V70)
 // ============================================================
@@ -856,7 +874,6 @@ describe('NavRegistry — Timeline sous Facturation (V70)', () => {
     expect(code).toMatch(/\/bill-intel[\s\S]{0,150}Factures & anomalies/);
   });
 });
-
 
 // ============================================================
 // Z. BillIntelPage — 100% Français (V70)
@@ -898,22 +915,21 @@ describe('BillIntelPage — 100% Français (V70)', () => {
   });
 
   it('handleOpenCreateAction onSave calls toast on success', () => {
-    const fn = code.match(/function handleOpenCreateAction[\s\S]{0,800}/)?.[0] || '';
+    const fn = code.match(/function handleOpenCreateAction[\s\S]{0,1500}/)?.[0] || '';
     expect(fn).toMatch(/toast\(/);
     expect(fn).toMatch(/Action créée/);
   });
 
-  it('has Voir l\'action button with setViewActionId', () => {
+  it("has Voir l'action button with setViewActionId", () => {
     expect(code).toMatch(/setViewActionId/);
     expect(code).toMatch(/Voir l'action/);
   });
 });
 
-
 // ============================================================
 // AA. InsightDrawer — Comprendre l'écart (V70)
 // ============================================================
-describe('InsightDrawer — Comprendre l\'écart (V70)', () => {
+describe("InsightDrawer — Comprendre l'écart (V70)", () => {
   const code = readSrc('components', 'InsightDrawer.jsx');
   const page = readSrc('pages', 'BillIntelPage.jsx');
 
@@ -931,12 +947,14 @@ describe('InsightDrawer — Comprendre l\'écart (V70)', () => {
     expect(page).toMatch(/insightId=\{drawerInsightId\}/);
   });
 
-  it('BillIntelPage has Comprendre l\'écart button', () => {
+  it("BillIntelPage has Comprendre l'écart button", () => {
     expect(page).toMatch(/Comprendre l'écart/);
   });
 
   it('InsightDrawer imports getInsightDetail from api', () => {
-    expect(code).toMatch(/import\s*\{[^}]*getInsightDetail[^}]*\}\s*from\s*['"]\.\.\/services\/api['"]/);
+    expect(code).toMatch(
+      /import\s*\{[^}]*getInsightDetail[^}]*\}\s*from\s*['"]\.\.\/services\/api['"]/
+    );
   });
 
   it('InsightDrawer uses Drawer from ui/Drawer', () => {
@@ -967,7 +985,6 @@ describe('InsightDrawer — Comprendre l\'écart (V70)', () => {
     expect(backendCode).toMatch(/metrics_json/);
   });
 });
-
 
 // ============================================================
 // AB. Explainability — V2 breakdown + confidence (V71)
@@ -1013,7 +1030,6 @@ describe('Explainability — V2 breakdown + confidence (V71)', () => {
   });
 });
 
-
 // ============================================================
 // AC. Actions CTA — CreateActionModal + action_id (V71)
 // ============================================================
@@ -1026,7 +1042,9 @@ describe('Actions CTA — CreateActionModal + action_id (V71)', () => {
   });
 
   it('BillIntelPage imports ActionDetailDrawer', () => {
-    expect(page).toMatch(/import\s+ActionDetailDrawer\s+from\s+['"]\.\.\/components\/ActionDetailDrawer['"]/);
+    expect(page).toMatch(
+      /import\s+ActionDetailDrawer\s+from\s+['"]\.\.\/components\/ActionDetailDrawer['"]/
+    );
   });
 
   it('BillIntelPage has actionMap state (Map, not Set)', () => {
@@ -1097,7 +1115,10 @@ describe('AD · CTA Stabilization', () => {
 
 /* ─── Section AE — Insight drawer breakdown guarantee (3 tests) ─── */
 describe('AE · Insight drawer breakdown guarantee', () => {
-  const backend = readFileSync(resolve(__dirname, '../../../../backend/routes/billing.py'), 'utf-8');
+  const backend = readFileSync(
+    resolve(__dirname, '../../../../backend/routes/billing.py'),
+    'utf-8'
+  );
   const drawer = readFileSync(resolve(__dirname, '../../components/InsightDrawer.jsx'), 'utf-8');
 
   it('get_insight_detail recalculates V2 when breakdown absent', () => {
@@ -1129,9 +1150,15 @@ describe('AE · Insight drawer breakdown guarantee', () => {
 
 /* ─── Section AF — 405 fix: Optional import + debug method (4 tests) ─── */
 describe('AF · 405 fix — router registration + debug method', () => {
-  const importSites = readFileSync(resolve(__dirname, '../../../../backend/routes/import_sites.py'), 'utf-8');
+  const importSites = readFileSync(
+    resolve(__dirname, '../../../../backend/routes/import_sites.py'),
+    'utf-8'
+  );
   const drawer = readFileSync(resolve(__dirname, '../../components/InsightDrawer.jsx'), 'utf-8');
-  const billingRoute = readFileSync(resolve(__dirname, '../../../../backend/routes/billing.py'), 'utf-8');
+  const billingRoute = readFileSync(
+    resolve(__dirname, '../../../../backend/routes/billing.py'),
+    'utf-8'
+  );
 
   it('import_sites.py imports Optional from typing (Python 3.14 compat)', () => {
     expect(importSites).toMatch(/from typing import.*Optional/);

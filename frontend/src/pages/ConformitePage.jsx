@@ -5,20 +5,20 @@
  * Sub-components extracted to conformite-tabs/ (V92 split).
  */
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import {
-  ShieldCheck, AlertTriangle, CheckCircle, Clock,
-  Plus, Building, RotateCcw, RefreshCw,
-  Database, Search, X,
-} from 'lucide-react';
-import { Card, CardBody, Badge, Button, EmptyState, TrustBadge, PageShell, Drawer } from '../ui';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { ShieldCheck, Plus, RotateCcw, RefreshCw, Database } from 'lucide-react';
+import { Button, PageShell, Drawer } from '../ui';
 import ObligationsTab from './conformite-tabs/ObligationsTab';
 import DonneesTab from './conformite-tabs/DonneesTab';
 import ExecutionTab from './conformite-tabs/ExecutionTab';
 import PreuvesTab from './conformite-tabs/PreuvesTab';
 import GuidedModeBandeau from './conformite-tabs/GuidedModeBandeau';
 import NextBestActionCard from './conformite-tabs/NextBestActionCard';
-import { computeGuidedSteps, computeNextBestAction, computeDonneesMetrics } from '../models/guidedModeModel';
+import {
+  computeGuidedSteps,
+  computeNextBestAction,
+  computeDonneesMetrics,
+} from '../models/guidedModeModel';
 import Tabs from '../ui/Tabs';
 import { useToast } from '../ui/ToastProvider';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
@@ -30,18 +30,20 @@ import { buildWatchlist, buildBriefing, computeHealthState } from '../models/das
 import HealthSummary from '../components/HealthSummary';
 import DossierPrintView from '../components/DossierPrintView';
 import {
-  REG_LABELS, REG_DESCRIPTIONS, STATUT_LABELS, BACKEND_STATUS_MAP,
-  WORKFLOW_LABELS, SEVERITY_LABELS, SEVERITY_BADGE_MAP, CONFIDENCE_LABELS,
-  COCKPIT_TABS, EMPTY_REASONS as EMPTY_REASONS_LABELS, RULE_LABELS,
-  RULE_NEXT_STEPS, RULE_EXPECTED_PROOFS, DRAWER_LABELS,
+  REG_LABELS,
+  REG_DESCRIPTIONS,
+  STATUT_LABELS,
+  BACKEND_STATUS_MAP,
+  WORKFLOW_LABELS,
+  SEVERITY_LABELS,
+  COCKPIT_TABS,
+  DRAWER_LABELS,
 } from '../domain/compliance/complianceLabels.fr';
 import {
-  applyKB,
   getComplianceBundle,
   getApiHealth,
   patchComplianceFinding,
   recomputeComplianceRules,
-  getDataQuality,
   getFindingDetail,
   getIntakeQuestions,
   resetDb,
@@ -93,7 +95,9 @@ export function DevScopeBadge({ scope, scopedSites }) {
   const { scopeType, scopeId, label } = resolveScopeLabel(scope);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(JSON.stringify({ scope_type: scopeType, scope_id: scopeId, sites_count: scopedSites.length }));
+    navigator.clipboard.writeText(
+      JSON.stringify({ scope_type: scopeType, scope_id: scopeId, sites_count: scopedSites.length })
+    );
     setCopied(true);
     setTimeout(() => setCopied(false), 1200);
   };
@@ -152,12 +156,12 @@ export function computeBacsV2Summary(bacsV2Data) {
   if (!bacsV2Data) return null;
   const entries = Object.values(bacsV2Data);
   if (entries.length === 0) return null;
-  const applicable = entries.some(e => e.applicable);
-  const deadlines = entries.map(e => e.deadline).filter(Boolean);
+  const applicable = entries.some((e) => e.applicable);
+  const deadlines = entries.map((e) => e.deadline).filter(Boolean);
   const closest = deadlines.length ? deadlines.sort()[0] : null;
-  const maxPutile = Math.max(...entries.map(e => e.putile_kw || 0));
-  const maxThreshold = Math.max(...entries.map(e => e.threshold_kw || 0));
-  const triExemption = entries.some(e => e.tri_exemption);
+  const maxPutile = Math.max(...entries.map((e) => e.putile_kw || 0));
+  const maxThreshold = Math.max(...entries.map((e) => e.threshold_kw || 0));
+  const triExemption = entries.some((e) => e.tri_exemption);
   return {
     applicable,
     deadline: closest,
@@ -179,7 +183,7 @@ export function computeScopeLabel(org, scope, scopedSites, portefeuilles) {
     return `${orgName} · Site: ${site?.nom || scope.siteId}`;
   }
   if (scope?.portefeuilleId) {
-    const pf = portefeuilles?.find(p => p.id === scope.portefeuilleId);
+    const pf = portefeuilles?.find((p) => p.id === scope.portefeuilleId);
     return `${orgName} · Portefeuille: ${pf?.nom || scope.portefeuilleId} (${scopedSites?.length || 0} sites)`;
   }
   return `${orgName} · Organisation (${scopedSites?.length || 0} sites)`;
@@ -250,13 +254,25 @@ export function sitesToObligations(sitesData, _summary) {
     }
   }
 
-  return Object.values(byReg).map(obl => ({
+  return Object.values(byReg).map((obl) => ({
     ...obl,
     sites_concernes: obl._site_ids_all.size,
     sites_conformes: obl._site_ids_ok.size,
-    proof_status: obl.statut === 'conforme' ? 'ok' : obl.statut === 'a_qualifier' ? 'pending' : obl.statut === 'a_risque' ? 'in_progress' : 'missing',
+    proof_status:
+      obl.statut === 'conforme'
+        ? 'ok'
+        : obl.statut === 'a_qualifier'
+          ? 'pending'
+          : obl.statut === 'a_risque'
+            ? 'in_progress'
+            : 'missing',
     pourquoi: `${obl._site_ids_all.size} site(s) concerné(s) par ${obl.regulation}`,
-    quoi_faire: obl.findings.filter(f => f.actions?.length).flatMap(f => f.actions).filter((v, i, a) => a.indexOf(v) === i).join('. ') || 'Évaluer la conformité',
+    quoi_faire:
+      obl.findings
+        .filter((f) => f.actions?.length)
+        .flatMap((f) => f.actions)
+        .filter((v, i, a) => a.indexOf(v) === i)
+        .join('. ') || 'Évaluer la conformité',
     preuve: 'Attestation ou rapport de conformité',
     impact_eur: 0,
   }));
@@ -286,26 +302,58 @@ function FindingAuditDrawer({ findingId, onClose }) {
         <div className="space-y-5">
           {/* Identity */}
           <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase mb-2">{DRAWER_LABELS.identity}</p>
+            <p className="text-xs font-semibold text-gray-500 uppercase mb-2">
+              {DRAWER_LABELS.identity}
+            </p>
             <div className="grid grid-cols-2 gap-2 text-sm">
-              {isExpert && <div><span className="text-gray-500">{DRAWER_LABELS.rule_id} :</span> <span className="font-mono font-medium">{detail.rule_id}</span></div>}
-              <div><span className="text-gray-500">{DRAWER_LABELS.regulation} :</span> <span className="font-medium">{detail.regulation}</span></div>
-              <div><span className="text-gray-500">{DRAWER_LABELS.status} :</span> <span className="font-medium">{STATUT_LABELS[BACKEND_STATUS_MAP[detail.status]] || detail.status}</span></div>
-              <div><span className="text-gray-500">{DRAWER_LABELS.severity} :</span> <span className="font-medium">{SEVERITY_LABELS[detail.severity] || detail.severity}</span></div>
-              <div><span className="text-gray-500">{DRAWER_LABELS.site} :</span> <span className="font-medium">{detail.site_nom}</span></div>
-              {detail.deadline && <div><span className="text-gray-500">{DRAWER_LABELS.deadline} :</span> <span className="font-medium">{detail.deadline}</span></div>}
+              {isExpert && (
+                <div>
+                  <span className="text-gray-500">{DRAWER_LABELS.rule_id} :</span>{' '}
+                  <span className="font-mono font-medium">{detail.rule_id}</span>
+                </div>
+              )}
+              <div>
+                <span className="text-gray-500">{DRAWER_LABELS.regulation} :</span>{' '}
+                <span className="font-medium">{detail.regulation}</span>
+              </div>
+              <div>
+                <span className="text-gray-500">{DRAWER_LABELS.status} :</span>{' '}
+                <span className="font-medium">
+                  {STATUT_LABELS[BACKEND_STATUS_MAP[detail.status]] || detail.status}
+                </span>
+              </div>
+              <div>
+                <span className="text-gray-500">{DRAWER_LABELS.severity} :</span>{' '}
+                <span className="font-medium">
+                  {SEVERITY_LABELS[detail.severity] || detail.severity}
+                </span>
+              </div>
+              <div>
+                <span className="text-gray-500">{DRAWER_LABELS.site} :</span>{' '}
+                <span className="font-medium">{detail.site_nom}</span>
+              </div>
+              {detail.deadline && (
+                <div>
+                  <span className="text-gray-500">{DRAWER_LABELS.deadline} :</span>{' '}
+                  <span className="font-medium">{detail.deadline}</span>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Inputs */}
           {detail.inputs && Object.keys(detail.inputs).length > 0 && (
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">{DRAWER_LABELS.inputs}</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">
+                {DRAWER_LABELS.inputs}
+              </p>
               <div className="bg-gray-50 rounded-lg p-3 space-y-1">
                 {Object.entries(detail.inputs).map(([k, v]) => (
                   <div key={k} className="flex justify-between text-sm">
                     <span className="text-gray-600 font-mono">{k}</span>
-                    <span className="text-gray-900 font-medium">{v === null ? '-' : String(v)}</span>
+                    <span className="text-gray-900 font-medium">
+                      {v === null ? '-' : String(v)}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -315,7 +363,9 @@ function FindingAuditDrawer({ findingId, onClose }) {
           {/* Params */}
           {detail.params && Object.keys(detail.params).length > 0 && (
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">{DRAWER_LABELS.params}</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">
+                {DRAWER_LABELS.params}
+              </p>
               <div className="bg-blue-50 rounded-lg p-3 space-y-1">
                 {Object.entries(detail.params).map(([k, v]) => (
                   <div key={k} className="flex justify-between text-sm">
@@ -330,9 +380,13 @@ function FindingAuditDrawer({ findingId, onClose }) {
           {/* Evidence */}
           {detail.evidence_refs && Object.keys(detail.evidence_refs).length > 0 && (
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">{DRAWER_LABELS.evidence_refs}</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">
+                {DRAWER_LABELS.evidence_refs}
+              </p>
               <div className="bg-green-50 rounded-lg p-3 text-sm text-gray-700">
-                <pre className="whitespace-pre-wrap">{JSON.stringify(detail.evidence_refs, null, 2)}</pre>
+                <pre className="whitespace-pre-wrap">
+                  {JSON.stringify(detail.evidence_refs, null, 2)}
+                </pre>
               </div>
             </div>
           )}
@@ -340,20 +394,43 @@ function FindingAuditDrawer({ findingId, onClose }) {
           {/* Evidence text */}
           {detail.evidence && (
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">{DRAWER_LABELS.explanation}</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase mb-2">
+                {DRAWER_LABELS.explanation}
+              </p>
               <p className="text-sm text-gray-700 bg-gray-50 rounded-lg p-3">{detail.evidence}</p>
             </div>
           )}
 
           {/* Metadata */}
           <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase mb-2">{DRAWER_LABELS.metadata}</p>
+            <p className="text-xs font-semibold text-gray-500 uppercase mb-2">
+              {DRAWER_LABELS.metadata}
+            </p>
             <div className="text-xs text-gray-400 space-y-1">
-              {isExpert && detail.engine_version && <div>{DRAWER_LABELS.engine_version} : <span className="font-mono">{detail.engine_version}</span></div>}
-              {detail.created_at && <div>{DRAWER_LABELS.computed_at} : {new Date(detail.created_at).toLocaleString('fr-FR')}</div>}
-              {detail.updated_at && <div>{DRAWER_LABELS.updated_at} : {new Date(detail.updated_at).toLocaleString('fr-FR')}</div>}
-              <div>{DRAWER_LABELS.workflow} : {WORKFLOW_LABELS[detail.insight_status] || detail.insight_status}</div>
-              <div>{DRAWER_LABELS.owner} : {detail.owner || '-'}</div>
+              {isExpert && detail.engine_version && (
+                <div>
+                  {DRAWER_LABELS.engine_version} :{' '}
+                  <span className="font-mono">{detail.engine_version}</span>
+                </div>
+              )}
+              {detail.created_at && (
+                <div>
+                  {DRAWER_LABELS.computed_at} :{' '}
+                  {new Date(detail.created_at).toLocaleString('fr-FR')}
+                </div>
+              )}
+              {detail.updated_at && (
+                <div>
+                  {DRAWER_LABELS.updated_at} : {new Date(detail.updated_at).toLocaleString('fr-FR')}
+                </div>
+              )}
+              <div>
+                {DRAWER_LABELS.workflow} :{' '}
+                {WORKFLOW_LABELS[detail.insight_status] || detail.insight_status}
+              </div>
+              <div>
+                {DRAWER_LABELS.owner} : {detail.owner || '-'}
+              </div>
             </div>
           </div>
         </div>
@@ -376,7 +453,10 @@ export default function ConformitePage() {
   const [summary, setSummary] = useState(null);
   const [sitesData, setSitesData] = useState([]);
   const [auditFindingId, setAuditFindingId] = useState(null);
-  const [activeTab, setActiveTab] = useState('obligations');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(
+    searchParams.get('tab') || 'obligations',
+  );
   const [intakeQuestions, setIntakeQuestions] = useState([]);
   const [emptyReason, setEmptyReason] = useState(null);
   const [error, setError] = useState(null);
@@ -387,12 +467,18 @@ export default function ConformitePage() {
     if (sitesLoading) return; // V18-B: wait for scope to be ready before fetching
     setLoading(true);
     setError(null);
-    const scopeParams = buildScopeParams({ orgId: org?.id, portefeuilleId: scope.portefeuilleId, siteId: scope.siteId }, scopedSites);
+    const scopeParams = buildScopeParams(
+      { orgId: org?.id, portefeuilleId: scope.portefeuilleId, siteId: scope.siteId },
+      scopedSites
+    );
 
     getComplianceBundle(scopeParams)
       .then((b) => {
         const err = parseBundleError(b);
-        if (err) { setError(err); return; }
+        if (err) {
+          setError(err);
+          return;
+        }
         setBundle(b);
         setSummary(b.summary);
         setSitesData(b.sites);
@@ -404,22 +490,25 @@ export default function ConformitePage() {
         const status = err?.response?.status;
         const base = parseBundleError(null);
         if (status) base.status = status;
-        const reqUrl = err?.config?.baseURL && err?.config?.url
-          ? `${err.config.baseURL}${err.config.url}`
-          : null;
+        const reqUrl =
+          err?.config?.baseURL && err?.config?.url
+            ? `${err.config.baseURL}${err.config.url}`
+            : null;
         if (reqUrl) base.request_url = reqUrl;
         setError(base);
       })
       .finally(() => setLoading(false));
   }, [org?.id, scope.portefeuilleId, scope.siteId, scopedSites, sitesLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   // Load intake questions for Donnees tab
   useEffect(() => {
     if (scopedSites.length > 0) {
       getIntakeQuestions(scopedSites[0].id)
-        .then(data => setIntakeQuestions(data.questions || []))
+        .then((data) => setIntakeQuestions(data.questions || []))
         .catch(() => setIntakeQuestions([]));
     }
   }, [scopedSites]);
@@ -431,18 +520,32 @@ export default function ConformitePage() {
 
   const complianceHealth = useMemo(() => {
     if (!bundle || !sitesData.length) return null;
-    const nc = sitesData.filter(s => s.statut_conformite === 'non_conforme').length;
-    const ar = sitesData.filter(s => s.statut_conformite === 'a_risque').length;
+    const nc = sitesData.filter((s) => s.statut_conformite === 'non_conforme').length;
+    const ar = sitesData.filter((s) => s.statut_conformite === 'a_risque').length;
     const total = sitesData.length;
-    const conformes = sitesData.filter(s => s.statut_conformite === 'conforme').length;
-    const simpleKpis = { total, conformes, nonConformes: nc, aRisque: ar, risqueTotal: 0, couvertureDonnees: 100 };
+    const conformes = sitesData.filter((s) => s.statut_conformite === 'conforme').length;
+    const simpleKpis = {
+      total,
+      conformes,
+      nonConformes: nc,
+      aRisque: ar,
+      risqueTotal: 0,
+      couvertureDonnees: 100,
+    };
     const wl = buildWatchlist(simpleKpis, sitesData);
     const br = buildBriefing(simpleKpis, wl);
-    return computeHealthState({ kpis: simpleKpis, watchlist: wl, briefing: br, consistency: { ok: true }, alertsCount: 0 });
+    return computeHealthState({
+      kpis: simpleKpis,
+      watchlist: wl,
+      briefing: br,
+      consistency: { ok: true },
+      alertsCount: 0,
+    });
   }, [bundle, sitesData]);
 
   const score = useMemo(() => {
-    if (!summary) return { pct: 0, total: 0, non_conformes: 0, a_risque: 0, conformes: 0, total_impact_eur: 0 };
+    if (!summary)
+      return { pct: 0, total: 0, non_conformes: 0, a_risque: 0, conformes: 0, total_impact_eur: 0 };
     return {
       pct: summary.pct_ok || 0,
       total: obligations.length,
@@ -456,21 +559,28 @@ export default function ConformitePage() {
   const bacsV2Summary = useMemo(() => computeBacsV2Summary(bundle?.bacs_v2), [bundle]);
 
   const scopeLabel = useMemo(
-    () => computeScopeLabel(org, { siteId: scope.siteId, portefeuilleId: scope.portefeuilleId }, scopedSites, portefeuilles),
-    [org, scope.siteId, scope.portefeuilleId, scopedSites, portefeuilles],
+    () =>
+      computeScopeLabel(
+        org,
+        { siteId: scope.siteId, portefeuilleId: scope.portefeuilleId },
+        scopedSites,
+        portefeuilles
+      ),
+    [org, scope.siteId, scope.portefeuilleId, scopedSites, portefeuilles]
   );
 
   const sortedObligations = useMemo(() => {
     let list = [...obligations];
     if (statusFilter) {
-      list = list.filter(o => o.statut === statusFilter);
+      list = list.filter((o) => o.statut === statusFilter);
     }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      list = list.filter(o =>
-        o.regulation.toLowerCase().includes(q) ||
-        o.description.toLowerCase().includes(q) ||
-        o.code.toLowerCase().includes(q)
+      list = list.filter(
+        (o) =>
+          o.regulation.toLowerCase().includes(q) ||
+          o.description.toLowerCase().includes(q) ||
+          o.code.toLowerCase().includes(q)
       );
     }
     list.sort((a, b) => {
@@ -484,23 +594,39 @@ export default function ConformitePage() {
   }, [obligations, statusFilter, searchQuery]);
 
   const actionableFindings = useMemo(() => {
-    return obligations.flatMap(o => o.findings)
-      .filter(f => f.status === 'NOK' || f.status === 'UNKNOWN')
-      .filter(f => f.insight_status !== 'resolved' && f.insight_status !== 'false_positive');
+    return obligations
+      .flatMap((o) => o.findings)
+      .filter((f) => f.status === 'NOK' || f.status === 'UNKNOWN')
+      .filter((f) => f.insight_status !== 'resolved' && f.insight_status !== 'false_positive');
   }, [obligations]);
 
   // ── Guided Mode + NBA + Données metrics ──
   const guidedSteps = useMemo(() => {
     if (isExpert || !sitesData.length) return [];
     return computeGuidedSteps(bundle, sitesData, summary, {
-      obligations, actionableFindings, proofFiles, bacsV2Summary,
+      obligations,
+      actionableFindings,
+      proofFiles,
+      bacsV2Summary,
     });
-  }, [isExpert, bundle, sitesData, summary, obligations, actionableFindings, proofFiles, bacsV2Summary]);
+  }, [
+    isExpert,
+    bundle,
+    sitesData,
+    summary,
+    obligations,
+    actionableFindings,
+    proofFiles,
+    bacsV2Summary,
+  ]);
 
   const nextBestAction = useMemo(() => {
     if (!sitesData.length) return null;
     return computeNextBestAction(bundle, sitesData, summary, {
-      obligations, actionableFindings, proofFiles, bacsV2Summary,
+      obligations,
+      actionableFindings,
+      proofFiles,
+      bacsV2Summary,
     });
   }, [bundle, sitesData, summary, obligations, actionableFindings, proofFiles, bacsV2Summary]);
 
@@ -509,18 +635,24 @@ export default function ConformitePage() {
     return computeDonneesMetrics(sitesData, [], {});
   }, [sitesData]);
 
-  const handleNbaAction = useCallback((ctaAction) => {
-    if (ctaAction.type === 'navigate') navigate(ctaAction.path);
-    else if (ctaAction.type === 'tab') setActiveTab(ctaAction.tab);
-    else if (ctaAction.type === 'drawer') openActionDrawer(ctaAction.prefill);
-    track('nba_click', { action_id: nextBestAction?.id });
-  }, [navigate, openActionDrawer, nextBestAction]);
+  const handleNbaAction = useCallback(
+    (ctaAction) => {
+      if (ctaAction.type === 'navigate') navigate(ctaAction.path);
+      else if (ctaAction.type === 'tab') setActiveTab(ctaAction.tab);
+      else if (ctaAction.type === 'drawer') openActionDrawer(ctaAction.prefill);
+      track('nba_click', { action_id: nextBestAction?.id });
+    },
+    [navigate, openActionDrawer, nextBestAction]
+  );
 
-  const handleStepClick = useCallback((step) => {
-    if (step.ctaTarget?.tab) setActiveTab(step.ctaTarget.tab);
-    else if (step.ctaTarget?.path) navigate(step.ctaTarget.path);
-    track('guided_step_click', { step_id: step.id });
-  }, [navigate]);
+  const handleStepClick = useCallback(
+    (step) => {
+      if (step.ctaTarget?.tab) setActiveTab(step.ctaTarget.tab);
+      else if (step.ctaTarget?.path) navigate(step.ctaTarget.path);
+      track('guided_step_click', { step_id: step.id });
+    },
+    [navigate]
+  );
 
   const handleRecompute = async () => {
     setRecomputing(true);
@@ -546,47 +678,63 @@ export default function ConformitePage() {
   };
 
   function handleCreateFromObligation(obligation) {
-    openActionDrawer({
-      prefill: {
-        titre: `Mise en conformité ${obligation.regulation}`,
-        type: 'conformite',
-        priorite: obligation.severity === 'critical' ? 'critical' : obligation.severity === 'high' ? 'high' : 'medium',
-        description: obligation.quoi_faire,
-        obligation_code: obligation.code,
-        impact_eur: obligation.impact_eur,
-        site: `${obligation.sites_concernes} sites concernés`,
+    openActionDrawer(
+      {
+        prefill: {
+          titre: `Mise en conformité ${obligation.regulation}`,
+          type: 'conformite',
+          priorite:
+            obligation.severity === 'critical'
+              ? 'critical'
+              : obligation.severity === 'high'
+                ? 'high'
+                : 'medium',
+          description: obligation.quoi_faire,
+          obligation_code: obligation.code,
+          impact_eur: obligation.impact_eur,
+          site: `${obligation.sites_concernes} sites concernés`,
+        },
+        sourceType: 'compliance',
+        sourceId: obligation.code,
+        evidenceRequired: obligation.severity === 'critical',
       },
-      sourceType: 'compliance',
-      sourceId: obligation.code,
-      evidenceRequired: obligation.severity === 'critical',
-    }, {
-      onSave: (action) => track('action_create_from_conformite', { titre: action.titre }),
-    });
+      {
+        onSave: (action) => track('action_create_from_conformite', { titre: action.titre }),
+      }
+    );
     track('conformite_create_action', { regulation: obligation.code });
   }
 
   function handleCreateFromFinding(finding) {
-    openActionDrawer({
-      prefill: {
-        titre: `Mise en conformité ${REG_LABELS[finding.regulation] || finding.regulation} — ${finding.site_nom}`,
-        type: 'conformite',
-        priorite: finding.severity === 'critical' ? 'critical' : finding.severity === 'high' ? 'high' : 'medium',
-        description: finding.evidence || `Non conforme: ${finding.rule_id}`,
-        obligation_code: finding.regulation,
-        site: finding.site_nom,
+    openActionDrawer(
+      {
+        prefill: {
+          titre: `Mise en conformité ${REG_LABELS[finding.regulation] || finding.regulation} — ${finding.site_nom}`,
+          type: 'conformite',
+          priorite:
+            finding.severity === 'critical'
+              ? 'critical'
+              : finding.severity === 'high'
+                ? 'high'
+                : 'medium',
+          description: finding.evidence || `Non conforme: ${finding.rule_id}`,
+          obligation_code: finding.regulation,
+          site: finding.site_nom,
+        },
+        sourceType: 'compliance',
+        sourceId: finding.rule_id,
+        evidenceRequired: finding.severity === 'critical',
       },
-      sourceType: 'compliance',
-      sourceId: finding.rule_id,
-      evidenceRequired: finding.severity === 'critical',
-    }, {
-      onSave: (action) => track('action_create_from_conformite', { titre: action.titre }),
-    });
+      {
+        onSave: (action) => track('action_create_from_conformite', { titre: action.titre }),
+      }
+    );
     track('conformite_create_action_finding', { rule_id: finding.rule_id });
   }
 
   function handleUploadProof(obligationId, file) {
     const entry = { name: file.name, date: new Date().toLocaleDateString('fr-FR') };
-    setProofFiles(prev => ({
+    setProofFiles((prev) => ({
       ...prev,
       [obligationId]: [...(prev[obligationId] || []), entry],
     }));
@@ -600,7 +748,9 @@ export default function ConformitePage() {
       <PageShell icon={ShieldCheck} title="Conformité réglementaire" subtitle="Chargement...">
         <div className="animate-pulse space-y-4">
           <div className="grid grid-cols-4 gap-4">
-            {[1,2,3,4].map(i => <div key={i} className="h-24 bg-gray-200 rounded-lg" />)}
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-24 bg-gray-200 rounded-lg" />
+            ))}
           </div>
           <div className="h-40 bg-gray-200 rounded-lg" />
         </div>
@@ -620,24 +770,36 @@ export default function ConformitePage() {
     };
 
     return (
-      <PageShell icon={ShieldCheck} title="Conformité réglementaire"
-                 subtitle={`${org?.nom || 'Organisation'} · ${sitesCount} site${sitesCount !== 1 ? 's' : ''}`}>
+      <PageShell
+        icon={ShieldCheck}
+        title="Conformité réglementaire"
+        subtitle={`${org?.nom || 'Organisation'} · ${sitesCount} site${sitesCount !== 1 ? 's' : ''}`}
+      >
         <ErrorState
           title="Erreur de chargement"
           message={error.message || 'Données de conformité indisponibles'}
-          onRetry={() => { setError(null); loadData(); }}
-          debug={isExpert && (error.error_code || error.status || error.request_url) ? {
-            ...(error.status ? { status: error.status } : {}),
-            ...(error.error_code ? { error_code: error.error_code } : {}),
-            ...(error.trace_id ? { trace_id: error.trace_id } : {}),
-            ...(error.hint ? { hint: error.hint } : {}),
-            ...(error.request_url ? { request_url: error.request_url } : {}),
-          } : null}
-          actions={error.hint === 'run_reset_db' ? (
-            <Button variant="secondary" onClick={handleResetDb}>
-              <RotateCcw size={14} /> Reset DB (dev)
-            </Button>
-          ) : null}
+          onRetry={() => {
+            setError(null);
+            loadData();
+          }}
+          debug={
+            isExpert && (error.error_code || error.status || error.request_url)
+              ? {
+                  ...(error.status ? { status: error.status } : {}),
+                  ...(error.error_code ? { error_code: error.error_code } : {}),
+                  ...(error.trace_id ? { trace_id: error.trace_id } : {}),
+                  ...(error.hint ? { hint: error.hint } : {}),
+                  ...(error.request_url ? { request_url: error.request_url } : {}),
+                }
+              : null
+          }
+          actions={
+            error.hint === 'run_reset_db' ? (
+              <Button variant="secondary" onClick={handleResetDb}>
+                <RotateCcw size={14} /> Reset DB (dev)
+              </Button>
+            ) : null
+          }
         />
       </PageShell>
     );
@@ -660,12 +822,14 @@ export default function ConformitePage() {
         </>
       }
     >
-
       {/* Expert-only badges */}
       {isExpert && (
         <div className="flex items-center gap-2 -mt-1 mb-1">
           <DevApiBadge />
-          <DevScopeBadge scope={{ orgId: org?.id, portefeuilleId: scope.portefeuilleId, siteId: scope.siteId }} scopedSites={scopedSites} />
+          <DevScopeBadge
+            scope={{ orgId: org?.id, portefeuilleId: scope.portefeuilleId, siteId: scope.siteId }}
+            scopedSites={scopedSites}
+          />
           {bundle?.meta?.generated_at && (
             <span className="text-[10px] font-mono text-gray-400">
               Synthèse : {new Date(bundle.meta.generated_at).toLocaleTimeString('fr-FR')}
@@ -675,7 +839,9 @@ export default function ConformitePage() {
       )}
 
       {/* Health Summary (compact) */}
-      {complianceHealth && <HealthSummary healthState={complianceHealth} onNavigate={navigate} compact />}
+      {complianceHealth && (
+        <HealthSummary healthState={complianceHealth} onNavigate={navigate} compact />
+      )}
 
       {/* Guided Mode Bandeau (non-expert only) */}
       {!isExpert && guidedSteps.length > 0 && (
@@ -688,52 +854,82 @@ export default function ConformitePage() {
       )}
 
       {/* Cockpit Tabs */}
-      <Tabs tabs={COCKPIT_TABS} active={activeTab} onChange={(tab) => { setActiveTab(tab); track('conformite_tab', { tab }); }} />
+      <Tabs
+        tabs={COCKPIT_TABS}
+        active={activeTab}
+        onChange={(tab) => {
+          setActiveTab(tab);
+          setSearchParams({ tab }, { replace: true });
+          track('conformite_tab', { tab });
+        }}
+      />
 
       {/* ======================== Tab: Obligations ======================== */}
       {activeTab === 'obligations' && (
         <ObligationsTab
-          score={score} emptyReason={emptyReason}
-          statusFilter={statusFilter} setStatusFilter={setStatusFilter}
-          searchQuery={searchQuery} setSearchQuery={setSearchQuery}
-          sortedObligations={sortedObligations} overdueCount={overdueCount}
+          score={score}
+          emptyReason={emptyReason}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          sortedObligations={sortedObligations}
+          overdueCount={overdueCount}
           handleCreateFromObligation={handleCreateFromObligation}
           handleWorkflowAction={handleWorkflowAction}
           handleUploadProof={handleUploadProof}
-          proofFiles={proofFiles} setAuditFindingId={setAuditFindingId}
-          bacsV2Summary={bacsV2Summary} scopedSites={scopedSites}
-          navigate={navigate} isExpert={isExpert}
+          proofFiles={proofFiles}
+          setAuditFindingId={setAuditFindingId}
+          bacsV2Summary={bacsV2Summary}
+          scopedSites={scopedSites}
+          navigate={navigate}
+          isExpert={isExpert}
           setDossierSource={setDossierSource}
-          onNavigateIntake={scopedSites[0] ? () => { navigate(`/intake/${scopedSites[0].id}`); track('bacs_complete_data'); } : undefined}
+          onNavigateIntake={
+            scopedSites[0]
+              ? () => {
+                  navigate(`/intake/${scopedSites[0].id}`);
+                  track('bacs_complete_data');
+                }
+              : undefined
+          }
         />
       )}
 
       {/* ======================== Tab: Donnees & Qualite ======================== */}
       {activeTab === 'donnees' && (
-        <DonneesTab scopedSites={scopedSites} intakeQuestions={intakeQuestions} navigate={navigate} donneesMetrics={donneesMetrics} />
+        <DonneesTab
+          scopedSites={scopedSites}
+          intakeQuestions={intakeQuestions}
+          navigate={navigate}
+          donneesMetrics={donneesMetrics}
+        />
       )}
 
       {/* ======================== Tab: Plan d'execution ======================== */}
       {activeTab === 'execution' && (
         <ExecutionTab
-          actionableFindings={actionableFindings} emptyReason={emptyReason}
+          actionableFindings={actionableFindings}
+          emptyReason={emptyReason}
           handleWorkflowAction={handleWorkflowAction}
           handleCreateFromFinding={handleCreateFromFinding}
           setAuditFindingId={setAuditFindingId}
-          openActionDrawer={openActionDrawer} navigate={navigate}
+          openActionDrawer={openActionDrawer}
+          navigate={navigate}
         />
       )}
 
       {/* ======================== Tab: Preuves & Rapports ======================== */}
       {activeTab === 'preuves' && (
-        <PreuvesTab obligations={obligations} proofFiles={proofFiles} handleUploadProof={handleUploadProof} />
+        <PreuvesTab
+          obligations={obligations}
+          proofFiles={proofFiles}
+          handleUploadProof={handleUploadProof}
+        />
       )}
 
       {/* Finding Audit Drawer */}
-      <FindingAuditDrawer
-        findingId={auditFindingId}
-        onClose={() => setAuditFindingId(null)}
-      />
+      <FindingAuditDrawer findingId={auditFindingId} onClose={() => setAuditFindingId(null)} />
 
       {/* Dossier print view (Étape 5) */}
       <DossierPrintView

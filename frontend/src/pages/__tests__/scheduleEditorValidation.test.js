@@ -210,7 +210,7 @@ describe('ProfileHeatmapTab — useMemo optimization', () => {
   });
 
   it('uses useMemo for DailyProfileChart chartData', () => {
-    expect(code).toMatch(/useMemo\(\(\)\s*=>\s*\(dailyProfile/);
+    expect(code).toMatch(/useMemo\(\s*\(\)\s*=>\s*\(dailyProfile/s);
   });
 });
 
@@ -245,10 +245,7 @@ describe('Backend service — V1 error handling', () => {
 // F. Backend route — validate_intervals
 // ============================================================
 describe('Backend route — site_config.py V1.1', () => {
-  const code = readFileSync(
-    resolve(root, '..', 'backend', 'routes', 'site_config.py'),
-    'utf-8'
-  );
+  const code = readFileSync(resolve(root, '..', 'backend', 'routes', 'site_config.py'), 'utf-8');
 
   it('defines validate_intervals function', () => {
     expect(code).toMatch(/def validate_intervals/);

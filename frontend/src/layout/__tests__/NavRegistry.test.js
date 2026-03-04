@@ -140,9 +140,7 @@ describe('Expert filtering', () => {
   });
 
   it('normal mode shows ~7 items (excluding expertOnly items)', () => {
-    const normalItems = normalSections.flatMap((s) =>
-      s.items.filter((item) => !item.expertOnly)
-    );
+    const normalItems = normalSections.flatMap((s) => s.items.filter((item) => !item.expertOnly));
     expect(normalItems.length).toBeGreaterThanOrEqual(6);
     expect(normalItems.length).toBeLessThanOrEqual(12); // V65: +1 Action Center
   });
@@ -295,8 +293,8 @@ describe('IA coherence', () => {
 
 /* ── Quick Actions ── */
 describe('QUICK_ACTIONS', () => {
-  it('has exactly 4 quick actions', () => {
-    expect(QUICK_ACTIONS).toHaveLength(4);
+  it('has exactly 7 quick actions', () => {
+    expect(QUICK_ACTIONS).toHaveLength(7);
   });
 
   it('each action has key, label, icon, to', () => {
@@ -308,9 +306,12 @@ describe('QUICK_ACTIONS', () => {
     }
   });
 
-  it('all quick action routes exist in ROUTE_MODULE_MAP', () => {
+  it('all quick action base routes resolve to a valid module', () => {
     for (const action of QUICK_ACTIONS) {
-      expect(ROUTE_MODULE_MAP).toHaveProperty(action.to);
+      const basePath = action.to.split('?')[0];
+      const { moduleId } = matchRouteToModule(basePath);
+      const moduleKeys = NAV_MODULES.map((m) => m.key);
+      expect(moduleKeys).toContain(moduleId);
     }
   });
 });
@@ -352,10 +353,21 @@ describe('SIDEBAR_ITEM_TINTS', () => {
 /* ── TINT_PALETTE (Color Life System) ── */
 describe('TINT_PALETTE', () => {
   const REQUIRED_KEYS = [
-    'headerBand', 'panelHeader', 'softBg', 'hoverBg',
-    'activeBg', 'activeText', 'activeBorder',
-    'railActiveBg', 'railActiveRing', 'railActiveText',
-    'dot', 'icon', 'pillBg', 'pillText', 'pillRing',
+    'headerBand',
+    'panelHeader',
+    'softBg',
+    'hoverBg',
+    'activeBg',
+    'activeText',
+    'activeBorder',
+    'railActiveBg',
+    'railActiveRing',
+    'railActiveText',
+    'dot',
+    'icon',
+    'pillBg',
+    'pillText',
+    'pillRing',
   ];
 
   it('has entries for all 5 module tints', () => {
@@ -454,10 +466,10 @@ describe('Route coverage guard-rails', () => {
     }
   });
 
-  it('anomalies label is Centre d\'actions (FR)', () => {
+  it('anomalies label is Anomalies (FR)', () => {
     const anomalies = ALL_NAV_ITEMS.find((item) => item.to === '/anomalies');
     expect(anomalies).toBeDefined();
-    expect(anomalies.label).toBe("Centre d'actions");
+    expect(anomalies.label).toBe('Anomalies');
   });
 
   it('dynamic routes resolve correctly (not fallback to cockpit)', () => {
@@ -485,8 +497,20 @@ describe('Guard-rails — IDs and labels', () => {
   });
 
   it('no English words in nav labels (extended blacklist)', () => {
-    const blacklist = ['Dashboard', 'Settings', 'Home', 'Center', 'Knowledge Base',
-      'Overview', 'Reports', 'Search', 'Delete', 'Edit', 'Create', 'Submit'];
+    const blacklist = [
+      'Dashboard',
+      'Settings',
+      'Home',
+      'Center',
+      'Knowledge Base',
+      'Overview',
+      'Reports',
+      'Search',
+      'Delete',
+      'Edit',
+      'Create',
+      'Submit',
+    ];
     for (const item of ALL_NAV_ITEMS) {
       for (const word of blacklist) {
         expect(item.label.toLowerCase()).not.toContain(word.toLowerCase());

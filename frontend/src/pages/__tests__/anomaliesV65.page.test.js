@@ -167,11 +167,13 @@ describe('E. App.jsx — routing', () => {
   });
 
   it('/anomalies route uses AnomaliesPage, not a Navigate redirect', () => {
-    // Check line by line so dotall does not span into adjacent routes
-    const routeLine = code.split('\n').find(l => l.includes('path="/anomalies"'));
-    expect(routeLine).toBeDefined();
-    expect(routeLine).not.toMatch(/Navigate/);
-    expect(routeLine).toMatch(/AnomaliesPage/);
+    // Find the route block (may span multiple lines after formatting)
+    const lines = code.split('\n');
+    const idx = lines.findIndex((l) => l.includes('path="/anomalies"'));
+    expect(idx).toBeGreaterThanOrEqual(0);
+    const routeBlock = lines.slice(idx, idx + 6).join('\n');
+    expect(routeBlock).not.toMatch(/Navigate/);
+    expect(routeBlock).toMatch(/AnomaliesPage/);
   });
 });
 
@@ -183,8 +185,8 @@ describe('F. NavRegistry.js — navigation', () => {
     expect(code).toMatch(/\/anomalies.*operations/);
   });
 
-  it('"Centre d\'actions" label present in nav items', () => {
-    expect(code).toMatch(/Centre d'actions/);
+  it('"Anomalies" label present in nav items', () => {
+    expect(code).toMatch(/Anomalies/);
   });
 });
 

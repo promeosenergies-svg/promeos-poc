@@ -22,11 +22,11 @@ import { describe, test, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import path from 'path';
 
-const src     = (rel) => readFileSync(path.resolve(__dirname, '..', '..', rel), 'utf8');
+const src = (rel) => readFileSync(path.resolve(__dirname, '..', '..', rel), 'utf8');
 
-const HEATMAP_JSX   = src('components/PatrimoineHeatmap.jsx');
+const HEATMAP_JSX = src('components/PatrimoineHeatmap.jsx');
 const PATRIMOINE_JSX = src('pages/Patrimoine.jsx');
-const API_JS        = src('services/api.js');
+const API_JS = src('services/api.js');
 
 // ── PatrimoineHeatmap.jsx — structure composant ───────────────────────────
 
@@ -331,7 +331,7 @@ describe('PatrimoineHeatmap V63-scale — Top-15 tiles', () => {
   test('bandeau affiche visibleTiles.length / filtered.length (Top risques)', () => {
     expect(HEATMAP_JSX).toMatch(/visibleTiles\.length/);
     expect(HEATMAP_JSX).toMatch(/filtered\.length/);
-    expect(HEATMAP_JSX).toMatch(/Top risques/);
+    expect(HEATMAP_JSX).toMatch(/Top\s+risques/s);
   });
 
   // cas (b) : 20 sites → slice(0, MAX_TILES) pour sélection top-15
@@ -347,7 +347,9 @@ describe('PatrimoineHeatmap V63-scale — Top-15 tiles', () => {
   // cas (c) : filtres réduisent à 8 → pas de bandeau (8 ≤ 15)
   test('visibleTiles = filtered quand filtered.length ≤ MAX_TILES (no banner)', () => {
     // La condition ternaire couvre les deux cas
-    expect(HEATMAP_JSX).toMatch(/filtered\.length\s*>\s*MAX_TILES[\s\S]*?\?[\s\S]*?:[\s\S]*?filtered/);
+    expect(HEATMAP_JSX).toMatch(
+      /filtered\.length\s*>\s*MAX_TILES[\s\S]*?\?[\s\S]*?:[\s\S]*?filtered/
+    );
   });
 
   // cas (d) : CTA "Voir tous les sites" uniquement quand showTopBanner

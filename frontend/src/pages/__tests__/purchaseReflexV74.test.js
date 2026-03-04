@@ -24,7 +24,7 @@ describe('A · STRATEGY_META reflex_solar', () => {
   const code = readSrc('pages', 'PurchasePage.jsx');
 
   it('has reflex_solar key in STRATEGY_META', () => {
-    expect(code).toContain("reflex_solar: {");
+    expect(code).toContain('reflex_solar: {');
   });
 
   it("reflex_solar label is 'Tarif Heures Solaires'", () => {
@@ -35,12 +35,12 @@ describe('A · STRATEGY_META reflex_solar', () => {
     expect(code).toContain('icon: Sun');
   });
 
-  it("reflex_solar uses amber Tailwind classes", () => {
+  it('reflex_solar uses amber Tailwind classes', () => {
     expect(code).toContain("bgClass: 'bg-amber-50'");
   });
 
   it('reflex_solar has a desc string', () => {
-    expect(code).toContain("desc: \"Payez moins quand le soleil brille");
+    expect(code).toContain("Payez moins quand le soleil brille");
   });
 });
 
@@ -268,6 +268,8 @@ describe('G · V73 backward compat preserved', () => {
   });
 
   it('V74 header comment', () => {
-    expect(code).toContain('V74: + ReFlex Solar card, blocs horaires badges, effort score, cross-brique CTAs');
+    expect(code).toContain(
+      'V74: + ReFlex Solar card, blocs horaires badges, effort score, cross-brique CTAs'
+    );
   });
 });

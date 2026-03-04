@@ -228,7 +228,7 @@ describe('AM · api.js consumption functions', () => {
     'getEmsTimeseries',
   ];
 
-  required.forEach(fn => {
+  required.forEach((fn) => {
     it(`exports ${fn}`, () => {
       expect(api).toMatch(new RegExp(`export (const|function) ${fn}`));
     });
@@ -658,7 +658,6 @@ describe('AV · P1.1 drill-down CTAs', () => {
   });
 });
 
-
 // ============================================================
 // AW. Portfolio V1 — Backend endpoints
 // ============================================================
@@ -695,7 +694,7 @@ describe('AW · Portfolio V1 backend endpoints', () => {
   });
 
   it('sites endpoint supports sort, confidence, search, pagination', () => {
-    expect(code).toMatch(/sort.*kwh_desc/);
+    expect(code).toMatch(/sort.*kwh_desc/s);
     expect(code).toMatch(/confidence/);
     expect(code).toMatch(/search/);
     expect(code).toMatch(/limit.*Query/);
@@ -707,7 +706,6 @@ describe('AW · Portfolio V1 backend endpoints', () => {
     expect(main).toMatch(/portfolio_router/);
   });
 });
-
 
 // ============================================================
 // AX. Portfolio V1 — Frontend page
@@ -769,7 +767,6 @@ describe('AX · ConsumptionPortfolioPage structure', () => {
   });
 });
 
-
 // ============================================================
 // AY. Portfolio V1 — Route & Tab integration
 // ============================================================
@@ -781,7 +778,7 @@ describe('AY · Portfolio route & tab integration', () => {
 
   it('App.jsx has /consommations/portfolio route', () => {
     const app = readSrc('App.jsx');
-    expect(app).toMatch(/path="portfolio".*ConsumptionPortfolioPage/);
+    expect(app).toMatch(/path="portfolio".*ConsumptionPortfolioPage/s);
   });
 
   it('ConsommationsPage has Portefeuille tab', () => {
@@ -803,7 +800,6 @@ describe('AY · Portfolio route & tab integration', () => {
   });
 });
 
-
 // ============================================================
 // AZ. KPI Explorer coherence fix
 // ============================================================
@@ -823,7 +819,6 @@ describe('AZ · KPI Explorer coherence — totalKwh from hphc', () => {
     expect(code).toMatch(/hphc\?\.total_cost_eur/);
   });
 });
-
 
 // ============================================================
 // BA. Portfolio V1.1 — Impact EUR + Actions + CTA groupee
@@ -1007,7 +1002,7 @@ describe('BE · Portfolio V1.3 uses route registry (no hardcoded routes)', () =>
     expect(code).toMatch(/toConsoExplorer.*site_id.*siteId/);
     expect(code).toMatch(/toConsoDiag.*site_id.*siteId/);
     expect(code).toMatch(/toBillIntel.*site_id.*siteId/);
-    expect(code).toMatch(/toActionNew.*source.*portfolio_toplist/);
+    expect(code).toMatch(/toActionNew.*source.*portfolio_toplist/s);
   });
 
   it('table row actions use route registry helpers', () => {
@@ -1195,7 +1190,11 @@ describe('BK · Route registry helpers', () => {
   });
 
   it('toConsoExplorer supports date_from / date_to', () => {
-    const url = routes.toConsoExplorer({ site_id: 1, date_from: '2025-01-01', date_to: '2025-01-31' });
+    const url = routes.toConsoExplorer({
+      site_id: 1,
+      date_from: '2025-01-01',
+      date_to: '2025-01-31',
+    });
     expect(url).toContain('date_from=2025-01-01');
     expect(url).toContain('date_to=2025-01-31');
   });
@@ -1258,7 +1257,7 @@ describe('BK · Route registry helpers', () => {
       routes.toActionsList(),
       routes.toConsoImport(),
     ];
-    urls.forEach(url => {
+    urls.forEach((url) => {
       expect(url).toMatch(/^\//);
       expect(url).not.toContain('undefined');
       expect(url).not.toContain('null');

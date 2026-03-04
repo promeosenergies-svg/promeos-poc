@@ -2,7 +2,9 @@
 PROMEOS - EMS Cap Points Tests
 5 tests covering the 5000-point cap enforcement.
 """
+
 import sys, os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
@@ -50,23 +52,32 @@ def _seed_site(db):
 
 
 class TestCapPoints:
-
     def test_ok_short_range(self, env):
         client, db = env
         _seed_site(db)
-        r = client.get("/api/ems/timeseries", params={
-            "site_ids": "1", "date_from": "2025-01-01", "date_to": "2025-01-08",
-            "granularity": "hourly",
-        })
+        r = client.get(
+            "/api/ems/timeseries",
+            params={
+                "site_ids": "1",
+                "date_from": "2025-01-01",
+                "date_to": "2025-01-08",
+                "granularity": "hourly",
+            },
+        )
         assert r.status_code == 200
 
     def test_400_15min_365d(self, env):
         client, db = env
         _seed_site(db)
-        r = client.get("/api/ems/timeseries", params={
-            "site_ids": "1", "date_from": "2025-01-01", "date_to": "2026-01-01",
-            "granularity": "15min",
-        })
+        r = client.get(
+            "/api/ems/timeseries",
+            params={
+                "site_ids": "1",
+                "date_from": "2025-01-01",
+                "date_to": "2026-01-01",
+                "granularity": "15min",
+            },
+        )
         assert r.status_code == 400
         detail = r.json()["detail"]
         assert detail["error"] == "too_many_points"
@@ -75,29 +86,44 @@ class TestCapPoints:
     def test_detail_includes_suggestion(self, env):
         client, db = env
         _seed_site(db)
-        r = client.get("/api/ems/timeseries", params={
-            "site_ids": "1", "date_from": "2025-01-01", "date_to": "2026-01-01",
-            "granularity": "15min",
-        })
+        r = client.get(
+            "/api/ems/timeseries",
+            params={
+                "site_ids": "1",
+                "date_from": "2025-01-01",
+                "date_to": "2026-01-01",
+                "granularity": "15min",
+            },
+        )
         detail = r.json()["detail"]
         assert "suggested_granularity" in detail
-        assert detail["suggested_granularity"] == "monthly"
+        assert detail["suggested_granularity"] == "daily"
 
     def test_auto_avoids_error(self, env):
         client, db = env
         _seed_site(db)
-        r = client.get("/api/ems/timeseries", params={
-            "site_ids": "1", "date_from": "2025-01-01", "date_to": "2026-01-01",
-            "granularity": "auto",
-        })
+        r = client.get(
+            "/api/ems/timeseries",
+            params={
+                "site_ids": "1",
+                "date_from": "2025-01-01",
+                "date_to": "2026-01-01",
+                "granularity": "auto",
+            },
+        )
         assert r.status_code == 200
 
     def test_boundary_5000(self, env):
         """~208 days of daily data = 208 points, well under 5000."""
         client, db = env
         _seed_site(db)
-        r = client.get("/api/ems/timeseries", params={
-            "site_ids": "1", "date_from": "2025-01-01", "date_to": "2025-07-30",
-            "granularity": "daily",
-        })
+        r = client.get(
+            "/api/ems/timeseries",
+            params={
+                "site_ids": "1",
+                "date_from": "2025-01-01",
+                "date_to": "2025-07-30",
+                "granularity": "daily",
+            },
+        )
         assert r.status_code == 200

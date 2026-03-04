@@ -11,6 +11,7 @@ INV-8:  shadow billing = kwh * prix_ref
 INV-9:  compteur requires site_id (FK NOT NULL)
 INV-10: staging activation blocked by critical findings
 """
+
 import sys
 import os
 
@@ -23,12 +24,31 @@ from sqlalchemy.pool import StaticPool
 from sqlalchemy.exc import IntegrityError
 
 from models import (
-    Base, Organisation, EntiteJuridique, Portefeuille, Site, Compteur,
-    Obligation, Alerte,
-    EnergyInvoice, EnergyInvoiceLine, EnergyContract,
-    StagingBatch, StagingSite, StagingCompteur, QualityFinding,
-    StatutConformite, TypeObligation, TypeCompteur, TypeSite, SeveriteAlerte,
-    StagingStatus, ImportSourceType, QualityRuleSeverity, BillingEnergyType, InvoiceLineType,
+    Base,
+    Organisation,
+    EntiteJuridique,
+    Portefeuille,
+    Site,
+    Compteur,
+    Obligation,
+    Alerte,
+    EnergyInvoice,
+    EnergyInvoiceLine,
+    EnergyContract,
+    StagingBatch,
+    StagingSite,
+    StagingCompteur,
+    QualityFinding,
+    StatutConformite,
+    TypeObligation,
+    TypeCompteur,
+    TypeSite,
+    SeveriteAlerte,
+    StagingStatus,
+    ImportSourceType,
+    QualityRuleSeverity,
+    BillingEnergyType,
+    InvoiceLineType,
     not_deleted,
 )
 
@@ -36,6 +56,7 @@ from models import (
 # ══════════════════════════════════════════════════════════════════════════════
 # Fixtures
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 @pytest.fixture
 def db():
@@ -87,6 +108,7 @@ def _make_site(db, pf, nom="Site Test", risque=0, actif=True):
 # INV-1: cockpit total_sites == actual db count
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestInv1TotalSites:
     def test_total_matches_db_count(self, db):
         """total_sites from cockpit logic must equal real DB count for org."""
@@ -108,6 +130,7 @@ class TestInv1TotalSites:
     def test_soft_deleted_excluded(self, db):
         """Soft-deleted sites must NOT be counted."""
         from datetime import datetime, timezone
+
         org, ej, pf = _make_org(db)
         s1 = _make_site(db, pf, nom="Active")
         s2 = _make_site(db, pf, nom="Deleted")
@@ -127,10 +150,12 @@ class TestInv1TotalSites:
 # INV-2: risque_financier == SUM(sites.risque_financier_euro)
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestInv2RisqueFinancier:
     def test_risque_is_sum(self, db):
         """risque_financier_euro must equal SUM of all site risks for org."""
         from sqlalchemy import func
+
         org, ej, pf = _make_org(db)
         _make_site(db, pf, nom="S1", risque=5000)
         _make_site(db, pf, nom="S2", risque=12000)
@@ -151,13 +176,11 @@ class TestInv2RisqueFinancier:
 # INV-3: conformite hierarchy NOK > A_RISQUE > OK
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestInv3ConformiteHierarchy:
     def _compute_conformite(self, db, org_id, site_ids):
         """Reproduce dashboard_2min conformite logic."""
-        obligations = (
-            db.query(Obligation).filter(Obligation.site_id.in_(site_ids)).all()
-            if site_ids else []
-        )
+        obligations = db.query(Obligation).filter(Obligation.site_id.in_(site_ids)).all() if site_ids else []
         if not obligations:
             return {"label": "A evaluer", "color": "gray"}
 
@@ -216,6 +239,7 @@ class TestInv3ConformiteHierarchy:
 # INV-5: cockpit scoped to org — no cross-org data
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestInv5OrgScoping:
     def test_sites_only_from_target_org(self, db):
         """Sites from org2 must NEVER appear in org1's cockpit query."""
@@ -241,26 +265,55 @@ class TestInv5OrgScoping:
         org2, ej2, pf2 = _make_org(db, nom="Org2")
         s1 = _make_site(db, pf1, nom="S1")
         s2 = _make_site(db, pf2, nom="S2")
-        from datetime import datetime
-        db.add(Alerte(site_id=s1.id, titre="Alert org1", description="Detail", resolue=False, severite=SeveriteAlerte.WARNING, timestamp=datetime.now(timezone.utc)))
-        db.add(Alerte(site_id=s2.id, titre="Alert org2", description="Detail", resolue=False, severite=SeveriteAlerte.CRITICAL, timestamp=datetime.now(timezone.utc)))
+        from datetime import datetime, timezone
+
+        db.add(
+            Alerte(
+                site_id=s1.id,
+                titre="Alert org1",
+                description="Detail",
+                resolue=False,
+                severite=SeveriteAlerte.WARNING,
+                timestamp=datetime.now(timezone.utc),
+            )
+        )
+        db.add(
+            Alerte(
+                site_id=s2.id,
+                titre="Alert org2",
+                description="Detail",
+                resolue=False,
+                severite=SeveriteAlerte.CRITICAL,
+                timestamp=datetime.now(timezone.utc),
+            )
+        )
         db.commit()
 
         # Cockpit query: alertes for org1 only
-        site_ids_org1 = [s.id for s in not_deleted(db.query(Site), Site)
-                         .join(Portefeuille).join(EntiteJuridique)
-                         .filter(EntiteJuridique.organisation_id == org1.id)
-                         .with_entities(Site.id).all()]
-        alertes = db.query(Alerte).filter(
-            Alerte.resolue == False,
-            Alerte.site_id.in_(site_ids_org1),
-        ).count()
+        site_ids_org1 = [
+            s.id
+            for s in not_deleted(db.query(Site), Site)
+            .join(Portefeuille)
+            .join(EntiteJuridique)
+            .filter(EntiteJuridique.organisation_id == org1.id)
+            .with_entities(Site.id)
+            .all()
+        ]
+        alertes = (
+            db.query(Alerte)
+            .filter(
+                Alerte.resolue == False,
+                Alerte.site_id.in_(site_ids_org1),
+            )
+            .count()
+        )
         assert alertes == 1
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 # INV-7: facture total = sum(lignes) — R8 rule with 2% tolerance
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 class TestInv7InvoiceLinesSum:
     def test_mismatch_detected_above_2pct(self, db):
@@ -270,15 +323,22 @@ class TestInv7InvoiceLinesSum:
         org, ej, pf = _make_org(db)
         site = _make_site(db, pf)
         invoice = EnergyInvoice(
-            site_id=site.id, total_eur=1000.0, energy_kwh=5000,
-            invoice_number="F-001",        )
+            site_id=site.id,
+            total_eur=1000.0,
+            energy_kwh=5000,
+            invoice_number="F-001",
+        )
         db.add(invoice)
         db.flush()
 
         # Lines sum = 800 → 20% off → should trigger
         lines = [
-            EnergyInvoiceLine(invoice_id=invoice.id, label="Energie", amount_eur=500.0, line_type=InvoiceLineType.ENERGY),
-            EnergyInvoiceLine(invoice_id=invoice.id, label="Reseau", amount_eur=300.0, line_type=InvoiceLineType.NETWORK),
+            EnergyInvoiceLine(
+                invoice_id=invoice.id, label="Energie", amount_eur=500.0, line_type=InvoiceLineType.ENERGY
+            ),
+            EnergyInvoiceLine(
+                invoice_id=invoice.id, label="Reseau", amount_eur=300.0, line_type=InvoiceLineType.NETWORK
+            ),
         ]
         db.add_all(lines)
         db.commit()
@@ -295,15 +355,22 @@ class TestInv7InvoiceLinesSum:
         org, ej, pf = _make_org(db)
         site = _make_site(db, pf)
         invoice = EnergyInvoice(
-            site_id=site.id, total_eur=1000.0, energy_kwh=5000,
-            invoice_number="F-002",        )
+            site_id=site.id,
+            total_eur=1000.0,
+            energy_kwh=5000,
+            invoice_number="F-002",
+        )
         db.add(invoice)
         db.flush()
 
         # Lines sum = 990 → 1% off → within tolerance
         lines = [
-            EnergyInvoiceLine(invoice_id=invoice.id, label="Energie", amount_eur=600.0, line_type=InvoiceLineType.ENERGY),
-            EnergyInvoiceLine(invoice_id=invoice.id, label="Reseau", amount_eur=390.0, line_type=InvoiceLineType.NETWORK),
+            EnergyInvoiceLine(
+                invoice_id=invoice.id, label="Energie", amount_eur=600.0, line_type=InvoiceLineType.ENERGY
+            ),
+            EnergyInvoiceLine(
+                invoice_id=invoice.id, label="Reseau", amount_eur=390.0, line_type=InvoiceLineType.NETWORK
+            ),
         ]
         db.add_all(lines)
         db.commit()
@@ -316,6 +383,7 @@ class TestInv7InvoiceLinesSum:
 # INV-8: shadow billing = kwh * prix_ref
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestInv8ShadowBilling:
     def test_shadow_formula(self, db):
         """shadow_total = energy_kwh * price_ref (default 0.18 for elec)."""
@@ -324,8 +392,11 @@ class TestInv8ShadowBilling:
         org, ej, pf = _make_org(db)
         site = _make_site(db, pf)
         invoice = EnergyInvoice(
-            site_id=site.id, total_eur=200.0, energy_kwh=1000,
-            invoice_number="F-003",        )
+            site_id=site.id,
+            total_eur=200.0,
+            energy_kwh=1000,
+            invoice_number="F-003",
+        )
         db.add(invoice)
         db.commit()
 
@@ -342,14 +413,18 @@ class TestInv8ShadowBilling:
         org, ej, pf = _make_org(db)
         site = _make_site(db, pf)
         contract = EnergyContract(
-            site_id=site.id, supplier_name="EDF",
+            site_id=site.id,
+            supplier_name="EDF",
             energy_type=BillingEnergyType.ELEC,
             price_ref_eur_per_kwh=0.22,
         )
         db.add(contract)
         invoice = EnergyInvoice(
-            site_id=site.id, total_eur=250.0, energy_kwh=1000,
-            invoice_number="F-004",            contract_id=None,
+            site_id=site.id,
+            total_eur=250.0,
+            energy_kwh=1000,
+            invoice_number="F-004",
+            contract_id=None,
         )
         db.add(invoice)
         db.commit()
@@ -365,8 +440,11 @@ class TestInv8ShadowBilling:
         org, ej, pf = _make_org(db)
         site = _make_site(db, pf)
         invoice = EnergyInvoice(
-            site_id=site.id, total_eur=100.0, energy_kwh=0,
-            invoice_number="F-005",        )
+            site_id=site.id,
+            total_eur=100.0,
+            energy_kwh=0,
+            invoice_number="F-005",
+        )
         db.add(invoice)
         db.commit()
 
@@ -377,6 +455,7 @@ class TestInv8ShadowBilling:
 # ══════════════════════════════════════════════════════════════════════════════
 # INV-9: compteur requires site_id (FK NOT NULL)
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 class TestInv9CompteurSiteFk:
     def test_compteur_without_site_raises(self, db):
@@ -409,6 +488,7 @@ class TestInv9CompteurSiteFk:
 # ══════════════════════════════════════════════════════════════════════════════
 # INV-10: staging activation blocked by unresolved critical findings
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 class TestInv10StagingQualityGate:
     def test_activation_blocked_by_critical_finding(self, db):

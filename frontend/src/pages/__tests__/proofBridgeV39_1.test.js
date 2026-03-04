@@ -12,8 +12,7 @@ import { buildProofLink } from '../../models/proofLinkModel.js';
 import { STEPS as WIZARD_STEPS } from '../tertiaire/TertiaireWizardPage.jsx';
 
 // ── Helper: read source file ────────────────────────────────────────────────
-const src = (rel) =>
-  fs.readFileSync(path.resolve(__dirname, '..', '..', rel), 'utf-8');
+const src = (rel) => fs.readFileSync(path.resolve(__dirname, '..', '..', rel), 'utf-8');
 
 // ══════════════════════════════════════════════════════════════════════════════
 // 1. ProofDepositCTA component
@@ -27,8 +26,8 @@ describe('ProofDepositCTA component source', () => {
   });
 
   it('imports Upload icon from lucide-react', () => {
-    expect(code).toContain("Upload");
-    expect(code).toContain("lucide-react");
+    expect(code).toContain('Upload');
+    expect(code).toContain('lucide-react');
   });
 
   it('uses useNavigate for routing', () => {
@@ -57,7 +56,7 @@ describe('ProofDepositCTA component source', () => {
   });
 
   it('default label is Déposer une preuve', () => {
-    expect(code).toContain("Déposer une preuve");
+    expect(code).toContain('Déposer une preuve');
   });
 });
 
@@ -138,7 +137,7 @@ describe('GUARD TertiaireWizardPage proof section', () => {
     // Resilient to step reordering: derive the confirmation step index from STEPS
     const confirmIdx = WIZARD_STEPS.findIndex((s) => s.key === 'confirmation');
     expect(confirmIdx).toBeGreaterThanOrEqual(0);
-    expect(code).toContain(`case ${confirmIdx}: return true;`);
+    expect(code).toMatch(new RegExp(`case ${confirmIdx}:\\s*return true;`));
   });
 });
 
@@ -151,7 +150,7 @@ describe('GUARD TertiaireEfaDetailPage proof block', () => {
 
   it('imports ProofDepositCTA (not raw buildProofLink)', () => {
     expect(code).toContain("import ProofDepositCTA from './components/ProofDepositCTA'");
-    expect(code).not.toContain("import { buildProofLink }");
+    expect(code).not.toContain('import { buildProofLink }');
   });
 
   it('ProofDepositCTA is always visible (not gated by proofs.length === 0)', () => {
@@ -211,7 +210,7 @@ describe('GUARD TertiaireAnomaliesPage proof buttons', () => {
   });
 
   it('button label is Déposer la preuve', () => {
-    expect(code).toContain("Déposer la preuve");
+    expect(code).toContain('Déposer la preuve');
   });
 });
 
@@ -241,7 +240,7 @@ describe('GUARD no new backend API', () => {
 describe('ProofDepositCTA status=draft param', () => {
   it('source appends status=draft to the link', () => {
     const code = src('pages/tertiaire/components/ProofDepositCTA.jsx');
-    expect(code).toContain("status=draft");
+    expect(code).toContain('status=draft');
   });
 });
 

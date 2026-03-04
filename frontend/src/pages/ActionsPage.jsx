@@ -6,19 +6,53 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useSearchParams, useParams } from 'react-router-dom';
 import {
-  Plus, Download, Printer, ListChecks, RefreshCw,
-  AlertTriangle, BadgeEuro, ShieldCheck,
-  Users, ArrowUpDown, UserPlus, FileText,
-  Columns3, List, ChevronRight, ChevronDown, Search, CheckCircle, X, CalendarDays, Lock,
+  Plus,
+  Download,
+  Printer,
+  ListChecks,
+  RefreshCw,
+  AlertTriangle,
+  BadgeEuro,
+  ShieldCheck,
+  Users,
+  ArrowUpDown,
+  UserPlus,
+  FileText,
+  Columns3,
+  List,
+  ChevronRight,
+  ChevronDown,
+  Search,
+  CheckCircle,
+  X,
+  CalendarDays,
+  Lock,
 } from 'lucide-react';
-import { Card, CardBody, Badge, Button, Select, Pagination, EmptyState, Tabs, TrustBadge, PageShell } from '../ui';
+import {
+  Card,
+  CardBody,
+  Badge,
+  Button,
+  Select,
+  Pagination,
+  EmptyState,
+  Tabs,
+  TrustBadge,
+  PageShell,
+} from '../ui';
 import { Table, Thead, Tbody, Th, Tr, Td, ThCheckbox, TdCheckbox } from '../ui';
 import { useToast } from '../ui/ToastProvider';
 import Modal from '../ui/Modal';
 import ActionDetailDrawer from '../components/ActionDetailDrawer';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
 import ROISummaryBar from '../components/ROISummaryBar';
-import { getActionsList, syncActions, patchAction, exportActionsCSV, downloadAuditPDF } from '../services/api';
+import {
+  getActionsList,
+  syncActions,
+  patchAction,
+  exportActionsCSV,
+  downloadAuditPDF,
+} from '../services/api';
 import { useScope } from '../contexts/ScopeContext';
 import { useExpertMode } from '../contexts/ExpertModeContext';
 import { track } from '../services/tracker';
@@ -26,9 +60,27 @@ import { ACTION_STATUS_LABELS, ACTION_TYPE_LABELS } from '../domain/compliance/c
 import { groupActionsByWeek, computeCloseabilityBadge } from '../models/dossierModel';
 
 /* Backend → frontend field mappers */
-const SOURCE_MAP = { compliance: 'conformite', consumption: 'conso', billing: 'facture', purchase: 'maintenance', insight: 'operat' };
-const STATUS_TO_FE = { open: 'backlog', in_progress: 'in_progress', done: 'done', blocked: 'planned', false_positive: 'done' };
-const STATUS_TO_BE = { backlog: 'open', in_progress: 'in_progress', done: 'done', planned: 'blocked' };
+const SOURCE_MAP = {
+  compliance: 'conformite',
+  consumption: 'conso',
+  billing: 'facture',
+  purchase: 'maintenance',
+  insight: 'operat',
+  copilot: 'copilot',
+};
+const STATUS_TO_FE = {
+  open: 'backlog',
+  in_progress: 'in_progress',
+  done: 'done',
+  blocked: 'planned',
+  false_positive: 'done',
+};
+const STATUS_TO_BE = {
+  backlog: 'open',
+  in_progress: 'in_progress',
+  done: 'done',
+  planned: 'blocked',
+};
 const PRIO_TO_FE = { 1: 'critical', 2: 'high', 3: 'medium', 4: 'low', 5: 'low' };
 
 function mapBackendAction(a) {
@@ -37,7 +89,7 @@ function mapBackendAction(a) {
   return {
     id: a.id,
     titre: a.title,
-    type: isOperat ? 'operat' : (SOURCE_MAP[a.source_type] || a.source_type),
+    type: isOperat ? 'operat' : SOURCE_MAP[a.source_type] || a.source_type,
     site_id: a.site_id,
     site_nom: `Site ${a.site_id || '?'}`,
     impact_eur: a.estimated_gain_eur || 0,
@@ -59,14 +111,21 @@ const TYPE_BADGE = {
   facture: { status: 'info', label: 'Facture' },
   maintenance: { status: 'neutral', label: 'Maintenance' },
   operat: { status: 'crit', label: 'OPERAT' },
+  copilot: { status: 'info', label: 'Copilot' },
 };
 
 const PRIORITY_BADGE = {
-  critical: 'crit', high: 'warn', medium: 'info', low: 'neutral',
+  critical: 'crit',
+  high: 'warn',
+  medium: 'info',
+  low: 'neutral',
 };
 
 const PRIORITY_LABEL = {
-  critical: 'P1', high: 'P2', medium: 'P3', low: 'P4',
+  critical: 'P1',
+  high: 'P2',
+  medium: 'P3',
+  low: 'P4',
 };
 
 const PRIORITY_RANK = { critical: 4, high: 3, medium: 2, low: 1 };
@@ -74,10 +133,10 @@ const PRIORITY_RANK = { critical: 4, high: 3, medium: 2, low: 1 };
 const STATUT_LABELS = ACTION_STATUS_LABELS;
 
 const STATUT_PILL = {
-  backlog:     'bg-gray-100 text-gray-700',
-  planned:     'bg-blue-100 text-blue-700',
+  backlog: 'bg-gray-100 text-gray-700',
+  planned: 'bg-blue-100 text-blue-700',
   in_progress: 'bg-amber-100 text-amber-700',
-  done:        'bg-green-100 text-green-700',
+  done: 'bg-green-100 text-green-700',
 };
 
 const STATUT_TABS = [
@@ -90,7 +149,10 @@ const TYPE_OPTIONS = [
   ...Object.entries(ACTION_TYPE_LABELS).map(([value, label]) => ({ value, label })),
 ];
 
-const BULK_STATUS_OPTIONS = Object.entries(ACTION_STATUS_LABELS).map(([value, label]) => ({ value, label }));
+const BULK_STATUS_OPTIONS = Object.entries(ACTION_STATUS_LABELS).map(([value, label]) => ({
+  value,
+  label,
+}));
 
 const GROUP_OPTIONS = [
   { value: 'none', label: 'Pas de groupement' },
@@ -104,11 +166,21 @@ const GROUP_OPTIONS = [
 const QUICK_VIEWS = [
   { id: 'overdue', label: 'En retard', icon: AlertTriangle, color: 'text-red-600' },
   { id: 'high_impact', label: 'Impact élevé', icon: BadgeEuro, color: 'text-amber-600' },
-  { id: 'conformite_crit', label: 'Critique conformité', icon: ShieldCheck, color: 'text-blue-600' },
+  {
+    id: 'conformite_crit',
+    label: 'Critique conformité',
+    icon: ShieldCheck,
+    color: 'text-blue-600',
+  },
 ];
 
 const KANBAN_COLUMNS = ['backlog', 'planned', 'in_progress', 'done'];
-const KANBAN_DOT = { backlog: 'bg-gray-400', planned: 'bg-blue-500', in_progress: 'bg-amber-500', done: 'bg-green-500' };
+const KANBAN_DOT = {
+  backlog: 'bg-gray-400',
+  planned: 'bg-blue-500',
+  in_progress: 'bg-amber-500',
+  done: 'bg-green-500',
+};
 
 function isOverdue(action) {
   if (!action.due_date || action.statut === 'done') return false;
@@ -127,12 +199,20 @@ function defaultSort(a, b) {
 }
 
 /* ── Kanban Board ────────────────────────────────────────────── */
-function KanbanBoard({ actions, onStatusChange, onCardClick, selected, onToggleSelect: _onToggleSelect }) {
+function KanbanBoard({
+  actions,
+  onStatusChange,
+  onCardClick,
+  selected,
+  onToggleSelect: _onToggleSelect,
+}) {
   const [dragId, setDragId] = useState(null);
 
   const columnActions = useMemo(() => {
     const map = {};
-    KANBAN_COLUMNS.forEach(col => { map[col] = actions.filter(a => a.statut === col); });
+    KANBAN_COLUMNS.forEach((col) => {
+      map[col] = actions.filter((a) => a.statut === col);
+    });
     return map;
   }, [actions]);
 
@@ -156,7 +236,7 @@ function KanbanBoard({ actions, onStatusChange, onCardClick, selected, onToggleS
 
   return (
     <div className="grid grid-cols-4 gap-4">
-      {KANBAN_COLUMNS.map(col => (
+      {KANBAN_COLUMNS.map((col) => (
         <div
           key={col}
           onDragOver={handleDragOver}
@@ -169,7 +249,7 @@ function KanbanBoard({ actions, onStatusChange, onCardClick, selected, onToggleS
             <span className="text-xs text-gray-400 ml-auto">{columnActions[col].length}</span>
           </div>
           <div className="space-y-2">
-            {columnActions[col].map(a => {
+            {columnActions[col].map((a) => {
               const typeBadge = TYPE_BADGE[a.type] || TYPE_BADGE.maintenance;
               return (
                 <div
@@ -211,15 +291,20 @@ function KanbanBoard({ actions, onStatusChange, onCardClick, selected, onToggleS
 }
 
 /* ── Grouped Table View ──────────────────────────────────────── */
-function GroupedTableView({ actions, groupBy, onCardClick, selected, onToggleSelect: _onToggleSelect, onInlineStatus }) {
+function GroupedTableView({
+  actions,
+  groupBy,
+  onCardClick,
+  selected,
+  onToggleSelect: _onToggleSelect,
+  onInlineStatus,
+}) {
   const [collapsed, setCollapsed] = useState(new Set());
 
   const groups = useMemo(() => {
     const map = {};
-    actions.forEach(a => {
-      const key = groupBy === 'owner'
-        ? (a[groupBy] || 'Non assigné')
-        : (a[groupBy] || 'Non défini');
+    actions.forEach((a) => {
+      const key = groupBy === 'owner' ? a[groupBy] || 'Non assigné' : a[groupBy] || 'Non défini';
       if (!map[key]) map[key] = [];
       map[key].push(a);
     });
@@ -227,7 +312,7 @@ function GroupedTableView({ actions, groupBy, onCardClick, selected, onToggleSel
   }, [actions, groupBy]);
 
   function toggleGroup(key) {
-    setCollapsed(prev => {
+    setCollapsed((prev) => {
       const next = new Set(prev);
       next.has(key) ? next.delete(key) : next.add(key);
       return next;
@@ -242,7 +327,11 @@ function GroupedTableView({ actions, groupBy, onCardClick, selected, onToggleSel
             onClick={() => toggleGroup(key)}
             className="w-full flex items-center gap-2 px-4 py-3 bg-gray-50 hover:bg-gray-100 transition text-left"
           >
-            {collapsed.has(key) ? <ChevronRight size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
+            {collapsed.has(key) ? (
+              <ChevronRight size={16} className="text-gray-400" />
+            ) : (
+              <ChevronDown size={16} className="text-gray-400" />
+            )}
             <span className="text-sm font-semibold text-gray-800">{key}</span>
             <span className="text-xs text-gray-400">{items.length} action(s)</span>
             <span className="ml-auto text-xs font-medium text-gray-500">
@@ -263,36 +352,64 @@ function GroupedTableView({ actions, groupBy, onCardClick, selected, onToggleSel
                 </tr>
               </Thead>
               <Tbody>
-                {items.map(a => {
+                {items.map((a) => {
                   const typeBadge = TYPE_BADGE[a.type] || TYPE_BADGE.maintenance;
                   const overdue = isOverdue(a);
                   return (
                     <Tr key={a.id} selected={selected.has(a.id)} onClick={() => onCardClick(a)}>
                       <Td className="font-medium text-gray-900 max-w-xs truncate">{a.titre}</Td>
-                      <Td><Badge status={typeBadge.status}>{typeBadge.label}</Badge></Td>
-                      <Td><Badge status={PRIORITY_BADGE[a.priorite] || 'neutral'}>{PRIORITY_LABEL[a.priorite]}</Badge></Td>
-                      <Td className="text-right font-medium">{a.impact_eur.toLocaleString()} EUR</Td>
-                      <Td className={`text-sm whitespace-nowrap ${overdue ? 'text-red-600 font-semibold' : ''}`}>
-                        {a.due_date}
-                        {overdue && <span className="ml-1 text-xs bg-red-50 text-red-600 px-1.5 py-0.5 rounded">En retard</span>}
-                        {(() => { const cb = computeCloseabilityBadge(a); return cb.status === 'crit' ? (
-                          <span className="ml-1 text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full font-semibold inline-flex items-center gap-0.5">
-                            <Lock size={9} /> Bloqué
-                          </span>
-                        ) : null; })()}
+                      <Td>
+                        <Badge status={typeBadge.status}>{typeBadge.label}</Badge>
                       </Td>
-                      <Td className="text-sm">{a.owner || <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-400 rounded">Non assigné</span>}</Td>
+                      <Td>
+                        <Badge status={PRIORITY_BADGE[a.priorite] || 'neutral'}>
+                          {PRIORITY_LABEL[a.priorite]}
+                        </Badge>
+                      </Td>
+                      <Td className="text-right font-medium">
+                        {a.impact_eur.toLocaleString()} EUR
+                      </Td>
+                      <Td
+                        className={`text-sm whitespace-nowrap ${overdue ? 'text-red-600 font-semibold' : ''}`}
+                      >
+                        {a.due_date}
+                        {overdue && (
+                          <span className="ml-1 text-xs bg-red-50 text-red-600 px-1.5 py-0.5 rounded">
+                            En retard
+                          </span>
+                        )}
+                        {(() => {
+                          const cb = computeCloseabilityBadge(a);
+                          return cb.status === 'crit' ? (
+                            <span className="ml-1 text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full font-semibold inline-flex items-center gap-0.5">
+                              <Lock size={9} /> Bloqué
+                            </span>
+                          ) : null;
+                        })()}
+                      </Td>
+                      <Td className="text-sm">
+                        {a.owner || (
+                          <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-400 rounded">
+                            Non assigné
+                          </span>
+                        )}
+                      </Td>
                       <Td>
                         <select
                           value={a.statut}
-                          onChange={(e) => { e.stopPropagation(); onInlineStatus(a.id, e.target.value); }}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            onInlineStatus(a.id, e.target.value);
+                          }}
                           onClick={(e) => e.stopPropagation()}
                           className={`text-xs font-medium px-2.5 py-0.5 rounded-full border-0 cursor-pointer
                             appearance-none hover:ring-2 hover:ring-blue-300 transition
                             ${STATUT_PILL[a.statut] || STATUT_PILL.backlog}`}
                         >
-                          {BULK_STATUS_OPTIONS.map(opt => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          {BULK_STATUS_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
                           ))}
                         </select>
                       </Td>
@@ -313,10 +430,38 @@ function WeekView({ actions, onCardClick }) {
   const groups = useMemo(() => groupActionsByWeek(actions), [actions]);
 
   const SECTIONS = [
-    { key: 'overdue', label: 'En retard', items: groups.overdue, dot: 'bg-red-500', bg: 'bg-red-50', border: 'border-red-200' },
-    { key: 'today', label: "Aujourd'hui", items: groups.today, dot: 'bg-amber-500', bg: 'bg-amber-50', border: 'border-amber-200' },
-    { key: 'week', label: '7 prochains jours', items: groups.week, dot: 'bg-blue-500', bg: 'bg-blue-50', border: 'border-blue-200' },
-    { key: 'later', label: 'Plus tard / sans échéance', items: groups.later, dot: 'bg-gray-400', bg: 'bg-gray-50', border: 'border-gray-200' },
+    {
+      key: 'overdue',
+      label: 'En retard',
+      items: groups.overdue,
+      dot: 'bg-red-500',
+      bg: 'bg-red-50',
+      border: 'border-red-200',
+    },
+    {
+      key: 'today',
+      label: "Aujourd'hui",
+      items: groups.today,
+      dot: 'bg-amber-500',
+      bg: 'bg-amber-50',
+      border: 'border-amber-200',
+    },
+    {
+      key: 'week',
+      label: '7 prochains jours',
+      items: groups.week,
+      dot: 'bg-blue-500',
+      bg: 'bg-blue-50',
+      border: 'border-blue-200',
+    },
+    {
+      key: 'later',
+      label: 'Plus tard / sans échéance',
+      items: groups.later,
+      dot: 'bg-gray-400',
+      bg: 'bg-gray-50',
+      border: 'border-gray-200',
+    },
   ];
 
   return (
@@ -346,10 +491,14 @@ function WeekView({ actions, onCardClick }) {
                       <p className="text-sm font-medium text-gray-900 truncate">{a.titre}</p>
                       <div className="flex items-center gap-2 mt-0.5">
                         <Badge status={typeBadge.status}>{typeBadge.label}</Badge>
-                        <Badge status={PRIORITY_BADGE[a.priorite] || 'neutral'}>{PRIORITY_LABEL[a.priorite]}</Badge>
+                        <Badge status={PRIORITY_BADGE[a.priorite] || 'neutral'}>
+                          {PRIORITY_LABEL[a.priorite]}
+                        </Badge>
                         {closeBadge.label && (
-                          <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full
-                            ${closeBadge.status === 'crit' ? 'bg-red-100 text-red-700' : closeBadge.status === 'warn' ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>
+                          <span
+                            className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full
+                            ${closeBadge.status === 'crit' ? 'bg-red-100 text-red-700' : closeBadge.status === 'warn' ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}
+                          >
                             {closeBadge.status === 'crit' && <Lock size={10} />}
                             {closeBadge.label}
                           </span>
@@ -361,7 +510,9 @@ function WeekView({ actions, onCardClick }) {
                       <p className="text-xs text-gray-400">{a.owner || 'Non assigné'}</p>
                     </div>
                     {a.impact_eur > 0 && (
-                      <span className="text-sm font-bold text-red-600 shrink-0">{a.impact_eur.toLocaleString()} €</span>
+                      <span className="text-sm font-bold text-red-600 shrink-0">
+                        {a.impact_eur.toLocaleString()} €
+                      </span>
                     )}
                   </div>
                 );
@@ -383,9 +534,15 @@ export default function ActionsPage({ autoCreate = false }) {
   const { actionId: urlActionId } = useParams();
   const [actions, setActions] = useState([]);
   const [_loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [syncing, setSyncing] = useState(false);
   const [filterStatut, setFilterStatut] = useState('');
-  const [filterType, setFilterType] = useState(searchParams.get('source') === 'operat' ? 'operat' : '');
+  const [filterType, setFilterType] = useState(() => {
+    const src = searchParams.get('source');
+    if (src === 'operat') return 'operat';
+    if (src === 'copilot') return 'copilot';
+    return '';
+  });
   const [quickView, setQuickView] = useState('');
   const [page, setPage] = useState(1);
   const { openActionDrawer } = useActionDrawer();
@@ -402,7 +559,7 @@ export default function ActionsPage({ autoCreate = false }) {
   const pageSize = 15;
 
   const ownerOptions = useMemo(() => {
-    const unique = [...new Set(actions.map(a => a.owner).filter(Boolean))];
+    const unique = [...new Set(actions.map((a) => a.owner).filter(Boolean))];
     unique.sort((a, b) => a.localeCompare(b));
     return unique;
   }, [actions]);
@@ -410,22 +567,25 @@ export default function ActionsPage({ autoCreate = false }) {
   const fetchActions = useCallback(async () => {
     try {
       setLoading(true);
+      setError(null);
       const params = selectedSiteId ? { site_id: selectedSiteId } : {};
       const data = await getActionsList(params);
       setActions(data.map(mapBackendAction));
-    } catch {
-      /* fallback: keep current state */
+    } catch (err) {
+      setError(err?.message || 'Erreur chargement des actions');
     } finally {
       setLoading(false);
     }
   }, [selectedSiteId]);
 
-  useEffect(() => { fetchActions(); }, [fetchActions]);
+  useEffect(() => {
+    fetchActions();
+  }, [fetchActions]);
 
   // Auto-open detail drawer when navigating to /actions/:actionId
   useEffect(() => {
     if (urlActionId && actions.length > 0 && !detailAction) {
-      const found = actions.find(a => String(a.id) === urlActionId);
+      const found = actions.find((a) => String(a.id) === urlActionId);
       if (found) setDetailAction(found);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -452,7 +612,9 @@ export default function ActionsPage({ autoCreate = false }) {
       await syncActions();
       await fetchActions();
       track('action_hub_sync', {});
-    } catch { /* noop */ }
+    } catch {
+      /* noop */
+    }
     setSyncing(false);
   }
 
@@ -468,7 +630,9 @@ export default function ActionsPage({ autoCreate = false }) {
       el.click();
       URL.revokeObjectURL(url);
       track('download_audit_pdf', {});
-    } catch { toast('Erreur lors du téléchargement du PDF', 'error'); }
+    } catch {
+      toast('Erreur lors du téléchargement du PDF', 'error');
+    }
     setPdfLoading(false);
   }
 
@@ -477,31 +641,39 @@ export default function ActionsPage({ autoCreate = false }) {
 
     // Quick views
     if (quickView === 'overdue') result = result.filter(isOverdue);
-    else if (quickView === 'high_impact') result = result.filter(a => a.impact_eur >= 10000);
-    else if (quickView === 'conformite_crit') result = result.filter(a => a.type === 'conformite' && (a.priorite === 'critical' || a.priorite === 'high'));
+    else if (quickView === 'high_impact') result = result.filter((a) => a.impact_eur >= 10000);
+    else if (quickView === 'conformite_crit')
+      result = result.filter(
+        (a) => a.type === 'conformite' && (a.priorite === 'critical' || a.priorite === 'high')
+      );
 
-    if (filterStatut) result = result.filter(a => a.statut === filterStatut);
-    if (filterType) result = result.filter(a => a.type === filterType);
+    if (filterStatut) result = result.filter((a) => a.statut === filterStatut);
+    if (filterType) result = result.filter((a) => a.type === filterType);
 
     // Search
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      result = result.filter(a =>
-        a.titre.toLowerCase().includes(q) ||
-        a.site_nom.toLowerCase().includes(q) ||
-        (a.owner || '').toLowerCase().includes(q)
+      result = result.filter(
+        (a) =>
+          a.titre.toLowerCase().includes(q) ||
+          a.site_nom.toLowerCase().includes(q) ||
+          (a.owner || '').toLowerCase().includes(q)
       );
     }
 
     // Sort
     if (sortCol) {
       result.sort((a, b) => {
-        let va = a[sortCol], vb = b[sortCol];
+        let va = a[sortCol],
+          vb = b[sortCol];
         if (sortCol === 'priorite') {
-          va = PRIORITY_RANK[va] || 0; vb = PRIORITY_RANK[vb] || 0;
+          va = PRIORITY_RANK[va] || 0;
+          vb = PRIORITY_RANK[vb] || 0;
         }
         if (typeof va === 'number') return sortDir === 'asc' ? va - vb : vb - va;
-        return sortDir === 'asc' ? String(va || '').localeCompare(String(vb || '')) : String(vb || '').localeCompare(String(va || ''));
+        return sortDir === 'asc'
+          ? String(va || '').localeCompare(String(vb || ''))
+          : String(vb || '').localeCompare(String(va || ''));
       });
     } else {
       result.sort(defaultSort);
@@ -512,52 +684,70 @@ export default function ActionsPage({ autoCreate = false }) {
   const total = filtered.length;
   const pageData = filtered.slice((page - 1) * pageSize, page * pageSize);
 
-  const stats = useMemo(() => ({
-    total: actions.length,
-    backlog: actions.filter(a => a.statut === 'backlog').length,
-    planned: actions.filter(a => a.statut === 'planned').length,
-    in_progress: actions.filter(a => a.statut === 'in_progress').length,
-    done: actions.filter(a => a.statut === 'done').length,
-    total_impact: actions.reduce((s, a) => s + a.impact_eur, 0),
-    total_co2e_kg: actions.reduce((s, a) => s + (a.co2e_kg || 0), 0),
-    overdue: actions.filter(isOverdue).length,
-  }), [actions]);
+  const stats = useMemo(
+    () => ({
+      total: actions.length,
+      backlog: actions.filter((a) => a.statut === 'backlog').length,
+      planned: actions.filter((a) => a.statut === 'planned').length,
+      in_progress: actions.filter((a) => a.statut === 'in_progress').length,
+      done: actions.filter((a) => a.statut === 'done').length,
+      total_impact: actions.reduce((s, a) => s + a.impact_eur, 0),
+      total_co2e_kg: actions.reduce((s, a) => s + (a.co2e_kg || 0), 0),
+      overdue: actions.filter(isOverdue).length,
+    }),
+    [actions]
+  );
 
   function handleSort(col) {
     if (sortCol === col) {
-      setSortDir(d => d === 'asc' ? 'desc' : d === 'desc' ? '' : 'asc');
+      setSortDir((d) => (d === 'asc' ? 'desc' : d === 'desc' ? '' : 'asc'));
       if (sortDir === 'desc') setSortCol('');
-    } else { setSortCol(col); setSortDir('asc'); }
+    } else {
+      setSortCol(col);
+      setSortDir('asc');
+    }
     setPage(1);
   }
 
   function handleSaveAction(action) {
-    setActions(prev => [action, ...prev]);
+    setActions((prev) => [action, ...prev]);
   }
 
   function toggleSelect(id) {
-    setSelected(prev => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
   }
 
   function toggleSelectAll() {
     if (selected.size === pageData.length) setSelected(new Set());
-    else setSelected(new Set(pageData.map(a => a.id)));
+    else setSelected(new Set(pageData.map((a) => a.id)));
   }
 
   async function handleInlineStatusChange(actionId, newStatus) {
     const beStatus = STATUS_TO_BE[newStatus] || newStatus;
     try {
       await patchAction(actionId, { status: beStatus });
-    } catch { /* silent fallback */ }
-    setActions(prev => prev.map(a => a.id === actionId ? { ...a, statut: newStatus } : a));
+    } catch {
+      /* silent fallback */
+    }
+    setActions((prev) => prev.map((a) => (a.id === actionId ? { ...a, statut: newStatus } : a)));
     track('inline_status_change', { action_id: actionId, status: newStatus });
   }
 
   async function bulkChangeStatus(newStatus) {
     const beStatus = STATUS_TO_BE[newStatus] || newStatus;
     const ids = [...selected];
-    await Promise.all(ids.map(id => patchAction(id, { status: beStatus }).catch(() => toast('Erreur lors du changement de statut', 'error'))));
-    setActions(prev => prev.map(a => selected.has(a.id) ? { ...a, statut: newStatus } : a));
+    await Promise.all(
+      ids.map((id) =>
+        patchAction(id, { status: beStatus }).catch(() =>
+          toast('Erreur lors du changement de statut', 'error')
+        )
+      )
+    );
+    setActions((prev) => prev.map((a) => (selected.has(a.id) ? { ...a, statut: newStatus } : a)));
     track('bulk_status_change', { count: selected.size, status: newStatus });
     setSelected(new Set());
     setShowBulkStatus(false);
@@ -565,25 +755,32 @@ export default function ActionsPage({ autoCreate = false }) {
 
   async function bulkAssign(owner) {
     const ids = [...selected];
-    await Promise.all(ids.map(id => patchAction(id, { owner }).catch(() => toast('Erreur lors de l\'assignation', 'error'))));
-    setActions(prev => prev.map(a => selected.has(a.id) ? { ...a, owner } : a));
+    await Promise.all(
+      ids.map((id) =>
+        patchAction(id, { owner }).catch(() => toast("Erreur lors de l'assignation", 'error'))
+      )
+    );
+    setActions((prev) => prev.map((a) => (selected.has(a.id) ? { ...a, owner } : a)));
     track('bulk_assign', { count: selected.size, owner });
     setSelected(new Set());
     setShowAssign(false);
   }
 
   function handleBulkCreate() {
-    const rows = actions.filter(a => selected.has(a.id));
-    const types = [...new Set(rows.map(r => r.type))];
-    const sites = [...new Set(rows.map(r => r.site_nom))];
-    openActionDrawer({
-      prefill: {
-        titre: rows.length === 1 ? rows[0].titre : `Action groupée (${rows.length} items)`,
-        type: types.length === 1 ? types[0] : 'conformite',
-        site: sites.length === 1 ? sites[0] : sites.slice(0, 3).join(', '),
-        description: rows.map(r => `- ${r.titre}`).join('\n'),
+    const rows = actions.filter((a) => selected.has(a.id));
+    const types = [...new Set(rows.map((r) => r.type))];
+    const sites = [...new Set(rows.map((r) => r.site_nom))];
+    openActionDrawer(
+      {
+        prefill: {
+          titre: rows.length === 1 ? rows[0].titre : `Action groupée (${rows.length} items)`,
+          type: types.length === 1 ? types[0] : 'conformite',
+          site: sites.length === 1 ? sites[0] : sites.slice(0, 3).join(', '),
+          description: rows.map((r) => `- ${r.titre}`).join('\n'),
+        },
       },
-    }, { onSave: handleSaveAction });
+      { onSave: handleSaveAction }
+    );
   }
 
   async function exportPlan30j() {
@@ -591,32 +788,58 @@ export default function ActionsPage({ autoCreate = false }) {
       const resp = await exportActionsCSV();
       const blob = new Blob([resp.data], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
-      const el = document.createElement('a'); el.href = url; el.download = 'actions_promeos.csv'; el.click();
+      const el = document.createElement('a');
+      el.href = url;
+      el.download = 'actions_promeos.csv';
+      el.click();
       URL.revokeObjectURL(url);
       track('export_csv', { type: 'plan_backend' });
     } catch {
       /* fallback client-side */
       const next30 = actions
-        .filter(a => a.statut !== 'done' && a.due_date)
-        .filter(a => { const d = new Date(a.due_date); const now = new Date(); const diff = (d - now) / 86400000; return diff >= 0 && diff <= 30; })
+        .filter((a) => a.statut !== 'done' && a.due_date)
+        .filter((a) => {
+          const d = new Date(a.due_date);
+          const now = new Date();
+          const diff = (d - now) / 86400000;
+          return diff >= 0 && diff <= 30;
+        })
         .sort((a, b) => a.due_date.localeCompare(b.due_date));
       const header = 'titre,type,site,priorite,echeance,impact_eur,owner,statut';
-      const csv = [header, ...next30.map(a => `"${a.titre}",${a.type},${a.site_nom},${a.priorite},${a.due_date},${a.impact_eur},${a.owner || 'Non assigné'},${a.statut}`)].join('\n');
+      const csv = [
+        header,
+        ...next30.map(
+          (a) =>
+            `"${a.titre}",${a.type},${a.site_nom},${a.priorite},${a.due_date},${a.impact_eur},${a.owner || 'Non assigné'},${a.statut}`
+        ),
+      ].join('\n');
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
-      const el = document.createElement('a'); el.href = url; el.download = 'plan-30-jours.csv'; el.click();
+      const el = document.createElement('a');
+      el.href = url;
+      el.download = 'plan-30-jours.csv';
+      el.click();
       URL.revokeObjectURL(url);
       track('export_csv', { type: 'plan_30j', rows: next30.length });
     }
   }
 
   function exportSelected() {
-    const rows = actions.filter(a => selected.has(a.id));
+    const rows = actions.filter((a) => selected.has(a.id));
     const header = 'titre,type,site,priorite,echeance,impact_eur,owner,statut';
-    const csv = [header, ...rows.map(a => `"${a.titre}",${a.type},${a.site_nom},${a.priorite},${a.due_date},${a.impact_eur},${a.owner || 'Non assigné'},${a.statut}`)].join('\n');
+    const csv = [
+      header,
+      ...rows.map(
+        (a) =>
+          `"${a.titre}",${a.type},${a.site_nom},${a.priorite},${a.due_date},${a.impact_eur},${a.owner || 'Non assigné'},${a.statut}`
+      ),
+    ].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
-    const el = document.createElement('a'); el.href = url; el.download = 'actions-export.csv'; el.click();
+    const el = document.createElement('a');
+    el.href = url;
+    el.download = 'actions-export.csv';
+    el.click();
     URL.revokeObjectURL(url);
     track('export_csv', { type: 'selected', rows: rows.length });
   }
@@ -631,18 +854,52 @@ export default function ActionsPage({ autoCreate = false }) {
 
   function renderEmptyState() {
     if (quickView === 'overdue') {
-      return <EmptyState icon={CheckCircle} title="Aucune action en retard" text="Toutes vos actions sont dans les temps. Continuez ainsi !" />;
+      return (
+        <EmptyState
+          icon={CheckCircle}
+          title="Aucune action en retard"
+          text="Toutes vos actions sont dans les temps. Continuez ainsi !"
+        />
+      );
     }
     if (quickView === 'high_impact') {
-      return <EmptyState icon={BadgeEuro} title="Aucune action à fort impact" text="Aucune action avec un impact supérieur à 10 000 EUR n'a été détectée." />;
+      return (
+        <EmptyState
+          icon={BadgeEuro}
+          title="Aucune action à fort impact"
+          text="Aucune action avec un impact supérieur à 10 000 EUR n'a été détectée."
+        />
+      );
     }
     if (quickView === 'conformite_crit') {
-      return <EmptyState icon={ShieldCheck} title="Pas d'action critique conformité" text="Aucune action de conformité critique ou haute priorité." />;
+      return (
+        <EmptyState
+          icon={ShieldCheck}
+          title="Pas d'action critique conformité"
+          text="Aucune action de conformité critique ou haute priorité."
+        />
+      );
     }
     if (filterStatut || filterType || searchQuery.trim()) {
-      return <EmptyState icon={ListChecks} title="Aucune action pour ce filtre" text="Essayez de modifier vos filtres ou de réinitialiser la vue." ctaLabel="Réinitialiser" onCta={resetAllFilters} />;
+      return (
+        <EmptyState
+          icon={ListChecks}
+          title="Aucune action pour ce filtre"
+          text="Essayez de modifier vos filtres ou de réinitialiser la vue."
+          ctaLabel="Réinitialiser"
+          onCta={resetAllFilters}
+        />
+      );
     }
-    return <EmptyState icon={ListChecks} title="Aucune action" text="Synchronisez vos données ou créez votre première action pour commencer." ctaLabel="Créer action" onCta={() => openActionDrawer({}, { onSave: handleSaveAction })} />;
+    return (
+      <EmptyState
+        icon={ListChecks}
+        title="Aucune action"
+        text="Synchronisez vos données ou créez votre première action pour commencer."
+        ctaLabel="Créer action"
+        onCta={() => openActionDrawer({}, { onSave: handleSaveAction })}
+      />
+    );
   }
 
   return (
@@ -653,43 +910,72 @@ export default function ActionsPage({ autoCreate = false }) {
       actions={
         <>
           <Button variant="secondary" size="sm" onClick={handleSync} disabled={syncing}>
-            <RefreshCw size={16} className={syncing ? 'animate-spin' : ''} /> {syncing ? 'Sync...' : 'Synchroniser'}
+            <RefreshCw size={16} className={syncing ? 'animate-spin' : ''} />{' '}
+            {syncing ? 'Sync...' : 'Synchroniser'}
           </Button>
           {isExpert && (
-            <Button variant="secondary" size="sm" onClick={handleDownloadPDF} disabled={pdfLoading} title="Rapport d'audit PDF complet">
-              <FileText size={16} className={pdfLoading ? 'animate-pulse' : ''} /> {pdfLoading ? 'PDF...' : 'Rapport PDF'}
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleDownloadPDF}
+              disabled={pdfLoading}
+              title="Rapport d'audit PDF complet"
+            >
+              <FileText size={16} className={pdfLoading ? 'animate-pulse' : ''} />{' '}
+              {pdfLoading ? 'PDF...' : 'Rapport PDF'}
             </Button>
           )}
           <Button variant="secondary" size="sm" onClick={exportPlan30j} title="Exporter CSV">
             <Printer size={16} /> Exporter CSV
           </Button>
-          <Button onClick={() => openActionDrawer({}, { onSave: handleSaveAction })}><Plus size={16} /> Créer action</Button>
+          <Button onClick={() => openActionDrawer({}, { onSave: handleSaveAction })}>
+            <Plus size={16} /> Créer action
+          </Button>
         </>
       }
     >
+      {/* Error banner */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
 
       {/* ROI Summary (V5.0) */}
       <ROISummaryBar />
 
       {/* Quick views with counts */}
       <div className="flex items-center gap-2">
-        {QUICK_VIEWS.map(qv => {
+        {QUICK_VIEWS.map((qv) => {
           const Icon = qv.icon;
           const isActive = quickView === qv.id;
-          const count = qv.id === 'overdue' ? stats.overdue
-            : qv.id === 'high_impact' ? actions.filter(a => a.impact_eur >= 10000).length
-            : actions.filter(a => a.type === 'conformite' && (a.priorite === 'critical' || a.priorite === 'high')).length;
+          const count =
+            qv.id === 'overdue'
+              ? stats.overdue
+              : qv.id === 'high_impact'
+                ? actions.filter((a) => a.impact_eur >= 10000).length
+                : actions.filter(
+                    (a) =>
+                      a.type === 'conformite' &&
+                      (a.priorite === 'critical' || a.priorite === 'high')
+                  ).length;
           return (
             <button
               key={qv.id}
-              onClick={() => { setQuickView(isActive ? '' : qv.id); setPage(1); track('quick_view', { view: qv.id }); }}
+              onClick={() => {
+                setQuickView(isActive ? '' : qv.id);
+                setPage(1);
+                track('quick_view', { view: qv.id });
+              }}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition border
                 ${isActive ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
             >
               <Icon size={14} className={isActive ? 'text-blue-600' : qv.color} />
               {qv.label}
               {count > 0 && (
-                <span className={`ml-0.5 px-1.5 py-0 rounded-full text-[10px] font-bold ${isActive ? 'bg-blue-200 text-blue-800' : 'bg-gray-200 text-gray-600'}`}>
+                <span
+                  className={`ml-0.5 px-1.5 py-0 rounded-full text-[10px] font-bold ${isActive ? 'bg-blue-200 text-blue-800' : 'bg-gray-200 text-gray-600'}`}
+                >
                   {count}
                 </span>
               )}
@@ -701,13 +987,49 @@ export default function ActionsPage({ autoCreate = false }) {
       {/* Clickable stats cards */}
       <div className="grid grid-cols-5 gap-3">
         {[
-          { label: 'À planifier', value: stats.backlog, color: 'text-gray-700', bg: 'bg-gray-50', statut: 'backlog', ringColor: 'ring-gray-400' },
-          { label: 'Planifiée', value: stats.planned, color: 'text-blue-700', bg: 'bg-blue-50', statut: 'planned', ringColor: 'ring-blue-400' },
-          { label: 'En cours', value: stats.in_progress, color: 'text-amber-700', bg: 'bg-amber-50', statut: 'in_progress', ringColor: 'ring-amber-400' },
-          { label: 'Terminée', value: stats.done, color: 'text-green-700', bg: 'bg-green-50', statut: 'done', ringColor: 'ring-green-400' },
-          { label: 'En retard', value: stats.overdue, color: 'text-red-700', bg: 'bg-red-50', statut: '_overdue', ringColor: 'ring-red-400' },
-        ].map(c => {
-          const isCardActive = c.statut === '_overdue' ? quickView === 'overdue' : filterStatut === c.statut;
+          {
+            label: 'À planifier',
+            value: stats.backlog,
+            color: 'text-gray-700',
+            bg: 'bg-gray-50',
+            statut: 'backlog',
+            ringColor: 'ring-gray-400',
+          },
+          {
+            label: 'Planifiée',
+            value: stats.planned,
+            color: 'text-blue-700',
+            bg: 'bg-blue-50',
+            statut: 'planned',
+            ringColor: 'ring-blue-400',
+          },
+          {
+            label: 'En cours',
+            value: stats.in_progress,
+            color: 'text-amber-700',
+            bg: 'bg-amber-50',
+            statut: 'in_progress',
+            ringColor: 'ring-amber-400',
+          },
+          {
+            label: 'Terminée',
+            value: stats.done,
+            color: 'text-green-700',
+            bg: 'bg-green-50',
+            statut: 'done',
+            ringColor: 'ring-green-400',
+          },
+          {
+            label: 'En retard',
+            value: stats.overdue,
+            color: 'text-red-700',
+            bg: 'bg-red-50',
+            statut: '_overdue',
+            ringColor: 'ring-red-400',
+          },
+        ].map((c) => {
+          const isCardActive =
+            c.statut === '_overdue' ? quickView === 'overdue' : filterStatut === c.statut;
           return (
             <Card
               key={c.label}
@@ -734,9 +1056,23 @@ export default function ActionsPage({ autoCreate = false }) {
 
       {/* Filters */}
       <div className="flex items-center gap-3">
-        <Tabs tabs={STATUT_TABS} active={filterStatut} onChange={(id) => { setFilterStatut(id); setPage(1); }} />
+        <Tabs
+          tabs={STATUT_TABS}
+          active={filterStatut}
+          onChange={(id) => {
+            setFilterStatut(id);
+            setPage(1);
+          }}
+        />
         <div className="ml-auto">
-          <Select options={TYPE_OPTIONS} value={filterType} onChange={(e) => { setFilterType(e.target.value); setPage(1); }} />
+          <Select
+            options={TYPE_OPTIONS}
+            value={filterType}
+            onChange={(e) => {
+              setFilterType(e.target.value);
+              setPage(1);
+            }}
+          />
         </div>
       </div>
 
@@ -748,7 +1084,10 @@ export default function ActionsPage({ autoCreate = false }) {
             type="text"
             placeholder="Rechercher une action..."
             value={searchQuery}
-            onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setPage(1);
+            }}
             className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm placeholder:text-gray-400
               focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
@@ -757,7 +1096,10 @@ export default function ActionsPage({ autoCreate = false }) {
           <Select
             options={GROUP_OPTIONS}
             value={groupBy}
-            onChange={(e) => { setGroupBy(e.target.value); setPage(1); }}
+            onChange={(e) => {
+              setGroupBy(e.target.value);
+              setPage(1);
+            }}
           />
           <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
             <button
@@ -791,25 +1133,38 @@ export default function ActionsPage({ autoCreate = false }) {
           <span className="text-gray-500">Résultat filtré :</span>
           <span className="font-semibold text-gray-900">{total} action(s)</span>
           <span className="text-gray-400">&middot;</span>
-          <span className="font-bold text-red-600">{filtered.reduce((s, a) => s + a.impact_eur, 0).toLocaleString()} EUR</span>
+          <span className="font-bold text-red-600">
+            {filtered.reduce((s, a) => s + a.impact_eur, 0).toLocaleString()} EUR
+          </span>
           <span className="text-gray-400 text-xs">d'impact</span>
-          <button onClick={resetAllFilters} className="ml-auto text-xs text-blue-600 hover:text-blue-800 font-medium">
+          <button
+            onClick={resetAllFilters}
+            className="ml-auto text-xs text-blue-600 hover:text-blue-800 font-medium"
+          >
             Réinitialiser
           </button>
         </div>
       )}
 
       {/* Content: table / kanban / grouped */}
-      {total === 0 ? renderEmptyState() : viewMode === 'week' ? (
+      {total === 0 ? (
+        renderEmptyState()
+      ) : viewMode === 'week' ? (
         <WeekView
           actions={filtered}
-          onCardClick={(a) => { setDetailAction(a); track('row_click', { action_id: a.id }); }}
+          onCardClick={(a) => {
+            setDetailAction(a);
+            track('row_click', { action_id: a.id });
+          }}
         />
       ) : viewMode === 'kanban' ? (
         <KanbanBoard
           actions={filtered}
           onStatusChange={handleInlineStatusChange}
-          onCardClick={(a) => { setDetailAction(a); track('row_click', { action_id: a.id }); }}
+          onCardClick={(a) => {
+            setDetailAction(a);
+            track('row_click', { action_id: a.id });
+          }}
           selected={selected}
           onToggleSelect={toggleSelect}
         />
@@ -817,7 +1172,10 @@ export default function ActionsPage({ autoCreate = false }) {
         <GroupedTableView
           actions={filtered}
           groupBy={groupBy}
-          onCardClick={(a) => { setDetailAction(a); track('row_click', { action_id: a.id }); }}
+          onCardClick={(a) => {
+            setDetailAction(a);
+            track('row_click', { action_id: a.id });
+          }}
           selected={selected}
           onToggleSelect={toggleSelect}
           onInlineStatus={handleInlineStatusChange}
@@ -831,13 +1189,38 @@ export default function ActionsPage({ autoCreate = false }) {
                   checked={selected.size === pageData.length && pageData.length > 0}
                   onChange={toggleSelectAll}
                 />
-                <Th sortable sorted={sortCol === 'titre' ? sortDir : ''} onSort={() => handleSort('titre')}>Action</Th>
+                <Th
+                  sortable
+                  sorted={sortCol === 'titre' ? sortDir : ''}
+                  onSort={() => handleSort('titre')}
+                >
+                  Action
+                </Th>
                 <Th>Type</Th>
                 <Th>Site</Th>
-                <Th sortable sorted={sortCol === 'priorite' ? sortDir : ''} onSort={() => handleSort('priorite')}>Priorité</Th>
-                <Th sortable sorted={sortCol === 'impact_eur' ? sortDir : ''} onSort={() => handleSort('impact_eur')} className="text-right">Impact EUR</Th>
+                <Th
+                  sortable
+                  sorted={sortCol === 'priorite' ? sortDir : ''}
+                  onSort={() => handleSort('priorite')}
+                >
+                  Priorité
+                </Th>
+                <Th
+                  sortable
+                  sorted={sortCol === 'impact_eur' ? sortDir : ''}
+                  onSort={() => handleSort('impact_eur')}
+                  className="text-right"
+                >
+                  Impact EUR
+                </Th>
                 <Th className="text-right">CO₂e</Th>
-                <Th sortable sorted={sortCol === 'due_date' ? sortDir : ''} onSort={() => handleSort('due_date')}>Échéance</Th>
+                <Th
+                  sortable
+                  sorted={sortCol === 'due_date' ? sortDir : ''}
+                  onSort={() => handleSort('due_date')}
+                >
+                  Échéance
+                </Th>
                 <Th>Responsable</Th>
                 <Th>Statut</Th>
               </tr>
@@ -850,38 +1233,61 @@ export default function ActionsPage({ autoCreate = false }) {
                   <Tr
                     key={a.id}
                     selected={selected.has(a.id)}
-                    onClick={() => { setDetailAction(a); track('row_click', { action_id: a.id }); }}
+                    onClick={() => {
+                      setDetailAction(a);
+                      track('row_click', { action_id: a.id });
+                    }}
                   >
                     <TdCheckbox checked={selected.has(a.id)} onChange={() => toggleSelect(a.id)} />
                     <Td className="font-medium text-gray-900 max-w-xs truncate">{a.titre}</Td>
-                    <Td><Badge status={typeBadge.status}>{typeBadge.label}</Badge></Td>
+                    <Td>
+                      <Badge status={typeBadge.status}>{typeBadge.label}</Badge>
+                    </Td>
                     <Td className="text-sm">{a.site_nom}</Td>
                     <Td>
-                      <Badge status={PRIORITY_BADGE[a.priorite] || 'neutral'}>{PRIORITY_LABEL[a.priorite] || a.priorite}</Badge>
+                      <Badge status={PRIORITY_BADGE[a.priorite] || 'neutral'}>
+                        {PRIORITY_LABEL[a.priorite] || a.priorite}
+                      </Badge>
                     </Td>
                     <Td className="text-right font-medium">{a.impact_eur.toLocaleString()} EUR</Td>
-                    <Td className="text-right text-emerald-600 text-sm">{a.co2e_kg > 0 ? `${Math.round(a.co2e_kg).toLocaleString()} kg` : '—'}</Td>
-                    <Td className={`text-sm whitespace-nowrap ${overdue ? 'text-red-600 font-semibold' : ''}`}>
+                    <Td className="text-right text-emerald-600 text-sm">
+                      {a.co2e_kg > 0 ? `${Math.round(a.co2e_kg).toLocaleString()} kg` : '—'}
+                    </Td>
+                    <Td
+                      className={`text-sm whitespace-nowrap ${overdue ? 'text-red-600 font-semibold' : ''}`}
+                    >
                       {a.due_date}
-                      {overdue && <span className="ml-1 text-xs bg-red-50 text-red-600 px-1.5 py-0.5 rounded">En retard</span>}
+                      {overdue && (
+                        <span className="ml-1 text-xs bg-red-50 text-red-600 px-1.5 py-0.5 rounded">
+                          En retard
+                        </span>
+                      )}
                     </Td>
                     <Td className="text-sm">
-                      {a.owner
-                        ? a.owner
-                        : <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-400 rounded">Non assigné</span>
-                      }
+                      {a.owner ? (
+                        a.owner
+                      ) : (
+                        <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-400 rounded">
+                          Non assigné
+                        </span>
+                      )}
                     </Td>
                     <Td>
                       <select
                         value={a.statut}
-                        onChange={(e) => { e.stopPropagation(); handleInlineStatusChange(a.id, e.target.value); }}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          handleInlineStatusChange(a.id, e.target.value);
+                        }}
                         onClick={(e) => e.stopPropagation()}
                         className={`text-xs font-medium px-2.5 py-0.5 rounded-full border-0 cursor-pointer
                           appearance-none hover:ring-2 hover:ring-blue-300 transition
                           ${STATUT_PILL[a.statut] || STATUT_PILL.backlog}`}
                       >
-                        {BULK_STATUS_OPTIONS.map(opt => (
-                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        {BULK_STATUS_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
                         ))}
                       </select>
                     </Td>
@@ -912,7 +1318,11 @@ export default function ActionsPage({ autoCreate = false }) {
               <span className="font-semibold text-gray-900">sélectionnée(s)</span>
               <span className="ml-2 text-gray-500">&middot;</span>
               <span className="ml-2 font-bold text-red-600">
-                {actions.filter(a => selected.has(a.id)).reduce((s, a) => s + a.impact_eur, 0).toLocaleString()} EUR
+                {actions
+                  .filter((a) => selected.has(a.id))
+                  .reduce((s, a) => s + a.impact_eur, 0)
+                  .toLocaleString()}{' '}
+                EUR
               </span>
               <span className="ml-1 text-xs text-gray-400">d'impact total</span>
             </div>
@@ -944,7 +1354,7 @@ export default function ActionsPage({ autoCreate = false }) {
       <Modal open={showAssign} onClose={() => setShowAssign(false)} title="Assigner un responsable">
         <div className="space-y-2">
           <p className="text-sm text-gray-600">{selected.size} action(s) sélectionnée(s)</p>
-          {ownerOptions.map(owner => (
+          {ownerOptions.map((owner) => (
             <button
               key={owner}
               onClick={() => bulkAssign(owner)}
@@ -955,22 +1365,30 @@ export default function ActionsPage({ autoCreate = false }) {
             </button>
           ))}
           {ownerOptions.length === 0 && (
-            <p className="text-sm text-gray-400 py-2">Aucun responsable connu. Les responsables apparaissent automatiquement.</p>
+            <p className="text-sm text-gray-400 py-2">
+              Aucun responsable connu. Les responsables apparaissent automatiquement.
+            </p>
           )}
         </div>
       </Modal>
 
       {/* Bulk Status Modal */}
-      <Modal open={showBulkStatus} onClose={() => setShowBulkStatus(false)} title="Changer le statut">
+      <Modal
+        open={showBulkStatus}
+        onClose={() => setShowBulkStatus(false)}
+        title="Changer le statut"
+      >
         <div className="space-y-2">
           <p className="text-sm text-gray-600">{selected.size} action(s) sélectionnée(s)</p>
-          {BULK_STATUS_OPTIONS.map(opt => (
+          {BULK_STATUS_OPTIONS.map((opt) => (
             <button
               key={opt.value}
               onClick={() => bulkChangeStatus(opt.value)}
               className="w-full text-left px-4 py-2.5 rounded-lg hover:bg-blue-50 text-sm font-medium text-gray-700 transition"
             >
-              <span className={`inline-block w-2.5 h-2.5 rounded-full mr-2 ${KANBAN_DOT[opt.value]}`} />
+              <span
+                className={`inline-block w-2.5 h-2.5 rounded-full mr-2 ${KANBAN_DOT[opt.value]}`}
+              />
               {opt.label}
             </button>
           ))}
@@ -983,9 +1401,7 @@ export default function ActionsPage({ autoCreate = false }) {
         open={!!detailAction}
         onClose={() => setDetailAction(null)}
         onUpdate={(actionId, changes) => {
-          setActions(prev => prev.map(a =>
-            a.id === actionId ? { ...a, ...changes } : a
-          ));
+          setActions((prev) => prev.map((a) => (a.id === actionId ? { ...a, ...changes } : a)));
         }}
       />
     </PageShell>

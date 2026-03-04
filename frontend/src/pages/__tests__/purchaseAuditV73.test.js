@@ -128,7 +128,7 @@ describe('E · Tab deep-link', () => {
 
   it('toPurchase still supports tab param', () => {
     const routes = readSrc('services', 'routes.js');
-    expect(routes).toContain("opts.tab");
+    expect(routes).toContain('opts.tab');
   });
 });
 
@@ -176,7 +176,7 @@ describe('H · Breadcrumb label for achat-assistant', () => {
   const navCode = readSrc('layout', 'NavRegistry.js');
 
   it('has label for achat-assistant in NavRegistry (source of truth for Breadcrumb)', () => {
-    expect(navCode).toMatch(/achat-assistant.*Assistant Achat/);
+    expect(navCode).toMatch(/achat-assistant.*Assistant Achat/s);
   });
 });
 
@@ -231,6 +231,8 @@ describe('I · V72 backward compat preserved', () => {
   });
 
   it('V73 header comment', () => {
-    expect(code).toContain('V73: + Scope unlock fix, skipSiteHeader, tab deep-link, assistant CTA, renewals re-fetch');
+    expect(code).toContain(
+      'V73: + Scope unlock fix, skipSiteHeader, tab deep-link, assistant CTA, renewals re-fetch'
+    );
   });
 });

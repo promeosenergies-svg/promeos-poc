@@ -83,6 +83,10 @@ Pilotage reglementaire et energetique multi-sites B2B France -- conformite, usag
 > | V110 Targets + UX Audit (gen_targets ADEME+actuals+gaz, MeteoPanel orange temp, db.commit CRUD, N+1 fix, 20 UX polishes) | Stable -- V110 |
 > | V111 E2E Audit (frequency filter, double-count fix, scope filter, colorblind a11y, health banner, 841 backend + 4330 frontend tests) | Stable -- V111 |
 > | V112 Deep Audit (pagination caps, Pydantic Field constraints, upload validation, stale closure fix, SPA navigation, badge auto-refresh, toast leak fix, tab persistence, debounced search) | Stable -- V112 |
+> | V113 MVP Chantiers (Data Quality Dashboard, Export OPERAT, Energy Copilot mensuel, Action Templates x20, Onboarding Stepper 6 etapes) | Stable -- V113 |
+> | V113 Demo-Ready Patch (cause_code→CTA routing, OPERAT validation, copilot idempotence+AuditLog+priority_score, template ROI fields, onboarding TTFV+DQ gating, reject reason, error toasts, 13 new tests) | Stable -- V113.1 |
+> | V113 QA Audit (0 build errors, 0 lint errors, risk format k€, 3 error states, prettier+ruff format, CI quality-gate.yml, 4 docs) | Stable -- V113.2 |
+> | V113 Nav Integration (ConformitePage ?tab= deep-link, DQ CTA→Conformite, copilot source filter, "Anomalies" rename, 3 CommandPalette entries, orphan route mapping) | Stable -- V113.3 |
 > | Suite de tests automatises | **4 330 frontend + 2 795 backend, 0 regression** |
 
 > **Disclaimer**

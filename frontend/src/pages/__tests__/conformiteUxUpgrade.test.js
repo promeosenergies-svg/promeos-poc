@@ -85,7 +85,7 @@ describe('C · Expert mode conditionals', () => {
   });
 
   it('ObligationsTab conditions rule_id display on isExpert', () => {
-    expect(oblCode).toMatch(/isExpert.*rule_id/);
+    expect(oblCode).toMatch(/isExpert.*rule_id/s);
   });
 
   it('ObligationsTab has non-expert simplified status (STATUT_LABELS)', () => {

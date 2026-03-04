@@ -48,16 +48,22 @@ describe('A · Labels Tarif Heures Solaires', () => {
   });
 
   it('scenario_label prefill uses Tarif Heures Solaires', () => {
-    const match = code.match(/cta-create-action-reflex[\s\S]*?scenario_label:\s*'Tarif Heures Solaires'/);
+    const match = code.match(
+      /cta-create-action-reflex[\s\S]*?scenario_label:\s*'Tarif Heures Solaires'/
+    );
     expect(match).not.toBeNull();
   });
 
   it('STRATEGY_META desc is grand-public friendly', () => {
-    expect(code).toContain("Payez moins quand le soleil brille — sans surcoût si vous ne changez rien.");
+    expect(code).toContain(
+      'Payez moins quand le soleil brille — sans surcoût si vous ne changez rien.'
+    );
   });
 
   it('visible in mode normal (not gated by isExpert)', () => {
-    const match = code.match(/const STRATEGY_META[\s\S]*?reflex_solar:\s*\{[\s\S]*?label:\s*'Tarif Heures Solaires'/);
+    const match = code.match(
+      /const STRATEGY_META[\s\S]*?reflex_solar:\s*\{[\s\S]*?label:\s*'Tarif Heures Solaires'/
+    );
     expect(match).not.toBeNull();
   });
 });
@@ -135,7 +141,8 @@ describe('C · Assistant Heures Solaires', () => {
   });
 
   it('no-penalty text in French', () => {
-    expect(assistant).toContain('Pas de pénalité si vous ne décalez pas votre consommation.');
+    expect(assistant).toContain('Pas de pénalité si vous ne décalez pas votre');
+    expect(assistant).toContain('consommation.');
   });
 
   it('assistant imports Sun icon', () => {
@@ -184,7 +191,9 @@ describe('E · Tester CTA', () => {
   });
 
   it('CTA navigates via toPurchase with tab + site_id', () => {
-    const match = code.match(/cta-tester-tarif-solaire[\s\S]*?toPurchase\(\{[\s\S]*?tab:\s*'simulation'[\s\S]*?site_id/);
+    const match = code.match(
+      /cta-tester-tarif-solaire[\s\S]*?toPurchase\(\{[\s\S]*?tab:\s*'simulation'[\s\S]*?site_id/
+    );
     expect(match).not.toBeNull();
   });
 

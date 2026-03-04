@@ -61,7 +61,8 @@ describe('B · 2 bullets grand public', () => {
   });
 
   it('bullet 1: mentions prix réduit + production solaire', () => {
-    expect(code).toContain('prix réduit pendant les heures de forte production solaire');
+    expect(code).toContain('prix réduit pendant les heures de forte production');
+    expect(code).toContain('solaire');
   });
 
   it('bullet 2: mentions aucun engagement + facture identique', () => {

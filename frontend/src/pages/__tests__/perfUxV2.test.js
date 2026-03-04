@@ -52,10 +52,10 @@ describe('B · No forbidden English labels', () => {
   const code = readSrc('pages', 'MonitoringPage.jsx');
 
   const FORBIDDEN = [
-    'off-hours',      // should be "Hors horaires"
-    'validated',      // should be "Validé"
-    'anomaly',        // should be "Anomalie"
-    '>OK<',           // bare "OK" as a visible label — except in confidence where it's expected
+    'off-hours', // should be "Hors horaires"
+    'validated', // should be "Validé"
+    'anomaly', // should be "Anomalie"
+    '>OK<', // bare "OK" as a visible label — except in confidence where it's expected
   ];
 
   FORBIDDEN.forEach((term) => {
@@ -70,11 +70,15 @@ describe('B · No forbidden English labels', () => {
         if (line.match(/^\s*(\/\/|\/\*|\*|const |import |export |\/\*\*)/)) return false;
         // Allow in variable names or object keys (snake_case constant mappings)
         if (line.match(/^\s+\w+:\s*'/)) return false;
+        // Allow in bare string literals inside arrays (e.g. 'weekend_anomaly',)
+        if (line.match(/^\s+['"][a-z_]+['"]\s*,?\s*$/)) return false;
         // For '>OK<' specifically, allow in confidence/status badge context
         if (term === '>OK<' && (line.includes("'OK'") || line.includes('"OK"'))) return false;
         return true;
       });
-      expect(violations, `Found "${term}" in JSX output:\n${violations.join('\n')}`).toHaveLength(0);
+      expect(violations, `Found "${term}" in JSX output:\n${violations.join('\n')}`).toHaveLength(
+        0
+      );
     });
   });
 });
@@ -139,7 +143,7 @@ describe('D · "Comprendre" CTA', () => {
 describe('E · Route registry — zero hardcoded URLs', () => {
   const code = readSrc('pages', 'MonitoringPage.jsx');
 
-  it('no navigate(\'/...\') hardcoded patterns', () => {
+  it("no navigate('/...') hardcoded patterns", () => {
     const hardcoded = code.match(/navigate\(\s*['"]\/[a-z]/g);
     expect(hardcoded, 'Found hardcoded navigate() calls').toBeNull();
   });
@@ -150,19 +154,27 @@ describe('E · Route registry — zero hardcoded URLs', () => {
   });
 
   it('imports toConsoExplorer from route registry', () => {
-    expect(code).toMatch(/import\s*\{[^}]*toConsoExplorer[^}]*\}\s*from\s*['"]\.\.\/services\/routes['"]/);
+    expect(code).toMatch(
+      /import\s*\{[^}]*toConsoExplorer[^}]*\}\s*from\s*['"]\.\.\/services\/routes['"]/
+    );
   });
 
   it('imports toConsoDiag from route registry', () => {
-    expect(code).toMatch(/import\s*\{[^}]*toConsoDiag[^}]*\}\s*from\s*['"]\.\.\/services\/routes['"]/);
+    expect(code).toMatch(
+      /import\s*\{[^}]*toConsoDiag[^}]*\}\s*from\s*['"]\.\.\/services\/routes['"]/
+    );
   });
 
   it('imports toActionsList from route registry', () => {
-    expect(code).toMatch(/import\s*\{[^}]*toActionsList[^}]*\}\s*from\s*['"]\.\.\/services\/routes['"]/);
+    expect(code).toMatch(
+      /import\s*\{[^}]*toActionsList[^}]*\}\s*from\s*['"]\.\.\/services\/routes['"]/
+    );
   });
 
   it('imports toPatrimoine from route registry', () => {
-    expect(code).toMatch(/import\s*\{[^}]*toPatrimoine[^}]*\}\s*from\s*['"]\.\.\/services\/routes['"]/);
+    expect(code).toMatch(
+      /import\s*\{[^}]*toPatrimoine[^}]*\}\s*from\s*['"]\.\.\/services\/routes['"]/
+    );
   });
 });
 
@@ -213,7 +225,7 @@ describe('G · toPatrimoine route helper', () => {
 // ============================================================
 // H. Plan d'action section structure
 // ============================================================
-describe('H · Plan d\'action section', () => {
+describe("H · Plan d'action section", () => {
   const code = readSrc('pages', 'MonitoringPage.jsx');
 
   it('has "Plan d\'action" heading', () => {
