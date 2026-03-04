@@ -28,8 +28,8 @@ describe('MODE_MAP: PROMEOS → EMS API modes', () => {
     expect(MODE_MAP.empile).toBe('stack');
   });
 
-  it('separe → split', () => {
-    expect(MODE_MAP.separe).toBe('split');
+  it('separe → overlay (fix #33: split returns meter keys, overlay returns site_<id> keys)', () => {
+    expect(MODE_MAP.separe).toBe('overlay');
   });
 
   it('all 4 modes are defined', () => {

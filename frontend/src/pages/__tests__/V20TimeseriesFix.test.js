@@ -182,6 +182,6 @@ describe('MODE_MAP', () => {
     expect(MODE_MAP.agrege).toBe('aggregate');
     expect(MODE_MAP.superpose).toBe('overlay');
     expect(MODE_MAP.empile).toBe('stack');
-    expect(MODE_MAP.separe).toBe('split');
+    expect(MODE_MAP.separe).toBe('overlay'); // fix #33: overlay returns site_<id> keys; split returns meter_<id> keys
   });
 });

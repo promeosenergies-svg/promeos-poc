@@ -316,6 +316,13 @@ export default function TimeseriesPanel({
   // V20-B (RC3 fix): effectiveValueKey must match what ExplorerChart will use
   const effectiveValueKey = overlayValueKeys.length ? overlayValueKeys[0] : 'value';
 
+  // Issue #33: site name labels for SepareGrid sub-graph titles
+  const siteLabels = Object.fromEntries(
+    seriesData
+      .filter((s) => s.key?.startsWith('site_'))
+      .map((s) => [parseInt(s.key.replace('site_', ''), 10), s.label])
+  );
+
   // Debug panel — shown in ALL states when ?debug=1 (after overlayValueKeys so chartMeta is available)
   const isDebug =
     typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('debug');
@@ -413,6 +420,7 @@ export default function TimeseriesPanel({
           unit={unit}
           siteIds={chartSiteIds}
           siteColors={effectiveSiteColors}
+          siteLabels={siteLabels}
           height={360}
           showBrush
           summaryData={{
