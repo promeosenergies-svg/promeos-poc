@@ -88,13 +88,14 @@ function InsufficientDataPlaceholder({ count = 0 }) {
   );
 }
 
-function SepareGrid({ siteIds, data, xKey, valueKey, unit, height, children }) {
+function SepareGrid({ siteIds, data, xKey, valueKey, unit, height, siteLabels = {}, children }) {
   const colCount = Math.min(siteIds.length, 3);
   return (
     <div className={`grid gap-3`} style={{ gridTemplateColumns: `repeat(${colCount}, 1fr)` }}>
       {siteIds.map((sid, idx) => {
         const color = colorForSite(sid, idx);
-        const siteData = data.map((p) => ({ ...p, kwh: p[`site_${sid}`] ?? p.value ?? null }));
+        const siteData = data.map((p) => ({ ...p, kwh: p[`site_${sid}`] ?? null }));
+        const label = siteLabels[sid] ?? `Site ${idx + 1}`;
         return (
           <div key={sid}>
             <ResponsiveContainer width="100%" height={Math.round(height * 0.6)}>
@@ -119,12 +120,12 @@ function SepareGrid({ siteIds, data, xKey, valueKey, unit, height, children }) {
                   stroke={color}
                   fill={color}
                   fillOpacity={0.2}
-                  name={`Site ${idx + 1}`}
+                  name={label}
                 />
                 {children}
               </ComposedChart>
             </ResponsiveContainer>
-            <p className="text-center text-xs text-gray-500 mt-1">Site {idx + 1}</p>
+            <p className="text-center text-xs text-gray-500 mt-1">{label}</p>
           </div>
         );
       })}
@@ -140,6 +141,7 @@ export default function ExplorerChart({
   unit = 'kwh',
   siteIds = [],
   siteColors = {},
+  siteLabels = {},
   height = 300,
   onSlotClick,
   showBrush = true,
@@ -185,6 +187,7 @@ export default function ExplorerChart({
           valueKey={valueKey}
           unit={unit}
           height={height}
+          siteLabels={siteLabels}
         >
           {children}
         </SepareGrid>

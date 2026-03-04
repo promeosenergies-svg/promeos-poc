@@ -21,7 +21,7 @@ export const MODE_MAP = {
   agrege: 'aggregate',
   superpose: 'overlay',
   empile: 'stack',
-  separe: 'split',
+  separe: 'overlay', // one series per site (site_<id> keys) — same as superpose, displayed differently
 };
 
 // ── Date formatting by granularity (French) ───────────────────────────────────
