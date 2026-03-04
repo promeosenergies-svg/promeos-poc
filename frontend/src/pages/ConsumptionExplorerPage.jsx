@@ -401,9 +401,13 @@ export default function ConsumptionExplorerPage() {
   const [granularity, setGranularity] = useState('auto');
   // ── V22-B: Sampling minutes from backend meta (for data-frequency intersection) ──
   const [samplingMinutes, setSamplingMinutes] = useState(null);
+  // V26-fix: only update native sampling resolution from auto mode responses;
+  // forced-granularity responses return the aggregation window, not native resolution.
   const handleMeta = useCallback((m) => {
-    if (m?.sampling_minutes != null) setSamplingMinutes(m.sampling_minutes);
-  }, []);
+    if (m?.sampling_minutes != null && granularity === 'auto') {
+      setSamplingMinutes(m.sampling_minutes);
+    }
+  }, [granularity]);
 
   // ── V20-D / V21-F: Demo generation — generates MeterReading data for site, then forces refetch ──
   // Supports energy_vector param (V21-F: gas demo CTA)
