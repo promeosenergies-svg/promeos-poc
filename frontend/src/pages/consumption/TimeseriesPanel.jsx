@@ -400,7 +400,7 @@ export default function TimeseriesPanel({
   const MULTI_SITE_MODES = ['superpose', 'empile', 'separe'];
   const chartMode = seriesData.length > 1 && MULTI_SITE_MODES.includes(mode) ? mode : 'agrege';
   const chartSiteIds = overlayValueKeys.length
-    ? overlayValueKeys.map((k) => parseInt(k.replace('site_', ''), 10))
+    ? overlayValueKeys.map((k) => parseInt(k.replace('site_', ''), 10)).filter((id) => !isNaN(id))
     : siteIds.slice(0, 1);
 
   return (

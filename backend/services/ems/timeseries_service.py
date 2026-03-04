@@ -190,7 +190,19 @@ def query_timeseries(
                 )
             )
     elif mode == "stack":
-        series = [_query_single(db, m, bucket_expr, date_from, date_to, granularity, metric) for m in meters]
+        site_meter_map = {}
+        for m in meters:
+            site_meter_map.setdefault(m.site_id, []).append(m)
+        site_names = {s.id: s.nom for s in db.query(Site).filter(Site.id.in_(list(site_meter_map.keys()))).all()}
+        series = []
+        for sid, ms in sorted(site_meter_map.items()):
+            m_ids = [m.id for m in ms]
+            label = site_names.get(sid, f"Site {sid}")
+            series.append(
+                _query_aggregate(
+                    db, m_ids, bucket_expr, date_from, date_to, granularity, metric, key=f"site_{sid}", label=label
+                )
+            )
     else:  # split
         MAX_SPLIT = 8
         sorted_meters = sorted(meters, key=lambda m: m.id)
