@@ -17,12 +17,16 @@ from models.energy_models import Meter, MeterReading, EnergyVector
 from models.consumption_insight import ConsumptionInsight
 from models.action_item import ActionItem
 from models.enums import ActionStatus
+from services.billing_service import get_reference_price, DEFAULT_PRICE_ELEC
 
 router = APIRouter(prefix="/api/portfolio/consumption", tags=["Portfolio Consumption"])
 
-# Default kWh→EUR estimation (used when no contract price available)
-DEFAULT_EUR_KWH = 0.18
 CO2E_FACTOR = 0.052  # kgCO2e/kWh ADEME 2024
+
+# Expected readings per day by meter frequency
+READINGS_PER_DAY = {
+    "15min": 96, "30min": 48, "hourly": 24, "daily": 1, "monthly": 1 / 30,
+}
 
 
 def _parse_date_or_default(val: Optional[str], default_days_ago: int = 90) -> date_cls:
@@ -52,25 +56,30 @@ def _site_consumption(db: Session, site_id: int, dt_from: datetime, dt_to: datet
 
 
 def _site_peak_kw(db: Session, site_id: int, dt_from: datetime, dt_to: datetime):
-    """P95 approximation: max hourly kWh reading (proxy for kW peak)."""
-    row = (
-        db.query(
-            func.max(MeterReading.value_kwh).label("peak"),
-        )
+    """P95 peak: 95th percentile of kWh readings (proxy for kW peak)."""
+    readings = (
+        db.query(MeterReading.value_kwh)
         .join(Meter, MeterReading.meter_id == Meter.id)
         .filter(
             Meter.site_id == site_id,
             Meter.energy_vector == EnergyVector.ELECTRICITY,
             MeterReading.timestamp >= dt_from,
             MeterReading.timestamp < dt_to,
+            MeterReading.value_kwh.isnot(None),
         )
-        .first()
+        .order_by(MeterReading.value_kwh.asc())
+        .all()
     )
-    return row.peak if row and row.peak else None
+    if not readings:
+        return None
+    idx = min(int(len(readings) * 0.95), len(readings) - 1)
+    return readings[idx].value_kwh
 
 
 def _base_night_pct(db: Session, site_id: int, dt_from: datetime, dt_to: datetime):
-    """Base nocturne %: ratio night (22h-6h) vs day (6h-22h) avg kWh."""
+    """Base nocturne %: ratio night (22h-6h) vs day (6h-22h) avg kWh.
+    Fenêtre 22h-06h = standard tertiaire France (bureaux fermés).
+    """
     from sqlalchemy import extract
 
     night_avg = (
@@ -105,9 +114,12 @@ def _base_night_pct(db: Session, site_id: int, dt_from: datetime, dt_to: datetim
     return round((night_avg or 0) / day_avg * 100)
 
 
-def _confidence_for_readings(n_readings: int, days: int) -> str:
-    """Heuristic confidence from reading density."""
-    expected = days * 24  # hourly
+def _confidence_for_readings(n_readings: int, days: int, frequency: str = "hourly") -> str:
+    """Heuristic confidence from reading density, adapted to meter frequency."""
+    rpd = READINGS_PER_DAY.get(frequency, 24)
+    expected = days * rpd
+    if expected <= 0:
+        return "low"
     if n_readings >= expected * 0.8:
         return "high"
     if n_readings >= expected * 0.3:
@@ -149,10 +161,28 @@ def _build_site_row(db, site, dt_from, dt_to, days):
     n = conso.n_readings or 0
     last_reading = conso.last_reading
     has_data = kwh > 0
-    conf = _confidence_for_readings(n, days) if has_data else "low"
+
+    # Dominant frequency for this site's meters
+    dom_freq = (
+        db.query(MeterReading.frequency)
+        .join(Meter, MeterReading.meter_id == Meter.id)
+        .filter(
+            Meter.site_id == site.id,
+            Meter.energy_vector == EnergyVector.ELECTRICITY,
+            MeterReading.timestamp >= dt_from,
+            MeterReading.timestamp < dt_to,
+        )
+        .group_by(MeterReading.frequency)
+        .order_by(func.count(MeterReading.id).desc())
+        .first()
+    )
+    freq_str = dom_freq[0].value if dom_freq and dom_freq[0] else "hourly"
+    rpd = READINGS_PER_DAY.get(freq_str, 24)
+
+    conf = _confidence_for_readings(n, days, freq_str) if has_data else "low"
 
     # V2: coverage_pct per site + data_status badge
-    expected = days * 24  # hourly readings expected
+    expected = days * rpd  # adapted to meter frequency
     coverage_pct = round(n / expected * 100) if expected > 0 else 0
     if coverage_pct > 100:
         coverage_pct = 100
@@ -163,7 +193,8 @@ def _build_site_row(db, site, dt_from, dt_to, days):
     else:
         data_status = "partial"  # Donnees partielles
 
-    eur = round(kwh * DEFAULT_EUR_KWH, 2)
+    price, price_src = get_reference_price(db, site.id, "elec")
+    eur = round(kwh * price, 2)
     co2 = round(kwh * CO2E_FACTOR, 1)
 
     diag_count = (
@@ -197,6 +228,7 @@ def _build_site_row(db, site, dt_from, dt_to, days):
         "coverage_pct": coverage_pct,
         "last_reading_date": last_reading.isoformat() if last_reading else None,
         "n_readings": n,
+        "eur_source": price_src,
     }
 
 
@@ -240,9 +272,11 @@ def get_portfolio_summary(
         kwh_total += row["kwh"]
         site_rows.append(row)
 
-    eur_total = round(kwh_total * DEFAULT_EUR_KWH, 2)
+    eur_total = round(sum(r["eur"] for r in site_rows), 2)
     co2_total = round(kwh_total * CO2E_FACTOR, 1)
     impact_eur_total = round(sum(r["impact_eur_estimated"] for r in site_rows), 2)
+    all_default = all(r.get("eur_source", "").startswith("default") for r in site_rows if r["kwh"] > 0)
+    eur_source = "estime" if all_default else "mixte"
 
     # Build top-lists
     with_data = [r for r in site_rows if r["kwh"] > 0]
@@ -283,7 +317,7 @@ def get_portfolio_summary(
         "totals": {
             "kwh_total": round(kwh_total, 1),
             "eur_total": eur_total,
-            "eur_source": "estime",
+            "eur_source": eur_source,
             "co2_total": co2_total,
             "impact_eur_total": impact_eur_total,
         },
