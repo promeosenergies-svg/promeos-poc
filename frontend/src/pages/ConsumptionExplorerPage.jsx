@@ -253,6 +253,7 @@ export default function ConsumptionExplorerPage() {
     mergedAvailability,
     primarySiteId,
     primaryAvailability,
+    data: { availabilityBySite },
     loading,
   } = motor;
 
@@ -573,8 +574,8 @@ export default function ConsumptionExplorerPage() {
         </div>
       )}
 
-      {/* Context banner (site info + date range) */}
-      <ContextBanner availability={availability} />
+      {/* Context banner (site info + date range) — one row per site */}
+      <ContextBanner availabilityBySite={availabilityBySite} siteIds={siteIds} />
 
       {/* KPI Header — 6 KPIs respecting scope global */}
       {showContent && (
