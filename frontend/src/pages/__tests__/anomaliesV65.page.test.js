@@ -185,8 +185,8 @@ describe('F. NavRegistry.js — navigation', () => {
     expect(code).toMatch(/\/anomalies.*operations/);
   });
 
-  it('"Anomalies" label present in nav items', () => {
-    expect(code).toMatch(/Anomalies/);
+  it('"Centre d\'actions" label present in nav items', () => {
+    expect(code).toMatch(/Centre d'actions/);
   });
 });
 

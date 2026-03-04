@@ -50,8 +50,9 @@ describe('A. Site360 — real anomalies', () => {
 // ── B. Import Legacy + nav hiding ────────────────────────────────────────
 
 describe('B. Import legacy + nav', () => {
-  test('NavRegistry /import item has hidden: true', () => {
-    expect(NAV_REG).toMatch(/to:\s*'\/import'.*hidden:\s*true/s);
+  test('NavRegistry /import item is visible (V114: no longer hidden)', () => {
+    expect(NAV_REG).toMatch(/to:\s*'\/import'/);
+    expect(NAV_REG).not.toMatch(/to:\s*'\/import'.*hidden:\s*true/s);
   });
 
   test('NavPanel filters hidden items', () => {

@@ -95,7 +95,7 @@ describe('NAV_SECTIONS', () => {
       'Exécuter',
       'Analyser',
       'Marché & Factures',
-      'Donnees',
+      'Référentiels',
       'Administration',
     ]);
   });
@@ -141,8 +141,8 @@ describe('Expert filtering', () => {
 
   it('normal mode shows ~7 items (excluding expertOnly items)', () => {
     const normalItems = normalSections.flatMap((s) => s.items.filter((item) => !item.expertOnly));
-    expect(normalItems.length).toBeGreaterThanOrEqual(6);
-    expect(normalItems.length).toBeLessThanOrEqual(12); // V65: +1 Action Center
+    expect(normalItems.length).toBeGreaterThanOrEqual(5);
+    expect(normalItems.length).toBeLessThanOrEqual(10); // V114: Cockpit 2 + Ops 3 + Analyse 2
   });
 
   it('Diagnostic is expertOnly within Analyser', () => {
@@ -255,11 +255,12 @@ describe('IA coherence', () => {
     expect(perfIdx).toBe(consoIdx + 1);
   });
 
-  it('Cockpit has Alertes with badge', () => {
-    const cockpit = NAV_SECTIONS.find((s) => s.key === 'cockpit');
-    const alertes = cockpit.items.find((item) => item.to === '/notifications');
-    expect(alertes).toBeDefined();
-    expect(alertes.badgeKey).toBe('alerts');
+  it("Centre d'actions has alerts badge in Operations", () => {
+    const ops = NAV_SECTIONS.find((s) => s.key === 'operations');
+    const centre = ops.items.find((item) => item.to === '/anomalies');
+    expect(centre).toBeDefined();
+    expect(centre.badgeKey).toBe('alerts');
+    expect(centre.label).toBe("Centre d'actions");
   });
 
   it('Patrimoine lives in Admin module (Donnees section)', () => {
@@ -293,8 +294,8 @@ describe('IA coherence', () => {
 
 /* ── Quick Actions ── */
 describe('QUICK_ACTIONS', () => {
-  it('has exactly 7 quick actions', () => {
-    expect(QUICK_ACTIONS).toHaveLength(7);
+  it('has exactly 8 quick actions', () => {
+    expect(QUICK_ACTIONS).toHaveLength(8);
   });
 
   it('each action has key, label, icon, to', () => {
@@ -466,10 +467,10 @@ describe('Route coverage guard-rails', () => {
     }
   });
 
-  it('anomalies label is Anomalies (FR)', () => {
+  it("anomalies label is Centre d'actions (FR)", () => {
     const anomalies = ALL_NAV_ITEMS.find((item) => item.to === '/anomalies');
     expect(anomalies).toBeDefined();
-    expect(anomalies.label).toBe('Anomalies');
+    expect(anomalies.label).toBe("Centre d'actions");
   });
 
   it('dynamic routes resolve correctly (not fallback to cockpit)', () => {
