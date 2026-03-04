@@ -526,7 +526,7 @@ function WeekView({ actions, onCardClick }) {
 }
 
 /* ── Main Component ──────────────────────────────────────────── */
-export default function ActionsPage({ autoCreate = false }) {
+export default function ActionsPage({ autoCreate = false, bare = false }) {
   const { scopedSites, selectedSiteId } = useScope();
   const { isExpert } = useExpertMode();
   const { toast } = useToast();
@@ -902,38 +902,9 @@ export default function ActionsPage({ autoCreate = false }) {
     );
   }
 
-  return (
-    <PageShell
-      icon={ListChecks}
-      title="Plan d'actions"
-      subtitle={`${stats.total} actions · ${stats.total_impact.toLocaleString()} EUR d'impact total${stats.total_co2e_kg > 0 ? ` · ${Math.round(stats.total_co2e_kg).toLocaleString()} kgCO₂e` : ''}${stats.overdue > 0 ? ` · ${stats.overdue} en retard` : ''}`}
-      actions={
-        <>
-          <Button variant="secondary" size="sm" onClick={handleSync} disabled={syncing}>
-            <RefreshCw size={16} className={syncing ? 'animate-spin' : ''} />{' '}
-            {syncing ? 'Sync...' : 'Synchroniser'}
-          </Button>
-          {isExpert && (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleDownloadPDF}
-              disabled={pdfLoading}
-              title="Rapport d'audit PDF complet"
-            >
-              <FileText size={16} className={pdfLoading ? 'animate-pulse' : ''} />{' '}
-              {pdfLoading ? 'PDF...' : 'Rapport PDF'}
-            </Button>
-          )}
-          <Button variant="secondary" size="sm" onClick={exportPlan30j} title="Exporter CSV">
-            <Printer size={16} /> Exporter CSV
-          </Button>
-          <Button onClick={() => openActionDrawer({}, { onSave: handleSaveAction })}>
-            <Plus size={16} /> Créer action
-          </Button>
-        </>
-      }
-    >
+  const actionsContent = (
+    <>
+
       {/* Error banner */}
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
@@ -1404,6 +1375,44 @@ export default function ActionsPage({ autoCreate = false }) {
           setActions((prev) => prev.map((a) => (a.id === actionId ? { ...a, ...changes } : a)));
         }}
       />
+    </>
+  );
+
+  if (bare) return actionsContent;
+
+  return (
+    <PageShell
+      icon={ListChecks}
+      title="Plan d'actions"
+      subtitle={`${stats.total} actions · ${stats.total_impact.toLocaleString()} EUR d'impact total${stats.total_co2e_kg > 0 ? ` · ${Math.round(stats.total_co2e_kg).toLocaleString()} kgCO₂e` : ''}${stats.overdue > 0 ? ` · ${stats.overdue} en retard` : ''}`}
+      actions={
+        <>
+          <Button variant="secondary" size="sm" onClick={handleSync} disabled={syncing}>
+            <RefreshCw size={16} className={syncing ? 'animate-spin' : ''} />{' '}
+            {syncing ? 'Sync...' : 'Synchroniser'}
+          </Button>
+          {isExpert && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleDownloadPDF}
+              disabled={pdfLoading}
+              title="Rapport d'audit PDF complet"
+            >
+              <FileText size={16} className={pdfLoading ? 'animate-pulse' : ''} />{' '}
+              {pdfLoading ? 'PDF...' : 'Rapport PDF'}
+            </Button>
+          )}
+          <Button variant="secondary" size="sm" onClick={exportPlan30j} title="Exporter CSV">
+            <Printer size={16} /> Exporter CSV
+          </Button>
+          <Button onClick={() => openActionDrawer({}, { onSave: handleSaveAction })}>
+            <Plus size={16} /> Créer action
+          </Button>
+        </>
+      }
+    >
+      {actionsContent}
     </PageShell>
   );
 }

@@ -1,21 +1,23 @@
 /**
- * AnomaliesPage — V65
- * Action Center cross-sites : liste agrégée des anomalies du scope courant.
- * Route : /anomalies
- *
- * Data : Promise.all sur scopedSites.slice(0, 20) via getPatrimoineAnomalies.
- * KPIs : total anomalies | critiques | risque € estimé.
- * Filtres : framework, severity, site, recherche texte.
- * Tri : impact € DESC puis priority_score DESC.
- * CTAs : "Ouvrir site" (→ /patrimoine avec drawer) + "Créer action" (AnomalyActionModal).
+ * AnomaliesPage — V114 Centre d'actions
+ * Hub unique : onglet "Anomalies" (cross-sites) + onglet "Plan d'actions" (ActionsPage).
+ * Route : /anomalies   — ?tab=actions pour le plan d'actions.
  */
-import { useState, useEffect, useMemo, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AlertTriangle, Search, X, Euro, ChevronRight, Building2, Upload } from 'lucide-react';
 import { PageShell, EmptyState, Tooltip } from '../ui';
+import Tabs from '../ui/Tabs';
 import { useScope } from '../contexts/ScopeContext';
 import { getPatrimoineAnomalies, getBillingAnomaliesScoped } from '../services/api';
 import { useActionDrawer } from '../contexts/ActionDrawerContext';
+
+const ActionsPageInline = lazy(() => import('./ActionsPage'));
+
+const CENTRE_TABS = [
+  { id: 'anomalies', label: 'Anomalies' },
+  { id: 'actions', label: "Plan d'actions" },
+];
 
 /* ── Constantes ── */
 
@@ -46,6 +48,8 @@ function fmtEur(n) {
 
 export default function AnomaliesPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'anomalies';
   const { scopedSites, sitesLoading } = useScope();
   const { openActionDrawer } = useActionDrawer();
 
@@ -171,7 +175,7 @@ export default function AnomaliesPage() {
 
   if (sitesLoading) {
     return (
-      <PageShell icon={AlertTriangle} title="Action Center" subtitle="Chargement...">
+      <PageShell icon={AlertTriangle} title="Centre d'actions" subtitle="Chargement...">
         <div className="space-y-2 animate-pulse">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="h-14 bg-gray-100 rounded-lg" />
@@ -183,7 +187,7 @@ export default function AnomaliesPage() {
 
   if (scopedSites.length === 0) {
     return (
-      <PageShell icon={AlertTriangle} title="Action Center" subtitle="Aucun site dans le scope">
+      <PageShell icon={AlertTriangle} title="Centre d'actions" subtitle="Aucun site dans le scope">
         <EmptyState
           icon={Building2}
           title="Aucun site dans le scope"
@@ -208,7 +212,27 @@ export default function AnomaliesPage() {
     : `${kpis.total} anomalie${kpis.total > 1 ? 's' : ''} · ${kpis.critiques} critique${kpis.critiques > 1 ? 's' : ''} · ${fmtEur(kpis.risque)} de risque estimé`;
 
   return (
-    <PageShell icon={AlertTriangle} title="Action Center" subtitle={subtitle}>
+    <PageShell icon={AlertTriangle} title="Centre d'actions" subtitle={activeTab === 'anomalies' ? subtitle : undefined}>
+      <Tabs
+        tabs={CENTRE_TABS}
+        active={activeTab}
+        onChange={(tab) => setSearchParams({ tab }, { replace: true })}
+        moduleKey="operations"
+      />
+
+      {activeTab === 'actions' ? (
+        <Suspense
+          fallback={
+            <div className="space-y-2 animate-pulse mt-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-14 bg-gray-100 rounded-lg" />
+              ))}
+            </div>
+          }
+        >
+          <ActionsPageInline bare />
+        </Suspense>
+      ) : (
       <div className="space-y-4">
         {/* ── KPI row ── */}
         <div className="grid grid-cols-3 gap-3">
@@ -412,6 +436,7 @@ export default function AnomaliesPage() {
           </div>
         )}
       </div>
+      )}
 
       {/* Action Drawer — managed by ActionDrawerContext */}
     </PageShell>
