@@ -294,8 +294,8 @@ describe('IA coherence', () => {
 
 /* ── Quick Actions ── */
 describe('QUICK_ACTIONS', () => {
-  it('has exactly 8 quick actions', () => {
-    expect(QUICK_ACTIONS).toHaveLength(8);
+  it('has exactly 14 quick actions', () => {
+    expect(QUICK_ACTIONS).toHaveLength(14);
   });
 
   it('each action has key, label, icon, to', () => {
