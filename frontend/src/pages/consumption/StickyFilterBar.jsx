@@ -410,10 +410,7 @@ export default function StickyFilterBar({
           <div className="flex items-center gap-1.5">
             {effectiveSiteIds.length > 0 ? (
               /* Selected site chips */
-              <div
-                className="flex gap-1.5 overflow-x-auto max-w-xs"
-                style={{ scrollbarWidth: 'thin' }}
-              >
+              <div className="flex gap-1.5 flex-wrap min-w-0">
                 {effectiveSiteIds.map((id, idx) => {
                   const site = sites.find((s) => s.id === id);
                   const color = colorForSite(id, idx);
