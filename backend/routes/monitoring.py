@@ -78,8 +78,22 @@ def get_monitoring_kpis(
             if not weather:
                 climate_data = {"reason": "no_weather", "scatter": [], "fit_line": []}
             else:
+                # Filter by frequency: prefer 15-min > hourly (exclude monthly/daily)
+                _best_freq = None
+                for _freq in [FrequencyType.MIN_15, FrequencyType.HOURLY]:
+                    _cnt = db.query(MeterReading).filter(
+                        MeterReading.meter_id == meter_obj.id,
+                        MeterReading.frequency == _freq,
+                        MeterReading.timestamp >= snapshot.period_start,
+                        MeterReading.timestamp <= snapshot.period_end,
+                    ).count()
+                    if _cnt >= 48:
+                        _best_freq = _freq
+                        break
+                _freq_filter = [_best_freq] if _best_freq else [FrequencyType.MIN_15, FrequencyType.HOURLY]
                 readings_orm = db.query(MeterReading).filter(
                     MeterReading.meter_id == meter_obj.id,
+                    MeterReading.frequency.in_(_freq_filter),
                     MeterReading.timestamp >= snapshot.period_start,
                     MeterReading.timestamp <= snapshot.period_end,
                 ).order_by(MeterReading.timestamp).all()

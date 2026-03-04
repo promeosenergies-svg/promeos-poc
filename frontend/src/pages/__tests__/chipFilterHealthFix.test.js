@@ -68,16 +68,16 @@ describe('A · Chip filters actually filter "Sites à traiter"', () => {
 describe('B · computeHealthState: no AMBER card with 0 reasons', () => {
   const BASE = { total: 10, conformes: 10, nonConformes: 0, aRisque: 0, risqueTotal: 0, couvertureDonnees: 80 };
 
-  it('GREEN when alertsCount > 0 but no displayable reasons', () => {
+  it('AMBER when alertsCount > 0 (alerts surface as reasons)', () => {
     const state = computeHealthState({ kpis: BASE, watchlist: [], alertsCount: 5 });
-    expect(state.level).toBe('GREEN');
-    expect(state.reasons).toHaveLength(0);
+    expect(state.level).toBe('AMBER');
+    expect(state.reasons.length).toBeGreaterThan(0);
+    expect(state.reasons.some(r => r.id === 'alerts-active')).toBe(true);
   });
 
-  it('GREEN when kpis.aRisque > 0 but no watchlist items', () => {
+  it('AMBER when kpis.aRisque > 0 even without watchlist items', () => {
     const state = computeHealthState({ kpis: { ...BASE, aRisque: 2 }, watchlist: [], alertsCount: 0 });
-    expect(state.level).toBe('GREEN');
-    expect(state.reasons).toHaveLength(0);
+    expect(state.level).toBe('AMBER');
   });
 
   it('AMBER when warn reasons exist (regression: still works)', () => {
@@ -99,9 +99,9 @@ describe('B · computeHealthState: no AMBER card with 0 reasons', () => {
   });
 
   it('subtitle never says "0 points" for AMBER', () => {
-    // With the fix, AMBER is impossible when reasons.length===0,
-    // so subtitle "0 points à surveiller" can never occur
+    // alertsCount > 0 now creates an alerts-active reason, so reasons.length > 0
     const state = computeHealthState({ kpis: BASE, watchlist: [], alertsCount: 10 });
+    expect(state.level).toBe('AMBER');
     expect(state.subtitle).not.toMatch(/0 point/);
   });
 });
@@ -109,10 +109,11 @@ describe('B · computeHealthState: no AMBER card with 0 reasons', () => {
 // ============================================================
 // B2. Source-guard: computeHealthState condition
 // ============================================================
-describe('B2 · Source-guard: computeHealthState requires reasons for AMBER', () => {
+describe('B2 · Source-guard: computeHealthState alerts become reasons', () => {
   const code = readSrc('models', 'dashboardEssentials.js');
 
-  it('AMBER branch checks reasons.length > 0', () => {
-    expect(code).toMatch(/hasWarn\s*&&\s*reasons\.length\s*>\s*0/);
+  it('alerts > 0 creates an alerts-active reason', () => {
+    expect(code).toMatch(/alerts-active/);
+    expect(code).toMatch(/alertsCount\s*>\s*0/);
   });
 });

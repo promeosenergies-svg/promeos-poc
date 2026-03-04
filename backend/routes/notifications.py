@@ -129,12 +129,13 @@ def list_notifs(
 def notif_summary(
     request: Request,
     org_id: Optional[int] = Query(None),
+    site_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """GET /api/notifications/summary — Counts by severity + status."""
     oid = _resolve_org(request, auth, db, org_id)
-    return _count_summary(db, oid)
+    return _count_summary(db, oid, site_id=site_id)
 
 
 @router.patch("/{event_id}")

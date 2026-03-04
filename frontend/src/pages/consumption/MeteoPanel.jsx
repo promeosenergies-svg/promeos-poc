@@ -70,15 +70,20 @@ export function computeCorrelation(xs, ys) {
 function MeteoTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-sm px-3 py-2 text-xs">
-      <p className="font-medium text-gray-700 mb-1">{label}</p>
+    <div className="bg-white/95 backdrop-blur border border-gray-200 rounded-xl shadow-lg px-3.5 py-2.5 text-xs min-w-[180px]">
+      <p className="font-semibold text-gray-800 mb-1.5 pb-1 border-b border-gray-100">{label}</p>
       {payload.map((p) => (
-        <div key={p.dataKey} className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: p.color }} />
+        <div key={p.dataKey} className="flex items-center gap-2 py-0.5">
+          <span
+            className="w-2.5 h-2.5 shrink-0"
+            style={{
+              backgroundColor: p.color,
+              borderRadius: p.dataKey === 'temp' ? '2px' : '50%',
+            }}
+          />
           <span className="text-gray-500">{p.name}</span>
-          <span className="font-medium text-gray-800 ml-auto pl-4">
+          <span className="font-semibold text-gray-900 ml-auto pl-4 tabular-nums">
             {p.value != null ? Number(p.value).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) : '—'}
-            {p.dataKey === 'temp' ? ' °C' : ' kWh'}
           </span>
         </div>
       ))}
@@ -158,8 +163,20 @@ export default function MeteoPanel({ siteIds = [], energyType = 'electricity', d
     return computeCorrelation(cons, temps);
   }, [enrichedData]);
 
-  const correlationLabel = correlation > 0.5 ? 'Forte' : correlation > 0.2 ? 'Modérée' : 'Faible';
-  const correlationColor = correlation > 0.5 ? 'text-blue-700 bg-blue-50' : correlation > 0.2 ? 'text-amber-700 bg-amber-50' : 'text-gray-600 bg-gray-100';
+  const absCorr = Math.abs(correlation);
+  const correlationLabel = absCorr > 0.5 ? 'Forte' : absCorr > 0.2 ? 'Modérée' : 'Faible';
+  const correlationDir = correlation < -0.15 ? 'Chauffage' : correlation > 0.15 ? 'Climatisation' : 'Neutre';
+  // Okabe-Ito colorblind-safe: blue #0072B2 (strong), orange #E69F00 (moderate), gray (weak)
+  const correlationColor = absCorr > 0.5
+    ? 'ring-1'
+    : absCorr > 0.2
+      ? 'ring-1'
+      : 'text-gray-600 bg-gray-100 ring-1 ring-gray-200';
+  const correlationStyle = absCorr > 0.5
+    ? { color: '#005a8e', backgroundColor: '#0072B210', borderColor: '#0072B240' }
+    : absCorr > 0.2
+      ? { color: '#b07d00', backgroundColor: '#E69F0015', borderColor: '#E69F0040' }
+      : {};
 
   const isRealWeather = !!utcWeather;
   const _weatherSource = isRealWeather ? 'Temperature reelle (UTC)' : 'Temperature synthetique (modele)';
@@ -212,9 +229,9 @@ export default function MeteoPanel({ siteIds = [], energyType = 'electricity', d
               type="checkbox"
               checked={showTemp}
               onChange={(e) => setShowTemp(e.target.checked)}
-              className="w-3.5 h-3.5 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+              className="w-3.5 h-3.5 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
             />
-            <Thermometer size={13} className="text-orange-600" />
+            <Thermometer size={13} className="text-amber-600" />
             <span className="text-xs text-gray-600">Afficher la temperature</span>
           </label>
           <span className="text-xs text-gray-300">|</span>
@@ -223,16 +240,17 @@ export default function MeteoPanel({ siteIds = [], energyType = 'electricity', d
             {dju.toLocaleString('fr-FR')} °C·j
           </span>
           <span className="text-xs text-gray-500">Correlation :</span>
-          <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${correlationColor}`}>
-            {correlationLabel} ({correlation >= 0 ? '+' : ''}{correlation.toFixed(2)})
+          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-semibold rounded-full ${correlationColor}`} style={correlationStyle}>
+            {correlationLabel} · r={correlation >= 0 ? '+' : ''}{correlation.toFixed(2)}
+            <span className="text-[10px] font-normal opacity-75">({correlationDir})</span>
           </span>
         </div>
       </div>
 
       {/* Dual-axis chart */}
-      <ResponsiveContainer width="100%" height={280}>
-        <ComposedChart data={enrichedData} margin={{ top: 8, right: 40, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+      <ResponsiveContainer width="100%" height={300}>
+        <ComposedChart data={enrichedData} margin={{ top: 10, right: 44, left: 4, bottom: 4 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
           <XAxis
             dataKey="date"
             tick={{ fontSize: 11, fill: '#94a3b8' }}
@@ -244,22 +262,22 @@ export default function MeteoPanel({ siteIds = [], energyType = 'electricity', d
           <YAxis
             yAxisId="kwh"
             orientation="left"
-            tick={{ fontSize: 11, fill: '#94a3b8' }}
+            tick={{ fontSize: 11, fill: '#64748b' }}
             tickLine={false}
             axisLine={false}
-            width={50}
-            label={{ value: 'kWh', angle: -90, position: 'insideLeft', fontSize: 10, fill: '#94a3b8' }}
+            width={55}
+            label={{ value: 'kWh', angle: -90, position: 'insideLeft', fontSize: 10, fill: '#0072B2' }}
           />
           {/* Right Y: temperature — hidden when toggle off */}
           {showTemp && (
             <YAxis
               yAxisId="temp"
               orientation="right"
-              tick={{ fontSize: 11, fill: '#ea580c' }}
+              tick={{ fontSize: 11, fill: '#64748b' }}
               tickLine={false}
               axisLine={false}
-              width={40}
-              label={{ value: '°C', angle: 90, position: 'insideRight', fontSize: 10, fill: '#ea580c' }}
+              width={42}
+              label={{ value: '°C', angle: 90, position: 'insideRight', fontSize: 10, fill: '#E69F00' }}
             />
           )}
           <Tooltip content={<MeteoTooltip />} />
@@ -272,35 +290,46 @@ export default function MeteoPanel({ siteIds = [], energyType = 'electricity', d
             yAxisId="kwh"
             type="monotone"
             dataKey="value"
-            name="Consommation"
-            stroke="#6366f1"
-            fill="#e0e7ff"
-            fillOpacity={0.6}
-            strokeWidth={1.5}
+            name="Consommation (kWh)"
+            stroke="#0072B2"
+            fill="#0072B2"
+            fillOpacity={0.15}
+            strokeWidth={2}
             dot={false}
-            activeDot={{ r: 3 }}
+            activeDot={{ r: 4, strokeWidth: 2, fill: '#fff' }}
           />
           {showTemp && (
             <Line
               yAxisId="temp"
               type="monotone"
               dataKey="temp"
-              name="Temperature"
-              stroke="#ea580c"
-              strokeWidth={2}
+              name="Température (°C)"
+              stroke="#E69F00"
+              strokeWidth={2.5}
               strokeDasharray="6 3"
               dot={false}
-              activeDot={{ r: 3 }}
+              activeDot={{ r: 4, strokeWidth: 2, fill: '#fff' }}
             />
           )}
         </ComposedChart>
       </ResponsiveContainer>
 
-      {/* Disclaimer */}
-      <p className="text-[11px] text-gray-400">
-        Source temperature : {utcWeather ? 'API UTC (serveur, DST-safe)' : 'modele saisonnier synthetique'}
-        {' · '}DJU base 18 °C · R de Pearson sur la periode
-      </p>
+      {/* Interprétation + disclaimer */}
+      <div className="flex items-start gap-2 p-2.5 rounded-lg bg-slate-50 border border-slate-100">
+        <span className="text-xs text-slate-400 shrink-0 mt-0.5">ℹ</span>
+        <div className="text-[11px] text-slate-500 leading-relaxed">
+          <span className="font-medium text-slate-600">
+            {absCorr > 0.5
+              ? `Dépendance climatique forte (r=${correlation.toFixed(2)}) — la consommation est très sensible à la température.`
+              : absCorr > 0.2
+                ? `Dépendance climatique modérée (r=${correlation.toFixed(2)}) — influence partielle de la température.`
+                : `Faible corrélation (r=${correlation.toFixed(2)}) — la consommation semble peu liée à la température.`}
+          </span>
+          <br />
+          Source : {utcWeather ? 'météo réelle UTC' : 'modèle saisonnier synthétique'}
+          {' · '}DJU base 18 °C · Coefficient de Pearson sur la période ({enrichedData.length} pts)
+        </div>
+      </div>
     </div>
   );
 }

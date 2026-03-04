@@ -240,13 +240,14 @@ def _build_anomaly_schedule(site_idx: int, profile_name: str, days: int,
 
     elif profile_name == "warehouse" and site_idx == 2:
         # Eclairage oublie: Entrepot Toulouse, 5 random weekends
+        # Multiplier 2.0 = eclairage entrepot reste allume (realiste, ~2x le talon nuit)
         weekend_days = [d for d in range(max(0, days - 365), days)
                         if (datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days - d)).weekday() >= 5]
-        chosen = rng.sample(weekend_days, min(10, len(weekend_days)))
+        chosen = rng.sample(weekend_days, min(5, len(weekend_days)))
         for d in chosen:
             anomalies.append({
                 "day": d, "hours": list(range(20, 24)) + list(range(0, 6)),
-                "type": "forgotten_lights", "multiplier": 6.0, "quality": 0.70,
+                "type": "forgotten_lights", "multiplier": 2.0, "quality": 0.75,
             })
 
     elif profile_name == "hotel" and site_idx == 3:

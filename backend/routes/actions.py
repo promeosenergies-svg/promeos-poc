@@ -383,17 +383,20 @@ def list_actions(
 def actions_summary(
     request: Request,
     org_id: Optional[int] = Query(None),
+    site_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
     auth: Optional[AuthContext] = Depends(get_optional_auth),
 ):
     """
-    GET /api/actions/summary?org_id=
+    GET /api/actions/summary?org_id=&site_id=
     Statistiques: counts par status, top 5 prioritaires, by_source.
     """
     oid = _resolve_org(request, auth, db, org_id)
 
     q = db.query(ActionItem).filter(ActionItem.org_id == oid)
     q = apply_scope_filter(q, auth, ActionItem.site_id)
+    if site_id is not None:
+        q = q.filter(ActionItem.site_id == site_id)
     items = q.all()
 
     counts = {"open": 0, "in_progress": 0, "done": 0, "blocked": 0, "false_positive": 0, "total": 0}

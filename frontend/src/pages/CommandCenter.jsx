@@ -51,7 +51,7 @@ export function normalizeDashboardModel({ kpis, topActions, alertsCount }) {
 
 export default function CommandCenter() {
   const navigate = useNavigate();
-  const { org, scopedSites } = useScope();
+  const { org, scopedSites, selectedSiteId } = useScope();
   const { isExpert } = useExpertMode();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -66,11 +66,13 @@ export default function CommandCenter() {
     setLoading(true);
     setError(null);
     try {
+      // Pass site_id when a specific site is selected in scope
+      const siteParam = selectedSiteId ? { site_id: selectedSiteId } : {};
       const [compBundle, actSummary, actList, notifSummary] = await Promise.all([
-        getComplianceBundle({ org_id: org.id }).catch(() => null),
-        getActionsSummary(org.id).catch(() => null),
-        getActionsList({ limit: 20, status: 'open,in_progress' }).catch(() => []),
-        getNotificationsSummary(org.id).catch(() => null),
+        getComplianceBundle({ org_id: org.id, ...siteParam }).catch(() => null),
+        getActionsSummary(org.id, selectedSiteId || undefined).catch(() => null),
+        getActionsList({ limit: 20, status: 'open,in_progress', ...siteParam }).catch(() => []),
+        getNotificationsSummary(org.id, selectedSiteId || undefined).catch(() => null),
       ]);
       setCompliance(compBundle);
       setActionsSummary(actSummary);
@@ -82,7 +84,7 @@ export default function CommandCenter() {
     } finally {
       setLoading(false);
     }
-  }, [org.id]);
+  }, [org.id, selectedSiteId]);
 
   useEffect(() => { loadData(); }, [loadData]);
 

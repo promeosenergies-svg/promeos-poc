@@ -475,13 +475,12 @@ def sync_notifications(db: Session, org_id: int, triggered_by: str = "api") -> d
     }
 
 
-def _count_summary(db: Session, org_id: int) -> dict:
+def _count_summary(db: Session, org_id: int, site_id: int = None) -> dict:
     """Count notifications by severity and status for summary endpoint."""
-    events = (
-        db.query(NotificationEvent)
-        .filter(NotificationEvent.org_id == org_id)
-        .all()
-    )
+    q = db.query(NotificationEvent).filter(NotificationEvent.org_id == org_id)
+    if site_id:
+        q = q.filter(NotificationEvent.site_id == site_id)
+    events = q.all()
 
     by_severity = {"critical": 0, "warn": 0, "info": 0}
     by_status = {"new": 0, "read": 0, "dismissed": 0}

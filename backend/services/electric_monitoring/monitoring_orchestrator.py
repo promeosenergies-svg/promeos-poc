@@ -89,12 +89,34 @@ class MonitoringOrchestrator:
         period_start = now - timedelta(days=days)
         period_end = now
 
-        # 1. Fetch readings
+        # 1. Fetch readings — filter by frequency (prefer finest: 15min > hourly)
+        #    Exclude MONTHLY/DAILY readings that would corrupt power calculations
+        from models import FrequencyType
+        best_freq = None
+        for freq in [FrequencyType.MIN_15, FrequencyType.HOURLY]:
+            count = self.db.query(MeterReading).filter(
+                MeterReading.meter_id == meter.id,
+                MeterReading.frequency == freq,
+                MeterReading.timestamp >= period_start,
+                MeterReading.timestamp <= period_end,
+            ).count()
+            if count >= 48:  # at least 2 days of data
+                best_freq = freq
+                break
+
+        freq_filter = [best_freq] if best_freq else [FrequencyType.MIN_15, FrequencyType.HOURLY]
         readings_orm = self.db.query(MeterReading).filter(
             MeterReading.meter_id == meter.id,
+            MeterReading.frequency.in_(freq_filter),
             MeterReading.timestamp >= period_start,
-            MeterReading.timestamp <= period_end
+            MeterReading.timestamp <= period_end,
         ).order_by(MeterReading.timestamp).all()
+
+        # Auto-detect interval from best frequency
+        if best_freq == FrequencyType.MIN_15:
+            interval_minutes = 15
+        elif best_freq == FrequencyType.HOURLY:
+            interval_minutes = 60
 
         readings = [
             {"timestamp": r.timestamp, "value_kwh": r.value_kwh}

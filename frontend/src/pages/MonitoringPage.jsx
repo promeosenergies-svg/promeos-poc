@@ -952,9 +952,9 @@ function ClimateScatter({ climate }) {
           <XAxis dataKey="T" name="Température (°C)" unit=" °C" tick={{ fontSize: 11 }} type="number" />
           <YAxis dataKey="kwh" name="Conso. journalière" unit=" kWh/j" tick={{ fontSize: 11 }} type="number" />
           <RTooltip cursor={{ strokeDasharray: '3 3' }} />
-          <Scatter data={climate.scatter} fill="#3b82f6" fillOpacity={0.6} r={3} name="Jours" />
+          <Scatter data={climate.scatter} fill="#0072B2" fillOpacity={0.55} r={3} name="Jours" />
           {climate.fit_line && climate.fit_line.length > 0 && (
-            <Scatter data={climate.fit_line} fill="none" line={{ stroke: '#ef4444', strokeWidth: 2 }} shape={() => null} name="Régression" />
+            <Scatter data={climate.fit_line} fill="none" line={{ stroke: '#E69F00', strokeWidth: 2.5 }} shape={() => null} name="Régression" />
           )}
         </ScatterChart>
       </ResponsiveContainer>

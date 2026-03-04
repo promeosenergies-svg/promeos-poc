@@ -323,7 +323,7 @@ class TestEndToEndCompute:
 
     def test_renewals_show_b1_contracts(self, client, db):
         """GET /renewals reflects B1 contract data."""
-        _, site = _create_org_site(db)
+        org, site = _create_org_site(db)
         today = date.today()
         contract = EnergyContract(
             site_id=site.id,
@@ -337,7 +337,7 @@ class TestEndToEndCompute:
         db.add(contract)
         db.commit()
 
-        resp = client.get("/api/purchase/renewals")
+        resp = client.get(f"/api/purchase/renewals?org_id={org.id}")
         assert resp.status_code == 200
         data = resp.json()
         assert data["total"] >= 1

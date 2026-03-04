@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 
 from models import (
     MonitoringSnapshot, MonitoringAlert, ConsumptionInsight,
-    AlertStatus, AlertSeverity, InsightStatus,
+    AlertStatus, AlertSeverity, InsightStatus, FrequencyType,
 )
 
 
@@ -63,14 +63,27 @@ def generate_monitoring(db, sites: list, meters: list,
             period_end = now - timedelta(days=30 * month_offset)
             period_start = period_end - timedelta(days=30)
 
-            # Fetch readings for this period
+            # Fetch readings for this period — filter by frequency (prefer 15min > hourly)
+            best_freq = None
+            for freq in [FrequencyType.MIN_15, FrequencyType.HOURLY]:
+                cnt = db.query(MeterReading).filter(
+                    MeterReading.meter_id == meter.id,
+                    MeterReading.frequency == freq,
+                    MeterReading.timestamp >= period_start,
+                    MeterReading.timestamp < period_end,
+                ).count()
+                if cnt >= 48:
+                    best_freq = freq
+                    break
+            freq_filter = [best_freq] if best_freq else [FrequencyType.MIN_15, FrequencyType.HOURLY]
             readings_orm = db.query(MeterReading).filter(
                 MeterReading.meter_id == meter.id,
+                MeterReading.frequency.in_(freq_filter),
                 MeterReading.timestamp >= period_start,
                 MeterReading.timestamp < period_end,
             ).order_by(MeterReading.timestamp).all()
 
-            if len(readings_orm) < 24:
+            if len(readings_orm) < 48:
                 continue
 
             readings = [
@@ -78,16 +91,19 @@ def generate_monitoring(db, sites: list, meters: list,
                 for r in readings_orm
             ]
 
+            # Auto-detect interval
+            interval = 15 if best_freq == FrequencyType.MIN_15 else 60
+
             # Compute KPIs with real engine
-            kpis = kpi_engine.compute(readings, interval_minutes=60, schedule=schedule)
+            kpis = kpi_engine.compute(readings, interval_minutes=interval, schedule=schedule)
             quality = quality_engine.compute(
-                readings, 60,
+                readings, interval,
                 period_start=period_start, period_end=period_end,
             )
             power_risk = power_engine.compute(
                 kpis, readings,
                 subscribed_power_kva=meter.subscribed_power_kva or 0,
-                interval_minutes=60,
+                interval_minutes=interval,
             )
 
             snapshot = MonitoringSnapshot(

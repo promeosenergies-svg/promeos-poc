@@ -521,8 +521,8 @@ describe('AT · P1-3 overlay meteo UTC', () => {
 
   it('MeteoPanel shows weather source in disclaimer', () => {
     const code = readSrc('pages', 'consumption', 'MeteoPanel.jsx');
-    expect(code).toMatch(/API UTC.*serveur.*DST-safe/);
-    expect(code).toMatch(/synthetique/);
+    expect(code).toMatch(/météo réelle UTC|UTC.*weather|utcWeather/);
+    expect(code).toMatch(/synthétique|synthetique/);
   });
 
   it('MeteoPanel conditionally renders temperature Line and YAxis', () => {

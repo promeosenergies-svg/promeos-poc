@@ -886,8 +886,12 @@ export const syncActions = (orgId = null) =>
   api.post('/actions/sync', null, { params: orgId ? { org_id: orgId } : {} }).then((r) => r.data);
 export const getActionsList = (params = {}) =>
   _cachedGet('/actions/list', { params }).then((r) => r.data);
-export const getActionsSummary = (orgId = null) =>
-  _cachedGet('/actions/summary', { params: orgId ? { org_id: orgId } : {} }).then((r) => r.data);
+export const getActionsSummary = (orgId = null, siteId = null) => {
+  const params = {};
+  if (orgId) params.org_id = orgId;
+  if (siteId) params.site_id = siteId;
+  return _cachedGet('/actions/summary', { params }).then((r) => r.data);
+};
 export const patchAction = (id, data) => api.patch(`/actions/${id}`, data).then((r) => r.data);
 export const getActionBatches = (orgId = null) =>
   api.get('/actions/batches', { params: orgId ? { org_id: orgId } : {} }).then((r) => r.data);
@@ -935,10 +939,12 @@ export const syncNotifications = (orgId = null) =>
     .then((r) => r.data);
 export const getNotificationsList = (params = {}) =>
   api.get('/notifications/list', { params }).then((r) => r.data);
-export const getNotificationsSummary = (orgId = null) =>
-  _cachedGet('/notifications/summary', { params: orgId ? { org_id: orgId } : {} }).then(
-    (r) => r.data
-  );
+export const getNotificationsSummary = (orgId = null, siteId = null) => {
+  const params = {};
+  if (orgId) params.org_id = orgId;
+  if (siteId) params.site_id = siteId;
+  return _cachedGet('/notifications/summary', { params }).then((r) => r.data);
+};
 export const patchNotification = (id, data) =>
   api.patch(`/notifications/${id}`, data).then((r) => r.data);
 export const getNotificationPreferences = (orgId = null) =>

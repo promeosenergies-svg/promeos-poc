@@ -287,13 +287,43 @@ def _bucket_key_expr(granularity: str):
         return func.strftime(fmt, MeterReading.timestamp)
 
 
+def _resolve_best_freq(db, meter_ids, date_from, date_to, granularity: str):
+    """Pick a single frequency to avoid double-counting overlapping readings.
+
+    When a meter has both 15min and hourly data for the same period, summing
+    both would inflate values ~2×.  We select the finest frequency that has
+    ≥ 48 readings for the window.  Falls back to full compatible list only
+    when no single frequency meets the threshold.
+    """
+    compatible = _COMPATIBLE_FREQS.get(granularity, list(FrequencyType))
+    if len(compatible) <= 1:
+        return compatible
+
+    meter_filter = (
+        MeterReading.meter_id.in_(meter_ids)
+        if isinstance(meter_ids, list)
+        else MeterReading.meter_id == meter_ids
+    )
+    for freq in compatible:          # ordered finest → coarsest
+        cnt = db.query(func.count(MeterReading.id)).filter(
+            meter_filter,
+            MeterReading.frequency == freq,
+            MeterReading.timestamp >= date_from,
+            MeterReading.timestamp < date_to,
+        ).scalar() or 0
+        if cnt >= 48:
+            return [freq]
+    return compatible                 # fallback: no single freq has enough data
+
+
 def _base_query(db, meter_ids, bucket_expr, date_from, date_to, granularity: str = "daily"):
     """Shared bucket query base.
 
-    Filters readings to frequencies that are ≤ the requested granularity so that
-    monthly aggregate values never pollute daily or hourly chart buckets.
+    Filters readings to a single best frequency to prevent double-counting
+    when multiple overlapping frequencies exist (e.g. 15min + hourly).
+    Monthly aggregate values are never included for daily or hourly charts.
     """
-    compatible = _COMPATIBLE_FREQS.get(granularity, list(FrequencyType))
+    best = _resolve_best_freq(db, meter_ids, date_from, date_to, granularity)
     meter_filter = (
         MeterReading.meter_id.in_(meter_ids)
         if isinstance(meter_ids, list)
@@ -310,7 +340,7 @@ def _base_query(db, meter_ids, bucket_expr, date_from, date_to, granularity: str
             meter_filter,
             MeterReading.timestamp >= date_from,
             MeterReading.timestamp < date_to,
-            MeterReading.frequency.in_(compatible),
+            MeterReading.frequency.in_(best),
         )
         .group_by(literal_column("bucket"))
         .order_by(literal_column("bucket"))

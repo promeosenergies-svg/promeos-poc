@@ -521,6 +521,26 @@ export function computeHealthState({ kpis, watchlist = [], briefing = [], consis
     }
   }
 
+  // Add active alerts as reasons (so they influence banner even without watchlist items)
+  if (alertsCount > 0) {
+    reasons.push({
+      id: 'alerts-active',
+      label: `${alertsCount} alerte${alertsCount > 1 ? 's' : ''} active${alertsCount > 1 ? 's' : ''}`,
+      severity: alertsCount > 5 ? 'high' : 'medium',
+      link: '/notifications',
+    });
+  }
+
+  // 0% conformité with sites present = problem
+  if (kpis.total > 0 && kpis.conformes === 0 && kpis.nonConformes === 0 && kpis.aRisque === 0) {
+    reasons.push({
+      id: 'conformite-unknown',
+      label: 'Conformité non évaluée — lancer un scan',
+      severity: 'warn',
+      link: '/conformite',
+    });
+  }
+
   // Determine level
   const hasCritical = reasons.some(r => r.severity === 'critical') || kpis.nonConformes > 0;
   const hasWarn = reasons.some(r => ['high', 'warn', 'medium'].includes(r.severity)) || alertsCount > 0 || kpis.aRisque > 0;
@@ -531,7 +551,7 @@ export function computeHealthState({ kpis, watchlist = [], briefing = [], consis
     title = 'Actions requises';
     const critCount = reasons.filter(r => r.severity === 'critical').length;
     subtitle = `${critCount} point${critCount > 1 ? 's' : ''} critique${critCount > 1 ? 's' : ''} — intervention recommandée`;
-  } else if (hasWarn && reasons.length > 0) {
+  } else if (hasWarn) {
     level = 'AMBER';
     title = "Points d'attention";
     subtitle = `${reasons.length} point${reasons.length > 1 ? 's' : ''} à surveiller`;
